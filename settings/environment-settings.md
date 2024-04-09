@@ -23,6 +23,7 @@ pip install networkx==2.8.7
 pip install xxhash==3.2.0
 pip install graphviz==0.20.1
 pip install psutil
+pip install scipy==1.10.1
 
 # PyTorch GPU version
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
