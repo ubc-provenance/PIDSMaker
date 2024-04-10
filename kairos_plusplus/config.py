@@ -1,3 +1,115 @@
+import argparse
+import pathlib
+import sys
+from yacs.config import CfgNode as CN
+
+
+AVAILABLE_MODELS = [
+     "kairos_plus_plus",
+]
+AVAILABLE_DATASETS = [
+     "THEIA_E5",
+]
+MAX_NUM_NODES_PER_DATASET = {
+     "THEIA_E5": 967390,
+}
+
+def get_default_cfg():
+     """
+     Inits the shared cfg object with default configurations.
+     """
+     cfg = CN()
+
+     # ########################################################
+     # Dataset
+     # ########################################################
+     cfg.dataset = CN()
+
+     # Dataset name
+     cfg.dataset.name = None
+
+     # Number of nodes
+     cfg.dataset.max_node_num = None
+     
+     # ########################################################
+     # Preprocessing
+     # ########################################################
+     cfg.preprocessing = CN()
+
+     # ########################################################
+     # Featurization
+     # ########################################################
+     cfg.featurization = CN()
+
+     # ########################################################
+     # Detection
+     # ########################################################
+     cfg.detection = CN()
+     cfg.detection.model = CN()
+
+     # Model name
+     cfg.detection.model.name = None
+
+     # ########################################################
+     # Triage
+     # ########################################################
+     cfg.triage = CN()
+
+     # ########################################################
+     # Post-processing
+     # ########################################################
+     cfg.postprocessing = CN()
+
+     return cfg
+
+def assert_cfg_complete(cfg):
+     pass
+     # verify all is not None
+
+def get_runtime_required_args():
+     parser = argparse.ArgumentParser()
+     parser.add_argument('model', type=str, help="Name of the model")
+     parser.add_argument('dataset', type=str, help="Name of the dataset")
+     
+     try:
+          args = parser.parse_args()
+     except:
+          parser.print_help()
+          sys.exit(1)
+     return args
+
+def set_runtime_args_to_cfg(cfg, args):
+     # Model
+     if args.model not in AVAILABLE_MODELS:
+          raise ValueError(f"Unknown model {args.model}. Available models are {AVAILABLE_MODELS}")
+     
+     cfg.detection.model.name = args.model
+     
+     # Dataset
+     if args.dataset not in AVAILABLE_DATASETS:
+          raise ValueError(f"Unknown dataset {args.dataset}. Available datasets are {AVAILABLE_DATASETS}")
+
+     cfg.dataset.name = args.dataset
+     cfg.dataset.max_node_num = MAX_NUM_NODES_PER_DATASET[args.dataset]
+
+
+def get_yml_cfg(args):
+     # Inits with default configurations
+     cfg = get_default_cfg()
+
+     # Adds configurations only known at runtime (from the cli args)
+     set_runtime_args_to_cfg(cfg, args)
+     
+     # Overrides default config with config from yml file
+     root_path = pathlib.Path(__file__).parent.parent.resolve()
+     yml_file = f"{root_path}/config/{cfg.detection.model.name}.yml"
+     cfg.merge_from_file(yml_file)
+
+     # Asserts all required configurations are present in the final cfg
+     assert_cfg_complete(cfg)
+     return cfg
+
+
 
 ########################################################
 #
