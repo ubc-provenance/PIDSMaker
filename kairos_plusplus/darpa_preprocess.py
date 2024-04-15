@@ -10,7 +10,7 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     base_dir = cfg.preprocessing._graphs_dir
     sorted_paths = sorted([os.path.abspath(os.path.join(base_dir, sub, f))
                         for sub in os.listdir(base_dir)
-                        if os.path.isdir(os.path.join(base_dir, sub))
+                        if os.path.isdir(os.path.join(base_dir, sub)) and sub in split_files
                         for f in os.listdir(os.path.join(base_dir, sub))])
     
     g = []
