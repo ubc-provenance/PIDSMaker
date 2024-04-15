@@ -6,13 +6,6 @@ import networkx as nx
 from config import *
 from provnet_utils import *
 
-logger = logging.getLogger("graph_construction_edge_fused_tw")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(artifact_dir + 'edge_fused_tw_graph.log')
-file_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
 def get_node_list(cur):
     # node hash id to node label and type
@@ -39,7 +32,7 @@ def generate_timestamps(start_time, end_time, interval_minutes):
     timestamps.append(end)
     return timestamps
 
-def gen_edge_fused_tw(cur, nodeid2msg, cfg):
+def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
 
     include_edge_type = rel2id
 
@@ -180,7 +173,11 @@ if __name__ == "__main__":
     args = get_runtime_required_args()
     cfg = get_yml_cfg(args)
 
+    logger = get_logger(
+        name="graph_construction_edge_fused_tw",
+        filename=os.path.join(cfg.preprocessing._logs_dir, "edge_fused_tw_graph.log"))
+
     cur, connect = init_database_connection()
     nodeid2msg = get_node_list(cur=cur)
 
-    gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, cfg=cfg)
+    gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, logger=logger, cfg=cfg)

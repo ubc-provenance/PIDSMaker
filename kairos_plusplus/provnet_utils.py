@@ -7,6 +7,7 @@ from psycopg2 import extras as ex
 import os.path as osp
 import os
 import copy
+import logging
 import torch
 from torch.nn import Linear
 from sklearn.metrics import average_precision_score, roc_auc_score
@@ -251,3 +252,13 @@ def gen_darpa_adj_files(graph, filename):
             writer.writerow(data)
         f.close()
 
+def get_logger(name: str, filename: str):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(filename)
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    
+    return logger

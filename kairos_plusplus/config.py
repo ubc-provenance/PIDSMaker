@@ -96,33 +96,41 @@ def get_runtime_required_args():
 
      return args
 
-def set_current_task_paths(cfg):
+def set_task_paths(cfg):
      restart_args = RESTART_ARGS(cfg)
+
+     # Directories common to all tasks
+     for task in ["preprocessing", "featurization", "detection", "triage", "postprocessing"]:
+          task_cfg = getattr(cfg, task)
+
+          # The directory where all subfolders of each task will be stored
+          if task in ["preprocessing", "featurization"]:
+               hash_args = str(restart_args[task][cfg.dataset.name])
+               task_cfg._task_path = os.path.join(cfg._artifact_dir, task, cfg.dataset.name, hash_args)
+
+               # The directory to save logs related to the preprocessing task
+               task_cfg._logs_dir = os.path.join(task_cfg._task_path, "logs/")
+               os.makedirs(task_cfg._logs_dir, exist_ok=True)
+          else:
+               hash_args = None # TODO set cfg.dataset.model for detection
      
      # Preprocessing paths
-     hash_preprocessing = str(restart_args["preprocessing"][cfg.dataset.name])
-     cfg.preprocessing._current_task_path = os.path.join(cfg._artifact_dir, "preprocessing", cfg.dataset.name, hash_preprocessing)
      # The directory to save the Networkx graphs
-     cfg.preprocessing._graphs_dir = os.path.join(cfg.preprocessing._current_task_path, "nx/")
+     cfg.preprocessing._graphs_dir = os.path.join(cfg.preprocessing._task_path, "nx/")
      os.makedirs(cfg.preprocessing._graphs_dir, exist_ok=True)
      # The directory to save the preprocessed stuff from random walking
-     cfg.preprocessing._preprocessed_dir = os.path.join(cfg.preprocessing._current_task_path, "preprocessed/")
+     cfg.preprocessing._preprocessed_dir = os.path.join(cfg.preprocessing._task_path, "preprocessed/")
      os.makedirs(cfg.preprocessing._preprocessed_dir, exist_ok=True)
 
      # Featurization paths
-     hash_featurization = str(restart_args["featurization"][cfg.dataset.name])
-     cfg.featurization._current_task_path = os.path.join(cfg._artifact_dir, "featurization", cfg.dataset.name, hash_featurization)
      # The directory to save the vectorized graphs
-     cfg.featurization._vec_graphs_dir = os.path.join(cfg.featurization._current_task_path, "vectorized/")
-     os.makedirs(cfg.preprocessing._vec_graphs_dir, exist_ok=True)
-
-     # Detection paths
-     hash_detection = str(restart_args["detection"][cfg.detection.model.name])
-     cfg.detection._current_task_path = os.path.join(cfg._artifact_dir, "detection", cfg.dataset.name, hash_detection)
+     cfg.featurization._vec_graphs_dir = os.path.join(cfg.featurization._task_path, "vectorized/")
+     os.makedirs(cfg.featurization._vec_graphs_dir, exist_ok=True)
      
      # TODO
-     cfg.triage._current_task_path = None
-     cfg.postprocessing._current_task_path = None
+     cfg.detection._task_path = None
+     cfg.triage._task_path = None
+     cfg.postprocessing._task_path = None
 
 def assert_cfg_complete(cfg):
      pass
@@ -139,7 +147,7 @@ def get_yml_cfg(args):
 
      # Based on the defined restart args, computes a unique path on disk
      # to store the files of each task
-     set_current_task_paths(cfg)
+     set_task_paths(cfg)
 
      # Asserts all required configurations are present in the final cfg
      assert_cfg_complete(cfg)
