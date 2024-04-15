@@ -1,9 +1,2 @@
-preprocessing:
-
 featurization:
-
-detection:
-
-triage:
-
-postprocessing:
+  walk_length: 30

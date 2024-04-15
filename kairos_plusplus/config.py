@@ -23,8 +23,7 @@ RESTART_ARGS = lambda cfg: {
      "featurization": 
           {
                "THEIA_E5": [
-                    # cfg.featurization.arg1,
-                    # cfg.featurization.arg2,
+                    cfg.featurization.walk_length,
                ]
           },
      "detection": 
@@ -67,6 +66,7 @@ def get_default_cfg(args):
 
      # Featurization
      cfg.featurization = CN()
+     cfg.featurization.walk_length = None
 
      # Detection
      cfg.detection = CN()
@@ -121,11 +121,15 @@ def set_task_paths(cfg):
      # The directory to save the Networkx graphs
      cfg.preprocessing._graphs_dir = os.path.join(cfg.preprocessing._task_path, "nx/")
      os.makedirs(cfg.preprocessing._graphs_dir, exist_ok=True)
-     # The directory to save the preprocessed stuff from random walking
-     cfg.preprocessing._preprocessed_dir = os.path.join(cfg.preprocessing._task_path, "preprocessed/")
-     os.makedirs(cfg.preprocessing._preprocessed_dir, exist_ok=True)
 
      # Featurization paths
+     # The directory to save the preprocessed stuff from random walking
+     cfg.featurization._random_walk_dir = os.path.join(cfg.featurization._task_path, "random_walks/")
+     os.makedirs(cfg.featurization._random_walk_dir, exist_ok=True)
+     # The directory to save the preprocessed stuff from random walking
+     cfg.featurization._random_walk_corpus_dir = os.path.join(cfg.featurization._random_walk_dir, "random_walk_corpus/")
+     os.makedirs(cfg.featurization._random_walk_corpus_dir, exist_ok=True)
+
      # The directory to save the vectorized graphs
      cfg.featurization._vec_graphs_dir = os.path.join(cfg.featurization._task_path, "vectorized/")
      os.makedirs(cfg.featurization._vec_graphs_dir, exist_ok=True)
