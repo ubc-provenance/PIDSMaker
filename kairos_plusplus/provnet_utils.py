@@ -186,7 +186,7 @@ def split_filename(path):
     result = ' '.join(path.split('/')[1:-1]) + ' ' + file_name + ' ' + file_extension
     return result
 
-def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd):
+def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_walks=10):
     adj_list = {}
     with open(adjfilename, 'r') as adj_file:
         for line in tqdm(adj_file, desc="creating adj list"):
@@ -205,20 +205,38 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd):
     # import torch
     # torch.save(adj_list,'./adj_text')
     # input()
-    with open(filename,"w") as f:
+    with open(filename, "w") as f:
+        lines_buffer = []
+
+        # Computing random neighbors for each iteration is extremely slow.
+        # We thus pre-compute a list of random indices for all unique numbers of neighbors.
+        # These indices can then be accessed given the length of the neighbors.
+        unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]))
+        cache_size = 5 * len(adj_list) * num_walks * walk_len
+        random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
+        random_idx = {count: 0 for count in unique_neighbors_count}
+
+        def get_rand(idx: int):
+            val = random_cache[idx][random_idx[idx]]
+            random_idx[idx] += 1
+            return val
+
         for src in tqdm(adj_list, desc="Random walking"):
-            walk_num = len(adj_list[src]) * 10
+            walk_num = len(adj_list[src]) * num_walks
             for i in range(walk_num):
                 start = src
-                path_sentence = ""
+                path_sentence = []
                 for j in range(walk_len):
-                    dst = random.sample(adj_list[start].keys(), 1)[0]
-                    edge_type = random.sample(adj_list[start][dst], 1)[0]
+                    start_keys = list(adj_list[start].keys())
+                    dst = start_keys[get_rand(len(start_keys))]
+
+                    start_dst = list(adj_list[start][dst])
+                    edge_type = start_dst[get_rand(len(start_dst))]
 
                     if len(path_sentence) == 0:
-                        path_sentence += f"{graph.nodes[start]['label']},{edge_type},{graph.nodes[dst]['label']}"
+                        path_sentence.append(f"{graph.nodes[start]['label']},{edge_type},{graph.nodes[dst]['label']}")
                     else:
-                        path_sentence += f",{edge_type},{graph.nodes[dst]['label']}"
+                        path_sentence.append(f"{edge_type},{graph.nodes[dst]['label']}")
 
                     if dst not in adj_list:
                         break
@@ -228,12 +246,12 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd):
                 # We do not consider the nodes without any outgoing edges.
                 # We only record the paths.
                 if len(path_sentence) != 0:
-                    f.write(path_sentence)
-                    f.write("\n")
-
-                    overall_fd.write(path_sentence)
-                    overall_fd.write("\n")
-        f.close()
+                    path_str = ",".join(path_sentence)
+                    lines_buffer.append(path_str)
+        
+        lines = "\n".join(lines_buffer)
+        f.write(lines)
+        overall_fd.write(lines)
 
 def gen_darpa_adj_files(graph, filename):
     with open(filename,"w") as f:
