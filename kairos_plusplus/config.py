@@ -41,6 +41,9 @@ DATASET_DEFAULT_CONFIG = {
           "max_node_num": 967390,
           "year_month": "2019-05",
           "start_end_day_range": (8, 18),
+          "train_files": ["graph_8", "graph_9"],
+          "val_files": ["graph_11"],
+          "test_files": ["graph_14", "graph_15"],
      }
 }
 

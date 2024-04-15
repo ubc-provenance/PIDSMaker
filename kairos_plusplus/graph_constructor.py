@@ -155,7 +155,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                             label=edge['label']
                         )
 
-                    date_dir = f"{cfg.preprocessing._graphs_dir}/graph_5_{day}/"
+                    date_dir = f"{cfg.preprocessing._graphs_dir}/graph_{day}/"
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
