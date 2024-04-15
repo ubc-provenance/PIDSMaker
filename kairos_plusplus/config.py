@@ -1,4 +1,5 @@
 import argparse
+import os
 import pathlib
 import sys
 from yacs.config import CfgNode as CN
@@ -10,61 +11,72 @@ AVAILABLE_MODELS = [
 AVAILABLE_DATASETS = [
      "THEIA_E5",
 ]
-MAX_NUM_NODES_PER_DATASET = {
-     "THEIA_E5": 967390,
+
+RESTART_ARGS = lambda cfg: {
+     "preprocessing":
+          {
+               "THEIA_E5": [
+                    # cfg.preprocessing.arg1,
+                    # cfg.preprocessing.arg2,
+               ]
+          },
+     "featurization": 
+          {
+               "THEIA_E5": [
+                    # cfg.featurization.arg1,
+                    # cfg.featurization.arg2,
+               ]
+          },
+     "detection": 
+          {
+               "kairos_plus_plus": [
+                    # cfg.detection.model.x_dim,
+                    # cfg.detection.model.h_dim,
+               ]
+          }
 }
 
-def get_default_cfg():
+DATASET_DEFAULT_CONFIG = {
+     "THEIA_E5": {
+          "max_node_num": 967390,
+          "year_month": "2019-05",
+          "start_end_day_range": (8, 18),
+     }
+}
+
+def get_default_cfg(args):
      """
      Inits the shared cfg object with default configurations.
      """
      cfg = CN()
 
-     # ########################################################
+     cfg._artifact_dir = "/data1/tbilot/artifact_new/"
+
      # Dataset
-     # ########################################################
      cfg.dataset = CN()
+     cfg.dataset.name = args.dataset
 
-     # Dataset name
-     cfg.dataset.name = None
-
-     # Number of nodes
-     cfg.dataset.max_node_num = None
+     for attr, value in DATASET_DEFAULT_CONFIG[cfg.dataset.name].items():
+          setattr(cfg.dataset, attr, value)
      
-     # ########################################################
      # Preprocessing
-     # ########################################################
      cfg.preprocessing = CN()
 
-     # ########################################################
      # Featurization
-     # ########################################################
      cfg.featurization = CN()
 
-     # ########################################################
      # Detection
-     # ########################################################
      cfg.detection = CN()
      cfg.detection.model = CN()
+     cfg.detection.model.name = args.model
 
-     # Model name
-     cfg.detection.model.name = None
-
-     # ########################################################
      # Triage
-     # ########################################################
      cfg.triage = CN()
 
-     # ########################################################
      # Post-processing
-     # ########################################################
      cfg.postprocessing = CN()
 
      return cfg
-
-def assert_cfg_complete(cfg):
-     pass
-     # verify all is not None
 
 def get_runtime_required_args():
      parser = argparse.ArgumentParser()
@@ -76,34 +88,58 @@ def get_runtime_required_args():
      except:
           parser.print_help()
           sys.exit(1)
-     return args
 
-def set_runtime_args_to_cfg(cfg, args):
-     # Model
      if args.model not in AVAILABLE_MODELS:
           raise ValueError(f"Unknown model {args.model}. Available models are {AVAILABLE_MODELS}")
-     
-     cfg.detection.model.name = args.model
-     
-     # Dataset
      if args.dataset not in AVAILABLE_DATASETS:
           raise ValueError(f"Unknown dataset {args.dataset}. Available datasets are {AVAILABLE_DATASETS}")
 
-     cfg.dataset.name = args.dataset
-     cfg.dataset.max_node_num = MAX_NUM_NODES_PER_DATASET[args.dataset]
+     return args
 
+def set_current_task_paths(cfg):
+     restart_args = RESTART_ARGS(cfg)
+     
+     # Preprocessing paths
+     hash_preprocessing = str(restart_args["preprocessing"][cfg.dataset.name])
+     cfg.preprocessing._current_task_path = os.path.join(cfg._artifact_dir, "preprocessing", cfg.dataset.name, hash_preprocessing)
+     # The directory to save the Networkx graphs
+     cfg.preprocessing._graphs_dir = os.path.join(cfg.preprocessing._current_task_path, "nx/")
+     os.makedirs(cfg.preprocessing._graphs_dir, exist_ok=True)
+     # The directory to save the preprocessed stuff from random walking
+     cfg.preprocessing._preprocessed_dir = os.path.join(cfg.preprocessing._current_task_path, "preprocessed/")
+     os.makedirs(cfg.preprocessing._preprocessed_dir, exist_ok=True)
+
+     # Featurization paths
+     hash_featurization = str(restart_args["featurization"][cfg.dataset.name])
+     cfg.featurization._current_task_path = os.path.join(cfg._artifact_dir, "featurization", cfg.dataset.name, hash_featurization)
+     # The directory to save the vectorized graphs
+     cfg.featurization._vec_graphs_dir = os.path.join(cfg.featurization._current_task_path, "vectorized/")
+     os.makedirs(cfg.preprocessing._vec_graphs_dir, exist_ok=True)
+
+     # Detection paths
+     hash_detection = str(restart_args["detection"][cfg.detection.model.name])
+     cfg.detection._current_task_path = os.path.join(cfg._artifact_dir, "detection", cfg.dataset.name, hash_detection)
+     
+     # TODO
+     cfg.triage._current_task_path = None
+     cfg.postprocessing._current_task_path = None
+
+def assert_cfg_complete(cfg):
+     pass
+     # verify all is not None
 
 def get_yml_cfg(args):
      # Inits with default configurations
-     cfg = get_default_cfg()
+     cfg = get_default_cfg(args)
 
-     # Adds configurations only known at runtime (from the cli args)
-     set_runtime_args_to_cfg(cfg, args)
-     
      # Overrides default config with config from yml file
      root_path = pathlib.Path(__file__).parent.parent.resolve()
      yml_file = f"{root_path}/config/{cfg.detection.model.name}.yml"
      cfg.merge_from_file(yml_file)
+
+     # Based on the defined restart args, computes a unique path on disk
+     # to store the files of each task
+     set_current_task_paths(cfg)
 
      # Asserts all required configurations are present in the final cfg
      assert_cfg_complete(cfg)
