@@ -202,9 +202,7 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
                 adj_list[srcID][dstID] = set()
 
             adj_list[srcID][dstID].add(edgeLabel)
-    # import torch
-    # torch.save(adj_list,'./adj_text')
-    # input()
+
     with open(filename, "w") as f:
         lines_buffer = []
 
@@ -217,8 +215,11 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
         random_idx = {count: 0 for count in unique_neighbors_count}
 
         def get_rand(idx: int):
-            val = random_cache[idx][random_idx[idx]]
-            random_idx[idx] += 1
+            try:
+                val = random_cache[idx][random_idx[idx]]
+                random_idx[idx] += 1
+            except KeyError:
+                return np.random.randint(0, idx)
             return val
 
         for src in tqdm(adj_list, desc="Random walking"):

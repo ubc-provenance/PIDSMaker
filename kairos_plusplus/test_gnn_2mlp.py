@@ -251,7 +251,7 @@ def test(inference_data,
             edge_list.append(temp_dic)
 
         event_count += len(batch.src)
-        if t[-1] > start_time + time_window_size:
+        if t[-1] > start_time + time_window_size: # TODO: use cfg here
             # Here is a checkpoint, which records all edge losses in the current time window
             time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(t[-1])
 

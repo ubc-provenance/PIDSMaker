@@ -1,2 +1,9 @@
+preprocessing:
+  build_graphs:
+    time_window_size: 15
+
 featurization:
-  walk_length: 30
+  build_random_walks:
+    walk_length: 30
+  embed_nodes:
+    technique: alacarte

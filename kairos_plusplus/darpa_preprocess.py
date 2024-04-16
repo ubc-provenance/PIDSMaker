@@ -7,18 +7,18 @@ import torch
 
 def preprocess_split(split: Literal["train", "val", "test"], split_files: list[str], cfg):
     # Concatenates all files from all folders from this set and flattens in a single list
-    base_dir = cfg.preprocessing._graphs_dir
+    base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = sorted([os.path.abspath(os.path.join(base_dir, sub, f))
                         for sub in os.listdir(base_dir)
                         if os.path.isdir(os.path.join(base_dir, sub)) and sub in split_files
                         for f in os.listdir(os.path.join(base_dir, sub))])
     
     g = []
-    graph_info = open(f"{cfg.featurization._random_walk_dir}/graph_info.csv", "w")
+    graph_info = open(f"{cfg.featurization.build_random_walks._random_walk_dir}/graph_info.csv", "w")
     writer = csv.writer(graph_info)
-    random_walks_file = os.path.join(cfg.featurization._random_walk_corpus_dir, f"{split}.csv")
+    random_walks_file = os.path.join(cfg.featurization.build_random_walks._random_walk_corpus_dir, f"{split}.csv")
     random_walks_file_fd = open(random_walks_file, 'w')
-    adjacency_path = os.path.join(cfg.featurization._random_walk_dir, f"{split}-adj")
+    adjacency_path = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, f"{split}-adj")
     
     for path in sorted_paths:
         file = path.split("/")[-1]
@@ -33,10 +33,10 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
             adjacency_file,
             len(graph.nodes)
         ])
-        corpus_file = os.path.join(cfg.featurization._random_walk_dir, f"{split}_set_corpus.csv")
+        corpus_file = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, f"{split}_set_corpus.csv")
         gen_darpa_rw_file(
             graph=graph,
-            walk_len=cfg.featurization.walk_length,
+            walk_len=cfg.featurization.build_random_walks.walk_length,
             filename=corpus_file,
             adjfilename=adjacency_file,
             overall_fd=random_walks_file_fd)
@@ -47,6 +47,9 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
 if __name__ == "__main__":
     args = get_runtime_required_args()
     cfg = get_yml_cfg(args)
+
+    os.makedirs(cfg.featurization.build_random_walks._random_walk_dir, exist_ok=True)
+    os.makedirs(cfg.featurization.build_random_walks._random_walk_corpus_dir, exist_ok=True)
 
     preprocess_split(split="train", split_files=cfg.dataset.train_files, cfg=cfg)
     preprocess_split(split="val", split_files=cfg.dataset.val_files, cfg=cfg)

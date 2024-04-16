@@ -101,6 +101,7 @@ def gen_vectorized_test_graphs(rel2vec, g_dir, saved_vec_g_dir):
         logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 if __name__ == "__main__":
+    os.makedirs(cfg.featurization.embed_nodes._vec_graphs_dir, exist_ok=True) # TODO
     os.system(f"mkdir -p {vec_graphs_dir}")
 
     logger.info("Start logging.")
