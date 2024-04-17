@@ -8,6 +8,8 @@ import torch
 def preprocess_split(split: Literal["train", "val", "test"], split_files: list[str], cfg):
     # Concatenates all files from all folders from this set and flattens in a single list
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    num_walks = cfg.preprocessing.build_graphs.num_walks
+
     sorted_paths = sorted([os.path.abspath(os.path.join(base_dir, sub, f))
                         for sub in os.listdir(base_dir)
                         if os.path.isdir(os.path.join(base_dir, sub)) and sub in split_files
@@ -39,7 +41,9 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
             walk_len=cfg.featurization.build_random_walks.walk_length,
             filename=corpus_file,
             adjfilename=adjacency_file,
-            overall_fd=random_walks_file_fd)
+            overall_fd=random_walks_file_fd,
+            num_walks=num_walks,
+        )
     graph_info.close()
     random_walks_file_fd.close()
 

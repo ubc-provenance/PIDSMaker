@@ -35,7 +35,8 @@ TASK_ARGS = {
      "featurization": {
           "build_random_walks": {
                "walk_length": int,
-               "restart_args": ["walk_length"],
+               "num_walks": int,
+               "restart_args": ["walk_length", "num_walks"],
           },
           "embed_nodes": { # TODO: add an extra depth for required args for each technique
                "epochs": int,
