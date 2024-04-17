@@ -37,9 +37,23 @@ TASK_ARGS = {
                "walk_length": int,
                "restart_args": ["walk_length"],
           },
-          "embed_nodes": {
-               "technique": str,  # ["alacarte"]
-               "restart_args": ["technique"],
+          "embed_nodes": { # TODO: add an extra depth for required args for each technique
+               "epochs": int,
+               "emb_dim": int,
+               "context_window_size": int,
+               "min_count": int,
+               "use_skip_gram": bool,
+               "num_workers": int,
+               "compute_loss": bool,
+               "add_paths": bool,
+
+               "restart_args": ["emb_dim", "context_window_size", "min_count", "use_skip_gram", "add_paths"],
+               # "techniques": {
+               #      "alacarte": {
+               #           "emb_dim": int,
+               #           "restart_args": ["emb_dim"],
+               #      }
+               # }
      }},
      "detection": {
           "model": {

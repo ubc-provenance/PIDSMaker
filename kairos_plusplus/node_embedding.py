@@ -18,6 +18,7 @@ from unicodedata import category
 import re
 import torch
 from config import *
+from provnet_utils import *
 
 FLOAT = np.float32
 INT = np.uint64
@@ -404,118 +405,68 @@ def obtain_targets_from_file(input_path, w2v):
         if edge_name not in w2v:
             ret.add(edge_name)
 
-    root_logger.info("{} contains the following OOVs: {}".format(input_path, ret))
     return ret
 
+def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, cfg, verbose=True):
+    out_dir = cfg.featurization.embed_nodes._vec_graphs_dir
+    adjacency_dir = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, f"{split}-adj")
+    dataset = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, f"{split}_set_corpus.csv")
+    corpus_dir = cfg.featurization.build_random_walks._random_walk_corpus_dir
+    corpus = dataset if use_corpus else None
+    matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None
+    model_input = os.path.join(out_dir, "model.bin") if use_pretrained_model else None
 
-if __name__ == "__main__":
-    # ===-----------------------------------------------------------------------===
-    # Parsing arguments
-    # ===-----------------------------------------------------------------------===
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--log-dir", dest="log_dir", help="directory to write logs/serialized models")
-    parser.add_argument("-v", "--verbose", action="store_true", help="verbose logging")
+    epochs = cfg.featurization.embed_nodes.epochs
+    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    window_size = cfg.featurization.embed_nodes.context_window_size
+    min_count = cfg.featurization.embed_nodes.min_count
+    use_skip_gram = cfg.featurization.embed_nodes.use_skip_gram
+    num_workers = cfg.featurization.embed_nodes.num_workers
+    compute_loss = cfg.featurization.embed_nodes.compute_loss
+    add_paths = cfg.featurization.embed_nodes.add_paths
 
-    parser.add_argument("--dataset", required=True, help="input data (random walks) file name")
-    parser.add_argument("--adjacency-dir", dest="adjacency_dir", required=True,
-                        help="input adjacency list file directory")
-    parser.add_argument("--dim", type=int, default=word_embedding_dim, help="dimensionality of the node vectors")
-    parser.add_argument("--window", type=int, default=5,
-                        help="maximum distance between the current and predicted node within a path")
-    parser.add_argument("--min-count", dest="min_count", type=int, default=0,
-                        help="ignore all nodes with total frequency lower than this value")
-    parser.add_argument("--sg", type=int, choices=[0, 1], default=1,
-                        help="training algorithm: 0 for CBOW and 1 for skip-gram")
-    parser.add_argument("--workers", type=int, default=6, help="the number of worker threads to train the model")
-    parser.add_argument("--iter", type=int, default=5, help="the number of iterations (epochs) over the corpus")
-    parser.add_argument("--compute-loss", dest="compute_loss", action="store_true",
-                        help="computes and stores loss value")
-
-    parser.add_argument("--model-input", dest="model_input", help="load existing model if possible (optional). If there"
-                                                                  "exists existing w2v model, current input dataset is"
-                                                                  "considered additional training if --add-paths is on")
-    parser.add_argument("--add-paths", dest="add_paths", action="store_true",
-                        help="consider current input dataset as additional training dataset for w2v")
-    parser.add_argument("--model-output", dest="model_output", default="model.bin", help="file to save the w2v model")
-    parser.add_argument("--embed-output", dest="embed_output", default="model.wv",
-                        help="file to save the w2v embeddings")
-    parser.add_argument("--adjacency-output", dest="adjacency_output",
-                        help="output directory of the post processed adjacency lists")
-
-    # A La Carte related parameters
-    parser.add_argument("--matrix-input", dest="matrix_input", type=str,
-                        help="binary file path to load A La Carte transform matrix")
-    parser.add_argument("--matrix-output", dest="matrix_output", type=str,
-                        help="binary file path to save A La Carte transform matrix")
-    parser.add_argument("--interval", nargs=2, default=['0', 'inf'], help="corpus position interval")
-    parser.add_argument("--context-window", dest="context_window", type=int, default=5,
-                        help="size of A La Carte model context window")
-    parser.add_argument("--corpus", nargs='*', help="list of text corpus files for learning matrix")
-    parser.add_argument("--corpus-dir", dest="corpus_dir", required=True,
-                        help="input corpus file directory for generating OOV embeddings with context")
-    parser.add_argument("--add-embeddings", dest="add_embeddings", action="store_true",
-                        help="add embeddings learned from A La Carte to w2v embedding results to inspect quality")
-
-    # Node embedding visualization
-    parser.add_argument("--visualize", action="store_true", help="visualize node embeddings")
-    parser.add_argument("--keys", nargs='*', help="keys to find their most similar nodes for visualization")
-
-    options = parser.parse_args()
-
-    # ===-----------------------------------------------------------------------===
-    # Setting up logging infrastructure
-    # ===-----------------------------------------------------------------------===
-    log_dir = w2v_models_dir
-    os.system("mkdir -p {}".format(log_dir))
-
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(message)s')
-    handler = logging.FileHandler(log_dir + '/log.txt', 'w', 'utf-8')
-    handler.setFormatter(formatter)
-    root_logger.addHandler(handler)
+    log_dir = out_dir
 
     root_logger.info("=== PARAMETER SUMMARY ----------------------------------------------------------------------")
-    root_logger.info("Training data: {}".format(options.dataset))
-    root_logger.info("Total number of epochs: {}".format(options.iter))
-    if options.model_input is None:
-        root_logger.info("Node vector dimensionality: {}".format(options.dim))
+    root_logger.info("Training data: {}".format(dataset))
+    root_logger.info("Total number of epochs: {}".format(epochs))
+    if model_input is None:
+        root_logger.info("Node vector dimensionality: {}".format(emb_dim))
         # adjust word2vec context window size for segmentation
-        root_logger.info("word2vec context window size: {}".format(options.window))
-        root_logger.info("Minimal count threshold: {}".format(options.min_count))
-        root_logger.info("Training algorithm: {}".format("CBOW" if options.sg == 0 else "Skip-Gram"))
-        root_logger.info("Number of working threads: {}".format(options.workers))
+        root_logger.info("word2vec context window size: {}".format(window_size))
+        root_logger.info("Minimal count threshold: {}".format(min_count))
+        root_logger.info("Training algorithm: {}".format("CBOW" if not use_skip_gram else "Skip-Gram"))
+        root_logger.info("Number of working threads: {}".format(num_workers))
     else:
-        root_logger.info("Other parameters follow the input model from: {}".format(options.model_input))
-        if options.add_paths:
-            root_logger.info("Current training data is additional training data: {}".format(options.add_paths))
-    root_logger.info("Context information for OOV embedding learning is in directory: {}".format(options.corpus_dir))
+        root_logger.info("Other parameters follow the input model from: {}".format(model_input))
+        if add_paths:
+            root_logger.info("Current training data is additional training data: {}".format(add_paths))
+    root_logger.info("Context information for OOV embedding learning is in directory: {}".format(corpus_dir))
     # adjust A La Carte context window size for segmentation
-    root_logger.info("A La Carte context window size: {}".format(options.context_window))
-    root_logger.info("Model is used to fulfill adjacency lists in directory: {}".format(options.adjacency_dir))
-    root_logger.info("New embeddings from A La Carte model added to the w2v model: {}".format(options.add_embeddings))
+    root_logger.info("A La Carte context window size: {}".format(window_size))
+    root_logger.info("Model is used to fulfill adjacency lists in directory: {}".format(adjacency_dir))
     root_logger.info("=== ----------------------------------------------------------------------------------------")
 
     # ===-----------------------------------------------------------------------===
     # Importing data (only if Word2Vec model needs to be trained or modified)
     # ===-----------------------------------------------------------------------===
-    if options.model_input is None or options.add_paths:
-        paths = load_data(options.dataset)
-        if options.verbose:
+    if model_input is None or add_paths:
+        paths = load_data(dataset)
+        if verbose:
             root_logger.info("{} paths loaded".format(len(paths)))
 
     # ===-----------------------------------------------------------------------===
     # Training using Word2Vec if needed
     # ===-----------------------------------------------------------------------===
-    if options.model_input is None:
-        model = Word2Vec(paths, vector_size=options.dim, window=options.window, min_count=options.min_count, sg=options.sg,
-                         workers=options.workers, epochs=options.iter, compute_loss=options.compute_loss)
+    if model_input is None:
+        model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
+                         workers=num_workers, epochs=epochs, compute_loss=compute_loss)
     else:
-        root_logger.info("Loading existing model from: {}".format(options.model_input))
-        model = Word2Vec.load(options.model_input)
-        if options.add_paths:
+        root_logger.info("Loading existing model from: {}".format(model_input))
+        model = Word2Vec.load(model_input)
+        if add_paths:
             root_logger.info("Resuming training using additional data")
-            model.train(paths, epochs=options.iter, compute_loss=options.compute_loss)
+            model.train(paths, epochs=epochs, compute_loss=compute_loss)
 
     # Note: currently word2vec outputs normalized vectors (and replaces the original un-normalized ones)
     model.init_sims(replace=True)
@@ -526,9 +477,10 @@ if __name__ == "__main__":
     # Saving models
     # ===-----------------------------------------------------------------------===
     # Save the model, which supports later online training (e.g., add addition training paths)
-    if options.model_input is None or options.add_paths:
-        root_logger.info("Saving the model at: {}".format(log_dir + "/" + options.model_output))
-        model.save(log_dir + "/" + options.model_output)
+    if model_input is None or add_paths:
+        out_path = os.path.join(log_dir, "model.bin")
+        root_logger.info("Saving the model at: {}".format(out_path))
+        model.save(out_path)
 
     # ===-----------------------------------------------------------------------===
     # Using trained embeddings to train A La Carte model and save the model
@@ -537,32 +489,26 @@ if __name__ == "__main__":
     root_logger.info("Loading w2v embeddings as source embeddings to A La Carte model")
     w2v = OrderedDict(load_vectors(wv))
 
-    # define interval for ALaCarteReader
-    interval = [int(options.interval[0]), int(options.interval[1])] if options.interval[1].isdigit() else \
-        [int(options.interval[0]), float(options.interval[1])]
-
-    if options.matrix_input is not None:
-        M = np.fromfile(options.matrix_input, dtype=FLOAT)
+    if matrix_input is not None:
+        M = np.fromfile(matrix_input, dtype=FLOAT)
         d = int(np.sqrt(M.shape[0]))
         assert d == next(iter(w2v.values())).shape[0], \
             "induction matrix dimension and word embedding dimension must be the same"
         M = M.reshape(d, d)
     else:
-        matrix_file = log_dir + "/matrix.bin" if options.matrix_output is None else options.matrix_output
+        matrix_file = os.path.join(log_dir, "matrix.bin")
         root_logger.info("Learning induction matrix and saving to {}".format(matrix_file))
         targets = w2v.keys()
         M = None
 
-        alc = ALaCarteReader(w2v, targets, wnd=options.context_window, checkpoint=None, interval=interval, comm=None)
+        alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None, comm=None)
 
         root_logger.info("Building A La Carte context vectors")
-        if options.corpus:
+        if corpus:
             context_vectors = FLOAT(0.0)
             target_counts = INT(0)
-            for corpus in options.corpus:
-                root_logger.info("Source corpus: {}".format(corpus))
-                context_vectors, target_counts = corpus_documents(corpus, alc, verbose=options.verbose, comm=None,
-                                                                  english=None, lower=None)
+            root_logger.info("Source corpus: {}".format(corpus))
+            context_vectors, target_counts = corpus_documents(corpus, alc, verbose=verbose, comm=None, english=None, lower=None)
         else:
             root_logger.error("At least one corpus file is required by A La Carte model to learn")
             exit(1)
@@ -585,24 +531,24 @@ if __name__ == "__main__":
         context_vectors.tofile(log_dir + '/source_context_vectors.bin')
         M.tofile(matrix_file)
 
-    root_logger.info("Loading adjacency lists from: {}".format(options.adjacency_dir))
+    root_logger.info("Loading adjacency lists from: {}".format(adjacency_dir))
 
-    if "test" not in options.adjacency_dir:
+    if "test" not in adjacency_dir:
         try:
-            nodelabel2vec = torch.load(f"{w2v_models_dir}/nodelabel2vec")
+            nodelabel2vec = torch.load(f"{out_dir}/nodelabel2vec")
         except:
             nodelabel2vec = {}
 
         try:
-            edgelabel2vec = torch.load(f"{w2v_models_dir}/edgelabel2vec")
+            edgelabel2vec = torch.load(f"{out_dir}/edgelabel2vec")
         except:
             edgelabel2vec = {}
 
 
-        for filename in sorted(os.listdir(options.adjacency_dir)):
+        for filename in sorted(os.listdir(adjacency_dir)):
             if filename:
                 root_logger.info("Loading adjacency list: {}".format(filename))
-                input_path = os.path.join(options.adjacency_dir, filename)
+                input_path = os.path.join(adjacency_dir, filename)
 
                 # Going through the input data to find all the targets
                 root_logger.info("Loading targets from: {}".format(input_path))
@@ -615,14 +561,14 @@ if __name__ == "__main__":
                     root_logger.info("No uncovered targets found")
                 else:
                     # reloading ALC reader for new targets
-                    alc = ALaCarteReader(w2v, targets, wnd=options.context_window, checkpoint=None, interval=interval,
+                    alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
                                          comm=None)
                     root_logger.info("Rebuilding A La Carte context vectors for {}".format(filename))
-                    corpus_file = os.path.join(options.corpus_dir, filename)
+                    corpus_file = os.path.join(adjacency_dir, filename)
                     test_context_vectors = FLOAT(0.0)
                     test_target_counts = INT(0)
                     root_logger.info("Source corpus for {}: {}".format(filename, corpus_file))
-                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, verbose=options.verbose,
+                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, verbose=verbose,
                                                                                 comm=None, english=None, lower=None)
                     test_nz = test_target_counts > 0
 
@@ -658,14 +604,14 @@ if __name__ == "__main__":
                     # Source Node
                     if src_name in wv:
                         src_feature = wv[src_name]
-                        assert len(src_feature) == options.dim, "src feature dimension from wv is {}, not {}"\
-                            .format(len(src_feature), options.dim)
+                        assert len(src_feature) == emb_dim, "src feature dimension from wv is {}, not {}"\
+                            .format(len(src_feature), emb_dim)
                         row.extend(src_feature)
                     # Note: if we manually expand wv, we should not take this branch
                     elif src_name in target_dict:
                         src_feature = target_dict[src_name]
-                        assert len(src_feature) == options.dim, "src feature dimension from alc is {}, not {}" \
-                            .format(len(src_feature), options.dim)
+                        assert len(src_feature) == emb_dim, "src feature dimension from alc is {}, not {}" \
+                            .format(len(src_feature), emb_dim)
                         row.extend(np.array(src_feature))
                     else:
                         root_logger.error("Unknown source node name: {}".format(src_name))
@@ -676,13 +622,13 @@ if __name__ == "__main__":
                     # Destination Node
                     if dst_name in wv:
                         dst_feature = wv[dst_name]
-                        assert len(dst_feature) == options.dim, "dst feature dimension from wv is {}, not {}" \
-                            .format(len(dst_feature), options.dim)
+                        assert len(dst_feature) == emb_dim, "dst feature dimension from wv is {}, not {}" \
+                            .format(len(dst_feature), emb_dim)
                         row.extend(dst_feature)
                     elif dst_name in target_dict:
                         dst_feature = target_dict[dst_name]
-                        assert len(dst_feature) == options.dim, "dst feature dimension from alc is {}, not {}" \
-                            .format(len(dst_feature), options.dim)
+                        assert len(dst_feature) == emb_dim, "dst feature dimension from alc is {}, not {}" \
+                            .format(len(dst_feature), emb_dim)
                         row.extend(np.array(dst_feature))
                     else:
                         root_logger.error("Unknown destination node name: {}".format(dst_name))
@@ -694,13 +640,13 @@ if __name__ == "__main__":
                     # Edge type
                     if edge_name in wv:
                         edge_feature = wv[edge_name]
-                        assert len(edge_feature) == options.dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), options.dim)
+                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
+                            .format(len(edge_feature), emb_dim)
                         row.extend(edge_feature)
                     elif edge_name in target_dict:
                         edge_feature = target_dict[edge_name]
-                        assert len(edge_feature) == options.dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), options.dim)
+                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
+                            .format(len(edge_feature), emb_dim)
                         row.extend(np.array(edge_feature))
                     else:
                         root_logger.error("Unknown edge name: {}".format(edge_name))
@@ -708,16 +654,18 @@ if __name__ == "__main__":
                     if edge_name not in edgelabel2vec:
                         edgelabel2vec[edge_name] = edge_feature
 
-        torch.save(nodelabel2vec, f"{w2v_models_dir}/nodelabel2vec")
-        torch.save(edgelabel2vec, f"{w2v_models_dir}/edgelabel2vec")
+        # The one after validation is used in embedding.py
+        torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec_{split}")
+        torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec")
+        torch.save(edgelabel2vec, f"{out_dir}/edgelabel2vec")
     else:
-        for filename in sorted(os.listdir(options.adjacency_dir)):
+        for filename in sorted(os.listdir(adjacency_dir)):
             if filename:
                 nodelabel2vec = {}
                 # edgelabel2vec = {}
 
                 root_logger.info("Loading adjacency list: {}".format(filename))
-                input_path = os.path.join(options.adjacency_dir, filename)
+                input_path = os.path.join(adjacency_dir, filename)
 
                 # Going through the input data to find all the targets
                 root_logger.info("Loading targets from: {}".format(input_path))
@@ -730,15 +678,15 @@ if __name__ == "__main__":
                     root_logger.info("No uncovered targets found")
                 else:
                     # reloading ALC reader for new targets
-                    alc = ALaCarteReader(w2v, targets, wnd=options.context_window, checkpoint=None, interval=interval,
+                    alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
                                          comm=None)
                     root_logger.info("Rebuilding A La Carte context vectors for {}".format(filename))
-                    corpus_file = os.path.join(options.corpus_dir, filename)
+                    corpus_file = os.path.join(adjacency_dir, filename)
                     test_context_vectors = FLOAT(0.0)
                     test_target_counts = INT(0)
                     root_logger.info("Source corpus for {}: {}".format(filename, corpus_file))
                     test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc,
-                                                                                verbose=options.verbose,
+                                                                                verbose=verbose,
                                                                                 comm=None, english=None, lower=None)
                     test_nz = test_target_counts > 0
 
@@ -774,14 +722,14 @@ if __name__ == "__main__":
                     # Source Node
                     if src_name in wv:
                         src_feature = wv[src_name]
-                        assert len(src_feature) == options.dim, "src feature dimension from wv is {}, not {}" \
-                            .format(len(src_feature), options.dim)
+                        assert len(src_feature) == emb_dim, "src feature dimension from wv is {}, not {}" \
+                            .format(len(src_feature), emb_dim)
                         row.extend(src_feature)
                     # Note: if we manually expand wv, we should not take this branch
                     elif src_name in target_dict:
                         src_feature = target_dict[src_name]
-                        assert len(src_feature) == options.dim, "src feature dimension from alc is {}, not {}" \
-                            .format(len(src_feature), options.dim)
+                        assert len(src_feature) == emb_dim, "src feature dimension from alc is {}, not {}" \
+                            .format(len(src_feature), emb_dim)
                         row.extend(np.array(src_feature))
                     else:
                         root_logger.error("Unknown source node name: {}".format(src_name))
@@ -792,13 +740,13 @@ if __name__ == "__main__":
                     # Destination Node
                     if dst_name in wv:
                         dst_feature = wv[dst_name]
-                        assert len(dst_feature) == options.dim, "dst feature dimension from wv is {}, not {}" \
-                            .format(len(dst_feature), options.dim)
+                        assert len(dst_feature) == emb_dim, "dst feature dimension from wv is {}, not {}" \
+                            .format(len(dst_feature), emb_dim)
                         row.extend(dst_feature)
                     elif dst_name in target_dict:
                         dst_feature = target_dict[dst_name]
-                        assert len(dst_feature) == options.dim, "dst feature dimension from alc is {}, not {}" \
-                            .format(len(dst_feature), options.dim)
+                        assert len(dst_feature) == emb_dim, "dst feature dimension from alc is {}, not {}" \
+                            .format(len(dst_feature), emb_dim)
                         row.extend(np.array(dst_feature))
                     else:
                         root_logger.error("Unknown destination node name: {}".format(dst_name))
@@ -809,13 +757,13 @@ if __name__ == "__main__":
                     # Edge type
                     if edge_name in wv:
                         edge_feature = wv[edge_name]
-                        assert len(edge_feature) == options.dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), options.dim)
+                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
+                            .format(len(edge_feature), emb_dim)
                         row.extend(edge_feature)
                     elif edge_name in target_dict:
                         edge_feature = target_dict[edge_name]
-                        assert len(edge_feature) == options.dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), options.dim)
+                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
+                            .format(len(edge_feature), emb_dim)
                         row.extend(np.array(edge_feature))
                     else:
                         root_logger.error("Unknown edge name: {}".format(edge_name))
@@ -823,14 +771,14 @@ if __name__ == "__main__":
                     # if edge_name not in edgelabel2vec:
                     #     edgelabel2vec[edge_name] = edge_feature
 
-                torch.save(nodelabel2vec, f"{w2v_models_dir}/nodelabel2vec_{filename.replace('-test.csv','')}")
-                # torch.save(edgelabel2vec, f"{w2v_models_dir}/edgelabel2vec_{filename}")
+                torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec_{filename.replace('-test.csv','')}")
+                # torch.save(edgelabel2vec, f"{out_dir}/edgelabel2vec_{filename}")
 
 
     # ===-----------------------------------------------------------------------===
     # Saving embeddings (for reuse or checking embedding quality)
     # ===-----------------------------------------------------------------------===
-    embed_file_name = options.embed_output
+    embed_file_name = "model.wv"
     root_logger.info("Saving the embeddings at: {}".format(log_dir + "/" + embed_file_name))
     torch.save(wv, log_dir + "/" + embed_file_name)
     # ===-----------------------------------------------------------------------===
@@ -840,3 +788,19 @@ if __name__ == "__main__":
     w2v_loss = model.get_latest_training_loss()
     root_logger.info("word2vec Training loss: {}".format(w2v_loss))
     root_logger.info("=== ----------------------------------------------------------------------------------------")
+
+
+
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    root_logger = get_logger(
+        name="node_embedding_word2vec_alacarte",
+        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "node_embedding_word2vec_alacarte.log"))
+    
+    os.makedirs(cfg.featurization.embed_nodes._vec_graphs_dir, exist_ok=True)
+
+    embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
+    embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+    embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
