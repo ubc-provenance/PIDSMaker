@@ -153,17 +153,13 @@ def set_task_paths(cfg):
                hash_args = None # TODO set cfg.dataset.model for detection
      
      # Preprocessing paths
-     # The directory to save the Networkx graphs
      cfg.preprocessing.build_graphs._graphs_dir = os.path.join(cfg.preprocessing.build_graphs._task_path, "nx/")
 
      # Featurization paths
-     # The directory to save the preprocessed stuff from random walking
      cfg.featurization.build_random_walks._random_walk_dir = os.path.join(cfg.featurization.build_random_walks._task_path, "random_walks/")
-     # The directory to save the preprocessed stuff from random walking
      cfg.featurization.build_random_walks._random_walk_corpus_dir = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, "random_walk_corpus/")
-
-     # The directory to save the vectorized graphs
      cfg.featurization.embed_nodes._vec_graphs_dir = os.path.join(cfg.featurization.embed_nodes._task_path, "vectorized/")
+     cfg.featurization.embed_edges._edge_embeds_dir = os.path.join(cfg.featurization.embed_edges._task_path, "edge_embeds/")
      
      # TODO
      cfg.detection._task_path = None
