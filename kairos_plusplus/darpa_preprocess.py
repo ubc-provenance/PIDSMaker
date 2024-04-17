@@ -8,7 +8,7 @@ import torch
 def preprocess_split(split: Literal["train", "val", "test"], split_files: list[str], cfg):
     # Concatenates all files from all folders from this set and flattens in a single list
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
-    num_walks = cfg.preprocessing.build_graphs.num_walks
+    num_walks = cfg.featurization.build_random_walks.num_walks
 
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
     

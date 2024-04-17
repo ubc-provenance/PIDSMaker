@@ -14,7 +14,6 @@ def gen_relation_onehot(rel2id):
         if type(i) is not int:
             rel2vec[i]= relvec[rel2id[i]-1]
             rel2vec[relvec[rel2id[i]-1]]=i
-    torch.save(rel2vec, artifact_dir + f"rel2vec")
     return rel2vec
 
 def gen_vectorized_graphs(node2higvec, rel2vec, split_files, out_dir, is_test, trained_w2v_dir, logger, cfg):
