@@ -178,7 +178,8 @@ if __name__ == "__main__":
         name="graph_construction_edge_fused_tw",
         filename=os.path.join(cfg.preprocessing.build_graphs._logs_dir, "edge_fused_tw_graph.log"))
 
-    cur, connect = init_database_connection()
+    db = cfg.dataset.database
+    cur, connect = init_database_connection(database=db)
     nodeid2msg = get_node_list(cur=cur)
 
     os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)

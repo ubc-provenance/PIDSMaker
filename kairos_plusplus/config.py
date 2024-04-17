@@ -12,9 +12,6 @@ ROOT_ARTIFACT_DIR = "/data1/tbilot/artifact_new/"
 AVAILABLE_MODELS = [
      "kairos_plus_plus",
 ]
-AVAILABLE_DATASETS = [
-     "THEIA_E5",
-]
 
 # --- Dependency graph to follow ---
 TASK_DEPENDENCIES = {
@@ -73,13 +70,23 @@ TASK_ARGS = {
 
 DATASET_DEFAULT_CONFIG = {
      "THEIA_E5": {
+          "database": "theia_e5",
           "max_node_num": 967390,
           "year_month": "2019-05",
           "start_end_day_range": (8, 18),
           "train_files": ["graph_8", "graph_9"],
           "val_files": ["graph_11"],
           "test_files": ["graph_14", "graph_15"],
-     }
+     },
+     "THEIA_E3": {
+          "database": "theia_e3",
+          "max_node_num": 828313, # TODO: set the exact number
+          "year_month": "2018-04",
+          "start_end_day_range": (2, 14),
+          "train_files": ["graph_3", "graph_4", "graph_5"],
+          "val_files": ["graph_9"],
+          "test_files": ["graph_10", "graph_11"],
+     },
 }
 
 def get_default_cfg(args):
@@ -123,8 +130,10 @@ def get_runtime_required_args():
 
      if args.model not in AVAILABLE_MODELS:
           raise ValueError(f"Unknown model {args.model}. Available models are {AVAILABLE_MODELS}")
-     if args.dataset not in AVAILABLE_DATASETS:
-          raise ValueError(f"Unknown dataset {args.dataset}. Available datasets are {AVAILABLE_DATASETS}")
+     
+     available_datasets = DATASET_DEFAULT_CONFIG.keys()
+     if args.dataset not in available_datasets:
+          raise ValueError(f"Unknown dataset {args.dataset}. Available datasets are {available_datasets}")
 
      return args
 

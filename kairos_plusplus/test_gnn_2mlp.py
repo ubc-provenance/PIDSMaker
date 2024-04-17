@@ -288,7 +288,8 @@ if __name__ == "__main__":
 
 
     # load the map between nodeID and node labels
-    cur, _ = init_database_connection()
+    db = cfg.dataset.database
+    cur, _ = init_database_connection(database=db)
     nodeid2msg = gen_nodeid2msg(cur=cur)
 
     # load trained model

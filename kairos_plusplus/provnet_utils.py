@@ -100,7 +100,7 @@ def datetime_to_timestamp_US(date):
     timeStamp = timestamp
     return int(timeStamp)
 
-def init_database_connection():
+def init_database_connection(database: str):
     if host is not None:
         connect = psycopg2.connect(database = database,
                                    host = host,
