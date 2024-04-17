@@ -1,21 +1,11 @@
 from torch_geometric.data import *
 from tqdm import tqdm
 
-import logging
 import torch
 import os
 
 from config import *
 from provnet_utils import *
-
-# Setting for logging
-logger = logging.getLogger(f"embedding_logger")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(artifact_dir + f'embedding.log')
-file_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
 def gen_relation_onehot(rel2id):
     relvec=torch.nn.functional.one_hot(torch.arange(0, len(rel2id.keys())//2), num_classes=len(rel2id.keys())//2)
@@ -27,9 +17,16 @@ def gen_relation_onehot(rel2id):
     torch.save(rel2vec, artifact_dir + f"rel2vec")
     return rel2vec
 
-def gen_vectorized_graphs(node2higvec, rel2vec, g_dir, saved_vec_g_dir):
-    for file in tqdm(sorted(os.listdir(g_dir)), desc="Vectorizing the graphs"):
-        path = g_dir + file
+def gen_vectorized_graphs(node2higvec, rel2vec, split_files, out_dir, is_test, trained_w2v_dir, logger, cfg):
+    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    sorted_paths = get_all_files_from_folders(base_dir, split_files)
+    include_edge_type = cfg.featurization.embed_edges.include_edge_type
+
+    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
+        file = path.split("/")[-1]
+        if is_test:
+            node2higvec = torch.load(os.path.join(trained_w2v_dir, f"nodelabel2vec_test-{file}"))
+
         graph = torch.load(path)
 
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -42,11 +39,17 @@ def gen_vectorized_graphs(node2higvec, rel2vec, g_dir, saved_vec_g_dir):
         for u, v, k, attr in sorted_edges:
             src.append(int(u))
             dst.append(int(v))
-            msg.append(torch.cat([
-                torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
-                rel2vec[attr["label"]],
-                torch.from_numpy(node2higvec[graph.nodes[v]['label']])
-            ]))
+            if include_edge_type:
+                msg.append(torch.cat([
+                    torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
+                    rel2vec[attr["label"]],
+                    torch.from_numpy(node2higvec[graph.nodes[v]['label']])
+                ]))
+            else:
+                msg.append(torch.cat([
+                    torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
+                    torch.from_numpy(node2higvec[graph.nodes[v]['label']])
+                ]))
             t.append(int(attr["time"]))
 
         dataset.src = torch.tensor(src)
@@ -58,76 +61,56 @@ def gen_vectorized_graphs(node2higvec, rel2vec, g_dir, saved_vec_g_dir):
         dataset.msg = dataset.msg.to(torch.float)
         dataset.t = dataset.t.to(torch.long)
 
-        os.system(f"mkdir -p {saved_vec_g_dir}/")
-        torch.save(dataset, f"{saved_vec_g_dir}/" + file + ".TemporalData.simple")
+        os.makedirs(out_dir, exist_ok=True)
+        torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
         logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
-def gen_vectorized_test_graphs(rel2vec, g_dir, saved_vec_g_dir):
-    for file in tqdm(sorted(os.listdir(g_dir)), desc="Vectorizing the graphs"):
-        node2higvec = torch.load(w2v_models_dir + f"nodelabel2vec_{file}")
-        path = g_dir + file
-        graph = torch.load(path)
-
-        sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
-
-        dataset = TemporalData()
-        src = []
-        dst = []
-        msg = []
-        t = []
-        for u, v, k, attr in sorted_edges:
-            src.append(int(u))
-            dst.append(int(v))
-            msg.append(torch.cat([
-                torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
-                rel2vec[attr["label"]],
-                torch.from_numpy(node2higvec[graph.nodes[v]['label']])
-            ]))
-            t.append(int(attr["time"]))
-
-        dataset.src = torch.tensor(src)
-        dataset.dst = torch.tensor(dst)
-        dataset.t = torch.tensor(t)
-        dataset.msg = torch.vstack(msg)
-        dataset.src = dataset.src.to(torch.long)
-        dataset.dst = dataset.dst.to(torch.long)
-        dataset.msg = dataset.msg.to(torch.float)
-        dataset.t = dataset.t.to(torch.long)
-
-        os.system(f"mkdir -p {saved_vec_g_dir}/")
-        torch.save(dataset, f"{saved_vec_g_dir}/" + file + ".TemporalData.simple")
-
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 if __name__ == "__main__":
-    os.makedirs(cfg.featurization.embed_nodes._vec_graphs_dir, exist_ok=True) # TODO
-    os.system(f"mkdir -p {vec_graphs_dir}")
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
 
-    logger.info("Start logging.")
+    logger = get_logger(
+        name="embed_edges",
+        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "embed_edges.log"))
 
-    cur, _ = init_database_connection()
+    trained_w2v_dir = cfg.featurization.embed_nodes._vec_graphs_dir
+    graphs_dir = cfg.preprocessing.build_graphs._graphs_dir
+    out_dir = cfg.featurization.embed_edges._edge_embeds_dir
 
-    node2higvec = torch.load(w2v_models_dir + f"nodelabel2vec_train_val")
+    node2higvec = torch.load(os.path.join(trained_w2v_dir, "nodelabel2vec_val")) # From both train and val
     rel2vec = gen_relation_onehot(rel2id=rel2id)
-
-    saved_vec_g_dir = vec_graphs_dir
-    os.system(f"mkdir -p {saved_vec_g_dir}/")
-
+    
     # Vectorize training set
     gen_vectorized_graphs(node2higvec=node2higvec,
                           rel2vec=rel2vec,
-                          g_dir=f"{graphs_dir}/train/",
-                          saved_vec_g_dir=f"{saved_vec_g_dir}/train/")
+                          split_files=cfg.dataset.train_files,
+                          out_dir=os.path.join(out_dir, "train/"),
+                          is_test=False,
+                          trained_w2v_dir=trained_w2v_dir,
+                          logger=logger,
+                          cfg=cfg,
+                        )
 
     # Vectorize validation set
     gen_vectorized_graphs(node2higvec=node2higvec,
                           rel2vec=rel2vec,
-                          g_dir=f"{graphs_dir}/val/",
-                          saved_vec_g_dir=f"{saved_vec_g_dir}/val/")
+                          split_files=cfg.dataset.val_files,
+                          out_dir=os.path.join(out_dir, "val/"),
+                          is_test=False,
+                          trained_w2v_dir=trained_w2v_dir,
+                          logger=logger,
+                          cfg=cfg,
+                        )
 
     # Vectorize testing set
-    gen_vectorized_test_graphs(rel2vec=rel2vec,
-                               g_dir=f"{graphs_dir}/test/",
-                               saved_vec_g_dir=f"{saved_vec_g_dir}/test/")
-
+    gen_vectorized_graphs(node2higvec=node2higvec,
+                            rel2vec=rel2vec,
+                            split_files=cfg.dataset.test_files,
+                            out_dir=os.path.join(out_dir, "test/"),
+                            is_test=True,
+                            trained_w2v_dir=trained_w2v_dir,
+                            logger=logger,
+                            cfg=cfg,
+                            )

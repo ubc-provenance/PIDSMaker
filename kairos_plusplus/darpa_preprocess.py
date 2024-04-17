@@ -10,10 +10,7 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     num_walks = cfg.preprocessing.build_graphs.num_walks
 
-    sorted_paths = sorted([os.path.abspath(os.path.join(base_dir, sub, f))
-                        for sub in os.listdir(base_dir)
-                        if os.path.isdir(os.path.join(base_dir, sub)) and sub in split_files
-                        for f in os.listdir(os.path.join(base_dir, sub))])
+    sorted_paths = get_all_files_from_folders(base_dir, split_files)
     
     g = []
     graph_info = open(f"{cfg.featurization.build_random_walks._random_walk_dir}/graph_info.csv", "w")

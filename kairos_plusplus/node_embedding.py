@@ -771,7 +771,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                     # if edge_name not in edgelabel2vec:
                     #     edgelabel2vec[edge_name] = edge_feature
 
-                torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec_{filename.replace('-test.csv','')}")
+                torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec_{filename.replace('.csv','')}")
                 # torch.save(edgelabel2vec, f"{out_dir}/edgelabel2vec_{filename}")
 
 

@@ -281,3 +281,9 @@ def get_logger(name: str, filename: str):
     logger.addHandler(file_handler)
     
     return logger
+
+def get_all_files_from_folders(base_dir: str, folders: list[str]):
+    return sorted([os.path.abspath(os.path.join(base_dir, sub, f))
+        for sub in os.listdir(base_dir)
+        if os.path.isdir(os.path.join(base_dir, sub)) and sub in folders
+        for f in os.listdir(os.path.join(base_dir, sub))])

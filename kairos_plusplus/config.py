@@ -55,7 +55,12 @@ TASK_ARGS = {
                #           "restart_args": ["emb_dim"],
                #      }
                # }
-     }},
+          },
+          "embed_edges": {
+               "include_edge_type": bool,
+               "restart_args": ["include_edge_type"]
+          }
+     },
      "detection": {
           "model": {
                "name": str,
