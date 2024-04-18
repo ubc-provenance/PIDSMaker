@@ -304,9 +304,9 @@ def process_documents(func):
     """wraps document generator function to handle English-checking and lower-casing and to return data arrays
     """
 
-    def wrapper(string, reader, verbose=False, comm=None, english=False, lower=False):
+    def wrapper(string, reader, logger, verbose=False, comm=None, english=False, lower=False):
 
-        generator = (document for document in func(string, reader, verbose=verbose, comm=comm))
+        generator = (document for document in func(string, reader, logger, verbose=verbose, comm=comm))
         # TODO: English-checking is not supported
         if english:
             generator = (document for document in generator if is_english(document))
@@ -318,14 +318,14 @@ def process_documents(func):
             reader.read_document(document)
 
         reader.reduce()
-        root_logger.info("Finished Processing Corpus. Targets Covered: {}".format(reader.target_coverage()))
+        logger.info("Finished Processing Corpus. Targets Covered: {}".format(reader.target_coverage()))
         return reader.vector_array, reader.count_array
 
     return wrapper
 
 
 @process_documents
-def corpus_documents(corpusfile, reader, verbose=False, comm=None):
+def corpus_documents(corpusfile, reader, logger, verbose=False, comm=None):
     """iterates of text document
     Args:
         corpusfile: text file with a document on each line
@@ -350,7 +350,7 @@ def corpus_documents(corpusfile, reader, verbose=False, comm=None):
             if i and not i % 1000000:
                 reader.reduce()
                 if verbose and not rank:
-                    root_logger.info("Processed {} lines. Target coverage: {}".format(i, reader.target_coverage()))
+                    logger.info("Processed {} lines. Target coverage: {}".format(i, reader.target_coverage()))
                 # TODO: checkpoint is not supported
                 if not reader.datafile is None:
                     reader.checkpoint(f.tell())
@@ -407,7 +407,7 @@ def obtain_targets_from_file(input_path, w2v):
 
     return ret
 
-def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, cfg, verbose=True):
+def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, logger, cfg, verbose=True):
     out_dir = cfg.featurization.embed_nodes._vec_graphs_dir
     adjacency_dir = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, f"{split}-adj")
     dataset = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, f"{split}_set_corpus.csv")
@@ -427,25 +427,25 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
 
     log_dir = out_dir
 
-    root_logger.info("=== PARAMETER SUMMARY ----------------------------------------------------------------------")
-    root_logger.info("Training data: {}".format(dataset))
-    root_logger.info("Total number of epochs: {}".format(epochs))
+    logger.info("=== PARAMETER SUMMARY ----------------------------------------------------------------------")
+    logger.info("Training data: {}".format(dataset))
+    logger.info("Total number of epochs: {}".format(epochs))
     if model_input is None:
-        root_logger.info("Node vector dimensionality: {}".format(emb_dim))
+        logger.info("Node vector dimensionality: {}".format(emb_dim))
         # adjust word2vec context window size for segmentation
-        root_logger.info("word2vec context window size: {}".format(window_size))
-        root_logger.info("Minimal count threshold: {}".format(min_count))
-        root_logger.info("Training algorithm: {}".format("CBOW" if not use_skip_gram else "Skip-Gram"))
-        root_logger.info("Number of working threads: {}".format(num_workers))
+        logger.info("word2vec context window size: {}".format(window_size))
+        logger.info("Minimal count threshold: {}".format(min_count))
+        logger.info("Training algorithm: {}".format("CBOW" if not use_skip_gram else "Skip-Gram"))
+        logger.info("Number of working threads: {}".format(num_workers))
     else:
-        root_logger.info("Other parameters follow the input model from: {}".format(model_input))
+        logger.info("Other parameters follow the input model from: {}".format(model_input))
         if add_paths:
-            root_logger.info("Current training data is additional training data: {}".format(add_paths))
-    root_logger.info("Context information for OOV embedding learning is in directory: {}".format(corpus_dir))
+            logger.info("Current training data is additional training data: {}".format(add_paths))
+    logger.info("Context information for OOV embedding learning is in directory: {}".format(corpus_dir))
     # adjust A La Carte context window size for segmentation
-    root_logger.info("A La Carte context window size: {}".format(window_size))
-    root_logger.info("Model is used to fulfill adjacency lists in directory: {}".format(adjacency_dir))
-    root_logger.info("=== ----------------------------------------------------------------------------------------")
+    logger.info("A La Carte context window size: {}".format(window_size))
+    logger.info("Model is used to fulfill adjacency lists in directory: {}".format(adjacency_dir))
+    logger.info("=== ----------------------------------------------------------------------------------------")
 
     # ===-----------------------------------------------------------------------===
     # Importing data (only if Word2Vec model needs to be trained or modified)
@@ -453,7 +453,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     if model_input is None or add_paths:
         paths = load_data(dataset)
         if verbose:
-            root_logger.info("{} paths loaded".format(len(paths)))
+            logger.info("{} paths loaded".format(len(paths)))
 
     # ===-----------------------------------------------------------------------===
     # Training using Word2Vec if needed
@@ -462,16 +462,16 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
         model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
                          workers=num_workers, epochs=epochs, compute_loss=compute_loss)
     else:
-        root_logger.info("Loading existing model from: {}".format(model_input))
+        logger.info("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)
         if add_paths:
-            root_logger.info("Resuming training using additional data")
+            logger.info("Resuming training using additional data")
             model.train(paths, epochs=epochs, compute_loss=compute_loss)
 
     # Note: currently word2vec outputs normalized vectors (and replaces the original un-normalized ones)
     model.init_sims(replace=True)
     wv = model.wv
-    root_logger.info("Trained embedding vectors have shape: {}".format(wv.vectors.shape))
+    logger.info("Trained embedding vectors have shape: {}".format(wv.vectors.shape))
 
     # ===-----------------------------------------------------------------------===
     # Saving models
@@ -479,14 +479,14 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     # Save the model, which supports later online training (e.g., add addition training paths)
     if model_input is None or add_paths:
         out_path = os.path.join(log_dir, "model.bin")
-        root_logger.info("Saving the model at: {}".format(out_path))
+        logger.info("Saving the model at: {}".format(out_path))
         model.save(out_path)
 
     # ===-----------------------------------------------------------------------===
     # Using trained embeddings to train A La Carte model and save the model
     # or use an existing A La Carte matrix model
     # ===-----------------------------------------------------------------------===
-    root_logger.info("Loading w2v embeddings as source embeddings to A La Carte model")
+    logger.info("Loading w2v embeddings as source embeddings to A La Carte model")
     w2v = OrderedDict(load_vectors(wv))
 
     if matrix_input is not None:
@@ -497,20 +497,20 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
         M = M.reshape(d, d)
     else:
         matrix_file = os.path.join(log_dir, "matrix.bin")
-        root_logger.info("Learning induction matrix and saving to {}".format(matrix_file))
+        logger.info("Learning induction matrix and saving to {}".format(matrix_file))
         targets = w2v.keys()
         M = None
 
         alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None, comm=None)
 
-        root_logger.info("Building A La Carte context vectors")
+        logger.info("Building A La Carte context vectors")
         if corpus:
             context_vectors = FLOAT(0.0)
             target_counts = INT(0)
-            root_logger.info("Source corpus: {}".format(corpus))
-            context_vectors, target_counts = corpus_documents(corpus, alc, verbose=verbose, comm=None, english=None, lower=None)
+            logger.info("Source corpus: {}".format(corpus))
+            context_vectors, target_counts = corpus_documents(corpus, alc, logger, verbose=verbose, comm=None, english=None, lower=None)
         else:
-            root_logger.error("At least one corpus file is required by A La Carte model to learn")
+            logger.error("At least one corpus file is required by A La Carte model to learn")
             exit(1)
 
         nz = target_counts > 0
@@ -519,19 +519,19 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
         from sklearn.linear_model import LinearRegression as LR
         from sklearn.preprocessing import normalize
 
-        root_logger.info("Learning induction matrix")
+        logger.info("Learning induction matrix")
         X = np.true_divide(context_vectors[nz], target_counts[nz, None], dtype=FLOAT)
         Y = np.vstack([vector for vector, count in zip(w2v.values(), target_counts) if count])
         M = LR(fit_intercept=False).fit(X, Y).coef_.astype(FLOAT)
-        root_logger.info("Finished learning transform; Average cosine similarity: {}".format(
+        logger.info("Finished learning transform; Average cosine similarity: {}".format(
             np.mean(np.sum(normalize(X.dot(M.T)) * normalize(Y), axis=1))))
 
-        root_logger.info("Saving induction transform to {}".format(matrix_file))
+        logger.info("Saving induction transform to {}".format(matrix_file))
         dump_vectors(zip(targets, target_counts), log_dir + '/source_vocab_counts.txt')
         context_vectors.tofile(log_dir + '/source_context_vectors.bin')
         M.tofile(matrix_file)
 
-    root_logger.info("Loading adjacency lists from: {}".format(adjacency_dir))
+    logger.info("Loading adjacency lists from: {}".format(adjacency_dir))
 
     if "test" not in adjacency_dir:
         try:
@@ -547,28 +547,28 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
 
         for filename in sorted(os.listdir(adjacency_dir)):
             if filename:
-                root_logger.info("Loading adjacency list: {}".format(filename))
+                logger.info("Loading adjacency list: {}".format(filename))
                 input_path = os.path.join(adjacency_dir, filename)
 
                 # Going through the input data to find all the targets
-                root_logger.info("Loading targets from: {}".format(input_path))
+                logger.info("Loading targets from: {}".format(input_path))
                 targets = obtain_targets_from_file(input_path, w2v)
-                root_logger.info("A total number of {} targets identified".format(len(targets)))
+                logger.info("A total number of {} targets identified".format(len(targets)))
                 # target_dict now holds all unknown OOV embeddings
                 # TODO: we also manually add the new embeddings into the word2vec keyed vectors (see wv.add method)
                 target_dict = {}
                 if not len(targets):
-                    root_logger.info("No uncovered targets found")
+                    logger.info("No uncovered targets found")
                 else:
                     # reloading ALC reader for new targets
                     alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
                                          comm=None)
-                    root_logger.info("Rebuilding A La Carte context vectors for {}".format(filename))
+                    logger.info("Rebuilding A La Carte context vectors for {}".format(filename))
                     corpus_file = os.path.join(adjacency_dir, filename)
                     test_context_vectors = FLOAT(0.0)
                     test_target_counts = INT(0)
-                    root_logger.info("Source corpus for {}: {}".format(filename, corpus_file))
-                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, verbose=verbose,
+                    logger.info("Source corpus for {}: {}".format(filename, corpus_file))
+                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, logger, verbose=verbose,
                                                                                 comm=None, english=None, lower=None)
                     test_nz = test_target_counts > 0
 
@@ -579,7 +579,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                     target_vecs = test_context_vectors.dot(M.T)
                     for gram, vector in zip(targets, target_vecs):
                         if np.count_nonzero(vector) == 0:
-                            root_logger.error("[!]Zero-vector target: {}".format(gram))
+                            logger.error("[!]Zero-vector target: {}".format(gram))
                             assert (np.count_nonzero(vector) > 0), "zero-vector target could result in NaN"
                         vector = vector / np.linalg.norm(vector)
                         target_dict[gram] = vector
@@ -614,7 +614,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                             .format(len(src_feature), emb_dim)
                         row.extend(np.array(src_feature))
                     else:
-                        root_logger.error("Unknown source node name: {}".format(src_name))
+                        logger.error("Unknown source node name: {}".format(src_name))
 
                     if src_name not in nodelabel2vec:
                         nodelabel2vec[src_name] = src_feature
@@ -631,7 +631,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                             .format(len(dst_feature), emb_dim)
                         row.extend(np.array(dst_feature))
                     else:
-                        root_logger.error("Unknown destination node name: {}".format(dst_name))
+                        logger.error("Unknown destination node name: {}".format(dst_name))
 
                     if dst_name not in nodelabel2vec:
                         nodelabel2vec[dst_name] = dst_feature
@@ -649,7 +649,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                             .format(len(edge_feature), emb_dim)
                         row.extend(np.array(edge_feature))
                     else:
-                        root_logger.error("Unknown edge name: {}".format(edge_name))
+                        logger.error("Unknown edge name: {}".format(edge_name))
 
                     if edge_name not in edgelabel2vec:
                         edgelabel2vec[edge_name] = edge_feature
@@ -664,28 +664,28 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                 nodelabel2vec = {}
                 # edgelabel2vec = {}
 
-                root_logger.info("Loading adjacency list: {}".format(filename))
+                logger.info("Loading adjacency list: {}".format(filename))
                 input_path = os.path.join(adjacency_dir, filename)
 
                 # Going through the input data to find all the targets
-                root_logger.info("Loading targets from: {}".format(input_path))
+                logger.info("Loading targets from: {}".format(input_path))
                 targets = obtain_targets_from_file(input_path, w2v)
-                root_logger.info("A total number of {} targets identified".format(len(targets)))
+                logger.info("A total number of {} targets identified".format(len(targets)))
                 # target_dict now holds all unknown OOV embeddings
                 # TODO: we also manually add the new embeddings into the word2vec keyed vectors (see wv.add method)
                 target_dict = {}
                 if not len(targets):
-                    root_logger.info("No uncovered targets found")
+                    logger.info("No uncovered targets found")
                 else:
                     # reloading ALC reader for new targets
                     alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
                                          comm=None)
-                    root_logger.info("Rebuilding A La Carte context vectors for {}".format(filename))
+                    logger.info("Rebuilding A La Carte context vectors for {}".format(filename))
                     corpus_file = os.path.join(adjacency_dir, filename)
                     test_context_vectors = FLOAT(0.0)
                     test_target_counts = INT(0)
-                    root_logger.info("Source corpus for {}: {}".format(filename, corpus_file))
-                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc,
+                    logger.info("Source corpus for {}: {}".format(filename, corpus_file))
+                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, logger,
                                                                                 verbose=verbose,
                                                                                 comm=None, english=None, lower=None)
                     test_nz = test_target_counts > 0
@@ -698,7 +698,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                     target_vecs = test_context_vectors.dot(M.T)
                     for gram, vector in zip(targets, target_vecs):
                         if np.count_nonzero(vector) == 0:
-                            root_logger.error("[!]Zero-vector target: {}".format(gram))
+                            logger.error("[!]Zero-vector target: {}".format(gram))
                             assert (np.count_nonzero(vector) > 0), "zero-vector target could result in NaN"
                         vector = vector / np.linalg.norm(vector)
                         target_dict[gram] = vector
@@ -732,7 +732,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                             .format(len(src_feature), emb_dim)
                         row.extend(np.array(src_feature))
                     else:
-                        root_logger.error("Unknown source node name: {}".format(src_name))
+                        logger.error("Unknown source node name: {}".format(src_name))
 
                     if src_name not in nodelabel2vec:
                         nodelabel2vec[src_name] = src_feature
@@ -749,7 +749,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                             .format(len(dst_feature), emb_dim)
                         row.extend(np.array(dst_feature))
                     else:
-                        root_logger.error("Unknown destination node name: {}".format(dst_name))
+                        logger.error("Unknown destination node name: {}".format(dst_name))
 
                     if dst_name not in nodelabel2vec:
                         nodelabel2vec[dst_name] = dst_feature
@@ -766,7 +766,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                             .format(len(edge_feature), emb_dim)
                         row.extend(np.array(edge_feature))
                     else:
-                        root_logger.error("Unknown edge name: {}".format(edge_name))
+                        logger.error("Unknown edge name: {}".format(edge_name))
                     #
                     # if edge_name not in edgelabel2vec:
                     #     edgelabel2vec[edge_name] = edge_feature
@@ -779,26 +779,26 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     # Saving embeddings (for reuse or checking embedding quality)
     # ===-----------------------------------------------------------------------===
     embed_file_name = "model.wv"
-    root_logger.info("Saving the embeddings at: {}".format(log_dir + "/" + embed_file_name))
+    logger.info("Saving the embeddings at: {}".format(log_dir + "/" + embed_file_name))
     torch.save(wv, log_dir + "/" + embed_file_name)
     # ===-----------------------------------------------------------------------===
     # Output some stats and results
     # ===-----------------------------------------------------------------------===
-    root_logger.info("=== RESULTS REPORT -------------------------------------------------------------------------")
+    logger.info("=== RESULTS REPORT -------------------------------------------------------------------------")
     w2v_loss = model.get_latest_training_loss()
-    root_logger.info("word2vec Training loss: {}".format(w2v_loss))
-    root_logger.info("=== ----------------------------------------------------------------------------------------")
+    logger.info("word2vec Training loss: {}".format(w2v_loss))
+    logger.info("=== ----------------------------------------------------------------------------------------")
 
 def main(cfg):
-    root_logger = get_logger(
+    logger = get_logger(
         name="node_embedding_word2vec_alacarte",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "node_embedding_word2vec_alacarte.log"))
     
     os.makedirs(cfg.featurization.embed_nodes._vec_graphs_dir, exist_ok=True)
 
-    embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
-    embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
-    embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+    embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, logger=logger, cfg=cfg)
+    embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, logger=logger, cfg=cfg)
+    embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, logger=logger, cfg=cfg)
 
 
 if __name__ == "__main__":

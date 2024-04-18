@@ -68,7 +68,7 @@ def gen_vectorized_graphs(node2higvec, rel2vec, split_files, out_dir, is_test, t
 def main(cfg):
     logger = get_logger(
     name="embed_edges",
-    filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "embed_edges.log"))
+    filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log"))
 
     trained_w2v_dir = cfg.featurization.embed_nodes._vec_graphs_dir
     graphs_dir = cfg.preprocessing.build_graphs._graphs_dir
