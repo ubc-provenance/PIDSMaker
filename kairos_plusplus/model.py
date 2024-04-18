@@ -1,7 +1,7 @@
 from provnet_utils import *
 from config import *
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: refactor
 max_node_num = 967390  # the number of nodes in node2id table +1
 min_dst_idx, max_dst_idx = 0, max_node_num
 # Helper vector to map global node indices to local ones.
@@ -20,10 +20,10 @@ criterion = sce_loss
 
 
 class GraphAttentionEmbedding(torch.nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, hid_channels, out_channels):
         super(GraphAttentionEmbedding, self).__init__()
-        self.conv = TransformerConv(in_channels, out_channels, heads=8, dropout=0.0)
-        self.conv2 = TransformerConv(out_channels * 8, out_channels, heads=1, concat=False, dropout=0.0)
+        self.conv = TransformerConv(in_channels, hid_channels, heads=8, dropout=0.0)
+        self.conv2 = TransformerConv(hid_channels * 8, out_channels, heads=1, concat=False, dropout=0.0)
 
     def forward(self, x, edge_index):
         x = x.to(device)
@@ -42,7 +42,7 @@ class NodeRecon(torch.nn.Module):
         x = x.to(device)
         x = F.relu(self.conv(x, edge_index))
         x = F.relu(self.conv2(x, edge_index))
-        x = F.tanh(self.conv3(x, edge_index))
+        x = torch.tanh(self.conv3(x, edge_index))
         return x
 
 class NodeRecon_MLP(torch.nn.Module):
@@ -54,7 +54,7 @@ class NodeRecon_MLP(torch.nn.Module):
     def forward(self, x):
         x = x.to(device)
         x = F.relu(self.conv(x))
-        x = F.tanh(self.conv2(x))
+        x = torch.tanh(self.conv2(x))
         return x
 
 

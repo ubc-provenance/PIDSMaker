@@ -2,6 +2,7 @@ import graph_constructor
 import darpa_preprocess
 import node_embedding
 import embedding
+import train_gnn_2mlp
 
 from config import (
     get_yml_cfg,
@@ -33,6 +34,8 @@ def main(cfg):
         node_embedding.main(cfg)
     if should_restart["embed_edges"]:
         embedding.main(cfg)
+    if should_restart["gnn_training"]:
+        train_gnn_2mlp.main(cfg)
 
 
 if __name__ == '__main__':

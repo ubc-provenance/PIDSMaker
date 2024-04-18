@@ -20,6 +20,7 @@ TASK_DEPENDENCIES = OrderedDict({
      "build_random_walks": ["build_graphs"],
      "embed_nodes": ["build_random_walks"],
      "embed_edges": ["embed_nodes"],
+     "gnn_training": ["embed_edges"],
 })
 
 # --- Tasks, subtasks, and argument configurations ---
@@ -57,12 +58,22 @@ TASK_ARGS = {
           },
           "embed_edges": {
                "include_edge_type": bool,
-               "restart_args": ["include_edge_type"]
+               "restart_args": ["include_edge_type"],
           }
      },
      "detection": {
-          "model": {
-               "name": str,
+          "gnn_training": {
+               "num_epochs": int,
+               "lr": float,
+               "weight_decay": float,
+               "node_hid_dim": int,
+               "node_out_dim": int,
+               "tgn_batch_size": int,
+               "tgn_node_state_dim": int,
+               "tgn_time_dim": int,
+               "tgn_neighbor_size": int,
+               "restart_args": ["num_epochs", "lr", "weight_decay", "node_hid_dim", "node_out_dim",
+                    "tgn_batch_size", "tgn_node_state_dim", "tgn_time_dim", "tgn_neighbor_size"]
      }},
      "triage":
           {},
@@ -148,23 +159,24 @@ def set_task_paths(cfg):
           task_cfg = getattr(cfg, task)
 
           # The directory where all subfolders of each task will be stored
-          if task in ["preprocessing", "featurization"]:
-               for subtask_name, subtask_args in subtask.items():
-                    if "restart_args" not in subtask_args:
-                         raise ValueError(f"Missing arg `restart_args` in subtask `{subtask_name}`")
-                    restart_args = subtask_args["restart_args"]
+          for subtask_name, subtask_args in subtask.items():
+               if "restart_args" not in subtask_args:
+                    raise ValueError(f"Missing arg `restart_args` in subtask `{subtask_name}`")
+               restart_args = subtask_args["restart_args"]
 
-                    subtask_cfg = getattr(task_cfg, subtask_name)
-                    restart_values = [getattr(subtask_cfg, arg) for arg in restart_args]
+               subtask_cfg = getattr(task_cfg, subtask_name)
+               restart_values = [getattr(subtask_cfg, arg) for arg in restart_args]
 
-                    clean_hash_args = "".join([c for c in str(restart_values) if c not in set(" []\"\'")])
+               clean_hash_args = "".join([c for c in str(restart_values) if c not in set(" []\"\'")])
+
+               if task in ["preprocessing", "featurization"]:
                     subtask_cfg._task_path = os.path.join(cfg._artifact_dir, task, cfg.dataset.name, subtask_name, clean_hash_args)
+               else:
+                    subtask_cfg._task_path = os.path.join(cfg._artifact_dir, task, subtask_name, clean_hash_args, cfg.dataset.name)
 
-                    # The directory to save logs related to the preprocessing task
-                    subtask_cfg._logs_dir = os.path.join(subtask_cfg._task_path, "logs/")
-                    os.makedirs(subtask_cfg._logs_dir, exist_ok=True)
-          else:
-               hash_args = None # TODO set cfg.dataset.model for detection
+               # The directory to save logs related to the preprocessing task
+               subtask_cfg._logs_dir = os.path.join(subtask_cfg._task_path, "logs/")
+               os.makedirs(subtask_cfg._logs_dir, exist_ok=True)
      
      # Preprocessing paths
      cfg.preprocessing.build_graphs._graphs_dir = os.path.join(cfg.preprocessing.build_graphs._task_path, "nx/")
@@ -174,6 +186,9 @@ def set_task_paths(cfg):
      cfg.featurization.build_random_walks._random_walk_corpus_dir = os.path.join(cfg.featurization.build_random_walks._random_walk_dir, "random_walk_corpus/")
      cfg.featurization.embed_nodes._vec_graphs_dir = os.path.join(cfg.featurization.embed_nodes._task_path, "vectorized/")
      cfg.featurization.embed_edges._edge_embeds_dir = os.path.join(cfg.featurization.embed_edges._task_path, "edge_embeds/")
+
+     # Detection paths
+     cfg.detection.gnn_training._trained_models_dir = os.path.join(cfg.detection.gnn_training._task_path, "trained_models/")
      
      # TODO
      cfg.detection._task_path = None

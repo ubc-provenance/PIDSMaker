@@ -72,6 +72,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
 
             start_time = events_list[0][-2]
             temp_list = []
+            BATCH = 1024
             for batch_edges in get_batches(events_list, BATCH):
                 for j in batch_edges:
                     temp_list.append(j)
