@@ -10,14 +10,16 @@ from config import (
 
 
 def main(cfg):
-    should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
-    should_restart_with_dependencies = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
+    modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
+    should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
-    print("\nTasks modified since last runs:")
-    print("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
+    print("\n" + ("*" * 100))
+    print("Tasks modified since last runs:")
+    print("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
 
     print("\nTasks requiring re-execution:")
-    print("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart_with_dependencies.items()]))
+    print("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
+    print(("*" * 100) + "\n")
 
 
     # Preprocessing
@@ -27,9 +29,9 @@ def main(cfg):
     # Featurization
     if should_restart["build_random_walks"]:
         darpa_preprocess.main(cfg)
-    if should_restart["node_embedding"]:
+    if should_restart["embed_nodes"]:
         node_embedding.main(cfg)
-    if should_restart["embedding"]:
+    if should_restart["embed_edges"]:
         embedding.main(cfg)
 
 

@@ -98,6 +98,8 @@ def get_default_cfg(args):
      cfg = CN()
      cfg._artifact_dir = ROOT_ARTIFACT_DIR
 
+     cfg._force_restart = args.force_restart
+
      # Dataset: we simply create variables for all configurations described in the dict
      cfg.dataset = CN()
      cfg.dataset.name = args.dataset
@@ -123,6 +125,7 @@ def get_runtime_required_args():
      parser = argparse.ArgumentParser()
      parser.add_argument('model', type=str, help="Name of the model")
      parser.add_argument('dataset', type=str, help="Name of the dataset")
+     parser.add_argument('--force_restart', type=str, default="", help="The subtask or subtasks to force the restart")
      
      try:
           args = parser.parse_args()
@@ -268,12 +271,13 @@ def set_subtasks_to_restart(yml_file: str, cfg):
           for subtask in subtasks.keys():
                if subtask in subtasks_in_yml_file:
                     subtask_cfg = getattr(getattr(cfg, task), subtask)
-                    files_exist = any(files for _, _, files in os.walk(subtask_cfg._task_path))
+                    existing_files = [files for _, _, files in os.walk(subtask_cfg._task_path)]
+                    files_exist = any([files for files in existing_files for f in files if not f.endswith(".log")])
                     should_restart[subtask] = not files_exist
                else:
                     should_restart[subtask] = False
 
-     should_restart_with_deps = get_subtasks_to_restart_with_dependencies(should_restart, TASK_DEPENDENCIES)
+     should_restart_with_deps = get_subtasks_to_restart_with_dependencies(should_restart, TASK_DEPENDENCIES, cfg._force_restart)
      
      # Dicts are not accepted in the cfg
      should_restart = [(subtask, restart) for subtask, restart in should_restart.items()]
@@ -282,7 +286,7 @@ def set_subtasks_to_restart(yml_file: str, cfg):
      cfg._subtasks_should_restart = should_restart
      cfg._subtasks_should_restart_with_deps = should_restart_with_deps
 
-def get_subtasks_to_restart_with_dependencies(should_restart: dict, dependencies: dict):
+def get_subtasks_to_restart_with_dependencies(should_restart: dict, dependencies: dict, force_restart: str):
      subtasks_to_restart = set([subtask for subtask, restart in should_restart.items() if restart])
      
      def helper(sub_to_restart: str, deps_set: set):
@@ -301,7 +305,15 @@ def get_subtasks_to_restart_with_dependencies(should_restart: dict, dependencies
 
      should_restart_with_deps = (subtasks_to_restart | deps_set)
      should_restart_with_deps.remove("_end")
-     
+
+     # Adds the subtasks to force restart
+     if len(force_restart) > 0:
+          subtasks = set([subtask for task, subtasks in TASK_ARGS.items() for subtask in subtasks.keys()])
+          for subtask in force_restart.split(","):
+               if subtask not in subtasks:
+                    raise ValueError(f"Invalid subtask name `{subtask}` given to `--force_restart`.")
+               should_restart_with_deps.add(subtask)
+
      should_restart_with_deps = {subtask: (subtask in should_restart_with_deps) 
           for task, subtasks in TASK_ARGS.items()
           for subtask in subtasks.keys()}
