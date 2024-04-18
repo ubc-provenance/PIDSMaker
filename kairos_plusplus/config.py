@@ -3,6 +3,7 @@ import os
 import pathlib
 import sys
 import yaml
+from collections import OrderedDict
 from pprint import pprint
 from yacs.config import CfgNode as CN
 
@@ -14,11 +15,12 @@ AVAILABLE_MODELS = [
 ]
 
 # --- Dependency graph to follow ---
-TASK_DEPENDENCIES = {
+TASK_DEPENDENCIES = OrderedDict({
      "build_graphs": [],
      "build_random_walks": ["build_graphs"],
      "embed_nodes": ["build_random_walks"],
-}
+     "embed_edges": ["embed_nodes"],
+})
 
 # --- Tasks, subtasks, and argument configurations ---
 # Restart args refer to the args which when modified requires to re-compute 
@@ -242,10 +244,70 @@ def get_yml_cfg(args):
      # to store the files of each task
      set_task_paths(cfg)
 
-     print("\nFinal configuration:")
-     pprint(dict(cfg.items()), indent=2)
+     # Calculates which subtasks have to be re-executed
+     set_subtasks_to_restart(yml_file, cfg)
+
+     # print("\nFinal configuration:")
+     # pprint(dict(cfg.items()), indent=2)
      return cfg
 
+def set_subtasks_to_restart(yml_file: str, cfg):
+     """
+     Given a cfg, returns a boolean for each subtask, being `True` if
+     the subtask requires to be restarted and `False` if the current arguments
+     do not require a restart.
+     In practice, we restart a subtask if there are no files present in its
+     unique `_task_dir`.
+     """
+     with open(yml_file, 'r') as file:
+          user_config = yaml.safe_load(file)
+     subtasks_in_yml_file = set([subtask for task, subtasks in user_config.items() for subtask in subtasks.keys()])
+
+     should_restart = OrderedDict()
+     for task, subtasks in TASK_ARGS.items():
+          for subtask in subtasks.keys():
+               if subtask in subtasks_in_yml_file:
+                    subtask_cfg = getattr(getattr(cfg, task), subtask)
+                    files_exist = any(files for _, _, files in os.walk(subtask_cfg._task_path))
+                    should_restart[subtask] = not files_exist
+               else:
+                    should_restart[subtask] = False
+
+     should_restart_with_deps = get_subtasks_to_restart_with_dependencies(should_restart, TASK_DEPENDENCIES)
+     
+     # Dicts are not accepted in the cfg
+     should_restart = [(subtask, restart) for subtask, restart in should_restart.items()]
+     should_restart_with_deps = [(subtask, restart) for subtask, restart in should_restart_with_deps.items()]
+
+     cfg._subtasks_should_restart = should_restart
+     cfg._subtasks_should_restart_with_deps = should_restart_with_deps
+
+def get_subtasks_to_restart_with_dependencies(should_restart: dict, dependencies: dict):
+     subtasks_to_restart = set([subtask for subtask, restart in should_restart.items() if restart])
+     
+     def helper(sub_to_restart: str, deps_set: set):
+          for subtask, deps in dependencies.items():
+               if sub_to_restart in deps:
+                    deps_set.add(subtask)
+                    helper(subtask, deps_set)
+
+     # The last task requires to be a dependency too
+     last_subtask = next(reversed(dependencies))
+     dependencies["_end"] = last_subtask
+     
+     deps_set = set()
+     for sub_to_restart in subtasks_to_restart:
+          helper(sub_to_restart, deps_set)
+
+     should_restart_with_deps = (subtasks_to_restart | deps_set)
+     should_restart_with_deps.remove("_end")
+     
+     should_restart_with_deps = {subtask: (subtask in should_restart_with_deps) 
+          for task, subtasks in TASK_ARGS.items()
+          for subtask in subtasks.keys()}
+     
+     return should_restart_with_deps
+          
 
 
 ########################################################

@@ -789,12 +789,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     root_logger.info("word2vec Training loss: {}".format(w2v_loss))
     root_logger.info("=== ----------------------------------------------------------------------------------------")
 
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
+def main(cfg):
     root_logger = get_logger(
         name="node_embedding_word2vec_alacarte",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "node_embedding_word2vec_alacarte.log"))
@@ -804,3 +799,10 @@ if __name__ == "__main__":
     embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
     embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
     embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+
+
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    main(cfg)

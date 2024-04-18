@@ -65,14 +65,10 @@ def gen_vectorized_graphs(node2higvec, rel2vec, split_files, out_dir, is_test, t
 
         logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
+def main(cfg):
     logger = get_logger(
-        name="embed_edges",
-        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "embed_edges.log"))
+    name="embed_edges",
+    filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "embed_edges.log"))
 
     trained_w2v_dir = cfg.featurization.embed_nodes._vec_graphs_dir
     graphs_dir = cfg.preprocessing.build_graphs._graphs_dir
@@ -83,24 +79,24 @@ if __name__ == "__main__":
     
     # Vectorize training set
     gen_vectorized_graphs(node2higvec=node2higvec,
-                          rel2vec=rel2vec,
-                          split_files=cfg.dataset.train_files,
-                          out_dir=os.path.join(out_dir, "train/"),
-                          is_test=False,
-                          trained_w2v_dir=trained_w2v_dir,
-                          logger=logger,
-                          cfg=cfg,
+                        rel2vec=rel2vec,
+                        split_files=cfg.dataset.train_files,
+                        out_dir=os.path.join(out_dir, "train/"),
+                        is_test=False,
+                        trained_w2v_dir=trained_w2v_dir,
+                        logger=logger,
+                        cfg=cfg,
                         )
 
     # Vectorize validation set
     gen_vectorized_graphs(node2higvec=node2higvec,
-                          rel2vec=rel2vec,
-                          split_files=cfg.dataset.val_files,
-                          out_dir=os.path.join(out_dir, "val/"),
-                          is_test=False,
-                          trained_w2v_dir=trained_w2v_dir,
-                          logger=logger,
-                          cfg=cfg,
+                        rel2vec=rel2vec,
+                        split_files=cfg.dataset.val_files,
+                        out_dir=os.path.join(out_dir, "val/"),
+                        is_test=False,
+                        trained_w2v_dir=trained_w2v_dir,
+                        logger=logger,
+                        cfg=cfg,
                         )
 
     # Vectorize testing set
@@ -113,3 +109,10 @@ if __name__ == "__main__":
                             logger=logger,
                             cfg=cfg,
                             )
+
+
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    main(cfg)

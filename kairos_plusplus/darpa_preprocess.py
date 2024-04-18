@@ -44,14 +44,17 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     graph_info.close()
     random_walks_file_fd.close()
 
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
+def main(cfg):
     os.makedirs(cfg.featurization.build_random_walks._random_walk_dir, exist_ok=True)
     os.makedirs(cfg.featurization.build_random_walks._random_walk_corpus_dir, exist_ok=True)
 
     preprocess_split(split="train", split_files=cfg.dataset.train_files, cfg=cfg)
     preprocess_split(split="val", split_files=cfg.dataset.val_files, cfg=cfg)
     preprocess_split(split="test", split_files=cfg.dataset.test_files, cfg=cfg)
+
+
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    main(cfg)

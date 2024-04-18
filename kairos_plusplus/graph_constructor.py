@@ -169,11 +169,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                     start_time = batch_edges[-1][-2]
                     temp_list.clear()
 
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
+def main(cfg):
     logger = get_logger(
         name="graph_construction_edge_fused_tw",
         filename=os.path.join(cfg.preprocessing.build_graphs._logs_dir, "edge_fused_tw_graph.log"))
@@ -185,3 +181,10 @@ if __name__ == "__main__":
     os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)
 
     gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, logger=logger, cfg=cfg)
+
+
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    main(cfg)
