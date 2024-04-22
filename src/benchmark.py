@@ -9,13 +9,13 @@ from featurization import (
 from detection import (
     gnn_training,
     gnn_testing,
+    node_evaluation,
 )
 
 from config import (
     get_yml_cfg,
     get_runtime_required_args,
 )
-import node_evaluation_edgebase
 
 
 def main(cfg):
@@ -47,7 +47,7 @@ def main(cfg):
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
     if should_restart["node_evaluation"]:
-        node_evaluation_edgebase.main(cfg)
+        node_evaluation.main(cfg)
 
 
 if __name__ == '__main__':
