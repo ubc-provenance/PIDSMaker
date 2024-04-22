@@ -21,6 +21,7 @@ TASK_DEPENDENCIES = OrderedDict({
      "embed_nodes": ["build_random_walks"],
      "embed_edges": ["embed_nodes"],
      "gnn_training": ["embed_edges"],
+     "gnn_testing": ["gnn_training"],
 })
 
 # --- Tasks, subtasks, and argument configurations ---
@@ -74,7 +75,12 @@ TASK_ARGS = {
                "tgn_neighbor_size": int,
                "restart_args": ["num_epochs", "lr", "weight_decay", "node_hid_dim", "node_out_dim",
                     "tgn_batch_size", "tgn_node_state_dim", "tgn_time_dim", "tgn_neighbor_size"]
-     }},
+          },
+          "gnn_testing": {
+               "threshold_method": str,
+               "restart_args": ["threshold_method"]
+          }
+     },
      "triage":
           {},
      "postprocessing":
@@ -189,6 +195,7 @@ def set_task_paths(cfg):
 
      # Detection paths
      cfg.detection.gnn_training._trained_models_dir = os.path.join(cfg.detection.gnn_training._task_path, "trained_models/")
+     cfg.detection.gnn_testing._edge_losses_dir = os.path.join(cfg.detection.gnn_testing._task_path, "edge_losses/")
      
      # TODO
      cfg.detection._task_path = None
@@ -319,7 +326,8 @@ def get_subtasks_to_restart_with_dependencies(should_restart: dict, dependencies
           helper(sub_to_restart, deps_set)
 
      should_restart_with_deps = (subtasks_to_restart | deps_set)
-     should_restart_with_deps.remove("_end")
+     if "_end" in should_restart_with_deps:
+          should_restart_with_deps.remove("_end")
 
      # Adds the subtasks to force restart
      if len(force_restart) > 0:

@@ -3,6 +3,7 @@ import darpa_preprocess
 import node_embedding
 import embedding
 import train_gnn_2mlp
+import test_gnn_2mlp
 
 from config import (
     get_yml_cfg,
@@ -36,6 +37,8 @@ def main(cfg):
         embedding.main(cfg)
     if should_restart["gnn_training"]:
         train_gnn_2mlp.main(cfg)
+    if should_restart["gnn_testing"]:
+        test_gnn_2mlp.main(cfg)
 
 
 if __name__ == '__main__':

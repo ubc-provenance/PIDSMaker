@@ -29,4 +29,5 @@ detection:
     tgn_node_state_dim: 100
     tgn_time_dim: 100
     tgn_neighbor_size: 20
-    
+  gnn_testing:
+    threshold_method: time_window
