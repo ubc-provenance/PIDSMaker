@@ -9,7 +9,7 @@ create_database:
 	python create_database.py
 
 construct_graphs:
-	python graph_constructor.py
+	python build_graphs.py
 
 prepare_random_walks:
 	mv ./artifact/graphs/nx/e5-graph-08-00_00_00 ./artifact/graphs/nx/train/
@@ -19,7 +19,7 @@ prepare_random_walks:
 	mv ./artifact/graphs/nx/graph_5_15/* ./artifact/graphs/nx/test/
 
 run_random_walk:
-	python darpa_preprocess.py --train ./artifact/graphs/nx/train/ \
+	python build_random_walks.py --train ./artifact/graphs/nx/train/ \
 							  --validation ./artifact/graphs/nx/val/ \
 							  --test ./artifact/graphs/nx/test/ \
 							  --walk_len 30

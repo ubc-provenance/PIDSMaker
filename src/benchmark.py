@@ -1,9 +1,15 @@
-import graph_constructor
-import darpa_preprocess
-import node_embedding
-import embedding
-import train_gnn_2mlp
-import test_gnn_2mlp
+from preprocessing import (
+    build_graphs,
+)
+from featurization import (
+    build_random_walks,
+    embed_nodes,
+    embed_edges,
+)
+from detection import (
+    gnn_training,
+    gnn_testing,
+)
 
 from config import (
     get_yml_cfg,
@@ -26,19 +32,19 @@ def main(cfg):
 
     # Preprocessing
     if should_restart["build_graphs"]:
-        graph_constructor.main(cfg)
+        build_graphs.main(cfg)
     
     # Featurization
     if should_restart["build_random_walks"]:
-        darpa_preprocess.main(cfg)
+        build_random_walks.main(cfg)
     if should_restart["embed_nodes"]:
-        node_embedding.main(cfg)
+        embed_nodes.main(cfg)
     if should_restart["embed_edges"]:
-        embedding.main(cfg)
+        embed_edges.main(cfg)
     if should_restart["gnn_training"]:
-        train_gnn_2mlp.main(cfg)
+        gnn_training.main(cfg)
     if should_restart["gnn_testing"]:
-        test_gnn_2mlp.main(cfg)
+        gnn_testing.main(cfg)
 
 
 if __name__ == '__main__':
