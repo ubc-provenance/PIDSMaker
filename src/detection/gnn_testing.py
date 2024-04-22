@@ -292,8 +292,7 @@ def main(cfg):
     test_graphs_dir = os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test")
 
     # For each model trained at a given epoch, we test
-    all_trained_models = os.listdir(gnn_models_dir)
-    all_trained_models.sort(key=lambda f: int(''.join(filter(str.isdigit, f)))) # sorted by ascending epoch number
+    all_trained_models = listdir_sorted(gnn_models_dir)
 
     for trained_model in all_trained_models:
         print(f"Testing with model {trained_model}...")

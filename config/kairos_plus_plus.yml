@@ -13,7 +13,7 @@ featurization:
     min_count: 0
     use_skip_gram: True
     num_workers: 6
-    compute_loss: False
+    compute_loss: True
     add_paths: False
   embed_edges:
     include_edge_type: True
@@ -30,4 +30,6 @@ detection:
     tgn_time_dim: 100
     tgn_neighbor_size: 20
   gnn_testing:
-    threshold_method: time_window
+    threshold_method: str
+  node_evaluation:
+    threshold_method: max_val_loss

@@ -15,6 +15,7 @@ from config import (
     get_yml_cfg,
     get_runtime_required_args,
 )
+import node_evaluation_edgebase
 
 
 def main(cfg):
@@ -45,6 +46,8 @@ def main(cfg):
         gnn_training.main(cfg)
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
+    if should_restart["node_evaluation"]:
+        node_evaluation_edgebase.main(cfg)
 
 
 if __name__ == '__main__':

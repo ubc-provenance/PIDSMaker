@@ -1,27 +1,16 @@
-import argparse
-
 import torch
 from sklearn.metrics import confusion_matrix
-import logging
 
 from provnet_utils import *
 from config import *
 
-# Setting for logging
-logger = logging.getLogger("evaluation_logger")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(artifact_dir + 're_evaluation_without_triage.log')
-file_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
-def cal_val_thr(graph_dir):
-    filelist = list_files_in_directory(graph_dir)
+def calculate_max_val_loss_threshold(graph_dir, logger):
+    filelist = listdir_sorted(graph_dir)
 
     loss_list = []
     for file in sorted(filelist):
-        f = open(file)
+        f = open(os.path.join(graph_dir, file))
         for line in f:
             l = line.strip()
             jdata = eval(l)
@@ -34,7 +23,10 @@ def cal_val_thr(graph_dir):
 
     return thr
 
-def classifier_evaluation(y_test, y_test_pred):
+def calculate_supervised_best_threshold():
+    pass
+
+def classifier_evaluation(y_test, y_test_pred, logger):
     tn, fp, fn, tp =confusion_matrix(y_test, y_test_pred).ravel()
     logger.info(f'total node num: {len(y_test)}')
     logger.info(f'tn: {tn}')
@@ -58,24 +50,25 @@ def classifier_evaluation(y_test, y_test_pred):
 
     return precision, recall, fscore, accuracy, auc_val
 
-def get_ground_truth_nids():
+def get_ground_truth_nids(cfg):
     ground_truth_nids = []
-    with open("../Ground_Truth/E5-THEIA/THEIA-1-e5-05-15-Firefox_Drakon_APT_BinFmt_Elevate_Inject_nodes_new.txt", 'r') as f:
+    with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path), 'r') as f:
         for line in f:
             node_uuid, node_labels, node_id = line.replace(" ", "").strip().split(",")
             if node_id != 'node_id':
                 ground_truth_nids.append(int(node_id))
     return ground_truth_nids
 
-def node_evaluation_without_triage(thr, datapath):
-    ground_truth_nids = get_ground_truth_nids()
+def node_evaluation_without_triage(thr, tw_path, logger, cfg):
+    ground_truth_nids = get_ground_truth_nids(cfg)
 
     logger.info("Loading data...")
     labels = {}
     pred_labels ={}
 
-    filelist = list_files_in_directory(datapath)
+    filelist = listdir_sorted(tw_path)
     for file in tqdm(sorted(filelist), desc="Initialize the node labels in test set"):
+        file = os.path.join(tw_path, file)
         logger.info(f"Loading data from file: {file}")
         with open(file, 'r') as f:
             for line in f:
@@ -116,22 +109,35 @@ def node_evaluation_without_triage(thr, datapath):
         y_pred.append(pred_labels[nid])
 
     logger.info(f"Start evaluating...")
-    classifier_evaluation(y_truth, y_pred)
-    pass
+    classifier_evaluation(y_truth, y_pred, logger)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--embedding', help='input embedding type (re, bce or hybrid)', required=True)
-    args = parser.parse_args()
+def main(cfg):
+    logger = get_logger(
+        name="node_evaluation",
+        filename=os.path.join(cfg.detection.node_evaluation._logs_dir, "node_evaluation.log"))
 
-    if args.embedding == 're':
-        datapath = re_test_dir + 'test/'
-        valpath = re_test_dir + 'val/'
-    elif args.embedding == 'hybrid':
-        datapath = hybrid_test_dir + 'test/'
-        valpath = hybrid_test_dir + 'val/'
+    threshold_method = cfg.detection.node_evaluation.threshold_method
+    if threshold_method == "max_val_loss":
+        test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
+        val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
+        
+        for model_epoch_dir in listdir_sorted(test_losses_dir):
+            print(f"Evaluation of model {model_epoch_dir}...")
+
+            test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
+            val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
+
+            thr = calculate_max_val_loss_threshold(val_tw_path, logger)
+            node_evaluation_without_triage(thr, test_tw_path, logger, cfg)
+
+    elif threshold_method == "supervised_best_threshold":
+        thr = calculate_supervised_best_threshold(valpath)
+    else:
+        raise ValueError(f"Invalid threshold method `{threshold_method}`")
 
 
-    logger.info("Start logging.")
-    thr = cal_val_thr(valpath)
-    node_evaluation_without_triage(thr, datapath)
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    main(cfg)

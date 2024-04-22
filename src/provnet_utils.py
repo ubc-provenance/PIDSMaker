@@ -287,3 +287,8 @@ def get_all_files_from_folders(base_dir: str, folders: list[str]):
         for sub in os.listdir(base_dir)
         if os.path.isdir(os.path.join(base_dir, sub)) and sub in folders
         for f in os.listdir(os.path.join(base_dir, sub))])
+
+def listdir_sorted(path: str):
+    files = os.listdir(path)
+    files.sort(key=lambda f: int(''.join(filter(str.isdigit, f)))) # sorted by ascending number
+    return files
