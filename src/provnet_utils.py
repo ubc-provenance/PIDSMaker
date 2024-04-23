@@ -100,19 +100,19 @@ def datetime_to_timestamp_US(date):
     timeStamp = timestamp
     return int(timeStamp)
 
-def init_database_connection(database: str):
+def init_database_connection(cfg):
     if host is not None:
-        connect = psycopg2.connect(database = database,
-                                   host = host,
-                                   user = user,
-                                   password = password,
-                                   port = port
+        connect = psycopg2.connect(database = cfg.dataset.database,
+                                   host = cfg.database.host,
+                                   user = cfg.database.user,
+                                   password = cfg.database.password,
+                                   port = cfg.database.port
                                   )
     else:
-        connect = psycopg2.connect(database = database,
-                                   user = user,
-                                   password = password,
-                                   port = port
+        connect = psycopg2.connect(database = cfg.dataset.database,
+                                   user = cfg.database.user,
+                                   password = cfg.database.password,
+                                   port = cfg.database.port
                                   )
     cur = connect.cursor()
     return cur, connect

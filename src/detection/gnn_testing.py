@@ -283,8 +283,7 @@ def main(cfg):
         filename=os.path.join(cfg.detection.gnn_testing._logs_dir, "gnn_testing.log"))
 
     # load the map between nodeID and node labels
-    db = cfg.dataset.database
-    cur, _ = init_database_connection(database=db)
+    cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
 
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir

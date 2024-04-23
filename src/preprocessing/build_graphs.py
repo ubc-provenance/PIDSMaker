@@ -175,8 +175,7 @@ def main(cfg):
         name="graph_construction_edge_fused_tw",
         filename=os.path.join(cfg.preprocessing.build_graphs._logs_dir, "edge_fused_tw_graph.log"))
 
-    db = cfg.dataset.database
-    cur, connect = init_database_connection(database=db)
+    cur, connect = init_database_connection(cfg)
     nodeid2msg = get_node_list(cur=cur)
 
     os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)

@@ -350,7 +350,10 @@ def store_event(file_path, cur, connect, reverse, nodeid2msg, subject_uuid2hash,
 
 
 if __name__ == "__main__":
-    cur, connect = init_database_connection()
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+
+    cur, connect = init_database_connection(cfg)
 
     # There will be 36747 netflow nodes stored in the table
     print("Processing netflow data")

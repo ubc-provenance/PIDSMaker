@@ -42,6 +42,8 @@ def main(cfg):
         embed_nodes.main(cfg)
     if should_restart["embed_edges"]:
         embed_edges.main(cfg)
+
+    # Detection
     if should_restart["gnn_training"]:
         gnn_training.main(cfg)
     if should_restart["gnn_testing"]:
