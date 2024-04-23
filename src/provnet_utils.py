@@ -279,6 +279,10 @@ def get_logger(name: str, filename: str):
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+
+    logger.info("")
+    logger.info(f"START LOGGING FOR SUBTASK: {name}")
+    logger.info("")
     
     return logger
 
