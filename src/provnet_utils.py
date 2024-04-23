@@ -101,7 +101,7 @@ def datetime_to_timestamp_US(date):
     return int(timeStamp)
 
 def init_database_connection(cfg):
-    if host is not None:
+    if cfg.database.host is not None:
         connect = psycopg2.connect(database = cfg.dataset.database,
                                    host = cfg.database.host,
                                    user = cfg.database.user,
