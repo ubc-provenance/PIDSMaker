@@ -14,9 +14,9 @@ def get_node_list(cur):
     rows = cur.fetchall()
     nodeid2msg = {}
 
-    # hash_id | node_type | msg | hash_msg
+    # hash_id | node_type | msg | index_id
     for i in rows:
-        nodeid2msg[i[0]] = [i[1], i[-1]]
+        nodeid2msg[i[0]] = [i[1], i[2]] # TODO: check with Baoxiang
 
     return nodeid2msg
 
@@ -174,6 +174,7 @@ def main(cfg):
     logger = get_logger(
         name="graph_construction_edge_fused_tw",
         filename=os.path.join(cfg.preprocessing.build_graphs._logs_dir, "edge_fused_tw_graph.log"))
+    logger.info(f"build_graphs path: {cfg.preprocessing.build_graphs._task_path}")
 
     cur, connect = init_database_connection(cfg)
     nodeid2msg = get_node_list(cur=cur)
