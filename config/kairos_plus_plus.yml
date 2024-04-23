@@ -32,6 +32,6 @@ detection:
   gnn_testing:
     threshold_method: str
   node_evaluation:
-    threshold_method: max_val_loss
+    threshold_method: supervised_best_threshold
     use_dst_node_loss: False
     use_loss_sum: False
