@@ -33,3 +33,5 @@ detection:
     threshold_method: str
   node_evaluation:
     threshold_method: max_val_loss
+    use_dst_node_loss: False
+    use_loss_sum: False
