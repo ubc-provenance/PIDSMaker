@@ -1,9 +1,11 @@
 from provnet_utils import *
 from config import *
 
+args = get_runtime_required_args()
+cfg = get_yml_cfg(args)
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') # TODO: refactor
-max_node_num = 967390  # the number of nodes in node2id table +1
-min_dst_idx, max_dst_idx = 0, max_node_num
+max_node_num = cfg.dataset.max_node_num
 # Helper vector to map global node indices to local ones.
 assoc = torch.empty(max_node_num, dtype=torch.long, device=device)
 
