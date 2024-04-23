@@ -38,7 +38,7 @@ def calculate_supervised_best_threshold(losses, labels):
     roc_auc = auc(fpr, tpr)
 
     # Filter out the points where TPR is less than 0.84
-    valid_indices = np.where(tpr >= 0.75)[0]
+    valid_indices = np.where(tpr >= 0.16)[0]
     fpr_valid = fpr[valid_indices]
     thresholds_valid = thresholds[valid_indices]
 
@@ -130,7 +130,13 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
 
     os.makedirs(cfg.detection.node_evaluation._precision_recall_dir, exist_ok=True)
     img_file = os.path.join(cfg.detection.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
-    plot_precision_recall(edge_labels, losses, img_file)
+    # plot_precision_recall(edge_labels, losses, img_file)
+
+    node_mean, node_mean_labels = [], []
+    for nid, mean in node2mean_loss.items():
+        node_mean.append(mean)
+        node_mean_labels.append(node_labels[nid])
+    plot_precision_recall(node_mean_labels, node_mean, img_file)
     
     threshold_method = cfg.detection.node_evaluation.threshold_method
     if threshold_method == "max_val_loss":
@@ -140,32 +146,40 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
     else:
         raise ValueError(f"Invalid threshold method `{threshold_method}`")
     
-    node_preds = {}
-    edge_preds = []
-    for (srcnode, dstnode), loss, edge_label in tqdm(zip(edge_index, losses, edge_labels), desc="Edge thresholding"):
-        if loss > thr:
-            node_preds[srcnode] = 1
-        else:
-            if srcnode not in node_preds:
-                node_preds[srcnode] = 0
-
-        if cfg.detection.node_evaluation.use_dst_node_loss:
+    y_truth, y_pred = [], []
+    # Thresholds each node based on the mean of the losses of this node
+    if cfg.detection.node_evaluation.use_mean_node_loss:
+        for nid, mean_loss in node2mean_loss.items():
+            y_truth.append(node_labels[nid])
+            y_pred.append(int(mean_loss > thr))
+    
+    # Thresholds each node based on if an edge loss involving this node is greater
+    # than the threshold
+    else:
+        node_preds = {}
+        edge_preds = []
+        for (srcnode, dstnode), loss, edge_label in tqdm(zip(edge_index, losses, edge_labels), desc="Edge thresholding"):
             if loss > thr:
-                node_preds[dstnode] = 1
+                node_preds[srcnode] = 1
             else:
-                if dstnode not in node_preds:
-                    node_preds[dstnode] = 0
-        
-        edge_preds.append(int(loss > thr))
+                if srcnode not in node_preds:
+                    node_preds[srcnode] = 0
 
-    y_truth = []
-    y_pred = []
-    for nid in node_labels:
-        y_truth.append(node_labels[nid])
-        y_pred.append(node_preds[nid])
+            if cfg.detection.node_evaluation.use_dst_node_loss:
+                if loss > thr:
+                    node_preds[dstnode] = 1
+                else:
+                    if dstnode not in node_preds:
+                        node_preds[dstnode] = 0
+            
+            edge_preds.append(int(loss > thr))
 
-    logger.info("\nEdge detection")
-    classifier_evaluation(edge_labels, edge_preds, logger)
+        for nid in node_labels:
+            y_truth.append(node_labels[nid])
+            y_pred.append(node_preds[nid])
+
+        logger.info("\nEdge detection")
+        classifier_evaluation(edge_labels, edge_preds, logger)
     
     logger.info("\nNode detection")
     classifier_evaluation(y_truth, y_pred, logger)
