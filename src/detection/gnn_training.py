@@ -150,11 +150,11 @@ def main(cfg):
         # Check points
         if epoch % 5 == 0:
             model = [memory, gnn, neighbor_loader, src_recon, dst_recon,]
-            torch.save(model, f"{gnn_models_dir}/gnn_2mlp_models_epoch{epoch}.pt")
+            torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
 
     # Save the trained model
     model = [memory, gnn, neighbor_loader, src_recon, dst_recon,]
-    torch.save(model, f"{gnn_models_dir}/gnn_2mlp_models_epoch{epoch}.pt")
+    torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
 
 
 if __name__ == "__main__":
