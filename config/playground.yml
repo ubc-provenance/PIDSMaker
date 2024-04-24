@@ -22,13 +22,20 @@ detection:
   gnn_training:
     num_epochs: 50
     lr: 0.000001
-    weight_decay: 0.01
+    weight_decay: 0.00001
     node_hid_dim: 64
     node_out_dim: 64
-    tgn_batch_size: 1024
-    tgn_node_state_dim: 100
-    tgn_time_dim: 100
-    tgn_neighbor_size: 20
+    node_dropout: 0.0
+    encoder:
+      tgn:
+        tgn_batch_size: 1024
+        tgn_node_state_dim: 100
+        tgn_time_dim: 100
+        tgn_neighbor_size: 20
+    decoder:
+      node_recon_MLP:
+        recon_hid_dim: 100
+        recon_use_bias: True
   gnn_testing:
     threshold_method: str
   node_evaluation:

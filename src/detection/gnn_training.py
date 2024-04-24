@@ -28,7 +28,7 @@ def train(train_data,
     neighbor_loader.reset_state()  # Start with an empty graph.
 
     total_loss = 0
-    batch_size = cfg.detection.gnn_training.tgn_batch_size
+    batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
     for batch in train_data.seq_batches(batch_size=batch_size):
         optimizer.zero_grad()
 
@@ -82,13 +82,13 @@ def load_train_data(cfg):
 def init_models(edge_feat_size, cfg):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
-    tgn_node_state_dim = cfg.detection.gnn_training.tgn_node_state_dim
-    time_dim = cfg.detection.gnn_training.tgn_time_dim
+    tgn_node_state_dim = cfg.detection.gnn_training.encoder.tgn.tgn_node_state_dim
+    time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
     max_node_num = cfg.dataset.max_node_num
 
     lr = cfg.detection.gnn_training.lr
     weight_decay = cfg.detection.gnn_training.weight_decay
-    neighbor_size = cfg.detection.gnn_training.tgn_neighbor_size
+    neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
 
     memory = TGNMemory(
         max_node_num,
@@ -103,10 +103,21 @@ def init_models(edge_feat_size, cfg):
         in_channels=tgn_node_state_dim,
         hid_channels=node_hid_dim,
         out_channels=node_out_dim,
+        node_dropout=cfg.detection.gnn_training.node_dropout,
     ).to(device)
 
-    src_recon = NodeRecon_MLP().to(device)
-    dst_recon = NodeRecon_MLP().to(device)
+    src_recon = NodeRecon_MLP(
+        in_dim=cfg.detection.gnn_training.node_out_dim,
+        h_dim=cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim,
+        out_dim=cfg.featurization.embed_nodes.emb_dim,
+        use_bias=cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias,
+    ).to(device)
+    dst_recon = NodeRecon_MLP(
+        in_dim=cfg.detection.gnn_training.node_out_dim,
+        h_dim=cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim,
+        out_dim=cfg.featurization.embed_nodes.emb_dim,
+        use_bias=cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias,
+    ).to(device)
 
     optimizer = torch.optim.Adam(
         set(memory.parameters()) | set(gnn.parameters()) | set(src_recon.parameters()) | set(dst_recon.parameters()),
