@@ -5,20 +5,65 @@ import networkx as nx
 
 from config import *
 from provnet_utils import *
+import hashlib
 
+def stringtomd5(originstr):
+    originstr = originstr.encode("utf-8")
+    signaturemd5 = hashlib.sha256()
+    signaturemd5.update(originstr)
+    return signaturemd5.hexdigest()
 
 def get_node_list(cur):
-    # node hash id to node label and type
-    sql = "select * from node2id ORDER BY index_id;"
-    cur.execute(sql)
-    rows = cur.fetchall()
     nodeid2msg = {}
 
-    # hash_id | node_type | msg | index_id
-    for i in rows:
-        nodeid2msg[i[0]] = [i[1], i[2]] # TODO: check with Baoxiang
+    # netflow
+    sql = """
+        select * from netflow_node_table;
+        """
+    cur.execute(sql)
+    records = cur.fetchall()
 
-    return nodeid2msg
+    for i in records:
+        hash_id = i[1]
+        remote_address = i[4] + ':' + i[5]
+        label_str = 'netflow:' + remote_address
+        if USE_HASHED_LABEL:
+            nodeid2msg[hash_id] = stringtomd5(label_str)
+        else:
+            nodeid2msg[hash_id] = label_str
+
+    # subject
+    sql = """
+    select * from subject_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        hash_id = i[1]
+        path = i[2]
+        cmd = i[3]
+        label_str = 'subject:' + path + ':' + cmd
+        if USE_HASHED_LABEL:
+            nodeid2msg[hash_id] = stringtomd5(label_str)
+        else:
+            nodeid2msg[hash_id] = label_str
+
+    # file
+    sql = """
+    select * from file_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        hash_id = i[1]
+        path = i[2]
+        label_str = 'file:' + path
+        if USE_HASHED_LABEL:
+            nodeid2msg[hash_id] = stringtomd5(label_str)
+        else:
+            nodeid2msg[hash_id] = label_str
+
+    return nodeid2msg #{hash_id:[node_type,msg]}
 
 def generate_timestamps(start_time, end_time, interval_minutes):
     start = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
