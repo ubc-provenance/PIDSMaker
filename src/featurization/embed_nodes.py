@@ -424,6 +424,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     num_workers = cfg.featurization.embed_nodes.num_workers
     compute_loss = cfg.featurization.embed_nodes.compute_loss
     add_paths = cfg.featurization.embed_nodes.add_paths
+    show_epoch_loss = cfg.featurization.embed_nodes.show_epoch_loss
 
     log_dir = out_dir
 
@@ -459,14 +460,30 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     # Training using Word2Vec if needed
     # ===-----------------------------------------------------------------------===
     if model_input is None:
-        model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
+        if show_epoch_loss:
+            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
+                             workers=num_workers, epochs=1, compute_loss=compute_loss)
+            epoch_loss = model.get_latest_training_loss()
+            logger.info(f"Epoch: 0; Word2Vec loss: {epoch_loss}")
+            for e in range(epochs - 1):
+                model.train(paths, total_examples=len(paths), epochs=1, compute_loss=compute_loss)
+                epoch_loss = model.get_latest_training_loss()
+                logger.info(f"Epoch: {e + 1}; Word2Vec loss: {epoch_loss}")
+        else:
+            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
                          workers=num_workers, epochs=epochs, compute_loss=compute_loss)
     else:
         logger.info("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)
         if add_paths:
             logger.info("Resuming training using additional data")
-            model.train(paths, epochs=epochs, compute_loss=compute_loss)
+            if show_epoch_loss:
+                for e in range(epochs):
+                    model.train(paths, total_examples=len(paths), epochs=1, compute_loss=compute_loss)
+                    epoch_loss = model.get_latest_training_loss()
+                    logger.info(f"Epoch: {e}; Word2Vec loss: {epoch_loss}")
+            else:
+                model.train(paths, epochs=epochs, compute_loss=compute_loss)
 
     # Note: currently word2vec outputs normalized vectors (and replaces the original un-normalized ones)
     model.init_sims(replace=True)
