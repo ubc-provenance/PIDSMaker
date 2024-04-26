@@ -126,6 +126,16 @@ def main(cfg):
     logger = get_logger(
         name="gnn_training",
         filename=os.path.join(cfg.detection.gnn_training._logs_dir, "gnn_training.log"))
+    
+    if cfg.detection.gnn_training.use_seed:
+        seed = 0
+        random.seed(seed)
+        np.random.seed(seed)
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(gnn_models_dir, exist_ok=True)

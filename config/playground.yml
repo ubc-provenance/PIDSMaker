@@ -20,6 +20,7 @@ featurization:
 
 detection:
   gnn_training:
+    use_seed: False
     num_epochs: 50
     lr: 0.000001
     weight_decay: 0.01

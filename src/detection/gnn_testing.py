@@ -42,6 +42,7 @@ def test_tw(inference_data,
     for batch in inference_data.seq_batches(batch_size=batch_size):
 
         src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
+        unique_nodes = torch.cat([unique_nodes, src, dst]).unique()
         edge_index = torch.stack([src, dst])
         h_src = msg[:, :word_embedding_dim]
         h_dst = msg[:, -word_embedding_dim:]
@@ -248,7 +249,7 @@ def main(cfg):
     all_trained_models = listdir_sorted(gnn_models_dir)
 
     for trained_model in all_trained_models:
-        print(f"Testing with model {trained_model}...")
+        logger.info(f"Testing with model {trained_model}...")
         model = torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
@@ -256,7 +257,7 @@ def main(cfg):
             (val_graphs_dir, "val"),
             (test_graphs_dir, "test"),
         ]:
-            print(f"    Testing {split} set... (files into {graphs_dir})")
+            logger.info(f"    Testing {split} set... (files into {graphs_dir})")
             filelist = os.listdir(graphs_dir)
             for file in tqdm(sorted(filelist)):
                 filepath = os.path.join(graphs_dir, file)

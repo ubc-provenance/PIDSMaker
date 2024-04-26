@@ -178,8 +178,8 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
             y_truth.append(node_labels[nid])
             y_pred.append(node_preds[nid])
 
-        logger.info("\nEdge detection")
-        classifier_evaluation(edge_labels, edge_preds, logger)
+        # logger.info("\nEdge detection")
+        # classifier_evaluation(edge_labels, edge_preds, logger)
     
     logger.info("\nNode detection")
     classifier_evaluation(y_truth, y_pred, logger)
