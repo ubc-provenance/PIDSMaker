@@ -3,6 +3,11 @@ preprocessing:
     time_window_size: 15
 
 featurization:
+  build_doc2vec:
+    epochs: 100
+    vec_size: 128
+    alpha: 0.025
+    min_alpha: 0.00025
   build_random_walks:
     walk_length: 30
     num_walks: 10

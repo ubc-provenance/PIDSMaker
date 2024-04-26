@@ -10,6 +10,7 @@ from featurization import (
     build_random_walks,
     embed_nodes,
     embed_edges,
+    build_doc2vec,
 )
 from detection import (
     gnn_training,

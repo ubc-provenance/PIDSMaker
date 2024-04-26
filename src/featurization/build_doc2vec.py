@@ -114,14 +114,12 @@ def build_doc2vec(train_set: list[str],
     pass
 
 def main(cfg):
-    #TODO: modify model saving dir
-    model_save_path = os.path.join(cfg._artifact_dir,"doc2vec/")
+    model_save_path = cfg.featurization.build_doc2vec._model_dir
     os.makedirs(model_save_path,exist_ok=True)
 
-    #TODO: modify logger dir
     logger = get_logger(
         name="build_doc2vec",
-        filename=os.path.join(cfg._artifact_dir, "doc2vec.log")
+        filename=os.path.join(cfg.featurization.build_doc2vec._logs_dir, "build_doc2vec.log")
     )
     logger.info(f"Building doc2vec and save model to {model_save_path}")
 
@@ -134,11 +132,10 @@ def main(cfg):
     # val_set_nodes = splitting_label_set(split_files=cfg.dataset.val_files, cfg=cfg)
     # test_set_nodes = splitting_label_set(split_files=cfg.dataset.test_files, cfg=cfg)
 
-    #TODO: move parameters to config file
-    epochs = 100
-    vec_size = 128
-    alpha = 0.025
-    min_alpha = 0.00025
+    epochs = cfg.featurization.build_doc2vec.epochs
+    vec_size = cfg.featurization.build_doc2vec.vec_size
+    alpha = cfg.featurization.build_doc2vec.alpha
+    min_alpha = cfg.featurization.build_doc2vec.min_alpha
 
     logger.info(f"Start building and training Doc2Vec model...")
     build_doc2vec(train_set=train_set_nodes,
