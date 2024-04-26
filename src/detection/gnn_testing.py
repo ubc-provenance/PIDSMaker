@@ -9,36 +9,20 @@ from config import *
 from model import *
 
 
-def cal_pos_edges_loss(y_pred_src, y_true_src, y_pred_dst, y_true_dst):
-    loss = []
-    for i in range(len(y_pred_src)):
-        src_loss = criterion(y_pred_src[i], y_true_src[i])
-        dst_loss = criterion(y_pred_dst[i], y_true_dst[i])
-
-        loss.append(src_loss + dst_loss)
-    return torch.tensor(loss)
-
 @torch.no_grad()
 def test_tw(inference_data,
-            memory,
-            gnn,
-            src_recon,
-            dst_recon,
-            neighbor_loader,
+            model,
             nodeid2msg,
             split,
             model_epoch_file,
             logger,
             cfg,
             ):
-    memory.eval()
-    gnn.eval()
-    src_recon.eval()
-    dst_recon.eval()
+    model.eval()
 
-    memory.reset_state()  # Start with a fresh memory.
-    neighbor_loader.reset_state()  # Start with an empty graph.
-
+    if isinstance(model.encoder, TGNEncoder):
+        model.encoder.reset_state()
+    
     time_with_loss = {}  # key: time，  value： the losses
     total_loss = 0
     edge_list = []
@@ -52,50 +36,22 @@ def test_tw(inference_data,
     # Record the running time to evaluate the performance
     start = time.perf_counter()
 
-    batch_size = cfg.detection.gnn_training.tgn_batch_size
+    word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
+    batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
+    
     for batch in inference_data.seq_batches(batch_size=batch_size):
 
-        src, pos_dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
-        unique_nodes = torch.cat([unique_nodes, src, pos_dst]).unique()
-        total_edges += batch_size
+        src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
+        edge_index = torch.stack([src, dst])
+        h_src = msg[:, :word_embedding_dim]
+        h_dst = msg[:, -word_embedding_dim:]
 
-        n_id = torch.cat([src, pos_dst]).unique()
-        n_id, edge_index, e_id = neighbor_loader(n_id)
-        assoc[n_id] = torch.arange(n_id.size(0), device=device)
-
-        z, last_update = memory(n_id)
-        z = gnn(z, edge_index)
-
-        y_pred_src = src_recon(z[assoc[src]])
-        y_pred_dst = dst_recon(z[assoc[pos_dst]])
-
-        y_true_src = []
-        y_true_dst = []
-        word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
-        for m in msg:
-            y_true_src.append(m[:word_embedding_dim])
-            y_true_dst.append(m[-word_embedding_dim:])
-        y_true_src = torch.stack(y_true_src).to(device)
-        y_true_dst = torch.stack(y_true_dst).to(device)
-
-        loss_src = criterion(y_pred_src, y_true_src)
-        loss_dst = criterion(y_pred_dst, y_true_dst)
-
-        loss = loss_src + loss_dst
-
-        total_loss += float(loss) * batch.num_events
-
-        # update the edges in the batch to the memory and neighbor_loader
-        memory.update_state(src, pos_dst, t, msg)
-        neighbor_loader.insert(src, pos_dst)
-
-        # compute the loss for each edge
-        each_edge_loss = cal_pos_edges_loss(y_pred_src, y_true_src, y_pred_dst, y_true_dst)
+        each_edge_loss = model(edge_index, t, h_src, h_dst, msg, inference=True)
 
         node_embedding_dim = word_embedding_dim
-        for i in range(len(y_pred_src)):
+        for i in range(len(each_edge_loss)):
             srcnode = int(src[i])
-            dstnode = int(pos_dst[i])
+            dstnode = int(dst[i])
 
             srcmsg = str(nodeid2msg[srcnode])
             dstmsg = str(nodeid2msg[dstnode])
@@ -144,8 +100,6 @@ def test_tw(inference_data,
         log.write("\n")
     log.close()
     edge_list.clear()
-
-    return time_with_loss, memory, neighbor_loader
 
 
 # @torch.no_grad()
@@ -295,8 +249,7 @@ def main(cfg):
 
     for trained_model in all_trained_models:
         print(f"Testing with model {trained_model}...")
-        memory, gnn, neighbor_loader, src_recon, dst_recon = \
-            torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
+        model = torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
         for graphs_dir, split in [
@@ -309,17 +262,13 @@ def main(cfg):
                 filepath = os.path.join(graphs_dir, file)
                 g = torch.load(filepath)
                 g.to(device)
-                _, memory, neighbor_loader = test_tw(inference_data=g,
-                                                    memory=memory,
-                                                    gnn=gnn,
-                                                    src_recon=src_recon,
-                                                    dst_recon=dst_recon,
-                                                    neighbor_loader=neighbor_loader,
-                                                    nodeid2msg=nodeid2msg,
-                                                    split=split,
-                                                    model_epoch_file=trained_model,
-                                                    logger=logger,
-                                                    cfg=cfg,)
+                test_tw(inference_data=g,
+                        model=model,
+                        nodeid2msg=nodeid2msg,
+                        split=split,
+                        model_epoch_file=trained_model,
+                        logger=logger,
+                        cfg=cfg,)
                 del g
 
 if __name__ == "__main__":

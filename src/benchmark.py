@@ -1,3 +1,8 @@
+# import random
+
+# import numpy as np
+# import torch
+
 from preprocessing import (
     build_graphs,
 )
@@ -16,6 +21,15 @@ from config import (
     get_yml_cfg,
     get_runtime_required_args,
 )
+
+# seed = 0
+# random.seed(seed)
+# np.random.seed(seed)
+
+# torch.manual_seed(seed)
+# torch.cuda.manual_seed_all(seed)
+# torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.benchmark = False
 
 
 def main(cfg):
