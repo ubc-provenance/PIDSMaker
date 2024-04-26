@@ -1,3 +1,6 @@
+import wandb
+from provnet_utils import remove_underscore_keys
+
 from preprocessing import (
     build_graphs,
 )
@@ -55,5 +58,15 @@ def main(cfg):
 if __name__ == '__main__':
     args = get_runtime_required_args()
     cfg = get_yml_cfg(args)
+    
+    wandb.init(
+        mode="online" if args.wandb_exp != "" else "disabled",
+        project="framework",
+        name=args.wandb_exp,
+        tags=[args.wandb_tag] if args.wandb_tag != "" else None,
+        config=remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"], keys_to_rm=["restart_args"]),
+    )
 
     main(cfg)
+    
+    wandb.finish()

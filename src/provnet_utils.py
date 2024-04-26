@@ -296,3 +296,12 @@ def listdir_sorted(path: str):
     files = os.listdir(path)
     files.sort(key=lambda f: int(''.join(filter(str.isdigit, f)))) # sorted by ascending number
     return files
+
+def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
+    for key in list(data.keys()):
+        if (key in keys_to_rm) or (key.startswith('_') and key not in keys_to_keep):
+            del data[key]
+        elif isinstance(data[key], dict):
+            data[key] = dict(data[key])
+            remove_underscore_keys(data[key], keys_to_keep, keys_to_rm)
+    return data
