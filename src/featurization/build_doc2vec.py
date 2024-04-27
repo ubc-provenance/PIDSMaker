@@ -4,46 +4,6 @@ from nltk.tokenize import word_tokenize
 
 from provnet_utils import *
 
-def get_indexid2msg(cur):
-    indexid2msg = {}
-
-    # netflow
-    sql = """
-        select * from netflow_node_table;
-        """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        remote_address = i[4] + ':' + i[5]
-        index_id = i[-1] # int
-        indexid2msg[index_id] = ['netflow', remote_address]
-
-    # subject
-    sql = """
-    select * from subject_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-    for i in records:
-        path = i[2]
-        cmd = i[3]
-        index_id = i[-1]
-        indexid2msg[index_id] = ['subject', path + ' ' +cmd]
-
-    # file
-    sql = """
-    select * from file_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-    for i in records:
-        path = i[2]
-        index_id = i[-1]
-        indexid2msg[index_id] = ['file', path]
-
-    return indexid2msg #{index_id: [node_type, msg]}
-
 def splitting_label_set(split_files: list[str], cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
@@ -58,12 +18,6 @@ def splitting_label_set(split_files: list[str], cfg):
     return list(node_set)  #list[str]
 
 def preprocess(indexid2msg: dict, nodes: list[str]):
-    def tokenize_subject(sentence: str):
-        return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
-    def tokenize_file(sentence: str):
-        return word_tokenize(sentence.replace('/',' '))
-    def tokenize_netflow(sentence: str):
-        return word_tokenize(sentence.replace(':',' ').replace('.',' '))
 
     tags = []
     words = []
@@ -108,8 +62,10 @@ def build_doc2vec(train_set: list[str],
         if model.alpha < min_alpha:
             model.alpha = min_alpha
         logger.info(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
+        print(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
 
     logger.info(f'Saving Doc2Vec model to {model_save_path}')
+    print(f'Saving Doc2Vec model to {model_save_path}')
     model.save(model_save_path + 'doc2vec_model.model')
     pass
 
@@ -138,6 +94,7 @@ def main(cfg):
     min_alpha = cfg.featurization.build_doc2vec.min_alpha
 
     logger.info(f"Start building and training Doc2Vec model...")
+    print(f"Start building and training Doc2Vec model...")
     build_doc2vec(train_set=train_set_nodes,
                   model_save_path=model_save_path,
                   indexid2msg=indexid2msg,

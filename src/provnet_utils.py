@@ -36,6 +36,8 @@ from sklearn.metrics import (
 )
 
 from config import *
+import hashlib
+from nltk.tokenize import word_tokenize
 
 
 def ns_time_to_datetime(ns):
@@ -361,3 +363,50 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "fn": fn,
     }
     return stats
+
+def get_indexid2msg(cur):
+    indexid2msg = {}
+
+    # netflow
+    sql = """
+        select * from netflow_node_table;
+        """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    for i in records:
+        remote_address = i[4] + ':' + i[5]
+        index_id = i[-1] # int
+        indexid2msg[index_id] = ['netflow', remote_address]
+
+    # subject
+    sql = """
+    select * from subject_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        path = i[2]
+        cmd = i[3]
+        index_id = i[-1]
+        indexid2msg[index_id] = ['subject', path + ' ' +cmd]
+
+    # file
+    sql = """
+    select * from file_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        path = i[2]
+        index_id = i[-1]
+        indexid2msg[index_id] = ['file', path]
+
+    return indexid2msg #{index_id: [node_type, msg]}
+
+def tokenize_subject(sentence: str):
+    return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
+def tokenize_file(sentence: str):
+    return word_tokenize(sentence.replace('/',' '))
+def tokenize_netflow(sentence: str):
+    return word_tokenize(sentence.replace(':',' ').replace('.',' '))
