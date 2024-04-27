@@ -215,6 +215,7 @@ def main(cfg):
                 "train_loss": round(loss, 4),
                 "train_epoch_time": round(timer() - start, 2),
             })
+            print(f'GNN training loss Epoch: {epoch:02d}, Loss: {loss:.4f}')
 
         # Check points
         if epoch % 5 == 0:
