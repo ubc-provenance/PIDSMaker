@@ -208,6 +208,7 @@ def main(cfg):
                 model=model,
                 optimizer=optimizer,
                 cfg=cfg,
+                assoc=assoc
             )
             logger.info(f'  Epoch: {epoch:02d}, Loss: {loss:.4f}')
             wandb.log({
