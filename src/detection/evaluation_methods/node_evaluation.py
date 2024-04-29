@@ -48,7 +48,7 @@ def calculate_supervised_best_threshold(losses, labels):
 
 def get_ground_truth_nids(cfg):
     ground_truth_nids = []
-    with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path), 'r') as f:
+    with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path_new), 'r') as f:
         for line in f:
             node_uuid, node_labels, node_id = line.replace(" ", "").strip().split(",")
             if node_id != 'node_id':
