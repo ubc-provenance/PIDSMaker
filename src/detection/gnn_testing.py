@@ -19,6 +19,7 @@ def test_tw(inference_data,
             model_epoch_file,
             logger,
             cfg,
+            assoc
             ):
     model.eval()
 
@@ -46,7 +47,7 @@ def test_tw(inference_data,
         src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
         unique_nodes = torch.cat([unique_nodes, src, dst]).unique()
         edge_index = torch.stack([src, dst])
-        h_src = msg[:, :word_embedding_dim]
+        h_src = msg[:, :word_embedding_dim] # TODO: replace by x_src, x_dst
         h_dst = msg[:, -word_embedding_dim:]
 
         each_edge_loss = model(edge_index, t, h_src, h_dst, msg, inference=True)
@@ -249,6 +250,10 @@ def main(cfg):
 
     # For each model trained at a given epoch, we test
     all_trained_models = listdir_sorted(gnn_models_dir)
+
+    max_node_num = cfg.dataset.max_node_num
+    # Helper vector to map global node indices to local ones.
+    assoc = torch.empty(max_node_num, dtype=torch.long, device=device)
 
     for trained_model in all_trained_models:
         logger.info(f"Testing with model {trained_model}...")

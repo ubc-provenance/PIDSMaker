@@ -147,7 +147,7 @@ def train(train_data,
 
         src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
         edge_index = torch.stack([src, dst])
-        h_src = msg[:, :word_embedding_dim]
+        h_src = msg[:, :word_embedding_dim] # TODO: replace by x_src, x_dst
         h_dst = msg[:, -word_embedding_dim:]
 
         loss = model(edge_index, t, h_src, h_dst, msg)
