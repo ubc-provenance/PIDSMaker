@@ -64,7 +64,7 @@ if __name__ == '__main__':
         mode="online" if args.wandb_exp != "" else "disabled",
         project="framework",
         name=args.wandb_exp,
-        tags=[args.wandb_tag] if args.wandb_tag != "" else None,
+        tags=args.wandb_tag.split(",") if args.wandb_tag != "" else None,
     )
     
     if len(unknown_args) > 0:
