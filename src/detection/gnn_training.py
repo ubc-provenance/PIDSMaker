@@ -12,6 +12,9 @@ from provnet_utils import *
 from config import *
 from model import *
 
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def encoder_factory(cfg, edge_feat_size):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
