@@ -15,7 +15,6 @@ featurization:
     num_workers: 6
     compute_loss: True
     add_paths: False
-    show_epoch_loss: True
   embed_edges:
     include_edge_type: True
 
