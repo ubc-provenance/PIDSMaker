@@ -4,6 +4,9 @@
 ##########################################################################################
 import argparse
 import logging
+from time import perf_counter as timer
+
+import wandb
 
 from provnet_utils import *
 from config import *
@@ -151,6 +154,7 @@ def main(cfg):
     for epoch in tqdm(range(1, num_epochs+1)):
         for g in train_data:
             g.to(device=device)
+            start = timer()
             loss = train(
                 train_data=g,
                 model=model,
@@ -158,6 +162,11 @@ def main(cfg):
                 cfg=cfg,
             )
             logger.info(f'  Epoch: {epoch:02d}, Loss: {loss:.4f}')
+            wandb.log({
+                "train_epoch": epoch,
+                "train_loss": round(loss, 4),
+                "train_epoch_time": round(timer() - start, 2),
+            })
 
         # Check points
         if epoch % 5 == 0:
