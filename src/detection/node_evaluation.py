@@ -8,8 +8,11 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
     precision_recall_curve,
+    average_precision_score as ap_score,
 )
 import matplotlib.pyplot as plt
+import re
+import wandb
 
 from provnet_utils import *
 from config import *
@@ -48,7 +51,7 @@ def calculate_supervised_best_threshold(losses, labels):
 
     return optimal_threshold
 
-def classifier_evaluation(y_test, y_test_pred, logger):
+def classifier_evaluation(y_test, y_test_pred, losses, logger):
     tn, fp, fn, tp =confusion_matrix(y_test, y_test_pred).ravel()
     logger.info(f'total node num: {len(y_test)}')
     logger.info(f'tn: {tn}')
@@ -56,21 +59,30 @@ def classifier_evaluation(y_test, y_test_pred, logger):
     logger.info(f'fn: {fn}')
     logger.info(f'tp: {tp}')
 
+    fpr = fp/(fp+tn)
     precision=tp/(tp+fp)
     recall=tp/(tp+fn)
     accuracy=(tp+tn)/(tp+tn+fp+fn)
     fscore=2*(precision*recall)/(precision+recall)
-    auc_val=roc_auc_score(y_test, y_test_pred)
+    
+    try:
+        auc_val=roc_auc_score(y_test, losses)
+    except: auc_val=float("nan")
+    try:
+        ap=ap_score(y_test, losses)
+    except: ap=float("nan")
+    
     logger.info(f"precision: {precision}")
     logger.info(f"recall: {recall}")
+    logger.info(f"fpr: {fpr}")
     logger.info(f"fscore: {fscore}")
     logger.info(f"accuracy: {accuracy}")
     logger.info(f"auc_val: {auc_val}")
 
-    logger.info("|precision|recall|fscore|accuracy|TN|FP|FN|TP|")
-    logger.info(f"|{precision:.4f}|{recall:.4f}|{fscore:.4f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
+    logger.info("|precision|recall|fscore|ap|accuracy|TN|FP|FN|TP|")
+    logger.info(f"|{precision:.4f}|{recall:.4f}|{fscore:.4f}|{ap:.4f}{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
 
-    return precision, recall, fscore, accuracy, auc_val
+    return precision, recall, fpr, fscore, ap, accuracy, auc_val, tp, fp, tn, fn
 
 def get_ground_truth_nids(cfg):
     ground_truth_nids = []
@@ -179,10 +191,10 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
             y_pred.append(node_preds[nid])
 
         # logger.info("\nEdge detection")
-        # classifier_evaluation(edge_labels, edge_preds, logger)
+        # classifier_evaluation(edge_labels, edge_preds, losses, logger)
     
     logger.info("\nNode detection")
-    classifier_evaluation(y_truth, y_pred, logger)
+    return classifier_evaluation(y_truth, y_pred, node_mean, logger)
 
 def plot_precision_recall(y_true, y_scores, out_file):
     precision, recall, thresholds = precision_recall_curve(y_true, y_scores)
@@ -207,13 +219,38 @@ def main(cfg):
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
     
+    best_precision, best_stats = 0.0, None
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         logger.info(f"\nEvaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
 
-        node_evaluation_without_triage(val_tw_path, test_tw_path, model_epoch_dir, logger, cfg)
+        precision, recall, fpr, fscore, ap, accuracy, auc_val, tp, fp, tn, fn = \
+            node_evaluation_without_triage(val_tw_path, test_tw_path, model_epoch_dir, logger, cfg)
+            
+        stats = {
+            "epoch": int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0]),
+            "precision": round(precision, 5),
+            "recall": round(recall, 5),
+            "fpr": round(fpr, 7),
+            "fscore": round(fscore, 5),
+            "ap": round(ap, 5),
+            "accuracy": round(accuracy, 5),
+            "auc_val": round(auc_val, 5),
+            "tp": tp,
+            "fp": fp,
+            "tn": tn,
+            "fn": fn,
+            "precision_recall_img": wandb.Image(os.path.join(cfg.detection.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")),
+        }
+        wandb.log(stats)
+        
+        if precision > best_precision:
+            best_precision = precision
+            best_stats = stats
+        
+    wandb.log(best_stats)
 
 
 if __name__ == "__main__":
