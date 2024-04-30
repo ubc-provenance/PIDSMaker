@@ -28,9 +28,9 @@ def get_node_list(cur):
         remote_address = i[4] + ':' + i[5]
         label_str = 'netflow:' + remote_address
         if USE_HASHED_LABEL:
-            nodeid2msg[hash_id] = ['netflow',stringtomd5(label_str)]
+            nodeid2msg[hash_id] = stringtomd5(label_str)
         else:
-            nodeid2msg[hash_id] = ['netflow',label_str]
+            nodeid2msg[hash_id] = label_str
 
     # subject
     sql = """
@@ -44,9 +44,9 @@ def get_node_list(cur):
         cmd = i[3]
         label_str = 'subject:' + path + ':' + cmd
         if USE_HASHED_LABEL:
-            nodeid2msg[hash_id] = ['subject',stringtomd5(label_str)]
+            nodeid2msg[hash_id] = stringtomd5(label_str)
         else:
-            nodeid2msg[hash_id] = ['subject',label_str]
+            nodeid2msg[hash_id] = label_str
 
     # file
     sql = """
@@ -59,9 +59,9 @@ def get_node_list(cur):
         path = i[2]
         label_str = 'file:' + path
         if USE_HASHED_LABEL:
-            nodeid2msg[hash_id] = ['file',stringtomd5(label_str)]
+            nodeid2msg[hash_id] = stringtomd5(label_str)
         else:
-            nodeid2msg[hash_id] = ['file',label_str]
+            nodeid2msg[hash_id] = label_str
 
     return nodeid2msg #{hash_id:[node_type,msg]}
 
@@ -190,7 +190,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                         graph.add_node(
                             node,
                             node_type=info['node_type'],
-                            label=info['label'].replace(',','')
+                            label=info['label']
                         )
 
                     for edge in edge_list:
