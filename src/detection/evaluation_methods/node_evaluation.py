@@ -26,7 +26,11 @@ def calculate_max_val_loss_threshold(graph_dir, logger):
 
             loss_list.append(jdata['loss'])
 
-    thr = max(loss_list)
+    thr = {
+        'max': max(loss_list),
+        'avg': mean(loss_list),
+        'percentile_90': percentile_90(loss_list)
+           }
     # thr = np.percentile(loss_list, 90)
     logger.info(f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}")
 
@@ -114,9 +118,13 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
     
     threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
     if threshold_method == "max_val_loss":
-        thr = calculate_max_val_loss_threshold(val_tw_path, logger)
+        thr = calculate_max_val_loss_threshold(val_tw_path, logger)['max']
     elif threshold_method == "supervised_best_threshold":
         thr = calculate_supervised_best_threshold(losses, edge_labels)
+    elif threshold_method == "avg_val_loss":
+        thr = calculate_max_val_loss_threshold(val_tw_path, logger)['avg']
+    elif threshold_method == "90_percent_val_loss":
+        thr = calculate_max_val_loss_threshold(val_tw_path, logger)['percentile_90']
     else:
         raise ValueError(f"Invalid threshold method `{threshold_method}`")
     
