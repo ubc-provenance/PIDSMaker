@@ -9,6 +9,8 @@ from config import *
 from model import *
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 @torch.no_grad()
 def test_tw(inference_data,
             model,
