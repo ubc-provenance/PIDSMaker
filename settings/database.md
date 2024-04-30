@@ -475,10 +475,10 @@ cadets_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 sudo -u postgres psql
 
 # create the database
-postgres=# create database theia_e5_new;
+postgres=# create database theia_1_e5;
 
 # switch to the created database
-postgres=# \connect theia_e5_new;
+postgres=# \connect theia_1_e5;
 
 # create the event table and grant the privileges to postgres
 theia_1_e5=# create table event_table
@@ -501,7 +501,6 @@ theia_1_e5=# create table file_node_table
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
-    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
@@ -516,7 +515,6 @@ theia_1_e5=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
-    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
@@ -527,13 +525,22 @@ theia_1_e5=# create table subject_node_table
 (
     node_uuid varchar,
     hash_id   varchar,
-    path      varchar,
-    cmd       varchar,
-    index_id  bigint,
-    constraint subject_node_table_pk
-        primary key (node_uuid, hash_id)
+    exec      varchar
 );
 theia_1_e5=# alter table subject_node_table owner to postgres;
+
+# create the node2id table
+theia_1_e5=# create table node2id
+(
+    hash_id   varchar not null
+        constraint node2id_pk
+            primary key,
+    node_type varchar,
+    msg       varchar,
+    index_id  bigint
+);
+theia_1_e5=# alter table node2id owner to postgres;
+theia_1_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 ```
 
 

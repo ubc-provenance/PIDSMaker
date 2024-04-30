@@ -30,7 +30,6 @@ import random
 import csv
 
 from config import *
-import hashlib
 
 
 def ns_time_to_datetime(ns):
@@ -118,75 +117,19 @@ def init_database_connection(cfg):
     cur = connect.cursor()
     return cur, connect
 
-def stringtomd5(originstr):
-    originstr = originstr.encode("utf-8")
-    signaturemd5 = hashlib.sha256()
-    signaturemd5.update(originstr)
-    return signaturemd5.hexdigest()
-
 def gen_nodeid2msg(cur):
+    # node hash id to node label and type
+    sql = "select * from node2id ORDER BY index_id;"
+    cur.execute(sql)
+    rows = cur.fetchall()
     nodeid2msg = {}
 
-    # netflow
-    sql = """
-        select * from netflow_node_table;
-        """
-    cur.execute(sql)
-    records = cur.fetchall()
+    # hash_id | node_type | msg | index_id
+    for i in rows:
+        nodeid2msg[i[0]] = i[-1]
+        nodeid2msg[i[-1]] = {i[1]: i[2]}
 
-    for i in records:
-        hash_id = i[1]
-        index_id = i[-1]
-        node_type = 'netflow'
-        remote_address = i[4] + ':' + i[5]
-        label_str = 'netflow:' + remote_address
-        if USE_HASHED_LABEL:
-            msg = stringtomd5(label_str)
-        else:
-            msg = label_str
-        nodeid2msg[hash_id] = index_id
-        nodeid2msg[index_id] = {node_type: msg}
-
-    # subject
-    sql = """
-    select * from subject_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-    for i in records:
-        hash_id = i[1]
-        path = i[2]
-        cmd = i[3]
-        index_id = i[-1]
-        node_type = 'subject'
-        label_str = 'subject:' + path + ':' + cmd
-        if USE_HASHED_LABEL:
-            msg = stringtomd5(label_str)
-        else:
-            msg = label_str
-        nodeid2msg[hash_id] = index_id
-        nodeid2msg[index_id] = {node_type: msg}
-
-    # file
-    sql = """
-    select * from file_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-    for i in records:
-        hash_id = i[1]
-        path = i[2]
-        index_id = i[-1]
-        node_type = 'file'
-        label_str = 'file:' + path
-        if USE_HASHED_LABEL:
-            msg = stringtomd5(label_str)
-        else:
-            msg = label_str
-        nodeid2msg[hash_id] = index_id
-        nodeid2msg[index_id] = {node_type: msg}
-
-    return nodeid2msg #{hash_id:index_id} and {index_id:{node_type:msg}}
+    return nodeid2msg
 
 def tensor_find(t,x):
     t_np=t.cpu().numpy()

@@ -146,7 +146,7 @@ def stringtomd5(originstr):
     signaturemd5.update(originstr)
     return signaturemd5.hexdigest()
 
-def store_netflow(file_path, cur, connect, index_id):
+def store_netflow(file_path, cur, connect):
     # Parse data from logs
     netobjset = set()
     netobj2hash = {}
@@ -166,7 +166,7 @@ def store_netflow(file_path, cur, connect, index_id):
                         dstport = res[5]
 
                         nodeproperty = srcaddr + "," + srcport + "," + dstaddr + "," + dstport
-                        hashstr = stringtomd5(nodeid)
+                        hashstr = stringtomd5(nodeproperty)
                         netobj2hash[nodeid] = [hashstr, nodeproperty]
                         netobj2hash[hashstr] = nodeid
                         netobjset.add(hashstr)
@@ -175,12 +175,9 @@ def store_netflow(file_path, cur, connect, index_id):
 
     # Store data into database
     datalist = []
-    net_uuid2hash = {}
     for i in netobj2hash.keys():
         if len(i) != 64:
-            datalist.append([i] + [netobj2hash[i][0]] + netobj2hash[i][1].split(",") + [index_id])
-            net_uuid2hash[i] = netobj2hash[i][0]
-            index_id += 1
+            datalist.append([i] + [netobj2hash[i][0]] + netobj2hash[i][1].split(","))
 
     sql = '''insert into netflow_node_table
                          values %s
@@ -188,9 +185,7 @@ def store_netflow(file_path, cur, connect, index_id):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
-    return index_id, net_uuid2hash
-
-def store_subject(file_path, cur, connect, index_id):
+def store_subject(file_path, cur, connect):
     # Parse data from logs
     scusess_count = 0
     fail_count = 0
@@ -199,10 +194,9 @@ def store_subject(file_path, cur, connect, index_id):
         with open(file_path + file, "r") as f:
             for line in (f):
                 if "schema.avro.cdm20.Subject" in line:
-                    subject_uuid = re.findall(
-                        'avro.cdm20.Subject":{"uuid":"(.*?)"(.*?)"cmdLine":{"string":"(.*?)"}(.*?)"path":"(.*?)"', line)
+                    subject_uuid = re.findall('avro.cdm20.Subject":{"uuid":"(.*?)",(.*?)"path":"(.*?)"', line)
                     try:
-                        subject_obj2hash[subject_uuid[0][0]] = [subject_uuid[0][-1], subject_uuid[0][-3]] #{uuid:[path, cmd]}
+                        subject_obj2hash[subject_uuid[0][0]] = subject_uuid[0][-1]
                         scusess_count += 1
                     except:
                         try:
@@ -212,13 +206,9 @@ def store_subject(file_path, cur, connect, index_id):
                         fail_count += 1
     # Store into database
     datalist = []
-    subject_uuid2hash = {}
     for i in subject_obj2hash.keys():
         if len(i) != 64:
-            datalist.append([i] + [stringtomd5(i)] + subject_obj2hash[
-                i] + [index_id])  # ([uuid, hashstr, path, cmdLine, index_id]) and hashstr=stringtomd5(uuid)
-            subject_uuid2hash[i] = stringtomd5(i)
-            index_id += 1
+            datalist.append([i] + [stringtomd5(subject_obj2hash[i]), subject_obj2hash[i]])
 
     sql = '''insert into subject_node_table
                          values %s
@@ -226,9 +216,7 @@ def store_subject(file_path, cur, connect, index_id):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
-    return index_id, subject_uuid2hash
-
-def store_file(file_path, cur, connect, index_id):
+def store_file(file_path, cur, connect):
     file_obj2hash = {}
     fail_count = 0
     for file in tqdm(filelist):
@@ -242,12 +230,9 @@ def store_file(file_path, cur, connect, index_id):
                         fail_count += 1
 
     datalist = []
-    file_uuid2hash = {}
     for i in file_obj2hash.keys():
         if len(i) != 64:
-            datalist.append([i] + [stringtomd5(i), file_obj2hash[i]] + [index_id])
-            file_uuid2hash[i] = stringtomd5(i)
-            index_id += 1
+            datalist.append([i] + [stringtomd5(file_obj2hash[i]), file_obj2hash[i]])
 
     sql = '''insert into file_node_table
                          values %s
@@ -255,28 +240,8 @@ def store_file(file_path, cur, connect, index_id):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
-    return index_id, file_uuid2hash
-
-def create_node_list(cur):
-    nodeid2msg = {}
-
-    # netflow
-    sql = """
-        select * from netflow_node_table;
-        """
-    cur.execute(sql)
-    records = cur.fetchall()
-    for i in records:
-        nodeid2msg[i[1]] = i[-1]
-
-    # subject
-    sql = """
-    select * from subject_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-    for i in records:
-        nodeid2msg[i[1]] = i[-1]
+def create_node_list(cur, connect):
+    node_list = {}
 
     # file
     sql = """
@@ -285,9 +250,56 @@ def create_node_list(cur):
     cur.execute(sql)
     records = cur.fetchall()
     for i in records:
-        nodeid2msg[i[1]] = i[-1]
+        node_list[i[1]] = ["file", i[-1]]
+    file_uuid2hash = {}
+    for i in records:
+        file_uuid2hash[i[0]] = i[1]
 
-    return nodeid2msg #{hash_id:index_id}
+    # subject
+    sql = """
+    select * from subject_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        node_list[i[1]] = ["subject", i[-1]]
+    subject_uuid2hash = {}
+    for i in records:
+        subject_uuid2hash[i[0]] = i[1]
+
+    # netflow
+    sql = """
+    select * from netflow_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        node_list[i[1]] = ["netflow", i[-2] + ":" + i[-1]]
+    net_uuid2hash = {}
+    for i in records:
+        net_uuid2hash[i[0]] = i[1]
+
+    node_list_database = []
+    node_index = 0
+    for i in node_list:
+        node_list_database.append([i] + node_list[i] + [node_index])
+        node_index += 1
+
+    sql = '''insert into node2id
+                         values %s
+            '''
+    ex.execute_values(cur, sql, node_list_database, page_size=10000)
+    connect.commit()
+
+    sql = "select * from node2id ORDER BY index_id;"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    nodeid2msg = {}
+    for i in rows:
+        nodeid2msg[i[0]] = i[-1]
+        nodeid2msg[i[-1]] = {i[1]: i[2]}
+
+    return nodeid2msg, subject_uuid2hash, file_uuid2hash, net_uuid2hash
 
 def write_event_in_DB(cur, connect, datalist):
     sql = '''insert into event_table
@@ -343,23 +355,21 @@ if __name__ == "__main__":
 
     cur, connect = init_database_connection(cfg)
 
-    index_id = 0
-
     # There will be 36747 netflow nodes stored in the table
     print("Processing netflow data")
-    index_id, net_uuid2hash = store_netflow(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id)
+    store_netflow(file_path=raw_dir, cur=cur, connect=connect)
 
     # There will be 1264440 subject nodes stored in the table
     print("Processing subject data")
-    index_id, subject_uuid2hash = store_subject(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id)
+    store_subject(file_path=raw_dir, cur=cur, connect=connect)
 
     # There will be 984937 file nodes stored in the table
     print("Processing file data")
-    index_id, file_uuid2hash = store_file(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id)
+    store_file(file_path=raw_dir, cur=cur, connect=connect)
 
     # There will be 967388 entities stored in the table
     print("Extracting the node list")
-    nodeid2msg = create_node_list(cur=cur)
+    nodeid2msg, subject_uuid2hash, file_uuid2hash, net_uuid2hash = create_node_list(cur=cur, connect=connect)
 
     # There will be 140994662 events stored in the table
     print("Processing the events")
