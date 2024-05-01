@@ -1,69 +1,40 @@
-import argparse
-
 import torch
-from sklearn.metrics import confusion_matrix
-import logging
+import re
+import wandb
 
 from provnet_utils import *
 from config import *
-from model import *
 
-
-def classifier_evaluation(y_test, y_test_pred):
-    tn, fp, fn, tp =confusion_matrix(y_test, y_test_pred).ravel()
-    print(f'tn: {tn}')
-    print(f'fp: {fp}')
-    print(f'fn: {fn}')
-    print(f'tp: {tp}')
-
-    precision=tp/(tp+fp)
-    recall=tp/(tp+fn)
-    accuracy=(tp+tn)/(tp+tn+fp+fn)
-    fscore=2*(precision*recall)/(precision+recall)
-    auc_val=roc_auc_score(y_test, y_test_pred)
-    print(f"precision: {precision}")
-    print(f"recall: {recall}")
-    print(f"fscore: {fscore}")
-    print(f"accuracy: {accuracy}")
-    print(f"auc_val: {auc_val}")
-
-    print("|precision|recall|fscore|accuracy|TN|FP|FN|TP|")
-    print(f"|{precision:.4f}|{recall:.4f}|{fscore:.4f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
-
-    return precision,recall,fscore,accuracy,auc_val
 
 def ground_truth_label(test_tw_path):
     labels = {}
-    for tw in os.listdir(test_tw_path):
+    for tw in listdir_sorted(test_tw_path):
         labels[tw] = 0
 
-    attack_list = [ # TODO: parametrize
-            # tgn + 2MLP streaming
-            '2018-04-10 14:18:50.641713026~2018-04-10 14:34:12.001897298.txt',
-            '2018-04-10 14:34:12.001969452~2018-04-10 14:49:12.508890812.txt',
-            '2018-04-10 14:49:12.510151372~2018-04-10 15:04:20.772713218.txt',
-            '2018-04-10 15:04:20.772732545~2018-04-10 15:20:57.001950599.txt',
-            '2018-04-11 13:41:59.957267640~2018-04-11 13:57:04.138342417.txt'
-
-        ]
-
-    for i in attack_list:
-        if i in labels:
-            labels[i] = 1
+    attack_tws = cfg.dataset.ground_truth_time_windows
+    for tw in attack_tws:
+        # TODO: this is a workaround, should be replaced with exact event timestamps
+        label_tw_match = [label for label in labels.keys() if tw.startswith(label[:19])]
+        assert len(label_tw_match) > 0, f"Attack time window file not found: {tw}"
+        
+        matched_label_tw = label_tw_match[0]
+        labels[matched_label_tw] = 1
 
     return labels
 
 def main(cfg):
-    print(f"threshold 1: {beta_day10}")
+    print(f"threshold 1: {beta_day10}") # TODO: remove
     print(f"threshold 2: {beta_day11}")
 
     # Evaluating the testing set
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
+    
+    best_precision, best_stats = 0.0, None
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         
         pred_label = {}
-        for tw in os.listdir(test_tw_path):
+        for tw in listdir_sorted(test_tw_path):
             pred_label[tw] = 0
         
         queues = torch.load(os.path.join(cfg.detection.tw_evaluation._queues_dir, f"{model_epoch_dir}_queues.pkl"))
@@ -96,12 +67,20 @@ def main(cfg):
 
         # Calculate the metrics
         print("\n********************************* Attack Labels *********************************")
-        y = []
-        y_pred = []
+        y, y_pred = [], []
         for i in labels:
             y.append(labels[i])
             y_pred.append(pred_label[i])
-        classifier_evaluation(y, y_pred)
+
+        stats = classifier_evaluation(y, y_pred, y_pred)
+        stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
+        wandb.log(stats)
+        
+        if precision > best_precision:
+            best_precision = precision
+            best_stats = stats
+        
+    wandb.log(best_stats)
 
 
 if __name__ == "__main__":

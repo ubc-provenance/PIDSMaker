@@ -10,7 +10,6 @@ import copy
 import logging
 import torch
 from torch.nn import Linear
-from sklearn.metrics import average_precision_score, roc_auc_score
 from torch_geometric.data import TemporalData
 from torch_geometric.nn import TGNMemory, TransformerConv
 import torch.nn as nn
@@ -28,6 +27,13 @@ import xxhash
 import gc
 import random
 import csv
+from sklearn.metrics import (
+    confusion_matrix,
+    roc_auc_score,
+    roc_curve,
+    precision_recall_curve,
+    average_precision_score as ap_score,
+)
 
 from config import *
 
@@ -305,3 +311,49 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
             data[key] = dict(data[key])
             remove_underscore_keys(data[key], keys_to_keep, keys_to_rm)
     return data
+
+def classifier_evaluation(y_test, y_test_pred, scores):
+    tn, fp, fn, tp =confusion_matrix(y_test, y_test_pred).ravel()
+    print(f'total num: {len(y_test)}')
+    print(f'tn: {tn}')
+    print(f'fp: {fp}')
+    print(f'fn: {fn}')
+    print(f'tp: {tp}')
+
+    fpr = fp/(fp+tn)
+    precision=tp/(tp+fp)
+    recall=tp/(tp+fn)
+    accuracy=(tp+tn)/(tp+tn+fp+fn)
+    fscore=2*(precision*recall)/(precision+recall)
+    
+    try:
+        auc_val=roc_auc_score(y_test, scores)
+    except: auc_val=float("nan")
+    try:
+        ap=ap_score(y_test, scores)
+    except: ap=float("nan")
+    
+    print(f"precision: {precision}")
+    print(f"recall: {recall}")
+    print(f"fpr: {fpr}")
+    print(f"fscore: {fscore}")
+    print(f"accuracy: {accuracy}")
+    print(f"auc_val: {auc_val}")
+
+    print("|precision|recall|fscore|ap|accuracy|TN|FP|FN|TP|")
+    print(f"|{precision:.4f}|{recall:.4f}|{fscore:.4f}|{ap:.4f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
+    
+    stats = {
+        "precision": round(precision, 5),
+        "recall": round(recall, 5),
+        "fpr": round(fpr, 7),
+        "fscore": round(fscore, 5),
+        "ap": round(ap, 5),
+        "accuracy": round(accuracy, 5),
+        "auc_val": round(auc_val, 5),
+        "tp": tp,
+        "fp": fp,
+        "tn": tn,
+        "fn": fn,
+    }
+    return stats
