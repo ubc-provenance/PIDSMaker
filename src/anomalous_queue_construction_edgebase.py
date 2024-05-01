@@ -2,25 +2,18 @@ import argparse
 import logging
 
 import torch
+from sklearn.neighbors import LocalOutlierFactor
 
 from provnet_utils import *
 from config import *
 
-# Setting for logging
-logger = logging.getLogger("anomalous_queue_logger")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(artifact_dir + 'anomalous_queue.log')
-file_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
 def cal_val_thr(graph_dir):
     filelist = os.listdir(graph_dir)
 
     loss_list = []
     for i in sorted(filelist):
-        f = open(graph_dir + i)
+        f = open(os.path.join(graph_dir, i))
         for line in f:
             l = line.strip()
             jdata = eval(l)
@@ -28,7 +21,7 @@ def cal_val_thr(graph_dir):
             loss_list.append(jdata['loss'])
 
     thr = max(loss_list)
-    logger.info(f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}")
+    print(f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}")
 
     return thr
 
@@ -39,8 +32,6 @@ def cal_anomaly_loss_with_val_threshold(loss_list, edge_list, thr):
 
     edge_set = set()
     node_set = set()
-
-    logger.info(f"thr:{thr}")
 
     for i in range(len(loss_list)):
         if loss_list[i] > thr:
@@ -90,15 +81,14 @@ def cal_set_rel_lof(s1, s2, lof_model, nodelabels_train_val, node2vec):
             try:
                 emb = node2vec[path]
             except Exception as error:
-                print(i)
-                print(path)
-                print(error)
-                exit()
+                print(f"Error at {i}: {error}")
+                continue
+                # exit() #TODO: handle this
 
             lof_score = lof_model.decision_function([emb])
 
         if lof_score < 0:
-            logger.info(f"node:{i}, LOF score:{lof_score}")
+            print(f"node:{i}, LOF score:{lof_score}")
             count += 1
     return count
 
@@ -109,24 +99,17 @@ def anomalous_queue_construction(
         node2vec = None,
         val_thr = None
 ):
-    history_list = []
+    queues = []
     current_tw = {}
 
     file_l = os.listdir(graph_dir_path)
     index_count = 0
     for f_path in sorted(file_l):
-        if "2019-05-14" in f_path or "2019-05-15" in f_path:
-            nodefilelist = os.listdir(w2v_models_dir)
-            for n in nodefilelist:
-                if 'nodelabel2vec_' + f_path[:19] in n:
-                    node2vec = torch.load(w2v_models_dir + f"{n}")
-        logger.info("**************************************************")
-        logger.info(f"Time window: {f_path}")
+        print(f"Time window at index {index_count}: {f_path}")
 
         f = open(f"{graph_dir_path}/{f_path}")
         edge_loss_list = []
         edge_list = []
-        logger.info(f'Time window index: {index_count}')
 
         # Figure out which nodes are anomalous in this time window
         for line in f:
@@ -143,81 +126,78 @@ def anomalous_queue_construction(
 
         # Incrementally construct the queues
         added_que_flag = False
-        for hq in history_list:
+        for hq in queues:
             for his_tw in hq:
-                cal_set_rel_results = cal_set_rel_lof(current_tw['nodeset'], his_tw['nodeset'], lof_model,
-                                                      nodelabels_train_val, node2vec)
+                cal_set_rel_results = cal_set_rel_lof(current_tw['nodeset'], his_tw['nodeset'], lof_model, nodelabels_train_val, node2vec)
                 if cal_set_rel_results != 0 and current_tw['name'] != his_tw['name']:
                     hq.append(copy.deepcopy(current_tw))
                     added_que_flag = True
                     break
         if added_que_flag is False:
             temp_hq = [copy.deepcopy(current_tw)]
-            history_list.append(temp_hq)
+            queues.append(temp_hq)
 
         index_count += 1
 
+        print(f"Avg loss: {loss_avg} | Anomalies in time window: ({len(node_set)} and {len(edge_set)} malicious nodes and edges)\n")
 
-        logger.info(f"Average loss: {loss_avg}")
-        logger.info(f"Num of anomalous edges within the time window: {count}")
-        logger.info(f"Percentage of anomalous edges: {count / len(edge_list)}")
-        logger.info(f"Anomalous node count: {len(node_set)}")
-        logger.info(f"Anomalous edge count: {len(edge_set)}")
-        logger.info("**************************************************")
+    return queues
 
-    return history_list
+def train_lof_model(cfg):
+    node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes._vec_graphs_dir, "nodelabel2vec_val")
+    labels_and_embeddings = torch.load(node2vec_train_val_path)
 
+    embeddings = []
+    for label in labels_and_embeddings:
+        # We don't consider network
+        if ":" in label:
+            continue
+        else:
+            embeddings.append(labels_and_embeddings[label])
 
-def get_args():
-    parser = argparse.ArgumentParser()
+    clf = LocalOutlierFactor(novelty=True, n_neighbors=30).fit(embeddings)
+    torch.save(clf, os.path.join(cfg.detection.tw_evaluation._task_path, "trained_lof.pkl"))
+    return clf
 
-    parser.add_argument('-node2vec_path', help='Input the path to stored node2vec maps from Word2Vec', required=False)
-    parser.add_argument('-node2vec_train_val_path', help='Input the path to stored node2vec (train and val datasets only) maps from Word2Vec.', required=False)
-    parser.add_argument('-lof_path', help='Input the path to trained lof model', required=False)
+def main(cfg):
+    logger = get_logger(
+        name="tw_evaluation",
+        filename=os.path.join(cfg.detection.tw_evaluation._logs_dir, "tw_evaluation.log"))
 
-    args = parser.parse_args()
-    return args
-
-if __name__ == "__main__":
-    logger.info("Start logging.")
-
-    args = get_args()
-    node2vec_path = args.node2vec_path
-    node2vec_train_val_path = args.node2vec_train_val_path
-    lof_path = args.lof_path
-
+    node2vec_path = os.path.join(cfg.featurization.embed_nodes._vec_graphs_dir, "nodelabel2vec")
+    node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes._vec_graphs_dir, "nodelabel2vec_val")
+    
     node2vec = torch.load(node2vec_path)
     nodelabels_train_val = list(torch.load(node2vec_train_val_path).keys())
-    lof_model = torch.load(lof_path)
 
-    # Validation date
-    val_thr = cal_val_thr(f"{artifact_dir}/graph_5_11/")
+    lof_model = train_lof_model(cfg)
 
-    # history_list = anomalous_queue_construction(
-    #     graph_dir_path=f"{artifact_dir}/graph_5_11/",
-    #     lof_model=lof_model,
-    #     nodelabels_train_val=nodelabels_train_val,
-    #     node2vec=node2vec,
-    #     val_thr=val_thr
-    # )
-    # torch.save(history_list, f"{artifact_dir}/graph_5_11_history_list")
+    test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
+    val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
+    
+    for model_epoch_dir in listdir_sorted(test_losses_dir):
+        test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
+        val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
+
+        # Threshold
+        val_thr = cal_val_thr(val_tw_path)
+
+        # Testing date
+        queues = anomalous_queue_construction(
+            graph_dir_path=test_tw_path,
+            lof_model=lof_model,
+            nodelabels_train_val=nodelabels_train_val,
+            node2vec=None,
+            val_thr=val_thr
+        )
+        
+        out_dir = cfg.detection.tw_evaluation._queues_dir
+        os.makedirs(out_dir, exist_ok=True)
+        torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
 
 
-    # Testing date
-    history_list = anomalous_queue_construction(
-        graph_dir_path=f"{artifact_dir}/graph_5_14/",
-        lof_model=lof_model,
-        nodelabels_train_val=nodelabels_train_val,
-        node2vec=None,
-        val_thr=val_thr
-    )
-    torch.save(history_list, f"{artifact_dir}/graph_5_14_history_list")
-
-    history_list = anomalous_queue_construction(
-        graph_dir_path=f"{artifact_dir}/graph_5_15/",
-        lof_model=lof_model,
-        nodelabels_train_val=nodelabels_train_val,
-        node2vec=None,
-        val_thr=val_thr
-    )
-    torch.save(history_list, f"{artifact_dir}/graph_5_15_history_list")
+if __name__ == "__main__":
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
+    
+    main(cfg)
