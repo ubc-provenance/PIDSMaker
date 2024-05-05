@@ -29,6 +29,7 @@ detection:
     node_dropout: 0.0
     losses: recons_msg
     encoder:
+      used_methods: graph_attention,tgn
       graph_attention:
         num_layers: 2
       tgn:
@@ -37,6 +38,7 @@ detection:
         tgn_time_dim: 100
         tgn_neighbor_size: 20
     decoder:
+      used_methods: node_recon_MLP
       node_recon_MLP:
         recon_hid_dim: 100
         recon_use_bias: True

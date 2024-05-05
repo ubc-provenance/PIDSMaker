@@ -21,10 +21,10 @@ def encoder_factory(cfg, edge_feat_size):
     max_node_num = cfg.dataset.max_node_num
 
     in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim \
-        if "graph_attention" in cfg.detection.gnn_training.encoder \
+        if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods \
         else cfg.featurization.embed_nodes.emb_dim
 
-    if "graph_attention" in cfg.detection.gnn_training.encoder:
+    if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods:
         encoder = GraphAttentionEmbedding(
             in_channels=in_dim,
             hid_channels=node_hid_dim,
@@ -32,7 +32,7 @@ def encoder_factory(cfg, edge_feat_size):
             node_dropout=cfg.detection.gnn_training.node_dropout,
         ).to(device)
     
-    if "tgn" in cfg.detection.gnn_training.encoder:
+    if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
         tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
         time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
         neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
@@ -43,9 +43,9 @@ def encoder_factory(cfg, edge_feat_size):
             tgn_memory_dim,
             time_dim,
             message_module=IdentityMessage(edge_feat_size, tgn_memory_dim, time_dim),
-            aggregator_module=LastAggregator(), # TODO: parametrize
+            aggregator_module=LastAggregator(),
         ).to(device)
-        neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device) # TODO: parametrize
+        neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
 
         encoder = TGNEncoder(encoder=encoder, memory=memory, neighbor_loader=neighbor_loader)
 
@@ -55,7 +55,7 @@ def decoder_factory(cfg):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     emb_dim = cfg.featurization.embed_nodes.emb_dim
 
-    if "node_recon_MLP" in cfg.detection.gnn_training.decoder:
+    if "node_recon_MLP" in cfg.detection.gnn_training.decoder.used_methods:
         recon_hid_dim = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim
         recon_use_bias = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias
 
