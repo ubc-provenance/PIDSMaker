@@ -42,7 +42,11 @@ detection:
         recon_use_bias: True
   gnn_testing:
     threshold_method: str
-  node_evaluation:
-    threshold_method: max_val_loss
-    use_dst_node_loss: True
-    use_mean_node_loss: False 
+  evaluation:
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_mean_node_loss: False 
+    queue_evaluation:
+      queue_arg: max_val_loss

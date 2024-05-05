@@ -76,18 +76,18 @@ def get_edge_index_losses_labels(tw_path, logger, cfg):
                 edge_index.append((srcnode, dstnode))
                 losses.append(loss)
 
-                if cfg.detection.node_evaluation.use_dst_node_loss:
+                if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
                     edge_labels.append(int(srcnode in ground_truth_nids or dstnode in ground_truth_nids))
                 else:
                     edge_labels.append(int(srcnode in ground_truth_nids))
 
                 if srcnode not in node_labels:
                     node_labels[srcnode] = 0
-                if dstnode not in node_labels and cfg.detection.node_evaluation.use_dst_node_loss:
+                if dstnode not in node_labels and cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
                     node_labels[dstnode] = 0
 
                 node2mean_loss[srcnode].append(loss)
-                if cfg.detection.node_evaluation.use_dst_node_loss:
+                if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
                     node2mean_loss[dstnode].append(loss)
 
     for nid in node_labels:
@@ -102,8 +102,8 @@ def get_edge_index_losses_labels(tw_path, logger, cfg):
 def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger, cfg):
     edge_index, losses, node_labels, edge_labels, node2mean_loss = get_edge_index_losses_labels(tw_path, logger, cfg)
 
-    os.makedirs(cfg.detection.node_evaluation._precision_recall_dir, exist_ok=True)
-    img_file = os.path.join(cfg.detection.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
+    os.makedirs(cfg.detection.evaluation.node_evaluation._precision_recall_dir, exist_ok=True)
+    img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
     # plot_precision_recall(edge_labels, losses, img_file)
 
     node_mean, node_mean_labels = [], []
@@ -112,7 +112,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
         node_mean_labels.append(node_labels[nid])
     plot_precision_recall(node_mean_labels, node_mean, img_file)
     
-    threshold_method = cfg.detection.node_evaluation.threshold_method
+    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
     if threshold_method == "max_val_loss":
         thr = calculate_max_val_loss_threshold(val_tw_path, logger)
     elif threshold_method == "supervised_best_threshold":
@@ -122,7 +122,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
     
     y_truth, y_pred = [], []
     # Thresholds each node based on the mean of the losses of this node
-    if cfg.detection.node_evaluation.use_mean_node_loss:
+    if cfg.detection.evaluation.node_evaluation.use_mean_node_loss:
         for nid, mean_loss in node2mean_loss.items():
             y_truth.append(node_labels[nid])
             y_pred.append(int(mean_loss > thr))
@@ -139,7 +139,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
                 if srcnode not in node_preds:
                     node_preds[srcnode] = 0
 
-            if cfg.detection.node_evaluation.use_dst_node_loss:
+            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
                 if loss > thr:
                     node_preds[dstnode] = 1
                 else:
@@ -176,7 +176,7 @@ def plot_precision_recall(y_true, y_scores, out_file):
 def main(cfg):
     logger = get_logger(
         name="node_evaluation",
-        filename=os.path.join(cfg.detection.node_evaluation._logs_dir, "node_evaluation.log"))
+        filename=os.path.join(cfg.detection.evaluation._logs_dir, "node_evaluation.log"))
 
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
@@ -191,12 +191,12 @@ def main(cfg):
         stats = node_evaluation_without_triage(val_tw_path, test_tw_path, model_epoch_dir, logger, cfg)
             
         stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
-        stats["precision_recall_img"] = wandb.Image(os.path.join(cfg.detection.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
+        stats["precision_recall_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
         
         wandb.log(stats)
         
-        if precision > best_precision:
-            best_precision = precision
+        if stats["precision"] > best_precision:
+            best_precision = stats["precision"]
             best_stats = stats
         
     wandb.log(best_stats)

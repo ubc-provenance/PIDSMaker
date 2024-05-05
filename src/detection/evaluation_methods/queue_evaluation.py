@@ -155,7 +155,7 @@ def train_lof_model(cfg):
             embeddings.append(labels_and_embeddings[label])
 
     clf = LocalOutlierFactor(novelty=True, n_neighbors=30).fit(embeddings)
-    torch.save(clf, os.path.join(cfg.detection.queue_evaluation._task_path, "trained_lof.pkl"))
+    torch.save(clf, os.path.join(cfg.detection.evaluation._task_path, "trained_lof.pkl"))
     return clf
 
 def ground_truth_label(test_tw_path):
@@ -202,7 +202,7 @@ def create_queues(cfg):
             val_thr=val_thr
         )
         
-        out_dir = cfg.detection.queue_evaluation._queues_dir
+        out_dir = cfg.detection.evaluation.queue_evaluation._queues_dir
         os.makedirs(out_dir, exist_ok=True)
         torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
 
@@ -221,7 +221,7 @@ def predict_queues(cfg):
         for tw in listdir_sorted(test_tw_path):
             pred_label[tw] = 0
         
-        queues = torch.load(os.path.join(cfg.detection.queue_evaluation._queues_dir, f"{model_epoch_dir}_queues.pkl"))
+        queues = torch.load(os.path.join(cfg.detection.evaluation.queue_evaluation._queues_dir, f"{model_epoch_dir}_queues.pkl"))
         labels = ground_truth_label(test_tw_path)
 
         detected_queues = []
@@ -245,7 +245,7 @@ def predict_queues(cfg):
                     pred_label[i] = 1
                 print(f"Anomaly score: {anomaly_score}")
         
-        out_dir = cfg.detection.queue_evaluation._predicted_queues_dir
+        out_dir = cfg.detection.evaluation.queue_evaluation._predicted_queues_dir
         os.makedirs(out_dir, exist_ok=True)
         torch.save(detected_queues, os.path.join(out_dir, f"{model_epoch_dir}_predicted_queues.pkl"))
 
@@ -260,8 +260,8 @@ def predict_queues(cfg):
         stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
         wandb.log(stats)
         
-        if precision > best_precision:
-            best_precision = precision
+        if stats["precision"] > best_precision:
+            best_precision = stats["precision"]
             best_stats = stats
         
     wandb.log(best_stats)

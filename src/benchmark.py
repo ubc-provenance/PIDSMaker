@@ -14,7 +14,7 @@ from featurization import (
 from detection import (
     gnn_training,
     gnn_testing,
-    node_evaluation,
+    evaluation,
 )
 
 from config import (
@@ -53,8 +53,8 @@ def main(cfg):
         gnn_training.main(cfg)
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
-    if should_restart["node_evaluation"]:
-        node_evaluation.main(cfg)
+    if should_restart["evaluation"]:
+        evaluation.main(cfg)
 
 
 if __name__ == '__main__':
