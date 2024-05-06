@@ -14,9 +14,9 @@ def get_node_list(cur):
     rows = cur.fetchall()
     nodeid2msg = {}
 
-    # hash_id | node_type | msg | index_id
+    # hash_id | node_type | msg | index_id | hash_msg
     for i in rows:
-        nodeid2msg[i[0]] = [i[1], i[2]] # TODO: check with Baoxiang
+        nodeid2msg[i[0]] = [i[1], i[2]]
 
     return nodeid2msg
 

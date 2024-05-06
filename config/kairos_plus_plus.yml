@@ -20,25 +20,35 @@ featurization:
 
 detection:
   gnn_training:
+    use_seed: False
     num_epochs: 50
     lr: 0.000001
     weight_decay: 0.01
     node_hid_dim: 64
     node_out_dim: 64
     node_dropout: 0.0
+    losses: recons_msg
     encoder:
+      used_methods: graph_attention,tgn
+      graph_attention:
+        num_layers: 2
       tgn:
         tgn_batch_size: 1024
-        tgn_node_state_dim: 100
+        tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
     decoder:
+      used_methods: node_recon_MLP
       node_recon_MLP:
         recon_hid_dim: 100
         recon_use_bias: True
   gnn_testing:
     threshold_method: str
-  node_evaluation:
-    threshold_method: max_val_loss
-    use_dst_node_loss: True
-    use_mean_node_loss: False 
+  evaluation:
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_mean_node_loss: False 
+    queue_evaluation:
+      queue_arg: max_val_loss
