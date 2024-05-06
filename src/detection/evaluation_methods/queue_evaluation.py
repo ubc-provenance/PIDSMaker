@@ -14,9 +14,11 @@ def cal_idf_kairos(graph_files):
     node_set = defaultdict(set)
     for f_path in tqdm(graph_files, desc="Calculating IDF"):
         g = torch.load(f_path)
+        
+        f_path = f_path.split("/")[-1]
         for u, v, k in g.edges:
-            node_set[u].add(f_path)
-            node_set[v].add(f_path)
+            node_set[g.nodes[u]["label"]].add(f_path)
+            node_set[g.nodes[v]["label"]].add(f_path)
             
     node_IDF = {}
     for n in node_set:
@@ -28,7 +30,7 @@ def cal_idf_kairos(graph_files):
 
 def is_include_key_word_bak(s):
     keywords=[
-         'netflow',
+         ':',
         'null',
         '/dev/pts',
         'salt-minion.log',
@@ -52,7 +54,7 @@ def is_include_key_word_bak(s):
 
 def is_include_key_word(s):
     keywords=[
-         'netflow',        
+         ':',        
         '/dev/pts',
         'salt-minion.log',
         'null',
@@ -76,7 +78,7 @@ def is_include_key_word(s):
     return flag
 
 def cal_set_rel_bak(node_IDF, s1,s2,num_files):
-    new_s=s1 & s2
+    new_s=s1 & s2 # used to find common nodes in two windows to check if they should be in the same queue
     count=0
     for i in new_s:
 #     jdata=json.loads(i)
@@ -89,25 +91,25 @@ def cal_set_rel_bak(node_IDF, s1,s2,num_files):
             if (IDF)>math.log(num_files*0.9/(1)):
                 print("node:",i," IDF:",IDF)
                 count+=1
-    return counttrain_node_IDF
+    return count
 
 def cal_set_rel(train_node_IDF, test_node_IDF, s1,s2,num_test_files, num_train_files):
     IDF_train = train_node_IDF
-    new_s=s1 & s2
+    new_s=s1 & s2  # used to find common nodes in two windows to check if they should be in the same queue
     count=0
     for i in new_s:
        if is_include_key_word(i) is not True:
-            if i in test_node_IDF.keys():
+            if i in test_node_IDF:
                 IDF_test=test_node_IDF[i]
             else:
                 IDF_test=math.log(num_test_files/(1))
                 
-            if i in train_node_IDF.keys():
+            if i in train_node_IDF:
                 IDF_train=train_node_IDF[i]
             else:
                 IDF_train=math.log(num_train_files/(1))    
             
-            if (IDF_test+IDF_train)>5 :
+            if (IDF_test+IDF_train)>5:
                 print(f"node: {i} | IDF test: {IDF_test:.3f} | IDF train: {IDF_train:.3f}")
                 count+=1
     return count
@@ -142,7 +144,7 @@ def cal_anomaly_loss_kairos(loss_list, edge_list):
             edge_set.add(edge_list[i][0]+edge_list[i][1])
     return count, loss_sum/(count+0.00000000001),node_set,edge_set
 
-def create_queues_kairos(test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg):
+def anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg):
     # check if we use val set here
 
     queues=[]
@@ -161,7 +163,9 @@ def create_queues_kairos(test_tw_path, train_node_IDF, test_node_IDF, num_train_
             l=line.strip()
             jdata=eval(l)
             edge_loss_list.append(jdata['loss'])
-            edge_list.append([str(jdata['srcnode']),str(jdata['dstnode'])])
+            src_msg = list(eval(jdata["srcmsg"]).values())[0] # transform "subject: /etc/.." to "/etc/.."
+            dst_msg = list(eval(jdata["dstmsg"]).values())[0]
+            edge_list.append([src_msg, dst_msg])
         count,loss_avg,node_set,edge_set = cal_anomaly_loss_kairos(edge_loss_list, edge_list)
         current_tw={}
         current_tw['name']=f_path
@@ -204,7 +208,7 @@ def create_queues_kairos(cfg):
     for model_epoch_dir in tqdm(listdir_sorted(test_losses_dir), desc="Building queues"):
         print(f"\nEvaluation of model {model_epoch_dir}...")
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
-        queues = create_queues_kairos(test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg)
+        queues = anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg)
         
         out_dir = cfg.detection.evaluation.queue_evaluation._queues_dir
         os.makedirs(out_dir, exist_ok=True)
@@ -467,6 +471,7 @@ def predict_queues(cfg):
         
         if stats["precision"] > best_precision:
             best_precision = stats["precision"]
+            best_stats = stats
         elif str(stats["precision"]) == "nan":
             best_precision = 0
             best_stats = stats
