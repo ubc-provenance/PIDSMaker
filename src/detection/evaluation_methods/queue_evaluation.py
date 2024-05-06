@@ -158,7 +158,7 @@ def train_lof_model(cfg):
     torch.save(clf, os.path.join(cfg.detection.evaluation._task_path, "trained_lof.pkl"))
     return clf
 
-def ground_truth_label(test_tw_path):
+def ground_truth_label(test_tw_path, cfg):
     labels = {}
     for tw in listdir_sorted(test_tw_path):
         labels[tw] = 0
@@ -222,7 +222,7 @@ def predict_queues(cfg):
             pred_label[tw] = 0
         
         queues = torch.load(os.path.join(cfg.detection.evaluation.queue_evaluation._queues_dir, f"{model_epoch_dir}_queues.pkl"))
-        labels = ground_truth_label(test_tw_path)
+        labels = ground_truth_label(test_tw_path, cfg)
 
         detected_queues = []
         for queue in queues:
@@ -262,6 +262,8 @@ def predict_queues(cfg):
         
         if stats["precision"] > best_precision:
             best_precision = stats["precision"]
+        elif str(stats["precision"]) == "nan":
+            best_precision = 0
             best_stats = stats
         
     wandb.log(best_stats)
