@@ -88,7 +88,7 @@ def cal_set_rel_bak(node_IDF, s1,s2,num_files):
             else:
                 IDF=math.log(num_files/(1))         
 
-            if (IDF)>math.log(num_files*0.9/(1)):
+            if (IDF)>math.log(num_files*0.9/(1)): # TODO: default value for kairos, but can be parametrized
                 print("node:",i," IDF:",IDF)
                 count+=1
     return count
@@ -109,7 +109,7 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1,s2,num_test_files, num_train_f
             else:
                 IDF_train=math.log(num_train_files/(1))    
             
-            if (IDF_test+IDF_train)>5:
+            if (IDF_test+IDF_train)>5: # TODO: default value for kairos, but can be parametrized
                 print(f"node: {i} | IDF test: {IDF_test:.3f} | IDF train: {IDF_train:.3f}")
                 count+=1
     return count
@@ -181,7 +181,6 @@ def anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_
                 else:
                     cal_re = cal_set_rel_bak(train_node_IDF, current_tw['nodeset'],his_tw['nodeset'], num_train_files)
                 if cal_re != 0 and current_tw['name']!=his_tw['name']:
-    #             if cal_set_rel_bak(current_tw['nodeset'],his_tw['nodeset'],file_l)!=0 and current_tw['name']!=his_tw['name']:
                     hq.append(copy.deepcopy(current_tw))
                     added_que_flag=True
                     break
@@ -416,9 +415,6 @@ def create_queues(cfg):
         torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
 
 def predict_queues(cfg):
-    print(f"threshold 1: {beta_day10}") # TODO: remove
-    print(f"threshold 2: {beta_day11}")
-
     # Evaluating the testing set
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
     
@@ -444,7 +440,7 @@ def predict_queues(cfg):
                     anomaly_score = (anomaly_score) * (hq['loss'] + 1)
             print(f"-> queue anomaly score: {anomaly_score:.2f} | {'ATTACK' if label else ''}")
             
-            if anomaly_score > beta_day10:
+            if anomaly_score > cfg.detection.evaluation.queue_evaluation.queue_threshold:
                 name_list = []
                 for i in queue:
                     name_list.append(i['name'])
