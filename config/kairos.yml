@@ -36,21 +36,19 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: False
-        use_msg_as_edge_feature: False
+        use_time_encoding: True
+        use_msg_as_edge_feature: True
     decoder:
-      used_methods: node_recon_MLP
-      node_recon_MLP:
-        loss: SCE
-        recon_hid_dim: 100
-        recon_use_bias: True
+      used_methods: predict_edge_type
+      predict_edge_type:
+        loss: CE
+
   gnn_testing:
     threshold_method: str
   evaluation:
-    used_method: node_evaluation
-    node_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-      use_mean_node_loss: False 
+    used_method: queue_evaluation
     queue_evaluation:
-      queue_arg: max_val_loss
+      queue_threshold: 20
+      used_method: kairos_idf_queue
+      kairos_idf_queue:
+        include_test_set_in_IDF: True
