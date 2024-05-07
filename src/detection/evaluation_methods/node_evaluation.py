@@ -183,7 +183,7 @@ def main(cfg):
     
     best_precision, best_stats = 0.0, None
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        logger.info(f"\nEvaluation of model {model_epoch_dir}...")
+        print(f"\nEvaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)

@@ -290,6 +290,10 @@ def get_logger(name: str, filename: str):
     logger.info(f"START LOGGING FOR SUBTASK: {name}")
     logger.info("")
     
+    print("")
+    print(f"START LOGGING FOR SUBTASK: {name}")
+    print("")
+    
     return logger
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):

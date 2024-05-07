@@ -395,6 +395,7 @@ def create_queues(cfg):
     val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
     
     for model_epoch_dir in listdir_sorted(test_losses_dir):
+        print(f"\nEvaluation of model {model_epoch_dir}...")
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
 
