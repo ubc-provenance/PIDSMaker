@@ -19,8 +19,17 @@ def encoder_factory(cfg, edge_feat_size):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     max_node_num = cfg.dataset.max_node_num
+    tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
+    use_edge_feats = cfg.detection.gnn_training.encoder.use_edge_feats
+    use_time_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_encoding
+    
+    edge_dim = 0
+    if use_edge_feats:
+        edge_dim += edge_feat_size
+    if use_time_encoding and "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+        edge_dim += tgn_memory_dim
 
-    in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim \
+    in_dim = tgn_memory_dim \
         if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods \
         else cfg.featurization.embed_nodes.emb_dim
 
@@ -29,11 +38,11 @@ def encoder_factory(cfg, edge_feat_size):
             in_channels=in_dim,
             hid_channels=node_hid_dim,
             out_channels=node_out_dim,
+            edge_dim=edge_dim or None,
             node_dropout=cfg.detection.gnn_training.node_dropout,
         ).to(device)
     
     if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
-        tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
         time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
         neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
 
@@ -148,7 +157,7 @@ def main(cfg):
 
     train_data = load_train_data(cfg)
 
-    encoder = encoder_factory(cfg, edge_feat_size=train_data[0].msg.size(-1))
+    encoder = encoder_factory(cfg, edge_feat_size=train_data[0].msg.size(-1)) # TODO: check that we removed the edge type from msg for kairos
     decoder = decoder_factory(cfg)
     model = model_factory(encoder, decoder, cfg)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))

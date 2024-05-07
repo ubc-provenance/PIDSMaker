@@ -5,32 +5,20 @@ import torch.nn as nn
 
 
 class GraphAttentionEmbedding(torch.nn.Module):
-    def __init__(self, in_channels, hid_channels, out_channels, node_dropout):
+    def __init__(self, in_channels, hid_channels, out_channels, edge_dim, node_dropout, time_enc):
         super(GraphAttentionEmbedding, self).__init__()
-        self.conv = TransformerConv(in_channels, hid_channels, heads=8, dropout=node_dropout)
-        self.conv2 = TransformerConv(hid_channels * 8, out_channels, heads=1, concat=False, dropout=node_dropout)
-
+        
+        self.time_enc = time_enc
+        
+        self.conv = TransformerConv(in_channels, hid_channels, heads=8, dropout=node_dropout, edge_dim=edge_dim)
+        self.conv2 = TransformerConv(hid_channels * 8, out_channels, heads=1, concat=False, dropout=node_dropout, edge_dim=edge_dim)
         self.dropout = nn.Dropout(node_dropout)
 
-    def forward(self, x, edge_index):
-        x = F.relu(self.conv(x, edge_index))
+    def forward(self, x, edge_index, edge_feats=None):
+        x = F.relu(self.conv(x, edge_index, edge_feats))
         x = self.dropout(x)
-        x = F.relu(self.conv2(x, edge_index))
+        x = F.relu(self.conv2(x, edge_index, edge_feats))
         return x
-
-# class NodeRecon(torch.nn.Module):
-#     def __init__(self, layer1_in=64, layer2_in=80, layer3_in=100, layer3_out=128):
-#         super(NodeRecon, self).__init__()
-#         self.conv = TransformerConv(layer1_in, layer2_in, heads=8, concat=False, dropout=0.0)
-#         self.conv2 = TransformerConv(layer2_in, layer3_in, heads=8, concat=False, dropout=0.0)
-#         self.conv3 = TransformerConv(layer3_in, layer3_out, heads=8, concat=False, dropout=0.0)
-
-#     def forward(self, x, edge_index):
-#         x = x.to(device)
-#         x = F.relu(self.conv(x, edge_index))
-#         x = F.relu(self.conv2(x, edge_index))
-#         x = torch.tanh(self.conv3(x, edge_index))
-#         return x
 
 class NodeRecon_MLP(torch.nn.Module):
     def __init__(self, in_dim, h_dim, out_dim, use_bias):
@@ -44,15 +32,16 @@ class NodeRecon_MLP(torch.nn.Module):
         return x
 
 class TGNEncoder(torch.nn.Module):
-    def __init__(self, encoder, memory, neighbor_loader):
+    def __init__(self, encoder, memory, neighbor_loader, use_time_encoding):
         super(TGNEncoder, self).__init__()
         self.encoder = encoder
         self.memory = memory
         self.neighbor_loader = neighbor_loader
+        self.use_time_encoding = use_time_encoding
         self.device = self.memory.memory.device
         self.assoc = torch.empty(self.memory.num_nodes, dtype=torch.long, device=self.device)
 
-    def forward(self, edge_index, t, msg, inference=False):
+    def forward(self, edge_index, t, msg, inference=False, **kwargs):
         src, dst = edge_index
         n_id = torch.cat([src, dst]).unique()
         n_id, edge_index, e_id = self.neighbor_loader(n_id)
@@ -60,7 +49,18 @@ class TGNEncoder(torch.nn.Module):
 
         # Get updated memory of all nodes involved in the computation.
         h, last_update = self.memory(n_id)
-        h = self.encoder(h, edge_index)
+        
+        # Call the downstream encoder with possibly edge features
+        edge_feats = []
+        if self.use_edge_feats:
+            edge_feats.append(msg)
+        if self.use_time_encoding:
+            rel_t = last_update[edge_index[0]] - t
+            rel_t_enc = self.time_enc(rel_t.to(h.dtype))
+            edge_feats.append(rel_t_enc)
+        edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
+        
+        h = self.encoder(h, edge_index, edge_feats=edge_feats)
 
         # Decoding
         h_src = h[self.assoc[src]]
@@ -96,7 +96,7 @@ class Model(torch.nn.Module):
         train_mode = not inference
         
         with torch.set_grad_enabled(train_mode):
-            h_src, h_dst = self.encoder(edge_index, t, msg, inference=inference)
+            h_src, h_dst = self.encoder(edge_index=edge_index, t=t, x=(x_src, x_dst), msg=msg, inference=inference)
             x_src_hat, x_dst_hat = self.decoder(h_src, h_dst)
             
             # Train mode: loss | Inference mode: edge scores
