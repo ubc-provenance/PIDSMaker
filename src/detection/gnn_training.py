@@ -167,6 +167,12 @@ def load_train_data(cfg):
         glist.append(g)
     return glist
 
+# TODO: handle the new order of features
+# ntype2oh[graph.nodes[u]['node_type']],
+#                     torch.from_numpy(indexid2vec[int(u)]),
+#                     etype2oh[attr["label"]],
+#                     ntype2oh[graph.nodes[v]['node_type']],
+#                     torch.from_numpy(indexid2vec[int(v)])
 def main(cfg):
     logger = get_logger(
         name="gnn_training",
@@ -208,7 +214,6 @@ def main(cfg):
                 model=model,
                 optimizer=optimizer,
                 cfg=cfg,
-                assoc=assoc
             )
             logger.info(f'  Epoch: {epoch:02d}, Loss: {loss:.4f}')
             wandb.log({

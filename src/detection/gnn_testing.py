@@ -19,7 +19,6 @@ def test_tw(inference_data,
             model_epoch_file,
             logger,
             cfg,
-            assoc
             ):
     model.eval()
 
@@ -250,10 +249,6 @@ def main(cfg):
 
     # For each model trained at a given epoch, we test
     all_trained_models = listdir_sorted(gnn_models_dir)
-
-    max_node_num = cfg.dataset.max_node_num
-    # Helper vector to map global node indices to local ones.
-    assoc = torch.empty(max_node_num, dtype=torch.long, device=device)
 
     for trained_model in all_trained_models:
         logger.info(f"Testing with model {trained_model}...")

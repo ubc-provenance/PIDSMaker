@@ -93,6 +93,7 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
+    # TODO: support both word2vec and doc2vec
     logger = get_logger(
         name="embed_edges_by_doc2vec",
         filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
