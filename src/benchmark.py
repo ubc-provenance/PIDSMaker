@@ -71,7 +71,7 @@ if __name__ == '__main__':
         raise argparse.ArgumentTypeError(f"Unknown args {unknown_args}")
 
     cfg = get_yml_cfg(args)
-    wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"], keys_to_rm=["restart_args"]))
+    wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
 
     main(cfg)
     
