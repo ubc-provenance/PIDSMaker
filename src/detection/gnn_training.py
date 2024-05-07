@@ -6,11 +6,13 @@ import argparse
 import logging
 from time import perf_counter as timer
 
+import torch.nn as nn
 import wandb
 
 from provnet_utils import *
 from config import *
 from model import *
+from losses import sce_loss
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -20,14 +22,16 @@ def encoder_factory(cfg, edge_feat_size):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     max_node_num = cfg.dataset.max_node_num
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
-    use_edge_feats = cfg.detection.gnn_training.encoder.use_edge_feats
+    use_msg_as_edge_feature = cfg.detection.gnn_training.encoder.tgn.use_msg_as_edge_feature
     use_time_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_encoding
     
+    # If edge features are used in TGN, and the downstream encoder uses edge features, we set them here
     edge_dim = 0
-    if use_edge_feats:
-        edge_dim += edge_feat_size
-    if use_time_encoding and "tgn" in cfg.detection.gnn_training.encoder.used_methods:
-        edge_dim += tgn_memory_dim
+    if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+        if use_msg_as_edge_feature:
+            edge_dim += edge_feat_size
+        if use_time_encoding:
+            edge_dim += tgn_memory_dim
 
     in_dim = tgn_memory_dim \
         if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods \
@@ -56,40 +60,66 @@ def encoder_factory(cfg, edge_feat_size):
         ).to(device)
         neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
 
-        encoder = TGNEncoder(encoder=encoder, memory=memory, neighbor_loader=neighbor_loader)
+        encoder = TGNEncoder(
+            encoder=encoder,
+            memory=memory,
+            neighbor_loader=neighbor_loader,
+            time_encoder=memory.time_enc,
+            use_msg_as_edge_feature=use_msg_as_edge_feature,
+            use_time_encoding=use_time_encoding,
+        )
 
     return encoder
+
+def loss_fn_factory(loss: str):
+    if loss == "SCE":
+        return sce_loss
+    if loss == "CE":
+        return nn.CrossEntropyLoss()
+    raise ValueError(f"Invalid loss function {loss}")
 
 def decoder_factory(cfg):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     emb_dim = cfg.featurization.embed_nodes.emb_dim
 
-    if "node_recon_MLP" in cfg.detection.gnn_training.decoder.used_methods:
-        recon_hid_dim = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim
-        recon_use_bias = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias
+    decoders = []
+    for method in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
+        if method == "node_recon_MLP":
+            recon_hid_dim = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim
+            recon_use_bias = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias
+            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias.loss)
 
-        src_recon = NodeRecon_MLP(
-            in_dim=node_out_dim,
-            h_dim=recon_hid_dim,
-            out_dim=emb_dim,
-            use_bias=recon_use_bias,
-        ).to(device)
-        dst_recon = NodeRecon_MLP(
-            in_dim=node_out_dim,
-            h_dim=recon_hid_dim,
-            out_dim=emb_dim,
-            use_bias=recon_use_bias,
-        ).to(device)
+            src_recon = NodeRecon_MLP(
+                in_dim=node_out_dim,
+                h_dim=recon_hid_dim,
+                out_dim=emb_dim,
+                use_bias=recon_use_bias,
+            ).to(device)
+            dst_recon = NodeRecon_MLP(
+                in_dim=node_out_dim,
+                h_dim=recon_hid_dim,
+                out_dim=emb_dim,
+                use_bias=recon_use_bias,
+            ).to(device)
+            decoders.append(SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
+        
+        elif method == "predict_edge_type":
+            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.recon_use_bias.loss)
+            
+            decoder = EdgeTypeDecoder(
+                in_dim=node_out_dim,
+                loss_fn=loss_fn,
+            )
+            decoders.append(decoder)
+        else:
+            raise ValueError(f"Invalid decoder {method}")
+        
+    return decoders
 
-        decoder = SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon)
-    
-    return decoder
-
-def model_factory(encoder, decoder, cfg):
+def model_factory(encoder, decoders, cfg):
     return Model(
         encoder,
-        decoder,
-        losses=cfg.detection.gnn_training.losses,
+        decoders,
     )
 
 def optimizer_factory(cfg, parameters):
@@ -156,8 +186,14 @@ def main(cfg):
     os.makedirs(gnn_models_dir, exist_ok=True)
 
     train_data = load_train_data(cfg)
+    
+    # If we want to predict the edge type, we remove the edge type from the message
+    word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
+    if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
+        for g in train_data:
+            g.msg = torch.cat([g.msg[:, :word_embedding_dim],  g.msg[:, -word_embedding_dim:]], dim=-1)
 
-    encoder = encoder_factory(cfg, edge_feat_size=train_data[0].msg.size(-1)) # TODO: check that we removed the edge type from msg for kairos
+    encoder = encoder_factory(cfg, edge_feat_size=train_data[0].msg.size(-1))
     decoder = decoder_factory(cfg)
     model = model_factory(encoder, decoder, cfg)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))

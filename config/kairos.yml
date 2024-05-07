@@ -27,7 +27,7 @@ detection:
     node_hid_dim: 64
     node_out_dim: 64
     node_dropout: 0.0
-    losses: recons_msg
+    encoder:
       used_methods: graph_attention,tgn
       graph_attention:
         num_layers: 2
@@ -36,11 +36,13 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
+        use_time_encoding: True
+        use_msg_as_edge_feature: True
     decoder:
-      used_methods: node_recon_MLP
-      node_recon_MLP:
-        recon_hid_dim: 100
-        recon_use_bias: True
+      used_methods: predict_edge_type
+      predict_edge_type:
+        loss: CE
+
   gnn_testing:
     threshold_method: str
   evaluation:

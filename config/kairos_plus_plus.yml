@@ -27,7 +27,6 @@ detection:
     node_hid_dim: 64
     node_out_dim: 64
     node_dropout: 0.0
-    losses: recons_msg
     encoder:
       used_methods: graph_attention,tgn
       graph_attention:
@@ -37,9 +36,12 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
+        use_time_encoding: False
+        use_msg_as_edge_feature: False
     decoder:
       used_methods: node_recon_MLP
       node_recon_MLP:
+        loss: SCE
         recon_hid_dim: 100
         recon_use_bias: True
   gnn_testing:
