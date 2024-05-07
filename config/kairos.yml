@@ -1,0 +1,52 @@
+preprocessing:
+  build_graphs:
+    time_window_size: 15
+
+featurization:
+  build_random_walks:
+    walk_length: 30
+    num_walks: 10
+  embed_nodes:
+    epochs: 5 
+    emb_dim: 128
+    context_window_size: 5
+    min_count: 0
+    use_skip_gram: True
+    num_workers: 6
+    compute_loss: True
+    add_paths: False
+  embed_edges:
+    include_edge_type: True
+
+detection:
+  gnn_training:
+    use_seed: False
+    num_epochs: 50
+    lr: 0.000001
+    weight_decay: 0.01
+    node_hid_dim: 64
+    node_out_dim: 64
+    node_dropout: 0.0
+    losses: recons_msg
+      used_methods: graph_attention,tgn
+      graph_attention:
+        num_layers: 2
+      tgn:
+        tgn_batch_size: 1024
+        tgn_memory_dim: 100
+        tgn_time_dim: 100
+        tgn_neighbor_size: 20
+    decoder:
+      used_methods: node_recon_MLP
+      node_recon_MLP:
+        recon_hid_dim: 100
+        recon_use_bias: True
+  gnn_testing:
+    threshold_method: str
+  evaluation:
+    used_method: queue_evaluation
+    queue_evaluation:
+      queue_threshold: 20
+      used_method: kairos_idf_queue
+      kairos_idf_queue:
+        include_test_set_in_IDF: True
