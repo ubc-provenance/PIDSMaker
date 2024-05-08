@@ -9,7 +9,7 @@ from provnet_utils import *
 
 def get_node_list(cur):
     # node hash id to node label and type
-    sql = "select * from node2id ORDER BY index_id;"
+    sql = "select * from netflow_node_table;"
     cur.execute(sql)
     records = cur.fetchall()
     nodeid2msg = {}
