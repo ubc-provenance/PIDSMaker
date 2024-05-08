@@ -8,7 +8,7 @@ from preprocessing import (
 )
 from featurization import (
     embed_edges,
-    build_doc2vec,
+    embed_nodes,
 )
 from detection import (
     gnn_training,
@@ -37,15 +37,12 @@ def main(cfg):
 
     # Preprocessing
     if should_restart["build_graphs"]:
-        print("Start running build_graphs...")
         build_graphs.main(cfg)
     
     # Featurization
-    if should_restart["build_doc2vec"]:
-        print("Start running build_doc2vec...")
-        build_doc2vec.main(cfg)
+    if should_restart["embed_nodes"]:
+        embed_nodes.main(cfg)
     if should_restart["embed_edges"]:
-        print("Start running embed_edges...")
         embed_edges.main(cfg)
 
     # Detection

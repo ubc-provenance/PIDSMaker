@@ -104,7 +104,7 @@ def main(cfg):
     indexid2msg = get_indexid2msg(cur)
 
     logger.info("Generating node vectors...")
-    doc2vec_model_path = cfg.featurization.build_doc2vec._model_dir + 'doc2vec_model.model'
+    doc2vec_model_path = cfg.featurization.embed_nodes.doc2vec._model_dir + 'doc2vec_model.model'
     indexid2vec = get_indexid2vec(indexid2msg, doc2vec_model_path, logger=logger)
 
     etype2onehot = gen_relation_onehot(rel2id=rel2id)

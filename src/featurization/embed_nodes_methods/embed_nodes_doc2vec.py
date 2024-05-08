@@ -36,12 +36,12 @@ def preprocess(indexid2msg: dict, nodes: list[str]):
     return words, tags
 
 
-def build_doc2vec(train_set: list[str],
+def doc2vec(train_set: list[str],
                   model_save_path: str,
                   indexid2msg: dict,
                   logger: logging.Logger,
                   epochs: int,
-                  vec_size: int,
+                  emb_dim: int,
                   alpha: float,
                   min_alpha: float,
                   dm: int = 1):
@@ -51,7 +51,7 @@ def build_doc2vec(train_set: list[str],
     tagged_data = [TaggedDocument(words=word_list, tags=[tag]) for word_list, tag in zip(words, tags)]
 
     logger.info('Initializing Doc2Vec model...')
-    model = Doc2Vec(vector_size=vec_size, alpha=alpha, min_count=1, dm=dm, compute_loss=True)
+    model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True)
     model.build_vocab(tagged_data)
 
     logger.info('Start training...')
@@ -70,12 +70,12 @@ def build_doc2vec(train_set: list[str],
     pass
 
 def main(cfg):
-    model_save_path = cfg.featurization.build_doc2vec._model_dir
+    model_save_path = cfg.featurization.embed_nodes.doc2vec._model_dir
     os.makedirs(model_save_path,exist_ok=True)
 
     logger = get_logger(
-        name="build_doc2vec",
-        filename=os.path.join(cfg.featurization.build_doc2vec._logs_dir, "build_doc2vec.log")
+        name="doc2vec",
+        filename=os.path.join(cfg.featurization.embed_nodes.doc2vec._logs_dir, "doc2vec.log")
     )
     logger.info(f"Building doc2vec and save model to {model_save_path}")
 
@@ -88,19 +88,19 @@ def main(cfg):
     # val_set_nodes = splitting_label_set(split_files=cfg.dataset.val_files, cfg=cfg)
     # test_set_nodes = splitting_label_set(split_files=cfg.dataset.test_files, cfg=cfg)
 
-    epochs = cfg.featurization.build_doc2vec.epochs
-    vec_size = cfg.featurization.build_doc2vec.vec_size
-    alpha = cfg.featurization.build_doc2vec.alpha
-    min_alpha = cfg.featurization.build_doc2vec.min_alpha
+    epochs = cfg.featurization.embed_nodes.doc2vec.epochs
+    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    alpha = cfg.featurization.embed_nodes.doc2vec.alpha
+    min_alpha = cfg.featurization.embed_nodes.doc2vec.min_alpha
 
     logger.info(f"Start building and training Doc2Vec model...")
     print(f"Start building and training Doc2Vec model...")
-    build_doc2vec(train_set=train_set_nodes,
+    doc2vec(train_set=train_set_nodes,
                   model_save_path=model_save_path,
                   indexid2msg=indexid2msg,
                   logger=logger,
                   epochs=epochs,
-                  vec_size=vec_size,
+                  emb_dim=emb_dim,
                   alpha=alpha,
                   min_alpha=min_alpha)
 
