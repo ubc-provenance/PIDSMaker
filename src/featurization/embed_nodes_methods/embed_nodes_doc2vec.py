@@ -75,7 +75,7 @@ def main(cfg):
 
     logger = get_logger(
         name="doc2vec",
-        filename=os.path.join(cfg.featurization.embed_nodes.doc2vec._logs_dir, "doc2vec.log")
+        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "doc2vec.log")
     )
     logger.info(f"Building doc2vec and save model to {model_save_path}")
 

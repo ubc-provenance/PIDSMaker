@@ -11,11 +11,11 @@ def get_node_list(cur):
     # node hash id to node label and type
     sql = "select * from node2id ORDER BY index_id;"
     cur.execute(sql)
-    rows = cur.fetchall()
+    records = cur.fetchall()
     nodeid2msg = {}
 
     # hash_id | node_type | msg | index_id | hash_msg
-    for i in rows:
+    for i in records:
         nodeid2msg[i[0]] = [i[1], i[2]]
 
     for i in records:

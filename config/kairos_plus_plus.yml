@@ -5,7 +5,7 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
-    used_method: word2vec
+    used_method: doc2vec
     doc2vec:
       epochs: 100
       alpha: 0.025
