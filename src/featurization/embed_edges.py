@@ -43,6 +43,7 @@ def gen_relation_onehot(rel2id):
 def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, logger, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
+    include_edge_type = cfg.featurization.embed_edges.include_edge_type
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
         file = path.split("/")[-1]
@@ -60,14 +61,21 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         for u, v, k, attr in sorted_edges:
             src.append(int(u))
             dst.append(int(v))
-
-            msg.append(torch.cat([
-                ntype2oh[graph.nodes[u]['node_type']],
-                torch.from_numpy(indexid2vec[int(u)]),
-                etype2oh[attr["label"]],
-                ntype2oh[graph.nodes[v]['node_type']],
-                torch.from_numpy(indexid2vec[int(v)])
-            ]))
+            if include_edge_type:
+                msg.append(torch.cat([
+                    ntype2oh[graph.nodes[u]['node_type']],
+                    torch.from_numpy(indexid2vec[int(u)]),
+                    etype2oh[attr["label"]],
+                    ntype2oh[graph.nodes[v]['node_type']],
+                    torch.from_numpy(indexid2vec[int(v)])
+                ]))
+            else:
+                msg.append(torch.cat([
+                    ntype2oh[graph.nodes[u]['node_type']],
+                    torch.from_numpy(indexid2vec[int(u)]),
+                    ntype2oh[graph.nodes[v]['node_type']],
+                    torch.from_numpy(indexid2vec[int(v)])
+                ]))
             t.append(int(attr["time"]))
 
         dataset.src = torch.tensor(src)

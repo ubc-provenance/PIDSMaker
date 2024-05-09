@@ -38,8 +38,6 @@ from sklearn.metrics import (
 from config import *
 import hashlib
 from nltk.tokenize import word_tokenize
-import nltk
-nltk.download('punkt')
 
 
 def ns_time_to_datetime(ns):

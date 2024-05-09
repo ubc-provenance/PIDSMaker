@@ -42,7 +42,12 @@ def test_tw(inference_data,
     batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
     
     for batch in inference_data.seq_batches(batch_size=batch_size):
-        unique_nodes = torch.cat([unique_nodes, batch.edge_index]).unique()
+
+        src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
+        unique_nodes = torch.cat([unique_nodes, src, dst]).unique()
+        edge_index = torch.stack([src, dst])
+        h_src = msg[:, :word_embedding_dim] # TODO: replace by x_src, x_dst
+        h_dst = msg[:, -word_embedding_dim:]
 
         each_edge_loss = model(edge_index, t, h_src, h_dst, msg, inference=True)
 
@@ -54,7 +59,7 @@ def test_tw(inference_data,
             srcmsg = str(nodeid2msg[srcnode])
             dstmsg = str(nodeid2msg[dstnode])
             t_var = int(t[i])
-            edgeindex = tensor_find(batch.edge_types, 1)
+            edgeindex = tensor_find(msg[i][node_embedding_dim:-node_embedding_dim], 1)
             edge_type = rel2id[edgeindex]
             loss = each_edge_loss[i]
 

@@ -39,9 +39,9 @@ def encoder_factory(cfg, edge_feat_size):
 
     if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods:
         encoder = GraphAttentionEmbedding(
-            in_dim=in_dim,
-            hid_dim=node_hid_dim,
-            out_dim=node_out_dim,
+            in_channels=in_dim,
+            hid_channels=node_hid_dim,
+            out_channels=node_out_dim,
             edge_dim=edge_dim or None,
             node_dropout=cfg.detection.gnn_training.node_dropout,
         ).to(device)
@@ -87,7 +87,7 @@ def decoder_factory(cfg):
         if method == "node_recon_MLP":
             recon_hid_dim = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim
             recon_use_bias = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias
-            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.node_recon_MLP.loss)
+            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias.loss)
 
             src_recon = NodeRecon_MLP(
                 in_dim=node_out_dim,
@@ -104,11 +104,10 @@ def decoder_factory(cfg):
             decoders.append(SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
         
         elif method == "predict_edge_type":
-            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.loss)
+            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.recon_use_bias.loss)
             
             decoder = EdgeTypeDecoder(
                 in_dim=node_out_dim,
-                num_edge_types=cfg.dataset.num_edge_types,
                 loss_fn=loss_fn,
             )
             decoders.append(decoder)
@@ -143,10 +142,15 @@ def train(train_data,
     word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
     batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
 
-    for batch in train_data.seq_batches(batch_size=batch_size): # TODO: this should only be used for TGN
+    for batch in train_data.seq_batches(batch_size=batch_size):
         optimizer.zero_grad()
 
-        loss = model(batch)
+        src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
+        edge_index = torch.stack([src, dst])
+        h_src = msg[:, :word_embedding_dim] # TODO: replace by x_src, x_dst
+        h_dst = msg[:, -word_embedding_dim:]
+
+        loss = model(edge_index, t, h_src, h_dst, msg)
 
         loss.backward()
         optimizer.step()
@@ -163,50 +167,12 @@ def load_train_data(cfg):
         glist.append(g)
     return glist
 
-def extract_msg_from_data(train_data, cfg):
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
-    node_type_dim = cfg.dataset.num_node_types
-    edge_type_dim = cfg.dataset.num_edge_types
-    
-    msg_len = train_data[0].msg.shape[1]
-    expected_msg_len = (emb_dim*2) + (node_type_dim*2) + edge_type_dim
-    if msg_len != expected_msg_len:
-        raise ValueError(f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len}")
-    
-    field_to_size = [
-        ("src_type", node_type_dim),
-        ("src_emb", emb_dim),
-        ("edge_type", edge_type_dim),
-        ("dst_type", node_type_dim),
-        ("dst_emb", emb_dim),
-    ]
-    for g in train_data:
-        fields = {}
-        idx = 0
-        for field, size in field_to_size:
-            fields[field] = g.msg[:, idx: idx + size]
-            idx += size
-            
-        x_src = fields["src_emb"]
-        x_dst = fields["dst_emb"]
-        
-        if cfg.detection.gnn_training.encoder.use_node_type_in_node_feats:
-            x_src = torch.cat([x_src, fields["src_type"]], dim=-1)
-            x_dst = torch.cat([x_dst, fields["dst_type"]], dim=-1)
-        
-        # If we want to predict the edge type, we remove the edge type from the message
-        if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
-            msg = torch.cat([x_src, x_dst], dim=-1)
-        else:
-            msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
-            
-        g.x_src = x_src
-        g.x_dst = x_dst
-        g.msg = msg
-        g.edge_type = fields["edge_type"]
-    
-    return train_data
-
+# TODO: handle the new order of features
+# ntype2oh[graph.nodes[u]['node_type']],
+#                     torch.from_numpy(indexid2vec[int(u)]),
+#                     etype2oh[attr["label"]],
+#                     ntype2oh[graph.nodes[v]['node_type']],
+#                     torch.from_numpy(indexid2vec[int(v)])
 def main(cfg):
     logger = get_logger(
         name="gnn_training",
@@ -226,7 +192,12 @@ def main(cfg):
     os.makedirs(gnn_models_dir, exist_ok=True)
 
     train_data = load_train_data(cfg)
-    train_data = extract_msg_from_data(train_data, cfg)
+    
+    # If we want to predict the edge type, we remove the edge type from the message
+    word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
+    if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
+        for g in train_data:
+            g.msg = torch.cat([g.msg[:, :word_embedding_dim],  g.msg[:, -word_embedding_dim:]], dim=-1)
 
     encoder = encoder_factory(cfg, edge_feat_size=train_data[0].msg.size(-1))
     decoder = decoder_factory(cfg)
