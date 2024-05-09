@@ -1,6 +1,11 @@
 preprocessing:
   build_graphs:
     time_window_size: 15
+    use_hashed_label: False
+    node_label_features:
+      subject: type, path, cmd_line
+      file: type, path
+      netflow: type, remote_ip, remote_port
 
 featurization:
   embed_nodes:
