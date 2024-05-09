@@ -146,7 +146,7 @@ def train(train_data,
     for batch in train_data.seq_batches(batch_size=batch_size): # TODO: this should only be used for TGN
         optimizer.zero_grad()
 
-        loss = model(batch)
+        loss = model(batch, train_data)
 
         loss.backward()
         optimizer.step()

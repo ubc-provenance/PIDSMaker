@@ -12,7 +12,7 @@ featurization:
     emb_dim: 128
     used_method: doc2vec
     doc2vec:
-      epochs: 1
+      epochs: 100
       alpha: 0.025
       min_alpha: 0.00025
     word2vec:

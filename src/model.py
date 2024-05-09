@@ -42,14 +42,14 @@ class TGNEncoder(nn.Module):
         if self.use_time_encoding:
             self.time_encoder = time_encoder
 
-    def forward(self, edge_index, t, msg, inference=False, **kwargs):
+    def forward(self, edge_index, t, msg, full_data, inference=False, **kwargs):
         src, dst = edge_index
         n_id = torch.cat([src, dst]).unique()
         n_id, edge_index, e_id = self.neighbor_loader(n_id)
         self.assoc[n_id] = torch.arange(n_id.size(0), device=self.device)
         
-        curr_msg = msg[e_id]
-        curr_t = t[e_id]
+        curr_msg = full_data.msg[e_id]
+        curr_t = full_data.t[e_id]
 
         # Get updated memory of all nodes involved in the computation.
         h, last_update = self.memory(n_id)
@@ -91,16 +91,17 @@ class Model(nn.Module):
         self.encoder = encoder
         self.decoders = decoders
         
-    def forward(self, data, inference=False):
+    def forward(self, batch, full_data, inference=False):
         train_mode = not inference
         
         with torch.set_grad_enabled(train_mode):
-            edge_index = torch.stack([data.src, data.dst])
+            edge_index = torch.stack([batch.src, batch.dst])
             h_src, h_dst = self.encoder(
                 edge_index=edge_index,
-                t=data.t,
-                x=(data.x_src, data.x_dst),
-                msg=data.msg,
+                t=batch.t,
+                x=(batch.x_src, batch.x_dst),
+                msg=batch.msg,
+                full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
             )
             
@@ -109,7 +110,7 @@ class Model(nn.Module):
                 torch.zeros(edge_index.shape[1], dtype=torch.float)).to(h_src.device)
 
             for decoder in self.decoders:
-                loss = decoder(h_src, h_dst, edge_index=edge_index, edge_type=data.edge_type, inference=inference)
+                loss = decoder(h_src, h_dst, edge_index=edge_index, edge_type=batch.edge_type, inference=inference)
                 loss_or_scores = loss_or_scores + loss
                 
             return loss_or_scores
