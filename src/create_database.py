@@ -8,7 +8,7 @@ import hashlib
 from config import *
 from provnet_utils import *
 
-filelist = [
+filelist = [ # TODO: parametrize this. NOTE: this is only for THEIA_E5 and not THEIA_E3
     'ta1-theia-1-e5-official-1.bin.1.json',
     'ta1-theia-1-e5-official-1.bin.1.json.1',
     'ta1-theia-1-e5-official-1.bin.1.json.2',
@@ -142,7 +142,7 @@ filelist = [
 
 def stringtomd5(originstr):
     originstr = originstr.encode("utf-8")
-    signaturemd5 = hashlib.sha256()
+    signaturemd5 = hashlib.sha256() # TODO: check why we don't use hierarchical hashing here
     signaturemd5.update(originstr)
     return signaturemd5.hexdigest()
 

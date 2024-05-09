@@ -147,7 +147,7 @@ def train(train_data,
 
         src, dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
         edge_index = torch.stack([src, dst])
-        h_src = msg[:, :word_embedding_dim]
+        h_src = msg[:, :word_embedding_dim] # TODO: replace by x_src, x_dst
         h_dst = msg[:, -word_embedding_dim:]
 
         loss = model(edge_index, t, h_src, h_dst, msg)
@@ -167,6 +167,12 @@ def load_train_data(cfg):
         glist.append(g)
     return glist
 
+# TODO: handle the new order of features
+# ntype2oh[graph.nodes[u]['node_type']],
+#                     torch.from_numpy(indexid2vec[int(u)]),
+#                     etype2oh[attr["label"]],
+#                     ntype2oh[graph.nodes[v]['node_type']],
+#                     torch.from_numpy(indexid2vec[int(v)])
 def main(cfg):
     logger = get_logger(
         name="gnn_training",
@@ -215,6 +221,7 @@ def main(cfg):
                 "train_loss": round(loss, 4),
                 "train_epoch_time": round(timer() - start, 2),
             })
+            print(f'GNN training loss Epoch: {epoch:02d}, Loss: {loss:.4f}')
 
         # Check points
         if epoch % 5 == 0:

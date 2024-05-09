@@ -1,20 +1,30 @@
 preprocessing:
   build_graphs:
     time_window_size: 15
+    use_hashed_label: False
+    node_label_features:
+      subject: type, path, cmd_line
+      file: type, path
+      netflow: type, remote_ip, remote_port
 
 featurization:
-  build_random_walks:
-    walk_length: 30
-    num_walks: 10
   embed_nodes:
-    epochs: 5 
     emb_dim: 128
-    context_window_size: 5
-    min_count: 0
-    use_skip_gram: True
-    num_workers: 6
-    compute_loss: True
-    add_paths: False
+    used_method: doc2vec
+    doc2vec:
+      epochs: 100
+      alpha: 0.025
+      min_alpha: 0.00025
+    word2vec:
+      walk_length: 30
+      num_walks: 10
+      epochs: 5 
+      context_window_size: 5
+      min_count: 0
+      use_skip_gram: True
+      num_workers: 6
+      compute_loss: True
+      add_paths: False
   embed_edges:
     include_edge_type: True
 

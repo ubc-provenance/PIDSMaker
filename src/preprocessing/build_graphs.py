@@ -7,18 +7,82 @@ from config import *
 from provnet_utils import *
 
 
-def get_node_list(cur):
+def get_node_list(cur, cfg):
+    use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
+    node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
+    
     # node hash id to node label and type
-    sql = "select * from node2id ORDER BY index_id;"
+    sql = "select * from netflow_node_table;"
     cur.execute(sql)
-    rows = cur.fetchall()
+    records = cur.fetchall()
     nodeid2msg = {}
 
     # hash_id | node_type | msg | index_id | hash_msg
-    for i in rows:
+    for i in records:
         nodeid2msg[i[0]] = [i[1], i[2]]
 
-    return nodeid2msg
+    for i in records:
+        attrs = {
+            'type': 'netflow',
+            'local_ip': i[2],
+            'local_port': i[3],
+            'remote_ip': i[4],
+            'remote_port': i[5]
+        }
+        hash_id = i[1]
+        features_used = []
+        for label_used in node_label_features['netflow']:
+            features_used.append(attrs[label_used])
+        label_str = ':'.join(features_used)
+        if use_hashed_label:
+            nodeid2msg[hash_id] = ['netflow',stringtomd5(label_str)]
+        else:
+            nodeid2msg[hash_id] = ['netflow',label_str]
+
+    # subject
+    sql = """
+    select * from subject_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        hash_id = i[1]
+        attrs = {
+            'type': 'subject',
+            'path': i[2],
+            'cmd_line': i[3]
+        }
+        features_used = []
+        for label_used in node_label_features['subject']:
+            features_used.append(attrs[label_used])
+        label_str = ':'.join(features_used)
+        if use_hashed_label:
+            nodeid2msg[hash_id] = ['subject',stringtomd5(label_str)]
+        else:
+            nodeid2msg[hash_id] = ['subject',label_str]
+
+    # file
+    sql = """
+    select * from file_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+    for i in records:
+        attrs = {
+            'type': 'file',
+            'path': i[2]
+        }
+        hash_id = i[1]
+        features_used = []
+        for label_used in node_label_features['file']:
+            features_used.append(attrs[label_used])
+        label_str = ':'.join(features_used)
+        if use_hashed_label:
+            nodeid2msg[hash_id] = ['file',stringtomd5(label_str)]
+        else:
+            nodeid2msg[hash_id] = ['file',label_str]
+
+    return nodeid2msg #{hash_id:[node_type,msg]}
 
 def generate_timestamps(start_time, end_time, interval_minutes):
     start = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
@@ -177,7 +241,7 @@ def main(cfg):
     logger.info(f"build_graphs path: {cfg.preprocessing.build_graphs._task_path}")
 
     cur, connect = init_database_connection(cfg)
-    nodeid2msg = get_node_list(cur=cur)
+    nodeid2msg = get_node_list(cur=cur, cfg=cfg)
 
     os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)
 

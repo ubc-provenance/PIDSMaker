@@ -7,9 +7,8 @@ from preprocessing import (
     build_graphs,
 )
 from featurization import (
-    build_random_walks,
-    embed_nodes,
     embed_edges,
+    embed_nodes,
 )
 from detection import (
     gnn_training,
@@ -41,8 +40,6 @@ def main(cfg):
         build_graphs.main(cfg)
     
     # Featurization
-    if should_restart["build_random_walks"]:
-        build_random_walks.main(cfg)
     if should_restart["embed_nodes"]:
         embed_nodes.main(cfg)
     if should_restart["embed_edges"]:
