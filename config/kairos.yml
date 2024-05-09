@@ -10,9 +10,9 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
-    used_method: word2vec
+    used_method: doc2vec
     doc2vec:
-      epochs: 100
+      epochs: 1
       alpha: 0.025
       min_alpha: 0.00025
     word2vec:
@@ -38,6 +38,7 @@ detection:
     node_out_dim: 64
     node_dropout: 0.0
     encoder:
+      use_node_type_in_node_feats: True
       used_methods: graph_attention,tgn
       graph_attention:
         num_layers: 2

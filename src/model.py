@@ -4,11 +4,11 @@ import torch.nn as nn
 
 
 class GraphAttentionEmbedding(nn.Module):
-    def __init__(self, in_channels, hid_channels, out_channels, edge_dim, node_dropout):
+    def __init__(self, in_dim, hid_dim, out_dim, edge_dim, node_dropout):
         super(GraphAttentionEmbedding, self).__init__()
         
-        self.conv = TransformerConv(in_channels, hid_channels, heads=8, dropout=node_dropout, edge_dim=edge_dim)
-        self.conv2 = TransformerConv(hid_channels * 8, out_channels, heads=1, concat=False, dropout=node_dropout, edge_dim=edge_dim)
+        self.conv = TransformerConv(in_dim, hid_dim, heads=8, dropout=node_dropout, edge_dim=edge_dim)
+        self.conv2 = TransformerConv(hid_dim * 8, out_dim, heads=1, concat=False, dropout=node_dropout, edge_dim=edge_dim)
         self.dropout = nn.Dropout(node_dropout)
 
     def forward(self, x, edge_index, edge_feats=None):
@@ -91,18 +91,25 @@ class Model(nn.Module):
         self.encoder = encoder
         self.decoders = decoders
         
-    def forward(self, edge_index, t, x_src, x_dst, msg, inference=False):
+    def forward(self, data, inference=False):
         train_mode = not inference
         
         with torch.set_grad_enabled(train_mode):
-            h_src, h_dst = self.encoder(edge_index=edge_index, t=t, x=(x_src, x_dst), msg=msg, inference=inference)
+            edge_index = torch.stack([data.src, data.dst])
+            h_src, h_dst = self.encoder(
+                edge_index=edge_index,
+                t=data.t,
+                x=(data.x_src, data.x_dst),
+                msg=data.msg,
+                inference=inference,
+            )
             
             # Train mode: loss | Inference mode: edge scores
             loss_or_scores = (torch.zeros(1) if train_mode else \
                 torch.zeros(edge_index.shape[1], dtype=torch.float)).to(h_src.device)
 
             for decoder in self.decoders:
-                loss = decoder(h_src, h_dst, edge_index=edge_index, inference=inference)
+                loss = decoder(h_src, h_dst, edge_index=edge_index, edge_type=data.edge_type, inference=inference)
                 loss_or_scores = loss_or_scores + loss
                 
             return loss_or_scores
@@ -124,28 +131,28 @@ class SrcDstNodeDecoder(nn.Module):
         return loss_src + loss_dst
 
 class EdgeTypeDecoder(nn.Module):
-    def __init__(self, in_channels, num_edge_types, loss_fn):
+    def __init__(self, in_dim, num_edge_types, loss_fn):
         super(EdgeTypeDecoder, self).__init__()
-        self.lin_src = Linear(in_channels, in_channels*2)
-        self.lin_dst = Linear(in_channels, in_channels*2)
+        self.lin_src = Linear(in_dim, in_dim*2)
+        self.lin_dst = Linear(in_dim, in_dim*2)
         
         self.lin_seq = nn.Sequential(
-            Linear(in_channels*4, in_channels*8),
+            Linear(in_dim*4, in_dim*8),
             torch.nn.Dropout(0.5),
             nn.Tanh(),
-            Linear(in_channels*8, in_channels*2),
+            Linear(in_dim*8, in_dim*2),
             torch.nn.Dropout(0.5),
             nn.Tanh(),
-            Linear(in_channels*2, int(in_channels//2)),
+            Linear(in_dim*2, int(in_dim//2)),
             torch.nn.Dropout(0.5),
             nn.Tanh(),
-            Linear(int(in_channels//2), num_edge_types)                   
+            Linear(int(in_dim//2), num_edge_types)                   
         )
         self.loss_fn = loss_fn
         
-    def forward(self, h_src, h_dst, one_hot_edge_type):
+    def forward(self, h_src, h_dst, edge_type, **kwargs):
         h = torch.cat([self.lin_src(h_src), self.lin_dst(h_dst)], dim=-1)      
         h = self.lin_seq (h)
         
-        loss = self.loss_fn(h, one_hot_edge_type)
+        loss = self.loss_fn(h, edge_type)
         return loss

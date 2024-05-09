@@ -39,6 +39,7 @@ detection:
     node_dropout: 0.0
     losses: recons_msg
     encoder:
+      use_node_type_in_node_feats: False
       used_methods: graph_attention,tgn
       graph_attention:
         num_layers: 2
