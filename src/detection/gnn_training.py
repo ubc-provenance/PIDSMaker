@@ -161,7 +161,7 @@ def optimizer_factory(cfg, parameters):
 
     return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay) # TODO: parametrize
 
-def train(train_data,
+def train(data,
           model,
           optimizer,
           cfg
@@ -173,19 +173,19 @@ def train(train_data,
 
     total_loss = 0
     word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
-    batch_iterator = train_data.seq_batches(batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size) \
+    batch_iterator = data.seq_batches(batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size) \
         if "tgn" in cfg.detection.gnn_training.encoder.used_methods \
-        else [train_data] # if TGN is not used, each time window isn't sampled
+        else [data] # if TGN is not used, each time window isn't sampled
 
     for batch in batch_iterator:
         optimizer.zero_grad()
 
-        loss = model(batch, train_data)
+        loss = model(batch, data)
 
         loss.backward()
         optimizer.step()
         total_loss += float(loss) * batch.num_events
-    return total_loss / train_data.num_events
+    return total_loss / data.num_events
 
 def load_train_data(cfg):
     edge_embeds_dir = cfg.featurization.embed_edges._edge_embeds_dir
@@ -268,6 +268,7 @@ def main(cfg):
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
     num_epochs = cfg.detection.gnn_training.num_epochs
+    tot_loss = 0.0
     for epoch in tqdm(range(1, num_epochs+1)):
         for g in train_data:
             g.to(device=device)
@@ -278,13 +279,16 @@ def main(cfg):
                 optimizer=optimizer,
                 cfg=cfg,
             )
-            logger.info(f'  Epoch: {epoch:02d}, Loss: {loss:.4f}')
-            wandb.log({
-                "train_epoch": epoch,
-                "train_loss": round(loss, 4),
-                "train_epoch_time": round(timer() - start, 2),
-            })
-            print(f'GNN training loss Epoch: {epoch:02d}, Loss: {loss:.4f}')
+            tot_loss += loss.item()
+        
+        tot_loss /= len(train_data)
+        logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
+        wandb.log({
+            "train_epoch": epoch,
+            "train_loss": round(tot_loss, 4),
+            "train_epoch_time": round(timer() - start, 2),
+        })
+        print(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
         if epoch % 5 == 0:
