@@ -12,7 +12,7 @@ import wandb
 from provnet_utils import *
 from config import *
 from model import *
-from losses import sce_loss
+from losses import sce_loss, bce_contrastive
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,11 +71,11 @@ def encoder_factory(cfg, edge_feat_size):
 
     return encoder
 
-def loss_fn_factory(loss: str):
+def recon_loss_fn_factory(loss: str):
     if loss == "SCE":
         return sce_loss
-    if loss == "CE":
-        return nn.CrossEntropyLoss()
+    if loss == "MSE":
+        return F.mse_loss
     raise ValueError(f"Invalid loss function {loss}")
 
 def decoder_factory(cfg):
@@ -87,7 +87,7 @@ def decoder_factory(cfg):
         if method == "node_recon_MLP":
             recon_hid_dim = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim
             recon_use_bias = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias
-            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.node_recon_MLP.loss)
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.node_recon_MLP.loss)
 
             src_recon = NodeRecon_MLP(
                 in_dim=node_out_dim,
@@ -104,7 +104,7 @@ def decoder_factory(cfg):
             decoders.append(SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
         
         elif method == "predict_edge_type":
-            loss_fn = loss_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.loss)
+            loss_fn = nn.CrossEntropyLoss()
             
             decoder = EdgeTypeDecoder(
                 in_dim=node_out_dim,
@@ -112,6 +112,24 @@ def decoder_factory(cfg):
                 loss_fn=loss_fn,
             )
             decoders.append(decoder)
+        
+        elif method == "predict_edge_contrastive":
+            predict_edge_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.used_method.strip()
+            if predict_edge_method == "linear":
+                edge_decoder = EdgeLinearDecoder(
+                    in_dim=node_out_dim,
+                    dropout=cfg.detection.gnn_training.decoder.predict_edge_contrastive.linear.dropout,
+                )
+            elif predict_edge_method == "inner_product":
+                edge_decoder = EdgeInnerProductDecoder(
+                    dropout=cfg.detection.gnn_training.decoder.predict_edge_contrastive.inner_product.dropout,
+                )
+            else:
+                raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
+            
+            loss_fn = bce_contrastive
+            decoders.append(EdgeContrastiveDecoder(decoder=edge_decoder, loss_fn=loss_fn))
+        
         else:
             raise ValueError(f"Invalid decoder {method}")
         
@@ -119,8 +137,12 @@ def decoder_factory(cfg):
 
 def model_factory(encoder, decoders, cfg):
     return Model(
-        encoder,
-        decoders,
+        encoder=encoder,
+        decoders=decoders,
+        num_nodes=cfg.dataset.max_node_num,
+        device=device,
+        out_dim=cfg.detection.gnn_training.node_out_dim,
+        use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
     )
 
 def optimizer_factory(cfg, parameters):
@@ -141,7 +163,9 @@ def train(train_data,
 
     total_loss = 0
     word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
-    batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
+    batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size \
+        if "tgn" in cfg.detection.gnn_training.encoder.used_methods \
+        else -1 # if TGN is not used, each time window isn't sampled
 
     for batch in train_data.seq_batches(batch_size=batch_size): # TODO: this should only be used for TGN
         optimizer.zero_grad()

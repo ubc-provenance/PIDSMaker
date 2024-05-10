@@ -37,9 +37,8 @@ detection:
     node_hid_dim: 64
     node_out_dim: 64
     node_dropout: 0.0
-    losses: recons_msg
     encoder:
-      use_node_type_in_node_feats: False
+      use_node_type_in_node_feats: True
       used_methods: graph_attention,tgn
       graph_attention:
         num_layers: 2
@@ -48,26 +47,23 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: False
-        use_msg_as_edge_feature: False
+        use_time_encoding: True
+        use_msg_as_edge_feature: True
     decoder:
-      used_methods: node_recon_MLP
-      node_recon_MLP:
-        loss: SCE
-        recon_hid_dim: 100
-        recon_use_bias: True
+      used_methods: predict_edge_contrastive
+      predict_edge_contrastive:
+        used_method: linear
+        inner_product:
+          dropout: 0.0
+        linear:
+          dropout: 0.0
+
   gnn_testing:
     threshold_method: str
   evaluation:
     used_method: queue_evaluation
-    node_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: False
-      use_mean_node_loss: True
     queue_evaluation:
       queue_threshold: 20
-      used_method: provnet_lof_queue
-      provnet_lof_queue:
-        queue_arg: test
+      used_method: kairos_idf_queue
       kairos_idf_queue:
         include_test_set_in_IDF: True

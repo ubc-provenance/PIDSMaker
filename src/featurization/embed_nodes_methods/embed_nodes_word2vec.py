@@ -408,7 +408,7 @@ def obtain_targets_from_file(input_path, w2v):
     return ret
 
 def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, logger, cfg, verbose=True):
-    out_dir = cfg.featurization.embed_nodes._vec_graphs_dir
+    out_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
     adjacency_dir = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj")
     dataset = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv")
     corpus_dir = cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir
@@ -794,7 +794,7 @@ def main(cfg):
         name="node_embedding_word2vec_alacarte",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "node_embedding_word2vec_alacarte.log"))
     
-    os.makedirs(cfg.featurization.embed_nodes._vec_graphs_dir, exist_ok=True)
+    os.makedirs(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, exist_ok=True)
 
     embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, logger=logger, cfg=cfg)
     embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, logger=logger, cfg=cfg)

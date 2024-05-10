@@ -14,7 +14,7 @@ class GraphAttentionEmbedding(nn.Module):
     def forward(self, x, edge_index, edge_feats=None):
         x = F.relu(self.conv(x, edge_index, edge_feats))
         x = self.dropout(x)
-        x = F.relu(self.conv2(x, edge_index, edge_feats))
+        x = self.conv2(x, edge_index, edge_feats)
         return x
 
 class NodeRecon_MLP(nn.Module):
@@ -66,7 +66,6 @@ class TGNEncoder(nn.Module):
         
         h = self.encoder(h, edge_index, edge_feats=edge_feats)
 
-        # Decoding
         h_src = h[self.assoc[src]]
         h_dst = h[self.assoc[dst]]
 
@@ -85,11 +84,24 @@ class TGNEncoder(nn.Module):
         self.neighbor_loader.reset_state()  # Empties the graph.
 
 class Model(nn.Module):
-    def __init__(self, encoder: nn.Module, decoders: list[nn.Module]):
+    def __init__(self,
+            encoder: nn.Module,
+            decoders: list[nn.Module],
+            num_nodes: int,
+            out_dim: int,
+            use_contrastive_learning: bool,
+            device,
+        ):
         super(Model, self).__init__()
 
         self.encoder = encoder
         self.decoders = decoders
+        self.use_contrastive_learning = use_contrastive_learning
+        
+        self.last_h_storage, self.last_h_non_empty_nodes = None, None
+        if self.use_contrastive_learning:
+            self.last_h_storage = torch.empty((num_nodes, out_dim), device=device)
+            self.last_h_non_empty_nodes = torch.tensor([], dtype=torch.long, device=device)
         
     def forward(self, batch, full_data, inference=False):
         train_mode = not inference
@@ -104,17 +116,28 @@ class Model(nn.Module):
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
             )
+            if self.use_contrastive_learning:
+                involved_nodes = torch.cat([batch.src, batch.dst])
+                self.last_h_storage[involved_nodes] = torch.cat([h_src, h_dst]).detach()
+                self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: edge scores
             loss_or_scores = (torch.zeros(1) if train_mode else \
                 torch.zeros(edge_index.shape[1], dtype=torch.float)).to(h_src.device)
 
             for decoder in self.decoders:
-                loss = decoder(h_src, h_dst, edge_index=edge_index, edge_type=batch.edge_type, inference=inference)
+                loss = decoder(
+                    h_src=h_src,
+                    h_dst=h_dst,
+                    edge_index=edge_index,
+                    edge_type=batch.edge_type,
+                    inference=inference,
+                    last_h_storage=self.last_h_storage,
+                    last_h_non_empty_nodes=self.last_h_non_empty_nodes,
+                )
                 loss_or_scores = loss_or_scores + loss
                 
             return loss_or_scores
-
 
 class SrcDstNodeDecoder(nn.Module):
     def __init__(self, src_decoder, dst_decoder, loss_fn):
@@ -157,3 +180,43 @@ class EdgeTypeDecoder(nn.Module):
         
         loss = self.loss_fn(h, edge_type)
         return loss
+
+class EdgeContrastiveDecoder(nn.Module):
+    def __init__(self, decoder, loss_fn):
+        super().__init__()
+        
+        self.decoder = decoder
+        self.loss_fn = loss_fn
+        
+    def forward(self, h_src, h_dst, edge_index, last_h_storage, last_h_non_empty_nodes, **kwargs):
+        neg_dst_candidates = last_h_non_empty_nodes[~torch.isin(last_h_non_empty_nodes, edge_index[1].unique())]
+        neg_dst = torch.randperm(neg_dst_candidates.numel())[:edge_index.shape[1]]
+        
+        pos_scores = self.decoder(h_src=h_src, h_dst=h_dst)
+        neg_scores = self.decoder(h_src=h_src[:neg_dst.numel()], h_dst=last_h_storage[neg_dst])
+        
+        loss = self.loss_fn(pos_scores, neg_scores)
+        return loss
+
+class EdgeLinearDecoder(nn.Module):
+    def __init__(self, in_dim, dropout):
+        super().__init__()
+        
+        self.lin_src = Linear(in_dim, in_dim)
+        self.lin_dst = Linear(in_dim, in_dim)
+        self.lin_final = Linear(in_dim, 1)
+        self.drop = nn.Dropout(dropout)
+
+    def forward(self, h_src, h_dst):
+        h = self.lin_src(self.drop(h_src)) + self.lin_dst(self.drop(h_dst))
+        h = h.relu()
+        return self.lin_final(h)
+
+class EdgeInnerProductDecoder(nn.Module):
+    def __init__(self, dropout):
+        super().__init__()
+
+        self.drop = nn.Dropout(dropout)
+
+    def forward(self, h_src, h_dst):
+        return (self.drop(h_src) * self.drop(h_dst)).sum(dim=1)
