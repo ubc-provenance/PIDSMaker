@@ -52,7 +52,7 @@ detection:
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
-        loss: CE
+        used_method: kairos
 
   gnn_testing:
     threshold_method: str

@@ -106,10 +106,19 @@ def decoder_factory(cfg):
         elif method == "predict_edge_type":
             loss_fn = nn.CrossEntropyLoss()
             
+            method = cfg.detection.gnn_training.decoder.predict_edge_type.used_method.strip()
+            if method not in ["kairos", "custom"]:
+                raise ValueError(f"Invalid edge type decoder method {method}")
+            use_kairos_decoder = method == "kairos"
+            
             decoder = EdgeTypeDecoder(
                 in_dim=node_out_dim,
                 num_edge_types=cfg.dataset.num_edge_types,
                 loss_fn=loss_fn,
+                use_kairos_decoder=use_kairos_decoder,
+                dropout=cfg.detection.gnn_training.decoder.predict_edge_type.custom.dropout,
+                num_layers=cfg.detection.gnn_training.decoder.predict_edge_type.custom.num_layers,
+                activation=cfg.detection.gnn_training.decoder.predict_edge_type.custom.activation,
             )
             decoders.append(decoder)
         
