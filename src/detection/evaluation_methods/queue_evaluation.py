@@ -351,7 +351,7 @@ def anomalous_queue_construction(
     return queues
 
 def train_lof_model(cfg):
-    node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes._vec_graphs_dir, "nodelabel2vec_val")
+    node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, "nodelabel2vec_val")
     labels_and_embeddings = torch.load(node2vec_train_val_path)
 
     embeddings = []
@@ -383,8 +383,8 @@ def ground_truth_label(test_tw_path, cfg):
     return labels
 
 def create_queues(cfg):
-    node2vec_path = os.path.join(cfg.featurization.embed_nodes._vec_graphs_dir, "nodelabel2vec")
-    node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes._vec_graphs_dir, "nodelabel2vec_val")
+    node2vec_path = os.path.join(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, "nodelabel2vec")
+    node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, "nodelabel2vec_val")
     
     node2vec = torch.load(node2vec_path)
     nodelabels_train_val = list(torch.load(node2vec_train_val_path).keys())

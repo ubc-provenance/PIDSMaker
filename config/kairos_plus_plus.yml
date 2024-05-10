@@ -38,9 +38,10 @@ detection:
     node_out_dim: 64
     node_dropout: 0.0
     encoder:
+      use_node_type_in_node_feats: False
       used_methods: graph_attention,tgn
       graph_attention:
-        num_layers: 2
+        num_heads: 8
       tgn:
         tgn_batch_size: 1024
         tgn_memory_dim: 100
