@@ -173,11 +173,11 @@ def train(train_data,
 
     total_loss = 0
     word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
-    batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size \
+    batch_iterator = train_data.seq_batches(batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size) \
         if "tgn" in cfg.detection.gnn_training.encoder.used_methods \
-        else -1 # if TGN is not used, each time window isn't sampled
+        else [train_data] # if TGN is not used, each time window isn't sampled
 
-    for batch in train_data.seq_batches(batch_size=batch_size): # TODO: this should only be used for TGN
+    for batch in batch_iterator:
         optimizer.zero_grad()
 
         loss = model(batch, train_data)
