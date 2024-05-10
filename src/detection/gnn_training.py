@@ -270,9 +270,9 @@ def main(cfg):
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     for epoch in tqdm(range(1, num_epochs+1)):
+        start = timer()
         for g in train_data:
             g.to(device=device)
-            start = timer()
             loss = train(
                 train_data=g,
                 model=model,
@@ -293,9 +293,6 @@ def main(cfg):
         # Check points
         if epoch % 5 == 0:
             torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
-
-    # Save the trained model
-    torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
 
 
 if __name__ == "__main__":
