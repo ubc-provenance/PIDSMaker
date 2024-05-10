@@ -4,11 +4,11 @@ import torch.nn as nn
 
 
 class GraphAttentionEmbedding(nn.Module):
-    def __init__(self, in_dim, hid_dim, out_dim, edge_dim, node_dropout):
+    def __init__(self, in_dim, hid_dim, out_dim, edge_dim, node_dropout, num_heads):
         super(GraphAttentionEmbedding, self).__init__()
         
-        self.conv = TransformerConv(in_dim, hid_dim, heads=8, dropout=node_dropout, edge_dim=edge_dim)
-        self.conv2 = TransformerConv(hid_dim * 8, out_dim, heads=1, concat=False, dropout=node_dropout, edge_dim=edge_dim)
+        self.conv = TransformerConv(in_dim, hid_dim, heads=num_heads, dropout=node_dropout, edge_dim=edge_dim)
+        self.conv2 = TransformerConv(hid_dim * num_heads, out_dim, heads=1, concat=False, dropout=node_dropout, edge_dim=edge_dim)
         self.dropout = nn.Dropout(node_dropout)
 
     def forward(self, x, edge_index, edge_feats=None):

@@ -44,6 +44,7 @@ def encoder_factory(cfg, edge_feat_size):
             out_dim=node_out_dim,
             edge_dim=edge_dim or None,
             node_dropout=cfg.detection.gnn_training.node_dropout,
+            num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
         ).to(device)
     
     if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
