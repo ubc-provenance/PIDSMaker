@@ -3,9 +3,9 @@ preprocessing:
     time_window_size: 15
     use_hashed_label: False
     node_label_features:
-      subject: type, path, cmd_line
-      file: type, path
-      netflow: type, remote_ip, remote_port
+      subject: path
+      file: path
+      netflow: remote_ip, remote_port
 
 featurization:
   embed_nodes:
@@ -32,10 +32,10 @@ detection:
   gnn_training:
     use_seed: False
     num_epochs: 50
-    lr: 0.000001
+    lr: 0.00005
     weight_decay: 0.01
-    node_hid_dim: 64
-    node_out_dim: 64
+    node_hid_dim: 100
+    node_out_dim: 100
     node_dropout: 0.0
     encoder:
       use_node_type_in_node_feats: True
