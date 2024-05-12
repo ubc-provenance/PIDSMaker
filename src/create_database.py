@@ -7,13 +7,6 @@ from config import *
 from provnet_utils import *
 import filelist
 
-
-def stringtomd5(originstr):
-    originstr = originstr.encode("utf-8")
-    signaturemd5 = hashlib.sha256() # TODO: check why we don't use hierarchical hashing here
-    signaturemd5.update(originstr)
-    return signaturemd5.hexdigest()
-
 def store_netflow(file_path, cur, connect, index_id, filelist):
     # Parse data from logs
     netobjset = set()

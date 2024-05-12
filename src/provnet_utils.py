@@ -41,6 +41,11 @@ from nltk.tokenize import word_tokenize
 import nltk
 nltk.download('punkt')
 
+def stringtomd5(originstr):
+    originstr = originstr.encode("utf-8")
+    signaturemd5 = hashlib.sha256() # TODO: check why we don't use hierarchical hashing here
+    signaturemd5.update(originstr)
+    return signaturemd5.hexdigest()
 
 def ns_time_to_datetime(ns):
     """
