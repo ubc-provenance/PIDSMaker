@@ -371,7 +371,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     }
     return stats
 
-def get_indexid2msg(cur):
+def get_indexid2msg(cur, use_cmd=True, use_port=True):
     indexid2msg = {}
 
     # netflow
@@ -381,10 +381,16 @@ def get_indexid2msg(cur):
     cur.execute(sql)
     records = cur.fetchall()
 
+    print(f"Number of netflow nodes: {len(records)}")
+
     for i in records:
-        remote_address = i[4] + ':' + i[5]
+        remote_ip = i[4]
+        remote_port = i[5]
         index_id = i[-1] # int
-        indexid2msg[index_id] = ['netflow', remote_address]
+        if use_port:
+            indexid2msg[index_id] = ['netflow', remote_ip + ':' +remote_port]
+        else:
+            indexid2msg[index_id] = ['netflow', remote_ip]
 
     # subject
     sql = """
@@ -392,11 +398,17 @@ def get_indexid2msg(cur):
     """
     cur.execute(sql)
     records = cur.fetchall()
+
+    print(f"Number of subject nodes: {len(records)}")
+
     for i in records:
         path = i[2]
         cmd = i[3]
         index_id = i[-1]
-        indexid2msg[index_id] = ['subject', path + ' ' +cmd]
+        if use_cmd:
+            indexid2msg[index_id] = ['subject', path + ' ' +cmd]
+        else:
+            indexid2msg[index_id] = ['subject', path]
 
     # file
     sql = """
@@ -404,6 +416,9 @@ def get_indexid2msg(cur):
     """
     cur.execute(sql)
     records = cur.fetchall()
+
+    print(f"Number of file nodes: {len(records)}")
+
     for i in records:
         path = i[2]
         index_id = i[-1]
