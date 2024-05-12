@@ -427,7 +427,8 @@ def get_indexid2msg(cur, use_cmd=True, use_port=True):
     return indexid2msg #{index_id: [node_type, msg]}
 
 def tokenize_subject(sentence: str):
-    return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
+    return word_tokenize(sentence.replace('/', ' '))
+    # return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
 def tokenize_file(sentence: str):
     return word_tokenize(sentence.replace('/',' '))
 def tokenize_netflow(sentence: str):

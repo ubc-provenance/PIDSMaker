@@ -4,6 +4,7 @@ from .embed_edges_methods import (
     embed_edges_word2vec,
     embed_edges_doc2vec,
     embed_edges_HFH,
+    embed_edges_feature_word2vec,
 )
 
 
@@ -15,6 +16,8 @@ def main(cfg):
         embed_edges_doc2vec.main(cfg)
     elif method == "hierarchical_hashing":
         embed_edges_HFH.main(cfg)
+    elif method == "feature_word2vec":
+        embed_edges_feature_word2vec.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 
