@@ -3,141 +3,9 @@ import re
 import torch
 from tqdm import tqdm
 import hashlib
-
-
 from config import *
 from provnet_utils import *
-
-filelist = [ # TODO: parametrize this. NOTE: this is only for THEIA_E5 and not THEIA_E3
-    'ta1-theia-1-e5-official-1.bin.1.json',
-    'ta1-theia-1-e5-official-1.bin.1.json.1',
-    'ta1-theia-1-e5-official-1.bin.1.json.2',
-    'ta1-theia-1-e5-official-1.bin.2.json',
-    'ta1-theia-1-e5-official-1.bin.json',
-    'ta1-theia-1-e5-official-1.bin.json.1',
-    'ta1-theia-1-e5-official-1.bin.json.2',
-    'ta1-theia-1-e5-official-1.json.1',
-    'ta1-theia-1-e5-official-1.json.2',
-    'ta1-theia-1-e5-official-1.json',
-    'ta1-theia-1-e5-official-2.bin.10.json',
-    'ta1-theia-1-e5-official-2.bin.10.json.1',
-    'ta1-theia-1-e5-official-2.bin.10.json.2',
-    'ta1-theia-1-e5-official-2.bin.11.json',
-    'ta1-theia-1-e5-official-2.bin.11.json.1',
-    'ta1-theia-1-e5-official-2.bin.11.json.2',
-    'ta1-theia-1-e5-official-2.bin.12.json',
-    'ta1-theia-1-e5-official-2.bin.12.json.1',
-    'ta1-theia-1-e5-official-2.bin.12.json.2',
-    'ta1-theia-1-e5-official-2.bin.13.json',
-    'ta1-theia-1-e5-official-2.bin.13.json.1',
-    'ta1-theia-1-e5-official-2.bin.13.json.2',
-    'ta1-theia-1-e5-official-2.bin.14.json',
-    'ta1-theia-1-e5-official-2.bin.14.json.1',
-    'ta1-theia-1-e5-official-2.bin.14.json.2',
-    'ta1-theia-1-e5-official-2.bin.15.json',
-    'ta1-theia-1-e5-official-2.bin.15.json.1',
-    'ta1-theia-1-e5-official-2.bin.15.json.2',
-    'ta1-theia-1-e5-official-2.bin.16.json',
-    'ta1-theia-1-e5-official-2.bin.16.json.1',
-    'ta1-theia-1-e5-official-2.bin.16.json.2',
-    'ta1-theia-1-e5-official-2.bin.17.json',
-    'ta1-theia-1-e5-official-2.bin.17.json.1',
-    'ta1-theia-1-e5-official-2.bin.17.json.2',
-    'ta1-theia-1-e5-official-2.bin.18.json',
-    'ta1-theia-1-e5-official-2.bin.18.json.1',
-    'ta1-theia-1-e5-official-2.bin.18.json.2',
-    'ta1-theia-1-e5-official-2.bin.19.json',
-    'ta1-theia-1-e5-official-2.bin.19.json.1',
-    'ta1-theia-1-e5-official-2.bin.19.json.2',
-    'ta1-theia-1-e5-official-2.bin.1.json',
-    'ta1-theia-1-e5-official-2.bin.1.json.1',
-    'ta1-theia-1-e5-official-2.bin.1.json.2',
-    'ta1-theia-1-e5-official-2.bin.20.json',
-    'ta1-theia-1-e5-official-2.bin.20.json.1',
-    'ta1-theia-1-e5-official-2.bin.20.json.2',
-    'ta1-theia-1-e5-official-2.bin.21.json',
-    'ta1-theia-1-e5-official-2.bin.21.json.1',
-    'ta1-theia-1-e5-official-2.bin.21.json.2',
-    'ta1-theia-1-e5-official-2.bin.22.json',
-    'ta1-theia-1-e5-official-2.bin.22.json.1',
-    'ta1-theia-1-e5-official-2.bin.22.json.2',
-    'ta1-theia-1-e5-official-2.bin.23.json',
-    'ta1-theia-1-e5-official-2.bin.23.json.1',
-    'ta1-theia-1-e5-official-2.bin.23.json.2',
-    'ta1-theia-1-e5-official-2.bin.24.json',
-    'ta1-theia-1-e5-official-2.bin.24.json.1',
-    'ta1-theia-1-e5-official-2.bin.24.json.2',
-    'ta1-theia-1-e5-official-2.bin.25.json',
-    'ta1-theia-1-e5-official-2.bin.25.json.1',
-    'ta1-theia-1-e5-official-2.bin.25.json.2',
-    'ta1-theia-1-e5-official-2.bin.26.json',
-    'ta1-theia-1-e5-official-2.bin.26.json.1',
-    'ta1-theia-1-e5-official-2.bin.26.json.2',
-    'ta1-theia-1-e5-official-2.bin.27.json',
-    'ta1-theia-1-e5-official-2.bin.27.json.1',
-    'ta1-theia-1-e5-official-2.bin.27.json.2',
-    'ta1-theia-1-e5-official-2.bin.28.json',
-    'ta1-theia-1-e5-official-2.bin.28.json.1',
-    'ta1-theia-1-e5-official-2.bin.28.json.2',
-    'ta1-theia-1-e5-official-2.bin.29.json',
-    'ta1-theia-1-e5-official-2.bin.29.json.1',
-    'ta1-theia-1-e5-official-2.bin.29.json.2',
-    'ta1-theia-1-e5-official-2.bin.2.json',
-    'ta1-theia-1-e5-official-2.bin.2.json.1',
-    'ta1-theia-1-e5-official-2.bin.2.json.2',
-    'ta1-theia-1-e5-official-2.bin.30.json',
-    'ta1-theia-1-e5-official-2.bin.30.json.1',
-    'ta1-theia-1-e5-official-2.bin.30.json.2',
-    'ta1-theia-1-e5-official-2.bin.31.json',
-    'ta1-theia-1-e5-official-2.bin.31.json.1',
-    'ta1-theia-1-e5-official-2.bin.31.json.2',
-    'ta1-theia-1-e5-official-2.bin.32.json',
-    'ta1-theia-1-e5-official-2.bin.32.json.1',
-    'ta1-theia-1-e5-official-2.bin.32.json.2',
-    'ta1-theia-1-e5-official-2.bin.33.json',
-    'ta1-theia-1-e5-official-2.bin.33.json.1',
-    'ta1-theia-1-e5-official-2.bin.33.json.2',
-    'ta1-theia-1-e5-official-2.bin.34.json',
-    'ta1-theia-1-e5-official-2.bin.34.json.1',
-    'ta1-theia-1-e5-official-2.bin.34.json.2',
-    'ta1-theia-1-e5-official-2.bin.35.json',
-    'ta1-theia-1-e5-official-2.bin.35.json.1',
-    'ta1-theia-1-e5-official-2.bin.35.json.2',
-    'ta1-theia-1-e5-official-2.bin.36.json',
-    'ta1-theia-1-e5-official-2.bin.36.json.1',
-    'ta1-theia-1-e5-official-2.bin.36.json.2',
-    'ta1-theia-1-e5-official-2.bin.37.json',
-    'ta1-theia-1-e5-official-2.bin.37.json.1',
-    'ta1-theia-1-e5-official-2.bin.37.json.2',
-    'ta1-theia-1-e5-official-2.bin.38.json',
-    'ta1-theia-1-e5-official-2.bin.38.json.1',
-    'ta1-theia-1-e5-official-2.bin.38.json.2',
-    'ta1-theia-1-e5-official-2.bin.39.json',
-    'ta1-theia-1-e5-official-2.bin.3.json',
-    'ta1-theia-1-e5-official-2.bin.3.json.1',
-    'ta1-theia-1-e5-official-2.bin.3.json.2',
-    'ta1-theia-1-e5-official-2.bin.4.json',
-    'ta1-theia-1-e5-official-2.bin.4.json.1',
-    'ta1-theia-1-e5-official-2.bin.4.json.2',
-    'ta1-theia-1-e5-official-2.bin.5.json',
-    'ta1-theia-1-e5-official-2.bin.5.json.1',
-    'ta1-theia-1-e5-official-2.bin.5.json.2',
-    'ta1-theia-1-e5-official-2.bin.6.json',
-    'ta1-theia-1-e5-official-2.bin.6.json.1',
-    'ta1-theia-1-e5-official-2.bin.6.json.2',
-    'ta1-theia-1-e5-official-2.bin.7.json',
-    'ta1-theia-1-e5-official-2.bin.7.json.1',
-    'ta1-theia-1-e5-official-2.bin.7.json.2',
-    'ta1-theia-1-e5-official-2.bin.8.json',
-    'ta1-theia-1-e5-official-2.bin.8.json.1',
-    'ta1-theia-1-e5-official-2.bin.8.json.2',
-    'ta1-theia-1-e5-official-2.bin.9.json',
-    'ta1-theia-1-e5-official-2.bin.9.json.1',
-    'ta1-theia-1-e5-official-2.bin.9.json.2',
-    'ta1-theia-1-e5-official-2.bin.json',
-    'ta1-theia-1-e5-official-2.bin.json.1',
-    'ta1-theia-1-e5-official-2.bin.json.2'
-]
+import filelist
 
 
 def stringtomd5(originstr):
@@ -146,7 +14,7 @@ def stringtomd5(originstr):
     signaturemd5.update(originstr)
     return signaturemd5.hexdigest()
 
-def store_netflow(file_path, cur, connect):
+def store_netflow(file_path, cur, connect, index_id, filelist):
     # Parse data from logs
     netobjset = set()
     netobj2hash = {}
@@ -166,7 +34,7 @@ def store_netflow(file_path, cur, connect):
                         dstport = res[5]
 
                         nodeproperty = srcaddr + "," + srcport + "," + dstaddr + "," + dstport
-                        hashstr = stringtomd5(nodeproperty)
+                        hashstr = stringtomd5(nodeid)
                         netobj2hash[nodeid] = [hashstr, nodeproperty]
                         netobj2hash[hashstr] = nodeid
                         netobjset.add(hashstr)
@@ -175,9 +43,12 @@ def store_netflow(file_path, cur, connect):
 
     # Store data into database
     datalist = []
+    net_uuid2hash = {}
     for i in netobj2hash.keys():
         if len(i) != 64:
-            datalist.append([i] + [netobj2hash[i][0]] + netobj2hash[i][1].split(","))
+            datalist.append([i] + [netobj2hash[i][0]] + netobj2hash[i][1].split(",") + [index_id])
+            net_uuid2hash[i] = netobj2hash[i][0]
+            index_id += 1
 
     sql = '''insert into netflow_node_table
                          values %s
@@ -185,7 +56,9 @@ def store_netflow(file_path, cur, connect):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
-def store_subject(file_path, cur, connect):
+    return index_id, net_uuid2hash
+
+def store_subject(file_path, cur, connect, index_id, filelist):
     # Parse data from logs
     scusess_count = 0
     fail_count = 0
@@ -194,9 +67,10 @@ def store_subject(file_path, cur, connect):
         with open(file_path + file, "r") as f:
             for line in (f):
                 if "schema.avro.cdm20.Subject" in line:
-                    subject_uuid = re.findall('avro.cdm20.Subject":{"uuid":"(.*?)",(.*?)"path":"(.*?)"', line)
+                    subject_uuid = re.findall(
+                        'avro.cdm20.Subject":{"uuid":"(.*?)"(.*?)"cmdLine":{"string":"(.*?)"}(.*?)"path":"(.*?)"', line)
                     try:
-                        subject_obj2hash[subject_uuid[0][0]] = subject_uuid[0][-1]
+                        subject_obj2hash[subject_uuid[0][0]] = [subject_uuid[0][-1], subject_uuid[0][-3]] #{uuid:[path, cmd]}
                         scusess_count += 1
                     except:
                         try:
@@ -206,9 +80,13 @@ def store_subject(file_path, cur, connect):
                         fail_count += 1
     # Store into database
     datalist = []
+    subject_uuid2hash = {}
     for i in subject_obj2hash.keys():
         if len(i) != 64:
-            datalist.append([i] + [stringtomd5(subject_obj2hash[i]), subject_obj2hash[i]])
+            datalist.append([i] + [stringtomd5(i)] + subject_obj2hash[
+                i] + [index_id])  # ([uuid, hashstr, path, cmdLine, index_id]) and hashstr=stringtomd5(uuid)
+            subject_uuid2hash[i] = stringtomd5(i)
+            index_id += 1
 
     sql = '''insert into subject_node_table
                          values %s
@@ -216,7 +94,9 @@ def store_subject(file_path, cur, connect):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
-def store_file(file_path, cur, connect):
+    return index_id, subject_uuid2hash
+
+def store_file(file_path, cur, connect, index_id, filelist):
     file_obj2hash = {}
     fail_count = 0
     for file in tqdm(filelist):
@@ -230,9 +110,12 @@ def store_file(file_path, cur, connect):
                         fail_count += 1
 
     datalist = []
+    file_uuid2hash = {}
     for i in file_obj2hash.keys():
         if len(i) != 64:
-            datalist.append([i] + [stringtomd5(file_obj2hash[i]), file_obj2hash[i]])
+            datalist.append([i] + [stringtomd5(i), file_obj2hash[i]] + [index_id])
+            file_uuid2hash[i] = stringtomd5(i)
+            index_id += 1
 
     sql = '''insert into file_node_table
                          values %s
@@ -240,20 +123,19 @@ def store_file(file_path, cur, connect):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
-def create_node_list(cur, connect):
-    node_list = {}
+    return index_id, file_uuid2hash
 
-    # file
+def create_node_list(cur):
+    nodeid2msg = {}
+
+    # netflow
     sql = """
-    select * from file_node_table;
-    """
+        select * from netflow_node_table;
+        """
     cur.execute(sql)
     records = cur.fetchall()
     for i in records:
-        node_list[i[1]] = ["file", i[-1]]
-    file_uuid2hash = {}
-    for i in records:
-        file_uuid2hash[i[0]] = i[1]
+        nodeid2msg[i[1]] = i[-1]
 
     # subject
     sql = """
@@ -262,44 +144,18 @@ def create_node_list(cur, connect):
     cur.execute(sql)
     records = cur.fetchall()
     for i in records:
-        node_list[i[1]] = ["subject", i[-1]]
-    subject_uuid2hash = {}
-    for i in records:
-        subject_uuid2hash[i[0]] = i[1]
+        nodeid2msg[i[1]] = i[-1]
 
-    # netflow
+    # file
     sql = """
-    select * from netflow_node_table;
+    select * from file_node_table;
     """
     cur.execute(sql)
     records = cur.fetchall()
     for i in records:
-        node_list[i[1]] = ["netflow", i[-2] + ":" + i[-1]]
-    net_uuid2hash = {}
-    for i in records:
-        net_uuid2hash[i[0]] = i[1]
+        nodeid2msg[i[1]] = i[-1]
 
-    node_list_database = []
-    node_index = 0
-    for i in node_list:
-        node_list_database.append([i] + node_list[i] + [node_index])
-        node_index += 1
-
-    sql = '''insert into node2id
-                         values %s
-            '''
-    ex.execute_values(cur, sql, node_list_database, page_size=10000)
-    connect.commit()
-
-    sql = "select * from node2id ORDER BY index_id;"
-    cur.execute(sql)
-    rows = cur.fetchall()
-    nodeid2msg = {}
-    for i in rows:
-        nodeid2msg[i[0]] = i[-1]
-        nodeid2msg[i[-1]] = {i[1]: i[2]}
-
-    return nodeid2msg, subject_uuid2hash, file_uuid2hash, net_uuid2hash
+    return nodeid2msg #{hash_id:index_id}
 
 def write_event_in_DB(cur, connect, datalist):
     sql = '''insert into event_table
@@ -308,7 +164,7 @@ def write_event_in_DB(cur, connect, datalist):
     ex.execute_values(cur,sql, datalist,page_size=10000)
     connect.commit()
 
-def store_event(file_path, cur, connect, reverse, nodeid2msg, subject_uuid2hash, file_uuid2hash, net_uuid2hash):
+def store_event(file_path, cur, connect, reverse, nodeid2msg, subject_uuid2hash, file_uuid2hash, net_uuid2hash, filelist):
     datalist = []
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
@@ -353,25 +209,25 @@ if __name__ == "__main__":
     args = get_runtime_required_args()
     cfg = get_yml_cfg(args)
 
+    filelist = filelist.get_filelist(cfg.dataset.name)
+    raw_dir = cfg.dataset.raw_dir
+
     cur, connect = init_database_connection(cfg)
 
-    # There will be 36747 netflow nodes stored in the table
+    index_id = 0
+
     print("Processing netflow data")
-    store_netflow(file_path=raw_dir, cur=cur, connect=connect)
+    index_id, net_uuid2hash = store_netflow(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id, filelist=filelist)
 
-    # There will be 1264440 subject nodes stored in the table
     print("Processing subject data")
-    store_subject(file_path=raw_dir, cur=cur, connect=connect)
+    index_id, subject_uuid2hash = store_subject(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id, filelist=filelist)
 
-    # There will be 984937 file nodes stored in the table
     print("Processing file data")
-    store_file(file_path=raw_dir, cur=cur, connect=connect)
+    index_id, file_uuid2hash = store_file(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id, filelist=filelist)
 
-    # There will be 967388 entities stored in the table
     print("Extracting the node list")
-    nodeid2msg, subject_uuid2hash, file_uuid2hash, net_uuid2hash = create_node_list(cur=cur, connect=connect)
+    nodeid2msg = create_node_list(cur=cur)
 
-    # There will be 140994662 events stored in the table
     print("Processing the events")
     store_event(
         file_path=raw_dir,
@@ -381,5 +237,6 @@ if __name__ == "__main__":
         nodeid2msg=nodeid2msg,
         subject_uuid2hash=subject_uuid2hash,
         file_uuid2hash=file_uuid2hash,
-        net_uuid2hash=net_uuid2hash
+        net_uuid2hash=net_uuid2hash,
+        filelist=filelist
     )

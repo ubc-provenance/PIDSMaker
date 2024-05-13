@@ -60,6 +60,7 @@ class Model(nn.Module):
                 loss = decoder(
                     h_src=h_src,
                     h_dst=h_dst,
+                    x=(batch.x_src, batch.x_dst),
                     edge_index=edge_index,
                     edge_type=batch.edge_type,
                     inference=inference,
