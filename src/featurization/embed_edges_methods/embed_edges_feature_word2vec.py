@@ -36,7 +36,7 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
 
         normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
 
-        indexid2vec[int(indexid)] = normalized_vector
+        indexid2vec[int(indexid)] = np.array(normalized_vector)
 
     logger.info(f"Finish generating normalized node vectors.")
 

@@ -274,7 +274,7 @@ def main(cfg):
         for g in train_data:
             g.to(device=device)
             loss = train(
-                train_data=g,
+                data=g,
                 model=model,
                 optimizer=optimizer,
                 cfg=cfg,
