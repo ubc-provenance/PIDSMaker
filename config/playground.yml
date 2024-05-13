@@ -32,8 +32,8 @@ detection:
   gnn_training:
     use_seed: False
     num_epochs: 50
-    lr: 0.000001
-    weight_decay: 0.01
+    lr: 0.0001
+    weight_decay: 0.001
     node_hid_dim: 64
     node_out_dim: 64
     node_dropout: 0.0
@@ -50,7 +50,7 @@ detection:
         use_time_encoding: True
         use_msg_as_edge_feature: True
     decoder:
-      used_methods: predict_edge_type, predict_edge_contrastive
+      used_methods: predict_edge_contrastive, reconstruct_node
       predict_edge_type:
         used_method: custom
         custom:
@@ -63,6 +63,10 @@ detection:
           dropout: 0.0
         linear:
           dropout: 0.0
+      reconstruct_node:
+        loss: SCE
+        recon_hid_dim: 100
+        recon_use_bias: True
 
   gnn_testing:
     threshold_method: str
