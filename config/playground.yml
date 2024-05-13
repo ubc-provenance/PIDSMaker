@@ -67,6 +67,7 @@ detection:
         loss: SCE
         recon_hid_dim: 100
         recon_use_bias: True
+        out_activation: sigmoid
 
   gnn_testing:
     threshold_method: str

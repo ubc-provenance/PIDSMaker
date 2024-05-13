@@ -73,9 +73,17 @@ def recon_loss_fn_factory(loss: str):
         return F.mse_loss
     raise ValueError(f"Invalid loss function {loss}")
 
-def decoder_factory(cfg):
+def activation_fn_factory(activation: str):
+    if activation == "sigmoid":
+        return torch.sigmoid
+    if activation == "relu":
+        return torch.relu
+    if activation == "tanh":
+        return torch.tanh
+    raise ValueError(f"Invalid activation function {activation}")
+
+def decoder_factory(cfg, in_dim):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
 
     decoders = []
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
@@ -83,18 +91,21 @@ def decoder_factory(cfg):
             recon_hid_dim = cfg.detection.gnn_training.decoder.reconstruct_node.recon_hid_dim
             recon_use_bias = cfg.detection.gnn_training.decoder.reconstruct_node.recon_use_bias
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node.loss)
+            out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node.out_activation)
 
             src_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
-                out_dim=emb_dim,
+                out_dim=in_dim,
                 use_bias=recon_use_bias,
+                out_activation=out_activation,
             ).to(device)
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
-                out_dim=emb_dim,
+                out_dim=in_dim,
                 use_bias=recon_use_bias,
+                out_activation=out_activation,
             ).to(device)
             decoders.append(SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
         
@@ -113,7 +124,7 @@ def decoder_factory(cfg):
                 use_kairos_decoder=use_kairos_decoder,
                 dropout=cfg.detection.gnn_training.decoder.predict_edge_type.custom.dropout,
                 num_layers=cfg.detection.gnn_training.decoder.predict_edge_type.custom.num_layers,
-                activation=cfg.detection.gnn_training.decoder.predict_edge_type.custom.activation,
+                activation=activation_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.custom.activation),
             )
             decoders.append(decoder)
         
@@ -168,7 +179,6 @@ def train(data,
         model.encoder.reset_state()
 
     total_loss = 0
-    word_embedding_dim = cfg.featurization.embed_nodes.emb_dim
     batch_iterator = data.seq_batches(batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size) \
         if "tgn" in cfg.detection.gnn_training.encoder.used_methods \
         else [data] # if TGN is not used, each time window isn't sampled
@@ -266,7 +276,7 @@ def main(cfg):
     in_dim = train_data[0].x_src.shape[1]
 
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim)
-    decoder = decoder_factory(cfg)
+    decoder = decoder_factory(cfg, in_dim=in_dim)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
