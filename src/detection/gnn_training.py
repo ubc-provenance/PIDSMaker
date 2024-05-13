@@ -1,7 +1,3 @@
-##########################################################################################
-# Some of the code is adapted from:
-# https://github.com/pyg-team/pytorch_geometric/blob/master/examples/tgn.py
-##########################################################################################
 import argparse
 import logging
 from time import perf_counter as timer
@@ -13,11 +9,13 @@ from provnet_utils import *
 from config import *
 from model import *
 from losses import sce_loss, bce_contrastive
+from encoders import *
+from decoders import *
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def encoder_factory(cfg, edge_feat_size):
+def encoder_factory(cfg, msg_dim, in_dim, edge_dim):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     max_node_num = cfg.dataset.max_node_num
@@ -26,16 +24,12 @@ def encoder_factory(cfg, edge_feat_size):
     use_time_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_encoding
     
     # If edge features are used in TGN, and the downstream encoder uses edge features, we set them here
-    edge_dim = 0
     if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+        edge_dim = 0
         if use_msg_as_edge_feature:
-            edge_dim += edge_feat_size
+            edge_dim += msg_dim
         if use_time_encoding:
             edge_dim += tgn_memory_dim
-
-    in_dim = tgn_memory_dim \
-        if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods \
-        else cfg.featurization.embed_nodes.emb_dim
 
     if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods:
         encoder = GraphAttentionEmbedding(
@@ -53,10 +47,10 @@ def encoder_factory(cfg, edge_feat_size):
 
         memory = TGNMemory(
             max_node_num,
-            edge_feat_size,
+            msg_dim,
             tgn_memory_dim,
             time_dim,
-            message_module=IdentityMessage(edge_feat_size, tgn_memory_dim, time_dim),
+            message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
             aggregator_module=LastAggregator(),
         ).to(device)
         neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
@@ -85,18 +79,18 @@ def decoder_factory(cfg):
 
     decoders = []
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
-        if method == "node_recon_MLP":
-            recon_hid_dim = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_hid_dim
-            recon_use_bias = cfg.detection.gnn_training.decoder.node_recon_MLP.recon_use_bias
-            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.node_recon_MLP.loss)
+        if method == "reconstruct_node":
+            recon_hid_dim = cfg.detection.gnn_training.decoder.reconstruct_node.recon_hid_dim
+            recon_use_bias = cfg.detection.gnn_training.decoder.reconstruct_node.recon_use_bias
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node.loss)
 
-            src_recon = NodeRecon_MLP(
+            src_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
                 out_dim=emb_dim,
                 use_bias=recon_use_bias,
             ).to(device)
-            dst_recon = NodeRecon_MLP(
+            dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
                 out_dim=emb_dim,
@@ -145,14 +139,16 @@ def decoder_factory(cfg):
         
     return decoders
 
-def model_factory(encoder, decoders, cfg):
+def model_factory(encoder, decoders, cfg, in_dim):
     return Model(
         encoder=encoder,
         decoders=decoders,
         num_nodes=cfg.dataset.max_node_num,
         device=device,
+        in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
+        use_tgn="tgn" in cfg.detection.gnn_training.encoder.used_methods,
     )
 
 def optimizer_factory(cfg, parameters):
@@ -231,13 +227,16 @@ def extract_msg_from_data(train_data, cfg):
         # If we want to predict the edge type, we remove the edge type from the message
         if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
             msg = torch.cat([x_src, x_dst], dim=-1)
+            edge_feats = None
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
+            edge_feats = fields["edge_type"] # For now, we only use the edge type as edge feature
             
         g.x_src = x_src
         g.x_dst = x_dst
         g.msg = msg
         g.edge_type = fields["edge_type"]
+        g.edge_feats = edge_feats
     
     return train_data
 
@@ -261,10 +260,14 @@ def main(cfg):
 
     train_data = load_train_data(cfg)
     train_data = extract_msg_from_data(train_data, cfg)
+    
+    msg_dim = train_data[0].msg.shape[1]
+    edge_dim = train_data[0].edge_feats.shape[1]
+    in_dim = train_data[0].x_src.shape[1]
 
-    encoder = encoder_factory(cfg, edge_feat_size=train_data[0].msg.size(-1))
+    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim)
     decoder = decoder_factory(cfg)
-    model = model_factory(encoder, decoder, cfg)
+    model = model_factory(encoder, decoder, cfg, in_dim=in_dim)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
     num_epochs = cfg.detection.gnn_training.num_epochs
@@ -274,12 +277,13 @@ def main(cfg):
         for g in train_data:
             g.to(device=device)
             loss = train(
-                train_data=g,
+                data=g,
                 model=model,
                 optimizer=optimizer,
                 cfg=cfg,
             )
-            tot_loss += loss.item()
+            tot_loss += loss
+            print(f"Loss {loss:4f}")
         
         tot_loss /= len(train_data)
         logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
