@@ -38,7 +38,7 @@ detection:
     node_out_dim: 64
     node_dropout: 0.0
     encoder:
-      use_node_type_in_node_feats: Falsegti
+      use_node_type_in_node_feats: False
       used_methods: graph_attention,tgn
       graph_attention:
         num_heads: 8

@@ -129,6 +129,7 @@ class Model(nn.Module):
                 loss = decoder(
                     h_src=h_src,
                     h_dst=h_dst,
+                    x=(batch.x_src, batch.x_dst),
                     edge_index=edge_index,
                     edge_type=batch.edge_type,
                     inference=inference,
@@ -146,9 +147,10 @@ class SrcDstNodeDecoder(nn.Module):
         self.dst_decoder = dst_decoder
         self.loss_fn = loss_fn
 
-    def forward(self, h_src, h_dst, inference, **kwargs):
+    def forward(self, h_src, h_dst, x, inference, **kwargs):
         x_src_hat, x_dst_hat = self.src_decoder(h_src), self.dst_decoder(h_dst)
         
+        x_src, x_dst = x
         loss_src = self.loss_fn(x_src_hat, x_src, inference=inference)
         loss_dst = self.loss_fn(x_dst_hat, x_dst, inference=inference)
 

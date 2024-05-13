@@ -274,12 +274,12 @@ def main(cfg):
         for g in train_data:
             g.to(device=device)
             loss = train(
-                train_data=g,
+                data=g,
                 model=model,
                 optimizer=optimizer,
                 cfg=cfg,
             )
-            tot_loss += loss.item()
+            tot_loss += loss
         
         tot_loss /= len(train_data)
         logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
