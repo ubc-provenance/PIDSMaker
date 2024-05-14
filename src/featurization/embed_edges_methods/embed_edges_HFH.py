@@ -62,7 +62,7 @@ def feature_string_hashing(vec_size, indexid2msg, logger):
 
         dense_vector = FH_string.fit_transform([higstr]).toarray()
         normalized_vector = dense_vector/np.linalg.norm(dense_vector)
-        indexid2vec[int(indexid)] = normalized_vector
+        indexid2vec[int(indexid)] = normalized_vector.squeeze()
 
     logger.info(f"Finish generating node vectors.")
 
