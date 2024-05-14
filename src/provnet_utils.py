@@ -127,19 +127,62 @@ def init_database_connection(cfg):
     cur = connect.cursor()
     return cur, connect
 
-def gen_nodeid2msg(cur):
+def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
     # node hash id to node label and type
-    sql = "select * from node2id ORDER BY index_id;"
+    # {hash_id: index_id} and {index_id: {node_type:msg}}
+    indexid2msg = {}
+
+    # netflow
+    sql = """
+        select * from netflow_node_table;
+        """
     cur.execute(sql)
-    rows = cur.fetchall()
-    nodeid2msg = {}
+    records = cur.fetchall()
 
-    # hash_id | node_type | msg | index_id
-    for i in rows:
-        nodeid2msg[i[0]] = i[-1]
-        nodeid2msg[i[-1]] = {i[1]: i[2]}
+    for i in records:
+        hash_id = i[1]
+        remote_ip = i[4]
+        remote_port = i[5]
+        index_id = i[-1] # int
+        indexid2msg[hash_id] = index_id
+        if use_port:
+            indexid2msg[index_id] = {'netflow': remote_ip + ':' +remote_port}
+        else:
+            indexid2msg[index_id] = {'netflow': remote_ip}
 
-    return nodeid2msg
+    # subject
+    sql = """
+    select * from subject_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    for i in records:
+        hash_id = i[1]
+        path = i[2]
+        cmd = i[3]
+        index_id = i[-1]
+        indexid2msg[hash_id] = index_id
+        if use_cmd:
+            indexid2msg[index_id] = {'subject': path + ' ' +cmd}
+        else:
+            indexid2msg[index_id] = {'subject': path}
+
+    # file
+    sql = """
+    select * from file_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    for i in records:
+        hash_id = i[1]
+        path = i[2]
+        index_id = i[-1]
+        indexid2msg[hash_id] = index_id
+        indexid2msg[index_id] = {'file': path}
+
+    return indexid2msg #{hash_id: index_id} and {index_id: {node_type:msg}}
 
 def tensor_find(t,x):
     t_np=t.cpu().numpy()
@@ -366,7 +409,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     }
     return stats
 
-def get_indexid2msg(cur):
+def get_indexid2msg(cur, use_cmd=True, use_port=False):
     indexid2msg = {}
 
     # netflow
@@ -377,9 +420,13 @@ def get_indexid2msg(cur):
     records = cur.fetchall()
 
     for i in records:
-        remote_address = i[4] + ':' + i[5]
+        remote_ip = i[4]
+        remote_port = i[5]
         index_id = i[-1] # int
-        indexid2msg[index_id] = ['netflow', remote_address]
+        if use_port:
+            indexid2msg[index_id] = ['netflow', remote_ip + ':' +remote_port]
+        else:
+            indexid2msg[index_id] = ['netflow', remote_ip]
 
     # subject
     sql = """
@@ -387,11 +434,15 @@ def get_indexid2msg(cur):
     """
     cur.execute(sql)
     records = cur.fetchall()
+
     for i in records:
         path = i[2]
         cmd = i[3]
         index_id = i[-1]
-        indexid2msg[index_id] = ['subject', path + ' ' +cmd]
+        if use_cmd:
+            indexid2msg[index_id] = ['subject', path + ' ' +cmd]
+        else:
+            indexid2msg[index_id] = ['subject', path]
 
     # file
     sql = """
@@ -399,6 +450,7 @@ def get_indexid2msg(cur):
     """
     cur.execute(sql)
     records = cur.fetchall()
+
     for i in records:
         path = i[2]
         index_id = i[-1]
