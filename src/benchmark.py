@@ -38,26 +38,20 @@ def main(cfg):
     # Preprocessing
     if should_restart["build_graphs"]:
         build_graphs.main(cfg)
-        print("Finished building graphs")
     
     # Featurization
     if should_restart["embed_nodes"]:
         embed_nodes.main(cfg)
-        print("Finished embedding nodes")
     if should_restart["embed_edges"]:
         embed_edges.main(cfg)
-        print("Finished embedding edges")
 
     # Detection
     if should_restart["gnn_training"]:
         gnn_training.main(cfg)
-        print("Finished gnn_training")
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
-        print("Finished gnn_testing")
-    # if should_restart["evaluation"]:
-    #     evaluation.main(cfg)
-    #     print("Finished evaluation")
+    if should_restart["evaluation"]:
+        evaluation.main(cfg)
 
 
 if __name__ == '__main__':
