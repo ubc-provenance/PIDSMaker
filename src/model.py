@@ -149,7 +149,6 @@ class SrcDstNodeDecoder(nn.Module):
 
     def forward(self, h_src, h_dst, x, inference, **kwargs):
         x_src_hat, x_dst_hat = self.src_decoder(h_src), self.dst_decoder(h_dst)
-
         x_src, x_dst = x
         loss_src = self.loss_fn(x_src_hat, x_src, inference=inference)
         loss_dst = self.loss_fn(x_dst_hat, x_dst, inference=inference)
