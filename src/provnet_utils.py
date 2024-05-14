@@ -41,6 +41,11 @@ from nltk.tokenize import word_tokenize
 import nltk
 nltk.download('punkt')
 
+def stringtomd5(originstr):
+    originstr = originstr.encode("utf-8")
+    signaturemd5 = hashlib.sha256() # TODO: check if we might remove it in the future
+    signaturemd5.update(originstr)
+    return signaturemd5.hexdigest()
 
 def ns_time_to_datetime(ns):
     """
@@ -419,6 +424,8 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
+    print(f"Number of netflow nodes: {len(records)}")
+
     for i in records:
         remote_ip = i[4]
         remote_port = i[5]
@@ -459,8 +466,9 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     return indexid2msg #{index_id: [node_type, msg]}
 
 def tokenize_subject(sentence: str):
-    return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
+    return word_tokenize(sentence.replace('/', ' / '))
+    # return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
 def tokenize_file(sentence: str):
-    return word_tokenize(sentence.replace('/',' '))
+    return word_tokenize(sentence.replace('/',' / '))
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' ').replace('.',' '))
