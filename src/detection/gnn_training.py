@@ -279,7 +279,7 @@ def main(cfg):
                 optimizer=optimizer,
                 cfg=cfg,
             )
-            tot_loss += loss.item()
+            tot_loss += loss
         
         tot_loss /= len(train_data)
         logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
