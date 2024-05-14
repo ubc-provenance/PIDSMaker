@@ -442,6 +442,8 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
+    print(f"Number of process nodes: {len(records)}")
+
     for i in records:
         path = i[2]
         cmd = i[3]
@@ -457,6 +459,8 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     """
     cur.execute(sql)
     records = cur.fetchall()
+
+    print(f"Number of file nodes: {len(records)}")
 
     for i in records:
         path = i[2]
