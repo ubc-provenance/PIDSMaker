@@ -208,7 +208,6 @@ class EdgeTypeDecoder(nn.Module):
                 raise ValueError(f"Invalid number of layers, found {num_layers}")
         
         self.loss_fn = loss_fn
-        self.drop = nn.Dropout(dropout)
         
     def forward(self, h_src, h_dst, edge_type, **kwargs):
         h = torch.cat([self.lin_src(h_src), self.lin_dst(h_dst)], dim=-1)      
