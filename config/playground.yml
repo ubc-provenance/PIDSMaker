@@ -39,7 +39,8 @@ detection:
     node_dropout: 0.0
     encoder:
       use_node_type_in_node_feats: True
-      used_methods: graph_attention
+      neighbor_sampling: []
+      used_methods: graph_attention, tgn
       graph_attention:
         num_heads: 8
       tgn:
@@ -50,7 +51,7 @@ detection:
         use_time_encoding: True
         use_msg_as_edge_feature: True
     decoder:
-      used_methods: predict_edge_contrastive, reconstruct_node
+      used_methods: predict_edge_contrastive, reconstruct_node, predict_edge_type
       predict_edge_type:
         used_method: custom
         custom:

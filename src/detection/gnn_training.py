@@ -4,6 +4,7 @@ from time import perf_counter as timer
 
 import torch.nn as nn
 import wandb
+from torch_geometric.loader import NeighborLoader
 
 from provnet_utils import *
 from config import *
@@ -11,6 +12,11 @@ from model import *
 from losses import sce_loss, bce_contrastive
 from encoders import *
 from decoders import *
+from data_utils import (
+    custom_temporal_data_loader,
+    temporal_data_to_data,
+    GraphReindexer,
+)
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,6 +36,9 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim):
             edge_dim += msg_dim
         if use_time_encoding:
             edge_dim += tgn_memory_dim
+            
+        # Only for TGN, in_dim becomes memory dim
+        in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
     if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods:
         encoder = GraphAttentionEmbedding(
@@ -116,6 +125,8 @@ def decoder_factory(cfg, in_dim):
             if method not in ["kairos", "custom"]:
                 raise ValueError(f"Invalid edge type decoder method {method}")
             use_kairos_decoder = method == "kairos"
+            activation = None if use_kairos_decoder else \
+                activation_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.custom.activation)
             
             decoder = EdgeTypeDecoder(
                 in_dim=node_out_dim,
@@ -124,7 +135,7 @@ def decoder_factory(cfg, in_dim):
                 use_kairos_decoder=use_kairos_decoder,
                 dropout=cfg.detection.gnn_training.decoder.predict_edge_type.custom.dropout,
                 num_layers=cfg.detection.gnn_training.decoder.predict_edge_type.custom.num_layers,
-                activation=activation_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.custom.activation),
+                activation=activation,
             )
             decoders.append(decoder)
         
@@ -159,7 +170,6 @@ def model_factory(encoder, decoders, cfg, in_dim):
         in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
-        use_tgn="tgn" in cfg.detection.gnn_training.encoder.used_methods,
     )
 
 def optimizer_factory(cfg, parameters):
@@ -168,9 +178,42 @@ def optimizer_factory(cfg, parameters):
 
     return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay) # TODO: parametrize
 
+def batch_loader_factory(cfg, data, graph_reindexer):
+    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
+    
+    try:
+        use_neigh_sampling = all([isinstance(num_hop, int) for num_hop in neigh_sampling])
+        error = False
+    except:
+        error = True
+    if error or not use_neigh_sampling:
+        raise ValueError(f"Invalid neighbor sampling {neigh_sampling}. Expected 'None' or a list of integers.")
+    
+    # Use neigh sampling batch loader
+    if use_neigh_sampling and len(neigh_sampling) > 0:
+        if use_tgn:
+            raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
+
+        data = graph_reindexer(data)
+        data = temporal_data_to_data(data)
+        return NeighborLoader(
+            data,
+            num_neighbors=neigh_sampling,
+            batch_size=10_000_000, # no need for batching as a time window is already small
+        )
+    # Use TGN batch loader
+    if use_tgn:
+        return custom_temporal_data_loader(data, batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size)
+    
+    # Don't use any batching
+    data = graph_reindexer(data)
+    return [data]
+    
 def train(data,
           model,
           optimizer,
+          graph_reindexer,
           cfg
           ):
     model.train()
@@ -178,20 +221,18 @@ def train(data,
     if isinstance(model.encoder, TGNEncoder):
         model.encoder.reset_state()
 
-    total_loss = 0
-    batch_iterator = data.seq_batches(batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size) \
-        if "tgn" in cfg.detection.gnn_training.encoder.used_methods \
-        else [data] # if TGN is not used, each time window isn't sampled
+    losses = []
+    batch_loader = batch_loader_factory(cfg, data, graph_reindexer)
 
-    for batch in batch_iterator:
+    for batch in batch_loader:
         optimizer.zero_grad()
 
         loss = model(batch, data)
 
         loss.backward()
         optimizer.step()
-        total_loss += float(loss) * batch.num_events
-    return total_loss / data.num_events
+        losses.append(loss.item())
+    return np.mean(losses)
 
 def load_train_data(cfg):
     edge_embeds_dir = cfg.featurization.embed_edges._edge_embeds_dir
@@ -247,6 +288,7 @@ def extract_msg_from_data(train_data, cfg):
         g.msg = msg
         g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
+        g.edge_index = torch.stack([g.src, g.dst])
     
     return train_data
 
@@ -272,12 +314,17 @@ def main(cfg):
     train_data = extract_msg_from_data(train_data, cfg)
     
     msg_dim = train_data[0].msg.shape[1]
-    edge_dim = train_data[0].edge_feats.shape[1]
+    edge_dim = train_data[0].edge_feats.shape[1] \
+        if hasattr(train_data[0], "edge_feats") else None
     in_dim = train_data[0].x_src.shape[1]
 
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim)
     decoder = decoder_factory(cfg, in_dim=in_dim)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim)
+    graph_reindexer = GraphReindexer(
+        num_nodes=cfg.dataset.max_node_num,
+        device=device,
+    )
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
     num_epochs = cfg.detection.gnn_training.num_epochs
@@ -287,9 +334,10 @@ def main(cfg):
         for g in train_data:
             g.to(device=device)
             loss = train(
-                data=g,
+                data=g.clone(), # avoids alteration of the graph across epochs
                 model=model,
                 optimizer=optimizer,
+                graph_reindexer=graph_reindexer,
                 cfg=cfg,
             )
             tot_loss += loss
