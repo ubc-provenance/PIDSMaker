@@ -151,6 +151,8 @@ def batch_loader_factory(cfg, data, graph_reindexer):
     neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
     
     try:
+        if isinstance(neigh_sampling[0], str):
+            neigh_sampling = eval("".join(neigh_sampling))
         use_neigh_sampling = all([isinstance(num_hop, int) for num_hop in neigh_sampling])
         error = False
     except:
