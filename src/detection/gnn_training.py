@@ -93,7 +93,7 @@ def main(cfg):
         print(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
-        if epoch % 5 == 0:
+        if epoch % 1 == 0:
             torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
 
 
