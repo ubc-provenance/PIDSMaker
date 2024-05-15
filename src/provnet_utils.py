@@ -189,11 +189,6 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     return indexid2msg #{hash_id: index_id} and {index_id: {node_type:msg}}
 
-def tensor_find(t,x):
-    t_np=t.cpu().numpy()
-    idx=np.argwhere(t_np==x)
-    return idx[0][0]+1
-
 def std(t):
     t = np.array(t)
     return np.std(t)
