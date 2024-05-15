@@ -37,7 +37,7 @@ def test(
     batch_loader = batch_loader_factory(cfg, data, graph_reindexer)
     
     for batch in batch_loader:
-        unique_nodes = torch.cat([unique_nodes, batch.edge_index]).unique()
+        unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
 
         each_edge_loss = model(batch, data, inference=True)
         tot_loss += each_edge_loss.sum().item()
