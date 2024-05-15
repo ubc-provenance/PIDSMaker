@@ -189,7 +189,7 @@ def main(cfg):
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
     
-    best_precision, best_stats = 0.0, None
+    best_precision, best_stats = 0.0, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         print(f"\nEvaluation of model {model_epoch_dir}...")
 
