@@ -84,11 +84,11 @@ def recon_loss_fn_factory(loss: str):
 
 def activation_fn_factory(activation: str):
     if activation == "sigmoid":
-        return torch.sigmoid
+        return nn.Sigmoid()
     if activation == "relu":
-        return torch.relu
+        return nn.ReLU()
     if activation == "tanh":
-        return torch.tanh
+        return nn.Tanh()
     raise ValueError(f"Invalid activation function {activation}")
 
 def decoder_factory(cfg, in_dim):
