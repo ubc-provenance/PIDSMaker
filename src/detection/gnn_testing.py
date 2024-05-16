@@ -122,7 +122,7 @@ def main(cfg):
             for g in tqdm(graphs, desc=f"{split} set with {trained_model}"):
                 g.to(device)
                 test(
-                    data=g,
+                    data=g.clone(),
                     model=model,
                     graph_reindexer=graph_reindexer,
                     nodeid2msg=nodeid2msg,
