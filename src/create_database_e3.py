@@ -18,6 +18,8 @@ def store_netflow(file_path, cur, connect, index_id, filelist):
     # Parse data from logs
     netobjset = set()
     netobj2hash = {}
+    successful_num = 0
+    failed_num = 0
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
             for line in f:
@@ -41,7 +43,9 @@ def store_netflow(file_path, cur, connect, index_id, filelist):
                         netobj2hash[nodeid] = [hashstr, nodeproperty]
                         netobj2hash[hashstr] = nodeid
                         netobjset.add(hashstr)
+                        successful_num += 1
                     except:
+                        failed_num += 1
                         pass
 
     # Store data into database
@@ -59,11 +63,13 @@ def store_netflow(file_path, cur, connect, index_id, filelist):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
+    print(f"Netflow: successful_num = {successful_num}, failed_num = {failed_num}")
+
     return index_id, net_uuid2hash
 
 def store_subject(file_path, cur, connect, index_id, filelist):
     # Parse data from logs
-    scusess_count = 0
+    success_count = 0
     fail_count = 0
     subject_obj2hash = {}
     for file in tqdm(filelist):
@@ -75,7 +81,7 @@ def store_subject(file_path, cur, connect, index_id, filelist):
 
                     try:
                         subject_obj2hash[subject_uuid[0][0]] = [subject_uuid[0][-1], subject_uuid[0][-3]] #{uuid:[path, cmd]}
-                        scusess_count += 1
+                        success_count += 1
                     except:
                         try:
                             subject_obj2hash[subject_uuid[0][0]] = ['null', subject_uuid[0][-3]]
@@ -98,10 +104,13 @@ def store_subject(file_path, cur, connect, index_id, filelist):
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
 
+    print(f"Subject: success_count = {success_count}, fail_count = {fail_count}")
+
     return index_id, subject_uuid2hash
 
 def store_file(file_path, cur, connect, index_id, filelist):
     file_obj2hash = {}
+    success_count = 0
     fail_count = 0
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
@@ -110,6 +119,7 @@ def store_file(file_path, cur, connect, index_id, filelist):
                     Object_uuid = re.findall('FileObject":{"uuid":"(.*?)",(.*?)"filename":"(.*?)"', line)
                     try:
                         file_obj2hash[Object_uuid[0][0]] = Object_uuid[0][-1]
+                        success_count += 1
                     except:
                         fail_count += 1
 
@@ -126,6 +136,8 @@ def store_file(file_path, cur, connect, index_id, filelist):
             '''
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
+
+    print(f"File: success_count = {success_count}, fail_count = {fail_count}")
 
     return index_id, file_uuid2hash
 
@@ -173,17 +185,17 @@ def store_event(file_path, cur, connect, reverse, nodeid2msg, subject_uuid2hash,
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
             for line in f:
-                if '{"datum":{"com.bbn.tc.schema.avro.cdm20.Event"' in line:
+                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.Event"' in line:
                     relation_type = re.findall('"type":"(.*?)"', line)[0]
                     if relation_type not in exclude_edge_type:
-                        subject_uuid = re.findall('"subject":{"com.bbn.tc.schema.avro.cdm20.UUID":"(.*?)"', line)
-                        predicateObject_uuid = re.findall('"predicateObject":{"com.bbn.tc.schema.avro.cdm20.UUID":"(.*?)"', line)
+                        subject_uuid = re.findall('"subject":{"com.bbn.tc.schema.avro.cdm18.UUID":"(.*?)"', line)
+                        predicateObject_uuid = re.findall('"predicateObject":{"com.bbn.tc.schema.avro.cdm18.UUID":"(.*?)"', line)
 
                         if len(subject_uuid) > 0 and len(predicateObject_uuid) > 0:
                             if subject_uuid[0] in subject_uuid2hash and (predicateObject_uuid[0] in subject_uuid2hash or
                                                                          predicateObject_uuid[0] in file_uuid2hash or
                                                                          predicateObject_uuid[0] in net_uuid2hash):
-                                event_uuid = re.findall('{"datum":{"com.bbn.tc.schema.avro.cdm20.Event":{"uuid":"(.*?)",', line)[0]
+                                event_uuid = re.findall('{"datum":{"com.bbn.tc.schema.avro.cdm18.Event":{"uuid":"(.*?)",', line)[0]
                                 time_rec = re.findall('"timestampNanos":(.*?),', line)[0]
                                 time_rec = int(time_rec)
                                 subjectId = subject_uuid2hash[subject_uuid[0]]
