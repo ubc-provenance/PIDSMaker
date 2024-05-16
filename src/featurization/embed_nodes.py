@@ -3,6 +3,7 @@ from . import build_random_walks
 from .embed_nodes_methods import (
     embed_nodes_word2vec,
     embed_nodes_doc2vec,
+    build_feature_word2vec,
 )
 
 
@@ -13,6 +14,13 @@ def main(cfg):
         embed_nodes_word2vec.main(cfg)
     elif method == "doc2vec":
         embed_nodes_doc2vec.main(cfg)
+    elif method == "hierarchical_hashing":
+        # hierarchical feature hashing doesn't need to build or train any model
+        # so we do nothing here and generate vectorized graphs directly in embed_edges.py
+        # We still need to create a dummy file in the task path to know that this task is done
+        set_task_to_done(cfg.featurization.embed_nodes._task_path)
+    elif method == "feature_word2vec":
+        build_feature_word2vec.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 

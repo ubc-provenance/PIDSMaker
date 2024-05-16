@@ -3,6 +3,7 @@ import os
 from nltk.tokenize import word_tokenize
 
 from provnet_utils import *
+from config import *
 
 def splitting_label_set(split_files: list[str], cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir

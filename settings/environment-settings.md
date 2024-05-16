@@ -31,7 +31,7 @@ pip install nltk==3.8.1
 
 # PyTorch GPU version
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
-pip install torch_geometric==2.0.0 --no-cache-dir
+pip install torch_geometric==2.5.3 --no-cache-dir
 pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 torch_cluster==1.6.1 torch_spline_conv==1.2.2 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html --no-cache-dir
 
 # Gensim Word2Vec library 

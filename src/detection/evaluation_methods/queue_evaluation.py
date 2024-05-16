@@ -299,7 +299,7 @@ def cal_set_rel_lof(s1, s2, lof_model, nodelabels_train_val, node2vec):
             count += 1
     return count
 
-def anomalous_queue_construction(
+def anomalous_queue_construction_provnet(
         graph_dir_path,
         lof_model = None,
         nodelabels_train_val = None,
@@ -382,7 +382,7 @@ def ground_truth_label(test_tw_path, cfg):
 
     return labels
 
-def create_queues(cfg):
+def create_queues_provnet(cfg):
     node2vec_path = os.path.join(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, "nodelabel2vec")
     node2vec_train_val_path = os.path.join(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, "nodelabel2vec_val")
     
@@ -403,7 +403,7 @@ def create_queues(cfg):
         val_thr = cal_val_thr(val_tw_path)
 
         # Testing date
-        queues = anomalous_queue_construction(
+        queues = anomalous_queue_construction_provnet(
             graph_dir_path=test_tw_path,
             lof_model=lof_model,
             nodelabels_train_val=nodelabels_train_val,
@@ -479,10 +479,10 @@ def main(cfg):
     method = cfg.detection.evaluation.queue_evaluation.used_method
     
     if method == "kairos_idf_queue":
-        create_queues(cfg)
+        create_queues_kairos(cfg)
         predict_queues(cfg)
     elif method == "provnet_lof_queue":
-        create_queues_kairos(cfg)
+        create_queues_provnet(cfg)
         predict_queues(cfg)
     else:
         raise ValueError(f"Invalid queue evaluation method `{method}`")

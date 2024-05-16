@@ -58,10 +58,10 @@ if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
     wandb.init(
-        mode="online" if args.wandb_exp != "" else "disabled",
+        mode="online" if args.exp != "" else "disabled",
         project="framework",
-        name=args.wandb_exp,
-        tags=args.wandb_tag.split(",") if args.wandb_tag != "" else None,
+        name=args.exp,
+        tags=args.tags.split(",") if args.tags != "" else None,
     )
     
     if len(unknown_args) > 0:

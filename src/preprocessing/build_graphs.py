@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 import networkx as nx
-
+import torch
 from config import *
 from provnet_utils import *
 
@@ -33,7 +33,7 @@ def get_node_list(cur, cfg):
         features_used = []
         for label_used in node_label_features['netflow']:
             features_used.append(attrs[label_used])
-        label_str = ':'.join(features_used)
+        label_str = ' '.join(features_used)
         if use_hashed_label:
             nodeid2msg[hash_id] = ['netflow',stringtomd5(label_str)]
         else:
@@ -55,7 +55,7 @@ def get_node_list(cur, cfg):
         features_used = []
         for label_used in node_label_features['subject']:
             features_used.append(attrs[label_used])
-        label_str = ':'.join(features_used)
+        label_str = ' '.join(features_used)
         if use_hashed_label:
             nodeid2msg[hash_id] = ['subject',stringtomd5(label_str)]
         else:
@@ -76,7 +76,7 @@ def get_node_list(cur, cfg):
         features_used = []
         for label_used in node_label_features['file']:
             features_used.append(attrs[label_used])
-        label_str = ':'.join(features_used)
+        label_str = ' '.join(features_used)
         if use_hashed_label:
             nodeid2msg[hash_id] = ['file',stringtomd5(label_str)]
         else:
