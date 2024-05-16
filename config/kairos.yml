@@ -10,21 +10,7 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
-    used_method: doc2vec
-    doc2vec:
-      epochs: 100
-      alpha: 0.025
-      min_alpha: 0.00025
-    word2vec:
-      walk_length: 30
-      num_walks: 10
-      epochs: 5 
-      context_window_size: 5
-      min_count: 0
-      use_skip_gram: True
-      num_workers: 6
-      compute_loss: True
-      add_paths: False
+    used_method: hierarchical_hashing
   embed_edges:
     include_edge_type: True
 
@@ -39,6 +25,7 @@ detection:
     node_dropout: 0.0
     encoder:
       use_node_type_in_node_feats: True
+      neighbor_sampling: []
       used_methods: graph_attention,tgn
       graph_attention:
         num_heads: 8

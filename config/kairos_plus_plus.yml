@@ -51,6 +51,7 @@ detection:
     node_dropout: 0.0
     encoder:
       use_node_type_in_node_feats: False
+      neighbor_sampling: []
       used_methods: graph_attention,tgn
       graph_attention:
         num_heads: 8
@@ -62,11 +63,12 @@ detection:
         use_time_encoding: False
         use_msg_as_edge_feature: False
     decoder:
-      used_methods: node_recon_MLP
-      node_recon_MLP:
+      used_methods: reconstruct_node
+      reconstruct_node:
         loss: SCE
         recon_hid_dim: 100
         recon_use_bias: True
+        out_activation: tanh
   gnn_testing:
     threshold_method: str
   evaluation:

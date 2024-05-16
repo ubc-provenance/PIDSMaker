@@ -73,7 +73,7 @@ def main(cfg):
         name="embed_edges",
         filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log"))
 
-    trained_w2v_dir = cfg.featurization.embed_nodes._vec_graphs_dir
+    trained_w2v_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
     graphs_dir = cfg.preprocessing.build_graphs._graphs_dir
     out_dir = cfg.featurization.embed_edges._edge_embeds_dir
 
