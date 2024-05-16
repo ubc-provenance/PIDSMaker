@@ -123,6 +123,7 @@ theia_e3=# create table file_node_table
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
@@ -137,36 +138,24 @@ theia_e3=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
-theia_e3=# alter table netflow_node_table owner to postgres;
+theia_e5=# alter table netflow_node_table owner to postgres;
 
 # create the subject table
 theia_e3=# create table subject_node_table
 (
-    node_uuid varchar not null,
-    hash_id   varchar not null,
-    "cmdLine" varchar not null,
-    tgid      varchar not null,
-    path      varchar not null,
+    node_uuid varchar,
+    hash_id   varchar,
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
     constraint subject_node_table_pk
         primary key (node_uuid, hash_id)
 );
 theia_e3=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-theia_e3=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-theia_e3=# alter table node2id owner to postgres;
-theia_e3=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 ```
 
 
