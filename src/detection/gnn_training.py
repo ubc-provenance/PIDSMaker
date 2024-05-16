@@ -36,7 +36,7 @@ def train(data,
         losses.append(loss.item())
     return np.mean(losses)
 
-def main(cfg):
+def main(cfg, save_model: bool=True):
     logger = get_logger(
         name="gnn_training",
         filename=os.path.join(cfg.detection.gnn_training._logs_dir, "gnn_training.log"))
@@ -93,7 +93,7 @@ def main(cfg):
         print(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
-        if epoch % 1 == 0:
+        if save_model and epoch % 1 == 0:
             torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
 
 

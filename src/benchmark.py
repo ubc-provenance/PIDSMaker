@@ -22,7 +22,7 @@ from config import (
 )
 
 
-def main(cfg):
+def main(cfg, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
@@ -47,7 +47,7 @@ def main(cfg):
 
     # Detection
     if should_restart["gnn_training"]:
-        gnn_training.main(cfg)
+        gnn_training.main(cfg, **kwargs)
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
     if should_restart["evaluation"]:
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.exp != "" else "disabled",
-        project="framework",
+        project="framework_tests",
         name=args.exp,
         tags=args.tags.split(",") if args.tags != "" else None,
     )
