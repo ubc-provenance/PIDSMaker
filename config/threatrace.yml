@@ -22,20 +22,13 @@ detection:
     weight_decay: 0.01
     node_hid_dim: 32
     node_out_dim: 100
-    dropout: 0.0
     encoder:
       use_node_type_in_node_feats: True
-      neighbor_sampling: []
-      used_methods: tgn,sage
-      graph_attention:
-        num_heads: 8
-      tgn:
-        tgn_batch_size: 1024
-        tgn_memory_dim: 100
-        tgn_time_dim: 100
-        tgn_neighbor_size: 20
-        use_time_encoding: True
-        use_msg_as_edge_feature: True
+      neighbor_sampling: [1,1]
+      used_methods: sage
+      sage:
+        dropout: 0.5
+        activation: relu
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
