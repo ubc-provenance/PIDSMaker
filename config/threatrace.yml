@@ -17,26 +17,18 @@ featurization:
 detection:
   gnn_training:
     use_seed: False
-    num_epochs: 50
+    num_epochs: 1
     lr: 0.00005
     weight_decay: 0.01
-    node_hid_dim: 100
+    node_hid_dim: 32
     node_out_dim: 100
     encoder:
       use_node_type_in_node_feats: True
-      neighbor_sampling: []
-      used_methods: graph_attention,tgn
-      graph_attention:
-        dropout: 0.0
+      neighbor_sampling: [1,1]
+      used_methods: sage
+      sage:
+        dropout: 0.5
         activation: relu
-        num_heads: 8
-      tgn:
-        tgn_batch_size: 1024
-        tgn_memory_dim: 100
-        tgn_time_dim: 100
-        tgn_neighbor_size: 20
-        use_time_encoding: True
-        use_msg_as_edge_feature: True
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:

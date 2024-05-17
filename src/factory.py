@@ -37,19 +37,33 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
             edge_dim += msg_dim
         if use_time_encoding:
             edge_dim += tgn_memory_dim
-            
+
         # Only for TGN, in_dim becomes memory dim
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
-    if "graph_attention" in cfg.detection.gnn_training.encoder.used_methods:
-        encoder = GraphAttentionEmbedding(
-            in_dim=in_dim,
-            hid_dim=node_hid_dim,
-            out_dim=node_out_dim,
-            edge_dim=edge_dim or None,
-            node_dropout=cfg.detection.gnn_training.node_dropout,
-            num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
-        ).to(device)
+    for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.split(",")):
+        if method == "tgn":
+            pass
+        elif method == "graph_attention":
+            encoder = GraphAttentionEmbedding(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                edge_dim=edge_dim or None,
+                activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
+                dropout=cfg.detection.gnn_training.encoder.graph_attention.dropout,
+                num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
+            ).to(device)
+        elif method == "sage":
+            encoder = SAGE(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
+                dropout=cfg.detection.gnn_training.encoder.sage.dropout,
+            ).to(device)
+        else:
+            raise ValueError(f"Invalid encoder {method}")
     
     if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
         time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim

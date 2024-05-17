@@ -43,17 +43,18 @@ featurization:
 detection:
   gnn_training:
     use_seed: False
-    num_epochs: 50
+    num_epochs: 30
     lr: 0.000001
     weight_decay: 0.01
     node_hid_dim: 64
     node_out_dim: 64
-    node_dropout: 0.0
     encoder:
       use_node_type_in_node_feats: False
       neighbor_sampling: []
       used_methods: graph_attention,tgn
       graph_attention:
+        dropout: 0.0
+        activation: relu
         num_heads: 8
       tgn:
         tgn_batch_size: 1024
@@ -77,6 +78,3 @@ detection:
       threshold_method: max_val_loss
       use_dst_node_loss: True
       use_mean_node_loss: False 
-    queue_evaluation:
-      provnet_lof_queue:
-        queue_arg: max_val_loss
