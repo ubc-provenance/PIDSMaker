@@ -48,12 +48,12 @@ def train_feature_word2vec(corpus, cfg, model_save_path, logger):
                          compute_loss=compute_loss,
                          negative=negative)
         epoch_loss = model.get_latest_training_loss()
-        logger.info(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
+        print(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
 
         for epoch in range(epochs - 1):
             model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
             epoch_loss = model.get_latest_training_loss()
-            logger.info(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
+            print(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
     else:
         model = Word2Vec(corpus,
                          vector_size=emb_dim,
@@ -65,11 +65,11 @@ def train_feature_word2vec(corpus, cfg, model_save_path, logger):
                          compute_loss=compute_loss,
                          negative=negative)
         loss = model.get_latest_training_loss()
-        logger.info(f"Epoch: {epochs}; loss: {loss}")
+        print(f"Epoch: {epochs}; loss: {loss}")
 
     model.init_sims(replace=True)
     model.save(os.path.join(model_save_path, 'feature_word2vec.model'))
-    logger.info(f"Save word2vec to {os.path.join(model_save_path, 'feature_word2vec.model')}")
+    print(f"Save word2vec to {os.path.join(model_save_path, 'feature_word2vec.model')}")
 
 def main(cfg):
     model_save_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir
@@ -79,20 +79,19 @@ def main(cfg):
         name="build_feature_word2vec",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "feature_word2vec.log")
     )
-    logger.info(f"Building feature word2vec model and save model to {model_save_path}")
+    print(f"Building feature word2vec model and save model to {model_save_path}")
 
     use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
 
-    logger.info(f"Get indexid2msg from database...")
+    print(f"Get indexid2msg from database...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
 
-    logger.info(f"Start building and training feature word2vec model...")
     print(f"Start building and training feature word2vec model...")
 
-    logger.info("Loading and tokenizing corpus from database...")
+    print("Loading and tokenizing corpus from database...")
     corpus = load_corpus_from_database(indexid2msg=indexid2msg, use_node_types=use_node_types)
 
     train_feature_word2vec(corpus=corpus,

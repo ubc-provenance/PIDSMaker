@@ -212,7 +212,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                             label=info['label']
                         )
 
-                    for edge in edge_list:
+                    for i, edge in enumerate(edge_list):
                         graph.add_edge(
                             edge['src'],
                             edge['dst'],
@@ -220,6 +220,11 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                             time=edge['time'],
                             label=edge['label']
                         )
+                        
+                        # For unit tests, we only want few edges
+                        NUM_TEST_EDGES = 2000
+                        if cfg._test_mode and i >= NUM_TEST_EDGES:
+                            break
 
                     date_dir = f"{cfg.preprocessing.build_graphs._graphs_dir}/graph_{day}/"
                     os.makedirs(date_dir, exist_ok=True)
@@ -233,6 +238,10 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                     logger.info(f"[{time_interval}] Num of nodes: {len(node_info.keys())}")
                     start_time = batch_edges[-1][-2]
                     temp_list.clear()
+                    
+                    # For unit tests, we only edges from the first graph
+                    if cfg._test_mode:
+                        return
 
 def main(cfg):
     logger = get_logger(

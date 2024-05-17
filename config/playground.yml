@@ -63,6 +63,9 @@ detection:
         tgn_neighbor_size: 20
         use_time_encoding: True
         use_msg_as_edge_feature: True
+      sage:
+        dropout: 0.5
+        activation: relu
     decoder:
       used_methods: predict_edge_contrastive, reconstruct_node, predict_edge_type
       predict_edge_type:
