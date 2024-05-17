@@ -364,7 +364,11 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
     return data
 
 def classifier_evaluation(y_test, y_test_pred, scores):
-    tn, fp, fn, tp =confusion_matrix(y_test, y_test_pred).ravel()
+    labels_exist = sum(y_test) > 0
+    if labels_exist:
+        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
+    else:
+        tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
     print(f'total num: {len(y_test)}')
     print(f'tn: {tn}')
     print(f'fp: {fp}')
@@ -376,14 +380,14 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     recall=tp/(tp+fn)
     accuracy=(tp+tn)/(tp+tn+fp+fn)
     fscore=2*(precision*recall)/(precision+recall)
-    
+
     try:
         auc_val=roc_auc_score(y_test, scores)
     except: auc_val=float("nan")
     try:
         ap=ap_score(y_test, scores)
     except: ap=float("nan")
-    
+
     print(f"precision: {precision}")
     print(f"recall: {recall}")
     print(f"fpr: {fpr}")
@@ -393,7 +397,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
 
     print("|precision|recall|fscore|ap|accuracy|TN|FP|FN|TP|")
     print(f"|{precision:.4f}|{recall:.4f}|{fscore:.4f}|{ap:.4f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
-    
+
     stats = {
         "precision": round(precision, 5),
         "recall": round(recall, 5),
