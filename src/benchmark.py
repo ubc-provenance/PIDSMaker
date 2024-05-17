@@ -57,11 +57,15 @@ def main(cfg, **kwargs):
 if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
+    exp_name = args.exp if args.exp != "" else \
+        "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
+    tags = args.tags.split(",") if args.tags != "" else [args.model]
+    
     wandb.init(
-        mode="online" if args.exp != "" else "disabled",
+        mode="online" if args.wandb else "disabled",
         project="framework_tests",
-        name=args.exp,
-        tags=args.tags.split(",") if args.tags != "" else None,
+        name=exp_name,
+        tags=tags,
     )
     
     if len(unknown_args) > 0:
