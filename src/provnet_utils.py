@@ -396,7 +396,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     print(f"auc_val: {auc_val}")
 
     print("|precision|recall|fscore|ap|accuracy|TN|FP|FN|TP|")
-    print(f"|{precision:.4f}|{recall:.4f}|{fscore:.4f}|{ap:.4f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
+    print(f"|{precision:.5f}|{recall:.5f}|{fscore:.5f}|{ap:.5f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
 
     stats = {
         "precision": round(precision, 5),
