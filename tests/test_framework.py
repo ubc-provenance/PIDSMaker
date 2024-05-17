@@ -69,7 +69,7 @@ def run_decoders(model, dataset, featurization_method):
 
 
 # === Tests ===
-def test_yml_files():
+def test_yml_files(dataset: str):
     """
     Tests that YML file configurations do not generate errors.
     """
@@ -84,11 +84,11 @@ def test_yml_files():
     ]
     
     for model in models:
-        cfg = prepare_cfg(model=model, dataset="THEIA_E3", featurization_method="feature_word2vec")
+        cfg = prepare_cfg(model=model, dataset=dataset, featurization_method="feature_word2vec")
         benchmark.main(cfg)
 
 
-def test_whole_framework():
+def test_whole_framework(dataset: str):
     """
     Tests all subtasks of the framework with different featurization methods.
     """
@@ -102,7 +102,6 @@ def test_whole_framework():
         "doc2vec",
     ]
     base_model = "playground"
-    dataset = "THEIA_E3"
     
     for featurization_method in featurization_methods:
         run_encoders(base_model, dataset, featurization_method)
@@ -113,13 +112,14 @@ if __name__ == "__main__":
     config.ROOT_ARTIFACT_DIR = os.path.join(config.ROOT_ARTIFACT_DIR, "tests/")
     
     parser = argparse.ArgumentParser()
+    parser.add_argument('dataset', type=str, help="Name of the dataset to run the tests on.")
     parser.add_argument('--restart', action="store_true", help="Removes all existing files and start tests from beginning.")
     args, _ = parser.parse_known_args()
 
     if args.restart:
         shutil.rmtree(config.ROOT_ARTIFACT_DIR, ignore_errors=True)
     
-    test_whole_framework()
-    test_yml_files()
+    test_whole_framework(args.dataset)
+    test_yml_files(args.dataset)
     
     shutil.rmtree(config.ROOT_ARTIFACT_DIR)

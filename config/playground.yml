@@ -43,9 +43,9 @@ featurization:
 detection:
   gnn_training:
     use_seed: False
-    num_epochs: 1
+    num_epochs: 20
     lr: 0.0001
-    weight_decay: 0.001
+    weight_decay: 0.00001
     node_hid_dim: 64
     node_out_dim: 64
     encoder:
@@ -67,7 +67,7 @@ detection:
         dropout: 0.5
         activation: relu
     decoder:
-      used_methods: predict_edge_contrastive, reconstruct_node, predict_edge_type
+      used_methods: reconstruct_node
       predict_edge_type:
         used_method: custom
         custom:
@@ -82,9 +82,9 @@ detection:
           dropout: 0.0
       reconstruct_node:
         loss: SCE
-        recon_hid_dim: 100
+        recon_hid_dim: 32
         recon_use_bias: True
-        out_activation: sigmoid
+        out_activation: tanh
 
   gnn_testing:
     threshold_method: str

@@ -140,7 +140,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
     else:
         node_preds = {}
         edge_preds = []
-        for (srcnode, dstnode), loss, edge_label in tqdm(zip(edge_index, losses, edge_labels), desc="Edge thresholding"):
+        for (srcnode, dstnode), loss, edge_label in tqdm(zip(edge_index, losses, edge_labels), total=len(edge_index), desc="Edge thresholding"):
             if loss > thr:
                 node_preds[srcnode] = 1
             else:
