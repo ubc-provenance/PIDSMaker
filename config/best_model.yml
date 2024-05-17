@@ -43,9 +43,9 @@ featurization:
 detection:
   gnn_training:
     use_seed: False
-    num_epochs: 10
-    lr: 0.000001
-    weight_decay: 0.01
+    num_epochs: 30
+    lr: 0.00001
+    weight_decay: 0.00001
     node_hid_dim: 64
     node_out_dim: 64
     encoder:
@@ -70,18 +70,6 @@ detection:
         recon_hid_dim: 100
         recon_use_bias: True
         out_activation: tanh
-      predict_edge_type:
-        used_method: custom
-        custom:
-          dropout: 0.5
-          num_layers: 2
-          activation: relu
-      predict_edge_contrastive:
-        used_method: linear
-        inner_product:
-          dropout: 0.0
-        linear:
-          dropout: 0.0
   gnn_testing:
     threshold_method: str
   evaluation:

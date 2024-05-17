@@ -51,7 +51,7 @@ detection:
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
-      used_methods: graph_attention
+      used_methods: tgn,graph_attention
       graph_attention:
         dropout: 0.0
         activation: relu
