@@ -107,6 +107,7 @@ def decoder_factory(cfg, in_dim, device):
                 out_dim=in_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
+                hid_activation=activation_fn_factory("relu"),
             ).to(device)
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
@@ -114,6 +115,7 @@ def decoder_factory(cfg, in_dim, device):
                 out_dim=in_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
+                hid_activation=activation_fn_factory("relu"),
             ).to(device)
             decoders.append(SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
         
