@@ -1,0 +1,45 @@
+preprocessing:
+  build_graphs:
+    time_window_size: 15
+    use_hashed_label: False
+    node_label_features:
+      subject: path
+      file: path
+      netflow: remote_ip, remote_port
+
+featurization:
+  embed_nodes:
+    emb_dim: 128
+    used_method: hierarchical_hashing
+  embed_edges:
+    include_edge_type: True
+
+detection:
+  gnn_training:
+    use_seed: False
+    num_epochs: 1
+    lr: 0.00005
+    weight_decay: 0.01
+    node_hid_dim: 32
+    node_out_dim: 100
+    encoder:
+      use_node_type_in_node_feats: True
+      neighbor_sampling: [1,1]
+      used_methods: sage
+      sage:
+        dropout: 0.5
+        activation: relu
+    decoder:
+      used_methods: predict_edge_type
+      predict_edge_type:
+        used_method: kairos
+
+  gnn_testing:
+    threshold_method: str
+  evaluation:
+    used_method: queue_evaluation
+    queue_evaluation:
+      queue_threshold: 20
+      used_method: kairos_idf_queue
+      kairos_idf_queue:
+        include_test_set_in_IDF: True
