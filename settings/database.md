@@ -123,6 +123,7 @@ theia_e3=# create table file_node_table
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
@@ -137,36 +138,24 @@ theia_e3=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
-theia_e3=# alter table netflow_node_table owner to postgres;
+theia_e5=# alter table netflow_node_table owner to postgres;
 
 # create the subject table
 theia_e3=# create table subject_node_table
 (
-    node_uuid varchar not null,
-    hash_id   varchar not null,
-    "cmdLine" varchar not null,
-    tgid      varchar not null,
-    path      varchar not null,
+    node_uuid varchar,
+    hash_id   varchar,
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
     constraint subject_node_table_pk
         primary key (node_uuid, hash_id)
 );
 theia_e3=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-theia_e3=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-theia_e3=# alter table node2id owner to postgres;
-theia_e3=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 ```
 
 
@@ -426,6 +415,7 @@ cadets_e5=# create table file_node_table
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
@@ -440,6 +430,7 @@ cadets_e5=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
@@ -450,22 +441,13 @@ cadets_e5=# create table subject_node_table
 (
     node_uuid varchar,
     hash_id   varchar,
-    exec      varchar
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
+    constraint subject_node_table_pk
+        primary key (node_uuid, hash_id)
 );
 cadets_e5=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-cadets_e5=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-cadets_e5=# alter table node2id owner to postgres;
-cadets_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 ```
 
 
@@ -475,13 +457,13 @@ cadets_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 sudo -u postgres psql
 
 # create the database
-postgres=# create database theia_1_e5;
+postgres=# create database theia_e5;
 
 # switch to the created database
-postgres=# \connect theia_1_e5;
+postgres=# \connect theia_e5;
 
 # create the event table and grant the privileges to postgres
-theia_1_e5=# create table event_table
+theia_e5=# create table event_table
 (
     src_node      varchar,
     src_index_id  varchar,
@@ -492,22 +474,23 @@ theia_1_e5=# create table event_table
     timestamp_rec bigint,
     _id           serial
 );
-theia_1_e5=# alter table event_table owner to postgres;
-theia_1_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
+theia_e5=# alter table event_table owner to postgres;
+theia_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
 
 # create the file table
-theia_1_e5=# create table file_node_table
+theia_e5=# create table file_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
-theia_1_e5=# alter table file_node_table owner to postgres;
+theia_e5=# alter table file_node_table owner to postgres;
 
 # create the netflow table
-theia_1_e5=# create table netflow_node_table
+theia_e5=# create table netflow_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
@@ -515,32 +498,24 @@ theia_1_e5=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
-theia_1_e5=# alter table netflow_node_table owner to postgres;
+theia_e5=# alter table netflow_node_table owner to postgres;
 
 # create the subject table
-theia_1_e5=# create table subject_node_table
+theia_e5=# create table subject_node_table
 (
     node_uuid varchar,
     hash_id   varchar,
-    exec      varchar
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
+    constraint subject_node_table_pk
+        primary key (node_uuid, hash_id)
 );
-theia_1_e5=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-theia_1_e5=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-theia_1_e5=# alter table node2id owner to postgres;
-theia_1_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
+theia_e5=# alter table subject_node_table owner to postgres;
 ```
 
 
@@ -550,38 +525,40 @@ theia_1_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 sudo -u postgres psql
 
 # create the database
-postgres=# create database tc_e5_clearscope_dataset_db;
+postgres=# create database clearscope_e5;
 
 # switch to the created database
-postgres=# \connect tc_e5_clearscope_dataset_db;
+postgres=# \connect clearscope_e5;
 
 # create the event table and grant the privileges to postgres
-tc_e5_clearscope_dataset_db=# create table event_table
+clearscope_e5=# create table event_table
 (
     src_node      varchar,
     src_index_id  varchar,
     operation     varchar,
     dst_node      varchar,
     dst_index_id  varchar,
+    event_uuid    varchar not null,
     timestamp_rec bigint,
     _id           serial
 );
-tc_e5_clearscope_dataset_db=# alter table event_table owner to postgres;
-tc_e5_clearscope_dataset_db=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
+clearscope_e5=# alter table event_table owner to postgres;
+clearscope_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
 
 # create the file table
-tc_e5_clearscope_dataset_db=# create table file_node_table
+clearscope_e5=# create table file_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
-tc_e5_clearscope_dataset_db=# alter table file_node_table owner to postgres;
+clearscope_e5=# alter table file_node_table owner to postgres;
 
 # create the netflow table
-tc_e5_clearscope_dataset_db=# create table netflow_node_table
+clearscope_e5=# create table netflow_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
@@ -589,32 +566,24 @@ tc_e5_clearscope_dataset_db=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
-tc_e5_clearscope_dataset_db=# alter table netflow_node_table owner to postgres;
+clearscope_e5=# alter table netflow_node_table owner to postgres;
 
 # create the subject table
-tc_e5_clearscope_dataset_db=# create table subject_node_table
+clearscope_e5=# create table subject_node_table
 (
     node_uuid varchar,
     hash_id   varchar,
-    exec      varchar
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
+    constraint subject_node_table_pk
+        primary key (node_uuid, hash_id)
 );
-tc_e5_clearscope_dataset_db=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-tc_e5_clearscope_dataset_db=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-tc_e5_clearscope_dataset_db=# alter table node2id owner to postgres;
-tc_e5_clearscope_dataset_db=# create unique index node2id_hash_id_uindex on node2id (hash_id);
+clearscope_e5=# alter table subject_node_table owner to postgres;
 ```
 
 ## TRACE E5
@@ -623,13 +592,13 @@ tc_e5_clearscope_dataset_db=# create unique index node2id_hash_id_uindex on node
 sudo -u postgres psql
 
 # create the database
-postgres=# create database trace_2_e5;
+postgres=# create database trace_e5;
 
 # switch to the created database
-postgres=# \connect trace_2_e5;
+postgres=# \connect trace_e5;
 
 # create the event table and grant the privileges to postgres
-trace_2_e5=# create table event_table
+trace_e5=# create table event_table
 (
     src_node      varchar,
     src_index_id  varchar,
@@ -640,22 +609,23 @@ trace_2_e5=# create table event_table
     timestamp_rec bigint,
     _id           serial
 );
-trace_2_e5=# alter table event_table owner to postgres;
-trace_2_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
+trace_e5=# alter table event_table owner to postgres;
+trace_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
 
 # create the file table
-trace_2_e5=# create table file_node_table
+trace_e5=# create table file_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
-trace_2_e5=# alter table file_node_table owner to postgres;
+trace_e5=# alter table file_node_table owner to postgres;
 
 # create the netflow table
-trace_2_e5=# create table netflow_node_table
+trace_e5=# create table netflow_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
@@ -663,32 +633,24 @@ trace_2_e5=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
-trace_2_e5=# alter table netflow_node_table owner to postgres;
+trace_e5=# alter table netflow_node_table owner to postgres;
 
 # create the subject table
-trace_2_e5=# create table subject_node_table
+trace_e5=# create table subject_node_table
 (
     node_uuid varchar,
     hash_id   varchar,
-    exec      varchar
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
+    constraint subject_node_table_pk
+        primary key (node_uuid, hash_id)
 );
-trace_2_e5=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-trace_2_e5=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-trace_2_e5=# alter table node2id owner to postgres;
-trace_2_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
+trace_e5=# alter table subject_node_table owner to postgres;
 ```
 
 ## FiveDirections E5
@@ -697,13 +659,13 @@ trace_2_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
 sudo -u postgres psql
 
 # create the database
-postgres=# create database fivedirections_2_e5;
+postgres=# create database fivedirections_e5;
 
 # switch to the created database
-postgres=# \connect fivedirections_2_e5;
+postgres=# \connect fivedirections_e5;
 
 # create the event table and grant the privileges to postgres
-fivedirections_2_e5=# create table event_table
+fivedirections_e5=# create table event_table
 (
     src_node      varchar,
     src_index_id  varchar,
@@ -714,22 +676,23 @@ fivedirections_2_e5=# create table event_table
     timestamp_rec bigint,
     _id           serial
 );
-fivedirections_2_e5=# alter table event_table owner to postgres;
-fivedirections_2_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
+fivedirections_e5=# alter table event_table owner to postgres;
+fivedirections_e5=# create unique index event_table__id_uindex on event_table (_id); grant delete, insert, references, select, trigger, truncate, update on event_table to postgres;
 
 # create the file table
-fivedirections_2_e5=# create table file_node_table
+fivedirections_e5=# create table file_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
     path      varchar,
+    index_id  bigint,
     constraint file_node_table_pk
         primary key (node_uuid, hash_id)
 );
-fivedirections_2_e5=# alter table file_node_table owner to postgres;
+fivedirections_e5=# alter table file_node_table owner to postgres;
 
 # create the netflow table
-fivedirections_2_e5=# create table netflow_node_table
+fivedirections_e5=# create table netflow_node_table
 (
     node_uuid varchar not null,
     hash_id   varchar not null,
@@ -737,33 +700,24 @@ fivedirections_2_e5=# create table netflow_node_table
     src_port  varchar,
     dst_addr  varchar,
     dst_port  varchar,
+    index_id  bigint,
     constraint netflow_node_table_pk
         primary key (node_uuid, hash_id)
 );
-fivedirections_2_e5=# alter table netflow_node_table owner to postgres;
+fivedirections_e5=# alter table netflow_node_table owner to postgres;
 
 # create the subject table
-fivedirections_2_e5=# create table subject_node_table
+fivedirections_e5=# create table subject_node_table
 (
     node_uuid varchar,
     hash_id   varchar,
-    cmdline   varchar,
-    exec      varchar
+    path      varchar,
+    cmd       varchar,
+    index_id  bigint,
+    constraint subject_node_table_pk
+        primary key (node_uuid, hash_id)
 );
-fivedirections_2_e5=# alter table subject_node_table owner to postgres;
-
-# create the node2id table
-fivedirections_2_e5=# create table node2id
-(
-    hash_id   varchar not null
-        constraint node2id_pk
-            primary key,
-    node_type varchar,
-    msg       varchar,
-    index_id  bigint
-);
-fivedirections_2_e5=# alter table node2id owner to postgres;
-fivedirections_2_e5=# create unique index node2id_hash_id_uindex on node2id (hash_id);
+fivedirections_e5=# alter table subject_node_table owner to postgres;
 ```
 
 
