@@ -370,6 +370,9 @@ def ground_truth_label(test_tw_path, cfg):
     labels = {}
     for tw in listdir_sorted(test_tw_path):
         labels[tw] = 0
+        
+    if cfg._test_mode:
+        return labels
 
     attack_tws = cfg.dataset.ground_truth_time_windows
     for tw in attack_tws:
