@@ -95,11 +95,11 @@ def decoder_factory(cfg, in_dim, device):
 
     decoders = []
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
-        if method == "reconstruct_node":
-            recon_hid_dim = cfg.detection.gnn_training.decoder.reconstruct_node.recon_hid_dim
-            recon_use_bias = cfg.detection.gnn_training.decoder.reconstruct_node.recon_use_bias
-            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node.loss)
-            out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node.out_activation)
+        if method == "reconstruct_node_features":
+            recon_hid_dim = cfg.detection.gnn_training.decoder.reconstruct_node_features.recon_hid_dim
+            recon_use_bias = cfg.detection.gnn_training.decoder.reconstruct_node_features.recon_use_bias
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
+            out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.out_activation)
 
             src_recon = AutoEncoder(
                 in_dim=node_out_dim,
@@ -107,6 +107,7 @@ def decoder_factory(cfg, in_dim, device):
                 out_dim=in_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
+                hid_activation=activation_fn_factory("relu"),
             ).to(device)
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
@@ -114,8 +115,50 @@ def decoder_factory(cfg, in_dim, device):
                 out_dim=in_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
+                hid_activation=activation_fn_factory("relu"),
             ).to(device)
-            decoders.append(SrcDstNodeDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
+            decoders.append(SrcDstNodeFeatDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
+            
+        elif method == "reconstruct_node_embeddings":
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_embeddings.loss)
+            out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_embeddings.out_activation)
+
+            src_recon = AutoEncoder(
+                in_dim=node_out_dim,
+                h_dim=node_out_dim // 2,
+                out_dim=node_out_dim,
+                out_activation=out_activation,
+            ).to(device)
+            dst_recon = AutoEncoder(
+                in_dim=node_out_dim,
+                h_dim=node_out_dim // 2,
+                out_dim=node_out_dim,
+                out_activation=out_activation,
+            ).to(device)
+            decoders.append(SrcDstNodeEmbDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
+        
+        elif method == "reconstruct_edge_embeddings":
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_edge_embeddings.loss)
+            out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_edge_embeddings.out_activation)
+            in_dim_edge = node_out_dim * 2  # concatenation of 2 nodes
+            
+            ae = AutoEncoder(
+                in_dim=in_dim_edge,
+                h_dim=in_dim_edge // 2,
+                out_dim=in_dim_edge,
+                out_activation=out_activation,
+            )
+            edge_decoder = edge_decoder_factory(
+                edge_decoder=cfg.detection.gnn_training.decoder.reconstruct_edge_embeddings.edge_decoder,
+                in_dim=in_dim_edge,
+            )
+            if edge_decoder is not None:
+                ae = nn.Sequential(edge_decoder, ae)
+            decoder = EdgeDecoder(
+                decoder=ae,
+                loss_fn=loss_fn,
+            )
+            decoders.append(decoder)
         
         elif method == "predict_edge_type":
             loss_fn = nn.CrossEntropyLoss()
@@ -159,6 +202,18 @@ def decoder_factory(cfg, in_dim, device):
             raise ValueError(f"Invalid decoder {method}")
         
     return decoders
+
+def edge_decoder_factory(edge_decoder, in_dim):
+    if edge_decoder == "MLP":
+        return nn.Sequential(
+            nn.Linear(in_dim, in_dim * 2),
+            nn.ReLU(),
+            nn.Linear(in_dim * 2, in_dim),
+        )
+    elif edge_decoder == "None":
+        return None
+
+    raise ValueError(f"Invalid edge decoder {edge_decoder}")
 
 def batch_loader_factory(cfg, data, graph_reindexer):
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
