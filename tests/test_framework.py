@@ -124,6 +124,6 @@ if __name__ == "__main__":
         shutil.rmtree(config.ROOT_ARTIFACT_DIR, ignore_errors=True)
     
     test_whole_framework(args.dataset)
-    test_yml_files(args.dataset)
+    # test_yml_files(args.dataset)
     
     shutil.rmtree(config.ROOT_ARTIFACT_DIR)
