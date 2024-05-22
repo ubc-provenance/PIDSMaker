@@ -15,7 +15,7 @@ import benchmark
 
 
 # === Utils ===
-def prepare_cfg(model, dataset, featurization_method):
+def prepare_cfg(model, dataset, featurization_method=None):
     input_args = [model, dataset]
     args, unknown_args = get_runtime_required_args(return_unknown_args=True, args=input_args)
     
@@ -30,10 +30,13 @@ def prepare_cfg(model, dataset, featurization_method):
         args.__dict__["featurization.embed_nodes.doc2vec.epochs"] = 1
     elif featurization_method == "hierarchical_hashing":
         pass
+    elif featurization_method == None:
+        pass
     else:
         raise ValueError(f"Invalid featurization method {featurization_method}")
     
-    args.__dict__["featurization.embed_nodes.used_method"] = featurization_method
+    if featurization_method is not None:
+        args.__dict__["featurization.embed_nodes.used_method"] = featurization_method
     
     cfg = get_yml_cfg(args)
     cfg._test_mode = True
@@ -84,7 +87,8 @@ def test_yml_files(dataset: str):
     ]
     
     for model in models:
-        cfg = prepare_cfg(model=model, dataset=dataset, featurization_method="feature_word2vec")
+        print(f"Testing {model}...")
+        cfg = prepare_cfg(model=model, dataset=dataset)
         benchmark.main(cfg)
 
 
