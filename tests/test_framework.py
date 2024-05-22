@@ -57,7 +57,7 @@ def run_encoders(model, dataset, featurization_method):
 
 def run_decoders(model, dataset, featurization_method):
     # Test each decoder
-    decoders = ["reconstruct_node", "predict_edge_type", "predict_edge_contrastive"]
+    decoders = ["reconstruct_node_features", "reconstruct_node_embeddings", "reconstruct_edge_embeddings", "predict_edge_type", "predict_edge_contrastive"]
     for method in decoders:
         cfg = prepare_cfg(model, dataset, featurization_method)
         cfg.detection.gnn_training.decoder.used_methods = method

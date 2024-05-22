@@ -67,7 +67,7 @@ detection:
         dropout: 0.5
         activation: relu
     decoder:
-      used_methods: reconstruct_node
+      used_methods: reconstruct_node_features
       predict_edge_type:
         used_method: custom
         custom:
@@ -80,7 +80,7 @@ detection:
           dropout: 0.0
         linear:
           dropout: 0.0
-      reconstruct_node:
+      reconstruct_node_features:
         loss: SCE
         recon_hid_dim: 32
         recon_use_bias: True

@@ -64,8 +64,8 @@ detection:
         use_time_encoding: False
         use_msg_as_edge_feature: False
     decoder:
-      used_methods: reconstruct_node
-      reconstruct_node:
+      used_methods: reconstruct_node_features
+      reconstruct_node_features:
         loss: SCE
         recon_hid_dim: 100
         recon_use_bias: True
