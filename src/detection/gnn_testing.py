@@ -22,9 +22,6 @@ def test(
     cfg,
 ):
     model.eval()
-
-    if isinstance(model.encoder, TGNEncoder):
-        model.encoder.reset_state()
     
     time_with_loss = {}  # key: time，  value： the losses
     edge_list = []
