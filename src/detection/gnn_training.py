@@ -20,9 +20,6 @@ def train(data,
           ):
     model.train()
 
-    if isinstance(model.encoder, TGNEncoder):
-        model.encoder.reset_state()
-
     losses = []
     batch_loader = batch_loader_factory(cfg, data, graph_reindexer)
 
@@ -71,6 +68,11 @@ def main(cfg, save_model: bool=True):
     tot_loss = 0.0
     for epoch in tqdm(range(1, num_epochs+1)):
         start = timer()
+        
+        # Before each epoch, we reset the memory
+        if isinstance(model.encoder, TGNEncoder):
+            model.encoder.reset_state()
+
         for g in train_data:
             g.to(device=device)
             loss = train(
