@@ -263,6 +263,8 @@ def activation_fn_factory(activation: str):
         return nn.ReLU()
     if activation == "tanh":
         return nn.Tanh()
+    if activation == "None":
+        return None
     raise ValueError(f"Invalid activation function {activation}")
 
 def optimizer_factory(cfg, parameters):
