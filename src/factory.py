@@ -5,7 +5,7 @@ from torch_geometric.loader import NeighborLoader
 from provnet_utils import *
 from config import *
 from model import *
-from losses import sce_loss, bce_contrastive
+from losses import sce_loss, mse_loss, bce_contrastive
 from encoders import *
 from decoders import *
 from data_utils import *
@@ -253,7 +253,7 @@ def recon_loss_fn_factory(loss: str):
     if loss == "SCE":
         return sce_loss
     if loss == "MSE":
-        return F.mse_loss
+        return mse_loss
     raise ValueError(f"Invalid loss function {loss}")
 
 def activation_fn_factory(activation: str):
@@ -263,6 +263,8 @@ def activation_fn_factory(activation: str):
         return nn.ReLU()
     if activation == "tanh":
         return nn.Tanh()
+    if activation == "None":
+        return None
     raise ValueError(f"Invalid activation function {activation}")
 
 def optimizer_factory(cfg, parameters):
