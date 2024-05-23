@@ -72,6 +72,8 @@ class Model(nn.Module):
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
                 )
+                if loss.shape != loss_or_scores.shape:
+                    raise TypeError(f"Shapes of loss/score do not match ({loss.shape} vs {loss_or_scores.shape})")
                 loss_or_scores = loss_or_scores + loss
                 
             return loss_or_scores
