@@ -10,7 +10,8 @@ from data_utils import *
 from factory import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+if device == torch.device("cpu"):
+    print("Warning: the device is CPU instead of CUDA")
 
 def train(data,
           model,
