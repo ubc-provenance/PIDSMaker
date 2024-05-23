@@ -5,7 +5,7 @@ from torch_geometric.loader import NeighborLoader
 from provnet_utils import *
 from config import *
 from model import *
-from losses import sce_loss, mse_loss, bce_contrastive
+from losses import sce_loss, mse_loss, bce_contrastive, cross_entropy
 from encoders import *
 from decoders import *
 from data_utils import *
@@ -161,7 +161,7 @@ def decoder_factory(cfg, in_dim, device):
             decoders.append(decoder)
         
         elif method == "predict_edge_type":
-            loss_fn = nn.CrossEntropyLoss()
+            loss_fn = categorical_loss_fn_factory("cross_entropy")
             
             method = cfg.detection.gnn_training.decoder.predict_edge_type.used_method.strip()
             if method not in ["kairos", "custom"]:
@@ -254,6 +254,11 @@ def recon_loss_fn_factory(loss: str):
         return sce_loss
     if loss == "MSE":
         return mse_loss
+    raise ValueError(f"Invalid loss function {loss}")
+
+def categorical_loss_fn_factory(loss: str):
+    if loss == "cross_entropy":
+        return cross_entropy
     raise ValueError(f"Invalid loss function {loss}")
 
 def activation_fn_factory(activation: str):
