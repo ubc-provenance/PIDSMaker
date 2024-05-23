@@ -12,6 +12,10 @@ def sce_loss(x, y, alpha=3, inference=False, **kwargs):
         loss = loss.mean()
     return loss
 
+def mse_loss(x, y, inference=False, **kwargs):
+    reduction = "none" if inference else "mean"
+    return F.mse_loss(x, y, reduction=reduction)
+
 def bce_contrastive(positive, negative, inference=False, **kwargs):
     reduction = "none" if inference else "mean"
     pos_loss = F.binary_cross_entropy_with_logits(positive, torch.ones_like(positive), reduction=reduction)
