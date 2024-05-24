@@ -25,3 +25,7 @@ def bce_contrastive(positive, negative, inference=False, **kwargs):
         return (pos_loss + neg_loss) * 0.5
 
     return pos_loss
+
+def cross_entropy(x, y, inference=False, **kwargs):
+    reduction = "none" if inference else "mean"
+    return F.cross_entropy(x, y, reduction=reduction)
