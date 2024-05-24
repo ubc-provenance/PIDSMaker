@@ -57,7 +57,7 @@ def main(cfg, save_model: bool=True):
     msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(train_data[0])
 
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, device=device)
-    decoder = decoder_factory(cfg, in_dim=in_dim, device=device)
+    decoder = decoder_factory(cfg, in_dim=in_dim)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, device=device)
     graph_reindexer = GraphReindexer(
         num_nodes=cfg.dataset.max_node_num,

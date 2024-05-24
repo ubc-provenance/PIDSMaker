@@ -20,7 +20,7 @@ def model_factory(encoder, decoders, cfg, in_dim, device):
         in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
-    )
+    ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
@@ -33,13 +33,15 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
     # If edge features are used in TGN, and the downstream encoder uses edge features, we set them here
     if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
         edge_dim = 0
-        if use_msg_as_edge_feature:
-            edge_dim += msg_dim
-        if use_time_encoding:
-            edge_dim += tgn_memory_dim
+        # TODO: uncomment when implementing the edge features in TGN
+        # if use_msg_as_edge_feature:
+        #     edge_dim += msg_dim
+        # if use_time_encoding:
+        #     edge_dim += tgn_memory_dim
 
         # Only for TGN, in_dim becomes memory dim
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
+        original_in_dim = in_dim
 
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.split(",")):
         if method == "tgn":
@@ -53,7 +55,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
                 dropout=cfg.detection.gnn_training.encoder.graph_attention.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
-            ).to(device)
+            )
         elif method == "sage":
             encoder = SAGE(
                 in_dim=in_dim,
@@ -61,7 +63,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
                 out_dim=node_out_dim,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
                 dropout=cfg.detection.gnn_training.encoder.sage.dropout,
-            ).to(device)
+            )
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -76,7 +78,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
             time_dim,
             message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
             aggregator_module=LastAggregator(),
-        ).to(device)
+        )
         neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
 
         encoder = TGNEncoder(
@@ -90,7 +92,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
 
     return encoder
 
-def decoder_factory(cfg, in_dim, device):
+def decoder_factory(cfg, in_dim):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
 
     decoders = []
@@ -108,7 +110,7 @@ def decoder_factory(cfg, in_dim, device):
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
                 hid_activation=activation_fn_factory("relu"),
-            ).to(device)
+            )
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
@@ -116,7 +118,7 @@ def decoder_factory(cfg, in_dim, device):
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
                 hid_activation=activation_fn_factory("relu"),
-            ).to(device)
+            )
             decoders.append(SrcDstNodeFeatDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
             
         elif method == "reconstruct_node_embeddings":
@@ -128,13 +130,13 @@ def decoder_factory(cfg, in_dim, device):
                 h_dim=node_out_dim // 2,
                 out_dim=node_out_dim,
                 out_activation=out_activation,
-            ).to(device)
+            )
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=node_out_dim // 2,
                 out_dim=node_out_dim,
                 out_activation=out_activation,
-            ).to(device)
+            )
             decoders.append(SrcDstNodeEmbDecoder(src_decoder=src_recon, dst_decoder=dst_recon, loss_fn=loss_fn))
         
         elif method == "reconstruct_edge_embeddings":
