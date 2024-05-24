@@ -74,6 +74,7 @@ class Model(nn.Module):
                 )
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
+
                 loss_or_scores = loss_or_scores + loss
                 
             return loss_or_scores
