@@ -63,6 +63,7 @@ detection:
         tgn_neighbor_size: 20
         use_time_encoding: False
         use_msg_as_edge_feature: False
+        use_node_feats_in_gnn: False
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:

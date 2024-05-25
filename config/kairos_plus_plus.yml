@@ -43,7 +43,7 @@ featurization:
 detection:
   gnn_training:
     use_seed: False
-    num_epochs: 10
+    num_epochs: 30
     lr: 0.000001
     weight_decay: 0.01
     node_hid_dim: 64
@@ -63,6 +63,7 @@ detection:
         tgn_neighbor_size: 20
         use_time_encoding: False
         use_msg_as_edge_feature: False
+        use_node_feats_in_gnn: False
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:

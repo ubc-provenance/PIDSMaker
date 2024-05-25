@@ -63,6 +63,7 @@ detection:
         tgn_neighbor_size: 20
         use_time_encoding: True
         use_msg_as_edge_feature: True
+        use_node_feats_in_gnn: True
       sage:
         dropout: 0.5
         activation: relu

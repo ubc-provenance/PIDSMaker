@@ -40,8 +40,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
         #     edge_dim += tgn_memory_dim
 
         # Only for TGN, in_dim becomes memory dim
-        in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
         original_in_dim = in_dim
+        in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.split(",")):
         if method == "tgn":
@@ -70,6 +70,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
     if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
         time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
         neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
+        use_node_feats_in_gnn = cfg.detection.gnn_training.encoder.tgn.use_node_feats_in_gnn
 
         memory = TGNMemory(
             max_node_num,
@@ -88,6 +89,10 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
             time_encoder=memory.time_enc,
             use_msg_as_edge_feature=use_msg_as_edge_feature,
             use_time_encoding=use_time_encoding,
+            in_dim=original_in_dim,
+            memory_dim=tgn_memory_dim,
+            use_node_feats_in_gnn=use_node_feats_in_gnn,
+            device=device,
         )
 
     return encoder
@@ -212,7 +217,7 @@ def edge_decoder_factory(edge_decoder, in_dim):
             nn.ReLU(),
             nn.Linear(in_dim * 2, in_dim),
         )
-    elif edge_decoder == "None":
+    elif edge_decoder == "none":
         return None
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
@@ -256,6 +261,8 @@ def recon_loss_fn_factory(loss: str):
         return sce_loss
     if loss == "MSE":
         return mse_loss
+    if activation == "none":
+        return nn.Identity()
     raise ValueError(f"Invalid loss function {loss}")
 
 def categorical_loss_fn_factory(loss: str):
@@ -270,8 +277,8 @@ def activation_fn_factory(activation: str):
         return nn.ReLU()
     if activation == "tanh":
         return nn.Tanh()
-    if activation == "None":
-        return None
+    if activation == "none":
+        return nn.Identity()
     raise ValueError(f"Invalid activation function {activation}")
 
 def optimizer_factory(cfg, parameters):
