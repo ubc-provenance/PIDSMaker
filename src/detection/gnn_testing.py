@@ -107,10 +107,16 @@ def main(cfg):
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     all_trained_models = listdir_sorted(gnn_models_dir)
+    
+    # Create empty model that will be loaded with weights
+    msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(val_data[0])
+    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, device=device)
+    decoder = decoder_factory(cfg, in_dim=in_dim)
+    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, device=device)
 
     for trained_model in all_trained_models:
         print(f"Evaluation with model {trained_model}...")
-        model = torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
+        model.load_state_dict(torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device))
         
         # TODO: we may want to move the validation set into the training for early stopping
         for graphs, split in [
