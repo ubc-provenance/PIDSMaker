@@ -96,8 +96,8 @@ def main(cfg, save_model: bool=True):
         print(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
-        if cfg._test_mode or (save_model and epoch % 5 == 0):
-            torch.save(model.state_dict(), f"{gnn_models_dir}/model_epoch{epoch}.pt")
+        if cfg._test_mode or (save_model and epoch % 2 == 0):
+            torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
 
 
 if __name__ == "__main__":
