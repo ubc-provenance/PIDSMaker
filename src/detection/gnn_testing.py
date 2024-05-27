@@ -130,6 +130,9 @@ def main(cfg):
                     logger=logger,
                     cfg=cfg,
                 )
+                
+        del model
+        torch.cuda.empty_cache()
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
