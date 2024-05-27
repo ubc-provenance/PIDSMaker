@@ -10,7 +10,7 @@ from factory import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == torch.device("cpu"):
-    print("Warning: the device is CPU instead of CUDA")
+    log("Warning: the device is CPU instead of CUDA")
 
 @torch.no_grad()
 def test(
@@ -75,15 +75,15 @@ def test(
     model_epoch_file = model_epoch_file.split(".")[0]
     logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    log = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
+    log_file = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
 
-    print(
+    log(
         f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
     edge_list = sorted(edge_list, key=lambda x: x['loss'], reverse=True)  # Rank the results based on edge losses
     for e in edge_list:
-        log.write(str(e))
-        log.write("\n")
-    log.close()
+        log_file.write(str(e))
+        log_file.write("\n")
+    log_file.close()
     edge_list.clear()
 
 
@@ -109,7 +109,7 @@ def main(cfg):
     all_trained_models = listdir_sorted(gnn_models_dir)
 
     for trained_model in all_trained_models:
-        print(f"Evaluation with model {trained_model}...")
+        log(f"Evaluation with model {trained_model}...")
         model = torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
@@ -117,7 +117,7 @@ def main(cfg):
             (val_data, "val"),
             (test_data, "test"),
         ]:
-            print(f"    Testing {split} set...")
+            log(f"    Testing {split} set...")
             for g in tqdm(graphs, desc=f"{split} set with {trained_model}"):
                 g.to(device)
                 test(
@@ -130,6 +130,9 @@ def main(cfg):
                     logger=logger,
                     cfg=cfg,
                 )
+                
+        del model
+        torch.cuda.empty_cache()
 
 if __name__ == "__main__":
     args = get_runtime_required_args()

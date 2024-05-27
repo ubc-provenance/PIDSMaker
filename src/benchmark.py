@@ -1,7 +1,7 @@
 import argparse
 
 import wandb
-from provnet_utils import remove_underscore_keys
+from provnet_utils import remove_underscore_keys, log
 
 from preprocessing import (
     build_graphs,
@@ -26,13 +26,13 @@ def main(cfg, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
-    print("\n" + ("*" * 100))
-    print("Tasks modified since last runs:")
-    print("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
+    log("\n" + ("*" * 100))
+    log("Tasks modified since last runs:")
+    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
 
-    print("\nTasks requiring re-execution:")
-    print("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
-    print(("*" * 100) + "\n")
+    log("\nTasks requiring re-execution:")
+    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
+    log(("*" * 100) + "\n")
 
 
     # Preprocessing

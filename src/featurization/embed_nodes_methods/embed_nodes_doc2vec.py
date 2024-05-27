@@ -63,10 +63,10 @@ def doc2vec(train_set: list[str],
         if model.alpha < min_alpha:
             model.alpha = min_alpha
         logger.info(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
-        print(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
+        log(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
 
     logger.info(f'Saving Doc2Vec model to {model_save_path}')
-    print(f'Saving Doc2Vec model to {model_save_path}')
+    log(f'Saving Doc2Vec model to {model_save_path}')
     model.save(model_save_path + 'doc2vec_model.model')
     pass
 
@@ -95,7 +95,7 @@ def main(cfg):
     min_alpha = cfg.featurization.embed_nodes.doc2vec.min_alpha
 
     logger.info(f"Start building and training Doc2Vec model...")
-    print(f"Start building and training Doc2Vec model...")
+    log(f"Start building and training Doc2Vec model...")
     doc2vec(train_set=train_set_nodes,
                   model_save_path=model_save_path,
                   indexid2msg=indexid2msg,

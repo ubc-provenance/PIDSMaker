@@ -107,14 +107,8 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
     edge_index, losses, node_labels, edge_labels, node2mean_loss = get_edge_index_losses_labels(tw_path, logger, cfg)
 
     os.makedirs(cfg.detection.evaluation.node_evaluation._precision_recall_dir, exist_ok=True)
-    img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
-    # plot_precision_recall(edge_labels, losses, img_file)
-
-    node_mean, node_mean_labels = [], []
-    for nid, mean in node2mean_loss.items():
-        node_mean.append(mean)
-        node_mean_labels.append(node_labels[nid])
-    plot_precision_recall(node_mean_labels, node_mean, img_file)
+    pr_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
+    scores_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png")
     
     threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
     if threshold_method == "max_val_loss":
@@ -127,16 +121,22 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
         thr = calculate_max_val_loss_threshold(val_tw_path, logger)['percentile_90']
     else:
         raise ValueError(f"Invalid threshold method `{threshold_method}`")
+    log(f"Threshold: {thr:.3f}")
     
-    y_truth, y_pred, max_loss = [], [], []
     # Thresholds each node based on the mean of the losses of this node
     if cfg.detection.evaluation.node_evaluation.use_mean_node_loss:
+        y_truth, y_pred, mean_losses = [], [], []
         for nid, mean_loss in node2mean_loss.items():
             y_truth.append(node_labels[nid])
             y_pred.append(int(mean_loss > thr))
-            max_loss.append(mean_loss)
+            mean_losses.append(mean_loss)
             if node_labels[nid]:
-                print(f"-> Malicious node {nid}: loss={mean_loss:.3f}" + (" ✅" if mean_loss > thr else " ❌"))
+                log(f"-> Malicious node {nid}: loss={mean_loss:.3f}" + (" ✅" if mean_loss > thr else " ❌"))
+                
+        # Plots the PR curve and scores for mean node loss
+        plot_precision_recall(mean_losses, y_truth, pr_img_file)
+        plot_scores(mean_losses, y_truth, scores_img_file)
+        return classifier_evaluation(y_truth, y_pred, mean_losses)
     
     # Thresholds each node based on if an edge loss involving this node is greater
     # than the threshold
@@ -162,25 +162,22 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
             
             edge_preds.append(int(loss > thr))
 
-        print(f"Threshold: {thr:.3f}")
+        y_truth, y_pred, max_losses = [], [], []
         for nid in node_labels:
             y_truth.append(node_labels[nid])
             y_pred.append(node_preds[nid])
-            max_loss.append(node_preds_max_loss[nid])
+            max_losses.append(node_preds_max_loss[nid])
             if node_labels[nid]:
-                print(f"-> Malicious node {nid}: loss={node_preds_max_loss[nid]:.3f}" + (" ✅" if node_preds[nid] else " ❌"))
+                log(f"-> Malicious node {nid}: loss={node_preds_max_loss[nid]:.3f}" + (" ✅" if node_preds[nid] else " ❌"))
+                
+        # Plots the PR curve and scores for mean node loss
+        plot_precision_recall(max_losses, y_truth, pr_img_file)
+        plot_scores(max_losses, y_truth, scores_img_file)
+        return classifier_evaluation(y_truth, y_pred, max_losses)
 
-        # logger.info("\nEdge detection")
-        # classifier_evaluation(edge_labels, edge_preds, losses)
-        
-    scores_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png")
-    plot_scores(max_loss, y_truth, scores_img_file)
-    
-    logger.info("\nNode detection")
-    return classifier_evaluation(y_truth, y_pred, node_mean)
 
-def plot_precision_recall(y_true, y_scores, out_file):
-    precision, recall, thresholds = precision_recall_curve(y_true, y_scores)
+def plot_precision_recall(scores, y_truth, out_file):
+    precision, recall, thresholds = precision_recall_curve(y_truth, scores)
     
     plt.figure(figsize=(8, 6))
     plt.plot(recall, precision, marker='.', label='Precision-Recall curve')
@@ -194,9 +191,9 @@ def plot_precision_recall(y_true, y_scores, out_file):
 
     plt.savefig(out_file)
 
-def plot_scores(max_loss, y_truth, out_file):
-    scores_0 = [score for score, label in zip(max_loss, y_truth) if label == 0]
-    scores_1 = [score for score, label in zip(max_loss, y_truth) if label == 1]
+def plot_scores(scores, y_truth, out_file):
+    scores_0 = [score for score, label in zip(scores, y_truth) if label == 0]
+    scores_1 = [score for score, label in zip(scores, y_truth) if label == 1]
 
     # Positions on the y-axis for the scatter plot (can be zero or any other constant)
     y_zeros = [0] * len(scores_0)  # All zeros at y=0
@@ -225,7 +222,7 @@ def main(cfg):
     
     best_precision, best_stats = 0.0, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        print(f"\nEvaluation of model {model_epoch_dir}...")
+        log(f"\nEvaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)

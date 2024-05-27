@@ -337,9 +337,9 @@ def get_logger(name: str, filename: str):
     logger.info(f"START LOGGING FOR SUBTASK: {name}")
     logger.info("")
     
-    print("")
-    print(f"START LOGGING FOR SUBTASK: {name}")
-    print("")
+    log("")
+    log(f"START LOGGING FOR SUBTASK: {name}")
+    log("")
     
     return logger
 
@@ -383,20 +383,20 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         ap=ap_score(y_test, scores)
     except: ap=float("nan")
     
-    print(f'total num: {len(y_test)}')
-    print(f'tn: {tn}')
-    print(f'fp: {fp}')
-    print(f'fn: {fn}')
-    print(f'tp: {tp}')
-    print('')
+    log(f'total num: {len(y_test)}')
+    log(f'tn: {tn}')
+    log(f'fp: {fp}')
+    log(f'fn: {fn}')
+    log(f'tp: {tp}')
+    log('')
 
-    print(f"ap: {ap}")
-    print(f"precision: {precision}")
-    print(f"recall: {recall}")
-    print(f"fpr: {fpr}")
-    print(f"fscore: {fscore}")
-    print(f"accuracy: {accuracy}")
-    print(f"auc_val: {auc_val}")
+    log(f"ap: {ap}")
+    log(f"precision: {precision}")
+    log(f"recall: {recall}")
+    log(f"fpr: {fpr}")
+    log(f"fscore: {fscore}")
+    log(f"accuracy: {accuracy}")
+    log(f"auc_val: {auc_val}")
 
     stats = {
         "precision": round(precision, 5),
@@ -423,7 +423,7 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
-    print(f"Number of netflow nodes: {len(records)}")
+    log(f"Number of netflow nodes: {len(records)}")
 
     for i in records:
         remote_ip = i[4]
@@ -441,7 +441,7 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
-    print(f"Number of process nodes: {len(records)}")
+    log(f"Number of process nodes: {len(records)}")
 
     for i in records:
         path = i[2]
@@ -459,7 +459,7 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
-    print(f"Number of file nodes: {len(records)}")
+    log(f"Number of file nodes: {len(records)}")
 
     for i in records:
         path = i[2]
@@ -475,3 +475,8 @@ def tokenize_file(sentence: str):
     return word_tokenize(sentence.replace('/',' / '))
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' ').replace('.',' '))
+
+def log(msg: str):
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp} - {msg}")

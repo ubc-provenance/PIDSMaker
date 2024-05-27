@@ -29,7 +29,7 @@ def path2higlist(p):
             l.append(l[-1]+'/'+i)
         else:
             l.append(i)
-#     print(l)
+#     log(l)
     return l
 
 def ip2higlist(p):
@@ -40,7 +40,7 @@ def ip2higlist(p):
             l.append(l[-1]+'.'+i)
         else:
             l.append(i)
-#     print(l)
+#     log(l)
     return l
 
 def list2str(l):
@@ -67,7 +67,7 @@ def feature_string_hashing(vec_size, indexid2msg, save_indexid2vec, save_path):
 
     if save_indexid2vec:
         torch.save(indexid2vec, save_path)
-        print("indexid2vec is saved to "+save_path)
+        log("indexid2vec is saved to "+save_path)
 
     return indexid2vec
 
@@ -78,7 +78,7 @@ def get_attrs_different_files(indexid2vec):
     for i in range(1516491, 1516491 + 200):
         file_list_1.append(indexid2vec[i])
     file_list_1 = np.concatenate(file_list_1, axis=0)
-    print(f"shape of file_list_1 is {file_list_1.shape}")
+    log(f"shape of file_list_1 is {file_list_1.shape}")
     embeddings['/data/*'] = {
         'embeddings': file_list_1,
         'color': 'r'
@@ -88,7 +88,7 @@ def get_attrs_different_files(indexid2vec):
     for i in range(1520698,1520897+1):
         file_list_2.append(indexid2vec[i])
     file_list_2 = np.concatenate(file_list_2, axis=0)
-    print(f"shape of file_list_2 is {file_list_2.shape}")
+    log(f"shape of file_list_2 is {file_list_2.shape}")
     embeddings['/proc/*'] = {
         'embeddings': file_list_2,
         'color': 'g'
@@ -98,7 +98,7 @@ def get_attrs_different_files(indexid2vec):
     for i in list(range(1557820,1557855+1)) + list(range(1567860, 1567881+1)):
         file_list_3.append(indexid2vec[i])
     file_list_3 = np.concatenate(file_list_3, axis=0)
-    print(f"shape of file_list_3 is {file_list_3.shape}")
+    log(f"shape of file_list_3 is {file_list_3.shape}")
     embeddings['/home/admin/*'] = {
         'embeddings': file_list_3,
         'color': 'b'
@@ -108,7 +108,7 @@ def get_attrs_different_files(indexid2vec):
     for i in range(1420793,1421042):
         file_list_4.append(indexid2vec[i])
     file_list_4 = np.concatenate(file_list_4, axis=0)
-    print(f"shape of file_list_4 is {file_list_4.shape}")
+    log(f"shape of file_list_4 is {file_list_4.shape}")
     embeddings['/usr/share/*'] = {
         'embeddings': file_list_4,
         'color': 'yellow'
@@ -117,7 +117,7 @@ def get_attrs_different_files(indexid2vec):
     return embeddings
 
 def build_tsne_visualization(embeddings, fig_path, logger):
-    print(f"Building TSNE visualization")
+    log(f"Building TSNE visualization")
     logger.info("Building TSNE visualization")
     tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, learning_rate=100, metric='euclidean', init='pca')
 
@@ -132,7 +132,7 @@ def build_tsne_visualization(embeddings, fig_path, logger):
             "color": value['color']
         }
 
-    print(f"Start visualizing TSNE embeddings")
+    log(f"Start visualizing TSNE embeddings")
     plt.figure(figsize=(10, 8))
 
     for key,value in dic_2d.items():
@@ -143,7 +143,7 @@ def build_tsne_visualization(embeddings, fig_path, logger):
     plt.ylabel('t-SNE Dimension 2')
     plt.legend()
     plt.savefig(fig_path)
-    print(f"Fig saved to {fig_path}")
+    log(f"Fig saved to {fig_path}")
 
 def main(cfg, gen_index2vec=False):
     logger = get_logger(
@@ -151,7 +151,7 @@ def main(cfg, gen_index2vec=False):
         filename=os.path.join(cfg.featurization.build_doc2vec._logs_dir, "test_HFH.log")
     )
 
-    print("loading indexid2msg...")
+    log("loading indexid2msg...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
 
@@ -166,10 +166,10 @@ def main(cfg, gen_index2vec=False):
     vec_size = cfg.featurization.build_doc2vec.vec_size
 
     if gen_index2vec:
-        print("Start generating indexid2vec...")
+        log("Start generating indexid2vec...")
         indexid2vec = feature_string_hashing(vec_size=vec_size, indexid2msg=indexid2msg, save_indexid2vec=True, save_path=indexid2vec_path)
     else:
-        print("Loading indexid2vec ...")
+        log("Loading indexid2vec ...")
         indexid2vec = torch.load(indexid2vec_path)
 
     embeddings = get_attrs_different_files(indexid2vec)

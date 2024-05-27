@@ -11,7 +11,7 @@ from factory import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == torch.device("cpu"):
-    print("Warning: the device is CPU instead of CUDA")
+    log("Warning: the device is CPU instead of CUDA")
 
 def train(data,
           model,
@@ -85,7 +85,7 @@ def main(cfg, save_model: bool=True):
                 cfg=cfg,
             )
             tot_loss += loss
-            print(f"Loss {loss:4f}")
+            log(f"Loss {loss:4f}")
         
         tot_loss /= len(train_data)
         logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
@@ -94,7 +94,7 @@ def main(cfg, save_model: bool=True):
             "train_loss": round(tot_loss, 4),
             "train_epoch_time": round(timer() - start, 2),
         })
-        print(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
+        log(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
         if cfg._test_mode or (save_model and epoch % 2 == 0):

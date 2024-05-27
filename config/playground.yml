@@ -65,14 +65,14 @@ detection:
         use_msg_as_edge_feature: True
         use_node_feats_in_gnn: True
       sage:
-        dropout: 0.5
+        dropout: 0.0
         activation: relu
     decoder:
-      used_methods: reconstruct_node_features
+      used_methods: predict_edge_type
       predict_edge_type:
         used_method: custom
         custom:
-          dropout: 0.5
+          dropout: 0.0
           num_layers: 2
           activation: relu
       predict_edge_contrastive:
@@ -82,10 +82,17 @@ detection:
         linear:
           dropout: 0.0
       reconstruct_node_features:
-        loss: SCE
-        recon_hid_dim: 32
+        loss: MSE
+        recon_hid_dim: 128
         recon_use_bias: True
         out_activation: tanh
+      reconstruct_node_embeddings:
+        loss: MSE
+        out_activation: none
+      reconstruct_edge_embeddings:
+        loss: MSE
+        out_activation: none
+        edge_decoder: none
 
   gnn_testing:
     threshold_method: str
