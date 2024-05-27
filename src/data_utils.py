@@ -92,6 +92,20 @@ def temporal_data_to_data(data: TemporalData) -> Data:
     """
     return Data(num_nodes=data.x_src.shape[0], **{k: v for k, v in data._store.items()})
 
+def node_features_change_shape(edge_index, x_src, x_dst):
+    """
+    Converts node features in shape (E, d) to a shape (N, d).
+    Returns x as a tuple (x_src, x_dst).
+    """
+    x_src_out = torch.zeros((edge_index.max() + 1, x_src.shape[1]), device=edge_index.device)
+    x_dst_out = x_src_out.clone()
+    
+    x_src_out[edge_index[0, :]] = x_src
+    x_dst_out[edge_index[1, :]] = x_dst
+    x = (x_src_out, x_dst_out)
+    
+    return x
+
 class GraphReindexer:
     """
     Simply transforms an edge_index and its src/dst node features of shape (E, d)
@@ -118,11 +132,6 @@ class GraphReindexer:
         edge_index = self.assoc[edge_index]
         
         # Associates each feature vector to each reindexed node ID
-        x_src = torch.zeros((edge_index.max() + 1, batch_x_src.shape[1]), device=edge_index.device)
-        x_dst = x_src.clone()
-        
-        x_src[edge_index[0, :]] = batch_x_src
-        x_dst[edge_index[1, :]] = batch_x_dst
-        x = (x_src, x_dst)
+        x = node_features_change_shape(edge_index, batch_x_src, batch_x_dst)
         
         return x, edge_index

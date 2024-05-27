@@ -16,7 +16,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.encoder = encoder
-        self.decoders = decoders
+        self.decoders = nn.ModuleList(decoders)
         self.use_contrastive_learning = use_contrastive_learning
         
         self.last_h_storage, self.last_h_non_empty_nodes = None, None

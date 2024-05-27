@@ -128,17 +128,21 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
     else:
         raise ValueError(f"Invalid threshold method `{threshold_method}`")
     
-    y_truth, y_pred = [], []
+    y_truth, y_pred, max_loss = [], [], []
     # Thresholds each node based on the mean of the losses of this node
     if cfg.detection.evaluation.node_evaluation.use_mean_node_loss:
         for nid, mean_loss in node2mean_loss.items():
             y_truth.append(node_labels[nid])
             y_pred.append(int(mean_loss > thr))
+            max_loss.append(mean_loss)
+            if node_labels[nid]:
+                print(f"-> Malicious node {nid}: loss={mean_loss:.3f}" + (" ✅" if mean_loss > thr else " ❌"))
     
     # Thresholds each node based on if an edge loss involving this node is greater
     # than the threshold
     else:
         node_preds = {}
+        node_preds_max_loss = {}
         edge_preds = []
         for (srcnode, dstnode), loss, edge_label in tqdm(zip(edge_index, losses, edge_labels), total=len(edge_index), desc="Edge thresholding"):
             if loss > thr:
@@ -146,6 +150,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
             else:
                 if srcnode not in node_preds:
                     node_preds[srcnode] = 0
+            node_preds_max_loss[srcnode] = max(loss, node_preds_max_loss.get(srcnode, 0))
 
             if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
                 if loss > thr:
@@ -153,15 +158,23 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
                 else:
                     if dstnode not in node_preds:
                         node_preds[dstnode] = 0
+                node_preds_max_loss[dstnode] = max(loss, node_preds_max_loss.get(dstnode, 0))
             
             edge_preds.append(int(loss > thr))
 
+        print(f"Threshold: {thr:.3f}")
         for nid in node_labels:
             y_truth.append(node_labels[nid])
             y_pred.append(node_preds[nid])
+            max_loss.append(node_preds_max_loss[nid])
+            if node_labels[nid]:
+                print(f"-> Malicious node {nid}: loss={node_preds_max_loss[nid]:.3f}" + (" ✅" if node_preds[nid] else " ❌"))
 
         # logger.info("\nEdge detection")
         # classifier_evaluation(edge_labels, edge_preds, losses)
+        
+    scores_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png")
+    plot_scores(max_loss, y_truth, scores_img_file)
     
     logger.info("\nNode detection")
     return classifier_evaluation(y_truth, y_pred, node_mean)
@@ -179,6 +192,27 @@ def plot_precision_recall(y_true, y_scores, out_file):
     precision_ticks = [i / 20 for i in range(7)]  # Generates [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     plt.yticks(precision_ticks)
 
+    plt.savefig(out_file)
+
+def plot_scores(max_loss, y_truth, out_file):
+    scores_0 = [score for score, label in zip(max_loss, y_truth) if label == 0]
+    scores_1 = [score for score, label in zip(max_loss, y_truth) if label == 1]
+
+    # Positions on the y-axis for the scatter plot (can be zero or any other constant)
+    y_zeros = [0] * len(scores_0)  # All zeros at y=0
+    y_ones = [1] * len(scores_1)  # All ones at y=1, you can also keep them at y=0 if you prefer
+
+    # Creating the plot
+    plt.figure(figsize=(10, 3))  # Width, height in inches
+    plt.scatter(scores_0, y_zeros, color='green', label='Label 0')
+    plt.scatter(scores_1, y_ones, color='red', label='Label 1')
+
+    # Adding labels and title
+    plt.xlabel('Scores')
+    plt.ylabel('Labels')
+    plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
+    plt.title('Scatter Plot of Scores by Label')
+    plt.legend()
     plt.savefig(out_file)
 
 def main(cfg):
@@ -200,6 +234,7 @@ def main(cfg):
             
         stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
         stats["precision_recall_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
+        stats["scores_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png"))
         
         wandb.log(stats)
         

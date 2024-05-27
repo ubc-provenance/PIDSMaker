@@ -369,11 +369,6 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
     else:
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
-    print(f'total num: {len(y_test)}')
-    print(f'tn: {tn}')
-    print(f'fp: {fp}')
-    print(f'fn: {fn}')
-    print(f'tp: {tp}')
 
     fpr = fp/(fp+tn)
     precision=tp/(tp+fp)
@@ -387,16 +382,21 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     try:
         ap=ap_score(y_test, scores)
     except: ap=float("nan")
+    
+    print(f'total num: {len(y_test)}')
+    print(f'tn: {tn}')
+    print(f'fp: {fp}')
+    print(f'fn: {fn}')
+    print(f'tp: {tp}')
+    print('')
 
+    print(f"ap: {ap}")
     print(f"precision: {precision}")
     print(f"recall: {recall}")
     print(f"fpr: {fpr}")
     print(f"fscore: {fscore}")
     print(f"accuracy: {accuracy}")
     print(f"auc_val: {auc_val}")
-
-    print("|precision|recall|fscore|ap|accuracy|TN|FP|FN|TP|")
-    print(f"|{precision:.5f}|{recall:.5f}|{fscore:.5f}|{ap:.5f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
 
     stats = {
         "precision": round(precision, 5),
