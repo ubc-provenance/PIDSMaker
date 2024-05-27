@@ -22,7 +22,7 @@ def model_factory(encoder, decoders, cfg, in_dim, device):
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
     ).to(device)
 
-def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
+def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     max_node_num = cfg.dataset.max_node_num
@@ -92,6 +92,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device):
             in_dim=original_in_dim,
             memory_dim=tgn_memory_dim,
             use_node_feats_in_gnn=use_node_feats_in_gnn,
+            graph_reindexer=graph_reindexer,
             device=device,
         )
 
@@ -241,7 +242,7 @@ def batch_loader_factory(cfg, data, graph_reindexer):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 
-        data = graph_reindexer(data)
+        data = graph_reindexer.reindex_graph(data)
         data = temporal_data_to_data(data)
         return NeighborLoader(
             data,
@@ -253,7 +254,7 @@ def batch_loader_factory(cfg, data, graph_reindexer):
         return custom_temporal_data_loader(data, batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size)
     
     # Don't use any batching
-    data = graph_reindexer(data)
+    data = graph_reindexer.reindex_graph(data)
     return [data]
 
 def recon_loss_fn_factory(loss: str):
