@@ -92,20 +92,6 @@ def temporal_data_to_data(data: TemporalData) -> Data:
     """
     return Data(num_nodes=data.x_src.shape[0], **{k: v for k, v in data._store.items()})
 
-def node_features_change_shape(edge_index, x_src, x_dst):
-    """
-    Converts node features in shape (E, d) to a shape (N, d).
-    Returns x as a tuple (x_src, x_dst).
-    """
-    x_src_out = torch.zeros((edge_index.max() + 1, x_src.shape[1]), device=edge_index.device)
-    x_dst_out = x_src_out.clone()
-    
-    x_src_out[edge_index[0, :]] = x_src
-    x_dst_out[edge_index[1, :]] = x_dst
-    x = (x_src_out, x_dst_out)
-    
-    return x
-
 class GraphReindexer:
     """
     Simply transforms an edge_index and its src/dst node features of shape (E, d)
@@ -114,24 +100,43 @@ class GraphReindexer:
     This reindexing is essential for the graph to be computed by a standard GNN model with PyG.
     """
     def __init__(self, num_nodes, device):
-        self.assoc = None
         self.num_nodes = num_nodes
         self.device = device
+        
+        self.assoc = None
+        self.x_src_cache = None
+        self.x_dst_cache = None
+
+    def node_features_reshape(self, edge_index, x_src, x_dst, max_num_node=None):
+        """
+        Converts node features in shape (E, d) to a shape (N, d).
+        Returns x as a tuple (x_src, x_dst).
+        """
+        if self.x_src_cache is None:
+            self.x_src_cache = torch.zeros((self.num_nodes, x_src.shape[1]), device=self.device)
+            self.x_dst_cache = torch.zeros((self.num_nodes, x_src.shape[1]), device=self.device)
             
-    def __call__(self, data):
+        max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
+        
+        self.x_src_cache[edge_index[0, :]] = x_src
+        self.x_dst_cache[edge_index[1, :]] = x_dst
+        x = (self.x_src_cache[:max_num_node, :], self.x_dst_cache[:max_num_node, :])
+        
+        return x
+    
+    def reindex_graph(self, edge_index, batch_x_src, batch_x_dst):
+        """
+        Reindexes edge_index with indices starting from 0.
+        Also reshapes the node features.
+        """
         if self.assoc is None:
             self.assoc = torch.empty((self.num_nodes, ), dtype=torch.long, device=self.device)
-            
-        (data.x_src, data.x_dst), data.edge_index = self._reindex_graph(data.edge_index, data.x_src, data.x_dst)
-        return data
 
-    def _reindex_graph(self, edge_index, batch_x_src, batch_x_dst):
-        # Reindex edge_index with indices starting from 0
         n_id = edge_index.unique()
         self.assoc[n_id] = torch.arange(n_id.size(0), device=edge_index.device)
         edge_index = self.assoc[edge_index]
         
         # Associates each feature vector to each reindexed node ID
-        x = node_features_change_shape(edge_index, batch_x_src, batch_x_dst)
+        x = self.node_features_reshape(edge_index, batch_x_src, batch_x_dst)
         
         return x, edge_index
