@@ -75,15 +75,15 @@ def test(
     model_epoch_file = model_epoch_file.split(".")[0]
     logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    log = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
+    log_file = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
 
     log(
         f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
     edge_list = sorted(edge_list, key=lambda x: x['loss'], reverse=True)  # Rank the results based on edge losses
     for e in edge_list:
-        log.write(str(e))
-        log.write("\n")
-    log.close()
+        log_file.write(str(e))
+        log_file.write("\n")
+    log_file.close()
     edge_list.clear()
 
 
