@@ -121,7 +121,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
         thr = calculate_max_val_loss_threshold(val_tw_path, logger)['percentile_90']
     else:
         raise ValueError(f"Invalid threshold method `{threshold_method}`")
-    print(f"Threshold: {thr:.3f}")
+    log(f"Threshold: {thr:.3f}")
     
     # Thresholds each node based on the mean of the losses of this node
     if cfg.detection.evaluation.node_evaluation.use_mean_node_loss:
@@ -131,7 +131,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
             y_pred.append(int(mean_loss > thr))
             mean_losses.append(mean_loss)
             if node_labels[nid]:
-                print(f"-> Malicious node {nid}: loss={mean_loss:.3f}" + (" ✅" if mean_loss > thr else " ❌"))
+                log(f"-> Malicious node {nid}: loss={mean_loss:.3f}" + (" ✅" if mean_loss > thr else " ❌"))
                 
         # Plots the PR curve and scores for mean node loss
         plot_precision_recall(mean_losses, y_truth, pr_img_file)
@@ -168,7 +168,7 @@ def node_evaluation_without_triage(val_tw_path, tw_path, model_epoch_dir, logger
             y_pred.append(node_preds[nid])
             max_losses.append(node_preds_max_loss[nid])
             if node_labels[nid]:
-                print(f"-> Malicious node {nid}: loss={node_preds_max_loss[nid]:.3f}" + (" ✅" if node_preds[nid] else " ❌"))
+                log(f"-> Malicious node {nid}: loss={node_preds_max_loss[nid]:.3f}" + (" ✅" if node_preds[nid] else " ❌"))
                 
         # Plots the PR curve and scores for mean node loss
         plot_precision_recall(max_losses, y_truth, pr_img_file)
@@ -222,7 +222,7 @@ def main(cfg):
     
     best_precision, best_stats = 0.0, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        print(f"\nEvaluation of model {model_epoch_dir}...")
+        log(f"\nEvaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)

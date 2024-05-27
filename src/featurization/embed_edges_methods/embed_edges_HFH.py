@@ -16,7 +16,7 @@ def path2higlist(p):
             l.append(l[-1]+'/'+i)
         else:
             l.append(i)
-#     print(l)
+#     log(l)
     return l
 
 def ip2higlist(p):
@@ -27,7 +27,7 @@ def ip2higlist(p):
             l.append(l[-1]+'.'+i)
         else:
             l.append(i)
-#     print(l)
+#     log(l)
     return l
 
 def gen_relation_onehot(rel2id):

@@ -24,7 +24,7 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
         adjacency_file = os.path.join(adjacency_path, f"{split}-{file}.csv")
         os.makedirs(adjacency_path, exist_ok=True)
 
-        print("load file: ", path)
+        log("load file: ", path)
         graph = torch.load(path)
         gen_darpa_adj_files(graph, adjacency_file)
         g.append(graph)

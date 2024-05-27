@@ -190,13 +190,13 @@ def get_vec_csv(msg2vec, csv_path, logger):
     element_info_df = pandas.DataFrame(element_info)
     embeddings_df = pandas.DataFrame(embeddings)
     element_info_df.to_csv(element_info_path, index=False, header=False)
-    print(f"Saving element info to {element_info_path}")
+    log(f"Saving element info to {element_info_path}")
     embeddings_df.to_csv(embedding_path, index=False, header=False)
-    print(f"Saving embeddings to: {embedding_path}")
+    log(f"Saving embeddings to: {embedding_path}")
     pass
 
 def build_tsne_visualization(embeddings, fig_path, logger):
-    print(f"Building TSNE visualization")
+    log(f"Building TSNE visualization")
     logger.info("Building TSNE visualization")
     tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, learning_rate=100, metric='euclidean', init='pca')
 
@@ -211,7 +211,7 @@ def build_tsne_visualization(embeddings, fig_path, logger):
             "color": value['color']
         }
 
-    print(f"Start visualizing TSNE embeddings")
+    log(f"Start visualizing TSNE embeddings")
     plt.figure(figsize=(10, 8))
 
     for key,value in dic_2d.items():
@@ -222,7 +222,7 @@ def build_tsne_visualization(embeddings, fig_path, logger):
     plt.ylabel('t-SNE Dimension 2')
     plt.legend()
     plt.savefig(fig_path)
-    print(f"Fig saved to {fig_path}")
+    log(f"Fig saved to {fig_path}")
 
 def main(cfg):
     logger = get_logger(

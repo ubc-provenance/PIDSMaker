@@ -209,19 +209,19 @@ if __name__ == "__main__":
 
     index_id = 0
 
-    print("Processing netflow data")
+    log("Processing netflow data")
     index_id, net_uuid2hash = store_netflow(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id, filelist=filelist)
 
-    print("Processing subject data")
+    log("Processing subject data")
     index_id, subject_uuid2hash = store_subject(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id, filelist=filelist)
 
-    print("Processing file data")
+    log("Processing file data")
     index_id, file_uuid2hash = store_file(file_path=raw_dir, cur=cur, connect=connect, index_id=index_id, filelist=filelist)
 
-    print("Extracting the node list")
+    log("Extracting the node list")
     nodeid2msg = create_node_list(cur=cur)
 
-    print("Processing the events")
+    log("Processing the events")
     store_event(
         file_path=raw_dir,
         cur=cur,

@@ -22,7 +22,7 @@ def main(cfg):
     label2indexid = get_label2indexid(indexid2msg)
 
     for label, indexids in label2indexid.items():
-        print(f"{label}\t{len(indexids)}")
+        log(f"{label}\t{len(indexids)}")
 
 if __name__ == '__main__':
     args = get_runtime_required_args()
