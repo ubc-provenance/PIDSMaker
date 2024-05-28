@@ -96,8 +96,6 @@ def main(cfg):
     
     val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
-    
-    model = build_model(data_sample=test_data[0], device=device, cfg=cfg)
 
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
@@ -105,6 +103,8 @@ def main(cfg):
 
     for trained_model in all_trained_models:
         log(f"Evaluation with model {trained_model}...")
+        torch.cuda.empty_cache()
+        model = build_model(data_sample=test_data[0], device=device, cfg=cfg)
         model = load_model(model, os.path.join(gnn_models_dir, trained_model), map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
@@ -124,9 +124,7 @@ def main(cfg):
                     logger=logger,
                     cfg=cfg,
                 )
-                
-        del model
-        torch.cuda.empty_cache()
+
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
