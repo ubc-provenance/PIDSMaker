@@ -220,7 +220,7 @@ def main(cfg):
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
     
-    best_precision, best_stats = 0.0, {}
+    best_ap, best_stats = 0.0, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         log(f"\nEvaluation of model {model_epoch_dir}...")
 
@@ -235,8 +235,8 @@ def main(cfg):
         
         wandb.log(stats)
         
-        if stats["precision"] > best_precision:
-            best_precision = stats["precision"]
+        if stats["ap"] > best_ap:
+            best_ap = stats["ap"]
             best_stats = stats
         
     wandb.log(best_stats)
