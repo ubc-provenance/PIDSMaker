@@ -15,6 +15,7 @@ if device == torch.device("cpu"):
 @torch.no_grad()
 def test(
     data,
+    full_data,
     model,
     nodeid2msg,
     split,
@@ -37,7 +38,7 @@ def test(
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
 
-        each_edge_loss = model(batch, data, inference=True)
+        each_edge_loss = model(batch, full_data, inference=True)
         tot_loss += each_edge_loss.sum().item()
         
         num_events = each_edge_loss.shape[0]
@@ -94,8 +95,7 @@ def main(cfg):
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
     
-    val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
-    test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    _, val_data, test_data, full_data = load_all_datasets(cfg)
 
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
@@ -117,6 +117,7 @@ def main(cfg):
                 g.to(device)
                 test(
                     data=g.clone(),
+                    full_data=full_data,
                     model=model,
                     nodeid2msg=nodeid2msg,
                     split=split,
