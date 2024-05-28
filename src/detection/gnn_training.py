@@ -87,7 +87,7 @@ def main(cfg):
 
         # Check points
         if cfg._test_mode or epoch % 2 == 0:
-            model_path = os.path.join(gnn_models_dir, f"model_epoch.{epoch}")
+            model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             save_model(model, model_path)
 
 

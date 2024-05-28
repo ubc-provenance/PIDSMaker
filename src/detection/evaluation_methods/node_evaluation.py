@@ -229,7 +229,7 @@ def main(cfg):
 
         stats = node_evaluation_without_triage(val_tw_path, test_tw_path, model_epoch_dir, logger, cfg)
             
-        stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
+        stats["epoch"] = int(model_epoch_dir.split("_")[-1])
         stats["precision_recall_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
         stats["scores_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png"))
         

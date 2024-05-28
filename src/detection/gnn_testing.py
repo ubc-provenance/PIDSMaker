@@ -71,7 +71,6 @@ def test(
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list[-1]["time"])
 
     end = time.perf_counter()
-    model_epoch_file = model_epoch_file.split(".")[0]
     logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     log_file = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
