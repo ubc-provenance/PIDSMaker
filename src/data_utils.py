@@ -8,6 +8,25 @@ from torch_geometric.loader import TemporalDataLoader
 from encoders import TGNEncoder
 
 
+def load_all_datasets(cfg):
+    train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
+    val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
+    test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    
+    all_msg, all_t, all_edge_types = [], [], []
+    for dataset in [train_data, val_data, test_data]:
+        for data in dataset:
+            all_msg.append(data.msg)
+            all_t.append(data.t)
+            all_edge_types.append(data.edge_type)
+
+    all_msg = torch.cat(all_msg)
+    all_t = torch.cat(all_t)
+    all_edge_types = torch.cat(all_edge_types)
+    full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    
+    return train_data, val_data, test_data, full_data
+
 def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
     """
     Returns a list of time window graphs for a given `split` (train/val/test set).

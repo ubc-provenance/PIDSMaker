@@ -476,7 +476,7 @@ def tokenize_file(sentence: str):
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' ').replace('.',' '))
 
-def log(msg: str):
+def log(msg: str, *args):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"{timestamp} - {msg}")
+    print(f"{timestamp} - {msg}", *args)

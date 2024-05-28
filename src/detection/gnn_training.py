@@ -14,6 +14,7 @@ if device == torch.device("cpu"):
     log("Warning: the device is CPU instead of CUDA")
 
 def train(data,
+          full_data,
           model,
           optimizer,
           cfg
@@ -26,7 +27,7 @@ def train(data,
     for batch in batch_loader:
         optimizer.zero_grad()
 
-        loss = model(batch, data)
+        loss = model(batch, full_data)
 
         loss.backward()
         optimizer.step()
@@ -51,7 +52,7 @@ def main(cfg):
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(gnn_models_dir, exist_ok=True)
 
-    train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
+    train_data, _, _, full_data = load_all_datasets(cfg)
     
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
@@ -69,6 +70,7 @@ def main(cfg):
             g.to(device=device)
             loss = train(
                 data=g.clone(), # avoids alteration of the graph across epochs
+                full_data=full_data,  # full list of edge messages (do not store on CPU)
                 model=model,
                 optimizer=optimizer,
                 cfg=cfg,
