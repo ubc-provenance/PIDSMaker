@@ -13,8 +13,11 @@ def sce_loss(x, y, alpha=3, inference=False, **kwargs):
     return loss
 
 def mse_loss(x, y, inference=False, **kwargs):
-    reduction = "none" if inference else "mean"
-    return F.mse_loss(x, y, reduction=reduction)
+    if inference:
+        losses = F.mse_loss(x, y, reduction="none")
+        return torch.sum(losses, dim=1)
+    
+    return F.mse_loss(x, y, reduction="mean")
 
 def bce_contrastive(positive, negative, inference=False, **kwargs):
     reduction = "none" if inference else "mean"
