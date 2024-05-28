@@ -11,7 +11,25 @@ from decoders import *
 from data_utils import *
 
 
-def model_factory(encoder, decoders, cfg, in_dim, device):
+def build_model(data_sample, device, cfg):
+    """
+    Builds and loads the initial model into memory.
+    The `data_sample` is required to infer the shape of the layers.
+    """
+    msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(data_sample)
+
+    graph_reindexer = GraphReindexer(
+        num_nodes=cfg.dataset.max_node_num,
+        device=device,
+    )
+    
+    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device)
+    decoder = decoder_factory(cfg, in_dim=in_dim)
+    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
+    
+    return model
+
+def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device):
     return Model(
         encoder=encoder,
         decoders=decoders,
@@ -20,6 +38,7 @@ def model_factory(encoder, decoders, cfg, in_dim, device):
         in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
+        graph_reindexer=graph_reindexer,
     ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):

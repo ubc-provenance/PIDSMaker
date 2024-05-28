@@ -12,12 +12,14 @@ class Model(nn.Module):
             out_dim: int,
             use_contrastive_learning: bool,
             device,
+            graph_reindexer,
         ):
         super(Model, self).__init__()
 
         self.encoder = encoder
         self.decoders = nn.ModuleList(decoders)
         self.use_contrastive_learning = use_contrastive_learning
+        self.graph_reindexer = graph_reindexer
         
         self.last_h_storage, self.last_h_non_empty_nodes = None, None
         if self.use_contrastive_learning:

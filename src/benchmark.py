@@ -1,5 +1,6 @@
 import argparse
 
+import torch
 import wandb
 from provnet_utils import remove_underscore_keys, log
 
@@ -48,6 +49,7 @@ def main(cfg, **kwargs):
     # Detection
     if should_restart["gnn_training"]:
         gnn_training.main(cfg, **kwargs)
+        torch.cuda.empty_cache()
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
     if should_restart["evaluation"]:

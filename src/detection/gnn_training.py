@@ -16,13 +16,12 @@ if device == torch.device("cpu"):
 def train(data,
           model,
           optimizer,
-          graph_reindexer,
           cfg
           ):
     model.train()
 
     losses = []
-    batch_loader = batch_loader_factory(cfg, data, graph_reindexer)
+    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
 
     for batch in batch_loader:
         optimizer.zero_grad()
@@ -34,7 +33,7 @@ def train(data,
         losses.append(loss.item())
     return np.mean(losses)
 
-def main(cfg, save_model: bool=True):
+def main(cfg):
     logger = get_logger(
         name="gnn_training",
         filename=os.path.join(cfg.detection.gnn_training._logs_dir, "gnn_training.log"))
@@ -54,16 +53,7 @@ def main(cfg, save_model: bool=True):
 
     train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
     
-    msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(train_data[0])
-
-    graph_reindexer = GraphReindexer(
-        num_nodes=cfg.dataset.max_node_num,
-        device=device,
-    )
-    
-    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device)
-    decoder = decoder_factory(cfg, in_dim=in_dim)
-    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, device=device)
+    model = build_model(data_sample=train_data[0], device=device, cfg=cfg)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
     num_epochs = cfg.detection.gnn_training.num_epochs
@@ -81,7 +71,6 @@ def main(cfg, save_model: bool=True):
                 data=g.clone(), # avoids alteration of the graph across epochs
                 model=model,
                 optimizer=optimizer,
-                graph_reindexer=graph_reindexer,
                 cfg=cfg,
             )
             tot_loss += loss
@@ -97,8 +86,9 @@ def main(cfg, save_model: bool=True):
         log(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
-        if cfg._test_mode or (save_model and epoch % 2 == 0):
-            torch.save(model, f"{gnn_models_dir}/model_epoch{epoch}.pt")
+        if cfg._test_mode or epoch % 2 == 0:
+            model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+            save_model(model, model_path)
 
 
 if __name__ == "__main__":
