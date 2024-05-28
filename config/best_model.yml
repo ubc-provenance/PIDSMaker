@@ -43,18 +43,18 @@ featurization:
 detection:
   gnn_training:
     use_seed: True
-    num_epochs: 16
-    lr: 0.0001
+    num_epochs: 20
+    lr: 0.00001
     weight_decay: 0.00001
-    node_hid_dim: 64
+    node_hid_dim: 128
     node_out_dim: 64
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
-      edge_features: msg,time_encoding
+      edge_features: edge_type
       used_methods: tgn,graph_attention
       graph_attention:
-        dropout: 0.0
+        dropout: 0.25
         activation: relu
         num_heads: 8
       tgn:
