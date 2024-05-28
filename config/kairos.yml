@@ -25,6 +25,7 @@ detection:
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
+      edge_features: msg,time_encoding
       used_methods: graph_attention,tgn
       graph_attention:
         dropout: 0.0
@@ -35,8 +36,6 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: True
-        use_msg_as_edge_feature: True
         use_node_feats_in_gnn: False
     decoder:
       used_methods: predict_edge_type

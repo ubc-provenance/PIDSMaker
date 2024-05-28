@@ -43,15 +43,16 @@ featurization:
 detection:
   gnn_training:
     use_seed: True
-    num_epochs: 30
-    lr: 0.00001
+    num_epochs: 16
+    lr: 0.0001
     weight_decay: 0.00001
     node_hid_dim: 64
     node_out_dim: 64
     encoder:
-      use_node_type_in_node_feats: False
+      use_node_type_in_node_feats: True
       neighbor_sampling: []
-      used_methods: graph_attention,tgn
+      edge_features: msg,time_encoding
+      used_methods: tgn,graph_attention
       graph_attention:
         dropout: 0.0
         activation: relu
@@ -61,16 +62,37 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: False
-        use_msg_as_edge_feature: False
-        use_node_feats_in_gnn: False
+        use_node_feats_in_gnn: True
+      sage:
+        dropout: 0.0
+        activation: relu
     decoder:
-      used_methods: reconstruct_node_features
+      used_methods: predict_edge_type
+      predict_edge_type:
+        used_method: custom
+        custom:
+          dropout: 0.0
+          num_layers: 2
+          activation: relu
+      predict_edge_contrastive:
+        used_method: linear
+        inner_product:
+          dropout: 0.0
+        linear:
+          dropout: 0.0
       reconstruct_node_features:
-        loss: SCE
-        recon_hid_dim: 100
+        loss: MSE
+        recon_hid_dim: 128
         recon_use_bias: True
         out_activation: tanh
+      reconstruct_node_embeddings:
+        loss: MSE
+        out_activation: none
+      reconstruct_edge_embeddings:
+        loss: MSE
+        out_activation: none
+        edge_decoder: none
+
   gnn_testing:
     threshold_method: str
   evaluation:
@@ -79,3 +101,8 @@ detection:
       threshold_method: max_val_loss
       use_dst_node_loss: True
       use_mean_node_loss: False 
+    queue_evaluation:
+      queue_threshold: 20
+      used_method: kairos_idf_queue
+      kairos_idf_queue:
+        include_test_set_in_IDF: True
