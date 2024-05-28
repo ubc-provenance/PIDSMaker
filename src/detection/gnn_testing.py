@@ -16,7 +16,6 @@ if device == torch.device("cpu"):
 def test(
     data,
     model,
-    graph_reindexer,
     nodeid2msg,
     split,
     model_epoch_file,
@@ -33,7 +32,7 @@ def test(
     tot_loss = 0
     start = time.perf_counter()
     
-    batch_loader = batch_loader_factory(cfg, data, graph_reindexer)
+    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
     
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
@@ -99,10 +98,7 @@ def main(cfg):
     val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
     
-    graph_reindexer = GraphReindexer(
-        num_nodes=cfg.dataset.max_node_num,
-        device=device,
-    )
+    model = build_model(data_sample=test_data[0], device=device, cfg=cfg)
 
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
@@ -110,7 +106,7 @@ def main(cfg):
 
     for trained_model in all_trained_models:
         log(f"Evaluation with model {trained_model}...")
-        model = torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
+        model = load_model(model, os.path.join(gnn_models_dir, trained_model), map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
         for graphs, split in [
@@ -123,7 +119,6 @@ def main(cfg):
                 test(
                     data=g.clone(),
                     model=model,
-                    graph_reindexer=graph_reindexer,
                     nodeid2msg=nodeid2msg,
                     split=split,
                     model_epoch_file=trained_model,

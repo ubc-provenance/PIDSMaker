@@ -1,8 +1,11 @@
 import os
 
+import pickle
 import torch
 from torch_geometric.data import Data, TemporalData
 from torch_geometric.loader import TemporalDataLoader
+
+from encoders import TGNEncoder
 
 
 def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
@@ -144,3 +147,31 @@ class GraphReindexer:
         x = self.node_features_reshape(edge_index, x_src, x_dst)
         
         return x, edge_index
+
+def save_model(model, path: str):
+    """
+    Saves only the required weights and tensors on disk.
+    Using torch.save() directly on the model is very long (up to 10min),
+    so we select only the tensors we want to save/load.
+    """
+    os.makedirs(path, exist_ok=True)
+    
+    # We only save specific tensors, as the other tensors are not useful to save (assoc, cache, etc)
+    torch.save(model.state_dict(), os.path.join(path, "state_dict.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
+    
+    if isinstance(model.encoder, TGNEncoder):
+        torch.save(model.encoder.memory, os.path.join(path, "memory.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
+        torch.save(model.encoder.neighbor_loader, os.path.join(path, "neighbor_loader.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
+
+def load_model(model, path: str, map_location=None):
+    """
+    Loads weights and tensors from disk into a model.
+    """
+    model.load_state_dict(
+        torch.load(os.path.join(path, "state_dict.pkl"), map_location=map_location))
+    
+    if isinstance(model.encoder, TGNEncoder):
+        model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"), map_location=map_location)
+        model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"), map_location=map_location)
+
+    return model
