@@ -9,12 +9,12 @@ from provnet_utils import *
 from config import *
 
 
-def calculate_max_val_loss_threshold(graph_dir):
-    filelist = listdir_sorted(graph_dir)
+def calculate_threshold(val_tw_dir):
+    filelist = listdir_sorted(val_tw_dir)
 
     loss_list = []
     for file in sorted(filelist):
-        f = open(os.path.join(graph_dir, file))
+        f = open(os.path.join(val_tw_dir, file))
         for line in f:
             l = line.strip()
             jdata = eval(l)
@@ -25,8 +25,8 @@ def calculate_max_val_loss_threshold(graph_dir):
         'max': max(loss_list),
         'avg': mean(loss_list),
         'percentile_90': percentile_90(loss_list)
-           }
-    log(f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}")
+    }
+    log(f"Thresholds: MEAN={thr['avg']:.3f}, STD={std(loss_list):.3f}, MAX={thr['max']:.3f}, 90 Percentile={thr['percentile_90']:.3f}")
 
     return thr
 
@@ -77,6 +77,25 @@ def plot_scores(scores, y_truth, out_file):
     plt.ylabel('Labels')
     plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
     plt.title('Scatter Plot of Scores by Label')
+    plt.legend()
+    plt.savefig(out_file)
+
+def plot_false_positives(y_true, y_pred, out_file):
+    plt.figure(figsize=(10, 6))
+    
+    plt.plot(y_pred, label='y_pred', color='blue')
+    
+    # Adding green dots for true positives (y_true == 1)
+    label_indices = [i for i, true in enumerate(y_true) if true == 1]
+    plt.scatter(label_indices, [y_pred[i] for i in label_indices], color='green', label='True Positive')
+    
+    # Adding red dots for false positives (y_true == 0 and y_pred == 1)
+    false_positive_indices = [i for i, (true, pred) in enumerate(zip(y_true, y_pred)) if true == 0 and pred == 1]
+    plt.scatter(false_positive_indices, [y_pred[i] for i in false_positive_indices], color='red', label='False Positive')
+    
+    plt.xlabel('Index')
+    plt.ylabel('Prediction Value')
+    plt.title('True Positives and False Positives in Predictions')
     plt.legend()
     plt.savefig(out_file)
 
