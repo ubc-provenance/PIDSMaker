@@ -51,6 +51,7 @@ detection:
     encoder:
       use_node_type_in_node_feats: False
       neighbor_sampling: []
+      edge_features: none
       used_methods: graph_attention,tgn
       graph_attention:
         dropout: 0.0
@@ -61,8 +62,6 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: False
-        use_msg_as_edge_feature: False
         use_node_feats_in_gnn: False
     decoder:
       used_methods: reconstruct_node_features
@@ -83,6 +82,10 @@ detection:
           dropout: 0.0
         linear:
           dropout: 0.0
+      reconstruct_edge_embeddings:
+        loss: MSE
+        out_activation: none
+        edge_decoder: none
   gnn_testing:
     threshold_method: str
   evaluation:

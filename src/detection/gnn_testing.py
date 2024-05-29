@@ -15,8 +15,8 @@ if device == torch.device("cpu"):
 @torch.no_grad()
 def test(
     data,
+    full_data,
     model,
-    graph_reindexer,
     nodeid2msg,
     split,
     model_epoch_file,
@@ -33,12 +33,12 @@ def test(
     tot_loss = 0
     start = time.perf_counter()
     
-    batch_loader = batch_loader_factory(cfg, data, graph_reindexer)
+    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
     
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
 
-        each_edge_loss = model(batch, data, inference=True)
+        each_edge_loss = model(batch, full_data, inference=True)
         tot_loss += each_edge_loss.sum().item()
         
         num_events = each_edge_loss.shape[0]
@@ -72,7 +72,6 @@ def test(
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list[-1]["time"])
 
     end = time.perf_counter()
-    model_epoch_file = model_epoch_file.split(".")[0]
     logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     log_file = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
@@ -96,13 +95,7 @@ def main(cfg):
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
     
-    val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
-    test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
-    
-    graph_reindexer = GraphReindexer(
-        num_nodes=cfg.dataset.max_node_num,
-        device=device,
-    )
+    _, val_data, test_data, full_data = load_all_datasets(cfg)
 
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
@@ -110,7 +103,9 @@ def main(cfg):
 
     for trained_model in all_trained_models:
         log(f"Evaluation with model {trained_model}...")
-        model = torch.load(os.path.join(gnn_models_dir, trained_model), map_location=device)
+        torch.cuda.empty_cache()
+        model = build_model(data_sample=test_data[0], device=device, cfg=cfg)
+        model = load_model(model, os.path.join(gnn_models_dir, trained_model), map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
         for graphs, split in [
@@ -122,17 +117,15 @@ def main(cfg):
                 g.to(device)
                 test(
                     data=g.clone(),
+                    full_data=full_data,
                     model=model,
-                    graph_reindexer=graph_reindexer,
                     nodeid2msg=nodeid2msg,
                     split=split,
                     model_epoch_file=trained_model,
                     logger=logger,
                     cfg=cfg,
                 )
-                
-        del model
-        torch.cuda.empty_cache()
+
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
