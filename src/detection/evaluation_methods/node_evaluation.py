@@ -9,26 +9,11 @@ from config import *
 from .evaluation_utils import *
 
 
-def get_node_thr(val_tw_path, cfg):
-    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
-    if threshold_method == "max_val_loss":
-        thr = calculate_threshold(val_tw_path)['max']
-    # elif threshold_method == "supervised_best_threshold":
-        # thr = calculate_supervised_best_threshold(losses, edge_labels)
-    elif threshold_method == "avg_val_loss":
-        thr = calculate_threshold(val_tw_path)['avg']
-    elif threshold_method == "90_percent_val_loss":
-        thr = calculate_threshold(val_tw_path)['percentile_90']
-    else:
-        raise ValueError(f"Invalid threshold method `{threshold_method}`")
-    
-    return thr
-
 def get_node_predictions(val_tw_path, test_tw_path, cfg):
     ground_truth_nids = set(get_ground_truth_nids(cfg))
     log(f"Loading data from {test_tw_path}...")
     
-    thr = get_node_thr(val_tw_path, cfg) # TODO: change as it only works for max, not for mean (need to do the mean of each tw)
+    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_evaluation.threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     node_to_losses = defaultdict(list)
@@ -59,12 +44,8 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
                     
     results = defaultdict(dict)
     for node_id, losses in node_to_losses.items():
-        pred_score = None
-        if cfg.detection.evaluation.node_evaluation.use_mean_node_loss:
-            pred_score = np.mean(losses)
-        else:
-            pred_score = np.max(losses)
-            
+        pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.node_evaluation.threshold_method)
+
         results[node_id]["score"] = pred_score
         results[node_id]["y_hat"] = int(pred_score > thr)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
@@ -85,7 +66,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
         log(f"FP node {nodes[i]} -> max loss: {pred_scores[i]:.3f} | max TW: {max_val_loss_tw[i]} "
             f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
     
-    fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices)
+    fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
@@ -114,8 +95,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     plot_scores(pred_scores, y_truth, scores_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
-    if not cfg.detection.evaluation.node_evaluation.use_mean_node_loss: # TODO: change
-        fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
-        stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
+    fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
+    stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
     
     return stats

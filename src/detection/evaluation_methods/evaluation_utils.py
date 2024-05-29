@@ -9,6 +9,24 @@ from provnet_utils import *
 from config import *
 
 
+def get_threshold(val_tw_path, threshold_method: str):
+    threshold_method = threshold_method.strip()
+    if threshold_method == "max_val_loss":
+        return calculate_threshold(val_tw_path)['max']
+    elif threshold_method == "mean_val_loss":
+        return calculate_threshold(val_tw_path)['mean']
+    # elif threshold_method == "90_percent_val_loss":
+    #     return calculate_threshold(val_tw_path)['percentile_90']
+    raise ValueError(f"Invalid threshold method `{threshold_method}`")
+
+def reduce_losses_to_score(losses: list[float], threshold_method: str):
+    threshold_method = threshold_method.strip()
+    if threshold_method == "mean_val_loss":
+        return np.mean(losses)
+    elif threshold_method == "max_val_loss":
+        return np.max(losses)
+    raise ValueError(f"Invalid threshold method {threshold_method}")
+
 def calculate_threshold(val_tw_dir):
     filelist = listdir_sorted(val_tw_dir)
 
@@ -23,10 +41,10 @@ def calculate_threshold(val_tw_dir):
 
     thr = {
         'max': max(loss_list),
-        'avg': mean(loss_list),
+        'mean': mean(loss_list),
         'percentile_90': percentile_90(loss_list)
     }
-    log(f"Thresholds: MEAN={thr['avg']:.3f}, STD={std(loss_list):.3f}, MAX={thr['max']:.3f}, 90 Percentile={thr['percentile_90']:.3f}")
+    log(f"Thresholds: MEAN={thr['mean']:.3f}, STD={std(loss_list):.3f}, MAX={thr['max']:.3f}, 90 Percentile={thr['percentile_90']:.3f}")
 
     return thr
 
@@ -118,6 +136,9 @@ def get_uuid_to_node_id(cfg):
     return uuid_to_node_id
 
 def compute_tw_labels(cfg):
+    """
+    Gets the malcious node IDs present in each time window.
+    """
     out_path = cfg.preprocessing.build_graphs._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
     

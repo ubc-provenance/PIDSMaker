@@ -3,13 +3,12 @@ from collections import defaultdict
 from provnet_utils import *
 from config import *
 from .evaluation_utils import *
-from .node_evaluation import get_node_thr
 
 
 def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     log(f"Loading data from {test_tw_path}...")
     
-    thr = get_node_thr(val_tw_path, cfg)
+    thr = get_threshold(val_tw_path, cfg.detection.evaluation.tw_evaluation.threshold_method)
     log(f"Threshold: {thr:.3f}")
     
     tw_to_losses = defaultdict(list)
@@ -30,11 +29,7 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     tw_labels = set(tw_to_malicious_nodes.keys())
     results = defaultdict(dict)
     for tw, losses in tw_to_losses.items():
-        pred_score = None
-        if cfg.detection.evaluation.tw_evaluation.use_mean_node_loss:
-            pred_score = np.mean(losses)
-        else:
-            pred_score = np.max(losses)
+        pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.tw_evaluation.threshold_method)
             
         results[tw]["score"] = pred_score
         results[tw]["y_hat"] = int(pred_score > thr)
