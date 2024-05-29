@@ -89,6 +89,15 @@ def get_ground_truth_nids(cfg):
                 ground_truth_nids.append(int(node_id))
     return ground_truth_nids
 
+def get_uuid_to_node_id(cfg):
+    uuid_to_node_id = {}
+    with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path_new), 'r') as f:
+        for line in f:
+            node_uuid, node_labels, node_id = line.replace(" ", "").strip().split(",")
+            if node_id != 'node_id':
+                uuid_to_node_id[node_uuid] = node_id
+    return uuid_to_node_id
+
 def compute_tw_labels(cfg):
     out_path = cfg.preprocessing.build_graphs._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
@@ -121,12 +130,19 @@ def compute_tw_labels(cfg):
                     
         log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
         torch.save(tw_to_malicious_nodes, out_file)
+        
+    # Used to retrieve node ID from node raw UUID
+    node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
+    uuid_to_node_id = get_uuid_to_node_id(cfg)
     
+    # Create a mapping TW number => malicious node IDs
     tw_to_malicious_nodes = torch.load(out_file)
     for tw, nodes in tw_to_malicious_nodes.items():
         unique_nodes, counts = np.unique(nodes, return_counts=True)
         node_to_count = {node: count for node, count in zip(unique_nodes, counts)}
         log(f"TW {tw} -> {len(unique_nodes)} malicious nodes + {len(nodes)} malicious edges")
-        pprint(node_to_count)
+        
+        node_to_count = {uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()}
+        pprint(node_to_count, width=1)
         
     return tw_to_malicious_nodes
