@@ -89,7 +89,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         max_val_loss_tw.append(max_tw)
         
         if y_true == 1:
-            log(f"-> Malicious node {nid} ({result['path']}): loss={score:.3f} | is TP:" + (" ✅" if y_true == y_hat else " ❌"))
+            log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (result['path']))
 
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
