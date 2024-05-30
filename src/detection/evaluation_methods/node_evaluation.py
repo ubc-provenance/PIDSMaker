@@ -10,7 +10,7 @@ from .evaluation_utils import *
 
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg):
-    ground_truth_nids = set(get_ground_truth_nids(cfg))
+    ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
     thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_evaluation.threshold_method)
@@ -49,6 +49,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
         results[node_id]["score"] = pred_score
         results[node_id]["y_hat"] = int(pred_score > thr)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
+        results[node_id]["path"] = ground_truth_paths.get(node_id, "") # TODO: support for benign nodes too (see with Baowiang)
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw[node_id]
 
     return results
@@ -62,7 +63,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     for i in fp_indices:
         is_in_malicious_tw = max_val_loss_tw[i] in malicious_tws
         num_fps_in_malicious_tw += int(is_in_malicious_tw)
-            
+
         log(f"FP node {nodes[i]} -> max loss: {pred_scores[i]:.3f} | max TW: {max_val_loss_tw[i]} "
             f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
     
@@ -88,8 +89,8 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         max_val_loss_tw.append(max_tw)
         
         if y_true == 1:
-            log(f"-> Malicious node {nid}: loss={score:.3f} | is TP:" + (" ✅" if y_true == y_hat else " ❌"))
-            
+            log(f"-> Malicious node {nid} ({result['path']}): loss={score:.3f} | is TP:" + (" ✅" if y_true == y_hat else " ❌"))
+
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
     plot_scores(pred_scores, y_truth, scores_img_file)

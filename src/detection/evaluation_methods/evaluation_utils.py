@@ -118,13 +118,14 @@ def plot_false_positives(y_true, y_pred, out_file):
     plt.savefig(out_file)
 
 def get_ground_truth_nids(cfg):
-    ground_truth_nids = []
+    ground_truth_nids, ground_truth_paths = [], {}
     with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path_new), 'r') as f:
         for line in f:
             node_uuid, node_labels, node_id = line.replace(" ", "").strip().split(",")
             if node_id != 'node_id':
                 ground_truth_nids.append(int(node_id))
-    return ground_truth_nids
+                ground_truth_paths[int(node_id)] = node_labels
+    return set(ground_truth_nids), ground_truth_paths
 
 def get_uuid_to_node_id(cfg):
     uuid_to_node_id = {}
