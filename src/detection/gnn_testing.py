@@ -8,10 +8,6 @@ from model import *
 from factory import *
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if device == torch.device("cpu"):
-    log("Warning: the device is CPU instead of CUDA")
-
 @torch.no_grad()
 def test(
     data,
@@ -22,6 +18,7 @@ def test(
     model_epoch_file,
     logger,
     cfg,
+    device,
 ):
     model.eval()
     
@@ -100,6 +97,8 @@ def main(cfg):
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     all_trained_models = listdir_sorted(gnn_models_dir)
+    
+    device = get_device(cfg)
 
     for trained_model in all_trained_models:
         log(f"Evaluation with model {trained_model}...")
@@ -124,6 +123,7 @@ def main(cfg):
                     model_epoch_file=trained_model,
                     logger=logger,
                     cfg=cfg,
+                    device=device,
                 )
 
 

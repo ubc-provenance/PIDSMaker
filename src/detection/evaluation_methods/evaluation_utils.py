@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from sklearn.metrics import (
     auc,
     roc_curve,
@@ -6,6 +8,7 @@ import matplotlib.pyplot as plt
 import re
 
 from provnet_utils import *
+from data_utils import *
 from config import *
 
 
@@ -145,7 +148,7 @@ def compute_tw_labels(cfg):
     
     if not os.path.exists(out_file):
         log(f"Computing time-window labels...")
-        os.makedirs(out_path)
+        os.makedirs(out_path, exist_ok=True)
         event_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
         
         t_to_node = {}
