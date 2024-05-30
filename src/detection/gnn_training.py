@@ -9,9 +9,6 @@ from config import *
 from data_utils import *
 from factory import *
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if device == torch.device("cpu"):
-    log("Warning: the device is CPU instead of CUDA")
 
 def train(data,
           full_data,
@@ -53,6 +50,8 @@ def main(cfg):
     os.makedirs(gnn_models_dir, exist_ok=True)
 
     train_data, _, _, full_data = load_all_datasets(cfg)
+    
+    device = get_device(cfg)
     
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))

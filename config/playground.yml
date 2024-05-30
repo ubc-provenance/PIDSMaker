@@ -100,7 +100,6 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
-      use_mean_node_loss: False 
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue

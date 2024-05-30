@@ -480,3 +480,12 @@ def log(msg: str, *args):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     print(f"{timestamp} - {msg}", *args)
+
+def get_device(cfg):
+    if cfg._use_cpu:
+        return torch.device("cpu")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device == torch.device("cpu"):
+        log("Warning: the device is CPU instead of CUDA")
+    return device
