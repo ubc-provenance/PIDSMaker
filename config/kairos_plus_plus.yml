@@ -76,12 +76,6 @@ detection:
           dropout: 0.5
           num_layers: 2
           activation: relu
-      predict_edge_contrastive:
-        used_method: linear
-        inner_product:
-          dropout: 0.0
-        linear:
-          dropout: 0.0
       reconstruct_edge_embeddings:
         loss: MSE
         out_activation: none

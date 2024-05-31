@@ -24,7 +24,7 @@ def build_model(data_sample, device, cfg):
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device)
-    decoder = decoder_factory(cfg, in_dim=in_dim)
+    decoder = decoder_factory(cfg, in_dim=in_dim, device=device)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
     
     return model
@@ -124,7 +124,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
 
     return encoder
 
-def decoder_factory(cfg, in_dim):
+def decoder_factory(cfg, in_dim, device):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
 
     decoders = []
@@ -229,8 +229,21 @@ def decoder_factory(cfg, in_dim):
             else:
                 raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
             
+            contrastive_graph_reindexer = GraphReindexer(
+                num_nodes=cfg.dataset.max_node_num,
+                device=device,
+            )
             loss_fn = bce_contrastive
-            decoders.append(EdgeContrastiveDecoder(decoder=edge_decoder, loss_fn=loss_fn))
+            neg_sampling_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.neg_sampling_method.strip()
+            if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
+                raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
+            
+            decoders.append(EdgeContrastiveDecoder(
+                decoder=edge_decoder,
+                loss_fn=loss_fn,
+                graph_reindexer=contrastive_graph_reindexer,
+                neg_sampling_method=neg_sampling_method,
+            ))
         
         else:
             raise ValueError(f"Invalid decoder {method}")

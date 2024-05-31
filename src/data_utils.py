@@ -140,6 +140,11 @@ class GraphReindexer:
             
         max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
         
+        # To avoid storing gradients from all nodes, we detach() BEFORE caching. If we detach()
+        # after storing, we loose the gradient for all operations happening before the reindexing.
+        self.x_src_cache = self.x_src_cache.detach()
+        self.x_dst_cache = self.x_dst_cache.detach()
+        
         self.x_src_cache[edge_index[0, :]] = x_src
         self.x_dst_cache[edge_index[1, :]] = x_dst
         x = (self.x_src_cache[:max_num_node, :], self.x_dst_cache[:max_num_node, :])
