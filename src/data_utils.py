@@ -40,9 +40,57 @@ def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
         filepath = os.path.join(path, split, f)
         data = torch.load(filepath).to("cpu")
         data_list.append(data)
-        
-    data_list = extract_msg_from_data(data_list, cfg)
+
+    if cfg.featurization.embed_nodes.used_method.strip() == "only_type":
+        data_list = extract_msg_node_type_only(data_list, cfg)
+    else:
+        data_list = extract_msg_from_data(data_list, cfg)
     return data_list
+
+def extract_msg_node_type_only(data_set: list[TemporalData], cfg) -> list[TemporalData]:
+    """
+    Initializes the attributes of a `Data` object based on the `msg`
+    computed in previous tasks.
+    """
+    node_type_dim = cfg.dataset.num_node_types
+    edge_type_dim = cfg.dataset.num_edge_types
+
+    msg_len = data_set[0].msg.shape[1]
+    expected_msg_len = (node_type_dim * 2) + edge_type_dim
+    if msg_len != expected_msg_len:
+        raise ValueError(f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len}")
+
+    field_to_size = [
+        ("src_type", node_type_dim),
+        ("edge_type", edge_type_dim),
+        ("dst_type", node_type_dim),
+    ]
+    for g in data_set:
+        fields = {}
+        idx = 0
+        for field, size in field_to_size:
+            fields[field] = g.msg[:, idx: idx + size]
+            idx += size
+
+        x_src = fields["src_type"]
+        x_dst = fields["dst_type"]
+
+        # If we want to predict the edge type, we remove the edge type from the message
+        if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
+            msg = torch.cat([x_src, x_dst], dim=-1)
+            edge_feats = None
+        else:
+            msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
+            edge_feats = fields["edge_type"]  # For now, we only use the edge type as edge feature
+
+        g.x_src = x_src
+        g.x_dst = x_dst
+        g.msg = msg
+        g.edge_type = fields["edge_type"]
+        g.edge_feats = edge_feats
+        g.edge_index = torch.stack([g.src, g.dst])
+
+    return data_set
 
 def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalData]:
     """
