@@ -7,6 +7,15 @@ from tqdm import tqdm
 from torch_geometric.data import *
 import torch
 
+def gen_relation_onehot(rel2id):
+    relvec=torch.nn.functional.one_hot(torch.arange(0, len(rel2id.keys())//2), num_classes=len(rel2id.keys())//2)
+    rel2vec={}
+    for i in rel2id.keys():
+        if type(i) is not int:
+            rel2vec[i]= relvec[rel2id[i]-1]
+            rel2vec[relvec[rel2id[i]-1]]=i
+    return rel2vec
+
 def gen_vectorized_graphs(etype2oh, ntype2oh, split_files, out_dir, logger, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
