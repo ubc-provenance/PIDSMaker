@@ -28,6 +28,7 @@ featurization:
       epochs: 50
       compute_loss: True
       negative: 5
+      decline_rate: 30
     doc2vec:
       epochs: 100
       alpha: 0.025
