@@ -11,6 +11,23 @@ featurization:
   embed_nodes:
     emb_dim: 128
     used_method: feature_word2vec
+    temporal_rw:
+      walk_length: 30
+      num_walks: 10
+      trw_workers: 8
+      time_weight: uniform
+      half_life: 1
+      use_node_types: False
+      use_cmd: True
+      use_port: False
+      show_epoch_loss: True
+      window_size: 5
+      min_count: 1
+      use_skip_gram: True
+      wv_workers: 6
+      epochs: 50
+      compute_loss: True
+      negative: 5
     doc2vec:
       epochs: 100
       alpha: 0.025
