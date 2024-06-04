@@ -474,7 +474,7 @@ def tokenize_subject(sentence: str):
 def tokenize_file(sentence: str):
     return word_tokenize(sentence.replace('/',' / '))
 def tokenize_netflow(sentence: str):
-    return word_tokenize(sentence.replace(':',' ').replace('.',' '))
+    return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
 
 def log(msg: str, *args):
     now = datetime.now()
