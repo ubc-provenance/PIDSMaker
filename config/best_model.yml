@@ -10,7 +10,7 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
-    used_method: temporal_rw
+    used_method: feature_word2vec
     temporal_rw:
       walk_length: 30
       num_walks: 10
