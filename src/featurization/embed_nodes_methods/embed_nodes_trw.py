@@ -112,7 +112,7 @@ def main(cfg):
     indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
 
     corpus_base_dir = cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir
-    corpus_folders = ['train','val','test']
+    corpus_folders = ['train','val','test','unused']
     corpus_file_list = get_all_files_from_folders(corpus_base_dir, corpus_folders)
     for i in tqdm(list(range(len(corpus_file_list))), desc="Train Word2Vec based on TRW corpus:"):
         with open(corpus_file_list[i], 'r') as f:

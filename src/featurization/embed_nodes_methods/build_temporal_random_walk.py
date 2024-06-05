@@ -60,6 +60,12 @@ def main(cfg):
                              logger=logger,
                              cfg=cfg)
 
+    run_temporal_random_walk(split_files=cfg.dataset.unused_files,
+                             out_dir=os.path.join(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir,
+                                                  "unused/"),
+                             logger=logger,
+                             cfg=cfg)
+
 
 
 if __name__ == "__main__":

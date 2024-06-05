@@ -17,12 +17,14 @@ def cal_word_weight(n,percentage):
         sequence.append(a_i)
     return sequence
 
-def get_indexid2vec(indexid2msg, model_path, use_node_types, logger, decline_percentage):
+def get_indexid2vec(indexid2msg, model_path, use_node_types, logger, decline_percentage, node_list):
     model = Word2Vec.load(model_path)
     logger.info(f"Loaded model from {model_path}")
 
     indexid2vec = {}
-    for indexid, msg in tqdm(indexid2msg.items(), desc='processing indexid2vec:'):
+    # for indexid, msg in tqdm(indexid2msg.items(), desc='processing indexid2vec:'):
+    for indexid in tqdm(node_list, desc='processing indexid2vec:'):
+        msg = indexid2msg[int(indexid)]
         if msg[0] == 'subject':
             if use_node_types:
                 tokens = tokenize_subject(msg[0] + ' ' + msg[1])
@@ -111,6 +113,16 @@ def main(cfg):
         filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
     )
 
+    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    sorted_paths = get_all_files_from_folders(base_dir, (cfg.dataset.train_files +
+                                                         cfg.dataset.test_files +
+                                                         cfg.dataset.val_files))
+    used_nodes = set()
+    for file_path in tqdm(sorted_paths, desc="Get nodes in graphs:"):
+        graph = torch.load(file_path)
+        used_nodes = used_nodes | set(graph.nodes())
+    used_nodes = list(used_nodes)
+
     use_node_types = cfg.featurization.embed_nodes.temporal_rw.use_node_types
     use_cmd = cfg.featurization.embed_nodes.temporal_rw.use_cmd
     use_port = cfg.featurization.embed_nodes.temporal_rw.use_port
@@ -123,7 +135,8 @@ def main(cfg):
     logger.info("Generating node vectors...")
     trw_word2vec_model_path = cfg.featurization.embed_nodes.temporal_rw._model_dir + 'trw_word2vec.model'
     indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=trw_word2vec_model_path,
-                                  use_node_types=use_node_types, logger=logger, decline_percentage=decline_rate)
+                                  use_node_types=use_node_types, logger=logger, decline_percentage=decline_rate,
+                                  node_list=used_nodes)
 
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
