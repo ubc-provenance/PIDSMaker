@@ -4,6 +4,8 @@ from .embed_nodes_methods import (
     embed_nodes_word2vec,
     embed_nodes_doc2vec,
     build_feature_word2vec,
+    build_temporal_random_walk,
+    embed_nodes_trw,
 )
 
 
@@ -21,6 +23,9 @@ def main(cfg):
         set_task_to_done(cfg.featurization.embed_nodes._task_path)
     elif method == "feature_word2vec":
         build_feature_word2vec.main(cfg)
+    elif method == "temporal_rw":
+        build_temporal_random_walk.main(cfg)
+        embed_nodes_trw.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 

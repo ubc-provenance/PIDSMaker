@@ -65,7 +65,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="framework_tests",
+        project="tests_baoxiang",
         name=exp_name,
         tags=tags,
     )
