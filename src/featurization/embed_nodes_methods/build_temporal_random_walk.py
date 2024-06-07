@@ -4,6 +4,8 @@ from config import *
 from tqdm import tqdm
 from trw import TRW
 import torch
+import numpy as np
+import random
 
 def run_temporal_random_walk(split_files, out_dir, logger, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
@@ -34,6 +36,18 @@ def run_temporal_random_walk(split_files, out_dir, logger, cfg):
         trw.run()
 
 def main(cfg):
+    use_seed = cfg.featurization.embed_nodes.use_seed
+
+    if use_seed:
+        SEED = 0
+        np.random.seed(SEED)
+        random.seed(SEED)
+
+        torch.manual_seed(SEED)
+        torch.cuda.manual_seed_all(SEED)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     logger = get_logger(
         name="build_temporal_random_walk",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "temporal_random_walk.log")

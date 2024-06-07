@@ -4,6 +4,9 @@ from nltk.tokenize import word_tokenize
 
 from provnet_utils import *
 from config import *
+import torch
+import numpy as np
+import random
 
 def splitting_label_set(split_files: list[str], cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
@@ -37,22 +40,28 @@ def preprocess(indexid2msg: dict, nodes: list[str]):
     return words, tags
 
 
-def doc2vec(train_set: list[str],
-                  model_save_path: str,
-                  indexid2msg: dict,
-                  logger: logging.Logger,
-                  epochs: int,
-                  emb_dim: int,
-                  alpha: float,
-                  min_alpha: float,
-                  dm: int = 1):
+def doc2vec(cfg,
+            train_set: list[str],
+            model_save_path: str,
+            indexid2msg: dict,
+            logger: logging.Logger,
+            epochs: int,
+            emb_dim: int,
+            alpha: float,
+            min_alpha: float,
+            dm: int = 1):
+    use_seed = cfg.featurization.embed_nodes.use_seed
+    SEED = 0
 
     logger.info('Preprocessing training data...')
     words, tags = preprocess(indexid2msg, train_set)
     tagged_data = [TaggedDocument(words=word_list, tags=[tag]) for word_list, tag in zip(words, tags)]
 
     logger.info('Initializing Doc2Vec model...')
-    model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True)
+    if use_seed:
+        model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED)
+    else:
+        model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True)
     model.build_vocab(tagged_data)
 
     logger.info('Start training...')
@@ -71,6 +80,18 @@ def doc2vec(train_set: list[str],
     pass
 
 def main(cfg):
+    use_seed = cfg.featurization.embed_nodes.use_seed
+
+    if use_seed:
+        SEED = 0
+        np.random.seed(SEED)
+        random.seed(SEED)
+
+        torch.manual_seed(SEED)
+        torch.cuda.manual_seed_all(SEED)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     model_save_path = cfg.featurization.embed_nodes.doc2vec._model_dir
     os.makedirs(model_save_path,exist_ok=True)
 
@@ -103,7 +124,8 @@ def main(cfg):
                   epochs=epochs,
                   emb_dim=emb_dim,
                   alpha=alpha,
-                  min_alpha=min_alpha)
+                  min_alpha=min_alpha,
+                  cfg=cfg)
 
 if __name__ == '__main__':
     args =get_runtime_required_args()

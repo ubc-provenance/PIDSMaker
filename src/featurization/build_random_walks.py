@@ -3,6 +3,8 @@ from config import *
 from provnet_utils import *
 import os
 import torch
+import numpy as np
+import random
 
 
 def preprocess_split(split: Literal["train", "val", "test"], split_files: list[str], cfg):
@@ -45,6 +47,17 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     random_walks_file_fd.close()
 
 def main(cfg):
+    use_seed = cfg.featurization.embed_nodes.use_seed
+
+    if use_seed:
+        SEED = 0
+        np.random.seed(SEED)
+        random.seed(SEED)
+
+        torch.manual_seed(SEED)
+        torch.cuda.manual_seed_all(SEED)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
     os.makedirs(cfg.featurization.embed_nodes.word2vec._random_walk_dir, exist_ok=True)
     os.makedirs(cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir, exist_ok=True)
 

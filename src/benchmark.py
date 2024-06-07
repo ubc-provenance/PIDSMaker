@@ -65,6 +65,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
+        # project="jbx_tests_featurization_theia_e5",
         project="framework_tests",
         name=exp_name,
         tags=tags,

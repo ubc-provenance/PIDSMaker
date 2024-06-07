@@ -19,6 +19,7 @@ import re
 import torch
 from config import *
 from provnet_utils import *
+import random
 
 FLOAT = np.float32
 INT = np.uint64
@@ -424,6 +425,8 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     num_workers = cfg.featurization.embed_nodes.word2vec.num_workers
     compute_loss = cfg.featurization.embed_nodes.word2vec.compute_loss
     add_paths = cfg.featurization.embed_nodes.word2vec.add_paths
+    use_seed = cfg.featurization.embed_nodes.use_seed
+    SEED = 0
 
     log_dir = out_dir
 
@@ -459,8 +462,12 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     # Training using Word2Vec if needed
     # ===-----------------------------------------------------------------------===
     if model_input is None:
-        model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
-                         workers=num_workers, epochs=epochs, compute_loss=compute_loss)
+        if use_seed:
+            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
+                             workers=num_workers, epochs=epochs, compute_loss=compute_loss,seed=SEED)
+        else:
+            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
+                             workers=num_workers, epochs=epochs, compute_loss=compute_loss)
     else:
         logger.info("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)
@@ -790,6 +797,18 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     logger.info("=== ----------------------------------------------------------------------------------------")
 
 def main(cfg):
+    use_seed = cfg.featurization.embed_nodes.use_seed
+
+    if use_seed:
+        SEED = 0
+        np.random.seed(SEED)
+        random.seed(SEED)
+
+        torch.manual_seed(SEED)
+        torch.cuda.manual_seed_all(SEED)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     logger = get_logger(
         name="node_embedding_word2vec_alacarte",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "node_embedding_word2vec_alacarte.log"))
