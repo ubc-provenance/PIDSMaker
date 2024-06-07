@@ -63,6 +63,7 @@ detection:
         tgn_time_dim: 100
         tgn_neighbor_size: 20
         use_node_feats_in_gnn: True
+        use_memory: True
       sage:
         dropout: 0.0
         activation: relu
