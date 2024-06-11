@@ -7,6 +7,7 @@ from sklearn.neighbors import LocalOutlierFactor
 
 from provnet_utils import *
 from config import *
+from .evaluation_utils import *
 
 
 # Kairos code
@@ -367,22 +368,17 @@ def train_lof_model(cfg):
     return clf
 
 def ground_truth_label(test_tw_path, cfg):
-    labels = {}
-    for tw in listdir_sorted(test_tw_path):
-        labels[tw] = 0
+    labels = []
+    for _ in listdir_sorted(test_tw_path):
+        labels.append(0)
         
     if cfg._test_mode:
         return labels
 
-    attack_tws = cfg.dataset.ground_truth_time_windows
-    for tw in attack_tws:
-        # TODO: this is a workaround, should be replaced with exact event timestamps
-        label_tw_match = [label for label in labels.keys() if tw.startswith(label[:19])]
-        assert len(label_tw_match) > 0, f"Attack time window file not found: {tw}"
-        
-        matched_label_tw = label_tw_match[0]
-        labels[matched_label_tw] = 1
-
+    tw_to_malicious_nodes = compute_tw_labels(cfg)
+    for tw, nodes in tw_to_malicious_nodes.items():
+        labels[tw] = 1
+    
     return labels
 
 def create_queues_provnet(cfg):
@@ -426,16 +422,16 @@ def predict_queues(cfg):
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         
-        pred_label = {}
-        for tw in listdir_sorted(test_tw_path):
-            pred_label[tw] = 0
+        pred_label = []
+        for _ in range(len(listdir_sorted(test_tw_path))):
+            pred_label.append(0)
         
         queues = torch.load(os.path.join(cfg.detection.evaluation.queue_evaluation._queues_dir, f"{model_epoch_dir}_queues.pkl"))
         labels = ground_truth_label(test_tw_path, cfg)
 
         detected_queues = []
         for queue in queues:
-            label = any([labels[hq["name"]] for hq in queue ])
+            label = any([labels[hq["index"]] for hq in queue ])
             anomaly_score = 0
             for hq in queue:
                 if anomaly_score == 0:
@@ -445,12 +441,12 @@ def predict_queues(cfg):
             log(f"-> queue anomaly score: {anomaly_score:.2f} | {'ATTACK' if label else ''}")
             
             if anomaly_score > cfg.detection.evaluation.queue_evaluation.queue_threshold:
-                name_list = []
+                idx_list = []
                 for i in queue:
-                    name_list.append(i['name'])
-                log(f"Anomalous queue: {name_list}")
-                detected_queues.append(name_list)
-                for i in name_list:
+                    idx_list.append(i['index'])
+                log(f"Anomalous queue: {idx_list}")
+                detected_queues.append(idx_list)
+                for i in idx_list:
                     pred_label[i] = 1
                 log(f"Anomaly score: {anomaly_score}")
         
@@ -460,12 +456,8 @@ def predict_queues(cfg):
 
         # Calculate the metrics
         log("\n********************************* Attack Labels *********************************")
-        y, y_pred = [], []
-        for i in labels:
-            y.append(labels[i])
-            y_pred.append(pred_label[i])
 
-        stats = classifier_evaluation(y, y_pred, y_pred)
+        stats = classifier_evaluation(labels, pred_label, pred_label)
         stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
         wandb.log(stats)
         
