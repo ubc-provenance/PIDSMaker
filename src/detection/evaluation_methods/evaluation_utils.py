@@ -80,7 +80,7 @@ def plot_precision_recall(scores, y_truth, out_file):
 
     plt.savefig(out_file)
 
-def plot_scores(scores, y_truth, out_file):
+def plot_simple_scores(scores, y_truth, out_file):
     scores_0 = [score for score, label in zip(scores, y_truth) if label == 0]
     scores_1 = [score for score, label in zip(scores, y_truth) if label == 1]
 
@@ -99,6 +99,61 @@ def plot_scores(scores, y_truth, out_file):
     plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
     plt.title('Scatter Plot of Scores by Label')
     plt.legend()
+    plt.savefig(out_file)
+
+def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
+    node_to_path = get_node_to_path_and_type(cfg)
+    paths = [node_to_path[n]["path"] for n in nodes]
+    
+    scores_0 = [score for score, label in zip(scores, y_truth) if label == 0]
+    scores_1 = [score for score, label in zip(scores, y_truth) if label == 1]
+    paths_0 = [path for path, label in zip(paths, y_truth) if label == 0]
+    paths_1 = [path for path, label in zip(paths, y_truth) if label == 1]
+
+    # Positions on the y-axis for the scatter plot (can be zero or any other constant)
+    y_zeros = [0] * len(scores_0)  # All zeros at y=0
+    y_ones = [1] * len(scores_1)  # All ones at y=1, you can also keep them at y=0 if you prefer
+
+    # Creating the plot
+    plt.figure(figsize=(12, 6))  # Increase the width to make space for text
+    plt.scatter(scores_0, y_zeros, color='green', label='Label 0')
+    plt.scatter(scores_1, y_ones, color='red', label='Label 1')
+
+    # Adding labels and title
+    plt.xlabel('Scores')
+    plt.ylabel('Labels')
+    plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
+    plt.title('Scatter Plot of Scores by Label')
+    plt.legend()
+
+    # Combine scores and paths for easy handling
+    combined_scores = list(zip(scores, paths, y_truth, max_val_loss_tw))
+
+    # Sort combined list by scores in descending order
+    combined_scores_sorted = sorted(combined_scores, key=lambda x: x[0], reverse=True)
+
+    # Select the top N scores
+    top = combined_scores_sorted[:10]
+
+    # Separate the top scores by their labels
+    top_0 = [item for item in top if item[2] == 0]
+    top_1 = [item for item in top if item[2] == 1]
+
+    # Annotate the top scores for label 0
+    for i, (score, path, _, max_tw_idx) in enumerate(top_0):
+        y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
+        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color='green')
+
+    # Annotate the top scores for label 1
+    for i, (score, path, _, max_tw_idx) in enumerate(top_1):
+        y_position = 1 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
+        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color='red')
+        
+    plt.text(max(scores) // 3, 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
+    plt.text(max(scores) // 3, 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
+
+    plt.xlim([min(scores), max(scores) + 7])  # Adjust xlim to make space for text
+    plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
 
 def plot_false_positives(y_true, y_pred, out_file):

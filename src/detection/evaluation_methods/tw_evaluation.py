@@ -57,6 +57,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
-    plot_scores(pred_scores, y_truth, scores_img_file)
+    plot_simple_scores(pred_scores, y_truth, scores_img_file)
     plot_false_positives(y_truth, y_preds, fp_img_file)
     return classifier_evaluation(y_truth, y_preds, pred_scores)
