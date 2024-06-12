@@ -10,6 +10,7 @@ import re
 from provnet_utils import *
 from data_utils import *
 from config import *
+import igraph as ig
 
 
 def get_threshold(val_tw_path, threshold_method: str):
@@ -133,11 +134,12 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     combined_scores_sorted = sorted(combined_scores, key=lambda x: x[0], reverse=True)
 
     # Select the top N scores
-    top = combined_scores_sorted[:10]
+    top = combined_scores_sorted[:1000]
 
     # Separate the top scores by their labels
-    top_0 = [item for item in top if item[2] == 0]
-    top_1 = [item for item in top if item[2] == 1]
+    keep_only = 10
+    top_0 = [item for item in top if item[2] == 0][:keep_only]
+    top_1 = [item for item in top if item[2] == 1][:keep_only]
 
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
@@ -243,5 +245,130 @@ def compute_tw_labels(cfg):
         
         node_to_count = {uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()}
         pprint(node_to_count, width=1)
-        
+        tw_to_malicious_nodes[tw] = node_to_count
+
     return tw_to_malicious_nodes
+
+def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_path_and_type, anomaly_threshold, i, cfg, n_hop=2):
+    # On OpTC, the degree is too high so we remove 90% of non-malicious nodes
+    # for visualization.
+    # if dataset == "OPTC":
+    #     OPTC_NODE_TO_VISUALIZE = 201  # Set the node viz manually
+    #     idx = edge_index[0, :] == OPTC_NODE_TO_VISUALIZE
+
+    #     if 1 not in y[idx]:
+    #         return
+
+    #     edge_index = edge_index[:, idx]
+    #     edge_scores = edge_scores[idx]
+    #     y = y[idx]
+
+    #     indices_0 = np.where(y == 0)[0]
+    #     indices_1 = np.where(y == 1)[0]
+
+    #     selected_indices_0 = np.random.choice(
+    #         indices_0, size=int(len(indices_0) * 0.1), replace=False
+    #     )
+    #     final_indices = np.concatenate((selected_indices_0, indices_1))
+    #     np.random.shuffle(final_indices)
+
+    #     edge_index = edge_index[:, final_indices]
+    #     edge_scores = edge_scores[final_indices]
+    #     y = y[final_indices]
+    
+    if edge_index.shape[0] != 2:
+        edge_index = np.array([edge_index[:, 0], edge_index[:, 1]])
+
+    # Flatten edge_index and map node IDs to a contiguous range starting from 0
+    unique_nodes, new_edge_index = np.unique(edge_index.flatten(), return_inverse=True)
+    new_edge_index = new_edge_index.reshape(edge_index.shape)
+    unique_paths = [node_to_path_and_type[n]["path"] for n in unique_nodes]
+    unique_types = [node_to_path_and_type[n]["type"] for n in unique_nodes]
+
+    G = ig.Graph(edges=[tuple(e) for e in new_edge_index.T], directed=True)
+
+    # Node attributes
+    G.vs["original_id"] = unique_nodes
+    G.vs["path"] = unique_paths
+    G.vs["type"] = unique_types
+    G.vs["shape"] = ["rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle" for typ in unique_types]
+
+    # Edge attributes
+    G.es["anomaly_score"] = edge_scores
+    G.es["y"] = y.tolist()
+
+    source_nodes = malicious_nodes
+    source_node_map = {old: new for new, old in enumerate(unique_nodes)}
+    new_source_nodes = [source_node_map.get(node, -1) for node in source_nodes]
+
+    # Find 2-hop neighborhoods for the source nodes
+    neighborhoods = set()
+    for node in new_source_nodes:
+        if node == -1:
+            # Warning: one malicious node in {source_nodes} was not seen in the dataset ({new_source_nodes}).
+            continue
+        neighborhood = G.neighborhood(node, order=n_hop)
+        neighborhoods.update(neighborhood)
+
+    # Create a subgraph with only the n-hop neighborhoods
+    subgraph = G.subgraph(neighborhoods)
+
+    y_hat = [score > anomaly_threshold for score in subgraph.es["anomaly_score"]]
+
+    BENIGN = "#44BC"
+    ATTACK = "#FF7E79"
+
+    visual_style = {}
+    visual_style["bbox"] = (700, 700)
+    visual_style["margin"] = 40
+    visual_style["layout"] = subgraph.layout("kk")
+
+    visual_style["vertex_size"] = 13
+    visual_style["vertex_label_dist"] = 1.3
+    visual_style["vertex_label_size"] = 7
+    visual_style["vertex_label_font"] = 1
+    visual_style["vertex_color"] = [
+        ATTACK if subgraph.vs[v.index]["original_id"] in source_nodes else BENIGN
+        for v in subgraph.vs
+    ]
+    visual_style["vertex_label"] = subgraph.vs["path"]
+
+    visual_style["edge_width"] = 1
+    visual_style["edge_curved"] = 0.1
+    visual_style["edge_width"] = [3 if label else 1 for label in y_hat]
+    visual_style["edge_color"] = [
+        "red" if label else "gray" for label in subgraph.es["y"]
+    ]
+    visual_style["edge_label"] = [f"{x:.2f}" for x in subgraph.es["anomaly_score"]]
+    visual_style["edge_label_size"] = 8
+    visual_style["edge_label_color"] = "#888888"
+
+    folder = "viz/"
+    svg = f"{n_hop}-hop_attack_graph_{i}.svg"
+    os.makedirs(folder, exist_ok=True)
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(12, 12))
+
+    # Plot the graph using igraph
+    plot = ig.plot(subgraph, target=ax, **visual_style)
+
+    # Create legend handles
+    legend_handles = [
+        mpatches.Patch(color=BENIGN, label='Benign'),
+        mpatches.Patch(color=ATTACK, label='Attack'),
+        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=10, label='Subject', markeredgewidth=1),
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='k', markersize=10, label='File', markeredgewidth=1),
+        plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=10, label='IP', markeredgewidth=1)
+    ]
+
+    # Add legend to the plot
+    ax.legend(handles=legend_handles, loc='upper right', fontsize='large')
+
+    # Save the plot with legend
+    plt.savefig(folder + svg)
+    plt.close(fig)
+
+    print(
+        f"Graph {svg} saved, with attack nodes:\t {','.join([str(n) for n in source_nodes])}."
+    )

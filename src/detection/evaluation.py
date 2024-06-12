@@ -8,6 +8,7 @@ from .evaluation_methods import (
     node_evaluation,
     queue_evaluation,
     tw_evaluation,
+    node_tw_evaluation,
 )
 from data_utils import *
 from provnet_utils import log
@@ -42,12 +43,15 @@ def standard_evaluation(cfg, evaluation_fn):
     wandb.log(best_stats)
 
 
-def main(cfg):    
-    if "node_evaluation" in cfg.detection.evaluation.used_method:
+def main(cfg):
+    method = cfg.detection.evaluation.used_method.strip()
+    if method == "node_evaluation":
         standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
-    elif "tw_evaluation" in cfg.detection.evaluation.used_method:
+    elif method == "tw_evaluation":
         standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
-    elif "queue_evaluation" in cfg.detection.evaluation.used_method:
+    elif method == "node_tw_evaluation":
+        standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
+    elif method == "queue_evaluation":
         queue_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
