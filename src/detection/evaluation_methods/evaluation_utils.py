@@ -5,7 +5,9 @@ from sklearn.metrics import (
     roc_curve,
 )
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import re
+import wandb
 
 from provnet_utils import *
 from data_utils import *
@@ -249,7 +251,20 @@ def compute_tw_labels(cfg):
 
     return tw_to_malicious_nodes
 
-def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_path_and_type, anomaly_threshold, i, cfg, n_hop=2):
+def viz_graph(
+    edge_index,
+    edge_scores,
+    node_scores,
+    node_to_correct_pred,
+    malicious_nodes,
+    node_to_path_and_type,
+    anomaly_threshold,
+    out_dir,
+    tw,
+    cfg,
+    n_hop,
+    fuse_nodes,
+):
     # On OpTC, the degree is too high so we remove 90% of non-malicious nodes
     # for visualization.
     # if dataset == "OPTC":
@@ -279,11 +294,60 @@ def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_
     if edge_index.shape[0] != 2:
         edge_index = np.array([edge_index[:, 0], edge_index[:, 1]])
 
-    # Flatten edge_index and map node IDs to a contiguous range starting from 0
-    unique_nodes, new_edge_index = np.unique(edge_index.flatten(), return_inverse=True)
-    new_edge_index = new_edge_index.reshape(edge_index.shape)
-    unique_paths = [node_to_path_and_type[n]["path"] for n in unique_nodes]
-    unique_types = [node_to_path_and_type[n]["type"] for n in unique_nodes]
+    if fuse_nodes:
+        idx = 0
+        merged_nodes = defaultdict(lambda: defaultdict(int))
+        merged_edges = defaultdict(lambda: defaultdict(list))
+        old_node_to_merged_node = defaultdict(list)
+        for i, (src, dst, score) in enumerate(zip(edge_index[0], edge_index[1], edge_scores)):
+            edge_tuple = []
+            for node in [src, dst]:
+                path = node_to_path_and_type[node]['path']
+                typ = node_to_path_and_type[node]['type']
+                
+                if (path, typ) not in merged_nodes:
+                    merged_nodes[(path, typ)] = {"idx": idx, "label": 0, "predicted": 0}
+                    idx += 1
+                edge_tuple.append(merged_nodes[(path, typ)]["idx"])
+                old_node_to_merged_node[node] = merged_nodes[(path, typ)]["idx"]
+                
+                # If only one malicious node is present in the merged node, it is malicious
+                merged_nodes[(path, typ)]["label"] = max(merged_nodes[(path, typ)]["label"], int(node in malicious_nodes))
+                # I fonly one good prediction of the merged nodes is correct, we set predicted=1. If node not predicted, we set to -1
+                merged_nodes[(path, typ)]["predicted"] = max(merged_nodes[(path, typ)]["predicted"], int(node_to_correct_pred.get(node, -1)))
+            
+            merged_edges[tuple(edge_tuple)]["t"].append(i)
+            merged_edges[tuple(edge_tuple)]["score"].append(score)
+
+        new_edge_index = np.array(list(merged_edges.keys())).T
+        merged_edge_scores = [np.max(d["score"]) for _, d in merged_edges.items()]
+        edge_t = [f"{np.min(d['t'])}-{np.max(d['t'])}" for _, d in merged_edges.items()]
+
+        # sorted_merged_nodes = dict(sorted(merged_nodes.items(), key=lambda item: item[1]))
+        unique_nodes, unique_labels, unique_predicted, unique_paths, unique_types = [], [], [], [], []
+        for (path, typ), d in merged_nodes.items():
+            unique_nodes.append(d["idx"])
+            unique_labels.append(d["label"])
+            unique_predicted.append(d["predicted"])
+            unique_paths.append(path)
+            unique_types.append(typ)
+            
+        source_nodes = malicious_nodes
+        new_source_nodes = {old_node_to_merged_node[n] for n in source_nodes}
+
+    else:
+        # Flatten edge_index and map node IDs to a contiguous range starting from 0
+        unique_nodes, new_edge_index = np.unique(edge_index.flatten(), return_inverse=True)
+        new_edge_index = new_edge_index.reshape(edge_index.shape)
+        unique_paths = [node_to_path_and_type[n]["path"] for n in unique_nodes]
+        unique_types = [node_to_path_and_type[n]["type"] for n in unique_nodes]
+        unique_labels = [n in malicious_nodes for n in unique_nodes]
+        unique_predicted = [node_to_correct_pred.get(n, -1) for n in unique_nodes]
+        edge_t = list(range(len(edge_index[0])))
+        
+        source_nodes = malicious_nodes
+        source_node_map = {old: new for new, old in enumerate(unique_nodes)}
+        new_source_nodes = [source_node_map.get(node, -1) for node in source_nodes]
 
     G = ig.Graph(edges=[tuple(e) for e in new_edge_index.T], directed=True)
 
@@ -292,16 +356,15 @@ def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_
     G.vs["path"] = unique_paths
     G.vs["type"] = unique_types
     G.vs["shape"] = ["rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle" for typ in unique_types]
+    
+    G.vs["label"] = unique_labels
+    G.vs["predicted"] = unique_predicted
+    G.es["t"] = edge_t
 
     # Edge attributes
     G.es["anomaly_score"] = edge_scores
-    G.es["y"] = y.tolist()
 
-    source_nodes = malicious_nodes
-    source_node_map = {old: new for new, old in enumerate(unique_nodes)}
-    new_source_nodes = [source_node_map.get(node, -1) for node in source_nodes]
-
-    # Find 2-hop neighborhoods for the source nodes
+    # Find N-hop neighborhoods for the source nodes
     neighborhoods = set()
     for node in new_source_nodes:
         if node == -1:
@@ -313,10 +376,10 @@ def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_
     # Create a subgraph with only the n-hop neighborhoods
     subgraph = G.subgraph(neighborhoods)
 
-    y_hat = [score > anomaly_threshold for score in subgraph.es["anomaly_score"]]
-
     BENIGN = "#44BC"
     ATTACK = "#FF7E79"
+    FAILURE = "red"
+    SUCCESS = "green"
 
     visual_style = {}
     visual_style["bbox"] = (700, 700)
@@ -324,28 +387,23 @@ def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_
     visual_style["layout"] = subgraph.layout("kk")
 
     visual_style["vertex_size"] = 13
+    visual_style["vertex_width"] = 13
     visual_style["vertex_label_dist"] = 1.3
-    visual_style["vertex_label_size"] = 7
+    visual_style["vertex_label_size"] = 6
     visual_style["vertex_label_font"] = 1
-    visual_style["vertex_color"] = [
-        ATTACK if subgraph.vs[v.index]["original_id"] in source_nodes else BENIGN
-        for v in subgraph.vs
-    ]
+    visual_style["vertex_color"] = [ATTACK if label else BENIGN for label in subgraph.vs["label"]]
     visual_style["vertex_label"] = subgraph.vs["path"]
+    visual_style["vertex_frame_width"] = 2
+    visual_style["vertex_frame_color"] = ["black" if predicted == -1 else SUCCESS if predicted else FAILURE for predicted in subgraph.vs["predicted"]]
 
-    visual_style["edge_width"] = 1
     visual_style["edge_curved"] = 0.1
-    visual_style["edge_width"] = [3 if label else 1 for label in y_hat]
-    visual_style["edge_color"] = [
-        "red" if label else "gray" for label in subgraph.es["y"]
-    ]
-    visual_style["edge_label"] = [f"{x:.2f}" for x in subgraph.es["anomaly_score"]]
-    visual_style["edge_label_size"] = 8
+    visual_style["edge_width"] = 1 #[3 if label else 1 for label in y_hat]
+    visual_style["edge_color"] = "gray" # ["red" if label else "gray" for label in subgraph.es["y"]]
+    visual_style["edge_label"] = [f"s:{x:.2f}\nt:{t}" for x, t in zip(subgraph.es["anomaly_score"], subgraph.es["t"])]
+    visual_style["edge_label_size"] = 6
     visual_style["edge_label_color"] = "#888888"
-
-    folder = "viz/"
-    svg = f"{n_hop}-hop_attack_graph_{i}.svg"
-    os.makedirs(folder, exist_ok=True)
+    visual_style["edge_arrow_size"] = 8
+    visual_style["edge_arrow_width"] = 8
 
     # Create the plot
     fig, ax = plt.subplots(figsize=(12, 12))
@@ -359,16 +417,19 @@ def viz_graph(edge_index, edge_scores, node_scores, y, malicious_nodes, node_to_
         mpatches.Patch(color=ATTACK, label='Attack'),
         plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=10, label='Subject', markeredgewidth=1),
         plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='k', markersize=10, label='File', markeredgewidth=1),
-        plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=10, label='IP', markeredgewidth=1)
+        plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=10, label='IP', markeredgewidth=1),
+        mpatches.Patch(edgecolor=FAILURE, label='False Pos/Neg', facecolor='none'),
+        mpatches.Patch(edgecolor=SUCCESS, label='True Pos/Neg', facecolor='none')
     ]
 
     # Add legend to the plot
-    ax.legend(handles=legend_handles, loc='upper right', fontsize='large')
+    ax.legend(handles=legend_handles, loc='upper right', fontsize='medium')
 
     # Save the plot with legend
-    plt.savefig(folder + svg)
+    out_file = f"{n_hop}-hop_attack_graph_tw_{tw}"
+    svg = os.path.join(out_dir, f"{out_file}.png")
+    plt.savefig(svg)
     plt.close(fig)
 
-    print(
-        f"Graph {svg} saved, with attack nodes:\t {','.join([str(n) for n in source_nodes])}."
-    )
+    print(f"Graph {svg} saved, with attack nodes:\t {','.join([str(n) for n in source_nodes])}.")
+    return {out_file: wandb.Image(svg)}
