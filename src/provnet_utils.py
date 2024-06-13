@@ -116,15 +116,20 @@ def datetime_to_timestamp_US(date):
     return int(timeStamp)
 
 def init_database_connection(cfg):
+    if cfg.preprocessing.build_graphs.use_all_files:
+        database_name = cfg.database.database_all_file
+    else:
+        database_name = cfg.database.database
+
     if cfg.database.host is not None:
-        connect = psycopg2.connect(database = cfg.dataset.database,
+        connect = psycopg2.connect(database = database_name,
                                    host = cfg.database.host,
                                    user = cfg.database.user,
                                    password = cfg.database.password,
                                    port = cfg.database.port
                                   )
     else:
-        connect = psycopg2.connect(database = cfg.dataset.database,
+        connect = psycopg2.connect(database = database_name,
                                    user = cfg.database.user,
                                    password = cfg.database.password,
                                    port = cfg.database.port
