@@ -100,21 +100,25 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
         use_node_feats_in_gnn = cfg.detection.gnn_training.encoder.tgn.use_node_feats_in_gnn
         use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
 
-        memory = TGNMemory(
-            max_node_num,
-            msg_dim,
-            tgn_memory_dim,
-            time_dim,
-            message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
-            aggregator_module=LastAggregator(),
-        )
+        if use_memory:
+            memory = TGNMemory(
+                max_node_num,
+                msg_dim,
+                tgn_memory_dim,
+                time_dim,
+                message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
+                aggregator_module=LastAggregator(),
+            )
+        else:
+            memory = None
+
         neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
 
         encoder = TGNEncoder(
             encoder=encoder,
             memory=memory,
             neighbor_loader=neighbor_loader,
-            time_encoder=memory.time_enc,
+            time_encoder=memory.time_enc if memory else None,
             in_dim=original_in_dim,
             memory_dim=tgn_memory_dim,
             use_node_feats_in_gnn=use_node_feats_in_gnn,
@@ -122,6 +126,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
             edge_features=edge_features,
             device=device,
             use_memory=use_memory,
+            num_nodes=max_node_num,
         )
 
     return encoder
