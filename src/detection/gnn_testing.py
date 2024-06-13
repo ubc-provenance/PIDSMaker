@@ -104,7 +104,7 @@ def main(cfg):
         log(f"Evaluation with model {trained_model}...")
         torch.cuda.empty_cache()
         model = build_model(data_sample=test_data[0], device=device, cfg=cfg)
-        model = load_model(model, os.path.join(gnn_models_dir, trained_model), map_location=device)
+        model = load_model(model, os.path.join(gnn_models_dir, trained_model), cfg, map_location=device)
         
         # TODO: we may want to move the validation set into the training for early stopping
         for graphs, split in [
@@ -125,6 +125,7 @@ def main(cfg):
                     cfg=cfg,
                     device=device,
                 )
+                g.to("cpu")
 
 
 if __name__ == "__main__":

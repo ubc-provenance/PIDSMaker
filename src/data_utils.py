@@ -172,7 +172,7 @@ class GraphReindexer:
         
         return x, edge_index
 
-def save_model(model, path: str):
+def save_model(model, path: str, cfg):
     """
     Saves only the required weights and tensors on disk.
     Using torch.save() directly on the model is very long (up to 10min),
@@ -184,10 +184,11 @@ def save_model(model, path: str):
     torch.save(model.state_dict(), os.path.join(path, "state_dict.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
     
     if isinstance(model.encoder, TGNEncoder):
-        torch.save(model.encoder.memory, os.path.join(path, "memory.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
         torch.save(model.encoder.neighbor_loader, os.path.join(path, "neighbor_loader.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
+        if cfg.detection.gnn_training.encoder.tgn.use_memory:
+            torch.save(model.encoder.memory, os.path.join(path, "memory.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
 
-def load_model(model, path: str, map_location=None):
+def load_model(model, path: str, cfg, map_location=None):
     """
     Loads weights and tensors from disk into a model.
     """
@@ -195,7 +196,8 @@ def load_model(model, path: str, map_location=None):
         torch.load(os.path.join(path, "state_dict.pkl"), map_location=map_location))
     
     if isinstance(model.encoder, TGNEncoder):
-        model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"), map_location=map_location)
         model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"), map_location=map_location)
+        if cfg.detection.gnn_training.encoder.tgn.use_memory:
+            model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"), map_location=map_location)
 
     return model

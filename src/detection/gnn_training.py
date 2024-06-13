@@ -76,6 +76,7 @@ def main(cfg):
             )
             tot_loss += loss
             log(f"Loss {loss:4f}")
+            g.to("cpu")
         
         tot_loss /= len(train_data)
         logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
@@ -89,7 +90,7 @@ def main(cfg):
         # Check points
         if cfg._test_mode or epoch % 2 == 0:
             model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-            save_model(model, model_path)
+            save_model(model, model_path, cfg)
 
 
 if __name__ == "__main__":
