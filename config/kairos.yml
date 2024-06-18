@@ -37,6 +37,7 @@ detection:
         tgn_time_dim: 100
         tgn_neighbor_size: 20
         use_node_feats_in_gnn: False
+        use_memory: True
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:

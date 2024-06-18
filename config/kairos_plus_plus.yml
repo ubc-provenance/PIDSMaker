@@ -83,6 +83,7 @@ detection:
         tgn_time_dim: 100
         tgn_neighbor_size: 20
         use_node_feats_in_gnn: False
+        use_memory: True
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:
@@ -96,12 +97,6 @@ detection:
           dropout: 0.5
           num_layers: 2
           activation: relu
-      predict_edge_contrastive:
-        used_method: linear
-        inner_product:
-          dropout: 0.0
-        linear:
-          dropout: 0.0
       reconstruct_edge_embeddings:
         loss: MSE
         out_activation: none

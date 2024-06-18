@@ -24,7 +24,7 @@ def build_model(data_sample, device, cfg):
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device)
-    decoder = decoder_factory(cfg, in_dim=in_dim)
+    decoder = decoder_factory(cfg, in_dim=in_dim, device=device)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
     
     return model
@@ -98,33 +98,40 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
         time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
         neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
         use_node_feats_in_gnn = cfg.detection.gnn_training.encoder.tgn.use_node_feats_in_gnn
+        use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
 
-        memory = TGNMemory(
-            max_node_num,
-            msg_dim,
-            tgn_memory_dim,
-            time_dim,
-            message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
-            aggregator_module=LastAggregator(),
-        )
+        if use_memory:
+            memory = TGNMemory(
+                max_node_num,
+                msg_dim,
+                tgn_memory_dim,
+                time_dim,
+                message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
+                aggregator_module=LastAggregator(),
+            )
+        else:
+            memory = None
+
         neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
 
         encoder = TGNEncoder(
             encoder=encoder,
             memory=memory,
             neighbor_loader=neighbor_loader,
-            time_encoder=memory.time_enc,
+            time_encoder=memory.time_enc if memory else None,
             in_dim=original_in_dim,
             memory_dim=tgn_memory_dim,
             use_node_feats_in_gnn=use_node_feats_in_gnn,
             graph_reindexer=graph_reindexer,
             edge_features=edge_features,
             device=device,
+            use_memory=use_memory,
+            num_nodes=max_node_num,
         )
 
     return encoder
 
-def decoder_factory(cfg, in_dim):
+def decoder_factory(cfg, in_dim, device):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
 
     decoders = []
@@ -229,8 +236,21 @@ def decoder_factory(cfg, in_dim):
             else:
                 raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
             
+            contrastive_graph_reindexer = GraphReindexer(
+                num_nodes=cfg.dataset.max_node_num,
+                device=device,
+            )
             loss_fn = bce_contrastive
-            decoders.append(EdgeContrastiveDecoder(decoder=edge_decoder, loss_fn=loss_fn))
+            neg_sampling_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.neg_sampling_method.strip()
+            if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
+                raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
+            
+            decoders.append(EdgeContrastiveDecoder(
+                decoder=edge_decoder,
+                loss_fn=loss_fn,
+                graph_reindexer=contrastive_graph_reindexer,
+                neg_sampling_method=neg_sampling_method,
+            ))
         
         else:
             raise ValueError(f"Invalid decoder {method}")

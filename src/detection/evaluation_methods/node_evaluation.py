@@ -93,7 +93,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
-    plot_scores(pred_scores, y_truth, scores_img_file)
+    plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)

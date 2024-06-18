@@ -1,0 +1,115 @@
+from collections import defaultdict
+
+import torch
+import numpy as np
+
+from provnet_utils import *
+from config import *
+from .evaluation_utils import *
+
+
+def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
+    ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
+    log(f"Loading data from {test_tw_path}...")
+    
+    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_tw_evaluation.threshold_method)
+    log(f"Threshold: {thr:.3f}")
+
+    tw_to_node_to_losses = defaultdict(lambda: defaultdict(list))
+    tw_to_edge_index = defaultdict(list)
+    tw_to_edge_loss = defaultdict(list)
+    
+    filelist = listdir_sorted(test_tw_path)
+    for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
+        file = os.path.join(test_tw_path, file)
+        with open(file, 'r') as f:
+            for line in f:
+                l = line.strip()
+                data = eval(l)
+                srcnode = data['srcnode']
+                dstnode = data['dstnode']
+                loss = data['loss']
+                
+                tw_to_edge_index[tw].append((srcnode, dstnode))
+                tw_to_edge_loss[tw].append(loss)
+                
+                # Scores
+                tw_to_node_to_losses[tw][srcnode].append(loss) # TODO: now we only consider src nodes and we don't evaluate on dst nodes
+                if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
+                    tw_to_node_to_losses[tw][dstnode].append(loss)
+
+    results = defaultdict(lambda: defaultdict(dict))
+    for tw, node_to_losses in tw_to_node_to_losses.items():
+        for node_id, losses in node_to_losses.items():
+            pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.node_tw_evaluation.threshold_method)
+
+            results[tw][node_id]["score"] = pred_score
+            results[tw][node_id]["y_hat"] = int(pred_score > thr)
+            results[tw][node_id]["y_true"] = int((tw in tw_to_malicious_nodes) and (str(node_id) in tw_to_malicious_nodes[tw]))
+
+    return results, tw_to_edge_index, tw_to_edge_loss, thr
+
+def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
+    results, tw_to_ei, tw_to_edge_loss, thr = get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
+
+    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    os.makedirs(out_dir, exist_ok=True)
+    pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
+    scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+    node_to_path_type = get_node_to_path_and_type(cfg)
+    
+    log("Analysis of malicious nodes:")
+    nodes, y_truth, y_preds, pred_scores = [], [], [], []
+    node_to_correct_pred = {}
+    summary_graphs = {}
+    
+    for tw, nid_to_result in results.items():
+        malicious_nodes = set()
+        
+        # We create a new arrayfor each TW
+        for arr in [nodes, y_truth, y_preds, pred_scores]:
+            arr.append([])
+        for nid, result in nid_to_result.items():
+            nodes[tw].append(nid)
+            score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
+            y_truth[tw].append(y_true)
+            y_preds[tw].append(y_hat)
+            pred_scores[tw].append(score)
+            node_to_correct_pred[nid] = y_hat == y_true
+            
+            if y_true == 1:
+                log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ "))
+                malicious_nodes.add(nid)
+                
+        # If malicious nodes in the TW, we plot a graph
+        if len(malicious_nodes) > 0:
+            graph_path = viz_graph(
+                edge_index=np.array(tw_to_ei[tw]),
+                edge_scores=np.array(tw_to_edge_loss[tw]),
+                node_scores=np.array(pred_scores[tw]),
+                node_to_correct_pred=node_to_correct_pred,
+                malicious_nodes=malicious_nodes,
+                node_to_path_and_type=node_to_path_type,
+                anomaly_threshold=thr,
+                out_dir=out_dir,
+                tw=tw,
+                cfg=cfg,
+                n_hop=1,
+                fuse_nodes=True,
+            )
+            summary_graphs.update(**graph_path)
+
+    flat_pred_scores = [e for sublist in pred_scores for e in sublist]
+    flat_y_truth = [e for sublist in y_truth for e in sublist]
+    flat_y_preds = [e for sublist in y_preds for e in sublist]
+    flat_nodes = [e for sublist in nodes for e in sublist]
+    
+    # Plots the PR curve and scores for mean node loss
+    plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
+    
+    max_val_loss_tw = [0] * len(flat_y_truth)
+    plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
+    stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
+    stats.update(**summary_graphs)
+    
+    return stats

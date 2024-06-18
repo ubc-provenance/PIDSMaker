@@ -494,3 +494,36 @@ def get_device(cfg):
     if device == torch.device("cpu"):
         log("Warning: the device is CPU instead of CUDA")
     return device
+
+def get_node_to_path_and_type(cfg):
+    out_path = cfg.preprocessing.build_graphs._node_id_to_path
+    out_file = os.path.join(out_path, "node_to_paths.pkl")
+    
+    if not os.path.exists(out_file):
+        os.makedirs(out_path, exist_ok=True)
+        cur, connect = init_database_connection(cfg)
+        
+        queries = {
+            "file": "SELECT index_id, path FROM file_node_table;",
+            "netflow": "SELECT index_id, src_addr, dst_addr, src_port, dst_port FROM netflow_node_table;",
+            "subject": "SELECT index_id, path FROM subject_node_table;"
+        }
+        node_to_path_type = {}
+        for node_type, query in queries.items():
+            cur.execute(query)
+            rows = cur.fetchall()
+            for row in rows:
+                if node_type == "netflow":
+                    index_id, src_addr, dst_addr, src_port, dst_port = row
+                    node_to_path_type[index_id] = {"path": f"{src_addr}:{src_port}->{dst_addr}:{dst_port}", "type": node_type}
+                else:
+                    index_id, path = row
+                    node_to_path_type[index_id] = {"path": path, "type": node_type}
+
+        torch.save(node_to_path_type, out_file)
+        connect.close()
+        
+    else:
+        node_to_path_type = torch.load(out_file)
+        
+    return node_to_path_type

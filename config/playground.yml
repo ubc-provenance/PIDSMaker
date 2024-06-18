@@ -83,6 +83,7 @@ detection:
         tgn_time_dim: 100
         tgn_neighbor_size: 20
         use_node_feats_in_gnn: True
+        use_memory: True
       sage:
         dropout: 0.0
         activation: relu
@@ -95,6 +96,7 @@ detection:
           num_layers: 2
           activation: relu
       predict_edge_contrastive:
+        neg_sampling_method: previously_seen_nodes
         used_method: linear
         inner_product:
           dropout: 0.0

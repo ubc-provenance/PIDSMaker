@@ -28,6 +28,8 @@ pip install matplotlib==3.8.4
 pip install wandb==0.16.6
 pip install chardet==5.2.0
 pip install nltk==3.8.1
+pip install igraph==0.11.5
+pip install cairocffi==1.7.0
 
 # PyTorch GPU version
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
