@@ -13,6 +13,7 @@ from provnet_utils import *
 from data_utils import *
 from config import *
 import igraph as ig
+import csv
 
 
 def get_threshold(val_tw_path, threshold_method: str):
@@ -181,20 +182,22 @@ def plot_false_positives(y_true, y_pred, out_file):
 
 def get_ground_truth_nids(cfg):
     ground_truth_nids, ground_truth_paths = [], {}
-    with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path_new), 'r') as f:
-        for line in f:
-            node_uuid, node_labels, node_id = line.replace(" ", "").strip().split(",")
-            if node_id != 'node_id':
+    for file in cfg.dataset.ground_truth_relative_path:
+        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                node_uuid, node_labels, node_id = row[0], row[1], row[2]
                 ground_truth_nids.append(int(node_id))
                 ground_truth_paths[int(node_id)] = node_labels
     return set(ground_truth_nids), ground_truth_paths
 
 def get_uuid_to_node_id(cfg):
     uuid_to_node_id = {}
-    with open(os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_relative_path_new), 'r') as f:
-        for line in f:
-            node_uuid, node_labels, node_id = line.replace(" ", "").strip().split(",")
-            if node_id != 'node_id':
+    for file in cfg.dataset.ground_truth_relative_path:
+        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                node_uuid, node_labels, node_id = row[0], row[1], row[2]
                 uuid_to_node_id[node_uuid] = node_id
     return uuid_to_node_id
 
@@ -208,15 +211,16 @@ def compute_tw_labels(cfg):
     if not os.path.exists(out_file):
         log(f"Computing time-window labels...")
         os.makedirs(out_path, exist_ok=True)
-        event_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
-        
+
         t_to_node = {}
-        with open(event_labels_path, "r") as f:
-            for i, line in enumerate(f):
-                if i == 0:
-                    continue
-                uuid, edge_type, src_id, dst_id, t = line.strip().split(", ")
-                t_to_node[int(t)] = src_id
+        for file_name in cfg.dataset.ground_truth_events_relative_path:
+            event_labels_path = os.path.join(cfg._ground_truth_dir, file_name)
+
+            with open(event_labels_path, "r") as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    src_id, edge_type, dst_id, uuid, t = row[0], row[1], row[2], row[3], row[4]
+                    t_to_node[int(t)] = src_id
                 
         test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
         
