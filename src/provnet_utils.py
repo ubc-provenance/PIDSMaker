@@ -117,9 +117,9 @@ def datetime_to_timestamp_US(date):
 
 def init_database_connection(cfg):
     if cfg.preprocessing.build_graphs.use_all_files:
-        database_name = cfg.database.database_all_file
+        database_name = cfg.dataset.database_all_file
     else:
-        database_name = cfg.database.database
+        database_name = cfg.dataset.database
 
     if cfg.database.host is not None:
         connect = psycopg2.connect(database = database_name,
