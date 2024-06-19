@@ -151,8 +151,8 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     for i in records:
         hash_id = i[1]
-        remote_ip = i[4]
-        remote_port = i[5]
+        remote_ip = str(i[4])
+        remote_port = str(i[5])
         index_id = i[-1] # int
         indexid2msg[hash_id] = index_id
         if use_port:
@@ -169,8 +169,8 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     for i in records:
         hash_id = i[1]
-        path = i[2]
-        cmd = i[3]
+        path = str(i[2])
+        cmd = str(i[3])
         index_id = i[-1]
         indexid2msg[hash_id] = index_id
         if use_cmd:
@@ -187,7 +187,7 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     for i in records:
         hash_id = i[1]
-        path = i[2]
+        path = str(i[2])
         index_id = i[-1]
         indexid2msg[hash_id] = index_id
         indexid2msg[index_id] = {'file': path}
@@ -431,8 +431,8 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of netflow nodes: {len(records)}")
 
     for i in records:
-        remote_ip = i[4]
-        remote_port = i[5]
+        remote_ip = str(i[4])
+        remote_port = str(i[5])
         index_id = i[-1] # int
         if use_port:
             indexid2msg[index_id] = ['netflow', remote_ip + ':' +remote_port]
@@ -449,8 +449,8 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of process nodes: {len(records)}")
 
     for i in records:
-        path = i[2]
-        cmd = i[3]
+        path = str(i[2])
+        cmd = str(i[3])
         index_id = i[-1]
         if use_cmd:
             indexid2msg[index_id] = ['subject', path + ' ' +cmd]
@@ -467,7 +467,7 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of file nodes: {len(records)}")
 
     for i in records:
-        path = i[2]
+        path = str(i[2])
         index_id = i[-1]
         indexid2msg[index_id] = ['file', path]
 
@@ -515,10 +515,10 @@ def get_node_to_path_and_type(cfg):
             for row in rows:
                 if node_type == "netflow":
                     index_id, src_addr, dst_addr, src_port, dst_port = row
-                    node_to_path_type[index_id] = {"path": f"{src_addr}:{src_port}->{dst_addr}:{dst_port}", "type": node_type}
+                    node_to_path_type[index_id] = {"path": f"{str(src_addr)}:{str(src_port)}->{str(dst_addr)}:{str(dst_port)}", "type": node_type}
                 else:
                     index_id, path = row
-                    node_to_path_type[index_id] = {"path": path, "type": node_type}
+                    node_to_path_type[index_id] = {"path": str(path), "type": node_type}
 
         torch.save(node_to_path_type, out_file)
         connect.close()

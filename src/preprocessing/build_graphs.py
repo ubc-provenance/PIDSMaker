@@ -24,10 +24,10 @@ def get_node_list(cur, cfg):
     for i in records:
         attrs = {
             'type': 'netflow',
-            'local_ip': i[2],
-            'local_port': i[3],
-            'remote_ip': i[4],
-            'remote_port': i[5]
+            'local_ip': str(i[2]),
+            'local_port': str(i[3]),
+            'remote_ip': str(i[4]),
+            'remote_port': str(i[5])
         }
         hash_id = i[1]
         features_used = []
@@ -49,8 +49,8 @@ def get_node_list(cur, cfg):
         hash_id = i[1]
         attrs = {
             'type': 'subject',
-            'path': i[2],
-            'cmd_line': i[3]
+            'path': str(i[2]),
+            'cmd_line': str(i[3])
         }
         features_used = []
         for label_used in node_label_features['subject']:
@@ -70,7 +70,7 @@ def get_node_list(cur, cfg):
     for i in records:
         attrs = {
             'type': 'file',
-            'path': i[2]
+            'path': str(i[2])
         }
         hash_id = i[1]
         features_used = []
