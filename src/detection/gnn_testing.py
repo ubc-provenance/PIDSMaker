@@ -126,6 +126,7 @@ def main(cfg):
                     device=device,
                 )
                 g.to("cpu")
+                torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
