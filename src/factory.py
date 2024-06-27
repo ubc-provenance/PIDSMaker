@@ -91,7 +91,21 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
                 out_dim=node_out_dim,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
                 dropout=cfg.detection.gnn_training.encoder.sage.dropout,
-            )
+            ).to(device)
+        elif method == "LSTM":
+            encoder = LSTM(
+                 in_features = in_dim,
+                 out_features = node_out_dim,
+                 cell_clip=None,
+                 type_specific_decoding=False,
+                 exclude_file=True,
+                 exclude_ip=True,
+                 typed_hidden_rep=False,
+                 edge_dim=None,
+                 full_param=False,
+                 num_edge_type = 15
+            
+            ).to(device)
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -152,11 +166,12 @@ def decoder_factory(cfg, in_dim, device):
             recon_use_bias = cfg.detection.gnn_training.decoder.reconstruct_node_features.recon_use_bias
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
             out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.out_activation)
+            out_dim = cfg.detection.gnn_training.decoder.node_mlp.in_dim
 
             src_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
-                out_dim=in_dim,
+                out_dim=out_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
                 hid_activation=activation_fn_factory("relu"),
@@ -164,7 +179,7 @@ def decoder_factory(cfg, in_dim, device):
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
-                out_dim=in_dim,
+                out_dim=out_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
                 hid_activation=activation_fn_factory("relu"),
@@ -263,6 +278,20 @@ def decoder_factory(cfg, in_dim, device):
                 neg_sampling_method=neg_sampling_method,
             ))
         
+            decoders.append(EdgeContrastiveDecoder(decoder=edge_decoder, loss_fn=loss_fn))
+            
+        elif method == "node_mlp":
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.node_mlp.loss)
+            node_out_dim = cfg.detection.gnn_training.decoder.node_mlp.out_dim 
+            in_dim = cfg.detection.gnn_training.decoder.node_mlp.in_dim
+            recon_hid_dim = cfg.detection.gnn_training.decoder.node_mlp.recon_hid_dim
+            decoders = MLPNodeTypeDecoder(
+                in_dim = in_dim,
+                d_dim = recon_hid_dim,
+                h_dim = node_out_dim,
+                loss_fn= loss_fn
+            ).to(device)
+
         else:
             raise ValueError(f"Invalid decoder {method}")
         
