@@ -166,12 +166,11 @@ def decoder_factory(cfg, in_dim, device):
             recon_use_bias = cfg.detection.gnn_training.decoder.reconstruct_node_features.recon_use_bias
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
             out_activation = activation_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.out_activation)
-            out_dim = cfg.detection.gnn_training.decoder.node_mlp.in_dim
 
             src_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
-                out_dim=out_dim,
+                out_dim=in_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
                 hid_activation=activation_fn_factory("relu"),
@@ -179,7 +178,7 @@ def decoder_factory(cfg, in_dim, device):
             dst_recon = AutoEncoder(
                 in_dim=node_out_dim,
                 h_dim=recon_hid_dim,
-                out_dim=out_dim,
+                out_dim=in_dim,
                 use_bias=recon_use_bias,
                 out_activation=out_activation,
                 hid_activation=activation_fn_factory("relu"),
