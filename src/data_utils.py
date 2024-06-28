@@ -78,10 +78,10 @@ def extract_msg_node_type_only(data_set: list[TemporalData], cfg) -> list[Tempor
         # If we want to predict the edge type, we remove the edge type from the message
         if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
             msg = torch.cat([x_src, x_dst], dim=-1)
-            edge_feats = None
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
-            edge_feats = fields["edge_type"]  # For now, we only use the edge type as edge feature
+            
+        edge_feats = build_edge_feats(fields, msg, cfg)
 
         g.x_src = x_src
         g.x_dst = x_dst
@@ -130,11 +130,11 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
         # If we want to predict the edge type, we remove the edge type from the message
         if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
             msg = torch.cat([x_src, x_dst], dim=-1)
-            edge_feats = None
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
-            edge_feats = fields["edge_type"] # For now, we only use the edge type as edge feature
-            
+        
+        edge_feats = build_edge_feats(fields, msg, cfg)
+        
         g.x_src = x_src
         g.x_dst = x_dst
         g.msg = msg
@@ -143,6 +143,16 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
         g.edge_index = torch.stack([g.src, g.dst])
     
     return data_set
+
+def build_edge_feats(fields, msg, cfg):
+    edge_features = list(map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.edge_features.split(",")))
+    edge_feats = []
+    if "edge_type" in edge_features:
+        edge_feats.append(fields["edge_type"])
+    if "msg" in edge_features:
+        edge_feats.append(msg)
+    edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
+    return edge_feats
 
 def custom_temporal_data_loader(data: TemporalData, batch_size: int, *args, **kwargs):
     """
