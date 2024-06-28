@@ -239,7 +239,6 @@ def compute_tw_labels(cfg):
         torch.save(tw_to_malicious_nodes, out_file)
         
     # Used to retrieve node ID from node raw UUID
-    node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
     uuid_to_node_id = get_uuid_to_node_id(cfg)
     
     # Create a mapping TW number => malicious node IDs
