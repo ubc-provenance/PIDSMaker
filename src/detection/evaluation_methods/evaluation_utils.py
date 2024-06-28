@@ -207,6 +207,10 @@ def compute_tw_labels(cfg):
     """
     out_path = cfg.preprocessing.build_graphs._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
+    uuid_to_node_id = get_uuid_to_node_id(cfg)
+
+    if os.path.exists(out_file):
+        os.remove(out_file)
     
     if not os.path.exists(out_file):
         log(f"Computing time-window labels...")
@@ -220,7 +224,10 @@ def compute_tw_labels(cfg):
                 reader = csv.reader(f)
                 for row in reader:
                     src_id, edge_type, dst_id, uuid, t = row[0], row[1], row[2], row[3], row[4]
-                    t_to_node[int(t)] = src_id
+                    if src_id in uuid_to_node_id:
+                        t_to_node[int(t)] = src_id
+                    if dst_id in uuid_to_node_id:
+                        t_to_node[int(t)] = dst_id
                 
         test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
         
@@ -239,7 +246,9 @@ def compute_tw_labels(cfg):
         torch.save(tw_to_malicious_nodes, out_file)
         
     # Used to retrieve node ID from node raw UUID
-    uuid_to_node_id = get_uuid_to_node_id(cfg)
+    # node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
+
+    # uuid_to_node_id = get_uuid_to_node_id(cfg)
     
     # Create a mapping TW number => malicious node IDs
     tw_to_malicious_nodes = torch.load(out_file)
