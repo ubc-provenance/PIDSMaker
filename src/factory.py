@@ -91,7 +91,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
                 out_dim=node_out_dim,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
                 dropout=cfg.detection.gnn_training.encoder.sage.dropout,
-            ).to(device)
+            )
         elif method == "LSTM":
             encoder = LSTM(
                  in_features = in_dim,
@@ -277,20 +277,19 @@ def decoder_factory(cfg, in_dim, device):
                 neg_sampling_method=neg_sampling_method,
             ))
         
-            decoders.append(EdgeContrastiveDecoder(decoder=edge_decoder, loss_fn=loss_fn))
-            
         elif method == "node_mlp":
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.node_mlp.loss)
             node_out_dim = cfg.detection.gnn_training.decoder.node_mlp.out_dim 
             in_dim = cfg.detection.gnn_training.decoder.node_mlp.in_dim
             recon_hid_dim = cfg.detection.gnn_training.decoder.node_mlp.recon_hid_dim
-            decoders = MLPNodeTypeDecoder(
+
+            decoder = MLPNodeEmbDecoder(
                 in_dim = in_dim,
                 d_dim = recon_hid_dim,
                 h_dim = node_out_dim,
                 loss_fn= loss_fn
             ).to(device)
-
+            decoders.append(decoder)
         else:
             raise ValueError(f"Invalid decoder {method}")
         
@@ -379,3 +378,8 @@ def get_dimensions_from_data_sample(data):
     in_dim = data.x_src.shape[1]
     
     return msg_dim, edge_dim, in_dim
+
+
+
+
+
