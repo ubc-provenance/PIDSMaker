@@ -129,7 +129,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                 continue
 
             events_list = []
-            for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in tqdm(events):
+            for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in events:
                 if operation in include_edge_type:
                     event_tuple = (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id)
                     events_list.append(event_tuple)
@@ -146,13 +146,11 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(
                         batch_edges[-1][-2])
 
-                    logger.info(f"Start create edge fused time window graph for {time_interval}")
+                    print(f"Start create edge fused time window graph for {time_interval}")
 
                     node_info = {}
                     edge_info = {}
-                    for (
-                    src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in tqdm(
-                            temp_list, desc=f"edge fused graph for time window {time_interval}"):
+                    for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in temp_list:
                         if src_index_id not in node_info:
                             node_type, label = nodeid2msg[src_node]
                             node_info[src_index_id] = {

@@ -11,10 +11,10 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
 
 
     model = Word2Vec.load(model_path)
-    logger.info(f"Loaded model from {model_path}")
+    print(f"Loaded model from {model_path}")
 
     indexid2vec = {}
-    for indexid, msg in tqdm(indexid2msg.items(), desc='processing indexid2vec:'):
+    for indexid, msg in indexid2msg.items():
         if msg[0] == 'subject':
             if use_node_types:
                 tokens = tokenize_subject(msg[0] + ' ' + msg[1])
@@ -38,7 +38,7 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
 
         indexid2vec[int(indexid)] = np.array(normalized_vector)
 
-    logger.info(f"Finish generating normalized node vectors.")
+    print(f"Finish generating normalized node vectors.")
 
     return indexid2vec
 
@@ -55,10 +55,10 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
-    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
+    for path in tqdm(sorted_paths):
+        print(f"Computing edge embeddings: {path}")
         file = path.split("/")[-1]
 
-        logger.info(f"Processing graph: {file}")
         graph = torch.load(path)
 
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -93,7 +93,7 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         os.makedirs(out_dir, exist_ok=True)
         torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
+        print(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
     # TODO: support both word2vec and doc2vec
@@ -106,11 +106,11 @@ def main(cfg):
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
 
-    logger.info("Loading node msg from database...")
+    print("Loading node msg from database...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
 
-    logger.info("Generating node vectors...")
+    print("Generating node vectors...")
     feature_word2vec_model_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir + 'feature_word2vec.model'
     indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, logger=logger)
 
