@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    use_all_files: True
+    use_all_files: False
     time_window_size: 15
     use_hashed_label: True
     node_label_features:
