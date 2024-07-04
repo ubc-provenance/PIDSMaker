@@ -146,7 +146,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(
                         batch_edges[-1][-2])
 
-                    print(f"Start create edge fused time window graph for {time_interval}")
+                    log(f"Start create edge fused time window graph for {time_interval}")
 
                     node_info = {}
                     edge_info = {}
