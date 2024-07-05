@@ -77,7 +77,7 @@ should be labelled as malicious nodes.
 But this means that we need to manually inspect 2436 suspicious nodes and 92570 associated events.
 Otherwise we have to accept the incompleteness of malicious `firefox` nodes.
 
-In addition, all netflow nodes caused by scanning should also be malicious nodes. 
+In addition, all netflow nodes caused by scanning should also be malicious nodes too. 
 But that would make our number of malicious nodes much larger.
 
 ### Phishing_E_mail_Executable_Attachment
@@ -85,7 +85,7 @@ There are `1` malicious node, `266` suspicious nodes and `96` relevant nodes.
 
 #### Problem 2: isolated malicious node
 The attacker sent an email with a malicious attachment to the target host through the mail server.
-The malicious email is received by `thunderbrid` and a malicious `tcexec` file is implanted into the host.
+The malicious email is received by `thunderbrid` and a malicious file `tcexec` is implanted into the host.
 The attacker then tries to run `tcexec`, but fails due to a missing library.
 
 The malicious IP (email server) connects to `thunderbrid` but not directly to `tcexec`, 
