@@ -17,7 +17,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.encoder = encoder
-        self.decoders = decoders
+        self.decoders = nn.ModuleList(decoders)
         self.use_contrastive_learning = use_contrastive_learning
         self.graph_reindexer = graph_reindexer
         
@@ -28,11 +28,8 @@ class Model(nn.Module):
         
     def forward(self, batch, full_data, inference=False):
         train_mode = not inference
-        
         x = (batch.x_src, batch.x_dst)
         edge_index = batch.edge_index
-
-        x_nodes = torch.cat([batch.src,batch.dst],dim=0).unique()
 
         with torch.set_grad_enabled(train_mode):
             h = self.encoder(
@@ -44,11 +41,6 @@ class Model(nn.Module):
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
 
-                features = batch.x_src, 
-                node_order= x_nodes, 
-                adjacency_list= torch.transpose(edge_index,0,1),
-                edge_order= batch.t, 
-                edge_features= batch.edge_feats, 
                 edge_types= batch.edge_type
             )
 
@@ -69,21 +61,23 @@ class Model(nn.Module):
                 self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: edge scores
-            loss_or_scores = (torch.zeros(1) if train_mode else \
+            loss_or_scores = (torch.zeros(1) if (train_mode) else \
                 torch.zeros(edge_index.shape[1], dtype=torch.float)).to(h_src.device)
             
             for decoder in self.decoders:
                 loss = decoder(
                     h_src=h_src,
                     h_dst=h_dst,
-                    h = h,
-                    x=batch.x_src,
+                    x=x,
                     edge_index=edge_index,
                     edge_type=batch.edge_type,
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
                 )
+                if loss.numel() != loss_or_scores.numel():
+                    raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
+                
                 
             return loss_or_scores
