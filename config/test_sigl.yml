@@ -81,13 +81,15 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
-    used_method: node_tw_evaluation
+    used_method: tw_evaluation
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
     node_tw_evaluation:
       threshold_method: mean_val_loss
       use_dst_node_loss: False
+    tw_evaluation:
+      threshold_method: mean_val_loss
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue
