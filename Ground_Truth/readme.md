@@ -93,5 +93,55 @@ but no `thunderbrid` process that connects directly to `tcexec` was found.
 `tcexec` failed to run so there is no child process.
 At the end, `tcexec` becomes an isolated malicious node.
 
+## THEIA_E5
+There are 2 attacks on THEIA_E5, but we only consider the successful one `THEIA_1_Firefox_Drakon_APT_BinFmt_Elevate_Inject`.
+
+There are `18` malicious nodes, `1353` suspicious nodes and `1574` relevant nodes.
+
+Malicious nodes are even less than that in old kairos++ ground truth. The reason is that most `\run\shm\*`
+file nodes are filtered out except `\run\shm\lc` which connected to malicious IP `208.203.20.42`. 
+
+## CADETS_E5
+The attackers conducted 2 Nginx exploiting on May 16 and 17.
+
+### Nginx_Drakon_APT
+There are `12` malicious nodes, `121` suspicious nodes and `120` relevant nodes in the attack on 
+May 16.
+
+### Nginx_Drakon_APT_17
+There are `38` malicious, `487` suspicious and `428` relevant nodes in the May 17 attack.
+
+#### Problem 3: Incompleteness due to missing features
+The Cadets dataset has significant feature missing. No subject nodes don't have `path` and 
+`cmd` is brief without any parameter. And many file nodes don't have `path`.
+
+We filtered out many `whoami`, `hostsname`, `getpid` and `cat` nodes. Attackers used these
+commands but we can not find these nodes connecting to determining malicious nodes. And we
+don't have enough information to determining which nodes with these commands are malicious
+because of the missing feature.
+
+## CADETS_E3
+There are 5 attacks in CADETS_E5. Attackers tried to exploit Nginx Backdoor on April 6, 11,
+12 and 13. 
+And on April 15, they tried to use cadets host as an email server to send malicious emails to
+other hosts. But this is web only so I ignored it.
+
+There is no specific problem with CADETS_E3. But same as CADETS_E5, it suffers from missing 
+feature problem (Problem 3 above).
+
+### Nginx_Backdoor_06
+There are `7` malicious nodes, `3` suspicious nodes and `24` relevant nodes.
+
+### Nginx_Backdoor_11
+There are `4` malicious nodes, `12` suspicious nodes and `119` relevant nodes.
+
+### Nginx_Backdoor_12
+There are `15` malicious nodes, `3` suspicious nodes and `21` relevant nodes.
+
+### Nginx_Backdoor_13
+There are `9` malicious nodes, `19` suspicious nodes and `151` relevant nodes.
+
+
+
 
    
