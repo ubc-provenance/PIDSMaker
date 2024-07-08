@@ -118,6 +118,7 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
+    ground_truth_version: darpa_v3
     used_method: node_tw_evaluation
     node_evaluation:
       threshold_method: max_val_loss
