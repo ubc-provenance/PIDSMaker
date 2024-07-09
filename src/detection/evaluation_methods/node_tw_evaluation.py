@@ -18,6 +18,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     tw_to_node_to_losses = defaultdict(lambda: defaultdict(list))
     tw_to_edge_index = defaultdict(list)
     tw_to_edge_loss = defaultdict(list)
+    node_to_max_loss_tw = defaultdict(int)
     
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
@@ -37,6 +38,13 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
                 tw_to_node_to_losses[tw][srcnode].append(loss) # TODO: now we only consider src nodes and we don't evaluate on dst nodes
                 if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
                     tw_to_node_to_losses[tw][dstnode].append(loss)
+                    
+                # If max-val thr is used, we want to keep track when the node with max loss happens
+                if loss > node_to_max_loss_tw[srcnode]:
+                    node_to_max_loss_tw[srcnode] = tw
+                if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
+                    if loss > node_to_max_loss_tw[dstnode]:
+                        node_to_max_loss_tw[dstnode] = tw
 
     results = defaultdict(lambda: defaultdict(dict))
     for tw, node_to_losses in tw_to_node_to_losses.items():
@@ -47,10 +55,11 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
             results[tw][node_id]["y_hat"] = int(pred_score > thr)
             results[tw][node_id]["y_true"] = int((tw in tw_to_malicious_nodes) and (str(node_id) in tw_to_malicious_nodes[tw]))
 
-    return results, tw_to_edge_index, tw_to_edge_loss, thr
+    return results, tw_to_edge_index, tw_to_edge_loss, thr, node_to_max_loss_tw
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    results, tw_to_ei, tw_to_edge_loss, thr = get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
+    results, tw_to_ei, tw_to_edge_loss, thr, node_to_max_loss_tw = get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
+    node_to_path = get_node_to_path_and_type(cfg)
 
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
@@ -78,7 +87,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             node_to_correct_pred[nid] = y_hat == y_true
             
             if y_true == 1:
-                log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ "))
+                log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (node_to_path[nid]['path']))
                 malicious_nodes.add(nid)
                 
         # If malicious nodes in the TW, we plot a graph
@@ -107,7 +116,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
     
-    max_val_loss_tw = [0] * len(flat_y_truth)
+    max_val_loss_tw = [node_to_max_loss_tw[n] for n in flat_nodes]
     plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
     stats.update(**summary_graphs)

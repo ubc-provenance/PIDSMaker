@@ -49,7 +49,6 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
         results[node_id]["score"] = pred_score
         results[node_id]["y_hat"] = int(pred_score > thr)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
-        results[node_id]["path"] = ground_truth_paths.get(node_id, "") # TODO: support for benign nodes too (see with Baowiang)
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw[node_id]
 
     return results
@@ -73,6 +72,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     results = get_node_predictions(val_tw_path, test_tw_path, cfg)
+    node_to_path = get_node_to_path_and_type(cfg)
 
     os.makedirs(cfg.detection.evaluation.node_evaluation._precision_recall_dir, exist_ok=True)
     pr_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
@@ -89,7 +89,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         max_val_loss_tw.append(max_tw)
         
         if y_true == 1:
-            log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (result['path']))
+            log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (node_to_path[nid]['path']))
 
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
