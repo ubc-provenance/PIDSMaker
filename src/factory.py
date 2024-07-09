@@ -135,7 +135,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
             device=device,
             use_memory=use_memory,
             num_nodes=max_node_num,
-            use_time_enc_only=use_time_enc and not use_memory,
+            use_time_enc=use_time_enc,
             edge_dim=edge_dim,
             use_time_order_encoding=use_time_order_encoding,
         )
