@@ -101,6 +101,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
         use_node_feats_in_gnn = cfg.detection.gnn_training.encoder.tgn.use_node_feats_in_gnn
         use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
+        use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
 
         if use_memory:
             memory = TGNMemory(
@@ -135,6 +136,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
             use_memory=use_memory,
             num_nodes=max_node_num,
             use_time_enc_only=use_time_enc and not use_memory,
+            edge_dim=edge_dim,
+            use_time_order_encoding=use_time_order_encoding,
         )
 
     return encoder
