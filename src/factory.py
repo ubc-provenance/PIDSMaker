@@ -9,6 +9,7 @@ from losses import sce_loss, mse_loss, bce_contrastive, cross_entropy
 from encoders import *
 from decoders import *
 from data_utils import *
+from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader
 
 
 def build_model(data_sample, device, cfg):
@@ -99,6 +100,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
         neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
         use_node_feats_in_gnn = cfg.detection.gnn_training.encoder.tgn.use_node_feats_in_gnn
         use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
+        use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
 
         if use_memory:
             memory = TGNMemory(
@@ -108,6 +110,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
                 time_dim,
                 message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
                 aggregator_module=LastAggregator(),
+            )
+        elif use_time_enc:
+            memory = TimeEncodingMemory(
+                max_node_num,
+                time_dim,
             )
         else:
             memory = None
@@ -127,6 +134,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
             device=device,
             use_memory=use_memory,
             num_nodes=max_node_num,
+            use_time_enc_only=use_time_enc and not use_memory,
         )
 
     return encoder

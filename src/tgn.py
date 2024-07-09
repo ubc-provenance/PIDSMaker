@@ -186,6 +186,104 @@ class TGNMemory(torch.nn.Module):
                 torch.arange(self.num_nodes, device=self.memory.device))
             self._reset_message_store()
         super().train(mode)
+        
+class TimeEncodingMemory(torch.nn.Module):
+    """Custom lightweight class to only memorize past timestamps.
+    """
+    def __init__(self, num_nodes: int, time_dim: int):
+        super().__init__()
+
+        self.num_nodes = num_nodes
+        self.time_enc = TimeEncoder(time_dim)
+
+        last_update = torch.empty(self.num_nodes, dtype=torch.long)
+        self.register_buffer('last_update', last_update)
+        self.register_buffer('_assoc', torch.empty(num_nodes,
+                                                   dtype=torch.long))
+
+        self.msg_s_store = {}
+        self.msg_d_store = {}
+
+        self.reset_parameters()
+
+    @property
+    def device(self) -> torch.device:
+        return self.time_enc.lin.weight.device
+
+    def reset_parameters(self):
+        r"""Resets all learnable parameters of the module."""
+        self.time_enc.reset_parameters()
+        self.reset_state()
+
+    def reset_state(self):
+        """Resets the memory to its initial state."""
+        zeros(self.last_update)
+        self._reset_message_store()
+
+    def update_state(self, src: Tensor, dst: Tensor, t: Tensor,
+                     raw_msg: Tensor):
+        """Updates the memory with newly encountered interactions
+        :obj:`(src, dst, t, raw_msg)`.
+        """
+        n_id = torch.cat([src, dst]).unique()
+
+        if self.training:
+            self._update_memory(n_id)
+            self._update_msg_store(src, dst, t, raw_msg, self.msg_s_store)
+            self._update_msg_store(dst, src, t, raw_msg, self.msg_d_store)
+        else:
+            self._update_msg_store(src, dst, t, raw_msg, self.msg_s_store)
+            self._update_msg_store(dst, src, t, raw_msg, self.msg_d_store)
+            self._update_memory(n_id)
+
+    def _reset_message_store(self):
+        i = torch.empty((0, ), device=self.device, dtype=torch.long)
+        # Message store format: (src, dst, t)
+        self.msg_s_store = {j: (i, i, i) for j in range(self.num_nodes)}
+        self.msg_d_store = {j: (i, i, i) for j in range(self.num_nodes)}
+
+    def _update_memory(self, n_id: Tensor):
+        last_update = self.get_last_update(n_id)
+        self.last_update[n_id] = last_update
+
+    def _compute_last_update(self, n_id: Tensor, msg_store: TGNMessageStoreType):
+        data = [msg_store[i] for i in n_id.tolist()]
+        src, dst, t = list(zip(*data))
+        src = torch.cat(src, dim=0)
+        dst = torch.cat(dst, dim=0)
+        t = torch.cat(t, dim=0)
+
+        return t, src, dst
+    
+    def get_last_update(self, n_id: Tensor) -> Tensor:
+        self._assoc[n_id] = torch.arange(n_id.size(0), device=n_id.device)
+        
+        t_s, src_s, dst_s = self._compute_last_update(n_id, self.msg_s_store)
+        t_d, src_d, dst_d = self._compute_last_update(n_id, self.msg_d_store)
+        
+        idx = torch.cat([src_s, src_d], dim=0)
+        t = torch.cat([t_s, t_d], dim=0)
+        dim_size = self.last_update.size(0)
+        
+        last_update = scatter(t, idx, 0, dim_size, reduce='max')[n_id]
+        return last_update
+
+    def _update_msg_store(self, src: Tensor, dst: Tensor, t: Tensor,
+                          raw_msg: Tensor, msg_store: TGNMessageStoreType):
+        n_id, perm = src.sort()
+        n_id, count = n_id.unique_consecutive(return_counts=True)
+        for i, idx in zip(n_id.tolist(), perm.split(count.tolist())):
+            msg_store[i] = (src[idx], dst[idx], t[idx])
+
+    def train(self, mode: bool = True):
+        """Sets the module in training mode."""
+        if self.training and not mode:
+            # Flush message store to memory in case we just entered eval mode.
+            self._update_memory(
+                torch.arange(self.num_nodes, device=self.device))
+            self._reset_message_store()
+        super().train(mode)
+
 
 class IdentityMessage(torch.nn.Module):
     def __init__(self, raw_msg_dim: int, memory_dim: int, time_dim: int):

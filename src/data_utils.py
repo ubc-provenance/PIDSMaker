@@ -243,7 +243,7 @@ def save_model(model, path: str, cfg):
     
     if isinstance(model.encoder, TGNEncoder):
         torch.save(model.encoder.neighbor_loader, os.path.join(path, "neighbor_loader.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
-        if cfg.detection.gnn_training.encoder.tgn.use_memory:
+        if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.gnn_training.encoder.tgn.edge_features:
             torch.save(model.encoder.memory, os.path.join(path, "memory.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
 
 def load_model(model, path: str, cfg, map_location=None):
@@ -255,7 +255,7 @@ def load_model(model, path: str, cfg, map_location=None):
     
     if isinstance(model.encoder, TGNEncoder):
         model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"), map_location=map_location)
-        if cfg.detection.gnn_training.encoder.tgn.use_memory:
+        if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.gnn_training.encoder.tgn.edge_features:
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"), map_location=map_location)
 
     return model
