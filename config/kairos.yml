@@ -47,6 +47,7 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
+    viz_malicious_nodes: False
     used_method: queue_evaluation
     queue_evaluation:
       queue_threshold: 20

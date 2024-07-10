@@ -90,7 +90,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                 malicious_nodes.add(nid)
                 
         # If malicious nodes in the TW, we plot a graph
-        if len(malicious_nodes) > 0:
+        if cfg.detection.evaluation.viz_malicious_nodes and len(malicious_nodes) > 0:
             graph_path = viz_graph(
                 edge_index=np.array(tw_to_ei[tw]),
                 edge_scores=np.array(tw_to_edge_loss[tw]),

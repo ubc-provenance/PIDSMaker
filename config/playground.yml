@@ -119,6 +119,7 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
+    viz_malicious_nodes: False
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
