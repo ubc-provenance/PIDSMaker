@@ -22,25 +22,23 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        with open(file, 'r') as f:
-            for line in f:
-                l = line.strip()
-                data = eval(l)
-                srcnode = data['srcnode']
-                dstnode = data['dstnode']
-                loss = data['loss']
+        df = pd.read_csv(file).to_dict(orient='records')
+        for line in df:
+            srcnode = line['srcnode']
+            dstnode = line['dstnode']
+            loss = line['loss']
+            
+            # Scores
+            node_to_losses[srcnode].append(loss)
+            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
+                node_to_losses[dstnode].append(loss)
                 
-                # Scores
-                node_to_losses[srcnode].append(loss)
-                if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                    node_to_losses[dstnode].append(loss)
-                    
-                # If max-val thr is used, we want to keep track when the node with max loss happens
-                if loss > node_to_max_loss_tw[srcnode]:
-                    node_to_max_loss_tw[srcnode] = tw
-                if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                    if loss > node_to_max_loss_tw[dstnode]:
-                        node_to_max_loss_tw[dstnode] = tw
+            # If max-val thr is used, we want to keep track when the node with max loss happens
+            if loss > node_to_max_loss_tw[srcnode]:
+                node_to_max_loss_tw[srcnode] = tw
+            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
+                if loss > node_to_max_loss_tw[dstnode]:
+                    node_to_max_loss_tw[dstnode] = tw
                     
     results = defaultdict(dict)
     for node_id, losses in node_to_losses.items():

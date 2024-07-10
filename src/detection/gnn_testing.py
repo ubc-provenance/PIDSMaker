@@ -16,7 +16,6 @@ def test(
     nodeid2msg,
     split,
     model_epoch_file,
-    logger,
     cfg,
     device,
 ):
@@ -71,23 +70,16 @@ def test(
     end = time.perf_counter()
     logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    log_file = open(os.path.join(logs_dir, time_interval + ".txt"), 'w')
+    csv_file = os.path.join(logs_dir, time_interval + ".csv")
+    
+    df = pd.DataFrame(edge_list)
+    df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
 
     log(
         f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
-    edge_list = sorted(edge_list, key=lambda x: x['loss'], reverse=True)  # Rank the results based on edge losses
-    for e in edge_list:
-        log_file.write(str(e))
-        log_file.write("\n")
-    log_file.close()
-    edge_list.clear()
 
 
 def main(cfg):
-    logger = get_logger(
-        name="gnn_testing",
-        filename=os.path.join(cfg.detection.gnn_testing._logs_dir, "gnn_testing.log"))
-
     # load the map between nodeID and node labels
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
@@ -121,7 +113,6 @@ def main(cfg):
                     nodeid2msg=nodeid2msg,
                     split=split,
                     model_epoch_file=trained_model,
-                    logger=logger,
                     cfg=cfg,
                     device=device,
                 )

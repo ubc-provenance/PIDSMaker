@@ -16,6 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn.models.tgn import (LastNeighborLoader, IdentityMessage, MeanAggregator,
                                            LastAggregator)
+import pandas as pd
 from torch_geometric import *
 from tqdm import tqdm
 import networkx as nx

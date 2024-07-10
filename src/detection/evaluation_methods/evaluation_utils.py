@@ -39,12 +39,9 @@ def calculate_threshold(val_tw_dir):
 
     loss_list = []
     for file in sorted(filelist):
-        f = open(os.path.join(val_tw_dir, file))
-        for line in f:
-            l = line.strip()
-            jdata = eval(l)
-
-            loss_list.append(jdata['loss'])
+        f = os.path.join(val_tw_dir, file)
+        df = pd.read_csv(f).to_dict()
+        loss_list.extend(df["loss"].values())
 
     thr = {
         'max': max(loss_list),

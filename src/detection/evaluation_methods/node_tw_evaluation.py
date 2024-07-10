@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import torch
 import numpy as np
+import pandas as pd
 
 from provnet_utils import *
 from config import *
@@ -23,28 +24,26 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        with open(file, 'r') as f:
-            for line in f:
-                l = line.strip()
-                data = eval(l)
-                srcnode = data['srcnode']
-                dstnode = data['dstnode']
-                loss = data['loss']
+        df = pd.read_csv(file).to_dict(orient='records')
+        for line in df:
+            srcnode = line['srcnode']
+            dstnode = line['dstnode']
+            loss = line['loss']
+            
+            tw_to_edge_index[tw].append((srcnode, dstnode))
+            tw_to_edge_loss[tw].append(loss)
+            
+            # Scores
+            tw_to_node_to_losses[tw][srcnode].append(loss) # TODO: now we only consider src nodes and we don't evaluate on dst nodes
+            if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
+                tw_to_node_to_losses[tw][dstnode].append(loss)
                 
-                tw_to_edge_index[tw].append((srcnode, dstnode))
-                tw_to_edge_loss[tw].append(loss)
-                
-                # Scores
-                tw_to_node_to_losses[tw][srcnode].append(loss) # TODO: now we only consider src nodes and we don't evaluate on dst nodes
-                if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
-                    tw_to_node_to_losses[tw][dstnode].append(loss)
-                    
-                # If max-val thr is used, we want to keep track when the node with max loss happens
-                if loss > node_to_max_loss_tw[srcnode]:
-                    node_to_max_loss_tw[srcnode] = tw
-                if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                    if loss > node_to_max_loss_tw[dstnode]:
-                        node_to_max_loss_tw[dstnode] = tw
+            # If max-val thr is used, we want to keep track when the node with max loss happens
+            if loss > node_to_max_loss_tw[srcnode]:
+                node_to_max_loss_tw[srcnode] = tw
+            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
+                if loss > node_to_max_loss_tw[dstnode]:
+                    node_to_max_loss_tw[dstnode] = tw
 
     results = defaultdict(lambda: defaultdict(dict))
     for tw, node_to_losses in tw_to_node_to_losses.items():
@@ -91,7 +90,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                 malicious_nodes.add(nid)
                 
         # If malicious nodes in the TW, we plot a graph
-        if len(malicious_nodes) > 0:
+        if cfg.detection.evaluation.viz_malicious_nodes and len(malicious_nodes) > 0:
             graph_path = viz_graph(
                 edge_index=np.array(tw_to_ei[tw]),
                 edge_scores=np.array(tw_to_edge_loss[tw]),

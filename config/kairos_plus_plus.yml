@@ -105,6 +105,7 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
+    viz_malicious_nodes: False
     ground_truth_version: darpa_v3
     used_method: node_evaluation
     node_evaluation:
