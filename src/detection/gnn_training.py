@@ -32,10 +32,6 @@ def train(data,
     return np.mean(losses)
 
 def main(cfg):
-    logger = get_logger(
-        name="gnn_training",
-        filename=os.path.join(cfg.detection.gnn_training._logs_dir, "gnn_training.log"))
-    
     if cfg.detection.gnn_training.use_seed:
         seed = 0
         random.seed(seed)
@@ -79,7 +75,6 @@ def main(cfg):
             g.to("cpu")
         
         tot_loss /= len(train_data)
-        logger.info(f'  Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
         wandb.log({
             "train_epoch": epoch,
             "train_loss": round(tot_loss, 4),

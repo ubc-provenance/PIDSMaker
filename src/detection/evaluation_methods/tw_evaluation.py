@@ -16,15 +16,13 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        with open(file, 'r') as f:
-            for line in f:
-                l = line.strip()
-                data = eval(l)
-                srcnode = data['srcnode']
-                dstnode = data['dstnode']
-                loss = data['loss']
-                
-                tw_to_losses[tw].append(loss)
+        df = pd.read_csv(file).to_dict(orient='records')
+        for line in df:
+            srcnode = line['srcnode']
+            dstnode = line['dstnode']
+            loss = line['loss']
+            
+            tw_to_losses[tw].append(loss)
                 
     tw_labels = set(tw_to_malicious_nodes.keys())
     results = defaultdict(dict)
