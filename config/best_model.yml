@@ -120,6 +120,7 @@ detection:
     threshold_method: str
   evaluation:
     viz_malicious_nodes: False
+    ground_truth_version: darpa_v3
     used_method: node_tw_evaluation
     node_evaluation:
       threshold_method: max_val_loss
