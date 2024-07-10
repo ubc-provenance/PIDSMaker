@@ -72,6 +72,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     summary_graphs = {}
     
     for tw, nid_to_result in results.items():
+        malicious_tws = set()
         malicious_nodes = set()
         
         # We create a new arrayfor each TW
@@ -86,10 +87,12 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             node_to_correct_pred[nid] = y_hat == y_true
             
             if y_true == 1:
+                if tw not in malicious_tws:
+                    log(f"TW {tw}")
+                    malicious_tws.add(tw)
                 log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (node_to_path[nid]['path']))
                 malicious_nodes.add(nid)
-                
-        # If malicious nodes in the TW, we plot a graph
+
         if cfg.detection.evaluation.viz_malicious_nodes and len(malicious_nodes) > 0:
             graph_path = viz_graph(
                 edge_index=np.array(tw_to_ei[tw]),
