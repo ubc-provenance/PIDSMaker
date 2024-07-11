@@ -1,0 +1,70 @@
+B51CA62D-A770-574B-ACEE-5B34B7EC46F2,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},463625
+5FAEC575-D42B-57C9-B222-800D68DAAA74,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},463626
+54E97188-0A55-5521-99CD-E44A09C26D62,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},463627
+2112D882-F8C1-5228-A224-8448D17E1284,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465961
+B45850B8-0C0C-516A-9426-6155103B5658,{'subject': '/usr/sbin/sshd sshd: admin@pts/3   '},465962
+84053D48-9767-59AE-A797-BAC5E4ED3368,{'subject': '/usr/sbin/sshd '},151869
+6CCFB5A3-9CB2-5689-BA97-7776FBB241F0,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},462666
+49EFF3E1-5FD4-50FF-8C22-B12E8C7A72DD,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},462667
+80370C6E-1600-8037-0CA7-67E600000000,{'netflow': '128.55.12.110:22->128.55.12.167:58983'},17751
+EA1A155C-E196-5FDA-9F66-A7566988D863,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},463193
+0100D00F-3437-3C00-0000-00004B61DC5C,{'file': '/var/log/sshdlog'},3636314
+80370C6E-1600-8037-0CA7-68E600000000,{'netflow': '128.55.12.110:22->128.55.12.167:58984'},17758
+12000000-9652-CA02-0000-000000000000,{'file': '/run/shm/lc'},3636064
+D5E6AF81-29C2-557C-873C-810E7965CCBE,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464737
+80370C6E-1600-8037-0CA7-69E600000000,{'netflow': '128.55.12.110:22->128.55.12.167:58985'},17762
+A2555C30-F77B-5252-9086-960B8B744820,{'subject': '/usr/sbin/sshd sshd: admin@pts/3   '},464738
+8E6AB6B3-C0E9-5AC4-A429-D8C44269E538,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465002
+16945BF4-3873-54E6-B177-FE882B4F3C21,{'subject': '/usr/sbin/sshd sshd: admin@pts/3   '},465003
+6B00C251-E650-5D1A-AFA5-A577CF1A7496,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465260
+7CC8E4BF-965C-5C41-82F0-76F2841CA2D4,{'subject': '/usr/sbin/sshd sshd: admin@pts/3   '},465261
+FB9DA469-6B27-5945-A305-5611A6D5D175,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},463982
+C3830CEE-97E3-560B-BFDB-C2B129094C55,{'subject': '/usr/sbin/sshd sshd: admin@notty   '},463983
+938E2472-6080-596C-B5E6-77136AD01A40,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},463984
+CE5CCB85-9FA4-57E8-8BEB-35E76C4C6889,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},463985
+8235E527-1C02-5824-B7AC-3BED86C3FC23,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},463986
+7D2F83ED-6DF2-5C07-A425-CD08B63B9F82,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},463987
+1C63B3C8-E66D-5060-B097-CC658A2D7C91,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},463988
+1FCC1D14-89FE-5E43-BF80-0C13580C9E61,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465790
+D3C62334-1496-52A9-971D-130C53593EDF,{'subject': '/usr/sbin/sshd sshd: admin@notty   '},465791
+00000000-0000-0000-0000-000000000000,{'subject': 'swapper/0 '},117633
+14F36D96-C877-5889-A809-819319D358D7,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464259
+86267D07-B3FB-57D3-9667-4D9EE753DC83,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},463500
+ADF705F9-3E99-5E54-9362-1C316A68775F,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},465806
+3E6B1B04-0702-501C-B18A-206709055D2A,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},465807
+D6C68B07-5843-5CC6-9FD0-ABA3150D6C30,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465808
+1CD6069D-AB77-5DC8-8FBD-B4024CCC2AAA,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464019
+7C836D91-7F41-562E-9F5E-CC6E613D0C5B,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},464288
+1E66435F-090C-5B26-81D2-DCDC3E064FE8,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},464292
+BD173AC3-940D-5057-BB51-3A0B825CF17B,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},463782
+0C3B0E5F-D50B-5195-9952-B0EAE954AF33,{'subject': '/usr/sbin/sshd sshd: admin@notty   '},463783
+FB39B4E5-3279-5FFD-8F6E-39F4786DA309,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},463528
+E66A51DE-BEA0-54B1-AE8D-78C2F73C2870,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},463784
+420A2120-FB2B-57C3-A185-160482A8871C,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},463785
+FE183354-E393-5ADA-83B2-8BD28A3A1A56,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},463786
+77315121-57D8-57AC-8B74-1E2D106E6DC0,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464300
+8D12627C-42A6-50C9-B4DE-A3ED440E33BD,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},463533
+4F1BDDC7-E2CA-514D-965F-140A4D45E3C0,{'subject': '/usr/sbin/sshd sshd: admin@pts/3   '},464301
+42FFDA9B-DA03-5FE6-B229-F91FB096D907,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},463531
+299666B9-5F8A-579D-9868-443E19D5ED4E,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},463532
+E71415C9-824F-57E8-8CD8-E2DD1BF5F1C2,{'subject': '/usr/sbin/sshd sshd: admin@notty   '},464552
+F3AB14A3-4CC1-54F3-BEFB-092E67BE33CC,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},464576
+599B082D-A4DE-5153-B9A1-005DD53458ED,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},464579
+960167A3-320D-5D01-A5D7-6BEDB9BA2F37,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},464582
+118D7087-A326-557D-9AB8-7215FFD91390,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},464583
+4BD068FA-4AC9-5C4B-84A5-4B03CD4048DE,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464584
+2C4719F7-5AF8-5099-A89D-E67CA90F18B6,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},465100
+EB29D902-6C8B-556C-AD67-E6D459D673A4,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},464845
+CDD9894A-2EE3-5167-9191-8FF33DA9822F,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},464846
+FBDDE7B6-24EE-50EB-A34B-2588A0DB4EDE,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464847
+DB0E28AD-412D-5EDB-9090-A60CA954927A,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},465103
+D7D38965-3632-51D5-ACC2-C014598A1B02,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},465104
+7F25C02A-1173-5FFA-A53F-CFD6DFA25460,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465105
+16078C68-57FD-506D-92E9-29035A8C800C,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},465365
+F3470B6E-32F1-55CD-BDBB-29271D1A1337,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},465366
+4B0F1E8B-633B-55E5-9CE6-3C3013BCFC97,{'subject': '/usr/local/lib/firefox-54.0.1/firefox firefox'},465367
+A05BE6D6-98DE-5CF2-86C3-AFF61EAE57A3,{'subject': '/usr/sbin/sshd /usr/sbin/sshd -D'},465635
+600330D2-9A49-5220-BD13-17B21A236F18,{'subject': '/usr/sbin/sshd sshd: [accepted]    '},465636
+6DC79251-B698-5824-A030-9BFB327FC685,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},465637
+77A5F47E-9F41-5F79-81F2-1D603BEE02CB,{'subject': '/usr/sbin/sshd sshd: admin [priv]  '},464551
+80370C6E-859F-D0CB-142A-500000000000,{'netflow': '128.55.12.110:40837->208.203.20.42:80'},17658

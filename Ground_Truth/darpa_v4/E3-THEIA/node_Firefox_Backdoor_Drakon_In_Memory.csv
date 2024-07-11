@@ -1,0 +1,58 @@
+80370C6E-4C81-8D2B-B0CB-500000000040,{'netflow': '128.55.12.110:33100->141.43.176.203:80'},73088
+80370C6E-42AD-9299-4497-500000000040,{'netflow': '128.55.12.110:44354->146.153.68.151:80'},73089
+80370C6E-8581-8D2B-B0CB-500000000040,{'netflow': '128.55.12.110:33157->141.43.176.203:80'},73611
+80370C6E-7BAD-9299-4497-500000000040,{'netflow': '128.55.12.110:44411->146.153.68.151:80'},73612
+1920A530-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284560
+1A20AE30-0000-0000-0000-000000000020,{'subject': '/home/admin/profile (deleted) /home/admin/profile'},284561
+1B20AF30-0000-0000-0000-000000000020,{'subject': '/home/admin/profile (deleted) /home/admin/profile'},284562
+80370C6E-AAB0-A174-5848-500000000040,{'netflow': '128.55.12.110:45226->161.116.88.72:80'},73241
+26200C31-0000-0000-0000-000000000020,{'subject': '/home/admin/profile (deleted) /home/admin/profile'},284573
+29202531-0000-0000-0000-000000000020,{'subject': '/home/admin/profile (deleted) /home/admin/profile'},284576
+0100D00F-1D12-1E00-0000-00009F8F0C12,{'file': '/var/log/xdev'},658599
+80370C6E-64B2-A174-5848-500000000040,{'netflow': '128.55.12.110:45668->161.116.88.72:80'},74539
+C21F0F30-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284473
+C31F0F30-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284474
+4E18B22A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282560
+4F18B22A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282561
+06187E2A-0000-0000-0000-000000000020,{'subject': '/usr/bin/fluxbox fluxbox'},282484
+CD186B2D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282691
+CE186C2D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282692
+5318F12A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282565
+5418F32A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282566
+D0187D2D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282695
+D1187E2D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282696
+5518F72A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282567
+5818FF2A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282570
+5618FB2A-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282568
+D518C12D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282700
+D618C22D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282701
+0100D00F-44C5-0600-0000-00006E15B00E,{'file': '/home/admin/clean'},652280
+64189C2B-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282584
+65189F2B-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282585
+6618A32B-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282587
+6718A92B-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282588
+6818A92B-0000-0000-0000-000000000020,{'subject': '/home/admin/clean /home/admin/clean'},282590
+6918A92B-0000-0000-0000-000000000020,{'subject': '/home/admin/clean /home/admin/clean'},282591
+6B18B82B-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},282593
+EB1F2430-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284514
+6D18C82B-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282595
+FEFFFFFF-0000-FFFF-FFFF-000000000040,{'netflow': 'LOCAL:0->NA:0'},67683
+EE1F3230-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284517
+EF1F3230-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284518
+78188B2C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282606
+79188C2C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282607
+F71F9730-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284526
+FA1F9E30-0000-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},284529
+7B18A02C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282609
+FB1F9E30-0000-0000-0000-000000000020,{'subject': '/home/admin/profile /home/admin/profile'},284530
+FC1F9E30-0000-0000-0000-000000000020,{'subject': '/home/admin/profile /home/admin/profile'},284531
+7D18A12C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282611
+05000000-1F32-0000-0000-000000000000,{'file': '/dev/glx_alsa_675'},644341
+8118AB2C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282615
+8018A52C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282614
+8318AC2C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282617
+7F18A52C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282613
+0100D00F-5EC5-0600-0000-0000697C471C,{'file': '/home/admin/profile'},658171
+7E18A32C-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282612
+8718032D-0000-0000-0000-000000000020,{'subject': '/home/admin/clean (deleted) /home/admin/clean'},282621
+7F1FD92F-0000-0000-0000-000000000020,{'subject': '/usr/bin/fluxbox fluxbox'},284406
