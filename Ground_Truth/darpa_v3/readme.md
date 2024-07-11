@@ -121,7 +121,7 @@ don't have enough information to determining which nodes with these commands are
 because of the missing feature.
 
 ## CADETS_E3
-There are 5 attacks in CADETS_E5. Attackers tried to exploit Nginx Backdoor on April 6, 11,
+There are 5 attacks in CADETS_E3. Attackers tried to exploit Nginx Backdoor on April 6, 11,
 12 and 13. 
 And on April 15, they tried to use cadets host as an email server to send malicious emails to
 other hosts. But this is web only so I ignored it.

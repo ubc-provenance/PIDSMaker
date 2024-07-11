@@ -43,8 +43,8 @@ def test(
             srcnode = int(batch.edge_index[0, i])
             dstnode = int(batch.edge_index[1, i])
 
-            srcmsg = str(nodeid2msg[srcnode])
-            dstmsg = str(nodeid2msg[dstnode])
+            srcmsg = nodeid2msg[srcnode]
+            dstmsg = nodeid2msg[dstnode]
             t_var = int(batch.t[i])
             edge_type_idx = edge_types[i].item()
             edge_type = rel2id[edge_type_idx]
@@ -83,6 +83,7 @@ def main(cfg):
     # load the map between nodeID and node labels
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
+    nodeid2msg = {k: str(v) for k, v in nodeid2msg.items()} # pre-compute because it's too slow in main loop
     
     _, val_data, test_data, full_data = load_all_datasets(cfg)
 

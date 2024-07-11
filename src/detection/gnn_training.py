@@ -83,7 +83,7 @@ def main(cfg):
         log(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
-        if cfg._test_mode or epoch % 2 == 0:
+        if cfg._test_mode or epoch % 1 == 0:
             model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             save_model(model, model_path, cfg)
 
