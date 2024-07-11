@@ -3,7 +3,7 @@ from provnet_utils import *
 
 def get_ground_truth(cfg):
     cur, connect = init_database_connection(cfg)
-    uuid2nids = get_uuid2nids(cur)
+    uuid2nids, _ = get_uuid2nids(cur)
 
     ground_truth_nids, ground_truth_paths = [], {}
     uuid_to_node_id = {}
@@ -25,13 +25,15 @@ def get_uuid2nids(cur):
         "subject": "SELECT index_id, node_uuid FROM subject_node_table;"
     }
     uuid2nids = {}
+    nid2uuid = {}
     for node_type, query in queries.items():
         cur.execute(query)
         rows = cur.fetchall()
         for row in rows:
             uuid2nids[row[1]] = row[0]
+            nid2uuid[row[0]] = row[1]
 
-    return uuid2nids
+    return uuid2nids, nid2uuid
 
 def datetime_to_ns_time_US(date):
     """
@@ -58,7 +60,7 @@ def get_events(cur,
 
 def get_t2node(cfg):
     cur, connect = init_database_connection(cfg)
-    uuid2nids = get_uuid2nids(cur)
+    uuid2nids, nid2uuid = get_uuid2nids(cur)
 
     t_to_node = {}
 
@@ -81,8 +83,8 @@ def get_t2node(cfg):
                 dst_id = row[4]
                 t = row[6]
                 if src_id in ground_truth_nids:
-                    t_to_node[int(t)] = src_id
+                    t_to_node[int(t)] = nid2uuid[int(src_id)]
                 if dst_id in ground_truth_nids:
-                    t_to_node[int(t)] = dst_id
+                    t_to_node[int(t)] = nid2uuid[int(dst_id)]
 
     return t_to_node
