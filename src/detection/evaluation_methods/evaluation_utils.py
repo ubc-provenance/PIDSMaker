@@ -15,6 +15,8 @@ from config import *
 import igraph as ig
 import csv
 
+import labelling
+
 
 def get_threshold(val_tw_path, threshold_method: str):
     threshold_method = threshold_method.strip()
@@ -178,24 +180,26 @@ def plot_false_positives(y_true, y_pred, out_file):
     plt.savefig(out_file)
 
 def get_ground_truth_nids(cfg):
-    ground_truth_nids, ground_truth_paths = [], {}
-    for file in cfg.dataset.ground_truth_relative_path:
-        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                node_uuid, node_labels, node_id = row[0], row[1], row[2]
-                ground_truth_nids.append(int(node_id))
-                ground_truth_paths[int(node_id)] = node_labels
+    # ground_truth_nids, ground_truth_paths = [], {}
+    # for file in cfg.dataset.ground_truth_relative_path:
+    #     with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+    #         reader = csv.reader(f)
+    #         for row in reader:
+    #             node_uuid, node_labels, node_id = row[0], row[1], row[2]
+    #             ground_truth_nids.append(int(node_id))
+    #             ground_truth_paths[int(node_id)] = node_labels
+    ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return set(ground_truth_nids), ground_truth_paths
 
 def get_uuid_to_node_id(cfg):
-    uuid_to_node_id = {}
-    for file in cfg.dataset.ground_truth_relative_path:
-        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                node_uuid, node_labels, node_id = row[0], row[1], row[2]
-                uuid_to_node_id[node_uuid] = node_id
+    # uuid_to_node_id = {}
+    # for file in cfg.dataset.ground_truth_relative_path:
+    #     with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+    #         reader = csv.reader(f)
+    #         for row in reader:
+    #             node_uuid, node_labels, node_id = row[0], row[1], row[2]
+    #             uuid_to_node_id[node_uuid] = node_id
+    ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return uuid_to_node_id
 
 def compute_tw_labels(cfg):
@@ -213,18 +217,20 @@ def compute_tw_labels(cfg):
         log(f"Computing time-window labels...")
         os.makedirs(out_path, exist_ok=True)
 
-        t_to_node = {}
-        for file_name in cfg.dataset.ground_truth_events_relative_path:
-            event_labels_path = os.path.join(cfg._ground_truth_dir, file_name)
+        t_to_node = labelling.get_t2node(cfg)
 
-            with open(event_labels_path, "r") as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    src_id, edge_type, dst_id, uuid, t = row[0], row[1], row[2], row[3], row[4]
-                    if src_id in uuid_to_node_id:
-                        t_to_node[int(t)] = src_id
-                    if dst_id in uuid_to_node_id:
-                        t_to_node[int(t)] = dst_id
+        # t_to_node = {}
+        # for file_name in cfg.dataset.ground_truth_events_relative_path:
+        #     event_labels_path = os.path.join(cfg._ground_truth_dir, file_name)
+        #
+        #     with open(event_labels_path, "r") as f:
+        #         reader = csv.reader(f)
+        #         for row in reader:
+        #             src_id, edge_type, dst_id, uuid, t = row[0], row[1], row[2], row[3], row[4]
+        #             if src_id in uuid_to_node_id:
+        #                 t_to_node[int(t)] = src_id
+        #             if dst_id in uuid_to_node_id:
+        #                 t_to_node[int(t)] = dst_id
                 
         test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
         
