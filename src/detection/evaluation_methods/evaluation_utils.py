@@ -214,21 +214,7 @@ def compute_tw_labels(cfg):
         log(f"Computing time-window labels...")
         os.makedirs(out_path, exist_ok=True)
 
-        t_to_node = labelling.get_t2node(cfg)
-
-        # t_to_node = {}
-        # for file_name in cfg.dataset.ground_truth_events_relative_path:
-        #     event_labels_path = os.path.join(cfg._ground_truth_dir, file_name)
-        #
-        #     with open(event_labels_path, "r") as f:
-        #         reader = csv.reader(f)
-        #         for row in reader:
-        #             src_id, edge_type, dst_id, uuid, t = row[0], row[1], row[2], row[3], row[4]
-        #             if src_id in uuid_to_node_id:
-        #                 t_to_node[int(t)] = src_id
-        #             if dst_id in uuid_to_node_id:
-        #                 t_to_node[int(t)] = dst_id
-                
+        t_to_node = labelling.get_t2malicious_node(cfg)
         test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
         
         num_found_event_labels = 0
@@ -237,9 +223,10 @@ def compute_tw_labels(cfg):
             start = tw.t.min().item()
             end = tw.t.max().item()
             
-            for t, node_id in t_to_node.items():
+            for t, node_ids in t_to_node.items():
                 if start < t < end:
-                    tw_to_malicious_nodes[i].append(node_id)
+                    for node_id in node_ids: # src, dst, or [src, dst] malicious nodes
+                        tw_to_malicious_nodes[i].append(node_id)
                     num_found_event_labels += 1
                     
         log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
