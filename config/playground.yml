@@ -1,7 +1,7 @@
 preprocessing:
   build_graphs:
     use_all_files: False
-    time_window_size: 15
+    time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
       subject: type, path, cmd_line

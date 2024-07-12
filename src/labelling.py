@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from config import *
 from provnet_utils import *
 
@@ -58,11 +60,11 @@ def get_events(cur,
     rows = cur.fetchall()
     return rows
 
-def get_t2node(cfg):
+def get_t2malicious_node(cfg) -> dict[list]:
     cur, connect = init_database_connection(cfg)
     uuid2nids, nid2uuid = get_uuid2nids(cur)
 
-    t_to_node = {}
+    t_to_node = defaultdict(list)
 
     for attack_tuple in cfg.dataset.attack_to_time_window:
         attack = attack_tuple[0]
@@ -83,8 +85,8 @@ def get_t2node(cfg):
                 dst_id = row[4]
                 t = row[6]
                 if src_id in ground_truth_nids:
-                    t_to_node[int(t)] = nid2uuid[int(src_id)]
+                    t_to_node[int(t)].append(nid2uuid[int(src_id)])
                 if dst_id in ground_truth_nids:
-                    t_to_node[int(t)] = nid2uuid[int(dst_id)]
+                    t_to_node[int(t)].append(nid2uuid[int(dst_id)])
 
     return t_to_node

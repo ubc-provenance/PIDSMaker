@@ -135,13 +135,10 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Sort combined list by scores in descending order
     combined_scores_sorted = sorted(combined_scores, key=lambda x: x[0], reverse=True)
 
-    # Select the top N scores
-    top = combined_scores_sorted[:1000]
-
     # Separate the top scores by their labels
     keep_only = 10
-    top_0 = [item for item in top if item[2] == 0][:keep_only]
-    top_1 = [item for item in top if item[2] == 1][:keep_only]
+    top_0 = [item for item in combined_scores_sorted if item[2] == 0][:keep_only]
+    top_1 = [item for item in combined_scores_sorted if item[2] == 1][:keep_only]
 
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
@@ -191,7 +188,7 @@ def get_ground_truth_nids(cfg):
     ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return set(ground_truth_nids), ground_truth_paths
 
-def get_uuid_to_node_id(cfg):
+def get_ground_truth_uuid_to_node_id(cfg):
     # uuid_to_node_id = {}
     # for file in cfg.dataset.ground_truth_relative_path:
     #     with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
@@ -208,7 +205,7 @@ def compute_tw_labels(cfg):
     """
     out_path = cfg.preprocessing.build_graphs._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
-    uuid_to_node_id = get_uuid_to_node_id(cfg)
+    uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
 
     if os.path.exists(out_file):
         os.remove(out_file)
@@ -217,21 +214,7 @@ def compute_tw_labels(cfg):
         log(f"Computing time-window labels...")
         os.makedirs(out_path, exist_ok=True)
 
-        t_to_node = labelling.get_t2node(cfg)
-
-        # t_to_node = {}
-        # for file_name in cfg.dataset.ground_truth_events_relative_path:
-        #     event_labels_path = os.path.join(cfg._ground_truth_dir, file_name)
-        #
-        #     with open(event_labels_path, "r") as f:
-        #         reader = csv.reader(f)
-        #         for row in reader:
-        #             src_id, edge_type, dst_id, uuid, t = row[0], row[1], row[2], row[3], row[4]
-        #             if src_id in uuid_to_node_id:
-        #                 t_to_node[int(t)] = src_id
-        #             if dst_id in uuid_to_node_id:
-        #                 t_to_node[int(t)] = dst_id
-                
+        t_to_node = labelling.get_t2malicious_node(cfg)
         test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
         
         num_found_event_labels = 0
@@ -240,9 +223,10 @@ def compute_tw_labels(cfg):
             start = tw.t.min().item()
             end = tw.t.max().item()
             
-            for t, node_id in t_to_node.items():
+            for t, node_ids in t_to_node.items():
                 if start < t < end:
-                    tw_to_malicious_nodes[i].append(node_id)
+                    for node_id in node_ids: # src, dst, or [src, dst] malicious nodes
+                        tw_to_malicious_nodes[i].append(node_id)
                     num_found_event_labels += 1
                     
         log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
@@ -251,7 +235,7 @@ def compute_tw_labels(cfg):
     # Used to retrieve node ID from node raw UUID
     # node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
 
-    # uuid_to_node_id = get_uuid_to_node_id(cfg)
+    # uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
     
     # Create a mapping TW number => malicious node IDs
     tw_to_malicious_nodes = torch.load(out_file)
