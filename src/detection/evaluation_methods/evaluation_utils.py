@@ -135,13 +135,10 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Sort combined list by scores in descending order
     combined_scores_sorted = sorted(combined_scores, key=lambda x: x[0], reverse=True)
 
-    # Select the top N scores
-    top = combined_scores_sorted[:1000]
-
     # Separate the top scores by their labels
     keep_only = 10
-    top_0 = [item for item in top if item[2] == 0][:keep_only]
-    top_1 = [item for item in top if item[2] == 1][:keep_only]
+    top_0 = [item for item in combined_scores_sorted if item[2] == 0][:keep_only]
+    top_1 = [item for item in combined_scores_sorted if item[2] == 1][:keep_only]
 
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
@@ -191,7 +188,7 @@ def get_ground_truth_nids(cfg):
     ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return set(ground_truth_nids), ground_truth_paths
 
-def get_uuid_to_node_id(cfg):
+def get_ground_truth_uuid_to_node_id(cfg):
     # uuid_to_node_id = {}
     # for file in cfg.dataset.ground_truth_relative_path:
     #     with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
@@ -208,7 +205,7 @@ def compute_tw_labels(cfg):
     """
     out_path = cfg.preprocessing.build_graphs._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
-    uuid_to_node_id = get_uuid_to_node_id(cfg)
+    uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
 
     if os.path.exists(out_file):
         os.remove(out_file)
@@ -251,7 +248,7 @@ def compute_tw_labels(cfg):
     # Used to retrieve node ID from node raw UUID
     # node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
 
-    # uuid_to_node_id = get_uuid_to_node_id(cfg)
+    # uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
     
     # Create a mapping TW number => malicious node IDs
     tw_to_malicious_nodes = torch.load(out_file)

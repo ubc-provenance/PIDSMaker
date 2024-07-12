@@ -11,7 +11,7 @@ from .evaluation_utils import *
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
-    log(f"Loading data from {test_tw_path}...")
+    log(f"Calculating threshold...")
     
     thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_tw_evaluation.threshold_method)
     log(f"Threshold: {thr:.3f}")

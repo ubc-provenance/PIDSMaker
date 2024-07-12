@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    time_window_size: 15
+    time_window_size: 15.0
     use_hashed_label: False
     node_label_features:
       subject: path
