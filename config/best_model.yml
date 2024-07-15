@@ -139,3 +139,4 @@ triage :
     used_method: depimpact
     depimpact:
       score_method: degree
+      workers: 8

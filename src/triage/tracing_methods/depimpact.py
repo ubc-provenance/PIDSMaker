@@ -91,7 +91,7 @@ def main(evaluation_results,
         for poi in pois:
             tasks.append((tw, graph_dir, poi))
 
-    workers = 16 #TODO: add workers into config and yml files
+    workers = cfg.triage.tracing.depimpact.workers
 
     all_results = run(tasks, workers)
 
