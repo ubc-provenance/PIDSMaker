@@ -111,3 +111,10 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
+
+triage :
+  tracing:
+    used_method: depimpact
+    depimpact:
+      score_method: degree
+      workers: 8
