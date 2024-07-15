@@ -22,6 +22,10 @@ from config import (
     get_runtime_required_args,
 )
 
+from triage import (
+    tracing,
+)
+
 
 def main(cfg, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
@@ -55,6 +59,10 @@ def main(cfg, **kwargs):
     if should_restart["evaluation"]:
         evaluation.main(cfg)
 
+    # Triage
+    if should_restart["tracing"]:
+        tracing.main(cfg)
+
 
 if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
@@ -65,8 +73,8 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        # project="jbx_tests_featurization_theia_e5",
-        project="framework_tests",
+        project="jbx_runs_0714",
+        # project="framework_tests",
         name=exp_name,
         tags=tags,
     )
