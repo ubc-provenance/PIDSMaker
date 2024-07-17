@@ -22,6 +22,10 @@ from config import (
     get_runtime_required_args,
 )
 
+from triage import (
+    tracing,
+)
+
 
 def main(cfg, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
@@ -55,6 +59,10 @@ def main(cfg, **kwargs):
         gnn_testing.main(cfg)
     if should_restart["evaluation"]:
         evaluation.main(cfg)
+
+    # Triage
+    if should_restart["tracing"]:
+        tracing.main(cfg)
 
 
 if __name__ == '__main__':

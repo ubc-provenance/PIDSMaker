@@ -1,0 +1,49 @@
+A972A4C7-D0EE-F2A7-513C-C0200E7A5569,{'subject': 'firefox f'},39881606
+3B31261A-403D-2673-940F-36DA11884679,{'subject': 'sshd /'},39957766
+4E2D8224-3667-4B3A-EC43-8ABEA4788498,{'subject': 'firefox f'},39866878
+E6121325-5C30-5A6F-3916-6E7778795123,{'netflow': '128.55.12.118:52012->35.106.122.76:80'},4521612
+2B7AB6A4-71F3-BE5F-E654-B797622837B3,{'netflow': '128.55.12.118:39746->69.155.209.87:80'},4521613
+596E9A1F-6548-796C-2C61-654959591AC2,{'subject': 'firefox f'},39939854
+BA54635F-DA78-73DA-AE1E-32B8089D7AF3,{'file': '/usr/local/firefox-54.0.1/build/win32/crashinjectdll'},67795727
+9A823242-2E50-628A-99E9-C2FB259CDABB,{'subject': 'sshd /'},39939857
+488431D8-4681-7F12-2D3F-28AB91458EC8,{'subject': 'du d'},14853266
+EA4D57E8-F915-1B73-7D9B-4131D34D291B,{'file': '/usr/local/firefox-54.0.1/build/win32/crashinjectdll'},71031827
+F67904FC-9A90-0A57-8537-2EFF8CC004AD,{'file': '/home/admin/test'},67772307
+EE233911-A400-5C63-33C9-E7BB3D7A6749,{'file': '/home/admin/test/My Pictures'},67772308
+40E12389-0424-2CBF-98AA-C5DEED9BBBB0,{'file': '/home/admin/test/My Pictures/Camera Roll'},67772309
+BFD4B954-30E5-EFCC-2E53-506E5ADC973B,{'file': '/home/admin/test/My Pictures/Saved Pictures'},67772310
+26AC660C-4A00-87C9-B50A-DA0AE25A93D4,{'file': '/home/admin/test/My Videos'},67772311
+2E4CBD68-C4B9-1F59-5346-D4E4EAB00283,{'file': '/home/admin/test/My Music'},67772312
+9568054B-2E6E-7A19-6177-91206A25D2C4,{'subject': 'sshd /'},39939859
+5165BCDD-FA7B-9008-C5B2-792825F594F7,{'file': '/dev/urandom'},67762452
+F2B401C4-AA27-D332-2882-471649F07AAA,{'file': '/usr/local/firefox-54.0.1/toolkit/crashreporter/injector'},67785763
+DDDC40EE-F4B8-1A94-A966-BD9035A9891B,{'subject': 'du d'},40025123
+29316F1C-1C2A-EA8F-00BC-104BD0A414A0,{'subject': 'firefox f'},39888555
+669B2A0F-1A3C-AB31-BF48-EE64493B5F5F,{'subject': 'du d'},40336944
+3C24F192-35CD-7BBE-524B-D6E4A98D73E6,{'file': '/usr/src/linux-headers-4.4.0-31/zfs/cmd/zinject'},71483841
+61D3C674-DDB8-9CCE-DCF2-DA9BD89D190B,{'subject': 'sshd /'},39957825
+1B0F5856-9986-809D-67E2-4069610D0635,{'file': '/proc'},67768131
+3530A93E-5A15-A52E-4928-C711C05EB591,{'file': '/usr/src/linux-headers-4.4.0-31/zfs/cmd/zinject'},65102661
+96202343-065C-0550-72BA-BB9B6AEFB5AA,{'file': '/usr/src/linux-headers-4.4.0-31/tools/testing/fault-injection'},65104453
+8B45F750-DB20-95ED-7EC0-D3F67119A506,{'file': '/sys/devices/virtual/block/ram9/trace'},65076938
+E8680C51-02E7-55CE-1DD0-75832EC6444A,{'subject': 'firefox f'},39881342
+6C7A9E96-E2A1-1287-DF73-183F0EE5B82D,{'subject': 'firefox f'},39866834
+836E0DE2-95A1-C708-EE95-90E6B42D346E,{'subject': 'firefox f'},39888594
+4632A444-526B-0848-697F-574905C7D376,{'subject': 'firefox f'},39901524
+DEF8FC47-7A9A-FBED-6B2A-08B2189BECCD,{'subject': 'sshd /'},37395285
+5B0DE31C-78E1-9384-434E-75217C652ADC,{'file': '/usr/local/firefox-54.0.1/build/unix/elfhack/inject'},65080412
+54E27D76-250B-FC64-0C78-A6224E36CD24,{'subject': 'firefox f'},39866846
+BF400076-1BE9-A755-7F6D-E7DE1C5C5FCF,{'subject': 'firefox f'},39883872
+F65BC9CA-8365-9EE4-E1BA-CB24EF56C3A1,{'file': '/usr/src/linux-headers-4.4.0-31/tools/testing/fault-injection'},71482214
+5641710A-6DE3-D0F1-650F-4E25B8068331,{'file': '/usr/local/firefox-54.0.1/build/win32/crashinjectdll'},65080422
+08ECEBD8-CCB3-6DC8-59A3-FE4ADE88740B,{'file': '/usr/local/build/unix/elfhack/inject'},69198568
+29AB8369-EE84-120E-6DED-0B970C464C4F,{'netflow': '128.55.12.118:53368->35.106.122.76:80'},4525161
+3CC73DB2-7D4C-4671-FA22-94708BEECC83,{'file': '/home/admin/test'},65070570
+93AFB68D-BF75-D4FC-532A-03CB143A936C,{'netflow': '128.55.12.118:41102->69.155.209.87:80'},4525162
+A1D32242-5F11-F358-ED81-9B9F648B7B3C,{'subject': 'du d'},14852593
+D130DA2C-4151-6DE6-8FCB-E9E381BCE566,{'subject': 'du d'},61423859
+8436CC10-FE54-163C-4687-70EBDE1B47F0,{'file': '/usr/local/firefox-54.0.1/build/unix/elfhack/inject'},71031801
+5BE2001E-94D8-56D7-A4A7-1DF5CBBF3750,{'file': '/usr/local/firefox-54.0.1/build/unix/elfhack/inject'},67795707
+B8CC6DF4-C59A-D065-A79F-FCA8A091FEE9,{'file': '/usr/local/build/win32/crashinjectdll'},69198588
+B2F51570-3E4A-66B2-EF37-15EFEAA2B73E,{'file': '/usr/local/firefox-54.0.1/toolkit/crashreporter/injector'},71032189
+D2F13844-41E7-A788-EE2E-76A81CF4AF8A,{'file': '/usr/local/firefox-54.0.1/toolkit/crashreporter/injector'},65079166

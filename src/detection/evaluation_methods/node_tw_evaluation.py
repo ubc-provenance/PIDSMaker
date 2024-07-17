@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 
 import torch
@@ -45,10 +46,15 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
                 if loss > node_to_max_loss_tw[dstnode]:
                     node_to_max_loss_tw[dstnode] = tw
 
-    results = defaultdict(lambda: defaultdict(dict))
+    results = {}
     for tw, node_to_losses in tw_to_node_to_losses.items():
+        if tw not in results:
+            results[tw] = {}
         for node_id, losses in node_to_losses.items():
             pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.node_tw_evaluation.threshold_method)
+
+            if node_id not in results[tw]:
+                results[tw][node_id] = {}
 
             results[tw][node_id]["score"] = pred_score
             results[tw][node_id]["y_hat"] = int(pred_score > thr)
@@ -122,5 +128,11 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
     stats.update(**summary_graphs)
+
+    results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
+    stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+
+    torch.save(results, results_file)
+    torch.save(stats, stats_file)
     
     return stats
