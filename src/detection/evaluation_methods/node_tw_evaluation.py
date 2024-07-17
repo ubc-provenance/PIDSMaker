@@ -92,7 +92,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     for tw, nid_to_result in results.items():
         malicious_tws = set()
         malicious_nodes = set()
-        
+
         # We create a new arrayfor each TW
         for arr in [nodes, y_truth, y_preds, pred_scores]:
             arr.append([])
