@@ -345,6 +345,8 @@ def find_descendants(graph, node):
 def min_max_normalize(lst):
     min_val = min(lst)
     max_val = max(lst)
+    if min_val == max_val:
+        return [0.0 for _ in lst]
     return [(x - min_val) / (max_val - min_val) for x in lst]
 
 def find_min_larger_than(sequence, value):
