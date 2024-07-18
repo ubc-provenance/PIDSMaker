@@ -11,15 +11,18 @@ import labelling
 
 def get_tasks(evaluation_results):
     tw_to_poi = {}
+    tw_to_node_score = {}
     for tw, nid_to_result in evaluation_results.items():
+        tw_to_node_score[tw] = {}
         for nid, result in nid_to_result.items():
             score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
+            tw_to_node_score[tw][str(nid)] = score
             if y_hat == 1:
                 if tw not in tw_to_poi:
                     tw_to_poi[tw] = []
                 tw_to_poi[tw].append(int(nid))
 
-    return tw_to_poi
+    return tw_to_poi, tw_to_node_score
 
 def split_list(lst, n):
     avg = len(lst) // n
@@ -41,14 +44,14 @@ def worker_func(task_list, worker_num):
     result = []
 
     for task in task_list:
-        tw, graph_dir, poi = task[0], task[1], task[2]
+        tw, graph_dir, poi, node_to_score, used_method, score_method  = task[0], task[1], task[2], task[3], task[4], task[5]
 
         # load graph
         graph = torch.load(graph_dir)
 
         # init depimpact
         log_with_pid(f"start tracing poi {str(poi)} in time window {str(tw)}")
-        dep = DEPIMPACT(graph, str(poi))
+        dep = DEPIMPACT(graph, str(poi), node_to_score, used_method, score_method)
 
         # get dependency_graph_nodes
         subgraph_nodes = dep.gen_dependency_graph()
@@ -88,7 +91,10 @@ def main(evaluation_results,
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     ground_truth_nids, _, _ = labelling.get_ground_truth(cfg) # int
 
-    tw_to_poi = get_tasks(evaluation_results)
+    used_method = cfg.triage.tracing.depimpact.used_method
+    score_method = cfg.triage.tracing.depimpact.score_method
+
+    tw_to_poi, tw_to_node_score = get_tasks(evaluation_results)
     tasks = []
     for tw, pois in tw_to_poi.items():
         timestr = tw_to_timestr[tw]
@@ -96,7 +102,7 @@ def main(evaluation_results,
         graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
 
         for poi in pois:
-            tasks.append((tw, graph_dir, poi))
+            tasks.append((tw, graph_dir, poi, tw_to_node_score[tw], used_method, score_method))
 
     workers = cfg.triage.tracing.depimpact.workers
 
