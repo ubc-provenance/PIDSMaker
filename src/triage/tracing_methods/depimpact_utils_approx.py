@@ -12,7 +12,7 @@ class DEPIMPACT():
     def __init__(self, graph, poi):
         self.graph = graph
         self.poi = poi
-        self.dag, self.dag_poi = self.convert_DAG()
+        self.dag, self.dag_poi, self.forward_tags = self.convert_DAG()
 
         # self.forward_adj = self._gen_forward_adj_dict()
         # self.backward_adj = self._get_backward_adj_dict()
@@ -25,7 +25,8 @@ class DEPIMPACT():
         subgraph_nodes = set()
 
         if self.dag.in_degree(poi) > 0:
-            entry2path = dag_backward_tracing(poi, self.dag)
+            # entry2path = dag_backward_tracing(poi, self.dag)
+            entry2path = tag_based_backward_tracing(poi, self.dag, self.forward_tags)
             entry2nodes = {}
             for entry, paths in entry2path.items():
                 entry_in_graph = entry.split('-')[0]
@@ -159,23 +160,41 @@ class DEPIMPACT():
         new_nodes = set()
         new_edges = []
         visited = set()
+
+        forward_tags = {}
+
         for u, v, t in sorted_edges:
 
             if u == v:
                 continue
 
             src = str(u) + '-' + str(node_version[u])
+
+            if src not in forward_tags:
+                forward_tags[src] = set()
+            if u not in visited:
+                forward_tags[src].add(src)
+
             visited.add(u)
             new_nodes.add(src)
 
             if v not in visited:
                 dst = str(v) + '-' + str(node_version[v])
+
+                forward_tags[dst] = set()
+                forward_tags[dst] |= forward_tags[src]
+
                 visited.add(v)
                 new_nodes.add(dst)
                 new_edges.append((src, dst, {'time': int(t)}))
             else:
                 dst_current = str(v) + '-' + str(node_version[v])
                 dst_new = str(v) + '-' + str(node_version[v] + 1)
+
+                forward_tags[dst_new] = set()
+                forward_tags[dst_new] |= forward_tags[src]
+                forward_tags[dst_new] |= forward_tags[dst_current]
+
                 node_version[v] += 1
                 new_nodes.add(dst_new)
                 new_edges.append((src, dst_new, {'time': int(t)}))
@@ -188,7 +207,7 @@ class DEPIMPACT():
         old_poi = self.poi
         new_poi = str(old_poi) + '-' + str(node_version[old_poi])
 
-        return DAG, new_poi
+        return DAG, new_poi, forward_tags
 
 def backward_tracing(poi: str, backward_adj: dict):
     queue = [(poi, float('inf'),[])]
@@ -264,6 +283,32 @@ def dag_forward_tracing(poi: str, dag: nx.DiGraph):
             all_paths = [[]]
         exit2path[e] = all_paths
     return exit2path
+
+def tag_based_backward_tracing(poi: str, dag: nx.DiGraph, tags: dict):
+    log_with_pid("start tag based backward tracing")
+    visited = set()
+    stack = [poi]
+    entry2nodes = {}
+    while stack:
+        current_node = stack.pop()
+
+        for entry in tags[current_node]:
+            if entry not in entry2nodes:
+                entry2nodes[entry] = set()
+            entry2nodes[entry].add(current_node)
+
+        visited.add(current_node)
+
+        for parent in dag.predecessors(current_node):
+            if parent not in visited:
+                stack.append(parent)
+
+    result = {}
+    for entry_node, node_set in entry2nodes.items():
+        result[entry_node] = [list(node_set)]
+
+    return result
+
 
 def find_min_larger_than(sequence, value):
     min_larger = None

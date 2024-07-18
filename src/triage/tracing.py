@@ -8,7 +8,7 @@ from .tracing_methods import (
     depimpact,
 )
 
-def get_new_stats(all_traced_nodes,
+def get_new_stats(tw_to_info,
                   evaluation_results):
     flat_y_truth = []
     flat_y_hat = []
@@ -18,7 +18,10 @@ def get_new_stats(all_traced_nodes,
             score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
             scores.append(score)
             flat_y_truth.append(y_true)
-            flat_y_hat.append(int(str(nid) in all_traced_nodes))
+            if int(tw) in tw_to_info:
+                flat_y_hat.append(int(str(nid) in tw_to_info[int(tw)]['subgraph_nodes']))
+            else:
+                flat_y_hat.append(0)
 
     new_stats = classifier_evaluation(flat_y_truth, flat_y_hat, scores)
 
@@ -48,9 +51,9 @@ def main(cfg):
         tw_to_time[tw] = tw_file[:-20]
 
     if cfg.triage.tracing.used_method == 'depimpact':
-        all_traced_nodes = depimpact.main(results, tw_to_time, cfg)
+        tw_to_info, all_traced_nodes = depimpact.main(results, tw_to_time, cfg)
         new_stats = get_new_stats(
-            all_traced_nodes=all_traced_nodes,
+            tw_to_info=tw_to_info,
             evaluation_results=results,
         )
 
