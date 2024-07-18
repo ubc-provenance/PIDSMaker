@@ -1,7 +1,7 @@
 preprocessing:
   build_graphs:
     use_all_files: False
-    time_window_size: 15.0
+    time_window_size: 1.0
     use_hashed_label: True
     node_label_features:
       subject: type, path, cmd_line
@@ -120,7 +120,7 @@ detection:
     threshold_method: str
   evaluation:
     viz_malicious_nodes: False
-    ground_truth_version: darpa_v3
+    ground_truth_version: darpa_v4
     used_method: node_tw_evaluation
     node_evaluation:
       threshold_method: max_val_loss
@@ -138,5 +138,7 @@ triage :
   tracing:
     used_method: depimpact
     depimpact:
+      used_method: component
       score_method: degree
       workers: 8
+      visualize: False
