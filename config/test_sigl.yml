@@ -1,8 +1,8 @@
 preprocessing:
   build_graphs:
-    use_all_files: True
-    time_window_size: 15
-    use_hashed_label: False
+    use_all_files: False
+    time_window_size: 15.0
+    use_hashed_label: True
     node_label_features:
       subject: type, path, cmd_line
       file: type, path
@@ -101,17 +101,24 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
+    viz_malicious_nodes: False
+    ground_truth_version: darpa_v3
     used_method: node_tw_evaluation
     node_evaluation:
-      threshold_method: mean_val_loss
+      threshold_method: max_val_loss
       use_dst_node_loss: False
     node_tw_evaluation:
-      threshold_method: mean_val_loss
-      use_dst_node_loss: False
-    tw_evaluation:
       threshold_method: max_val_loss
+      use_dst_node_loss: False
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue
       kairos_idf_queue:
         include_test_set_in_IDF: True
+
+triage :
+  tracing:
+    used_method: depimpact
+    depimpact:
+      score_method: degree
+      workers: 8

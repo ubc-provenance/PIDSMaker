@@ -18,6 +18,8 @@ from sklearn.cluster import KMeans
 
 import labelling
 
+import labelling
+
 
 def get_threshold(val_tw_path, threshold_method: str):
     threshold_method = threshold_method.strip()
