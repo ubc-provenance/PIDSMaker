@@ -26,6 +26,23 @@ class DEPIMPACT():
             recon_scores = self._cal_loss_score(node_to_score)
             self.node_scores = self._cal_degree_recon_score(degree_scores, recon_scores)
 
+    def run(self):
+        if self.used_method == "component" or self.used_method == "shortest_path":
+            subgraph_nodes = self.gen_dependency_graph()
+        elif self.used_method == "1-hop" or self.used_method == "2-hop" or self.used_method == "3-hop":
+            subgraph_nodes = self.n_hop_subgraph_nodes()
+
+        return subgraph_nodes
+
+    def n_hop_subgraph_nodes(self):
+        graph = self.graph
+        poi = self.poi
+        n = int(self.used_method.split("-")[0])
+
+        subgraph_nodes = get_n_hop_neighbors(graph, poi, n)
+
+        return subgraph_nodes
+
     def gen_dependency_graph(self):
 
         poi_in_graph = self.poi
@@ -370,6 +387,23 @@ def log_with_pid(msg: str, *args):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     print(f"{timestamp} - (pid: {pid}) - {msg}", *args)
+
+def get_n_hop_neighbors(graph, node, n):
+
+    neighbors = set()
+    current_level = {node}
+
+    for _ in range(n):
+        next_level = set()
+        for current_node in current_level:
+            next_level.update(graph.successors(current_node))
+            next_level.update(graph.predecessors(current_node))
+        neighbors.update(next_level)
+        current_level = next_level
+
+    neighbors.add(node)
+
+    return neighbors
 
 def visualize_dependency_graph(dependency_graph,
                                ground_truth_nids,
