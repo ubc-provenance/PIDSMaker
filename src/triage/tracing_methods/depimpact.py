@@ -10,6 +10,7 @@ import multiprocessing
 import labelling
 
 import time
+import csv
 
 def get_tasks(evaluation_results):
     tw_to_poi = {}
@@ -117,6 +118,7 @@ def main(evaluation_results,
     log("==" * 20)
     log("Results of each poi tracing")
     tw_to_info = {}
+    detailed_info = []
     for result in all_results:
         tw, graph_dir, subgraph_nodes, poi, time_taken = result[0], result[1], result[2], result[3], result[4]
 
@@ -124,8 +126,10 @@ def main(evaluation_results,
         log('--' * 20)
         if int(poi) in ground_truth_nids:
             log(f"POI {str(poi)} in time window {str(tw)} is a TP POI")
+            tp_or_fp = 'TP'
         else:
             log(f"POI {str(poi)} in time window {str(tw)} is a FP POI")
+            tp_or_fp = 'FP'
         log(f"Tracing poi {str(poi)} in time window {str(tw)} leads to:")
         tps = 0
         fps = 0
@@ -134,6 +138,8 @@ def main(evaluation_results,
                 tps += 1
             else:
                 fps += 1
+        time_taken_str = f"{time_taken:.2f}"
+        detailed_info.append((int(poi), tw, tp_or_fp, tps, fps, time_taken_str))
         log(f"TPS: {tps}, FPS: {fps}")
         log(f"{time_taken:.2f} seconds is taken")
         log('--' * 20)
@@ -147,6 +153,10 @@ def main(evaluation_results,
 
     out_dir = cfg.triage.tracing._tracing_graph_dir
     os.makedirs(out_dir, exist_ok=True)
+
+    detailed_info_filename = used_method + '_' + score_method + "_detailed.csv"
+    detailed_info_dir = os.path.join(out_dir, detailed_info_filename)
+    save_detailed_infos(detailed_info, detailed_info_dir)
 
     out_file = os.path.join(out_dir, "results.pth")
     torch.save(tw_to_info, out_file)
@@ -170,6 +180,22 @@ def main(evaluation_results,
 
     return tw_to_info, all_traced_nodes
 
-
-
+def save_detailed_infos(infos, out_dir):
+    poi, tw, tp_or_fp, tps, fps, time_taken_str = [], [], [], [], [], []
+    sorted_infos = sorted(infos, key=lambda x: x[0])
+    for info in sorted_infos:
+        poi.append(info[0])
+        tw.append(info[1])
+        tp_or_fp.append(info[2])
+        tps.append(info[3])
+        fps.append(info[4])
+        time_taken_str.append(info[5])
+    with open(out_dir, "w") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(poi)
+        writer.writerow(tw)
+        writer.writerow(tp_or_fp)
+        writer.writerow(tps)
+        writer.writerow(fps)
+        writer.writerow(time_taken_str)
 
