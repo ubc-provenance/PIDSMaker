@@ -9,6 +9,8 @@ from .depimpact_utils import DEPIMPACT, visualize_dependency_graph, log_with_pid
 import multiprocessing
 import labelling
 
+import time
+
 def get_tasks(evaluation_results):
     tw_to_poi = {}
     tw_to_node_score = {}
@@ -49,15 +51,19 @@ def worker_func(task_list, worker_num):
         # load graph
         graph = torch.load(graph_dir)
 
+        start_time = time.time()
         # init depimpact
         log_with_pid(f"start tracing poi {str(poi)} in time window {str(tw)}")
         dep = DEPIMPACT(graph, str(poi), node_to_score, used_method, score_method)
 
-        # get dependency_graph_nodes
-        subgraph_nodes = dep.gen_dependency_graph()
+        # get subgraph nodes
+        subgraph_nodes = dep.run()
         log_with_pid(f"finish tracing poi {str(poi)} in time window {str(tw)}")
 
-        result.append((tw, graph_dir, subgraph_nodes, poi))
+        end_time = time.time()
+        time_taken = end_time - start_time
+
+        result.append((tw, graph_dir, subgraph_nodes, poi, time_taken))
 
     log(f"Finish worker {str(worker_num)} with pid {pid}")
 
@@ -112,9 +118,10 @@ def main(evaluation_results,
     log("Results of each poi tracing")
     tw_to_info = {}
     for result in all_results:
-        tw, graph_dir, subgraph_nodes, poi = result[0], result[1], result[2], result[3]
+        tw, graph_dir, subgraph_nodes, poi, time_taken = result[0], result[1], result[2], result[3], result[4]
 
         #check tracing result of each poi
+        log('--' * 20)
         if int(poi) in ground_truth_nids:
             log(f"POI {str(poi)} in time window {str(tw)} is a TP POI")
         else:
@@ -128,6 +135,8 @@ def main(evaluation_results,
             else:
                 fps += 1
         log(f"TPS: {tps}, FPS: {fps}")
+        log(f"{time_taken:.2f} seconds is taken")
+        log('--' * 20)
 
         if int(tw) not in tw_to_info:
             tw_to_info[int(tw)] = {}

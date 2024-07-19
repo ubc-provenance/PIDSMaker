@@ -73,7 +73,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="jbx_runs_0714",
+        project="jbx_runs_0719",
         # project="framework_tests",
         name=exp_name,
         tags=tags,
