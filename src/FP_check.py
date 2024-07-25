@@ -53,6 +53,7 @@ def check_if_in_trainset(fps,tw_to_graphdir,cur):
     for fp in fps:
         print("==" * 20)
         print(f"FP node {fp}:")
+        print(f"Feature of {fp} is: {indexid2msg[fp]}")
         if len(fp_to_tw[fp]) == 0:
             print("It does not appear in any training graph")
         else:
