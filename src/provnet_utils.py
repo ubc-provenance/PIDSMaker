@@ -36,6 +36,8 @@ from sklearn.metrics import (
     average_precision_score as ap_score,
 )
 
+import re
+
 from config import *
 import hashlib
 from nltk.tokenize import word_tokenize
@@ -475,10 +477,12 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     return indexid2msg #{index_id: [node_type, msg]}
 
 def tokenize_subject(sentence: str):
-    return word_tokenize(sentence.replace('/', ' / '))
+    new_sentence = re.sub(r'\\+', '/', sentence)
+    return word_tokenize(new_sentence.replace('/', ' / '))
     # return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
 def tokenize_file(sentence: str):
-    return word_tokenize(sentence.replace('/',' / '))
+    new_sentence = re.sub(r'\\+', '/', sentence)
+    return word_tokenize(new_sentence.replace('/',' / '))
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
 
