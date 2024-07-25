@@ -48,7 +48,7 @@ def check_if_in_trainset(fps,tw_to_graphdir,cur):
 
             for sn in sns:
                 if sn in graph.nodes():
-                    sn_to_tw[fp].add(sn)
+                    sn_to_tw[fp].add(tw)
 
     for fp in fps:
         print("==" * 20)
