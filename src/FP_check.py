@@ -18,7 +18,7 @@ def get_tasks(evaluation_results):
 
     return tw_to_poi
 
-def check_if_in_trainset(fps,tw_to_graphdir,cur):
+def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur):
     indexid2msg = get_node_infos(cur)
     fp_to_samename = {}
     for fp in tqdm(list(fps),desc='get same-name nodes of FPs'):
@@ -65,6 +65,46 @@ def check_if_in_trainset(fps,tw_to_graphdir,cur):
         else:
             print(f"Its same-name nodes appear in time windows:")
             print(list(sn_to_tw[fp]))
+
+        print("==" * 20)
+
+
+    fp_to_tw_test = {}
+    sn_to_tw_test = {}
+
+    for tw, graphdir in tqdm(tw_to_graphdir_test.items(),desc="check if fp or same-name node is in testing sets"):
+        graph = torch.load(graphdir)
+
+        for fp in fps:
+            if fp not in fp_to_tw_test:
+                fp_to_tw_test[fp] = set()
+            if fp not in sn_to_tw_test:
+                sn_to_tw_test[fp] = set()
+
+            sns = list(fp_to_samename[fp] - {fp})
+
+            if fp in graph.nodes():
+                fp_to_tw_test[fp].add(tw)
+
+            for sn in sns:
+                if sn in graph.nodes():
+                    sn_to_tw_test[fp].add(tw)
+
+    for fp in fps:
+        print("==" * 20)
+        print(f"FP node {fp}:")
+        print(f"Feature of {fp} is: {indexid2msg[fp]}")
+        if len(fp_to_tw_test[fp]) == 0:
+            print("It does not appear in any testing graph")
+        else:
+            print(f"It appear in testing time windows:")
+            print(list(fp_to_tw_test[fp]))
+
+        if len(sn_to_tw_test[fp]) == 0:
+            print("Its same-name nodes do not appear in any testing graph")
+        else:
+            print(f"Its same-name nodes appear in testing time windows:")
+            print(list(sn_to_tw_test[fp]))
 
         print("==" * 20)
 
@@ -151,12 +191,28 @@ def main(cfg):
         tw_to_graphdir[tw] = graph_dir
 
     tw_to_fps = get_tasks(results)
+    fp_to_tw = {}
     fps = set()
     for tw, fps_list in tw_to_fps.items():
         for fp in fps_list:
             fps.add(fp)
+            if fp not in fp_to_tw:
+                fp_to_tw[fp] = set()
+            fp_to_tw[fp].add(tw)
 
-    check_if_in_trainset(fps,tw_to_graphdir,cur)
+    for fp, tw_set in fp_to_tw.items():
+        print(f"FP node {fp} appears in testing time windows: {list(tw_set)}")
+
+    test_sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'test')))
+    tw_to_graphdir_test = {}
+    for tw, tw_file in enumerate(test_sorted_tw_paths):
+        timestr = tw_file[:-20]
+        day = timestr[8:10].lstrip('0')
+        graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
+
+        tw_to_graphdir_test[tw] = graph_dir
+
+    check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur)
     print("Finish checking!")
 
 if __name__ == "__main__":
