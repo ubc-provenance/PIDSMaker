@@ -12,8 +12,8 @@ We use the following settings to run the experiments reported in the paper:
 Install the following libraries, 
 or use our [`requirements.txt`](requirements.txt):
 ```commandline
-conda create -n provnet python=3.9
-conda activate provnet
+conda create -n orthrus python=3.9
+conda activate orthrus
 # Note: using "pip install psycopg2" to install may fail
 conda install psycopg2
 conda install tqdm
@@ -38,6 +38,11 @@ pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 torch_clust
 
 # Gensim Word2Vec library 
 pip install gensim==4.3.1
+
+pip install wandb
+pip install pandas
+pip install pytz
+pip install yacs
 ```
 
 ## Troubleshooting
