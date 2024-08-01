@@ -50,18 +50,18 @@ def main(cfg, **kwargs):
     if should_restart["embed_edges"]:
         embed_edges.main(cfg)
 
-    # # Detection
-    # if should_restart["gnn_training"]:
-    #     gnn_training.main(cfg, **kwargs)
-    #     torch.cuda.empty_cache()
-    # if should_restart["gnn_testing"]:
-    #     gnn_testing.main(cfg)
-    # if should_restart["evaluation"]:
-    #     evaluation.main(cfg)
-    #
-    # # Triage
-    # if should_restart["tracing"]:
-    #     tracing.main(cfg)
+    # Detection
+    if should_restart["gnn_training"]:
+        gnn_training.main(cfg, **kwargs)
+        torch.cuda.empty_cache()
+    if should_restart["gnn_testing"]:
+        gnn_testing.main(cfg)
+    if should_restart["evaluation"]:
+        evaluation.main(cfg)
+
+    # Triage
+    if should_restart["tracing"]:
+        tracing.main(cfg)
 
 
 if __name__ == '__main__':

@@ -87,4 +87,4 @@ def load_entity_level_dataset(t, n, cfg):
         edge_attrs=['type'],
     )
     g = transform_graph(dgl_g, node_feature_dim, edge_feature_dim)
-    return g, file_path.split('/')[-1]
+    return g, file_path.split('/')[-1], list(nx_g.nodes())

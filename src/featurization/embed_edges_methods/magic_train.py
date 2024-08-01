@@ -48,7 +48,7 @@ def main(cfg):
     for epoch in epoch_iter:
         epoch_loss = 0.0
         for i in range(n_train):
-            g, tw_name = load_entity_level_dataset(t='train', n=i, cfg=cfg)
+            g, tw_name, _ = load_entity_level_dataset(t='train', n=i, cfg=cfg)
             g.to(device)
             model.train()
             loss = model(g)

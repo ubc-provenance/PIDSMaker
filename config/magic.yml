@@ -60,7 +60,7 @@ featurization:
       use_port: False
     magic:
       num_hidden: 64
-      max_epoch: 50
+      max_epoch: 10
       num_layers: 3
       negative_slope: 0.2
       mask_rate: 0.5
@@ -73,6 +73,7 @@ featurization:
 
 detection:
   gnn_training:
+    used_method: magic
     use_seed: True
     num_epochs: 6
     lr: 0.00001
@@ -132,7 +133,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4
-    used_method: node_tw_evaluation
+    used_method: magic_evaluation
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
