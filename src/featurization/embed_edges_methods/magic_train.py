@@ -2,9 +2,9 @@ from config import *
 from provnet_utils import *
 from yacs.config import CfgNode as CN
 
-from .magic_utils.utils import set_random_seed, create_optimizer
-from .magic_utils.loaddata import load_entity_level_dataset, load_metadata
-from .magic_utils.autoencoder import build_model
+from magic_utils.utils import set_random_seed, create_optimizer
+from magic_utils.loaddata import load_entity_level_dataset, load_metadata
+from magic_utils.autoencoder import build_model
 
 from tqdm import tqdm
 import torch
