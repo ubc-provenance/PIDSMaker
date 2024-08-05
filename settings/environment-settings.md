@@ -38,11 +38,8 @@ pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 torch_clust
 
 # Gensim Word2Vec library 
 pip install gensim==4.3.1
-
+pip install pytz==2024.1 pandas==2.2.2 yacs==0.1.8
 pip install wandb
-pip install pandas
-pip install pytz
-pip install yacs
 ```
 
 ## Troubleshooting

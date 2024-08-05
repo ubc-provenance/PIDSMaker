@@ -54,6 +54,7 @@ def main(cfg, **kwargs):
     if should_restart["gnn_training"]:
         gnn_training.main(cfg, **kwargs)
         torch.cuda.empty_cache()
+        return
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
     if should_restart["evaluation"]:
@@ -73,8 +74,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="jbx_runs_0719",
-        # project="framework_tests",
+        project="Orthrus_V1_bis",
         name=exp_name,
         tags=tags,
     )
