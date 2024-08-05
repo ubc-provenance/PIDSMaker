@@ -138,5 +138,7 @@ triage :
   tracing:
     used_method: depimpact
     depimpact:
+      used_method: component
       score_method: degree
       workers: 8
+      visualize: False

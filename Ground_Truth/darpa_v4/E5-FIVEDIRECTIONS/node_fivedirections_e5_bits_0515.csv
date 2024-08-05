@@ -1,0 +1,54 @@
+644D3F91-455A-4297-BE26-124A3C2C608D,{'subject': 'None None'},9842177
+258FFF6C-FB16-404D-BF2F-3E12FAF88A14,{'subject': 'None None'},9840645
+82D9C7ED-1AA0-4250-B926-E614D99C54B6,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\ctfhost2.exe.Manifest""}'}",18303623
+A1D2F6B4-1632-4C55-BE4E-9CEB14CA0AA2,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\ctfhost2.exe.Local""}'}",18303624
+8AA65624-312C-42D5-A757-56E01152FC22,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\WINDOWS\\\\\\\\system32\\\\\\\\ctfhost2.exe""}'}",18303626
+1DF9170F-1636-4779-B5D2-D631FC0CDFB5,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Desktop\\\\\\\\20190502_elevate2_windows_Release""}'}",18085902
+CB33D920-F94E-47F1-9E54-16F4A004EF1B,{'subject': 'None None'},9842194
+B399E0AD-7B1D-4DD7-B932-FBFC05219D90,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\screenshot.png""}'}",18303763
+13AA8364-8657-4657-9805-B4598F0EE901,{'subject': 'None None'},9503763
+7628C611-5590-4087-91D7-9DEB38FAC2A9,{'subject': 'None None'},9841942
+546FD034-87A2-4127-A37C-59D84B8FD29E,{'subject': 'None c:\\\\windows\\\\system32\\\\svchost.exe -k netsvcs -p -s BITS'},9504927
+33438FE9-8DDE-4051-8686-89A741C6E5D3,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Program Files\\\\\\\\mozilla\\\\\\\\firefox\\\\\\\\browser\\\\\\\\features\\\\\\\\screenshots@mozilla.org.xpi\\\\\\\\install.rdf""}'}",18724645
+2B30ABE2-066B-4898-A271-671B6E6FE53A,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Program Files\\\\\\\\mozilla\\\\\\\\firefox\\\\\\\\browser\\\\\\\\features\\\\\\\\screenshots@mozilla.org.xpi\\\\\\\\manifest.json""}'}",18724646
+729691ED-694D-4761-8F06-C6A9153B4744,{'subject': 'None None'},5890343
+05BC3954-0759-4325-8461-F1831C92EF7C,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\20190503_sysmon_win10""}'}",18089769
+F98892CE-965D-4BF4-BB2F-59A21FE9EA31,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Program Files\\\\\\\\mozilla\\\\\\\\firefox\\\\\\\\browser\\\\\\\\features\\\\\\\\screenshots@mozilla.org.xpi""}'}",18093097
+CC40E326-A68E-4FF0-8B4B-063B06DD9125,{'subject': 'None None'},9502891
+A87C84E9-A3EC-4206-BB51-6771F750CB33,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\DriverStore\\\\\\\\FileRepository\\\\\\\\sysmon.inf_amd64_4e94e0f31be37f70""}'}",17990760
+DC95E56B-7E91-4B1D-9CB7-415A9D0D9BE9,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\DriverStore\\\\\\\\FileRepository\\\\\\\\sysmon.inf_amd64_4e94e0f31be37f70\\\\\\\\sysmon.inf""}'}",17990761
+8ADE38B8-3CD1-4CC5-8364-C6407E02B4CE,{'subject': 'None None'},9840697
+B2CBA9F2-BC66-495F-AA3A-ABDAC335CA05,{'file': '{NULL}'},18075194
+9373AE61-84FE-461D-80CF-BDB40661299D,{'subject': 'None None'},16698571
+3D98A548-A51A-4E2B-90FA-165E5C89CE0A,{'netflow': '128.55.12.56:49994->215.237.119.171:80'},624855
+B6910D41-5071-481C-AD07-6733A6D4546D,{'netflow': '128.55.12.56:49995->215.237.119.171:80'},624856
+28C7EAE5-61C8-4791-92C7-A27A1EB5D666,{'netflow': '128.55.12.56:49996->215.237.119.171:80'},624857
+6BA63B8D-7AF8-467A-9B1B-3C64B2944BB3,{'netflow': '128.55.12.56:49997->215.237.119.171:80'},624858
+54D6AB5A-1327-41D1-A628-924EF25DA19E,"{'subject': 'None \\""C:\\\\Users\\\\admin\\\\AppData\\\\Local\\\\Temp\\\\ctfhost2.exe\\""'}",9842172
+AB56C140-CDC8-455B-8DAB-56FD25488D06,{'netflow': '128.55.12.56:49998->215.237.119.171:80'},624865
+4651D4B5-E0E2-4627-B67A-E59C7877E9CC,{'netflow': '128.55.12.56:49999->215.237.119.171:80'},624866
+D04432B0-5E33-42A6-94C6-29DA73681796,{'netflow': '128.55.12.56:50000->215.237.119.171:80'},624867
+0A2F6F71-D8AD-46BC-95EC-C5CEBD3BE0DD,{'netflow': '128.55.12.56:50001->215.237.119.171:80'},624868
+5E2B6B39-2436-48DE-A3D5-078C092D6537,{'netflow': '128.55.12.56:50002->215.237.119.171:80'},624869
+F0C8F2A4-8AF7-4752-BF66-BB1B8BCB9BF8,{'netflow': '128.55.12.56:50003->215.237.119.171:80'},624870
+578E58D2-4C22-4B22-8196-DDB438149522,{'netflow': '128.55.12.56:50004->215.237.119.171:80'},624871
+85AEECC9-715C-45EC-AEA6-797A361CC6B2,{'netflow': '128.55.12.56:50005->215.237.119.171:80'},624872
+E5243F9A-B648-43D0-8788-A273BE490CB5,{'netflow': '128.55.12.56:50006->215.237.119.171:80'},624873
+7E919EF7-EDF0-409A-91AA-DEC4254893D0,{'netflow': '128.55.12.56:50007->68.149.51.179:80'},624874
+E7EFB234-8084-4A03-A849-F21E2D15F9F4,{'netflow': '128.55.12.56:50008->68.149.51.179:80'},624875
+321B2BFB-35DE-4823-AA25-C9EA44CE8DC0,{'netflow': '128.55.12.56:50009->68.149.51.179:80'},624876
+3780B371-EF6A-47A4-8AFD-ECB5EFA2CCAA,{'netflow': '128.55.12.56:50010->68.149.51.179:80'},624877
+DB4231AC-EA2F-4118-9CA5-0AED34C183ED,{'netflow': '128.55.12.56:50011->68.149.51.179:80'},624878
+541D4538-EE5F-4D59-B8FC-96DCB207F1E2,{'netflow': '128.55.12.56:50012->68.149.51.179:80'},624879
+B9CD32D0-32B1-4451-952A-BB9C18755CDF,{'netflow': '128.55.12.56:50013->68.149.51.179:80'},624880
+C322C7E1-B3F5-434F-AF4A-FE63E4CC5519,{'netflow': '128.55.12.56:50014->68.149.51.179:80'},624881
+83CE6BD0-9B57-4B1A-8E0F-512861A7F0B5,{'netflow': '128.55.12.56:50015->68.149.51.179:80'},624882
+8C76A0FF-68C0-4BE1-960A-F39DAA5CB140,{'netflow': '128.55.12.56:50016->68.149.51.179:80'},624883
+BF2A7E4A-77D4-445B-A177-438EC368DC37,{'netflow': '128.55.12.56:50017->68.149.51.179:80'},624884
+4FADADC1-A9D7-4E75-A45F-5854D391DE44,{'netflow': '128.55.12.56:50018->113.165.213.253:80'},624885
+578CD1B2-28F1-463C-B631-B518627835A0,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Program Files\\\\\\\\mozilla\\\\\\\\firefox\\\\\\\\browser\\\\\\\\features\\\\\\\\screenshots@mozilla.org.xpi\\\\\\\\install.rdf""}'}",18093174
+B5997726-F695-4A40-9954-4F1189DB4566,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Program Files\\\\\\\\mozilla\\\\\\\\firefox\\\\\\\\browser\\\\\\\\features\\\\\\\\screenshots@mozilla.org.xpi\\\\\\\\manifest.json""}'}",18093175
+FD581CF9-50A3-4DBA-BD22-AE26AC9E5442,"{'subject': 'None \\""C:\\\\Program Files\\\\mozilla\\\\firefox\\\\firefox.exe\\"" '}",9841908
+FDD8EB10-AF26-49C8-A3D0-5025301E094C,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\20190503_sysmon_win10\\\\\\\\sysmon""}'}",18245370
+7BEF4F4E-F712-4F12-84C1-FC411A8AAC6E,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Desktop\\\\\\\\20190502_elevate2_windows_Release\\\\\\\\elevate2_windows_Release""}'}",18244732
+8E191990-0D74-41EF-9C7C-0BD901BB4B26,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\ctfhost2.exe""}'}",18303615

@@ -6,123 +6,145 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
 import numpy as np
+from datetime import datetime
 
 class DEPIMPACT():
-    def __init__(self, graph):
+    def __init__(self, graph, poi, node_to_score, used_method, score_method):
         self.graph = graph
+        self.poi = poi
+        self.used_method = used_method
+        self.score_method = score_method
 
-        self.forward_adj = self._gen_forward_adj_dict()
-        self.backward_adj = self._get_backward_adj_dict()
-        self.degree_scores = self._cal_degree_score()
+        log_with_pid(f"Start trace with args used method: {used_method} and score method: {score_method}")
 
-    def gen_dependency_graph(self, poi):
-        # print(f"Generating dependency graph starting from node {poi}")
-        subgraph_nodes = set()
-        if len(self.backward_adj[poi].keys()) > 0:
-            entry2path = backward_tracing(poi, self.backward_adj)
-            entry2info = {}
-            for entry, pathset in entry2path.items():
-                # if entry == poi:
-                if False:
-                    continue
-                else:
-                    entry2info[entry] = {}
+        if self.score_method == "degree":
+            self.node_scores = self._cal_degree_score()
+        elif self.score_method == "recon_loss":
+            self.node_scores = self._cal_loss_score(node_to_score)
+        elif self.score_method == "degree_recon":
+            degree_scores = self._cal_degree_score()
+            recon_scores = self._cal_loss_score(node_to_score)
+            self.node_scores = self._cal_degree_recon_score(degree_scores, recon_scores)
 
-                    unique_nodes = set()
-                    for edge in list(pathset):
-                        unique_nodes.add(edge[0])
-                        unique_nodes.add(edge[1])
-                    entry2info[entry]['nodes'] = unique_nodes
-
-                    unique_nodes.discard(poi)
-                    node_scores = []
-                    for node in unique_nodes:
-                        node_scores.append(self.degree_scores[node])
-                    if len(node_scores) == 0:
-                        entry2info[entry]['score'] = 0
-                    else:
-                        entry2info[entry]['score'] = sum(node_scores) / len(node_scores)
-            entry_scores = []
-            for e, info in entry2info.items():
-                entry_scores.append((e, info['score']))
-            max_entry_score = max(entry_scores, key=lambda x: x[1])[1]
-            highest_entries = [item for item in entry_scores if item[1] == max_entry_score]
-
-            # print("Entries with the highest score are: ", highest_entries)
-
-            for entry, score in highest_entries:
-                subgraph_nodes |= entry2info[entry]['nodes']
-        else:
-            # print(f'No backward subgraph for poi node {poi}')
-            pass
-
-        if len(self.forward_adj[poi].keys()) > 0:
-            exit2path = forward_tracing(poi, self.forward_adj)
-            exit2info = {}
-            for exit, pathset in exit2path.items():
-                # if exit == poi:
-                if False:
-                    continue
-                else:
-                    exit2info[exit] = {}
-
-                    unique_nodes = set()
-                    for edge in list(pathset):
-                        unique_nodes.add(edge[0])
-                        unique_nodes.add(edge[1])
-                    exit2info[exit]['nodes'] = unique_nodes
-
-                    unique_nodes.discard(poi)
-                    node_scores = []
-                    for node in unique_nodes:
-                        node_scores.append(self.degree_scores[node])
-                    if len(node_scores) == 0:
-                        exit2info[exit]['score'] = 0
-                    else:
-                        exit2info[exit]['score'] = sum(node_scores) / len(node_scores)
-            exit_scores = []
-            for e, info in exit2info.items():
-                exit_scores.append((e, info['score']))
-            max_exit_score = max(exit_scores, key=lambda x: x[1])[1]
-            highest_exits = [item for item in exit_scores if item[1] == max_exit_score]
-
-            # print("Exits with the highest score are: ", highest_exits)
-
-            for exit, score in highest_exits:
-                subgraph_nodes |= exit2info[exit]['nodes']
-        else:
-            # print(f'No forward subgraph for poi node {poi}')
-            pass
-
-        subgraph_nodes.add(poi)
+    def run(self):
+        if self.used_method == "component" or self.used_method == "shortest_path":
+            subgraph_nodes = self.gen_dependency_graph()
+        elif self.used_method == "1-hop" or self.used_method == "2-hop" or self.used_method == "3-hop":
+            subgraph_nodes = self.n_hop_subgraph_nodes()
 
         return subgraph_nodes
 
-    def _gen_forward_adj_dict(self):
-        forward_adj = {}
-        for src, dst, k, attrs in tqdm(self.graph.edges(data=True, keys=True), desc=
-                                       'generating forward_adj dictionary'):
-            if src not in forward_adj:
-                forward_adj[src] = {}
-            if dst not in forward_adj:
-                forward_adj[dst] = {}
-            if dst not in forward_adj[src]:
-                forward_adj[src][dst] = []
-            forward_adj[src][dst].append(attrs['time'])
-        return forward_adj
+    def n_hop_subgraph_nodes(self):
+        graph = self.graph
+        poi = self.poi
+        n = int(self.used_method.split("-")[0])
 
-    def _get_backward_adj_dict(self):
-        backward_adj = {}
-        for src, dst, k, attrs in tqdm(self.graph.edges(data=True, keys=True),desc=
-                                       'generating backward_adj dictionary'):
-            if dst not in backward_adj:
-                backward_adj[dst] = {}
-            if src not in backward_adj:
-                backward_adj[src] = {}
-            if src not in backward_adj[dst]:
-                backward_adj[dst][src] = []
-            backward_adj[dst][src].append(attrs['time'])
-        return backward_adj
+        subgraph_nodes = get_n_hop_neighbors(graph, poi, n)
+
+        return subgraph_nodes
+
+    def gen_dependency_graph(self):
+
+        poi_in_graph = self.poi
+
+        if self.used_method == "shortest_path":
+            self.dag, self.backward_poi = self._convert_DAG()
+            backward_poi = self.backward_poi
+            forward_poi = str(self.poi) + '-' + str(0)
+        elif self.used_method == "component":
+            self.dag, self.backward_poi = self._convert_DAG()
+            backward_poi = self.backward_poi
+            forward_poi = str(self.poi) + '-' + str(0)
+
+        subgraph_nodes = set()
+
+        if self.dag.in_degree(backward_poi) > 0:
+            if self.used_method == "shortest_path":
+                entry2path = dag_backward_tracing_shortest_path(backward_poi, self.dag)
+            elif self.used_method == "component":
+                entry2path = dag_backward_tracing_component(backward_poi, self.dag)
+            entry2nodes = {}
+            for entry, paths in entry2path.items():
+                entry_in_graph = entry.split('-')[0]
+                if entry_in_graph not in entry2nodes:
+                    entry2nodes[entry_in_graph] = set()
+
+                nodes_in_dag = set()
+                for path in paths:
+                    nodes_in_dag |= set(path)
+
+                for node_in_dag in list(nodes_in_dag):
+                    node_in_graph = node_in_dag.split('-')[0]
+                    entry2nodes[entry_in_graph].add(node_in_graph)
+
+            entry2score = {}
+            for entry, nodes in entry2nodes.items():
+                nodes.discard(poi_in_graph)
+                node_scores = []
+                for node in nodes:
+                    node_scores.append(self.node_scores[node])
+
+                if len(node_scores) == 0:
+                    entry2score[entry] = 0
+                else:
+                    entry2score[entry] = sum(node_scores) / len(node_scores)
+
+            entry_scores = []
+            for e, score in entry2score.items():
+                entry_scores.append((e, score))
+            max_entry_score = max(entry_scores, key=lambda x: x[1])[1]
+            highest_entries = [item[0] for item in entry_scores if item[1] == max_entry_score]
+
+            for he in highest_entries:
+                subgraph_nodes |= entry2nodes[he]
+        else:
+            print(f"POI {backward_poi} is an entry node, skip backward tracing.")
+
+        if self.dag.out_degree(forward_poi) > 0:
+            if self.used_method == "shortest_path":
+                exit2path = dag_forward_tracing_shortest_path(forward_poi, self.dag)
+            elif self.used_method == "component":
+                exit2path = dag_forward_tracing_component(forward_poi, self.dag)
+            exit2nodes = {}
+            for exit, paths in exit2path.items():
+                exit_in_graph = exit.split('-')[0]
+                if exit_in_graph not in exit2nodes:
+                    exit2nodes[exit_in_graph] = set()
+
+                nodes_in_dag = set()
+                for path in paths:
+                    nodes_in_dag |= set(path)
+
+                for node_in_dag in list(nodes_in_dag):
+                    node_in_graph = node_in_dag.split('-')[0]
+                    exit2nodes[exit_in_graph].add(node_in_graph)
+
+            exit2score = {}
+            for exit, nodes in exit2nodes.items():
+                nodes.discard(poi_in_graph)
+                node_scores = []
+                for node in nodes:
+                    node_scores.append(self.node_scores[node])
+
+                if len(node_scores) == 0:
+                    exit2score[exit] = 0
+                else:
+                    exit2score[exit] = sum(node_scores) / len(node_scores)
+
+            exit_scores = []
+            for e, score in exit2score.items():
+                exit_scores.append((e, score))
+            max_exit_score = max(exit_scores, key=lambda x: x[1])[1]
+            highest_entries = [item[0] for item in exit_scores if item[1] == max_exit_score]
+
+            for he in highest_entries:
+                subgraph_nodes |= exit2nodes[he]
+        else:
+            print(f"POI {forward_poi} is an exit node, skip forward tracing.")
+
+        subgraph_nodes.add(poi_in_graph)
+
+        return subgraph_nodes
 
     def _cal_degree_score(self):
         out_to_in = {}
@@ -134,6 +156,81 @@ class DEPIMPACT():
             else:
                 out_to_in[node] = int(out_degrees[node]) / int(in_degrees[node])
         return out_to_in
+
+    def _cal_loss_score(self, node_to_score):
+        node_scores = {}
+        for node in tqdm(self.graph.nodes(), desc="calculating degree score"):
+            if str(node) in node_scores:
+                node_scores[node] = int(node_to_score[str(node)])
+            else:
+                node_scores[node] = 0
+        return node_scores
+
+    def _convert_DAG(self):
+        graph = self.graph
+        edges = []
+        node_version = {}
+        for u, v, k, data in graph.edges(keys=True, data=True):
+            edges.append((u, v, int(data['time'])))
+            if u not in node_version:
+                node_version[u] = 0
+            if v not in node_version:
+                node_version[v] = 0
+
+        sorted_edges = sorted(edges, key=lambda x: x[2])
+
+        new_nodes = set()
+        new_edges = []
+        visited = set()
+        for u, v, t in sorted_edges:
+
+            if u == v:
+                continue
+
+            src = str(u) + '-' + str(node_version[u])
+            visited.add(u)
+            new_nodes.add(src)
+
+            if v not in visited:
+                dst = str(v) + '-' + str(node_version[v])
+                visited.add(v)
+                new_nodes.add(dst)
+                new_edges.append((src, dst, {'time': int(t)}))
+            else:
+                dst_current = str(v) + '-' + str(node_version[v])
+                dst_new = str(v) + '-' + str(node_version[v] + 1)
+                node_version[v] += 1
+                new_nodes.add(dst_new)
+                new_edges.append((src, dst_new, {'time': int(t)}))
+                new_edges.append((dst_current, dst_new, {'time': int(t)}))
+
+        DAG = nx.DiGraph()
+        DAG.add_nodes_from(list(new_nodes))
+        DAG.add_edges_from(new_edges)
+
+        old_poi = self.poi
+        new_poi = str(old_poi) + '-' + str(node_version[old_poi])
+
+        return DAG, new_poi
+
+    def _cal_degree_recon_score(self,degree_scores, recon_scores):
+        nid_list = []
+        degree_score_list = []
+        recon_score_list = []
+        for node, score in degree_scores.items():
+            nid_list.append(node)
+            degree_score_list.append(score)
+            recon_score_list.append(recon_scores[node])
+
+        normalized_degree_score_list = min_max_normalize(degree_score_list)
+        normalized_recon_score_list = min_max_normalize(recon_score_list)
+
+        node_scores = {}
+        for i in range(len(nid_list)):
+            node_scores[nid_list[i]] = normalized_degree_score_list[i] + normalized_recon_score_list[i]
+
+        return node_scores
+
 
 def backward_tracing(poi: str, backward_adj: dict):
     queue = [(poi, float('inf'),[])]
@@ -184,6 +281,91 @@ def forward_tracing(poi: str, forward_adj: dict):
 
     return exit2path
 
+def dag_backward_tracing_shortest_path(poi: str, dag: nx.DiGraph):
+    entries = [n for n in dag.nodes() if dag.in_degree(n) == 0]
+    entry2path = {}
+    for e in entries:
+        # all_paths = list(nx.all_simple_paths(dag, e, poi))
+        try:
+            shortest_path = nx.shortest_path(dag, e, poi)
+            all_paths = [shortest_path]
+        except:
+            all_paths = [[]]
+        entry2path[e] = all_paths
+    return entry2path
+
+def dag_forward_tracing_shortest_path(poi: str, dag: nx.DiGraph):
+    exits = [n for n in dag.nodes() if dag.out_degree(n) == 0]
+    exit2path = {}
+    for e in exits:
+        # all_paths = list(nx.all_simple_paths(dag, poi, e))
+        try:
+            shortest_path = nx.shortest_path(dag, e, poi)
+            all_paths = [shortest_path]
+        except:
+            all_paths = [[]]
+        exit2path[e] = all_paths
+    return exit2path
+
+def dag_backward_tracing_component(poi: str, dag: nx.DiGraph):
+    # extract backward dependency graph
+    ancestors_of_poi = find_ancestors(dag, poi)
+    dep_graph = dag.subgraph(ancestors_of_poi).copy()
+    entries = [n for n in dag.nodes() if dep_graph.in_degree(n) == 0]
+
+    # generate entry2path
+    entry2path = {}
+    for e in entries:
+        descendants_of_entry = find_descendants(dep_graph, e)
+        common_nodes = descendants_of_entry & ancestors_of_poi
+        entry2path[e] = [list(common_nodes)]
+    return entry2path
+
+def dag_forward_tracing_component(poi: str, dag: nx.DiGraph):
+    # extract forward dependency graph
+    descendants_of_poi = find_descendants(dag, poi)
+    dep_graph = dag.subgraph(descendants_of_poi).copy()
+    exits = [n for n in dag.nodes() if dep_graph.out_degree(n) == 0]
+
+    # generate exit2path
+    exit2path = {}
+    for e in exits:
+        ancestors_of_exit = find_ancestors(dep_graph, e)
+        common_nodes = ancestors_of_exit & descendants_of_poi
+        exit2path[e] = [list(common_nodes)]
+    return exit2path
+
+def find_ancestors(graph, node):
+    ancestors = set()  # 用于记录已经访问过的节点
+    stack = [node]     # 初始化栈，开始深度优先搜索
+    while stack:
+        current = stack.pop()  # 弹出栈顶节点
+        for parent in graph.predecessors(current):  # 遍历所有前驱节点
+            if parent not in ancestors:  # 如果前驱节点尚未访问
+                ancestors.add(parent)    # 将其添加到已访问集合
+                stack.append(parent)     # 并将其压入栈中以继续搜索
+    ancestors.add(node)
+    return ancestors  # 返回所有祖先节点
+
+def find_descendants(graph, node):
+    descendants = set()  # 用于记录已经访问过的节点
+    stack = [node]       # 初始化栈，开始深度优先搜索
+    while stack:
+        current = stack.pop()  # 弹出栈顶节点
+        for child in graph.successors(current):  # 遍历所有后继节点
+            if child not in descendants:  # 如果后继节点尚未访问
+                descendants.add(child)    # 将其添加到已访问集合
+                stack.append(child)       # 并将其压入栈中以继续搜索
+    descendants.add(node)
+    return descendants  # 返回所有后代节点
+
+def min_max_normalize(lst):
+    min_val = min(lst)
+    max_val = max(lst)
+    if min_val == max_val:
+        return [0.0 for _ in lst]
+    return [(x - min_val) / (max_val - min_val) for x in lst]
+
 def find_min_larger_than(sequence, value):
     min_larger = None
     for num in sequence:
@@ -199,6 +381,29 @@ def find_max_smaller_than(sequence, value):
             if max_smaller is None or num > max_smaller:
                 max_smaller = num
     return max_smaller
+
+def log_with_pid(msg: str, *args):
+    pid = os.getpid()
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp} - (pid: {pid}) - {msg}", *args)
+
+def get_n_hop_neighbors(graph, node, n):
+
+    neighbors = set()
+    current_level = {node}
+
+    for _ in range(n):
+        next_level = set()
+        for current_node in current_level:
+            next_level.update(graph.successors(current_node))
+            next_level.update(graph.predecessors(current_node))
+        neighbors.update(next_level)
+        current_level = next_level
+
+    neighbors.add(node)
+
+    return neighbors
 
 def visualize_dependency_graph(dependency_graph,
                                ground_truth_nids,
@@ -232,7 +437,7 @@ def visualize_dependency_graph(dependency_graph,
     visual_style = {}
     visual_style["bbox"] = (700, 700)
     visual_style["margin"] = 40
-    visual_style["layout"] = G.layout("kk")
+    visual_style["layout"] = G.layout("kk", maxiter=100)
 
     visual_style["vertex_size"] = 13
     visual_style["vertex_width"] = 13
@@ -275,5 +480,7 @@ def visualize_dependency_graph(dependency_graph,
     svg = os.path.join(out_dir, f"{out_file}.png")
     plt.savefig(svg)
     plt.close(fig)
+
+    log(f"Figure saved to {svg}")
 
 
