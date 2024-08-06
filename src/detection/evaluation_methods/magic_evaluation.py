@@ -71,7 +71,7 @@ def main(cfg):
     torch.save(results, results_file)
     torch.save(stats, stats_file)
 
-    stats["epoch"] = cfg.featurization.embed_nodes.magic.max_epoch
+    stats["epoch"] = cfg.featurization.embed_edges.magic.max_epoch
     stats["precision_recall_img"] = wandb.Image(
         os.path.join(out_dir, f"{model_epoch_dir}.png"))
     stats["scores_img"] = wandb.Image(

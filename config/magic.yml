@@ -58,6 +58,8 @@ featurization:
       use_node_types: False
       use_cmd: True
       use_port: False
+  embed_edges:
+    include_edge_type: True
     magic:
       num_hidden: 64
       max_epoch: 10
@@ -68,8 +70,6 @@ featurization:
       optimizer: adam
       lr: 0.001
       weight_decay: 0.0005
-  embed_edges:
-    include_edge_type: True
 
 detection:
   gnn_training:

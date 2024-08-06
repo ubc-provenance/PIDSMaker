@@ -11,22 +11,22 @@ import torch
 import os
 
 def main(cfg):
-    checkpoints_dir = cfg.featurization.embed_nodes.magic._magic_checkpoints_dir
+    checkpoints_dir = cfg.featurization.embed_edges.magic._magic_checkpoints_dir
     os.makedirs(checkpoints_dir, exist_ok=True)
 
     device = get_device(cfg)
 
     log("Get training args")
     train_args = CN()
-    train_args.num_hidden = cfg.featurization.embed_nodes.magic.num_hidden
-    train_args.num_layers = cfg.featurization.embed_nodes.magic.num_layers
-    train_args.max_epoch = cfg.featurization.embed_nodes.magic.max_epoch
-    train_args.negative_slope = cfg.featurization.embed_nodes.magic.negative_slope
-    train_args.mask_rate = cfg.featurization.embed_nodes.magic.mask_rate
-    train_args.alpha_l = cfg.featurization.embed_nodes.magic.alpha_l
-    train_args.optimizer = cfg.featurization.embed_nodes.magic.optimizer
-    train_args.lr = cfg.featurization.embed_nodes.magic.lr
-    train_args.weight_decay = cfg.featurization.embed_nodes.magic.weight_decay
+    train_args.num_hidden = cfg.featurization.embed_edges.magic.num_hidden
+    train_args.num_layers = cfg.featurization.embed_edges.magic.num_layers
+    train_args.max_epoch = cfg.featurization.embed_edges.magic.max_epoch
+    train_args.negative_slope = cfg.featurization.embed_edges.magic.negative_slope
+    train_args.mask_rate = cfg.featurization.embed_edges.magic.mask_rate
+    train_args.alpha_l = cfg.featurization.embed_edges.magic.alpha_l
+    train_args.optimizer = cfg.featurization.embed_edges.magic.optimizer
+    train_args.lr = cfg.featurization.embed_edges.magic.lr
+    train_args.weight_decay = cfg.featurization.embed_edges.magic.weight_decay
 
     set_random_seed(0)
 
