@@ -123,7 +123,7 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
 
     # Define marker styles for each type
     marker_styles = {
-        'process': 's',   # Square
+        'subject': 's',   # Square
         'file': 'o',      # Circle
         'netflow': 'D'    # Diamond
     }
