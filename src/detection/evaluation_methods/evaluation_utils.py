@@ -106,28 +106,50 @@ def plot_simple_scores(scores, y_truth, out_file):
 
 def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
     node_to_path = get_node_to_path_and_type(cfg)
-    paths = []
+    paths, types = [], []
     # Prints the path if it exists, else tries to print the cmd line
     for n in nodes:
+        types.append(node_to_path[n]["type"])
         path = node_to_path[n]["path"]
         if path == "None":
-            paths.append(node_to_path[n]["cmd"] if cmd in node_to_path[n] else path)
+            paths.append(node_to_path[n]["cmd"] if "cmd" in node_to_path[n] else path)
         else:
             paths.append(path)
-    
-    scores_0 = [score for score, label in zip(scores, y_truth) if label == 0]
-    scores_1 = [score for score, label in zip(scores, y_truth) if label == 1]
+            
+    # Convert data to numpy arrays for easy manipulation
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+    types = np.array(types)
+
+    # Define marker styles for each type
+    marker_styles = {
+        'process': 's',   # Square
+        'file': 'o',      # Circle
+        'netflow': 'D'    # Diamond
+    }
+
+    # Separate the scores based on labels
+    scores_0 = scores[y_truth == 0]
+    scores_1 = scores[y_truth == 1]
+    types_0 = types[y_truth == 0]
+    types_1 = types[y_truth == 1]
     paths_0 = [path for path, label in zip(paths, y_truth) if label == 0]
     paths_1 = [path for path, label in zip(paths, y_truth) if label == 1]
 
-    # Positions on the y-axis for the scatter plot (can be zero or any other constant)
-    y_zeros = [0] * len(scores_0)  # All zeros at y=0
-    y_ones = [1] * len(scores_1)  # All ones at y=1, you can also keep them at y=0 if you prefer
+    plt.figure(figsize=(12, 6))
+    
+    red = (155/255, 44/255, 37/255)
+    green = (62/255, 126/255, 42/255)
 
-    # Creating the plot
-    plt.figure(figsize=(12, 6))  # Increase the width to make space for text
-    plt.scatter(scores_0, y_zeros, color='green', label='Label 0')
-    plt.scatter(scores_1, y_ones, color='red', label='Label 1')
+    # Plot each type with a different marker for Label 0
+    for t in marker_styles.keys():
+        plt.scatter(scores_0[types_0 == t], [0]*sum(types_0 == t), 
+                    marker=marker_styles[t], color=green, label=f'Label 0 - {t}')
+
+    # Plot each type with a different marker for Label 1
+    for t in marker_styles.keys():
+        plt.scatter(scores_1[types_1 == t], [1]*sum(types_1 == t), 
+                    marker=marker_styles[t], color=red, label=f'Label 1 - {t}')
 
     # Adding labels and title
     plt.xlabel('Scores')
@@ -150,12 +172,12 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
         y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
-        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color='green')
+        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
 
     # Annotate the top scores for label 1
     for i, (score, path, _, max_tw_idx) in enumerate(top_1):
         y_position = 1 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
-        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color='red')
+        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
         
     plt.text(max(scores) // 3, 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
     plt.text(max(scores) // 3, 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
