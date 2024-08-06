@@ -106,7 +106,14 @@ def plot_simple_scores(scores, y_truth, out_file):
 
 def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
     node_to_path = get_node_to_path_and_type(cfg)
-    paths = [node_to_path[n]["path"] for n in nodes]
+    paths = []
+    # Prints the path if it exists, else tries to print the cmd line
+    for n in nodes:
+        path = node_to_path[n]["path"]
+        if path == "None":
+            paths.append(node_to_path[n]["cmd"] if cmd in node_to_path[n] else path)
+        else:
+            paths.append(path)
     
     scores_0 = [score for score, label in zip(scores, y_truth) if label == 0]
     scores_1 = [score for score, label in zip(scores, y_truth) if label == 1]

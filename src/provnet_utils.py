@@ -511,7 +511,7 @@ def get_node_to_path_and_type(cfg):
         queries = {
             "file": "SELECT index_id, path FROM file_node_table;",
             "netflow": "SELECT index_id, src_addr, dst_addr, src_port, dst_port FROM netflow_node_table;",
-            "subject": "SELECT index_id, path FROM subject_node_table;"
+            "subject": "SELECT index_id, path, cmd FROM subject_node_table;"
         }
         node_to_path_type = {}
         for node_type, query in queries.items():
@@ -521,9 +521,12 @@ def get_node_to_path_and_type(cfg):
                 if node_type == "netflow":
                     index_id, src_addr, dst_addr, src_port, dst_port = row
                     node_to_path_type[index_id] = {"path": f"{str(src_addr)}:{str(src_port)}->{str(dst_addr)}:{str(dst_port)}", "type": node_type}
-                else:
+                elif node_type == "file":
                     index_id, path = row
                     node_to_path_type[index_id] = {"path": str(path), "type": node_type}
+                elif node_type == "subject":
+                    index_id, path, cmd = row
+                    node_to_path_type[index_id] = {"path": str(path), "type": node_type, "cmd": cmd}
 
         torch.save(node_to_path_type, out_file)
         connect.close()
