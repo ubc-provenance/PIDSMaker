@@ -125,9 +125,13 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
+      use_kmeans: True
+      kmeans_top_K: 30
     node_tw_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
+      use_kmeans: True
+      kmeans_top_K: 3
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue

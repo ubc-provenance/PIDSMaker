@@ -14,6 +14,7 @@ from data_utils import *
 from config import *
 import igraph as ig
 import csv
+from sklearn.cluster import KMeans
 
 import labelling
 
@@ -461,3 +462,35 @@ def viz_graph(
 
     print(f"Graph {svg} saved, with attack nodes:\t {','.join([str(n) for n in source_nodes])}.")
     return {out_file: wandb.Image(svg)}
+
+def compute_kmeans_labels(results, topk_K):
+    nodes_to_score = sorted([(node_id, d["score"]) for node_id, d in results.items()], key=lambda x: x[1])
+    nodes_to_score = np.array(nodes_to_score, dtype=object)
+    score_values = nodes_to_score[:, 1].astype(float)
+
+    last_N_scores = score_values[-topk_K:]
+    last_N_nodes = nodes_to_score[-topk_K:]
+
+    kmeans = KMeans(n_clusters=2, random_state=0)
+    kmeans.fit(last_N_scores.reshape(-1, 1))
+
+    centroids = kmeans.cluster_centers_.flatten()
+    highest_cluster_index = np.argmax(centroids)
+
+    # Extract scores from the highest value cluster
+    highest_value_cluster_indices = np.where(kmeans.labels_ == highest_cluster_index)[0]
+    highest_value_cluster = last_N_nodes[highest_value_cluster_indices]
+
+    # Extract scores and nodes from the highest cluster
+    cluster_scores = highest_value_cluster[:, 1].astype(float)
+    anomaly_nodes = highest_value_cluster[:, 0]
+
+    print("Anomalous scores (high values):", cluster_scores)
+    print("Anomalous nodes:", anomaly_nodes)
+    
+    for idx in highest_value_cluster_indices:
+        global_idx = len(score_values) - topk_K + idx
+        node_id = nodes_to_score[global_idx, 0]
+        results[node_id]["y_hat"] = 1
+        
+    return results

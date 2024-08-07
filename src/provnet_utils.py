@@ -34,6 +34,7 @@ from sklearn.metrics import (
     roc_curve,
     precision_recall_curve,
     average_precision_score as ap_score,
+    balanced_accuracy_score,
 )
 
 import re
@@ -390,6 +391,9 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     try:
         ap=ap_score(y_test, scores)
     except: ap=float("nan")
+    try:
+        balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
+    except: balanced_acc=float("nan")
     
     log(f'total num: {len(y_test)}')
     log(f'tn: {tn}')
@@ -404,6 +408,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     log(f"fpr: {fpr}")
     log(f"fscore: {fscore}")
     log(f"accuracy: {accuracy}")
+    log(f"balanced acc: {balanced_acc}")
     log(f"auc_val: {auc_val}")
 
     stats = {
@@ -413,6 +418,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "fscore": round(fscore, 5),
         "ap": round(ap, 5),
         "accuracy": round(accuracy, 5),
+        "balanced_acc": round(balanced_acc, 5),
         "auc_val": round(auc_val, 5),
         "tp": tp,
         "fp": fp,

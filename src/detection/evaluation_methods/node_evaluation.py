@@ -40,15 +40,23 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
                 if loss > node_to_max_loss_tw[dstnode]:
                     node_to_max_loss_tw[dstnode] = tw
                     
+    use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_losses.items():
         pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.node_evaluation.threshold_method)
 
         results[node_id]["score"] = pred_score
-        results[node_id]["y_hat"] = int(pred_score > thr)
-        results[node_id]["y_true"] = int(node_id in ground_truth_nids)
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw[node_id]
-
+        results[node_id]["y_true"] = int(node_id in ground_truth_nids)
+        
+        if use_kmeans: # in this mode, we add the label after
+            results[node_id]["y_hat"] = 0
+        else:
+            results[node_id]["y_hat"] = int(pred_score > thr)
+        
+    if use_kmeans:
+        results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)
+        
     return results
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
