@@ -104,7 +104,8 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="Orthrus_V1_bis",
+        # project="Orthrus_V1_bis",
+        project="merge_flash",
         name=exp_name,
         tags=tags,
     )
