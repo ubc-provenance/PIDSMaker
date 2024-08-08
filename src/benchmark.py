@@ -65,13 +65,13 @@ def main(cfg, **kwargs):
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
     t5 = time.time()
-    if should_restart["evaluation"]:
-        evaluation.main(cfg)
+    # if should_restart["evaluation"]:
+    #     evaluation.main(cfg)
     t6 = time.time()
 
     # Triage
-    if should_restart["tracing"]:
-        tracing.main(cfg)
+    # if should_restart["tracing"]:
+    #     tracing.main(cfg)
     t7 = time.time()
 
     time_consumption = {

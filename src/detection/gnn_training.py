@@ -1,6 +1,7 @@
 from config import *
 from .training_methods import (
     orthrus_gnn_training,
+    flash_training,
 )
 
 def main(cfg):
@@ -9,6 +10,8 @@ def main(cfg):
         orthrus_gnn_training.main(cfg)
     elif method == 'magic':
         set_task_to_done(cfg.detection.gnn_training._task_path)
+    elif method == 'flash':
+        flash_training.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")
 

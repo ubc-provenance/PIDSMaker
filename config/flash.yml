@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    used_method: magic
+    used_method: orthrus
     use_all_files: False
     time_window_size: 15.0
     use_hashed_label: True
@@ -12,8 +12,14 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
-    used_method: feature_word2vec
+    used_method: flash
     use_seed: True
+    flash:
+      vector_size: 30
+      window: 5
+      min_count: 1
+      workers: 8
+      epochs: 30
     temporal_rw:
       walk_length: 30
       num_walks: 10
@@ -73,13 +79,19 @@ featurization:
 
 detection:
   gnn_training:
-    used_method: magic
+    used_method: flash
     use_seed: True
     num_epochs: 6
     lr: 0.00001
     weight_decay: 0.00001
     node_hid_dim: 128
     node_out_dim: 64
+    flash:
+      in_channel: 30
+      out_channel: 3
+      lr: 0.01
+      weight_decay: 0.0005
+      epochs: 20
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
