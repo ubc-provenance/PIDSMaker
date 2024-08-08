@@ -69,6 +69,9 @@ def main(cfg):
             log(f"{k}: {v}")
         log("==" * 20)
 
+        wandb.log(best_stats)
+        wandb.log(new_stats)
+
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
