@@ -80,9 +80,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     results = get_node_predictions(val_tw_path, test_tw_path, cfg)
     node_to_path = get_node_to_path_and_type(cfg)
 
-    os.makedirs(cfg.detection.evaluation.node_evaluation._precision_recall_dir, exist_ok=True)
-    pr_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
-    scores_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png")
+    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    os.makedirs(out_dir, exist_ok=True)
+    pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
+    scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     
     log("Analysis of malicious nodes:")
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
@@ -104,5 +105,11 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
     stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
+    
+    results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
+    stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+
+    torch.save(results, results_file)
+    torch.save(stats, stats_file)
     
     return stats
