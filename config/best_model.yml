@@ -1,7 +1,8 @@
 preprocessing:
   build_graphs:
-    use_all_files: True
-    time_window_size: 1.0
+    used_method: magic
+    use_all_files: False
+    time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
       subject: type, path, cmd_line
@@ -38,7 +39,7 @@ featurization:
     word2vec:
       walk_length: 30
       num_walks: 10
-      epochs: 5 
+      epochs: 5
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
@@ -59,9 +60,20 @@ featurization:
       use_port: False
   embed_edges:
     include_edge_type: True
+    magic:
+      num_hidden: 64
+      max_epoch: 10
+      num_layers: 3
+      negative_slope: 0.2
+      mask_rate: 0.5
+      alpha_l: 3.0
+      optimizer: adam
+      lr: 0.001
+      weight_decay: 0.0005
 
 detection:
   gnn_training:
+    used_method: magic
     use_seed: True
     num_epochs: 6
     lr: 0.00001
