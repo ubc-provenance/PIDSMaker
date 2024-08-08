@@ -73,7 +73,7 @@ featurization:
 
 detection:
   gnn_training:
-    used_method: magic
+    used_method: orthrus
     use_seed: True
     num_epochs: 6
     lr: 0.00001
