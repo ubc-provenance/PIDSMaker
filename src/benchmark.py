@@ -26,6 +26,7 @@ from triage import (
     tracing,
 )
 
+import time
 
 def main(cfg, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
@@ -39,30 +40,59 @@ def main(cfg, **kwargs):
     log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
     log(("*" * 100) + "\n")
 
+    t0 = time.time()
 
     # Preprocessing
     if should_restart["build_graphs"]:
         build_graphs.main(cfg)
+
+    t1 = time.time()
     
     # Featurization
     if should_restart["embed_nodes"]:
         embed_nodes.main(cfg)
+    t2 = time.time()
     if should_restart["embed_edges"]:
         embed_edges.main(cfg)
+    t3 = time.time()
 
     # Detection
     if should_restart["gnn_training"]:
         gnn_training.main(cfg, **kwargs)
         torch.cuda.empty_cache()
         return
+    t4 = time.time()
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
+    t5 = time.time()
     if should_restart["evaluation"]:
         evaluation.main(cfg)
+    t6 = time.time()
 
     # Triage
     if should_restart["tracing"]:
         tracing.main(cfg)
+    t7 = time.time()
+
+    time_consumption = {
+        "total": t7 - t0,
+        "build_graphs": t1 - t0,
+        "embed_nodes": t2 - t1,
+        "embed_edges": t3 - t2,
+        "gnn_training": t4 - t3,
+        "gnn_testing": t5 - t4,
+        "evaluation": t6 - t5,
+        "tracing": t7 - t6,
+    }
+
+    log("==" * 30)
+    log("Run finished. Time consumed in each step:")
+    for k, v in time_consumption.items():
+        log(f"{k}: {v} s")
+
+    log("==" * 30)
+    wandb.log(time_consumption)
+
 
 
 if __name__ == '__main__':
