@@ -9,6 +9,7 @@ from .evaluation_methods import (
     queue_evaluation,
     tw_evaluation,
     node_tw_evaluation,
+    magic_evaluation,
 )
 from data_utils import *
 from provnet_utils import log
@@ -53,6 +54,8 @@ def main(cfg):
         standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
     elif method == "queue_evaluation":
         queue_evaluation.main(cfg)
+    elif method == "magic_evaluation":
+        magic_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 

@@ -280,6 +280,75 @@ def compute_tw_labels(cfg):
 
     return tw_to_malicious_nodes
 
+def datetime_to_ns_time_US(nano_date_str):
+    date = nano_date_str.split('.')[0]
+    nanos = nano_date_str.split('.')[1]
+
+    tz = pytz.timezone('US/Eastern')
+    timeArray = time.strptime(date, "%Y-%m-%d %H:%M:%S")
+    dt = datetime.fromtimestamp(mktime(timeArray))
+    timestamp = tz.localize(dt)
+    timestamp = timestamp.timestamp()
+    timeStamp = str(timestamp).split('.')[0] + nanos
+    return int(timeStamp)
+
+def compute_tw_labels_for_magic(cfg):
+    """
+    Gets the malcious node IDs present in each time window.
+    """
+    out_path = cfg.preprocessing.build_graphs._tw_labels
+    out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
+    uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
+
+    if os.path.exists(out_file):
+        os.remove(out_file)
+
+    if not os.path.exists(out_file):
+        log(f"Computing time-window labels...")
+        os.makedirs(out_path, exist_ok=True)
+
+        t_to_node = labelling.get_t2malicious_node(cfg)
+
+        base_dir = cfg.preprocessing.build_graphs.magic_graphs_dir
+        test_tw = get_all_files_from_folders(base_dir, cfg.dataset.test_files)
+
+        num_found_event_labels = 0
+        tw_to_malicious_nodes = defaultdict(list)
+        for i, tw in enumerate(test_tw):
+            filename = tw.split('/')[-1]
+            start_time = filename.split('~')[0]
+            end_time = filename.split('~')[1]
+
+            start = datetime_to_ns_time_US(start_time)
+            end = datetime_to_ns_time_US(end_time)
+
+            for t, node_ids in t_to_node.items():
+                if start < t < end:
+                    for node_id in node_ids:  # src, dst, or [src, dst] malicious nodes
+                        tw_to_malicious_nodes[i].append(node_id)
+                    num_found_event_labels += 1
+
+        log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
+        torch.save(tw_to_malicious_nodes, out_file)
+
+    # Used to retrieve node ID from node raw UUID
+    # node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
+
+    # uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
+
+    # Create a mapping TW number => malicious node IDs
+    tw_to_malicious_nodes = torch.load(out_file)
+    for tw, nodes in tw_to_malicious_nodes.items():
+        unique_nodes, counts = np.unique(nodes, return_counts=True)
+        node_to_count = {node: count for node, count in zip(unique_nodes, counts)}
+        log(f"TW {tw} -> {len(unique_nodes)} malicious nodes + {len(nodes)} malicious edges")
+
+        node_to_count = {uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()}
+        pprint(node_to_count, width=1)
+        tw_to_malicious_nodes[tw] = node_to_count
+
+    return tw_to_malicious_nodes
+
 def viz_graph(
     edge_index,
     edge_scores,
