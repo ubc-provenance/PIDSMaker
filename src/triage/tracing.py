@@ -27,6 +27,27 @@ def get_new_stats(tw_to_info,
 
     return new_stats
 
+def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
+    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    results = {}
+
+    for tw, timestr in tw_to_timestr.items():
+        if tw not in results:
+            results[tw] = {}
+
+        day = timestr[8:10].lstrip('0')
+        graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
+        graph = torch.load(graph_dir)
+
+        for node_id in graph.nodes():
+            if node_id not in results[tw]:
+                results[tw][node_id] = {}
+
+            results[tw][node_id]['score'] = results_without_tw[node_id]['score']
+            results[tw][node_id]['y_hat'] = results_without_tw[node_id]['y_hat']
+            results[tw][node_id]['y_true'] = results_without_tw[node_id]['y_true']
+    return results
+
 def main(cfg):
     in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
@@ -42,13 +63,19 @@ def main(cfg):
             best_stats = stats
             best_model_epoch = model_epoch_dir
 
-    results_file = os.path.join(in_dir, f"result_{best_model_epoch}.pth")
-    results = torch.load(results_file)
-
     sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'test')))
     tw_to_time = {}
     for tw, tw_file in enumerate(sorted_tw_paths):
         tw_to_time[tw] = tw_file[:-20]
+
+    method = cfg.detection.evaluation.used_method.strip()
+
+    results_file = os.path.join(in_dir, f"result_{best_model_epoch}.pth")
+    if method == "node_tw_evaluation":
+        results = torch.load(results_file)
+    elif method == "node_evaluation":
+        results_without_tw = torch.load(results_file)
+        results = transfer_results_of_node_evaluation(results_without_tw, tw_to_time, cfg)
 
     if cfg.triage.tracing.used_method == 'depimpact':
         tw_to_info, all_traced_nodes = depimpact.main(results, tw_to_time, cfg)
