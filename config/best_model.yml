@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    used_method: magic
+    used_method: orthrus
     use_all_files: False
     time_window_size: 15.0
     use_hashed_label: True
