@@ -94,7 +94,7 @@ def main(cfg):
         log(f"After triage:")
         for k, v in new_stats.items():
             log(f"{k}: {v}")
-            stats_traced[k + '_after_tracing'] = v
+            stats_traced["tracing_" + k] = v
         log("==" * 20)
 
         # wandb.log(best_stats)
