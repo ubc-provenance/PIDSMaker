@@ -1,5 +1,6 @@
 from config import *
 from provnet_utils import *
+from collections import defaultdict
 import wandb
 import os
 import torch
@@ -29,23 +30,21 @@ def get_new_stats(tw_to_info,
 
 def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
-    results = {}
+    results = defaultdict(lambda: defaultdict(dict))
 
     for tw, timestr in tw_to_timestr.items():
-        if tw not in results:
-            results[tw] = {}
-
         day = timestr[8:10].lstrip('0')
         graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
         graph = torch.load(graph_dir)
 
         for node_id in graph.nodes():
-            if node_id not in results[tw]:
-                results[tw][node_id] = {}
+            node_id = int(node_id)
 
-            results[tw][node_id]['score'] = results_without_tw[node_id]['score']
-            results[tw][node_id]['y_hat'] = results_without_tw[node_id]['y_hat']
-            results[tw][node_id]['y_true'] = results_without_tw[node_id]['y_true']
+            if node_id in results_without_tw:
+                results[tw][node_id]['score'] = results_without_tw[node_id]['score']
+                results[tw][node_id]['y_hat'] = results_without_tw[node_id]['y_hat']
+                results[tw][node_id]['y_true'] = results_without_tw[node_id]['y_true']
+
     return results
 
 def main(cfg):
