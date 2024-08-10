@@ -1,7 +1,7 @@
 from config import *
 from .testing_methods import (
     orthrus_gnn_testing,
-    flash_testing
+    flash_testing,
 )
 
 def main(cfg):

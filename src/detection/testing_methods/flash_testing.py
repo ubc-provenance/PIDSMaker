@@ -42,10 +42,11 @@ def main(cfg):
 
     epoch_to_tw_to_mp = {}
 
-    for epoch in range(epochs):
+    # for epoch in range(epochs):
+    for epoch in [epochs - 1]:
         epoch_to_tw_to_mp[epoch] = {}
         model.load_state_dict(
-            torch.load(os.path.join(model_save_dir,f'lword2vec_gnn_{epoch}.pth'), map_location=torch.device('cpu')))
+            torch.load(os.path.join(model_save_dir,f'lword2vec_gnn_{epoch}.pth'), map_location=torch.device(device)))
 
         for i in range(len(sorted_paths)):
             phrases, labels, edges, mapp = load_one_graph_data(sorted_paths[i], indexid2type, indexid2props)
@@ -57,7 +58,7 @@ def main(cfg):
                          y=torch.tensor(labels, dtype=torch.long).to(device),
                          edge_index=torch.tensor(edges, dtype=torch.long).to(device))
             graph.n_id = torch.arange(graph.num_nodes)
-            flag = torch.tensor([True] * graph.num_nodes, dtype=torch.bool)
+            flag = torch.tensor([True] * graph.num_nodes, dtype=torch.bool).to(device)
 
             loader = NeighborLoader(graph, num_neighbors=[-1, -1], batch_size=5000)
 
@@ -72,9 +73,13 @@ def main(cfg):
 
                 pred = indices[:, 0]
                 cond = (pred == subg.y) & (conf > 0.53)
-                flag[subg.n_id[cond]] = torch.logical_and(flag[subg.n_id[cond]],
-                                                          torch.tensor([False] * len(flag[subg.n_id[cond]]),
-                                                                       dtype=torch.bool))
+
+                cond = cond.to(device)
+                # Ensure subg.n_id[cond] is on the same device as mask
+                subg_n_id = subg.n_id.to(device)
+
+                flag[subg_n_id[cond]] = torch.logical_and(flag[subg_n_id[cond]],
+                                                          torch.tensor([False] * len(flag[subg_n_id[cond]]),dtype=torch.bool).to(device))
 
                 index = utils.mask_to_index(flag).tolist()
                 MP_ids = [mapp[x] for x in index]

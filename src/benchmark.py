@@ -65,13 +65,14 @@ def main(cfg, **kwargs):
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
     t5 = time.time()
-    # if should_restart["evaluation"]:
-    #     evaluation.main(cfg)
+    if should_restart["evaluation"]:
+        evaluation.main(cfg)
     t6 = time.time()
 
     # Triage
-    # if should_restart["tracing"]:
-    #     tracing.main(cfg)
+    if should_restart["tracing"]:
+        if cfg.detection.evaluation.used_method.strip() in ['node_evaluation', 'node_tw_evaluation']:
+            tracing.main(cfg)
     t7 = time.time()
 
     time_consumption = {
@@ -105,7 +106,7 @@ if __name__ == '__main__':
     wandb.init(
         mode="online" if args.wandb else "disabled",
         # project="Orthrus_V1_bis",
-        project="merge_flash",
+        project="flash_evaluation",
         name=exp_name,
         tags=tags,
     )
