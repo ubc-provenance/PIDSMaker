@@ -64,13 +64,15 @@ def main(cfg):
             log(f"{k}: {v}")
         log("==" * 20)
 
+        stats_traced = {}
         log(f"After triage:")
         for k, v in new_stats.items():
             log(f"{k}: {v}")
+            stats_traced[k + '_after_tracing'] = v
         log("==" * 20)
 
-        wandb.log(best_stats)
-        wandb.log(new_stats)
+        # wandb.log(best_stats)
+        wandb.log(stats_traced)
 
 
 if __name__ == "__main__":

@@ -45,7 +45,9 @@ pip install wandb
 # install dgl, cuML and cuDF for magic
 conda install -c dglteam dgl-cuda11.7
 pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.6.* cuml-cu12==24.6.*
-
+# dgl installation breaks scipy, which can be fixed by re-installing
+pip uninstall scipy
+pip install scipy==1.10.1
 ```
 
 ## Troubleshooting
