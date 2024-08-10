@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    used_method: magic
+    used_method: orthrus
     use_all_files: False
     time_window_size: 15.0
     use_hashed_label: True
@@ -73,7 +73,7 @@ featurization:
 
 detection:
   gnn_training:
-    used_method: magic
+    used_method: orthrus
     use_seed: True
     num_epochs: 6
     lr: 0.00001
@@ -137,9 +137,13 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
+      use_kmeans: True
+      kmeans_top_K: 30
     node_tw_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
+      use_kmeans: True
+      kmeans_top_K: 3
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue
