@@ -71,7 +71,8 @@ def main(cfg, **kwargs):
 
     # Triage
     if should_restart["tracing"]:
-        tracing.main(cfg)
+        if cfg.detection.evaluation.used_method.strip() in ['node_evaluation', 'node_tw_evaluation']:
+            tracing.main(cfg)
     t7 = time.time()
 
     time_consumption = {
@@ -104,7 +105,8 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="Orthrus_V1_bis",
+        # project="Orthrus_V1_bis",
+        project="flash_evaluation",
         name=exp_name,
         tags=tags,
     )
