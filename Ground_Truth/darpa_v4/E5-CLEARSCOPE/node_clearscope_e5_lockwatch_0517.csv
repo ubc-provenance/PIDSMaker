@@ -1,3 +1,17 @@
+00000000-0000-0000-0000-000001BE6224,{'subject': 'None /system/bin/toybox'},126464
+00000000-0000-0000-0000-000001BE6298,{'subject': 'None /system/bin/toybox'},126465
+00000000-0000-0000-0000-000001BE635A,{'subject': 'None /system/bin/toybox'},126468
+00000000-0000-0000-0000-000001BE6A6A,{'subject': 'None /system/bin/toybox'},126469
+00000000-0000-0000-0000-000001BE6AB6,{'subject': 'None /system/bin/toybox'},126470
+00000000-0000-0000-0000-000001BE6BA2,{'subject': 'None /system/bin/toybox'},126473
+00000000-0000-0000-0000-000001BE6BE8,{'subject': 'None /system/bin/toybox'},126474
+00000000-0000-0000-0000-000001BE6C4C,{'subject': 'None /system/bin/toybox'},126475
+958CF3EE-D70C-E7A7-FBE1-4D077AC9434D,{'file': '/data/local/tmp'},285933
 5F98350F-9777-B278-51CC-4C036C930B34,{'file': '/data/data/com.android.providers.contacts/databases/calllog.db'},190289
 D06CF305-6E87-32CC-2CC8-E08F9147E8D5,{'file': '/data/data/com.android.providers.media/databases/external.db'},190035
-958CF3EE-D70C-E7A7-FBE1-4D077AC9434D,{'file': '/data/local/tmp'},285933
+00000000-0000-0000-0000-000001BE5884,{'subject': 'None /system/bin/toybox'},126454
+00000000-0000-0000-0000-000001BE6000,{'subject': 'None /system/bin/toybox'},126457
+00000000-0000-0000-0000-000001BE608A,{'subject': 'None /system/bin/toybox'},126459
+492195F2-9BCD-9D86-5019-4EFC997DCA12,{'file': '/dev/__properties__/u:object_r:system_prop:s0'},177245
+00000000-0000-0000-0000-000001BE6174,{'subject': 'None /system/bin/toybox'},126462
+00000000-0000-0000-0000-000001BE61D8,{'subject': 'None /system/bin/toybox'},126463
