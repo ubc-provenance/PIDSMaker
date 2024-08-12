@@ -46,8 +46,11 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
                 if loss > node_to_max_loss_tw[dstnode]:
                     node_to_max_loss_tw[dstnode] = tw
 
+    use_kmeans = cfg.detection.evaluation.node_tw_evaluation.use_kmeans
     results = {}
     for tw, node_to_losses in tw_to_node_to_losses.items():
+        is_malicious_tw = False
+        
         if tw not in results:
             results[tw] = {}
         for node_id, losses in node_to_losses.items():
@@ -57,8 +60,17 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
                 results[tw][node_id] = {}
 
             results[tw][node_id]["score"] = pred_score
-            results[tw][node_id]["y_hat"] = int(pred_score > thr)
             results[tw][node_id]["y_true"] = int((tw in tw_to_malicious_nodes) and (str(node_id) in tw_to_malicious_nodes[tw]))
+            
+            if use_kmeans: # in this mode, we add the label after
+                results[tw][node_id]["y_hat"] = 0
+                if int(pred_score > thr):
+                    is_malicious_tw = True
+            else:
+                results[tw][node_id]["y_hat"] = int(pred_score > thr)
+                
+        if is_malicious_tw:
+            results[tw] = compute_kmeans_labels(results[tw], topk_K=cfg.detection.evaluation.node_tw_evaluation.kmeans_top_K)
 
     return results, tw_to_edge_index, tw_to_edge_loss, thr, node_to_max_loss_tw
 

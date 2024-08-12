@@ -27,6 +27,8 @@ def main(cfg):
         embed_edges_TRW.main(cfg)
     elif method == "magic":
         magic_train.main(cfg)
+    elif method == "flash":
+        set_task_to_done(cfg.featurization.embed_edges._task_path)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 
