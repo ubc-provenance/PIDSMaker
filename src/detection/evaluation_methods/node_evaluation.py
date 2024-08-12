@@ -17,7 +17,8 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
     log(f"Threshold: {thr:.3f}")
 
     node_to_losses = defaultdict(list)
-    node_to_max_loss_tw = defaultdict(int)
+    node_to_max_loss_tw = {}
+    node_to_max_loss = defaultdict(int)
     
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
@@ -34,10 +35,12 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
                 node_to_losses[dstnode].append(loss)
                 
             # If max-val thr is used, we want to keep track when the node with max loss happens
-            if loss > node_to_max_loss_tw[srcnode]:
+            if loss > node_to_max_loss[srcnode]:
+                node_to_max_loss[srcnode] = loss
                 node_to_max_loss_tw[srcnode] = tw
             if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                if loss > node_to_max_loss_tw[dstnode]:
+                if loss > node_to_max_loss[dstnode]:
+                    node_to_max_loss[dstnode] = loss
                     node_to_max_loss_tw[dstnode] = tw
                     
     use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
