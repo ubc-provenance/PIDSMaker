@@ -9,73 +9,97 @@ import numpy as np
 from .evaluation_utils import *
 import torch
 import wandb
+from labelling import get_ground_truth
 
+def classifier_node_evaluation(y_test, y_test_pred):
+    labels_exist = sum(y_test) > 0
+    if labels_exist:
+        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
+    else:
+        tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
+
+    fpr = fp / (fp + tn)
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    fscore = 2 * (precision * recall) / (precision + recall)
+
+    log(f'total num: {len(y_test)}')
+    log(f'tn: {tn}')
+    log(f'fp: {fp}')
+    log(f'fn: {fn}')
+    log(f'tp: {tp}')
+    log('')
+
+    log(f"precision: {precision}")
+    log(f"recall: {recall}")
+    log(f"fpr: {fpr}")
+    log(f"fscore: {fscore}")
+    log(f"accuracy: {accuracy}")
+
+
+    stats = {
+        "precision": round(precision, 5),
+        "recall": round(recall, 5),
+        "fpr": round(fpr, 7),
+        "fscore": round(fscore, 5),
+        "accuracy": round(accuracy, 5),
+        "tp": tp,
+        "fp": fp,
+        "tn": tn,
+        "fn": fn,
+    }
+    return stats
 
 def main(cfg):
+    log("Get ground truth")
+    GP_nids, _, _ = get_ground_truth(cfg)
+    GPs = [str(nid) for nid in GP_nids]
+
     tw_to_malicious_nodes = compute_tw_labels_for_magic(cfg)
 
     results, node_to_max_loss_tw = magic_eval.get_node_predictions(cfg, tw_to_malicious_nodes)
 
     model_epoch_dir = "magic_evaluation"
 
-    node_to_path = get_node_to_path_and_type(cfg)
-    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
-    os.makedirs(out_dir, exist_ok=True)
-    pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
-    scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+    save_dir = cfg.detection.evaluation._evaluation_results_dir
+    os.makedirs(save_dir, exist_ok=True)
 
-    log("Analysis of malicious nodes:")
-    nodes, y_truth, y_preds, pred_scores = [], [], [], []
-    node_to_correct_pred = {}
+    log("Get all nodes")
+    all_nids = set()
+    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    split_files = cfg.dataset.test_files
+    sorted_paths = get_all_files_from_folders(graph_dir, split_files)
+    for graph_path in sorted_paths:
+        graph = torch.load(graph_path)
+        all_nids |= set(graph.nodes())
 
-    for tw, nid_to_result in results.items():
-        malicious_tws = set()
-        malicious_nodes = set()
+    log("Get model positives")
+    MPs = set()
+    for tw, nid2data in results.items():
+        for node_id, data in nid2data.items():
+            if data['y_hat'] == 1:
+                MPs.add(str(node_id))
 
-        # We create a new arrayfor each TW
-        for arr in [nodes, y_truth, y_preds, pred_scores]:
-            arr.append([])
-        for nid, result in nid_to_result.items():
-            nodes[tw].append(nid)
-            score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
-            y_truth[tw].append(y_true)
-            y_preds[tw].append(y_hat)
-            pred_scores[tw].append(score)
-            node_to_correct_pred[nid] = y_hat == y_true
+    nodes, y_hat, y_truth = [], [], []
 
-            if y_true == 1:
-                if tw not in malicious_tws:
-                    log(f"TW {tw}")
-                    malicious_tws.add(tw)
-                log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (
-                node_to_path[nid]['path']))
-                malicious_nodes.add(nid)
+    for n in all_nids:
+        nodes.append(n)
+        y_hat.append(int(n in MPs))
+        y_truth.append(int(n in GPs))
 
+    log(f"Results of epoch {model_epoch_dir}")
+    log("==" * 30)
+    stats = classifier_node_evaluation(y_truth, y_hat)
+    log("==" * 30)
 
-    flat_pred_scores = [e for sublist in pred_scores for e in sublist]
-    flat_y_truth = [e for sublist in y_truth for e in sublist]
-    flat_y_preds = [e for sublist in y_preds for e in sublist]
-    flat_nodes = [e for sublist in nodes for e in sublist]
-
-    # Plots the PR curve and scores for mean node loss
-    plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
-
-    max_val_loss_tw = [node_to_max_loss_tw[n] for n in flat_nodes]
-    plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes,
-                           scores_img_file, cfg)
-    stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
-
-    results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
-    stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+    results_file = os.path.join(save_dir, f"result_{model_epoch_dir}.pth")
+    stats_file = os.path.join(save_dir, f"stats_{model_epoch_dir}.pth")
 
     torch.save(results, results_file)
     torch.save(stats, stats_file)
 
     stats["epoch"] = cfg.featurization.embed_edges.magic.max_epoch
-    stats["precision_recall_img"] = wandb.Image(
-        os.path.join(out_dir, f"{model_epoch_dir}.png"))
-    stats["scores_img"] = wandb.Image(
-        os.path.join(out_dir, f"scores_{model_epoch_dir}.png"))
 
     wandb.log(stats)
 
