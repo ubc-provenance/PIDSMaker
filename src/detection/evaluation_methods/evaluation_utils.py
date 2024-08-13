@@ -206,6 +206,52 @@ def plot_false_positives(y_true, y_pred, out_file):
     plt.legend()
     plt.savefig(out_file)
 
+def plot_dor_recall_curve(scores, y_truth, out_file):
+    y_truth = np.array(y_truth)
+    thresholds = np.percentile(np.sort(scores), np.linspace(0, 100, 50))
+
+    sensitivity_list = []
+    dor_list = []
+
+    # Iterate over each threshold to calculate sensitivity and DOR
+    for threshold in thresholds:
+        # Make predictions based on the threshold
+        predictions = scores >= threshold
+        
+        # Calculate TP, FP, TN, FN
+        TP = np.sum((predictions == 1) & (y_truth == 1))
+        FP = np.sum((predictions == 1) & (y_truth == 0))
+        TN = np.sum((predictions == 0) & (y_truth == 0))
+        FN = np.sum((predictions == 0) & (y_truth == 1))
+        
+        # Calculate sensitivity and specificity
+        sensitivity = TP / (TP + FN) if (TP + FN) > 0 else 0
+        specificity = TN / (TN + FP) if (TN + FP) > 0 else 0
+        
+        # Calculate Diagnostic Odds Ratio (DOR)
+        if sensitivity > 0 and specificity > 0 and (1 - sensitivity) > 0 and (1 - specificity) > 0:
+            dor = (sensitivity * specificity) / ((1 - sensitivity) * (1 - specificity))
+        else:
+            dor = np.nan  # Assign NaN if the DOR is undefined
+        
+        # Append to lists
+        sensitivity_list.append(sensitivity)
+        dor_list.append(dor)
+
+        # Convert lists to numpy arrays for plotting
+        sensitivity_list = np.array(sensitivity_list)
+        dor_list = np.array(dor_list)
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(sensitivity_list, dor_list, label='DOR vs Sensitivity', color='blue', marker='o')
+    plt.xlabel('Sensitivity')
+    plt.ylabel('Diagnostic Odds Ratio (DOR)')
+    plt.title('Diagnostic Odds Ratio vs Sensitivity at Different Thresholds')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig(out_file)
+
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}
     # for file in cfg.dataset.ground_truth_relative_path:

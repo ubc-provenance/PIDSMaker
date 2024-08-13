@@ -87,6 +87,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+    dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
     
     log("Analysis of malicious nodes:")
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
@@ -103,6 +104,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
+    plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
