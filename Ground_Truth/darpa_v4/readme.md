@@ -19,7 +19,7 @@
 | attack            | Date | Description     | TPs | Status  |
 |-------------------|------|-----------------|-----|---------|
 | Nginx_Backdoor_06 | 0406 | partial succeed | 8   | used    |
-| Nginx_Backdoor_11 | 0406 | partial succeed | 4   | used    |
+| Nginx_Backdoor_11 | 0406 | partial succeed | -   | removed |
 | Nginx_Backdoor_12 | 0406 | partial succeed | 43  | used    |
 | Nginx_Backdoor_13 | 0406 | partial succeed | 24  | used    |
 | E_mail_Server     | 0406 | non-host        | -   | removed |
@@ -36,7 +36,7 @@
 
 - **E_mail_Server** sent phishing emails, no host activities.
 
-TODO: remove Nginx_Backdoor_11
+DONE: remove Nginx_Backdoor_11
 
 ## Trace E3
 | attack                            | Date | Description     | TPs | Status  |
