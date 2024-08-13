@@ -173,12 +173,12 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
         y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
-        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
+        plt.text(max(scores) + 1, y_position, f"{path[-30:]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
 
     # Annotate the top scores for label 1
     for i, (score, path, _, max_tw_idx) in enumerate(top_1):
         y_position = 1 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
-        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
+        plt.text(max(scores) + 1, y_position, f"{path[-30:]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
         
     plt.text(max(scores) // 3, 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
     plt.text(max(scores) // 3, 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
