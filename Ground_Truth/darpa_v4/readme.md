@@ -56,14 +56,14 @@ with the phishing email.
 |------------------------------------|------|-------------|-----|---------|
 | fivedirections_e3_excel_0409       | 0409 | failed      | -   | removed |
 | fivedirections_e3_firefox_0411     | 0411 | succeed     | 56  | used    |
-| fivedirections_e3_browser_0412     | 0412 | failed      | 1   | used    |
+| fivedirections_e3_browser_0412     | 0412 | failed      | -   | removed |
 | fivedirections_e3_executable_0413  | 0413 | failed      | -   | removed |
 
 - **fivedirections_e3_excel_0409** malicious shell codes are inserted to a excel and failed to run 
 automately. However, user manually copy the malicious command to a shell and ran it successfully. 
 Should I consider it as a successful attack or a failed attack and some normal user activities?
 
-TODO: remove fivedirections_e3_browser_0412
+DONE: remove fivedirections_e3_browser_0412
 
 # Theia E5
 | attack                                           | Date | Description | TPs | Status  |
