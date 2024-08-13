@@ -54,7 +54,7 @@ with the phishing email.
 ## Fivedirections E3
 | attack                             | Date | Description | TPs | Status  |
 |------------------------------------|------|-------------|-----|---------|
-| fivedirections_e3_excel_0409       | 0409 | failed      | -   | removed |
+| fivedirections_e3_excel_0409       | 0409 | failed      | 63  | used    |
 | fivedirections_e3_firefox_0411     | 0411 | succeed     | 56  | used    |
 | fivedirections_e3_browser_0412     | 0412 | failed      | -   | removed |
 | fivedirections_e3_executable_0413  | 0413 | failed      | -   | removed |
@@ -64,6 +64,7 @@ automately. However, user manually copy the malicious command to a shell and ran
 Should I consider it as a successful attack or a failed attack and some normal user activities?
 
 DONE: remove fivedirections_e3_browser_0412
+DONE: add fivedirections_e3_excel_0409
 
 # Theia E5
 | attack                                           | Date | Description | TPs | Status  |
