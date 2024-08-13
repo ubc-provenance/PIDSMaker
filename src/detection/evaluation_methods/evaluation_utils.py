@@ -92,17 +92,15 @@ def plot_simple_scores(scores, y_truth, out_file):
     y_zeros = [0] * len(scores_0)  # All zeros at y=0
     y_ones = [1] * len(scores_1)  # All ones at y=1, you can also keep them at y=0 if you prefer
 
-    # Creating the plot
-    plt.figure(figsize=(10, 3))  # Width, height in inches
-    plt.scatter(scores_0, y_zeros, color='green', label='Label 0')
-    plt.scatter(scores_1, y_ones, color='red', label='Label 1')
+    plt.figure(figsize=(6, 2))  # Width, height in inches
+    plt.scatter(scores_0, y_zeros, color='green')
+    plt.scatter(scores_1, y_ones, color='red')
 
-    # Adding labels and title
-    plt.xlabel('Scores')
-    plt.ylabel('Labels')
-    plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
-    plt.title('Scatter Plot of Scores by Label')
-    plt.legend()
+    plt.xlabel('Node anomaly scores')
+    plt.yticks([0, 1], ['Benign', 'Malicious'])
+    plt.ylim(-0.1, 1.1)  # Adjust if necessary to bring them even closer
+
+    plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
 
 def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
