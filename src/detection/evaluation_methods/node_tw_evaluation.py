@@ -139,7 +139,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
     
-    max_val_loss_tw = [node_to_max_loss_tw[n] for n in flat_nodes]
+    max_val_loss_tw = [node_to_max_loss_tw.get(n, -1) for n in flat_nodes]
     plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
     stats.update(**summary_graphs)
