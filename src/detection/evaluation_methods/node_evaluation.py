@@ -49,7 +49,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
         pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.node_evaluation.threshold_method)
 
         results[node_id]["score"] = pred_score
-        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw[node_id]
+        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
         
         if use_kmeans: # in this mode, we add the label after
