@@ -207,35 +207,29 @@ def plot_false_positives(y_true, y_pred, out_file):
     plt.savefig(out_file)
 
 def plot_dor_recall_curve(scores, y_truth, out_file):
+    scores = np.array(scores)
     y_truth = np.array(y_truth)
-    thresholds = np.percentile(np.sort(scores), np.linspace(0, 100, 50))
+    thresholds = np.linspace(scores.min(), scores.max(), 300)
 
     sensitivity_list = []
     dor_list = []
 
-    # Iterate over each threshold to calculate sensitivity and DOR
+    # Iterate over each threshold to calculate recall and DOR
     for threshold in thresholds:
         # Make predictions based on the threshold
         predictions = scores >= threshold
         
         # Calculate TP, FP, TN, FN
-        TP = np.sum((predictions == 1) & (y_truth == 1))
-        FP = np.sum((predictions == 1) & (y_truth == 0))
-        TN = np.sum((predictions == 0) & (y_truth == 0))
-        FN = np.sum((predictions == 0) & (y_truth == 1))
-        
-        # Calculate sensitivity and specificity
-        sensitivity = TP / (TP + FN) if (TP + FN) > 0 else 0
-        specificity = TN / (TN + FP) if (TN + FP) > 0 else 0
+        TN, FP, FN, TP = confusion_matrix(y_truth, predictions).ravel()
+        recall = TP / (TP + FN) if (TP + FN) > 0 else 0
         
         # Calculate Diagnostic Odds Ratio (DOR)
-        if sensitivity > 0 and specificity > 0 and (1 - sensitivity) > 0 and (1 - specificity) > 0:
-            dor = (sensitivity * specificity) / ((1 - sensitivity) * (1 - specificity))
-        else:
-            dor = np.nan  # Assign NaN if the DOR is undefined
-        
-        # Append to lists
-        sensitivity_list.append(sensitivity)
+        try:
+            dor = (TP * TN) / (FP * FN)
+        except:
+            dor = np.nan
+
+        sensitivity_list.append(recall)
         dor_list.append(dor)
 
     # Convert lists to numpy arrays for plotting
