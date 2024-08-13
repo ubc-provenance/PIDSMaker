@@ -398,6 +398,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
     lr_plus = sensitivity / (1 - specificity)
+    dor = (tp * tn) / (fp * fn)
     
     log(f'total num: {len(y_test)}')
     log(f'tn: {tn}')
@@ -414,7 +415,8 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     log(f"accuracy: {accuracy}")
     log(f"balanced acc: {balanced_acc}")
     log(f"auc: {auc_val}")
-    log(f"lr+: {lr_plus}")
+    log(f"lr(+): {lr_plus}")
+    log(f"dor: {dor}")
 
     stats = {
         "precision": round(precision, 5),
@@ -425,7 +427,8 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "accuracy": round(accuracy, 5),
         "balanced_acc": round(balanced_acc, 5),
         "auc": round(auc_val, 5),
-        "lr+": round(lr_plus, 5),
+        "lr(+)": round(lr_plus, 5),
+        "dor": round(dor, 5),
         "tp": tp,
         "fp": fp,
         "tn": tn,
