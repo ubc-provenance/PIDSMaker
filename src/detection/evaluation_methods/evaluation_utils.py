@@ -238,9 +238,9 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
         sensitivity_list.append(sensitivity)
         dor_list.append(dor)
 
-        # Convert lists to numpy arrays for plotting
-        sensitivity_list = np.array(sensitivity_list)
-        dor_list = np.array(dor_list)
+    # Convert lists to numpy arrays for plotting
+    sensitivity_list = np.array(sensitivity_list)
+    dor_list = np.array(dor_list)
 
     # Create the plot
     plt.figure(figsize=(10, 6))
