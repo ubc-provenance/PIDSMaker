@@ -17,6 +17,7 @@ import csv
 from sklearn.cluster import KMeans
 
 import labelling
+import torch
 
 
 def get_threshold(val_tw_path, threshold_method: str):
@@ -229,6 +230,12 @@ def get_ground_truth_uuid_to_node_id(cfg):
     ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return uuid_to_node_id
 
+def get_start_end_from_graph(graph):
+    time_list = []
+    for u, v, k, data in graph.edges(keys=True, data=True):
+        time_list.append(int(data['time']))
+    return min(time_list), max(time_list)
+
 def compute_tw_labels(cfg):
     """
     Gets the malcious node IDs present in each time window.
@@ -245,13 +252,19 @@ def compute_tw_labels(cfg):
         os.makedirs(out_path, exist_ok=True)
 
         t_to_node = labelling.get_t2malicious_node(cfg)
-        test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
-        
+        # test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+
+        graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+        test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
+
         num_found_event_labels = 0
         tw_to_malicious_nodes = defaultdict(list)
-        for i, tw in enumerate(test_data):
-            start = tw.t.min().item()
-            end = tw.t.max().item()
+        for i, tw in enumerate(test_graphs):
+            graph = torch.load(tw)
+            start, end  = get_start_end_from_graph(graph)
+
+            # start = tw.t.min().item()
+            # end = tw.t.max().item()
             
             for t, node_ids in t_to_node.items():
                 if start < t < end:
