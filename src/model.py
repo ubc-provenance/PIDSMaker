@@ -61,7 +61,7 @@ class Model(nn.Module):
                 self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: edge scores
-            loss_or_scores = (torch.zeros(1) if (train_mode) else \
+            loss_or_scores = (torch.zeros(1) if train_mode else \
                 torch.zeros(edge_index.shape[1], dtype=torch.float)).to(h_src.device)
             
             for decoder in self.decoders:
@@ -78,6 +78,5 @@ class Model(nn.Module):
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
-                
-                
+
             return loss_or_scores

@@ -378,8 +378,3 @@ def get_dimensions_from_data_sample(data):
     in_dim = data.x_src.shape[1]
     
     return msg_dim, edge_dim, in_dim
-
-
-
-
-
