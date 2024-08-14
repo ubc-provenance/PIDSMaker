@@ -55,7 +55,7 @@ def main(cfg):
         standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
     elif method == "queue_evaluation":
         queue_evaluation.main(cfg)
-    elif method == "magic_evaluation":
+    elif method == "magic_evaluation" or method == "magic_node_evaluation":
         magic_evaluation.main(cfg)
     elif method == "flash_evaluation":
         flash_evaluation.main(cfg)
