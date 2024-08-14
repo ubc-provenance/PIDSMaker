@@ -20,7 +20,8 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     tw_to_node_to_losses = defaultdict(lambda: defaultdict(list))
     tw_to_edge_index = defaultdict(list)
     tw_to_edge_loss = defaultdict(list)
-    node_to_max_loss_tw = defaultdict(int)
+    node_to_max_loss_tw = {}
+    node_to_max_loss = defaultdict(int)
     
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
@@ -40,10 +41,12 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
                 tw_to_node_to_losses[tw][dstnode].append(loss)
                 
             # If max-val thr is used, we want to keep track when the node with max loss happens
-            if loss > node_to_max_loss_tw[srcnode]:
+            if loss > node_to_max_loss[srcnode]:
+                node_to_max_loss[srcnode] = loss
                 node_to_max_loss_tw[srcnode] = tw
-            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                if loss > node_to_max_loss_tw[dstnode]:
+            if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
+                if loss > node_to_max_loss[dstnode]:
+                    node_to_max_loss[dstnode] = loss
                     node_to_max_loss_tw[dstnode] = tw
 
     use_kmeans = cfg.detection.evaluation.node_tw_evaluation.use_kmeans
@@ -78,7 +81,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     results, tw_to_ei, tw_to_edge_loss, thr, node_to_max_loss_tw = get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
     node_to_path = get_node_to_path_and_type(cfg)
 
-    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    out_dir = cfg.detection.evaluation.node_tw_evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
@@ -136,7 +139,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     # Plots the PR curve and scores for mean node loss
     plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
     
-    max_val_loss_tw = [node_to_max_loss_tw[n] for n in flat_nodes]
+    max_val_loss_tw = [node_to_max_loss_tw.get(n, -1) for n in flat_nodes]
     plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
     stats.update(**summary_graphs)
