@@ -65,17 +65,7 @@ featurization:
       use_cmd: True
       use_port: False
   embed_edges:
-    include_edge_type: True
-    magic:
-      num_hidden: 64
-      max_epoch: 10
-      num_layers: 3
-      negative_slope: 0.2
-      mask_rate: 0.5
-      alpha_l: 3.0
-      optimizer: adam
-      lr: 0.001
-      weight_decay: 0.0005
+    to_remove: True
 
 detection:
   gnn_training:
