@@ -52,10 +52,11 @@ def datetime_to_ns_time_US(date):
 
 def get_events(cur,
                start_time,
-               end_time,
-               malicious_nodes : list):
-    malicious_nodes_str = ', '.join(f"'{node}'" for node in malicious_nodes)
-    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' AND src_index_id IN ({malicious_nodes_str});"
+               end_time,):
+    # malicious_nodes_str = ', '.join(f"'{node}'" for node in malicious_nodes)
+    # sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' AND src_index_id IN ({malicious_nodes_str});"
+    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}';"
+
     cur.execute(sql)
     rows = cur.fetchall()
     return rows
@@ -79,7 +80,7 @@ def get_t2malicious_node(cfg) -> dict[list]:
                 node_id = uuid2nids[node_uuid]
                 ground_truth_nids.append(str(node_id))
 
-            rows = get_events(cur, start_time, end_time, ground_truth_nids)
+            rows = get_events(cur, start_time, end_time)
             for row in rows:
                 src_id = row[1]
                 dst_id = row[4]

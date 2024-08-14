@@ -17,6 +17,7 @@ import csv
 from sklearn.cluster import KMeans
 
 import labelling
+import torch
 
 
 def get_threshold(val_tw_path, threshold_method: str):
@@ -92,17 +93,15 @@ def plot_simple_scores(scores, y_truth, out_file):
     y_zeros = [0] * len(scores_0)  # All zeros at y=0
     y_ones = [1] * len(scores_1)  # All ones at y=1, you can also keep them at y=0 if you prefer
 
-    # Creating the plot
-    plt.figure(figsize=(10, 3))  # Width, height in inches
-    plt.scatter(scores_0, y_zeros, color='green', label='Label 0')
-    plt.scatter(scores_1, y_ones, color='red', label='Label 1')
+    plt.figure(figsize=(6, 2))  # Width, height in inches
+    plt.scatter(scores_0, y_zeros, color='green')
+    plt.scatter(scores_1, y_ones, color='red')
 
-    # Adding labels and title
-    plt.xlabel('Scores')
-    plt.ylabel('Labels')
-    plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
-    plt.title('Scatter Plot of Scores by Label')
-    plt.legend()
+    plt.xlabel('Node anomaly scores')
+    plt.yticks([0, 1], ['Benign', 'Malicious'])
+    plt.ylim(-0.1, 1.1)  # Adjust if necessary to bring them even closer
+
+    plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
 
 def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
@@ -173,12 +172,12 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
         y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
-        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
+        plt.text(max(scores) + 1, y_position, f"{path[-30:]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
 
     # Annotate the top scores for label 1
     for i, (score, path, _, max_tw_idx) in enumerate(top_1):
         y_position = 1 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
-        plt.text(max(scores) + 1, y_position, f"{path} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
+        plt.text(max(scores) + 1, y_position, f"{path[-30:]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
         
     plt.text(max(scores) // 3, 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
     plt.text(max(scores) // 3, 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
@@ -206,6 +205,46 @@ def plot_false_positives(y_true, y_pred, out_file):
     plt.legend()
     plt.savefig(out_file)
 
+def plot_dor_recall_curve(scores, y_truth, out_file):
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+    thresholds = np.linspace(scores.min(), scores.max(), 300)
+
+    sensitivity_list = []
+    dor_list = []
+
+    # Iterate over each threshold to calculate recall and DOR
+    for threshold in thresholds:
+        # Make predictions based on the threshold
+        predictions = scores >= threshold
+        
+        # Calculate TP, FP, TN, FN
+        TN, FP, FN, TP = confusion_matrix(y_truth, predictions).ravel()
+        recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+        
+        # Calculate Diagnostic Odds Ratio (DOR)
+        try:
+            dor = (TP * TN) / (FP * FN)
+        except:
+            dor = np.nan
+
+        sensitivity_list.append(recall)
+        dor_list.append(dor)
+
+    # Convert lists to numpy arrays for plotting
+    sensitivity_list = np.array(sensitivity_list)
+    dor_list = np.array(dor_list)
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(sensitivity_list, dor_list, label='DOR vs Sensitivity', color='blue', marker='o')
+    plt.xlabel('Sensitivity')
+    plt.ylabel('Diagnostic Odds Ratio (DOR)')
+    plt.title('Diagnostic Odds Ratio vs Sensitivity at Different Thresholds')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig(out_file)
+
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}
     # for file in cfg.dataset.ground_truth_relative_path:
@@ -229,6 +268,12 @@ def get_ground_truth_uuid_to_node_id(cfg):
     ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return uuid_to_node_id
 
+def get_start_end_from_graph(graph):
+    time_list = []
+    for u, v, k, data in graph.edges(keys=True, data=True):
+        time_list.append(int(data['time']))
+    return min(time_list), max(time_list)
+
 def compute_tw_labels(cfg):
     """
     Gets the malcious node IDs present in each time window.
@@ -245,13 +290,19 @@ def compute_tw_labels(cfg):
         os.makedirs(out_path, exist_ok=True)
 
         t_to_node = labelling.get_t2malicious_node(cfg)
-        test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
-        
+        # test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+
+        graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+        test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
+
         num_found_event_labels = 0
         tw_to_malicious_nodes = defaultdict(list)
-        for i, tw in enumerate(test_data):
-            start = tw.t.min().item()
-            end = tw.t.max().item()
+        for i, tw in enumerate(test_graphs):
+            graph = torch.load(tw)
+            start, end  = get_start_end_from_graph(graph)
+
+            # start = tw.t.min().item()
+            # end = tw.t.max().item()
             
             for t, node_ids in t_to_node.items():
                 if start < t < end:
