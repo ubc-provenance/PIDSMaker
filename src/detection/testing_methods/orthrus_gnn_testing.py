@@ -30,6 +30,7 @@ def test(
     tot_loss = 0
     start = time.perf_counter()
 
+    # NOTE: warning, this may reindex the graph is TGN is not used
     batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
 
     for batch in batch_loader:
@@ -38,11 +39,18 @@ def test(
         each_edge_loss = model(batch, full_data, inference=True)
         tot_loss += each_edge_loss.sum().item()
 
+        # If the graph has been reindexed in the loader, we retrieve original node IDs
+        # to later find the labels
+        if hasattr(batch, "original_edge_index"):
+            edge_index = batch.original_edge_index
+        else:
+            edge_index = batch.edge_index
+        
         num_events = each_edge_loss.shape[0]
         edge_types = torch.argmax(batch.edge_type, dim=1) + 1
         for i in range(num_events):
-            srcnode = int(batch.edge_index[0, i])
-            dstnode = int(batch.edge_index[1, i])
+            srcnode = int(edge_index[0, i])
+            dstnode = int(edge_index[1, i])
 
             srcmsg = nodeid2msg[srcnode]
             dstmsg = nodeid2msg[dstnode]
