@@ -133,7 +133,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4
-    used_method: magic_evaluation
+    used_method: magic_node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False
