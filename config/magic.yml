@@ -59,7 +59,7 @@ featurization:
       use_cmd: True
       use_port: False
   embed_edges:
-    include_edge_type: True
+    to_remove: True
     magic:
       num_hidden: 64
       max_epoch: 10
