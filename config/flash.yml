@@ -1,7 +1,7 @@
 preprocessing:
   build_graphs:
     used_method: orthrus
-    use_all_files: False
+    use_all_files: True
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
@@ -19,7 +19,7 @@ featurization:
       window: 5
       min_count: 1
       workers: 8
-      epochs: 30
+      epochs: 300
     temporal_rw:
       walk_length: 30
       num_walks: 10
@@ -81,7 +81,7 @@ detection:
       out_channel: 3
       lr: 0.01
       weight_decay: 0.0005
-      epochs: 20
+      epochs: 22
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
