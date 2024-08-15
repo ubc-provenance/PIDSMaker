@@ -81,10 +81,12 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     results, tw_to_ei, tw_to_edge_loss, thr, node_to_max_loss_tw = get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
     node_to_path = get_node_to_path_and_type(cfg)
 
-    out_dir = cfg.detection.evaluation.node_tw_evaluation._precision_recall_dir
+    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
-    pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
+    pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+    simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
+    dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
     node_to_path_type = get_node_to_path_and_type(cfg)
     
     log("Analysis of malicious nodes:")
@@ -137,8 +139,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     flat_nodes = [e for sublist in nodes for e in sublist]
     
     # Plots the PR curve and scores for mean node loss
+    print(f"Saving figures to {out_dir}...")
     plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
-    
+    plot_dor_recall_curve(flat_pred_scores, flat_y_truth, dor_img_file)
+    plot_simple_scores(flat_pred_scores, flat_y_truth, simple_scores_img_file)
     max_val_loss_tw = [node_to_max_loss_tw.get(n, -1) for n in flat_nodes]
     plot_scores_with_paths(flat_pred_scores, flat_y_truth, flat_nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
