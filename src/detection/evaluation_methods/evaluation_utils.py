@@ -223,10 +223,10 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
         recall = TP / (TP + FN) if (TP + FN) > 0 else 0
         
         # Calculate Diagnostic Odds Ratio (DOR)
-        try:
-            dor = (TP * TN) / (FP * FN)
-        except:
+        if (FP * FN) == 0:
             dor = np.nan
+        else:
+            dor = (TP * TN) / (FP * FN)
 
         sensitivity_list.append(recall)
         dor_list.append(dor)
@@ -326,7 +326,7 @@ def compute_tw_labels(cfg):
         log(f"TW {tw} -> {len(unique_nodes)} malicious nodes + {len(nodes)} malicious edges")
         
         node_to_count = {uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()}
-        pprint(node_to_count, width=1)
+        # pprint(node_to_count, width=1)
         tw_to_malicious_nodes[tw] = node_to_count
 
     return tw_to_malicious_nodes
@@ -591,7 +591,7 @@ def compute_kmeans_labels(results, topk_K):
     last_N_scores = score_values[-topk_K:]
     last_N_nodes = nodes_to_score[-topk_K:]
 
-    kmeans = KMeans(n_clusters=2, random_state=0)
+    kmeans = KMeans(n_clusters=2, random_state=0, n_init=10)
     kmeans.fit(last_N_scores.reshape(-1, 1))
 
     centroids = kmeans.cluster_centers_.flatten()
@@ -604,9 +604,6 @@ def compute_kmeans_labels(results, topk_K):
     # Extract scores and nodes from the highest cluster
     cluster_scores = highest_value_cluster[:, 1].astype(float)
     anomaly_nodes = highest_value_cluster[:, 0]
-
-    print("Anomalous scores (high values):", cluster_scores)
-    print("Anomalous nodes:", anomaly_nodes)
     
     for idx in highest_value_cluster_indices:
         global_idx = len(score_values) - topk_K + idx
