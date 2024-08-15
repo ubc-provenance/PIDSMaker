@@ -50,6 +50,11 @@ def main(cfg):
             torch.load(os.path.join(model_save_dir,f'lword2vec_gnn_{epoch}.pth'), map_location=torch.device(device)))
 
         for i in range(len(sorted_paths)):
+            epoch_to_tw_to_result[epoch][i] = {}
+            epoch_to_tw_to_result[epoch][i]['nids'] = []
+            epoch_to_tw_to_result[epoch][i]['score'] = []
+            epoch_to_tw_to_result[epoch][i]['y_hat'] = []
+
             phrases, labels, edges, mapp = load_one_graph_data(sorted_paths[i], indexid2type, indexid2props)
 
             nodes = [infer(x, w2vmodel, PositionalEncoder(w2v_vector_size)) for x in phrases]
@@ -86,12 +91,16 @@ def main(cfg):
                 MP_ids = [mapp[x] for x in index]
                 MP_set = set(MP_ids)
 
-                epoch_to_tw_to_result[epoch][i] = {}
-                epoch_to_tw_to_result[epoch][i]['nids'] = mapp
-                epoch_to_tw_to_result[epoch][i]['score'] = conf.tolist()
-                epoch_to_tw_to_result[epoch][i]['y_hat'] = [1 if x in MP_set else 0 for x in mapp]
+                subg_n_ids = subg.n_id.tolist()
+                subg_actual_ids = [mapp[x] for x in subg_n_ids]
 
-                log(f'Model# {epoch} and graph {i}/{len(sorted_paths)} evaluation finished.')
+
+                epoch_to_tw_to_result[epoch][i]['nids'].extend(subg_actual_ids)
+                epoch_to_tw_to_result[epoch][i]['score'].extend(conf.tolist())
+                epoch_to_tw_to_result[epoch][i]['y_hat'].extend(1 if x in MP_set else 0 for x in subg_actual_ids)
+
+
+            log(f'Model# {epoch} and graph {i}/{len(sorted_paths)} evaluation finished.')
 
     torch.save(epoch_to_tw_to_result, os.path.join(result_dir, 'epoch_to_tw_to_mp.pth'))
     log(f"Model positive nodes are saved in {os.path.join(result_dir, 'epoch_to_tw_to_mp.pth')}")

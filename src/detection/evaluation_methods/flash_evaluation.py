@@ -25,6 +25,49 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
+def get_set_nodes(split_files):
+    all_nids = set()
+    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    sorted_paths = get_all_files_from_folders(graph_dir, split_files)
+    for graph_path in tqdm(sorted_paths, desc='Computing node number'):
+        graph = torch.load(graph_path)
+        all_nids |= set(graph.nodes())
+
+    return all_nids
+
+def uniforming_nodes(results, cfg):
+    log("Get ground truth")
+    GP_nids, _, _ = get_ground_truth(cfg)
+    GPs = set(str(nid) for nid in GP_nids)
+    log(f"There are {len(GPs)} GPs")
+
+    log("Get testing nodes")
+    all_nids = get_set_nodes(split_files=cfg.dataset.test_files)
+    log(f'There are {len(all_nids)} testing set nodes')
+
+    log("Generate results for testing set nodes")
+    new_results = {}
+    missing_num = 0
+    for n in all_nids:
+        if isinstance(results.keys()[0], int):
+            node_id = int(n)
+        elif isinstance(results.keys()[0], str):
+            node_id = str(n)
+
+        if node_id in results.keys():
+            new_results[node_id] = results[node_id]
+        else:
+            new_results[node_id] = {
+                'score': 0,
+                'tw_with_max_loss': 0,
+                'y_hat': 0,
+                'y_true': int(str(node_id) in GPs)
+            }
+            missing_num += 1
+    log(f"There are {missing_num} missing nodes")
+
+    return new_results
+
 def main(cfg):
     log("Get ground truth")
     GP_nids, _, _ = get_ground_truth(cfg)
@@ -67,6 +110,8 @@ def main(cfg):
         results[n]['score'] = nid_to_max_score[n]
         results[n]['tw_with_max_loss'] = nid_to_max_score_tw[n]
 
+    results = uniforming_nodes(results, cfg)
+
     node_to_path = get_node_to_path_and_type(cfg)
     model_epoch_dir = "flash_evaluation"
 
@@ -80,7 +125,7 @@ def main(cfg):
     log("Analysis of malicious nodes:")
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
     for nid, result in results.items():
-        nodes.append(nid)
+        nodes.append(int(nid))
         score, y_hat, y_true, max_tw = result["score"], result["y_hat"], result["y_true"], result["tw_with_max_loss"]
         y_truth.append(y_true)
         y_preds.append(y_hat)
@@ -89,7 +134,7 @@ def main(cfg):
 
         if y_true == 1:
             log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (
-                node_to_path[nid]['path']))
+                node_to_path[int(nid)]['path']))
 
     # Plots the PR curve and scores for mean node loss
     print(f"Saving figures to {out_dir}...")
@@ -113,6 +158,9 @@ def main(cfg):
         os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
     stats["scores_img"] = wandb.Image(
         os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png"))
+
+    for k,v in stats.items():
+        log(k, " : ", v)
 
     wandb.log(stats)
 
