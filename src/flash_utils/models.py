@@ -38,7 +38,9 @@ def infer(document, w2vmodel, encoder):
     if not word_embeddings:
         return np.zeros(20)
 
-    output_embedding = torch.tensor(word_embeddings, dtype=torch.float)
+    word_embeddings_array = np.array(word_embeddings)
+
+    output_embedding = torch.tensor(word_embeddings_array, dtype=torch.float)
     if len(document) < 100000:
         output_embedding = encoder.embed(output_embedding)
 

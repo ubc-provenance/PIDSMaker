@@ -39,6 +39,7 @@ def main(cfg):
     indexid2type, indexid2props = get_nid2props(cfg)
 
     for epoch in range(epochs):
+        log(f"Start training epoch {epoch} in device {device}")
         total_loss = 0
 
         for i in range(len(sorted_paths)):
