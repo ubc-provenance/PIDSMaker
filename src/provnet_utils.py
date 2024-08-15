@@ -34,6 +34,7 @@ from sklearn.metrics import (
     roc_curve,
     precision_recall_curve,
     average_precision_score as ap_score,
+    balanced_accuracy_score,
 )
 
 import re
@@ -271,7 +272,7 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
         # We thus pre-compute a list of random indices for all unique numbers of neighbors.
         # These indices can then be accessed given the length of the neighbors.
         unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]))
-        cache_size = 5 * len(adj_list) * num_walks * walk_len
+        cache_size = 7 * len(adj_list) * num_walks * walk_len
         random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
         random_idx = {count: 0 for count in unique_neighbors_count}
 
@@ -390,6 +391,14 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     try:
         ap=ap_score(y_test, scores)
     except: ap=float("nan")
+    try:
+        balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
+    except: balanced_acc=float("nan")
+    
+    sensitivity = tp / (tp + fn)
+    specificity = tn / (tn + fp)
+    lr_plus = sensitivity / (1 - specificity)
+    dor = (tp * tn) / (fp * fn)
     
     log(f'total num: {len(y_test)}')
     log(f'tn: {tn}')
@@ -404,7 +413,10 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     log(f"fpr: {fpr}")
     log(f"fscore: {fscore}")
     log(f"accuracy: {accuracy}")
-    log(f"auc_val: {auc_val}")
+    log(f"balanced acc: {balanced_acc}")
+    log(f"auc: {auc_val}")
+    log(f"lr(+): {lr_plus}")
+    log(f"dor: {dor}")
 
     stats = {
         "precision": round(precision, 5),
@@ -413,13 +425,19 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "fscore": round(fscore, 5),
         "ap": round(ap, 5),
         "accuracy": round(accuracy, 5),
-        "auc_val": round(auc_val, 5),
+        "balanced_acc": round(balanced_acc, 5),
+        "auc": round(auc_val, 5),
+        "lr(+)": round(lr_plus, 5),
+        "dor": round(dor, 5),
         "tp": tp,
         "fp": fp,
         "tn": tn,
         "fn": fn,
     }
     return stats
+
+def get_detected_attacks(cfg):
+    cfg.dataset.attack_to_time_window
 
 def get_indexid2msg(cur, use_cmd=True, use_port=False):
     indexid2msg = {}
@@ -511,7 +529,7 @@ def get_node_to_path_and_type(cfg):
         queries = {
             "file": "SELECT index_id, path FROM file_node_table;",
             "netflow": "SELECT index_id, src_addr, dst_addr, src_port, dst_port FROM netflow_node_table;",
-            "subject": "SELECT index_id, path FROM subject_node_table;"
+            "subject": "SELECT index_id, path, cmd FROM subject_node_table;"
         }
         node_to_path_type = {}
         for node_type, query in queries.items():
@@ -521,9 +539,12 @@ def get_node_to_path_and_type(cfg):
                 if node_type == "netflow":
                     index_id, src_addr, dst_addr, src_port, dst_port = row
                     node_to_path_type[index_id] = {"path": f"{str(src_addr)}:{str(src_port)}->{str(dst_addr)}:{str(dst_port)}", "type": node_type}
-                else:
+                elif node_type == "file":
                     index_id, path = row
                     node_to_path_type[index_id] = {"path": str(path), "type": node_type}
+                elif node_type == "subject":
+                    index_id, path, cmd = row
+                    node_to_path_type[index_id] = {"path": str(path), "type": node_type, "cmd": cmd}
 
         torch.save(node_to_path_type, out_file)
         connect.close()

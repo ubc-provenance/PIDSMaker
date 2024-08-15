@@ -58,7 +58,7 @@ featurization:
       use_cmd: True
       use_port: False
   embed_edges:
-    include_edge_type: True
+    to_remove: True
 
 detection:
   gnn_training:

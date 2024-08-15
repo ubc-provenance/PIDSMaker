@@ -12,7 +12,7 @@ featurization:
     emb_dim: 128
     used_method: hierarchical_hashing
   embed_edges:
-    include_edge_type: True
+    to_remove: True
 
 detection:
   gnn_training:

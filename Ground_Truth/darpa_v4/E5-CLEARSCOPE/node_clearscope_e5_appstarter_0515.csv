@@ -1,3 +1,10 @@
-A725D5CE-B225-C4DB-09E4-4A6154D055F2,{'file': '/config/sdcardfs/com.android.providers.contacts/appid'},308184
 E12A36E1-620A-2C2A-AAC6-CEA557025A0F,{'file': '/config/sdcardfs/com.android.providers.contacts/appid'},189313
+00000000-0000-0000-0000-0000013B358E,{'subject': 'None /system/bin/dex2oat'},144546
+00000000-0000-0000-0000-0000013240C8,{'subject': 'None system_server'},143173
+1B878418-54E9-D085-42F9-9A23918E815F,{'subject': 'None kernel'},134630
 3D195FF6-B676-5F15-0C14-DC623817DE4A,{'file': '/dev/msm_g711tlaw'},372010
+B3A43F54-A451-8D84-70F0-B5786851EC19,{'file': '/system/bin/toybox'},371986
+00000000-0000-0000-0000-0000013B6902,{'subject': 'None /system/bin/toybox'},144565
+A725D5CE-B225-C4DB-09E4-4A6154D055F2,{'file': '/config/sdcardfs/com.android.providers.contacts/appid'},308184
+00000000-0000-0000-0000-0000013B88F2,{'subject': 'None /system/bin/toybox'},144569
+3C19E71D-8B9C-8B4D-8005-8C87795F7D55,{'file': '/dev/pmsg0'},303391

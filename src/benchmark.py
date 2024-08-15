@@ -76,14 +76,14 @@ def main(cfg, **kwargs):
     t7 = time.time()
 
     time_consumption = {
-        "total": t7 - t0,
-        "build_graphs": t1 - t0,
-        "embed_nodes": t2 - t1,
-        "embed_edges": t3 - t2,
-        "gnn_training": t4 - t3,
-        "gnn_testing": t5 - t4,
-        "evaluation": t6 - t5,
-        "tracing": t7 - t6,
+        "time_total": round(t7 - t0, 2),
+        "time_build_graphs": round(t1 - t0, 2),
+        "time_embed_nodes": round(t2 - t1, 2),
+        "time_embed_edges": round(t3 - t2, 2),
+        "time_gnn_training": round(t4 - t3, 2),
+        "time_gnn_testing": round(t5 - t4, 2),
+        "time_evaluation": round(t6 - t5, 2),
+        "time_tracing": round(t7 - t6, 2),
     }
 
     log("==" * 30)
@@ -93,7 +93,6 @@ def main(cfg, **kwargs):
 
     log("==" * 30)
     wandb.log(time_consumption)
-
 
 
 if __name__ == '__main__':
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     wandb.init(
         mode="online" if args.wandb else "disabled",
         # project="Orthrus_V1_bis",
-        project="flash_evaluation",
+        project="magic_evaluation",
         name=exp_name,
         tags=tags,
     )

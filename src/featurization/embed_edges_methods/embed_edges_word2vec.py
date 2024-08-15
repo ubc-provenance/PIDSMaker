@@ -18,10 +18,9 @@ def gen_relation_onehot(rel2id):
     return rel2vec
 
 
-def gen_vectorized_graphs(node2higvec, rel2vec, split_files, out_dir, is_test, trained_w2v_dir, logger, cfg):
+def gen_vectorized_graphs(node2higvec, rel2vec, node2vec, split_files, out_dir, is_test, trained_w2v_dir, logger, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
-    include_edge_type = cfg.featurization.embed_edges.include_edge_type
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
         file = path.split("/")[-1]
@@ -40,17 +39,14 @@ def gen_vectorized_graphs(node2higvec, rel2vec, split_files, out_dir, is_test, t
         for u, v, k, attr in sorted_edges:
             src.append(int(u))
             dst.append(int(v))
-            if include_edge_type:
-                msg.append(torch.cat([
-                    torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
-                    rel2vec[attr["label"]],
-                    torch.from_numpy(node2higvec[graph.nodes[v]['label']])
-                ]))
-            else:
-                msg.append(torch.cat([
-                    torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
-                    torch.from_numpy(node2higvec[graph.nodes[v]['label']])
-                ]))
+
+            msg.append(torch.cat([
+                node2vec[graph.nodes[u]['node_type']],
+                torch.from_numpy(node2higvec[graph.nodes[u]['label']]),
+                rel2vec[attr["label"]],
+                node2vec[graph.nodes[v]['node_type']],
+                torch.from_numpy(node2higvec[graph.nodes[v]['label']])
+            ]))
             t.append(int(attr["time"]))
 
         dataset.src = torch.tensor(src)
@@ -79,9 +75,11 @@ def main(cfg):
 
     node2higvec = torch.load(os.path.join(trained_w2v_dir, "nodelabel2vec_val"))  # From both train and val
     rel2vec = gen_relation_onehot(rel2id=rel2id)
+    node2vec = gen_relation_onehot(rel2id=ntype2id)
 
     # Vectorize training set
     gen_vectorized_graphs(node2higvec=node2higvec,
+                          node2vec=node2vec,
                           rel2vec=rel2vec,
                           split_files=cfg.dataset.train_files,
                           out_dir=os.path.join(out_dir, "train/"),
@@ -93,6 +91,7 @@ def main(cfg):
 
     # Vectorize validation set
     gen_vectorized_graphs(node2higvec=node2higvec,
+                          node2vec=node2vec,
                           rel2vec=rel2vec,
                           split_files=cfg.dataset.val_files,
                           out_dir=os.path.join(out_dir, "val/"),
@@ -104,6 +103,7 @@ def main(cfg):
 
     # Vectorize testing set
     gen_vectorized_graphs(node2higvec=node2higvec,
+                          node2vec=node2vec,
                           rel2vec=rel2vec,
                           split_files=cfg.dataset.test_files,
                           out_dir=os.path.join(out_dir, "test/"),

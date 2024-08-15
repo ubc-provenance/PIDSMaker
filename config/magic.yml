@@ -1,7 +1,7 @@
 preprocessing:
   build_graphs:
     used_method: magic
-    use_all_files: False
+    use_all_files: True
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
@@ -59,7 +59,7 @@ featurization:
       use_cmd: True
       use_port: False
   embed_edges:
-    include_edge_type: True
+    to_remove: True
     magic:
       num_hidden: 64
       max_epoch: 10
@@ -133,7 +133,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4
-    used_method: magic_evaluation
+    used_method: magic_node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: False

@@ -17,7 +17,8 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
     log(f"Threshold: {thr:.3f}")
 
     node_to_losses = defaultdict(list)
-    node_to_max_loss_tw = defaultdict(int)
+    node_to_max_loss_tw = {}
+    node_to_max_loss = defaultdict(int)
     
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
@@ -34,21 +35,31 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
                 node_to_losses[dstnode].append(loss)
                 
             # If max-val thr is used, we want to keep track when the node with max loss happens
-            if loss > node_to_max_loss_tw[srcnode]:
+            if loss > node_to_max_loss[srcnode]:
+                node_to_max_loss[srcnode] = loss
                 node_to_max_loss_tw[srcnode] = tw
             if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                if loss > node_to_max_loss_tw[dstnode]:
+                if loss > node_to_max_loss[dstnode]:
+                    node_to_max_loss[dstnode] = loss
                     node_to_max_loss_tw[dstnode] = tw
                     
+    use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_losses.items():
         pred_score = reduce_losses_to_score(losses, cfg.detection.evaluation.node_evaluation.threshold_method)
 
         results[node_id]["score"] = pred_score
-        results[node_id]["y_hat"] = int(pred_score > thr)
+        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
-        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw[node_id]
-
+        
+        if use_kmeans: # in this mode, we add the label after
+            results[node_id]["y_hat"] = 0
+        else:
+            results[node_id]["y_hat"] = int(pred_score > thr)
+        
+    if use_kmeans:
+        results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)
+        
     return results
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
@@ -72,9 +83,12 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     results = get_node_predictions(val_tw_path, test_tw_path, cfg)
     node_to_path = get_node_to_path_and_type(cfg)
 
-    os.makedirs(cfg.detection.evaluation.node_evaluation._precision_recall_dir, exist_ok=True)
-    pr_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png")
-    scores_img_file = os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png")
+    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    os.makedirs(out_dir, exist_ok=True)
+    pr_img_file = os.path.join(out_dir, f"{model_epoch_dir}.png")
+    scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+    simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
+    dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
     
     log("Analysis of malicious nodes:")
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
@@ -90,11 +104,20 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (node_to_path[nid]['path']))
 
     # Plots the PR curve and scores for mean node loss
+    print(f"Saving figures to {out_dir}...")
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
+    plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
+    plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
     stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
+    
+    results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
+    stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+
+    torch.save(results, results_file)
+    torch.save(stats, stats_file)
     
     return stats
