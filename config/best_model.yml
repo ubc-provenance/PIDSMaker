@@ -1,7 +1,7 @@
 preprocessing:
   build_graphs:
     used_method: orthrus
-    use_all_files: True
+    use_all_files: False
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
@@ -126,12 +126,12 @@ detection:
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
-      use_dst_node_loss: False
+      use_dst_node_loss: True
       use_kmeans: True
       kmeans_top_K: 30
     node_tw_evaluation:
       threshold_method: max_val_loss
-      use_dst_node_loss: False
+      use_dst_node_loss: True
       use_kmeans: True
       kmeans_top_K: 3
     queue_evaluation:

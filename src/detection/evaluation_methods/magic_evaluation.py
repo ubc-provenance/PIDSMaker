@@ -10,12 +10,15 @@ from .evaluation_utils import *
 import torch
 import wandb
 from labelling import get_ground_truth
+from tqdm import tqdm
 
 def transfer_result_to_node_evaluation(results, node_to_max_loss_tw):
     node_results = {}
+    nid_to_max_score = {}
+    nid_to_max_score_tw = {}
 
-    for tw, nid2data in results.items():
-        node_results[tw] = {}
+    for tw, nid2data in tqdm(results.items(),desc="Transferring results"):
+        # node_results[tw] = {}
 
         for node_id, data in nid2data.items():
             if node_id not in node_results:
@@ -23,12 +26,32 @@ def transfer_result_to_node_evaluation(results, node_to_max_loss_tw):
                 node_results[node_id]['y_true'] = 0
                 node_results[node_id]['y_hat'] = 0
 
-            node_results[node_id]['y_true'] = node_results[node_id]['y_true'] or data['y_true']
-            node_results[node_id]['y_hat'] = node_results[node_id]['y_hat'] or data['y_hat']
+            y_true = data['y_true']
+            y_hat = data['y_hat']
+            score = data['score']
+            try:
+                node_results[node_id]['y_true'] = node_results[node_id]['y_true'] or y_true
+                node_results[node_id]['y_hat'] = node_results[node_id]['y_hat'] or y_hat
+            except KeyError:
+                log(f"key error in tw: {tw} and node_id: {node_id}")
+                log(f"data is {data}")
+                log(f"node_results: {node_results[node_id]}")
 
-    for node_id in node_results.keys():
-        node_results[node_id]['tw_with_max_loss'] = node_to_max_loss_tw[node_id]
-        node_results[node_id]['score'] = results[node_to_max_loss_tw[node_id]][node_id]['score']
+            if node_id not in nid_to_max_score:
+                nid_to_max_score[node_id] = score
+                nid_to_max_score_tw[node_id] = tw
+
+            if score > nid_to_max_score[node_id]:
+                nid_to_max_score[node_id] = score
+                nid_to_max_score_tw[node_id] = tw
+
+    # for node_id in node_results.keys():
+    #     node_results[node_id]['tw_with_max_loss'] = node_to_max_loss_tw[node_id]
+    #     node_results[node_id]['score'] = results[node_to_max_loss_tw[node_id]][node_id]['score']
+
+    for n in node_results.keys():
+        node_results[n]['score'] = nid_to_max_score[n]
+        node_results[n]['tw_with_max_loss'] = nid_to_max_score_tw[n]
 
     return node_results
 
@@ -50,6 +73,49 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
+def get_set_nodes(split_files):
+    all_nids = set()
+    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    sorted_paths = get_all_files_from_folders(graph_dir, split_files)
+    for graph_path in tqdm(sorted_paths, desc='Computing node number'):
+        graph = torch.load(graph_path)
+        all_nids |= set(graph.nodes())
+
+    return all_nids
+
+def uniforming_nodes(results, cfg):
+    log("Get ground truth")
+    GP_nids, _, _ = get_ground_truth(cfg)
+    GPs = set(str(nid) for nid in GP_nids)
+    log(f"There are {len(GPs)} GPs")
+
+    log("Get testing nodes")
+    all_nids = get_set_nodes(split_files=cfg.dataset.test_files)
+    log(f'There are {len(all_nids)} testing set nodes')
+
+    log("Generate results for testing set nodes")
+    new_results = {}
+    missing_num = 0
+    for n in all_nids:
+        if isinstance(results.keys()[0], int):
+            node_id = int(n)
+        elif isinstance(results.keys()[0], str):
+            node_id = str(n)
+
+        if node_id in results.keys():
+            new_results[node_id] = results[node_id]
+        else:
+            new_results[node_id] = {
+                'score': 0,
+                'tw_with_max_loss': 0,
+                'y_hat': 0,
+                'y_true': int(str(node_id) in GPs)
+            }
+            missing_num += 1
+    log(f"There are {missing_num} missing nodes")
+
+    return new_results
+
 def main(cfg):
     tw_to_malicious_nodes = compute_tw_labels_for_magic(cfg)
 
@@ -60,6 +126,8 @@ def main(cfg):
         results = transfer_result_to_node_evaluation(node_tw_results, node_to_max_loss_tw)
     else:
         log(f"Method {method} not supported.")
+
+    results = uniforming_nodes(results, cfg)
 
     node_to_path = get_node_to_path_and_type(cfg)
 
