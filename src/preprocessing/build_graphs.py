@@ -9,6 +9,7 @@ def main(cfg):
     if graph_method == "orthrus":
         build_orthrus_graphs.main(cfg)
     elif graph_method == "magic":
+        build_orthrus_graphs.main(cfg)
         build_magic_graphs.main(cfg)
     else:
         raise ValueError(f"Unrecognized graph method: {graph_method}")
