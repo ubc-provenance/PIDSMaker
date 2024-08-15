@@ -95,7 +95,6 @@ def main(cfg, **kwargs):
     wandb.log(time_consumption)
 
 
-
 if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     wandb.init(
         mode="online" if args.wandb else "disabled",
         # project="Orthrus_V1_bis",
-        project="magic_evaluation",
+        project="flash_evaluation",
         name=exp_name,
         tags=tags,
     )

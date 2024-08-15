@@ -32,9 +32,12 @@ def standard_evaluation(cfg, evaluation_fn):
 
         stats = evaluation_fn(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes=tw_to_malicious_nodes)
             
+        out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
-        stats["precision_recall_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
-        stats["scores_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png"))
+        stats["precision_recall_img"] = wandb.Image(os.path.join(out_dir, f"{model_epoch_dir}.png"))
+        stats["scores_img"] = wandb.Image(os.path.join(out_dir, f"scores_{model_epoch_dir}.png"))
+        stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
+        stats["dor_img"] = wandb.Image(os.path.join(out_dir, f"dor_{model_epoch_dir}.png"))
         
         wandb.log(stats)
         

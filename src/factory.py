@@ -92,6 +92,20 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
                 dropout=cfg.detection.gnn_training.encoder.sage.dropout,
             )
+        elif method == "LSTM":
+            encoder = LSTM(
+                 in_features = in_dim,
+                 out_features = node_out_dim,
+                 cell_clip=None,
+                 type_specific_decoding=False,
+                 exclude_file=True,
+                 exclude_ip=True,
+                 typed_hidden_rep=False,
+                 edge_dim=None,
+                 full_param=False,
+                 num_edge_type = 15
+            
+            ).to(device)
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -263,6 +277,19 @@ def decoder_factory(cfg, in_dim, device):
                 neg_sampling_method=neg_sampling_method,
             ))
         
+        elif method == "node_mlp":
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.node_mlp.loss)
+            node_out_dim = cfg.detection.gnn_training.decoder.node_mlp.out_dim 
+            in_dim = cfg.detection.gnn_training.decoder.node_mlp.in_dim
+            recon_hid_dim = cfg.detection.gnn_training.decoder.node_mlp.recon_hid_dim
+
+            decoder = MLPNodeEmbDecoder(
+                in_dim = in_dim,
+                d_dim = recon_hid_dim,
+                h_dim = node_out_dim,
+                loss_fn= loss_fn
+            ).to(device)
+            decoders.append(decoder)
         else:
             raise ValueError(f"Invalid decoder {method}")
         
