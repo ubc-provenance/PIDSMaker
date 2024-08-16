@@ -73,7 +73,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
-def get_set_nodes(split_files):
+def get_set_nodes(split_files, cfg):
     all_nids = set()
     graph_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
@@ -90,16 +90,22 @@ def uniforming_nodes(results, cfg):
     log(f"There are {len(GPs)} GPs")
 
     log("Get testing nodes")
-    all_nids = get_set_nodes(split_files=cfg.dataset.test_files)
+    all_nids = get_set_nodes(split_files=cfg.dataset.test_files, cfg=cfg)
     log(f'There are {len(all_nids)} testing set nodes')
 
     log("Generate results for testing set nodes")
     new_results = {}
     missing_num = 0
+
+    if isinstance(list(results.keys())[0], int):
+        key_type = 'int'
+    elif isinstance(list(results.keys())[0], str):
+        key_type = 'str'
+
     for n in all_nids:
-        if isinstance(results.keys()[0], int):
+        if key_type == 'int':
             node_id = int(n)
-        elif isinstance(results.keys()[0], str):
+        elif key_type == 'str':
             node_id = str(n)
 
         if node_id in results.keys():
