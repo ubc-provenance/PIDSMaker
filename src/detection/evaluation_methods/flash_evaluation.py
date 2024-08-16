@@ -48,10 +48,16 @@ def uniforming_nodes(results, cfg):
     log("Generate results for testing set nodes")
     new_results = {}
     missing_num = 0
+
+    if isinstance(list(results.keys())[0], int):
+        key_type = 'int'
+    elif isinstance(list(results.keys())[0], str):
+        key_type = 'str'
+
     for n in all_nids:
-        if isinstance(results.keys()[0], int):
+        if key_type == 'int':
             node_id = int(n)
-        elif isinstance(results.keys()[0], str):
+        elif key_type == 'str':
             node_id = str(n)
 
         if node_id in results.keys():
