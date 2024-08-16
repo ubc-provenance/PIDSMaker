@@ -1,7 +1,9 @@
 import argparse
+import random
 
 import torch
 import wandb
+import numpy as np
 from provnet_utils import remove_underscore_keys, log
 
 from preprocessing import (
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
     exp_name = args.exp if args.exp != "" else \
-        cfg.dataset.name
+        args.__dict__["dataset"]
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
