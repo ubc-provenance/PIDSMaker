@@ -15,4 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-sh -c "python src/benchmark.py $args --wandb --force_restart=gnn_training && python src/benchmark.py $args --wandb --force_restart=gnn_testing,evaluation,tracing"
+python src/benchmark.py $args --wandb

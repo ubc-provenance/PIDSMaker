@@ -1,7 +1,9 @@
 import argparse
+import random
 
 import torch
 import wandb
+import numpy as np
 from provnet_utils import remove_underscore_keys, log
 
 from preprocessing import (
@@ -39,6 +41,16 @@ def main(cfg, **kwargs):
     log("\nTasks requiring re-execution:")
     log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
     log(("*" * 100) + "\n")
+    
+    if cfg.detection.gnn_training.use_seed:
+        seed = 0
+        random.seed(seed)
+        np.random.seed(seed)
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
     t0 = time.time()
 
@@ -60,7 +72,6 @@ def main(cfg, **kwargs):
     if should_restart["gnn_training"]:
         gnn_training.main(cfg, **kwargs)
         torch.cuda.empty_cache()
-        return
     t4 = time.time()
     if should_restart["gnn_testing"]:
         gnn_testing.main(cfg)
@@ -99,7 +110,8 @@ if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
     exp_name = args.exp if args.exp != "" else \
-        "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
+        args.__dict__["dataset"]
+        # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
     wandb.init(
