@@ -108,7 +108,8 @@ if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
     exp_name = args.exp if args.exp != "" else \
-        "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
+        cfg.dataset.name
+        # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
     wandb.init(
