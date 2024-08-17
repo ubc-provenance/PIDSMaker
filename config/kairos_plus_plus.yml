@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    use_all_files: False
+    use_all_files: True
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
@@ -58,7 +58,7 @@ featurization:
       use_cmd: True
       use_port: False
   embed_edges:
-    include_edge_type: True
+    to_remove: True
 
 detection:
   gnn_training:

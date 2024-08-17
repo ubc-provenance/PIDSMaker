@@ -23,7 +23,7 @@ def standard_evaluation(cfg, evaluation_fn):
     
     tw_to_malicious_nodes = compute_tw_labels(cfg)
     
-    best_ap, best_stats = 0.0, {}
+    best_mcc, best_stats = -1e6, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         log(f"\nEvaluation of model {model_epoch_dir}...")
 
@@ -32,14 +32,17 @@ def standard_evaluation(cfg, evaluation_fn):
 
         stats = evaluation_fn(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes=tw_to_malicious_nodes)
             
+        out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
-        stats["precision_recall_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
-        stats["scores_img"] = wandb.Image(os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png"))
+        stats["precision_recall_img"] = wandb.Image(os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png"))
+        stats["scores_img"] = wandb.Image(os.path.join(out_dir, f"scores_{model_epoch_dir}.png"))
+        stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
+        stats["dor_img"] = wandb.Image(os.path.join(out_dir, f"dor_{model_epoch_dir}.png"))
         
         wandb.log(stats)
         
-        if stats["ap"] > best_ap:
-            best_ap = stats["ap"]
+        if stats["mcc"] > best_mcc:
+            best_mcc = stats["mcc"]
             best_stats = stats
         
     wandb.log(best_stats)
@@ -55,7 +58,7 @@ def main(cfg):
         standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
     elif method == "queue_evaluation":
         queue_evaluation.main(cfg)
-    elif method == "magic_evaluation":
+    elif method == "magic_evaluation" or method == "magic_node_evaluation":
         magic_evaluation.main(cfg)
     elif method == "flash_evaluation":
         flash_evaluation.main(cfg)

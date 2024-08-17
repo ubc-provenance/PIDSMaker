@@ -1,5 +1,6 @@
 preprocessing:
   build_graphs:
+    use_all_files: True
     time_window_size: 15.0
     use_hashed_label: False
     node_label_features:
@@ -12,7 +13,7 @@ featurization:
     emb_dim: 128
     used_method: hierarchical_hashing
   embed_edges:
-    include_edge_type: True
+    to_remove: True
 
 detection:
   gnn_training:

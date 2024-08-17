@@ -2,6 +2,7 @@ from config import *
 from .testing_methods import (
     orthrus_gnn_testing,
     flash_testing,
+    magic_testing,
 )
 
 def main(cfg):
@@ -9,7 +10,7 @@ def main(cfg):
     if method == 'orthrus':
         orthrus_gnn_testing.main(cfg)
     elif method == 'magic':
-        set_task_to_done(cfg.detection.gnn_testing._task_path)
+        magic_testing.main(cfg)
     elif method == 'flash':
         flash_testing.main(cfg)
     else:

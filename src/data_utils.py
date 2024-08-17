@@ -210,6 +210,12 @@ class GraphReindexer:
         return x
     
     def reindex_graph(self, data):
+        """
+        Reindexes edge_index from 0 + reshapes node features.
+        The old edge_index is stored in `data.original_edge_index`
+        """
+        data = data.clone()
+        data.original_edge_index = data.edge_index
         (data.x_src, data.x_dst), data.edge_index = self._reindex_graph(data.edge_index, data.x_src, data.x_dst)
         return data
     

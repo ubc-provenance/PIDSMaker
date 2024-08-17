@@ -272,7 +272,7 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
         # We thus pre-compute a list of random indices for all unique numbers of neighbors.
         # These indices can then be accessed given the length of the neighbors.
         unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]))
-        cache_size = 5 * len(adj_list) * num_walks * walk_len
+        cache_size = 7 * len(adj_list) * num_walks * walk_len
         random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
         random_idx = {count: 0 for count in unique_neighbors_count}
 
@@ -353,10 +353,12 @@ def get_logger(name: str, filename: str):
     return logger
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
-    return sorted([os.path.abspath(os.path.join(base_dir, sub, f))
+    paths = [os.path.abspath(os.path.join(base_dir, sub, f))
         for sub in os.listdir(base_dir)
         if os.path.isdir(os.path.join(base_dir, sub)) and sub in folders
-        for f in os.listdir(os.path.join(base_dir, sub))])
+        for f in os.listdir(os.path.join(base_dir, sub))]
+    paths.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
+    return paths
 
 def listdir_sorted(path: str):
     files = os.listdir(path)
@@ -371,6 +373,16 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
             data[key] = dict(data[key])
             remove_underscore_keys(data[key], keys_to_keep, keys_to_rm)
     return data
+
+def compute_mcc(tp, fp, tn, fn):
+    numerator = (tp * tn) - (fp * fn)
+    denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    
+    if denominator == 0:
+        return 0
+    
+    mcc = numerator / denominator
+    return mcc
 
 def classifier_evaluation(y_test, y_test_pred, scores):
     labels_exist = sum(y_test) > 0
@@ -399,6 +411,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     specificity = tn / (tn + fp)
     lr_plus = sensitivity / (1 - specificity)
     dor = (tp * tn) / (fp * fn)
+    mcc = compute_mcc(tp, fp, tn, fn)
     
     log(f'total num: {len(y_test)}')
     log(f'tn: {tn}')
@@ -417,6 +430,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     log(f"auc: {auc_val}")
     log(f"lr(+): {lr_plus}")
     log(f"dor: {dor}")
+    log(f"mcc: {mcc}")
 
     stats = {
         "precision": round(precision, 5),
@@ -429,6 +443,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "auc": round(auc_val, 5),
         "lr(+)": round(lr_plus, 5),
         "dor": round(dor, 5),
+        "mcc": mcc,
         "tp": tp,
         "fp": fp,
         "tn": tn,

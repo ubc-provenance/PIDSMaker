@@ -51,14 +51,14 @@ def main(cfg):
     in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
 
-    best_ap, best_stats = 0.0, {}
+    best_mcc, best_stats = -1e6, {}
     best_model_epoch = listdir_sorted(test_losses_dir)[-1]
     for model_epoch_dir in listdir_sorted(test_losses_dir):
 
         stats_file = os.path.join(in_dir, f"stats_{model_epoch_dir}.pth")
         stats = torch.load(stats_file)
-        if stats["ap"] > best_ap:
-            best_ap = stats["ap"]
+        if stats["mcc"] > best_mcc:
+            best_mcc = stats["mcc"]
             best_stats = stats
             best_model_epoch = model_epoch_dir
 

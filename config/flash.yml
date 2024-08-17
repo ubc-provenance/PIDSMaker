@@ -1,7 +1,7 @@
 preprocessing:
   build_graphs:
     used_method: orthrus
-    use_all_files: False
+    use_all_files: True
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
@@ -19,7 +19,7 @@ featurization:
       window: 5
       min_count: 1
       workers: 8
-      epochs: 30
+      epochs: 300
     temporal_rw:
       walk_length: 30
       num_walks: 10
@@ -65,17 +65,7 @@ featurization:
       use_cmd: True
       use_port: False
   embed_edges:
-    include_edge_type: True
-    magic:
-      num_hidden: 64
-      max_epoch: 10
-      num_layers: 3
-      negative_slope: 0.2
-      mask_rate: 0.5
-      alpha_l: 3.0
-      optimizer: adam
-      lr: 0.001
-      weight_decay: 0.0005
+    to_remove: True
 
 detection:
   gnn_training:
@@ -91,7 +81,7 @@ detection:
       out_channel: 3
       lr: 0.01
       weight_decay: 0.0005
-      epochs: 20
+      epochs: 22
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
@@ -148,10 +138,10 @@ detection:
     used_method: flash_evaluation
     node_evaluation:
       threshold_method: max_val_loss
-      use_dst_node_loss: False
+      use_dst_node_loss: True
     node_tw_evaluation:
       threshold_method: max_val_loss
-      use_dst_node_loss: False
+      use_dst_node_loss: True
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue
