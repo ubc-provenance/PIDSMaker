@@ -23,7 +23,7 @@ def standard_evaluation(cfg, evaluation_fn):
     
     tw_to_malicious_nodes = compute_tw_labels(cfg)
     
-    best_ap, best_stats = 0.0, {}
+    best_mcc, best_stats = -1e6, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         log(f"\nEvaluation of model {model_epoch_dir}...")
 
@@ -41,8 +41,8 @@ def standard_evaluation(cfg, evaluation_fn):
         
         wandb.log(stats)
         
-        if stats["ap"] > best_ap:
-            best_ap = stats["ap"]
+        if stats["mcc"] > best_mcc:
+            best_mcc = stats["mcc"]
             best_stats = stats
         
     wandb.log(best_stats)
