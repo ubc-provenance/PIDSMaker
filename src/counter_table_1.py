@@ -127,6 +127,7 @@ def main(cfg):
     log("Get ground truth")
     GP_nids, _, _ = get_ground_truth(cfg)
     GPs = [str(nid) for nid in GP_nids]
+    print(f"There are {len(GPs)} malicious nodes")
 
     graph_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
@@ -161,36 +162,36 @@ def main(cfg):
 
 
     # count total number of nodes in attack relevant graphs
-    # print(f"Number of GPs: {len(GPs)}")
-    # unique_nodes_in_attack_tw = set()
-    # node_number_in_attak_tw = 0
-    # for tw, nid2count in tw_to_malicious_nodes.items():
-    #     if len(nid2count.items()) > 0:
-    #         graph = torch.load(sorted_paths[tw])
-    #         unique_nodes_in_attack_tw |= set(graph.nodes())
-    #         node_number_in_attak_tw += len(graph.nodes())
-    # print(f"total number of nodes in attack relevant graphs: {node_number_in_attak_tw}")
-    # print(f"total number of unique nodes in attack relevant graphs: {len(unique_nodes_in_attack_tw)}")
-
-    ## check malicious tws
+    print(f"Number of GPs: {len(GPs)}")
+    unique_nodes_in_attack_tw = set()
+    node_number_in_attak_tw = 0
     for tw, nid2count in tw_to_malicious_nodes.items():
         if len(nid2count.items()) > 0:
             graph = torch.load(sorted_paths[tw])
-            start, end = get_start_end_from_graph(graph)
-            print(f"For malicious time window {tw}:")
-            print(f"Time range is  {ns_time_to_datetime_US(start)} -> {ns_time_to_datetime_US(end)}")
-            print(f"graph file name is {sorted_paths[tw]}")
+            unique_nodes_in_attack_tw |= set(graph.nodes())
+            node_number_in_attak_tw += len(graph.nodes())
+    print(f"total number of nodes in attack relevant graphs: {node_number_in_attak_tw}")
+    print(f"total number of unique nodes in attack relevant graphs: {len(unique_nodes_in_attack_tw)}")
 
-            n_set = set()
-            rows = get_events(cur, start, end)
-            for row in rows:
-                src_id = row[1]
-                dst_id = row[4]
-                n_set.add(str(src_id))
-                n_set.add(str(dst_id))
-
-            print(f"Number of nodes in the graph: {len(graph.nodes())}")
-            print(f"Number of nodes in the time range: {len(n_set)}")
+    ## check malicious tws
+    # for tw, nid2count in tw_to_malicious_nodes.items():
+    #     if len(nid2count.items()) > 0:
+    #         graph = torch.load(sorted_paths[tw])
+    #         start, end = get_start_end_from_graph(graph)
+    #         print(f"For malicious time window {tw}:")
+    #         print(f"Time range is  {ns_time_to_datetime_US(start)} -> {ns_time_to_datetime_US(end)}")
+    #         print(f"graph file name is {sorted_paths[tw]}")
+    #
+    #         n_set = set()
+    #         rows = get_events(cur, start, end)
+    #         for row in rows:
+    #             src_id = row[1]
+    #             dst_id = row[4]
+    #             n_set.add(str(src_id))
+    #             n_set.add(str(dst_id))
+    #
+    #         print(f"Number of nodes in the graph: {len(graph.nodes())}")
+    #         print(f"Number of nodes in the time range: {len(n_set)}")
 
 
 
