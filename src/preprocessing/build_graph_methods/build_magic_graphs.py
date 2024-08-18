@@ -19,80 +19,96 @@ def get_node_list(cur, cfg):
     # netflow
     sql = "select * from netflow_node_table;"
     cur.execute(sql)
-    records = cur.fetchall()
-    # node_uuid | hash_id | src_addr | src_port | dst_addr | dst_port | index_id
-    for i in records:
-        attrs = {
-            'type': 'netflow',
-            'local_ip': str(i[2]),
-            'local_port': str(i[3]),
-            'remote_ip': str(i[4]),
-            'remote_port': str(i[5])
-        }
-        node_uuid = str(i[0])
-        hash_id = str(i[1])
-        index_id = int(i[-1])
 
-        features_used = []
-        for label_used in node_label_features['netflow']:
-            features_used.append(attrs[label_used])
-        label_str = ' '.join(features_used)
+    while True:
+        records = cur.fetchmany(1000)
+        if not records:
+            break
+        # node_uuid | hash_id | src_addr | src_port | dst_addr | dst_port | index_id
+        for i in records:
+            attrs = {
+                'type': 'netflow',
+                'local_ip': str(i[2]),
+                'local_port': str(i[3]),
+                'remote_ip': str(i[4]),
+                'remote_port': str(i[5])
+            }
+            node_uuid = str(i[0])
+            hash_id = str(i[1])
+            index_id = int(i[-1])
 
-        uuid2idx[node_uuid] = index_id
-        uuid2type[node_uuid] = attrs['type']
-        uuid2name[node_uuid] = label_str
-        hash2uuid[hash_id] = node_uuid
+            features_used = []
+            for label_used in node_label_features['netflow']:
+                features_used.append(attrs[label_used])
+            label_str = ' '.join(features_used)
+
+            uuid2idx[node_uuid] = index_id
+            uuid2type[node_uuid] = attrs['type']
+            uuid2name[node_uuid] = label_str
+            hash2uuid[hash_id] = node_uuid
+
+    del records
 
     # subject
     sql = """
     select * from subject_node_table;
     """
     cur.execute(sql)
-    records = cur.fetchall()
-    # node_uuid | hash_id | path | cmd | index_id
-    for i in records:
-        attrs = {
-            'type': 'subject',
-            'path': str(i[2]),
-            'cmd_line': str(i[3])
-        }
-        node_uuid = str(i[0])
-        hash_id = str(i[1])
-        index_id = int(i[-1])
-        features_used = []
-        for label_used in node_label_features['subject']:
-            features_used.append(attrs[label_used])
-        label_str = ' '.join(features_used)
+    while True:
+        records = cur.fetchmany(1000)
+        if not records:
+            break
+        # node_uuid | hash_id | path | cmd | index_id
+        for i in records:
+            attrs = {
+                'type': 'subject',
+                'path': str(i[2]),
+                'cmd_line': str(i[3])
+            }
+            node_uuid = str(i[0])
+            hash_id = str(i[1])
+            index_id = int(i[-1])
+            features_used = []
+            for label_used in node_label_features['subject']:
+                features_used.append(attrs[label_used])
+            label_str = ' '.join(features_used)
 
-        uuid2idx[node_uuid] = index_id
-        uuid2type[node_uuid] = attrs['type']
-        uuid2name[node_uuid] = label_str
-        hash2uuid[hash_id] = node_uuid
+            uuid2idx[node_uuid] = index_id
+            uuid2type[node_uuid] = attrs['type']
+            uuid2name[node_uuid] = label_str
+            hash2uuid[hash_id] = node_uuid
+
+    del records
 
     # file
     sql = """
     select * from file_node_table;
     """
     cur.execute(sql)
-    records = cur.fetchall()
-    # node_uuid | hash_id | path | index_id
-    for i in records:
-        attrs = {
-            'type': 'file',
-            'path': str(i[2])
-        }
-        node_uuid = str(i[0])
-        hash_id = str(i[1])
-        index_id = int(i[-1])
-        features_used = []
-        for label_used in node_label_features['file']:
-            features_used.append(attrs[label_used])
-        label_str = ' '.join(features_used)
+    while True:
+        records = cur.fetchmany(1000)
+        if not records:
+            break
+        # node_uuid | hash_id | path | index_id
+        for i in records:
+            attrs = {
+                'type': 'file',
+                'path': str(i[2])
+            }
+            node_uuid = str(i[0])
+            hash_id = str(i[1])
+            index_id = int(i[-1])
+            features_used = []
+            for label_used in node_label_features['file']:
+                features_used.append(attrs[label_used])
+            label_str = ' '.join(features_used)
 
-        uuid2idx[node_uuid] = index_id
-        uuid2type[node_uuid] = attrs['type']
-        uuid2name[node_uuid] = label_str
-        hash2uuid[hash_id] = node_uuid
+            uuid2idx[node_uuid] = index_id
+            uuid2type[node_uuid] = attrs['type']
+            uuid2name[node_uuid] = label_str
+            hash2uuid[hash_id] = node_uuid
+
+    del records
 
     return uuid2idx, uuid2type, uuid2name, hash2uuid
 
@@ -188,6 +204,7 @@ def generate_graphs(cur, uuid2type, logger, graph_out_dir, hash2uuid, cfg):
                     # For unit tests, we only edges from the first graph
                     if cfg._test_mode:
                         return
+    return
 
 def main(cfg):
     logger = get_logger(
@@ -215,8 +232,7 @@ def main(cfg):
                     hash2uuid=hash2uuid,
                     cfg=cfg)
 
-
-
+    del uuid2idx, uuid2type, uuid2name, hash2uuid
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
