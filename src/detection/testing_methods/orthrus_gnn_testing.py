@@ -115,7 +115,7 @@ def main(cfg):
         ]:
             log(f"    Testing {split} set...")
             for g in tqdm(graphs, desc=f"{split} set with {trained_model}"):
-                g = g.clone().to(device)
+                g.to(device=device)
                 test(
                     data=g,
                     full_data=full_data,
@@ -126,8 +126,7 @@ def main(cfg):
                     cfg=cfg,
                     device=device,
                 )
-                del g
-                torch.cuda.empty_cache()
+                g.to("cpu")
 
         del model
 
