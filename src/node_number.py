@@ -15,6 +15,7 @@ from config import (
 )
 
 from tqdm import tqdm
+from labelling import get_ground_truth
 
 def compute_node_number(split_files):
     all_nids = set()
@@ -23,7 +24,7 @@ def compute_node_number(split_files):
     for graph_path in tqdm(sorted_paths, desc='Computing node number'):
         graph = torch.load(graph_path)
         all_nids |= set(graph.nodes())
-    return len(all_nids)
+    return all_nids
 
 def main(cfg, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
@@ -41,16 +42,27 @@ def main(cfg, **kwargs):
     if should_restart["build_graphs"]:
         build_graphs.main(cfg)
 
-    node_num_train = compute_node_number(split_files=cfg.dataset.train_files)
-    node_num_val = compute_node_number(split_files=cfg.dataset.val_files)
-    node_num_test = compute_node_number(split_files=cfg.dataset.test_files)
-    node_num_unused = compute_node_number(split_files=cfg.dataset.unused_files)
+    node_in_train = compute_node_number(split_files=cfg.dataset.train_files)
+    node_in_val = compute_node_number(split_files=cfg.dataset.val_files)
+    node_in_test = compute_node_number(split_files=cfg.dataset.test_files)
+    node_in_unused = compute_node_number(split_files=cfg.dataset.unused_files)
+
+    log("Get ground truth")
+    GP_nids, _, _ = get_ground_truth(cfg)
+    GPs = set(str(nid) for nid in GP_nids)
+
+    GP_num_in_files = len(GPs)
+    log(f"There are {len(GPs)} GPs")
+
+    GP_num_in_test_set = len(GPs & node_in_test)
 
     node_number = {
-        'train node number': node_num_train,
-        'val node number': node_num_val,
-        'test node number': node_num_test,
-        'unused node number': node_num_unused,
+        'train node number': len(node_in_train),
+        'val node number': len(node_in_val),
+        'test node number': len(node_in_test),
+        'unused node number': len(node_in_unused),
+        'file GP number': GP_num_in_files,
+        'test GP number': GP_num_in_test_set,
     }
 
     for k, v in node_number.items():

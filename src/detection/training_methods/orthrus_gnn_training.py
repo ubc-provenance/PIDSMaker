@@ -33,16 +33,6 @@ def train(data,
 
 
 def main(cfg):
-    if cfg.detection.gnn_training.use_seed:
-        seed = 0
-        random.seed(seed)
-        np.random.seed(seed)
-
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(gnn_models_dir, exist_ok=True)
 
@@ -55,17 +45,22 @@ def main(cfg):
 
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
+    epoch_times = []
     for epoch in tqdm(range(1, num_epochs + 1)):
         start = timer()
+
+        # Reset the peak memory usage counter
+        torch.cuda.reset_peak_memory_stats(device=device)
 
         # Before each epoch, we reset the memory
         if isinstance(model.encoder, TGNEncoder):
             model.encoder.reset_state()
 
+        tot_loss = 0
         for g in train_data:
             g.to(device=device)
             loss = train(
-                data=g.clone(),  # avoids alteration of the graph across epochs
+                data=g,  # avoids alteration of the graph across epochs
                 full_data=full_data,  # full list of edge messages (do not store on CPU)
                 model=model,
                 optimizer=optimizer,
@@ -76,17 +71,28 @@ def main(cfg):
             g.to("cpu")
 
         tot_loss /= len(train_data)
+        log(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
+        
+        epoch_times.append(timer() - start)
+        
+        # Log peak CUDA memory usage
+        peak_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)  # Convert to GB
+        log(f'Peak CUDA memory usage Epoch {epoch}: {peak_memory:.2f} GB')
+        
         wandb.log({
             "train_epoch": epoch,
             "train_loss": round(tot_loss, 4),
-            "train_epoch_time": round(timer() - start, 2),
+            "peak_cuda_memory_GB": round(peak_memory, 2),
         })
-        log(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
 
         # Check points
         if cfg._test_mode or epoch % 1 == 0:
             model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             save_model(model, model_path, cfg)
+            
+    wandb.log({
+        "train_epoch_time": round(np.mean(epoch_times), 2),
+    })
 
 
 if __name__ == "__main__":

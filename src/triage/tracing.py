@@ -10,21 +10,48 @@ from .tracing_methods import (
 )
 
 def get_new_stats(tw_to_info,
-                  evaluation_results):
-    flat_y_truth = []
-    flat_y_hat = []
-    scores = []
-    for tw, nid_to_result in evaluation_results.items():
-        for nid, result in nid_to_result.items():
-            score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
-            scores.append(score)
-            flat_y_truth.append(y_true)
-            if int(tw) in tw_to_info:
-                flat_y_hat.append(int(str(nid) in tw_to_info[int(tw)]['subgraph_nodes']))
-            else:
-                flat_y_hat.append(0)
+                  evaluation_results,
+                  cfg):
+    method = cfg.detection.evaluation.used_method.strip()
+    if method == "node_tw_evaluation":
+        flat_y_truth = []
+        flat_y_hat = []
+        scores = []
+        for tw, nid_to_result in evaluation_results.items():
+            for nid, result in nid_to_result.items():
+                score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
+                scores.append(score)
+                flat_y_truth.append(y_true)
+                if int(tw) in tw_to_info:
+                    flat_y_hat.append(int(str(nid) in tw_to_info[int(tw)]['subgraph_nodes']))
+                else:
+                    flat_y_hat.append(0)
 
-    new_stats = classifier_evaluation(flat_y_truth, flat_y_hat, scores)
+        new_stats = classifier_evaluation(flat_y_truth, flat_y_hat, scores)
+    elif method == "node_evaluation":
+        node_results = {}
+        for tw, nid_to_result in evaluation_results.items():
+            for nid, result in nid_to_result.items():
+                score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
+
+                if nid not in node_results:
+                    node_results[nid] = {}
+                node_results[nid]['score'] = score
+                node_results[nid]['y_true'] = y_true
+                if int(tw) in tw_to_info:
+                    node_results[nid]['y_hat'] = int(str(nid) in tw_to_info[int(tw)]['subgraph_nodes'])
+                else:
+                    node_results[nid]['y_hat'] = 0
+
+        flat_y_truth = []
+        flat_y_hat = []
+        scores = []
+
+        for nid, data in node_results.items():
+            flat_y_truth.append(data["y_true"])
+            flat_y_hat.append(data["y_hat"])
+            scores.append(data["score"])
+        new_stats = classifier_evaluation(flat_y_truth, flat_y_hat, scores)
 
     return new_stats
 
@@ -51,14 +78,14 @@ def main(cfg):
     in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
 
-    best_ap, best_stats = 0.0, {}
+    best_mcc, best_stats = -1e6, {}
     best_model_epoch = listdir_sorted(test_losses_dir)[-1]
     for model_epoch_dir in listdir_sorted(test_losses_dir):
 
         stats_file = os.path.join(in_dir, f"stats_{model_epoch_dir}.pth")
         stats = torch.load(stats_file)
-        if stats["ap"] > best_ap:
-            best_ap = stats["ap"]
+        if stats["mcc"] > best_mcc:
+            best_mcc = stats["mcc"]
             best_stats = stats
             best_model_epoch = model_epoch_dir
 
@@ -81,6 +108,7 @@ def main(cfg):
         new_stats = get_new_stats(
             tw_to_info=tw_to_info,
             evaluation_results=results,
+            cfg=cfg
         )
 
         log(f"Best model epoch is {best_model_epoch}")
