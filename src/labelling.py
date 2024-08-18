@@ -20,6 +20,23 @@ def get_ground_truth(cfg):
                 uuid_to_node_id[node_uuid] = str(node_id)
     return set(ground_truth_nids), ground_truth_paths, uuid_to_node_id
 
+def get_GP_of_each_attack(cfg):
+    cur, connect = init_database_connection(cfg)
+    uuid2nids, _ = get_uuid2nids(cur)
+
+    attack_to_nids = {}
+
+    for i, file in enumerate(cfg.dataset.ground_truth_relative_path):
+        attack_to_nids[i] = set()
+        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                node_uuid, node_labels, _ = row[0], row[1], row[2]
+                node_id = uuid2nids[node_uuid]
+                attack_to_nids[i].add(int(node_id))
+    return attack_to_nids
+
+
 def get_uuid2nids(cur):
     queries = {
         "file": "SELECT index_id, node_uuid FROM file_node_table;",
