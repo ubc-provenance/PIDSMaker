@@ -5,4 +5,4 @@ nohup sh -c "\
 nohup sh -c "\
 ./run_serial.sh best_model THEIA_E5 --detection.gnn_training.lr=0.000005 --preprocessing.build_graphs.use_all_files=False && \
 ./run_serial.sh best_model CADETS_E5 && \
-./run_serial.sh best_model CLEARSCOPE_E5 --detection.evaluation.node_evaluation.kmeans_top_K=100" &
+./run_serial.sh best_model CLEARSCOPE_E5 --detection.gnn_training.num_epochs=10 --detection.gnn_training.lr=0.0001" &
