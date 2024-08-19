@@ -242,7 +242,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                     # For unit tests, we only edges from the first graph
                     if cfg._test_mode:
                         return
-
+    return
 
 def main(cfg):
     logger = get_logger(
@@ -256,6 +256,8 @@ def main(cfg):
     os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)
 
     gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, logger=logger, cfg=cfg)
+
+    del nodeid2msg
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import torch
 from data_utils import *
 from provnet_utils import *
 
-from labelling import get_ground_truth
+from labelling import get_ground_truth, get_GP_of_each_attack
 import os
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
@@ -48,10 +48,16 @@ def uniforming_nodes(results, cfg):
     log("Generate results for testing set nodes")
     new_results = {}
     missing_num = 0
+
+    if isinstance(list(results.keys())[0], int):
+        key_type = 'int'
+    elif isinstance(list(results.keys())[0], str):
+        key_type = 'str'
+
     for n in all_nids:
-        if isinstance(results.keys()[0], int):
+        if key_type == 'int':
             node_id = int(n)
-        elif isinstance(results.keys()[0], str):
+        elif key_type == 'str':
             node_id = str(n)
 
         if node_id in results.keys():
@@ -72,6 +78,8 @@ def main(cfg):
     log("Get ground truth")
     GP_nids, _, _ = get_ground_truth(cfg)
     GPs = set(str(nid) for nid in GP_nids)
+
+    attack_to_GPs = get_GP_of_each_attack(cfg)
 
     tw_to_malicious_nodes = compute_tw_labels(cfg)
 
@@ -123,6 +131,9 @@ def main(cfg):
     dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
 
     log("Analysis of malicious nodes:")
+    attack_to_TPs = {}
+    for attack in attack_to_GPs.keys():
+        attack_to_TPs[attack] = 0
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
     for nid, result in results.items():
         nodes.append(int(nid))
@@ -131,6 +142,11 @@ def main(cfg):
         y_preds.append(y_hat)
         pred_scores.append(score)
         max_val_loss_tw.append(max_tw)
+
+        if (y_hat == 1) and (y_true == 1):
+            for att, gps in attack_to_GPs.items():
+                if int(nid) in gps:
+                    attack_to_TPs[att] += 1
 
         if y_true == 1:
             log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (
@@ -161,6 +177,18 @@ def main(cfg):
 
     for k,v in stats.items():
         log(k, " : ", v)
+
+    log("Detected malicious nodes in each attacks:")
+    tps_in_atts = []
+    for att, tps in attack_to_TPs.items():
+        log(f"attack {att}: {tps}")
+        tps_in_atts.append((att, tps))
+
+    detected_attacks = {
+        'tps_in_atts': tps_in_atts,
+    }
+
+    wandb.log(detected_attacks)
 
     wandb.log(stats)
 

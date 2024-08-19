@@ -20,12 +20,14 @@ def load_one_graph_data(graph_path, indexid2type, indexid2props):
 
         if src not in nodes:
             nodes[src] = []
-        nodes[src].extend(properties)
+        if len(nodes[src]) < 300:
+            nodes[src].extend(properties)
         labels[src] = indexid2type[src]
 
         if dst not in nodes:
             nodes[dst] = []
-        nodes[dst].extend(properties)
+        if len(nodes[dst]) < 300:
+            nodes[dst].extend(properties)
         labels[dst] = indexid2type[dst]
 
         edges.append((src, dst))
@@ -70,12 +72,14 @@ def load_graph_data(t, cfg):
 
             if src not in nodes:
                 nodes[src] = []
-            nodes[src].extend(properties)
+            if len(nodes[src]) < 300:
+                nodes[src].extend(properties)
             labels[src] = indexid2type[src]
 
             if dst not in nodes:
                 nodes[dst] = []
-            nodes[dst].extend(properties)
+            if len(nodes[dst]) < 300:
+                nodes[dst].extend(properties)
             labels[dst] = indexid2type[dst]
 
             edges.append((src, dst))
@@ -109,42 +113,42 @@ def get_nid2props(cfg):
 
     # netflow
     sql = """
-            select * from netflow_node_table;
+            select dst_addr, index_id from netflow_node_table;
             """
     cur.execute(sql)
     records = cur.fetchall()
 
     for i in records:
-        remote_ip = str(i[4])
-        index_id = i[-1]  # int
+        remote_ip = str(i[0])
+        index_id = i[1]  # int
 
         indexid2type[str(index_id)] = ntype2id['netflow'] - 1 # 2
         indexid2props[str(index_id)] = remote_ip
 
     #subject
     sql = """
-    select * from subject_node_table;
+    select cmd, index_id from subject_node_table;
     """
     cur.execute(sql)
     records = cur.fetchall()
 
     for i in records:
-        cmd = str(i[3])
-        index_id = i[-1]
+        cmd = str(i[0])
+        index_id = i[1]
 
         indexid2type[str(index_id)] = ntype2id['subject'] - 1 # 0
         indexid2props[str(index_id)] = cmd
 
     # file
     sql = """
-       select * from file_node_table;
+       select path, index_id from file_node_table;
        """
     cur.execute(sql)
     records = cur.fetchall()
 
     for i in records:
-        path = str(i[2])
-        index_id = i[-1]
+        path = str(i[0])
+        index_id = i[1]
 
         indexid2type[str(index_id)] = ntype2id['file'] - 1  # 1
         indexid2props[str(index_id)] = path
