@@ -81,7 +81,7 @@ def main(cfg, **kwargs):
     t6 = time.time()
 
     # Triage
-    if should_restart["tracing"]:
+    if should_restart["tracing"] and cfg.triage.tracing.used_method is not None:
         if cfg.detection.evaluation.used_method.strip() in ['node_evaluation', 'node_tw_evaluation']:
             tracing.main(cfg)
     t7 = time.time()
