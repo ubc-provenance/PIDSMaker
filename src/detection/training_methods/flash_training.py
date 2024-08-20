@@ -44,8 +44,13 @@ def main(cfg):
 
         for i in range(len(sorted_paths)):
             phrases, labels, edges, mapp = load_one_graph_data(sorted_paths[i], indexid2type, indexid2props)
+
             l = np.array(labels)
-            class_weights = class_weight.compute_class_weight(class_weight="balanced", classes=np.unique(l), y=l)
+            num_classes = out_channel
+            class_weights = np.zeros(num_classes)
+            calculated_weights = class_weight.compute_class_weight(class_weight="balanced", classes=np.unique(l), y=l)
+            for j, c in enumerate(np.unique(l)):
+                class_weights[c] = calculated_weights[j]
             class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
             criterion = CrossEntropyLoss(weight=class_weights, reduction='mean')
 
