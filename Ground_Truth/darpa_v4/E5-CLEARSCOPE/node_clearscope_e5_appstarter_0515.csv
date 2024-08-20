@@ -1,10 +1,26 @@
 E12A36E1-620A-2C2A-AAC6-CEA557025A0F,{'file': '/config/sdcardfs/com.android.providers.contacts/appid'},189313
-00000000-0000-0000-0000-0000013B358E,{'subject': 'None /system/bin/dex2oat'},144546
 00000000-0000-0000-0000-0000013240C8,{'subject': 'None system_server'},143173
+00000000-0000-0000-0000-0000013B8936,{'subject': 'None /data/data/de.belu.appstarter/busybox'},144570
+EDCC04F8-D0E9-E47C-469F-FE9E1DC9EA90,{'file': '/config/sdcardfs/de.belu.appstarter/appid'},313036
+CCA8A014-940A-E8AF-47E5-923F728DAB7F,{'file': '/data/data/de.belu.appstarter/busybox'},371985
+B3A43F54-A451-8D84-70F0-B5786851EC19,{'file': '/system/bin/toybox'},371986
+A725D5CE-B225-C4DB-09E4-4A6154D055F2,{'file': '/config/sdcardfs/com.android.providers.contacts/appid'},308184
+206E3D40-0ED4-6F12-6DDD-D302CC82A81F,{'file': '/config/sdcardfs/com.bloketech.lockwatch/appid'},309857
+97064057-300B-2370-A39B-5D561358DC01,{'file': '/data/app/de.belu.appstarter-WNmK54ZhNXuzy_Q5DhIuQA=='},371938
+585890CB-8C41-7A15-471C-D20B479B42DD,{'file': '/data/app/de.belu.appstarter-WNmK54ZhNXuzy_Q5DhIuQA==/base.apk'},371939
+A01F8E07-A41D-A090-EAB2-214C52197DB1,{'file': '/data/app/de.belu.appstarter-WNmK54ZhNXuzy_Q5DhIuQA==/lib'},371940
+CF9CA4D4-353A-A83F-31B0-D2DF30C99981,{'file': '/data/app/de.belu.appstarter-WNmK54ZhNXuzy_Q5DhIuQA==/oat/arm64/base.odex'},371941
+760AC925-FB1C-371E-F989-229E48A18A90,{'file': '/data/app/de.belu.appstarter-WNmK54ZhNXuzy_Q5DhIuQA==/oat/arm64/base.vdex'},371942
+00000000-0000-0000-0000-0000013B358E,{'subject': 'None /system/bin/dex2oat'},144546
 1B878418-54E9-D085-42F9-9A23918E815F,{'subject': 'None kernel'},134630
 3D195FF6-B676-5F15-0C14-DC623817DE4A,{'file': '/dev/msm_g711tlaw'},372010
-B3A43F54-A451-8D84-70F0-B5786851EC19,{'file': '/system/bin/toybox'},371986
+00000000-0000-0000-0000-0000013B625A,{'subject': 'None de.belu.appstarter'},144560
+3C976196-C403-D785-9A5D-77F104A22616,{'file': '/config/sdcardfs/com.bloketech.lockwatch/appid'},191025
+841D4E73-EF8A-118A-46EC-6B19B61E6035,{'file': '/dev/ashmem'},303411
+00000000-0000-0000-0000-0000013B68A4,{'subject': 'None /data/data/de.belu.appstarter/busybox'},144563
 00000000-0000-0000-0000-0000013B6902,{'subject': 'None /system/bin/toybox'},144565
-A725D5CE-B225-C4DB-09E4-4A6154D055F2,{'file': '/config/sdcardfs/com.android.providers.contacts/appid'},308184
+00000000-0000-0000-0000-000000F1B964,{'subject': 'None system_server'},112117
+BEA17FF6-2475-4B0C-F2BF-C0C0B3C45EB7,{'file': '/config/sdcardfs/de.belu.appstarter/appid'},191031
+00000000-0000-0000-0000-0000013B88E6,{'subject': 'None /data/data/de.belu.appstarter/busybox'},144568
 00000000-0000-0000-0000-0000013B88F2,{'subject': 'None /system/bin/toybox'},144569
-3C19E71D-8B9C-8B4D-8005-8C87795F7D55,{'file': '/dev/pmsg0'},303391
+00000000-0000-0000-0000-0000013B68EC,{'subject': 'None /data/data/de.belu.appstarter/busybox'},144564
