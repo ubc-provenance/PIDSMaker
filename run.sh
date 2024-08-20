@@ -15,6 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-
-nohup sh -c "python src/benchmark.py $args --wandb --force_restart=build_graphs,embed_nodes,embed_edges,gnn_training && python src/benchmark.py $args --wandb --force_restart=gnn_testing,evaluation,tracing" &
-
+nohup python src/benchmark.py $args --wandb &
