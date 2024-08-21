@@ -4,7 +4,7 @@ from config import *
 import torch.nn.functional as F
 from threatrace_utils.model import SAGENet
 from threatrace_utils.data_process import load_train_graph, TestDataset
-from torch_geometric.data import NeighborSampler, DataLoader
+from torch_geometric.loader import NeighborSampler, DataLoader, NeighborLoader
 import torch
 
 from tqdm import tqdm
@@ -13,9 +13,10 @@ import os
 def train(model, loader, optimizer, data, device):
     model.train()
     total_loss = 0
-    for data_flow in loader(data.train_mask):
+    for data_flow in loader:
+        data_flow = data_flow.to(device)
         optimizer.zero_grad()
-        out = model(data.x.to(device), data_flow.to(device))
+        out = model(data_flow.x, data_flow.edge_index)
         loss = F.nll_loss(out, data.y[data_flow.n_id].to(device))
         loss.backward()
         optimizer.step()
@@ -45,11 +46,10 @@ def train_pro(cfg):
 
     for epoch in tqdm(range(epochs), desc="Training model"):
         for graph in sorted_paths:
-            data1, feature_num, label_num, adj, adj2, node_list = load_train_graph(graph)
-            dataset = TestDataset(data1)
-            data = dataset[0]
-            loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=b_size, shuffle=False,
-                                     add_self_loops=True)
+            data, feature_num, label_num, adj, adj2, node_list = load_train_graph(graph)
+            data.to(device)
+
+            loader = NeighborLoader(data, num_neighbors=[-1, -1], batch_size=b_size, shuffle=False, input_nodes=data.train_mask)
             loss = train(model, loader, optimizer, data, device)
         torch.save(model.state_dict(), os.path.join(model_save_dir, f'model_{epoch}.pth'))
         log(f"Model of epoch {epoch} is saved")

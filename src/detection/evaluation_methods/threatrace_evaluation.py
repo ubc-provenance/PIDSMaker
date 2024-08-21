@@ -1,7 +1,7 @@
 from data_utils import *
 from provnet_utils import *
 
-from .evaluation_utils import compute_tw_labels_for_magic
+from .evaluation_utils import compute_tw_labels
 
 import os
 import numpy as np
@@ -125,7 +125,7 @@ def main(cfg):
 
     attack_to_GPs = get_GP_of_each_attack(cfg) #int
 
-    tw_to_malicious_nodes = compute_tw_labels_for_magic(cfg) #int
+    tw_to_malicious_nodes = compute_tw_labels(cfg) #int
 
     out_dir = cfg.detection.gnn_testing._threatrace_test_dir
 
@@ -160,7 +160,7 @@ def main(cfg):
         score, y_hat, y_true, max_tw = result["score"], result["y_hat"], result["y_true"], result["tw_with_max_loss"]
         y_truth.append(y_true)
         y_preds.append(y_hat)
-        pred_scores.append(score)
+        pred_scores.append(score.cpu().item())
         max_val_loss_tw.append(max_tw)
 
         if (y_hat == 1) and (y_true == 1):
@@ -170,17 +170,22 @@ def main(cfg):
 
         if y_true == 1:
             log(f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:" + (" ✅ " if y_true == y_hat else " ❌ ") + (
-                node_to_path[nid]['path']))
+                node_to_path[int(nid)]['path']))
+
+    pred_scores = np.where(np.isinf(pred_scores), np.finfo(np.float64).max, pred_scores)
+    pred_scores = np.nan_to_num(pred_scores)
+
+    pred_scores_scaled = np.log1p(pred_scores)
 
     # Plots the PR curve and scores for mean node loss
     print(f"Saving figures to {out_dir}...")
-    plot_precision_recall(pred_scores, y_truth, pr_img_file)
-    plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
-    plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
-    stats = classifier_evaluation(y_truth, y_preds, pred_scores)
+    plot_precision_recall(pred_scores_scaled, y_truth, pr_img_file)
+    plot_dor_recall_curve(pred_scores_scaled, y_truth, dor_img_file)
+    plot_simple_scores(pred_scores_scaled, y_truth, simple_scores_img_file)
+    plot_scores_with_paths(pred_scores_scaled, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
+    stats = classifier_evaluation(y_truth, y_preds, pred_scores_scaled)
 
-    fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes,
+    fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores_scaled, max_val_loss_tw, nodes,
                                                        tw_to_malicious_nodes)
     stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
 

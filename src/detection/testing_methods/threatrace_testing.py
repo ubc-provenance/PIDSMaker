@@ -4,9 +4,9 @@ from config import *
 import os
 
 from tqdm import tqdm
-
-from threatrace_utils.data_process import load_train_graph, TestDataset
-from torch_geometric.data import NeighborSampler, DataLoader
+from threatrace_utils.model import SAGENet
+from threatrace_utils.data_process import load_train_graph
+from torch_geometric.loader import NeighborSampler, DataLoader, NeighborLoader
 import torch.nn.functional as F
 
 def test_pro(cfg):
@@ -33,15 +33,17 @@ def test_pro(cfg):
     for tw,graph in tqdm(enumerate(sorted_paths), desc="Testing model"):
         tw_node_data[tw] = {}
 
-        data1, feature_num, label_num, adj, adj2, node_list = load_train_graph(graph)
-        dataset = TestDataset(data1)
-        data = dataset[0]
-        loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=b_size, shuffle=False,
-                                 add_self_loops=True)
+        data, feature_num, label_num, adj, adj2, node_list = load_train_graph(graph)
+        data.to(device)
 
-        for data_flow in loader(data.test_mask):
+        loader = NeighborLoader(data, num_neighbors=[-1, -1], batch_size=b_size, shuffle=False, input_nodes=data.test_mask)
+
+        for data_flow in loader:
             score_list = []
-            out = model(data.x.to(device), data_flow.to(device))
+
+            data_flow = data_flow.to(device)
+            out = model(data_flow.x, data_flow.edge_index)
+
             pred = out.max(1)[1]
             pro = F.softmax(out, dim=1)
             pro1 = pro.max(1)
@@ -49,7 +51,10 @@ def test_pro(cfg):
                 pro[i][pro1[1][i]] = -1
             pro2 = pro.max(1)
             for i in range(len(data_flow.n_id)):
-                score_list.append(pro1[0][i] / pro2[0][i])
+                if pro2[0][i] != 0:
+                    score_list.append(pro1[0][i] / pro2[0][i])
+                else:
+                    score_list.append(pro1[0][i] / 1e-5)
             for i in range(len(data_flow.n_id)):
                 node = node_list[data_flow.n_id[i]]
                 score = score_list[i]
@@ -66,7 +71,7 @@ def test_pro(cfg):
                 tw_node_data[tw][node]['y_hat'] = int(tw_node_data[tw][node]['y_hat'] or y_hat)
 
     out_dir = cfg.detection.gnn_testing._threatrace_test_dir
-    os.makedirs(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data.pth"))
 
 def main(cfg):

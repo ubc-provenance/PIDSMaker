@@ -20,12 +20,12 @@ def load_train_graph(path):
     edge_feature_map = {}
     for k, v in rel2id.items():
         if isinstance(k, str):
-            edge_feature_map[k] = v
+            edge_feature_map[k] = v - 1
 
     node_label_map = {}
     for k, v in ntype2id.items():
         if isinstance(k, str):
-            node_label_map[k] = v
+            node_label_map[k] = v - 1
 
     node_to_id = {}
     node_to_type = {}
@@ -86,7 +86,7 @@ def load_train_graph(path):
     edge_index = torch.tensor([edge_s, edge_e], dtype=torch.long)
     data1 = Data(x=x, y=y, edge_index=edge_index, train_mask=train_mask, test_mask=test_mask)
 
-    return [data1], edge_feature_num * 2, node_label_num, 0, 0, node_list
+    return data1, edge_feature_num * 2, node_label_num, 0, 0, node_list
 
 
 
