@@ -2,6 +2,7 @@ from config import *
 from .training_methods import (
     orthrus_gnn_training,
     flash_training,
+    threatrace_training
 )
 
 def main(cfg):
@@ -12,6 +13,8 @@ def main(cfg):
         set_task_to_done(cfg.detection.gnn_training._task_path)
     elif method == 'flash':
         flash_training.main(cfg)
+    elif method == "threatrace":
+        threatrace_training.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")
 

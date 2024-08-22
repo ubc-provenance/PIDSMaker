@@ -11,6 +11,7 @@ from .evaluation_methods import (
     node_tw_evaluation,
     magic_evaluation,
     flash_evaluation,
+    threatrace_evaluation,
 )
 from data_utils import *
 from provnet_utils import log
@@ -62,6 +63,8 @@ def main(cfg):
         magic_evaluation.main(cfg)
     elif method == "flash_evaluation":
         flash_evaluation.main(cfg)
+    elif method == "threatrace_evaluation":
+        threatrace_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 
