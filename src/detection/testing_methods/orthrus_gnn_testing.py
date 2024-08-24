@@ -94,7 +94,7 @@ def main(cfg):
     nodeid2msg = gen_nodeid2msg(cur=cur)
     nodeid2msg = {k: str(v) for k, v in nodeid2msg.items()}  # pre-compute because it's too slow in main loop
 
-    _, val_data, test_data, full_data = load_all_datasets(cfg)
+    _, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
 
     # For each model trained at a given epoch, we test
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
@@ -105,7 +105,7 @@ def main(cfg):
     for trained_model in all_trained_models:
         log(f"Evaluation with model {trained_model}...")
         torch.cuda.empty_cache()
-        model = build_model(data_sample=test_data[0], device=device, cfg=cfg)
+        model = build_model(data_sample=test_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
         model = load_model(model, os.path.join(gnn_models_dir, trained_model), cfg, map_location=device)
 
         # TODO: we may want to move the validation set into the training for early stopping
