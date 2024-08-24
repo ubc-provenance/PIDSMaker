@@ -26,6 +26,7 @@ def load_all_datasets(cfg):
     all_t = torch.cat(all_t)
     all_edge_types = torch.cat(all_edge_types)
     full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    max_node = max_node + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
     
     return train_data, val_data, test_data, full_data, max_node
