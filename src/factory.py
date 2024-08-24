@@ -12,7 +12,7 @@ from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader
 
 
-def build_model(data_sample, device, cfg):
+def build_model(data_sample, device, cfg, max_node_num):
     """
     Builds and loads the initial model into memory.
     The `data_sample` is required to infer the shape of the layers.
@@ -20,21 +20,21 @@ def build_model(data_sample, device, cfg):
     msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(data_sample)
 
     graph_reindexer = GraphReindexer(
-        num_nodes=cfg.dataset.max_node_num,
+        num_nodes=max_node_num,
         device=device,
     )
     
-    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device)
-    decoder = decoder_factory(cfg, in_dim=in_dim, device=device)
-    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
+    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
+    decoder = decoder_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
+    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     
     return model
 
-def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device):
+def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device, max_node_num):
     return Model(
         encoder=encoder,
         decoders=decoders,
-        num_nodes=cfg.dataset.max_node_num,
+        num_nodes=max_node_num,
         device=device,
         in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
@@ -42,7 +42,7 @@ def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device):
         graph_reindexer=graph_reindexer,
     ).to(device)
 
-def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
+def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     max_node_num = cfg.dataset.max_node_num
@@ -156,7 +156,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device):
 
     return encoder
 
-def decoder_factory(cfg, in_dim, device):
+def decoder_factory(cfg, in_dim, device, max_node_num):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
 
     decoders = []
@@ -262,7 +262,7 @@ def decoder_factory(cfg, in_dim, device):
                 raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
             
             contrastive_graph_reindexer = GraphReindexer(
-                num_nodes=cfg.dataset.max_node_num,
+                num_nodes=max_node_num,
                 device=device,
             )
             loss_fn = bce_contrastive
