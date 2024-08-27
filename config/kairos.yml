@@ -1,5 +1,6 @@
 preprocessing:
   build_graphs:
+    used_method: orthrus
     use_all_files: True
     time_window_size: 15.0
     use_hashed_label: False
@@ -10,15 +11,16 @@ preprocessing:
 
 featurization:
   embed_nodes:
-    emb_dim: 128
+    emb_dim: 16
     used_method: hierarchical_hashing
   embed_edges:
     to_remove: True
 
 detection:
   gnn_training:
+    used_method: orthrus
     use_seed: True
-    num_epochs: 50
+    num_epochs: 6
     lr: 0.00005
     weight_decay: 0.01
     node_hid_dim: 100
@@ -49,7 +51,13 @@ detection:
     threshold_method: str
   evaluation:
     viz_malicious_nodes: False
-    used_method: queue_evaluation
+    ground_truth_version: darpa_v4
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_kmeans: True
+      kmeans_top_K: 30
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue

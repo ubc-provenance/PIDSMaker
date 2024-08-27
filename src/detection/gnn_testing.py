@@ -3,6 +3,7 @@ from .testing_methods import (
     orthrus_gnn_testing,
     flash_testing,
     magic_testing,
+    threatrace_testing,
 )
 
 def main(cfg):
@@ -13,6 +14,8 @@ def main(cfg):
         magic_testing.main(cfg)
     elif method == 'flash':
         flash_testing.main(cfg)
+    elif method == "threatrace":
+        threatrace_testing.main(cfg)
     else:
         raise ValueError(f"Invalid testing method {method}")
 
