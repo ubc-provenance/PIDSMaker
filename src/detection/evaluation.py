@@ -35,10 +35,19 @@ def standard_evaluation(cfg, evaluation_fn):
             
         out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
-        stats["precision_recall_img"] = wandb.Image(os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png"))
-        stats["scores_img"] = wandb.Image(os.path.join(out_dir, f"scores_{model_epoch_dir}.png"))
         stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
-        stats["dor_img"] = wandb.Image(os.path.join(out_dir, f"dor_{model_epoch_dir}.png"))
+        
+        scores = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+        if os.path.exists(scores):
+            stats["scores_img"] = wandb.Image(scores)
+        
+        dor = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
+        if os.path.exists(dor):
+            stats["dor_img"] = wandb.Image(dor)
+        
+        pr = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
+        if os.path.exists(pr):
+            stats["precision_recall_img"] = wandb.Image(pr)
         
         wandb.log(stats)
         
