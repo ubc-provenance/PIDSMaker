@@ -118,7 +118,6 @@ if __name__ == '__main__':
         mode="online" if args.wandb else "disabled",
         # project="Orthrus_V1_bis",
         project="kairos_evaluation",
-
         name=exp_name,
         tags=tags,
     )

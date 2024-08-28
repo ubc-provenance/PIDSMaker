@@ -174,6 +174,8 @@ def main(cfg):
         os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"{model_epoch_dir}.png"))
     stats["scores_img"] = wandb.Image(
         os.path.join(cfg.detection.evaluation.node_evaluation._precision_recall_dir, f"scores_{model_epoch_dir}.png"))
+    stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
+    stats["dor_img"] = wandb.Image(os.path.join(out_dir, f"dor_{model_epoch_dir}.png"))
 
     for k,v in stats.items():
         log(k, " : ", v)
