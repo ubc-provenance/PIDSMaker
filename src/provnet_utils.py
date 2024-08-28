@@ -272,7 +272,7 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
         # We thus pre-compute a list of random indices for all unique numbers of neighbors.
         # These indices can then be accessed given the length of the neighbors.
         unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]))
-        cache_size = 7 * len(adj_list) * num_walks * walk_len
+        cache_size = 15 * len(adj_list) * num_walks * walk_len
         random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
         random_idx = {count: 0 for count in unique_neighbors_count}
 

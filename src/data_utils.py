@@ -14,18 +14,22 @@ def load_all_datasets(cfg):
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
     
     all_msg, all_t, all_edge_types = [], [], []
+    max_node = 0
     for dataset in [train_data, val_data, test_data]:
         for data in dataset:
             all_msg.append(data.msg)
             all_t.append(data.t)
             all_edge_types.append(data.edge_type)
+            max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
     all_msg = torch.cat(all_msg)
     all_t = torch.cat(all_t)
     all_edge_types = torch.cat(all_edge_types)
     full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    max_node = max_node + 1
+    print(f"Max node in {cfg.dataset.name}: {max_node}")
     
-    return train_data, val_data, test_data, full_data
+    return train_data, val_data, test_data, full_data, max_node
 
 def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
     """

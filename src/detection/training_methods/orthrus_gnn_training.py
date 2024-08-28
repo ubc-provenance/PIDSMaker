@@ -35,12 +35,14 @@ def train(data,
 def main(cfg):
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(gnn_models_dir, exist_ok=True)
-
-    train_data, _, _, full_data = load_all_datasets(cfg)
-
     device = get_device(cfg)
+    
+    # Reset the peak memory usage counter
+    torch.cuda.reset_peak_memory_stats(device=device)
 
-    model = build_model(data_sample=train_data[0], device=device, cfg=cfg)
+    train_data, _, _, full_data, max_node_num = load_all_datasets(cfg)
+
+    model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
 
     num_epochs = cfg.detection.gnn_training.num_epochs
@@ -48,9 +50,6 @@ def main(cfg):
     epoch_times = []
     for epoch in tqdm(range(1, num_epochs + 1)):
         start = timer()
-
-        # Reset the peak memory usage counter
-        torch.cuda.reset_peak_memory_stats(device=device)
 
         # Before each epoch, we reset the memory
         if isinstance(model.encoder, TGNEncoder):
