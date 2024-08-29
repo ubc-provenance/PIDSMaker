@@ -182,8 +182,13 @@ class TGNMemory(torch.nn.Module):
         """Sets the module in training mode."""
         if self.training and not mode:
             # Flush message store to memory in case we just entered eval mode.
-            self._update_memory(
-                torch.arange(self.num_nodes, device=self.memory.device))
+            # NOTE: this line below was originaly here. However, it is called when calling model.eval()
+            # during inference and generates a memory overflow on large datasets like CADETS_E5.
+            # As we load directly the memory from a pkl file, I don't think we need this line anymore so we
+            # removed it. If results become strange in the future, try to add this line back to ensure it
+            # doen't affect performance.
+            # self._update_memory(
+            #     torch.arange(self.num_nodes, device=self.memory.device))
             self._reset_message_store()
         super().train(mode)
         
@@ -279,8 +284,13 @@ class TimeEncodingMemory(torch.nn.Module):
         """Sets the module in training mode."""
         if self.training and not mode:
             # Flush message store to memory in case we just entered eval mode.
-            self._update_memory(
-                torch.arange(self.num_nodes, device=self.device))
+            # NOTE: this line below was originaly here. However, it is called when calling model.eval()
+            # during inference and generates a memory overflow on large datasets like CADETS_E5.
+            # As we load directly the memory from a pkl file, I don't think we need this line anymore so we
+            # removed it. If results become strange in the future, try to add this line back to ensure it
+            # doen't affect performance.
+            # self._update_memory(
+            #     torch.arange(self.num_nodes, device=self.device))
             self._reset_message_store()
         super().train(mode)
 
