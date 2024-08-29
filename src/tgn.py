@@ -187,8 +187,8 @@ class TGNMemory(torch.nn.Module):
             # As we load directly the memory from a pkl file, I don't think we need this line anymore so we
             # removed it. If results become strange in the future, try to add this line back to ensure it
             # doen't affect performance.
-            # self._update_memory(
-            #     torch.arange(self.num_nodes, device=self.memory.device))
+            self._update_memory(
+                torch.arange(self.num_nodes, device=self.memory.device))
             self._reset_message_store()
         super().train(mode)
         
@@ -289,8 +289,8 @@ class TimeEncodingMemory(torch.nn.Module):
             # As we load directly the memory from a pkl file, I don't think we need this line anymore so we
             # removed it. If results become strange in the future, try to add this line back to ensure it
             # doen't affect performance.
-            # self._update_memory(
-            #     torch.arange(self.num_nodes, device=self.device))
+            self._update_memory(
+                torch.arange(self.num_nodes, device=self.device))
             self._reset_message_store()
         super().train(mode)
 
