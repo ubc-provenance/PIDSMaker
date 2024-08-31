@@ -7,7 +7,16 @@ import numpy as np
 from tqdm import tqdm
 from torch_geometric.data import *
 
-def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
+def cal_word_weight(n,percentage):
+    d = -1 / n * percentage / 100
+    a_1 = 1/n - 0.5 * (n-1) * d
+    sequence = []
+    for i in range(n):
+        a_i = a_1 + i * d
+        sequence.append(a_i)
+    return sequence
+
+def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage):
 
 
     model = Word2Vec.load(model_path)
@@ -31,8 +40,11 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
             else:
                 tokens = tokenize_netflow(msg[1])
 
+        weight_list = cal_word_weight(len(tokens), decline_percentage)
+
         word_vectors = [model.wv[word] for word in tokens]
-        sentence_vector = np.mean(word_vectors, axis=0)
+        weighted_vectors = [weight * word_vec for weight, word_vec in zip(weight_list, word_vectors)]
+        sentence_vector = np.mean(weighted_vectors, axis=0)
 
         normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
 
@@ -105,6 +117,7 @@ def main(cfg):
     use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
+    decline_percentage = cfg.featurization.embed_nodes.feature_word2vec.decline_rate
 
     log("Loading node msg from database...")
     cur, connect = init_database_connection(cfg)
@@ -112,7 +125,7 @@ def main(cfg):
 
     log("Generating node vectors...")
     feature_word2vec_model_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir + 'feature_word2vec.model'
-    indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, logger=logger)
+    indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, decline_percentage=decline_percentage)
 
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)

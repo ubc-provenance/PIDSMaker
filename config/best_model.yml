@@ -58,6 +58,7 @@ featurization:
       use_node_types: False
       use_cmd: True
       use_port: False
+      decline_rate: 30
   embed_edges:
     to_remove: True
 
