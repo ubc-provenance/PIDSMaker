@@ -261,11 +261,11 @@ def load_model(model, path: str, cfg, map_location=None):
     Loads weights and tensors from disk into a model.
     """
     model.load_state_dict(
-        torch.load(os.path.join(path, "state_dict.pkl"), map_location=map_location))
+        torch.load(os.path.join(path, "state_dict.pkl")))
     
     if isinstance(model.encoder, TGNEncoder):
-        model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"), map_location=map_location)
+        model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"))
         if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.gnn_training.encoder.edge_features:
-            model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"), map_location=map_location)
+            model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 
     return model
