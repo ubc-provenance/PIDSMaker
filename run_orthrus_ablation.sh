@@ -3,6 +3,10 @@ nohup sh -c "\
 ./run_serial.sh best_model THEIA_E5 --exp=E5_embedding --featurization.embed_nodes.used_method=hierarchical_hashing" &
 
 nohup sh -c "\
+./run_serial.sh best_model THEIA_E3 --exp=E3_embedding_word2vec --featurization.embed_nodes.used_method=word2vec && \
+./run_serial.sh best_model THEIA_E5 --exp=E5_embedding_word2vec --featurization.embed_nodes.used_method=word2vec" &
+
+nohup sh -c "\
 ./run_serial.sh best_model THEIA_E3 --exp=E3_encoding --detection.gnn_training.encoder.tgn.use_memory=True --detection.gnn_training.decoder.predict_edge_type.used_method=kairos  && \
 ./run_serial.sh best_model THEIA_E5 --exp=E5_encoding --detection.gnn_training.encoder.tgn.use_memory=True --detection.gnn_training.decoder.predict_edge_type.used_method=kairos" &
 
