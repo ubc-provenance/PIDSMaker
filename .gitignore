@@ -166,3 +166,4 @@ cython_debug/
 .vscode/
 wandb/
 nohup.out
+artifacts/

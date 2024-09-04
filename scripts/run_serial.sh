@@ -15,4 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-python src/benchmark.py $args --wandb
+python ../src/benchmark.py $args --wandb
