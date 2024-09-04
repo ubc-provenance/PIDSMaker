@@ -105,7 +105,7 @@ def test_whole_framework(dataset: str):
         "hierarchical_hashing",
         "doc2vec",
     ]
-    base_model = "best_model"
+    base_model = "orthrus"
     
     for featurization_method in featurization_methods:
         run_encoders(base_model, dataset, featurization_method)
