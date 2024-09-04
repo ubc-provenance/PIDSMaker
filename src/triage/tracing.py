@@ -79,7 +79,7 @@ def main(cfg):
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}
-    best_model_epoch = listdir_sorted(test_losses_dir)[-1]
+    orthrus_epoch = listdir_sorted(test_losses_dir)[-1]
     for model_epoch_dir in listdir_sorted(test_losses_dir):
 
         stats_file = os.path.join(in_dir, f"stats_{model_epoch_dir}.pth")
@@ -87,7 +87,7 @@ def main(cfg):
         if stats["mcc"] > best_mcc:
             best_mcc = stats["mcc"]
             best_stats = stats
-            best_model_epoch = model_epoch_dir
+            orthrus_epoch = model_epoch_dir
 
     sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'test')))
     tw_to_time = {}
@@ -96,7 +96,7 @@ def main(cfg):
 
     method = cfg.detection.evaluation.used_method.strip()
 
-    results_file = os.path.join(in_dir, f"result_{best_model_epoch}.pth")
+    results_file = os.path.join(in_dir, f"result_{orthrus_epoch}.pth")
     if method == "node_tw_evaluation":
         results = torch.load(results_file)
     elif method == "node_evaluation":
@@ -111,7 +111,7 @@ def main(cfg):
             cfg=cfg
         )
 
-        log(f"Best model epoch is {best_model_epoch}")
+        log(f"Best model epoch is {orthrus_epoch}")
         log("==" * 20)
         log(f"Before triage:")
         for k, v in best_stats.items():

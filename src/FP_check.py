@@ -169,15 +169,15 @@ def main(cfg):
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}
-    best_model_epoch = listdir_sorted(test_losses_dir)[-1]
+    orthrus_epoch = listdir_sorted(test_losses_dir)[-1]
     for model_epoch_dir in listdir_sorted(test_losses_dir):
 
         stats_file = os.path.join(in_dir, f"stats_{model_epoch_dir}.pth")
         stats = torch.load(stats_file)
         if stats["mcc"] > best_mcc:
             best_mcc = stats["mcc"]
-            best_model_epoch = model_epoch_dir
-    results_file = os.path.join(in_dir, f"result_{best_model_epoch}.pth")
+            orthrus_epoch = model_epoch_dir
+    results_file = os.path.join(in_dir, f"result_{orthrus_epoch}.pth")
     results = torch.load(results_file)
 
     sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'train')))
