@@ -7,6 +7,7 @@ from sklearn.neighbors import LocalOutlierFactor
 
 from provnet_utils import *
 from config import *
+from .evaluation_utils import *
 
 
 # Kairos code
@@ -89,7 +90,7 @@ def cal_set_rel_bak(node_IDF, s1,s2,num_files):
                 IDF=math.log(num_files/(1))         
 
             if (IDF)>math.log(num_files*0.9/(1)): # TODO: default value for kairos, but can be parametrized
-                print("node:",i," IDF:",IDF)
+                log("node:",i," IDF:",IDF)
                 count+=1
     return count
 
@@ -110,14 +111,14 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1,s2,num_test_files, num_train_f
                 IDF_train=math.log(num_train_files/(1))    
             
             if (IDF_test+IDF_train)>5: # TODO: default value for kairos, but can be parametrized
-                print(f"node: {i} | IDF test: {IDF_test:.3f} | IDF train: {IDF_train:.3f}")
+                log(f"node: {i} | IDF test: {IDF_test:.3f} | IDF train: {IDF_train:.3f}")
                 count+=1
     return count
 
 def cal_anomaly_loss_kairos(loss_list, edge_list):
     
     if len(loss_list)!=len(edge_list):
-        print("error!")
+        log("error!")
         return 0
     count=0
     loss_sum=0
@@ -129,7 +130,7 @@ def cal_anomaly_loss_kairos(loss_list, edge_list):
     
     thr=loss_mean+1.5*loss_std
 
-    print("thr:",thr)
+    log("thr:",thr)
   
     for i in range(len(loss_list)):
         if loss_list[i]>thr:
@@ -157,7 +158,7 @@ def anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_
         f=open(os.path.join(test_tw_path, f_path))
         edge_loss_list=[]
         edge_list=[]
-        print('index_count:',index_count)
+        log('index_count:',index_count)
         
         for line in f:
             l=line.strip()
@@ -190,7 +191,7 @@ def anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_
             temp_hq=[copy.deepcopy(current_tw)]
             queues.append(temp_hq)
         index_count+=1
-        print( f_path,"  ",loss_avg," count:",count," percentage:",count/len(edge_list)," node count:",len(node_set)," edge count:",len(edge_set))
+        log( f_path,"  ",loss_avg," count:",count," percentage:",count/len(edge_list)," node count:",len(node_set)," edge count:",len(edge_set))
         
     return queues
 
@@ -205,7 +206,7 @@ def create_queues_kairos(cfg):
     
     test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
     for model_epoch_dir in tqdm(listdir_sorted(test_losses_dir), desc="Building queues"):
-        print(f"\nEvaluation of model {model_epoch_dir}...")
+        log(f"\nEvaluation of model {model_epoch_dir}...")
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         queues = anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg)
         
@@ -228,7 +229,7 @@ def cal_val_thr(graph_dir):
             loss_list.append(jdata['loss'])
 
     thr = max(loss_list)
-    print(f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}")
+    log(f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}")
 
     return thr
 
@@ -278,7 +279,7 @@ def cal_set_rel_lof(s1, s2, lof_model, nodelabels_train_val, node2vec):
             try:
                 i = eval(i)
             except:
-                print(i)
+                log(i)
                 exit()
             if "subject" in i:
                 path = i['subject']
@@ -288,14 +289,14 @@ def cal_set_rel_lof(s1, s2, lof_model, nodelabels_train_val, node2vec):
             try:
                 emb = node2vec[path]
             except Exception as error:
-                print(f"Error at {i}: {error}")
+                log(f"Error at {i}: {error}")
                 continue
                 # exit() #TODO: handle this
 
             lof_score = lof_model.decision_function([emb])
 
         if lof_score < 0:
-            print(f"node:{i}, LOF score:{lof_score}")
+            log(f"node:{i}, LOF score:{lof_score}")
             count += 1
     return count
 
@@ -312,7 +313,7 @@ def anomalous_queue_construction_provnet(
     file_l = listdir_sorted(graph_dir_path)
     index_count = 0
     for f_path in sorted(file_l):
-        print(f"Time window at index {index_count}: {f_path}")
+        log(f"Time window at index {index_count}: {f_path}")
 
         f = open(f"{graph_dir_path}/{f_path}")
         edge_loss_list = []
@@ -346,7 +347,7 @@ def anomalous_queue_construction_provnet(
 
         index_count += 1
 
-        print(f"Avg loss: {loss_avg} | Anomalies in time window: ({len(node_set)} and {len(edge_set)} malicious nodes and edges)\n")
+        log(f"Avg loss: {loss_avg} | Anomalies in time window: ({len(node_set)} and {len(edge_set)} malicious nodes and edges)\n")
 
     return queues
 
@@ -367,22 +368,17 @@ def train_lof_model(cfg):
     return clf
 
 def ground_truth_label(test_tw_path, cfg):
-    labels = {}
-    for tw in listdir_sorted(test_tw_path):
-        labels[tw] = 0
+    labels = []
+    for _ in listdir_sorted(test_tw_path):
+        labels.append(0)
         
     if cfg._test_mode:
         return labels
 
-    attack_tws = cfg.dataset.ground_truth_time_windows
-    for tw in attack_tws:
-        # TODO: this is a workaround, should be replaced with exact event timestamps
-        label_tw_match = [label for label in labels.keys() if tw.startswith(label[:19])]
-        assert len(label_tw_match) > 0, f"Attack time window file not found: {tw}"
-        
-        matched_label_tw = label_tw_match[0]
-        labels[matched_label_tw] = 1
-
+    tw_to_malicious_nodes = compute_tw_labels(cfg)
+    for tw, nodes in tw_to_malicious_nodes.items():
+        labels[tw] = 1
+    
     return labels
 
 def create_queues_provnet(cfg):
@@ -398,7 +394,7 @@ def create_queues_provnet(cfg):
     val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
     
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        print(f"\nEvaluation of model {model_epoch_dir}...")
+        log(f"\nEvaluation of model {model_epoch_dir}...")
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
 
@@ -426,46 +422,42 @@ def predict_queues(cfg):
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         
-        pred_label = {}
-        for tw in listdir_sorted(test_tw_path):
-            pred_label[tw] = 0
+        pred_label = []
+        for _ in range(len(listdir_sorted(test_tw_path))):
+            pred_label.append(0)
         
         queues = torch.load(os.path.join(cfg.detection.evaluation.queue_evaluation._queues_dir, f"{model_epoch_dir}_queues.pkl"))
         labels = ground_truth_label(test_tw_path, cfg)
 
         detected_queues = []
         for queue in queues:
-            label = any([labels[hq["name"]] for hq in queue ])
+            label = any([labels[hq["index"]] for hq in queue ])
             anomaly_score = 0
             for hq in queue:
                 if anomaly_score == 0:
                     anomaly_score = (anomaly_score + 1) * (hq['loss'] + 1)
                 else:
                     anomaly_score = (anomaly_score) * (hq['loss'] + 1)
-            print(f"-> queue anomaly score: {anomaly_score:.2f} | {'ATTACK' if label else ''}")
+            log(f"-> queue anomaly score: {anomaly_score:.2f} | {'ATTACK' if label else ''}")
             
             if anomaly_score > cfg.detection.evaluation.queue_evaluation.queue_threshold:
-                name_list = []
+                idx_list = []
                 for i in queue:
-                    name_list.append(i['name'])
-                print(f"Anomalous queue: {name_list}")
-                detected_queues.append(name_list)
-                for i in name_list:
+                    idx_list.append(i['index'])
+                log(f"Anomalous queue: {idx_list}")
+                detected_queues.append(idx_list)
+                for i in idx_list:
                     pred_label[i] = 1
-                print(f"Anomaly score: {anomaly_score}")
+                log(f"Anomaly score: {anomaly_score}")
         
         out_dir = cfg.detection.evaluation.queue_evaluation._predicted_queues_dir
         os.makedirs(out_dir, exist_ok=True)
         torch.save(detected_queues, os.path.join(out_dir, f"{model_epoch_dir}_predicted_queues.pkl"))
 
         # Calculate the metrics
-        print("\n********************************* Attack Labels *********************************")
-        y, y_pred = [], []
-        for i in labels:
-            y.append(labels[i])
-            y_pred.append(pred_label[i])
+        log("\n********************************* Attack Labels *********************************")
 
-        stats = classifier_evaluation(y, y_pred, y_pred)
+        stats = classifier_evaluation(labels, pred_label, pred_label)
         stats["epoch"] = int(re.findall(r'[+-]?\d*\.?\d+', model_epoch_dir)[0])
         wandb.log(stats)
         

@@ -1,0 +1,56 @@
+31FDDEE5-045E-411D-9F03-88E6F23AF3FD,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\lwabeat\\\\\\\\logs\\\\\\\\lwabeat""}'}",922881
+61ABBB5B-0B8D-4E68-AFAE-12CED5E10C83,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\trains.docx""}'}",945410
+64814A6F-A574-4AE0-A1B0-60A629744013,{'netflow': '128.55.12.67:57909->156.78.147.114:80'},93060
+65C86F90-8007-4529-A0CF-09BABC8A897F,{'netflow': '128.55.12.67:57910->16.54.116.146:80'},93061
+40B43D4C-10A3-4228-82E2-DC1F3532B4C3,{'subject': 'None None'},149516
+3C6F1977-09C7-4CEA-B3A8-763AA7C7AD8E,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Covert.xlsx""}'}",1364758
+B64EAC5D-665F-4382-87E7-F370BC9BC24C,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Covert.xlsx""}'}",1364759
+9F0085DB-F398-4548-8DC9-A5310C1CF680,{'subject': 'None None'},505629
+3B06BE86-685F-4457-A165-A18730A575BC,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\drivers\\\\\\\\etc\\\\\\\\lmhosts""}'}",1350558
+4EAAD8DA-6386-42FB-87C0-713EF425E8FE,{'subject': 'None None'},505632
+49712B95-E89D-426B-A5A3-37E86A4D628A,{'subject': 'None None'},505635
+0C0D443B-0354-481B-8BC1-F8CAD8766630,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Covert.xlsx""}'}",1364777
+BC2C98D3-9699-485C-981A-EEFC556C8C7F,{'subject': 'None None'},505646
+2646324D-6896-4E51-8019-FF268D587399,{'subject': 'None None'},505647
+1FDDB51B-EBDC-4083-9F0C-62016907FE54,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\locomotives.rtf""}'}",1364785
+1C415180-6AD2-4C57-8711-A6D6877E7577,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\locomotives.rtf""}'}",1364786
+D85AD5CB-3AF4-4C34-80E1-57AE0BAFAD66,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\locomotives.rtf""}'}",1364787
+C893D828-C202-4D12-97DD-53DEBED478C3,{'subject': 'None None'},500403
+E8405DB2-665E-463F-886C-EF9419B3C5B8,{'file': '{NULL}'},921013
+57BEC9EC-CB15-4D37-9C13-C07F2E688CAD,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Windows\\\\\\\\System32\\\\\\\\drivers\\\\\\\\etc\\\\\\\\hosts""}'}",942132
+8EE116E4-FCFD-4934-8822-F14E8B9C45DB,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Document.rtf""}'}",1316025
+4B9A91FF-9531-4338-91F3-2F09168E423F,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Document.rtf""}'}",1316026
+ED6EB0C5-6D59-4FD3-B2B8-809C49183AF8,{'subject': 'None None'},506041
+782F5774-7E01-44B8-989E-E2CFA54A0E0D,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\MissleAlert.rtf""}'}",1364796
+02EDFE8D-AC2D-4B93-85F5-4DA6A16F32EE,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\MissleAlert.rtf""}'}",1364797
+6DEB1FCB-CD94-4C14-BD95-E2DC1E087105,{'subject': 'None None'},300733
+236258AC-BEE3-4888-A2EC-7609AD28731F,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\MissleAlert.rtf""}'}",1364799
+2A9FBA61-0097-42E9-B093-AC97FFBF809C,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Windows\\\\\\\\System32\\\\\\\\KernelBase.dll""}'}",921018
+6245414E-384B-4A9F-99A7-613D11C06CCA,{'subject': 'None None'},506042
+FBC53640-D8FA-4876-B4C4-BDCBC5B54C81,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Windows\\\\\\\\System32\\\\\\\\drivers\\\\\\\\etc\\\\\\\\hosts""}'}",941373
+B8CA5857-4C0F-4E3C-8CDA-25F7107199DB,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Document.rtf""}'}",1315523
+6A6B1F91-CFF0-4DD9-A2A2-314D47D42CEC,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\malicious.rtf""}'}",1315524
+3F01C20B-37B1-4F0B-BD6B-C5EEA03987E4,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\malicious.rtf""}'}",1315525
+EF386827-C58C-41F0-A48A-FDFB892AB28F,{'netflow': '128.55.12.67:57911->193.189.212.26:80'},93126
+0D5188C6-631E-4851-9866-4786E29FDED7,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\malicious.rtf""}'}",1315526
+255E412F-EFDC-4A34-AACB-878071C24533,{'subject': 'None None'},300740
+DC15FE65-2B7F-47DF-8120-DD085C814AB1,{'netflow': '128.55.12.67:53990->27.56.56.211:80'},94540
+7E7DDA23-CA19-454D-9A77-DFB533935682,"{'file': '{""C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\drivers\\\\\\\\etc\\\\\\\\hosts""}'}",731468
+96172979-436A-490B-ADD2-741B23E59F8C,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\trains.docx""}'}",943695
+9E8F6990-153B-4A4B-8499-3AAAC2008E5B,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\trains.rtf""}'}",1316052
+4C1954FB-0316-485D-904B-31344D6649DA,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\trains.rtf""}'}",1316053
+3EA7FB5E-0598-4974-9600-0CB44ABB35BA,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\trains.rtf""}'}",1316054
+8369E7BB-1CB8-4248-BB56-EEB748F1E10F,"{'subject': 'None \\""C:\\\\Program Files\\\\Mozilla Firefox\\\\firefox.exe\\"" '}",505437
+6DAD2A77-CA08-43ED-919C-05DF2ABA0AEE,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Missledefence.doc""}'}",1320673
+D80128C7-D77D-4E27-87FF-86FA77A876E3,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Missledefence.doc""}'}",1320674
+0A70CD92-C604-45D9-896C-F987E0F7ADAE,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\trains.docx""}'}",1320675
+931A0745-8ACE-491D-809C-87A23EC81C17,"{'file': '{""C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\test.docx""}'}",1320676
+BC25410C-B76B-41DC-BCB6-A0D6C2EDED5C,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\Missledefence.doc""}'}",955876
+698BDE81-3F54-4CFC-8091-5D8491706FED,"{'file': '{""\\\\\\\\Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\test.docx""}'}",955875
+B64310F3-D91F-4E7D-89BB-C3CB0522AC55,"{'file': '{""Device\\\\\\\\HarddiskVolume2\\\\\\\\Users\\\\\\\\admin\\\\\\\\Documents\\\\\\\\test.docx""}'}",1320677
+50A0EA8B-7C32-4638-A0EE-304678E1EFEA,{'subject': 'None None'},505705
+58EFDAD0-CFD5-4012-9F5F-03B43906A905,{'subject': 'None None'},505708
+EC170976-6F4A-473A-9A53-6DBDA46B8865,{'subject': 'None None'},505709
+66B504D5-8F99-440D-95F9-9252DB693798,{'subject': 'None None'},505713
+9B994A20-688A-4003-A527-32F816A6B2D3,"{'file': '{""C:\\\\\\\\Program Files\\\\\\\\Mozilla Firefox\\\\\\\\browser\\\\\\\\features\\\\\\\\firefox@getpocket.com.xpi""}'}",1312371
+04746262-AE9D-40C0-8B1C-CAC7044BD363,{'subject': 'None None'},505723

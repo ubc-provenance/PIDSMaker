@@ -3,6 +3,9 @@ from provnet_utils import *
 from config import *
 from tqdm import tqdm
 from gensim.models import Word2Vec
+import numpy as np
+import random
+import torch
 
 def load_corpus_from_database(indexid2msg, use_node_types):
 
@@ -36,40 +39,66 @@ def train_feature_word2vec(corpus, cfg, model_save_path, logger):
     epochs = cfg.featurization.embed_nodes.feature_word2vec.epochs
     compute_loss = cfg.featurization.embed_nodes.feature_word2vec.compute_loss
     negative = cfg.featurization.embed_nodes.feature_word2vec.negative
+    use_seed = cfg.featurization.embed_nodes.use_seed
+    SEED = 0
 
     if show_epoch_loss:
-        model = Word2Vec(corpus,
-                         vector_size=emb_dim,
-                         window=window_size,
-                         min_count=min_count,
-                         sg=use_skip_gram,
-                         workers=num_workers,
-                         epochs=1,
-                         compute_loss=compute_loss,
-                         negative=negative)
+        if use_seed:
+            model = Word2Vec(corpus,
+                             vector_size=emb_dim,
+                             window=window_size,
+                             min_count=min_count,
+                             sg=use_skip_gram,
+                             workers=num_workers,
+                             epochs=1,
+                             compute_loss=compute_loss,
+                             negative=negative,
+                             seed=SEED)
+        else:
+            model = Word2Vec(corpus,
+                             vector_size=emb_dim,
+                             window=window_size,
+                             min_count=min_count,
+                             sg=use_skip_gram,
+                             workers=num_workers,
+                             epochs=1,
+                             compute_loss=compute_loss,
+                             negative=negative)
         epoch_loss = model.get_latest_training_loss()
-        print(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
+        log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
 
         for epoch in range(epochs - 1):
             model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
             epoch_loss = model.get_latest_training_loss()
-            print(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
+            log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
     else:
-        model = Word2Vec(corpus,
-                         vector_size=emb_dim,
-                         window=window_size,
-                         min_count=min_count,
-                         sg=use_skip_gram,
-                         workers=num_workers,
-                         epochs=epochs,
-                         compute_loss=compute_loss,
-                         negative=negative)
+        if use_seed:
+            model = Word2Vec(corpus,
+                             vector_size=emb_dim,
+                             window=window_size,
+                             min_count=min_count,
+                             sg=use_skip_gram,
+                             workers=num_workers,
+                             epochs=epochs,
+                             compute_loss=compute_loss,
+                             negative=negative,
+                             seed=SEED)
+        else:
+            model = Word2Vec(corpus,
+                             vector_size=emb_dim,
+                             window=window_size,
+                             min_count=min_count,
+                             sg=use_skip_gram,
+                             workers=num_workers,
+                             epochs=epochs,
+                             compute_loss=compute_loss,
+                             negative=negative)
         loss = model.get_latest_training_loss()
-        print(f"Epoch: {epochs}; loss: {loss}")
+        log(f"Epoch: {epochs}; loss: {loss}")
 
     model.init_sims(replace=True)
     model.save(os.path.join(model_save_path, 'feature_word2vec.model'))
-    print(f"Save word2vec to {os.path.join(model_save_path, 'feature_word2vec.model')}")
+    log(f"Save word2vec to {os.path.join(model_save_path, 'feature_word2vec.model')}")
 
 def main(cfg):
     model_save_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir
@@ -79,19 +108,30 @@ def main(cfg):
         name="build_feature_word2vec",
         filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "feature_word2vec.log")
     )
-    print(f"Building feature word2vec model and save model to {model_save_path}")
+    log(f"Building feature word2vec model and save model to {model_save_path}")
 
     use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
+    use_seed = cfg.featurization.embed_nodes.use_seed
 
-    print(f"Get indexid2msg from database...")
+    if use_seed:
+        SEED = 0
+        np.random.seed(SEED)
+        random.seed(SEED)
+
+        torch.manual_seed(SEED)
+        torch.cuda.manual_seed_all(SEED)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    log(f"Get indexid2msg from database...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
 
-    print(f"Start building and training feature word2vec model...")
+    log(f"Start building and training feature word2vec model...")
 
-    print("Loading and tokenizing corpus from database...")
+    log("Loading and tokenizing corpus from database...")
     corpus = load_corpus_from_database(indexid2msg=indexid2msg, use_node_types=use_node_types)
 
     train_feature_word2vec(corpus=corpus,

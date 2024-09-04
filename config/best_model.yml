@@ -1,7 +1,9 @@
 preprocessing:
   build_graphs:
-    time_window_size: 15
-    use_hashed_label: False
+    used_method: orthrus
+    use_all_files: True
+    time_window_size: 15.0
+    use_hashed_label: True
     node_label_features:
       subject: type, path, cmd_line
       file: type, path
@@ -11,6 +13,25 @@ featurization:
   embed_nodes:
     emb_dim: 128
     used_method: feature_word2vec
+    use_seed: True
+    temporal_rw:
+      walk_length: 30
+      num_walks: 10
+      trw_workers: 8
+      time_weight: uniform
+      half_life: 1
+      use_node_types: False
+      use_cmd: True
+      use_port: False
+      show_epoch_loss: False
+      window_size: 5
+      min_count: 1
+      use_skip_gram: True
+      wv_workers: 6
+      epochs: 50
+      compute_loss: True
+      negative: 5
+      decline_rate: 30
     doc2vec:
       epochs: 100
       alpha: 0.025
@@ -18,7 +39,7 @@ featurization:
     word2vec:
       walk_length: 30
       num_walks: 10
-      epochs: 5 
+      epochs: 5
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
@@ -37,23 +58,26 @@ featurization:
       use_node_types: False
       use_cmd: True
       use_port: False
+      decline_rate: 30
   embed_edges:
-    include_edge_type: True
+    to_remove: True
 
 detection:
   gnn_training:
-    use_seed: False
-    num_epochs: 30
+    used_method: orthrus
+    use_seed: True
+    num_epochs: 6
     lr: 0.00001
     weight_decay: 0.00001
-    node_hid_dim: 64
+    node_hid_dim: 128
     node_out_dim: 64
     encoder:
-      use_node_type_in_node_feats: False
+      use_node_type_in_node_feats: True
       neighbor_sampling: []
-      used_methods: graph_attention,tgn
+      edge_features: edge_type
+      used_methods: tgn,graph_attention
       graph_attention:
-        dropout: 0.0
+        dropout: 0.5
         activation: relu
         num_heads: 8
       tgn:
@@ -61,20 +85,67 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: False
-        use_msg_as_edge_feature: False
+        use_node_feats_in_gnn: True
+        use_memory: False
+        use_time_order_encoding: False
+      sage:
+        dropout: 0.0
+        activation: relu
     decoder:
-      used_methods: reconstruct_node_features
+      used_methods: predict_edge_type
+      predict_edge_type:
+        used_method: custom
+        custom:
+          dropout: 0.0
+          num_layers: 2
+          activation: relu
+      predict_edge_contrastive:
+        neg_sampling_method: previously_seen_nodes
+        used_method: linear
+        inner_product:
+          dropout: 0.0
+        linear:
+          dropout: 0.0
       reconstruct_node_features:
-        loss: SCE
-        recon_hid_dim: 100
+        loss: MSE
+        recon_hid_dim: 128
         recon_use_bias: True
         out_activation: tanh
+      reconstruct_node_embeddings:
+        loss: MSE
+        out_activation: none
+      reconstruct_edge_embeddings:
+        loss: MSE
+        out_activation: none
+        edge_decoder: none
+
   gnn_testing:
     threshold_method: str
   evaluation:
+    viz_malicious_nodes: False
+    ground_truth_version: darpa_v4
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
-      use_mean_node_loss: False 
+      use_kmeans: True
+      kmeans_top_K: 30
+    node_tw_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_kmeans: True
+      kmeans_top_K: 3
+    queue_evaluation:
+      queue_threshold: 20
+      used_method: kairos_idf_queue
+      kairos_idf_queue:
+        include_test_set_in_IDF: True
+
+triage :
+  tracing:
+    used_method: depimpact
+    depimpact:
+      used_method: component
+      score_method: degree
+      workers: 8
+      visualize: False

@@ -1,6 +1,8 @@
 preprocessing:
   build_graphs:
-    time_window_size: 15
+    used_method: orthrus
+    use_all_files: True
+    time_window_size: 15.0
     use_hashed_label: False
     node_label_features:
       subject: path
@@ -9,15 +11,16 @@ preprocessing:
 
 featurization:
   embed_nodes:
-    emb_dim: 128
+    emb_dim: 16
     used_method: hierarchical_hashing
   embed_edges:
-    include_edge_type: True
+    to_remove: True
 
 detection:
   gnn_training:
-    use_seed: False
-    num_epochs: 50
+    used_method: orthrus
+    use_seed: True
+    num_epochs: 6
     lr: 0.00005
     weight_decay: 0.01
     node_hid_dim: 100
@@ -25,6 +28,7 @@ detection:
     encoder:
       use_node_type_in_node_feats: True
       neighbor_sampling: []
+      edge_features: msg,time_encoding
       used_methods: graph_attention,tgn
       graph_attention:
         dropout: 0.0
@@ -35,8 +39,9 @@ detection:
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
-        use_time_encoding: True
-        use_msg_as_edge_feature: True
+        use_node_feats_in_gnn: False
+        use_memory: True
+        use_time_order_encoding: False
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
@@ -45,7 +50,14 @@ detection:
   gnn_testing:
     threshold_method: str
   evaluation:
-    used_method: queue_evaluation
+    viz_malicious_nodes: False
+    ground_truth_version: darpa_v4
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_kmeans: True
+      kmeans_top_K: 30
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue

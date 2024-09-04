@@ -1,0 +1,61 @@
+C337B3BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216833
+C1357AB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216322
+C2357BB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216323
+4036C6B8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216451
+3F36C5B8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216450
+C437B3BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216834
+C6359FB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216327
+CA37B9BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216840
+C735BAB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216328
+C835BAB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216329
+CD37C5BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216843
+CE37C9BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216844
+4D38FABD-0200-0000-0000-000000000020,{'subject': '/var/log/mail /var/log/mail'},216973
+CA35BBB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216331
+C935BBB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216330
+CB37BFBA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216841
+CC3499B3-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216082
+5336F2B8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216470
+55361BB9-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216472
+56361CB9-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216473
+0100D00F-A60F-2400-0000-0000A43DD030,{'file': '/tmp/memtrace.so'},512410
+0100D00F-1D12-1E00-0000-00009F8F0C12,{'file': '/var/log/xdev'},658599
+0100D00F-0A01-2800-0000-00006A2F0F27,{'file': '/etc/firefox/native-messaging-hosts/pass_mgr'},511272
+0100D00F-0D01-2800-0000-00000A315129,{'file': '/etc/firefox/native-messaging-hosts/passwordfile.dat'},511273
+0100D00F-B700-2800-0000-00002BDE0334,{'file': '/etc/firefox/native-messaging-hosts/gtcache'},512168
+673559B4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216233
+68355DB4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216234
+6C3584B4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216238
+6D3588B4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216239
+0100D00F-A84B-1E00-0000-000049134A16,{'file': '/var/log/wdev'},512304
+F135CDB7-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216372
+F235D6B7-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216373
+80370C6E-D2AA-9534-C617-500000000040,{'netflow': '128.55.12.110:43730->149.52.198.23:80'},17974
+F335D6B7-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216374
+7737F1B9-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216759
+80370C6E-2D96-8D2B-B0CB-500000000040,{'netflow': '128.55.12.110:38445->141.43.176.203:80'},17081
+7837F1B9-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216760
+EF34BCB3-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216116
+7235B0B4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216244
+01368CB8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216388
+3536B9B8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216440
+033690B8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216390
+043694B8-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216391
+0100D00F-A84B-1E00-0000-00008C1CB31C,{'file': '/var/log/mail'},513608
+0100D00F-A66C-1800-0000-00003423B213,{'file': '/etc/ld.so.cache'},642629
+8F3745BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216783
+903745BA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216784
+9F376ABA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216799
+A1377EBA-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216801
+283847BC-0200-0000-0000-000000000020,{'subject': '/var/log/mail /var/log/mail'},216933
+293847BC-0200-0000-0000-000000000020,{'subject': '/var/log/mail /var/log/mail'},216934
+3D3530B4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216194
+80370C6E-4396-8D2B-B0CB-500000000040,{'netflow': '128.55.12.110:38467->141.43.176.203:80'},17139
+80370C6E-39C2-9299-4497-500000000040,{'netflow': '128.55.12.110:49721->146.153.68.151:80'},17140
+B33501B6-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216308
+B43501B6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/pass_mgr /etc/firefox/native-messaging-hosts/pass_mgr /home/admin/.mozilla/native-messaging-hosts/pass_mgr.json'},216309
+B53501B6-0200-0000-0000-000000000020,{'subject': '/bin/dash /bin/sh -c ./gtcache &>/dev/null &'},216310
+B73501B6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216312
+BC353DB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216317
+BD353EB6-0200-0000-0000-000000000020,{'subject': '/etc/firefox/native-messaging-hosts/gtcache ./gtcache'},216318
+3A3530B4-0200-0000-0000-000000000020,{'subject': '/home/admin/Downloads/firefox/firefox /usr/bin/firefox'},216191

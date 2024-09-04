@@ -12,8 +12,8 @@ We use the following settings to run the experiments reported in the paper:
 Install the following libraries, 
 or use our [`requirements.txt`](requirements.txt):
 ```commandline
-conda create -n provnet python=3.9
-conda activate provnet
+conda create -n orthrus python=3.9
+conda activate orthrus
 # Note: using "pip install psycopg2" to install may fail
 conda install psycopg2
 conda install tqdm
@@ -28,6 +28,8 @@ pip install matplotlib==3.8.4
 pip install wandb==0.16.6
 pip install chardet==5.2.0
 pip install nltk==3.8.1
+pip install igraph==0.11.5
+pip install cairocffi==1.7.0
 
 # PyTorch GPU version
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
@@ -36,6 +38,16 @@ pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 torch_clust
 
 # Gensim Word2Vec library 
 pip install gensim==4.3.1
+
+pip install pytz==2024.1 pandas==2.2.2 yacs==0.1.8
+pip install wandb
+
+# install dgl, cuML and cuDF for magic
+conda install -c dglteam dgl-cuda11.7
+pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.6.* cuml-cu12==24.6.*
+# dgl installation breaks scipy, which can be fixed by re-installing
+pip uninstall scipy
+pip install scipy==1.10.1
 ```
 
 ## Troubleshooting

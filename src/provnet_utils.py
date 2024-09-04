@@ -16,6 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn.models.tgn import (LastNeighborLoader, IdentityMessage, MeanAggregator,
                                            LastAggregator)
+import pandas as pd
 from torch_geometric import *
 from tqdm import tqdm
 import networkx as nx
@@ -33,7 +34,10 @@ from sklearn.metrics import (
     roc_curve,
     precision_recall_curve,
     average_precision_score as ap_score,
+    balanced_accuracy_score,
 )
+
+import re
 
 from config import *
 import hashlib
@@ -116,15 +120,20 @@ def datetime_to_timestamp_US(date):
     return int(timeStamp)
 
 def init_database_connection(cfg):
+    if cfg.preprocessing.build_graphs.use_all_files:
+        database_name = cfg.dataset.database_all_file
+    else:
+        database_name = cfg.dataset.database
+
     if cfg.database.host is not None:
-        connect = psycopg2.connect(database = cfg.dataset.database,
+        connect = psycopg2.connect(database = database_name,
                                    host = cfg.database.host,
                                    user = cfg.database.user,
                                    password = cfg.database.password,
                                    port = cfg.database.port
                                   )
     else:
-        connect = psycopg2.connect(database = cfg.dataset.database,
+        connect = psycopg2.connect(database = database_name,
                                    user = cfg.database.user,
                                    password = cfg.database.password,
                                    port = cfg.database.port
@@ -146,8 +155,8 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     for i in records:
         hash_id = i[1]
-        remote_ip = i[4]
-        remote_port = i[5]
+        remote_ip = str(i[4])
+        remote_port = str(i[5])
         index_id = i[-1] # int
         indexid2msg[hash_id] = index_id
         if use_port:
@@ -164,8 +173,8 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     for i in records:
         hash_id = i[1]
-        path = i[2]
-        cmd = i[3]
+        path = str(i[2])
+        cmd = str(i[3])
         index_id = i[-1]
         indexid2msg[hash_id] = index_id
         if use_cmd:
@@ -182,7 +191,7 @@ def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
 
     for i in records:
         hash_id = i[1]
-        path = i[2]
+        path = str(i[2])
         index_id = i[-1]
         indexid2msg[hash_id] = index_id
         indexid2msg[index_id] = {'file': path}
@@ -263,7 +272,7 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
         # We thus pre-compute a list of random indices for all unique numbers of neighbors.
         # These indices can then be accessed given the length of the neighbors.
         unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]))
-        cache_size = 5 * len(adj_list) * num_walks * walk_len
+        cache_size = 15 * len(adj_list) * num_walks * walk_len
         random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
         random_idx = {count: 0 for count in unique_neighbors_count}
 
@@ -337,17 +346,19 @@ def get_logger(name: str, filename: str):
     logger.info(f"START LOGGING FOR SUBTASK: {name}")
     logger.info("")
     
-    print("")
-    print(f"START LOGGING FOR SUBTASK: {name}")
-    print("")
+    log("")
+    log(f"START LOGGING FOR SUBTASK: {name}")
+    log("")
     
     return logger
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
-    return sorted([os.path.abspath(os.path.join(base_dir, sub, f))
+    paths = [os.path.abspath(os.path.join(base_dir, sub, f))
         for sub in os.listdir(base_dir)
         if os.path.isdir(os.path.join(base_dir, sub)) and sub in folders
-        for f in os.listdir(os.path.join(base_dir, sub))])
+        for f in os.listdir(os.path.join(base_dir, sub))]
+    paths.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
+    return paths
 
 def listdir_sorted(path: str):
     files = os.listdir(path)
@@ -363,17 +374,22 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
             remove_underscore_keys(data[key], keys_to_keep, keys_to_rm)
     return data
 
+def compute_mcc(tp, fp, tn, fn):
+    numerator = (tp * tn) - (fp * fn)
+    denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    
+    if denominator == 0:
+        return 0
+    
+    mcc = numerator / denominator
+    return mcc
+
 def classifier_evaluation(y_test, y_test_pred, scores):
     labels_exist = sum(y_test) > 0
     if labels_exist:
         tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
     else:
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
-    print(f'total num: {len(y_test)}')
-    print(f'tn: {tn}')
-    print(f'fp: {fp}')
-    print(f'fn: {fn}')
-    print(f'tp: {tp}')
 
     fpr = fp/(fp+tn)
     precision=tp/(tp+fp)
@@ -387,16 +403,34 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     try:
         ap=ap_score(y_test, scores)
     except: ap=float("nan")
+    try:
+        balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
+    except: balanced_acc=float("nan")
+    
+    sensitivity = tp / (tp + fn)
+    specificity = tn / (tn + fp)
+    lr_plus = sensitivity / (1 - specificity)
+    dor = (tp * tn) / (fp * fn)
+    mcc = compute_mcc(tp, fp, tn, fn)
+    
+    log(f'total num: {len(y_test)}')
+    log(f'tn: {tn}')
+    log(f'fp: {fp}')
+    log(f'fn: {fn}')
+    log(f'tp: {tp}')
+    log('')
 
-    print(f"precision: {precision}")
-    print(f"recall: {recall}")
-    print(f"fpr: {fpr}")
-    print(f"fscore: {fscore}")
-    print(f"accuracy: {accuracy}")
-    print(f"auc_val: {auc_val}")
-
-    print("|precision|recall|fscore|ap|accuracy|TN|FP|FN|TP|")
-    print(f"|{precision:.5f}|{recall:.5f}|{fscore:.5f}|{ap:.5f}|{accuracy:.3f}|{tn}|{fp}|{fn}|{tp}|")
+    log(f"ap: {ap}")
+    log(f"precision: {precision}")
+    log(f"recall: {recall}")
+    log(f"fpr: {fpr}")
+    log(f"fscore: {fscore}")
+    log(f"accuracy: {accuracy}")
+    log(f"balanced acc: {balanced_acc}")
+    log(f"auc: {auc_val}")
+    log(f"lr(+): {lr_plus}")
+    log(f"dor: {dor}")
+    log(f"mcc: {mcc}")
 
     stats = {
         "precision": round(precision, 5),
@@ -405,13 +439,20 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "fscore": round(fscore, 5),
         "ap": round(ap, 5),
         "accuracy": round(accuracy, 5),
-        "auc_val": round(auc_val, 5),
+        "balanced_acc": round(balanced_acc, 5),
+        "auc": round(auc_val, 5),
+        "lr(+)": round(lr_plus, 5),
+        "dor": round(dor, 5),
+        "mcc": mcc,
         "tp": tp,
         "fp": fp,
         "tn": tn,
         "fn": fn,
     }
     return stats
+
+def get_detected_attacks(cfg):
+    cfg.dataset.attack_to_time_window
 
 def get_indexid2msg(cur, use_cmd=True, use_port=False):
     indexid2msg = {}
@@ -423,11 +464,11 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
-    print(f"Number of netflow nodes: {len(records)}")
+    log(f"Number of netflow nodes: {len(records)}")
 
     for i in records:
-        remote_ip = i[4]
-        remote_port = i[5]
+        remote_ip = str(i[4])
+        remote_port = str(i[5])
         index_id = i[-1] # int
         if use_port:
             indexid2msg[index_id] = ['netflow', remote_ip + ':' +remote_port]
@@ -441,11 +482,11 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
-    print(f"Number of process nodes: {len(records)}")
+    log(f"Number of process nodes: {len(records)}")
 
     for i in records:
-        path = i[2]
-        cmd = i[3]
+        path = str(i[2])
+        cmd = str(i[3])
         index_id = i[-1]
         if use_cmd:
             indexid2msg[index_id] = ['subject', path + ' ' +cmd]
@@ -459,19 +500,71 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     cur.execute(sql)
     records = cur.fetchall()
 
-    print(f"Number of file nodes: {len(records)}")
+    log(f"Number of file nodes: {len(records)}")
 
     for i in records:
-        path = i[2]
+        path = str(i[2])
         index_id = i[-1]
         indexid2msg[index_id] = ['file', path]
 
     return indexid2msg #{index_id: [node_type, msg]}
 
 def tokenize_subject(sentence: str):
-    return word_tokenize(sentence.replace('/', ' / '))
+    new_sentence = re.sub(r'\\+', '/', sentence)
+    return word_tokenize(new_sentence.replace('/', ' / '))
     # return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
 def tokenize_file(sentence: str):
-    return word_tokenize(sentence.replace('/',' / '))
+    new_sentence = re.sub(r'\\+', '/', sentence)
+    return word_tokenize(new_sentence.replace('/',' / '))
 def tokenize_netflow(sentence: str):
-    return word_tokenize(sentence.replace(':',' ').replace('.',' '))
+    return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
+
+def log(msg: str, *args):
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp} - {msg}", *args)
+
+def get_device(cfg):
+    if cfg._use_cpu:
+        return torch.device("cpu")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device == torch.device("cpu"):
+        log("Warning: the device is CPU instead of CUDA")
+    return device
+
+def get_node_to_path_and_type(cfg):
+    out_path = cfg.preprocessing.build_graphs._node_id_to_path
+    out_file = os.path.join(out_path, "node_to_paths.pkl")
+    
+    if not os.path.exists(out_file):
+        os.makedirs(out_path, exist_ok=True)
+        cur, connect = init_database_connection(cfg)
+        
+        queries = {
+            "file": "SELECT index_id, path FROM file_node_table;",
+            "netflow": "SELECT index_id, src_addr, dst_addr, src_port, dst_port FROM netflow_node_table;",
+            "subject": "SELECT index_id, path, cmd FROM subject_node_table;"
+        }
+        node_to_path_type = {}
+        for node_type, query in queries.items():
+            cur.execute(query)
+            rows = cur.fetchall()
+            for row in rows:
+                if node_type == "netflow":
+                    index_id, src_addr, dst_addr, src_port, dst_port = row
+                    node_to_path_type[index_id] = {"path": f"{str(src_addr)}:{str(src_port)}->{str(dst_addr)}:{str(dst_port)}", "type": node_type}
+                elif node_type == "file":
+                    index_id, path = row
+                    node_to_path_type[index_id] = {"path": str(path), "type": node_type}
+                elif node_type == "subject":
+                    index_id, path, cmd = row
+                    node_to_path_type[index_id] = {"path": str(path), "type": node_type, "cmd": cmd}
+
+        torch.save(node_to_path_type, out_file)
+        connect.close()
+        
+    else:
+        node_to_path_type = torch.load(out_file)
+        
+    return node_to_path_type

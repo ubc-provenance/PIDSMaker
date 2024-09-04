@@ -7,14 +7,23 @@ import numpy as np
 from tqdm import tqdm
 from torch_geometric.data import *
 
-def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
+def cal_word_weight(n,percentage):
+    d = -1 / n * percentage / 100
+    a_1 = 1/n - 0.5 * (n-1) * d
+    sequence = []
+    for i in range(n):
+        a_i = a_1 + i * d
+        sequence.append(a_i)
+    return sequence
+
+def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage):
 
 
     model = Word2Vec.load(model_path)
-    logger.info(f"Loaded model from {model_path}")
+    log(f"Loaded model from {model_path}")
 
     indexid2vec = {}
-    for indexid, msg in tqdm(indexid2msg.items(), desc='processing indexid2vec:'):
+    for indexid, msg in indexid2msg.items():
         if msg[0] == 'subject':
             if use_node_types:
                 tokens = tokenize_subject(msg[0] + ' ' + msg[1])
@@ -31,14 +40,17 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, logger):
             else:
                 tokens = tokenize_netflow(msg[1])
 
+        weight_list = cal_word_weight(len(tokens), decline_percentage)
+
         word_vectors = [model.wv[word] for word in tokens]
-        sentence_vector = np.mean(word_vectors, axis=0)
+        weighted_vectors = [weight * word_vec for weight, word_vec in zip(weight_list, word_vectors)]
+        sentence_vector = np.mean(weighted_vectors, axis=0)
 
         normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
 
         indexid2vec[int(indexid)] = np.array(normalized_vector)
 
-    logger.info(f"Finish generating normalized node vectors.")
+    log(f"Finish generating normalized node vectors.")
 
     return indexid2vec
 
@@ -55,10 +67,10 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
-    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
+    for path in tqdm(sorted_paths):
+        log(f"Computing edge embeddings: {path}")
         file = path.split("/")[-1]
 
-        logger.info(f"Processing graph: {file}")
         graph = torch.load(path)
 
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -93,7 +105,7 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         os.makedirs(out_dir, exist_ok=True)
         torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
+        log(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
     # TODO: support both word2vec and doc2vec
@@ -105,14 +117,15 @@ def main(cfg):
     use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
+    decline_percentage = cfg.featurization.embed_nodes.feature_word2vec.decline_rate
 
-    logger.info("Loading node msg from database...")
+    log("Loading node msg from database...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
 
-    logger.info("Generating node vectors...")
+    log("Generating node vectors...")
     feature_word2vec_model_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir + 'feature_word2vec.model'
-    indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, logger=logger)
+    indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, decline_percentage=decline_percentage)
 
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
