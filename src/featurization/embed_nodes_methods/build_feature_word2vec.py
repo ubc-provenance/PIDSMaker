@@ -29,7 +29,7 @@ def load_corpus_from_database(indexid2msg, use_node_types):
         corpus[msg[1]] = tokens
     return list(corpus.values())
 
-def train_feature_word2vec(corpus, cfg, model_save_path, logger):
+def train_feature_word2vec(corpus, cfg, model_save_path):
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     show_epoch_loss = cfg.featurization.embed_nodes.feature_word2vec.show_epoch_loss
     window_size = cfg.featurization.embed_nodes.feature_word2vec.window_size
@@ -101,29 +101,15 @@ def train_feature_word2vec(corpus, cfg, model_save_path, logger):
     log(f"Save word2vec to {os.path.join(model_save_path, 'feature_word2vec.model')}")
 
 def main(cfg):
+    log_start(__file__)
     model_save_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
-    logger = get_logger(
-        name="build_feature_word2vec",
-        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "feature_word2vec.log")
-    )
     log(f"Building feature word2vec model and save model to {model_save_path}")
 
     use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
-    use_seed = cfg.featurization.embed_nodes.use_seed
-
-    if use_seed:
-        SEED = 0
-        np.random.seed(SEED)
-        random.seed(SEED)
-
-        torch.manual_seed(SEED)
-        torch.cuda.manual_seed_all(SEED)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
 
     log(f"Get indexid2msg from database...")
     cur, connect = init_database_connection(cfg)
@@ -136,8 +122,7 @@ def main(cfg):
 
     train_feature_word2vec(corpus=corpus,
                            cfg=cfg,
-                           model_save_path=model_save_path,
-                           logger=logger)
+                           model_save_path=model_save_path)
 
 if __name__ == '__main__':
     args =get_runtime_required_args()

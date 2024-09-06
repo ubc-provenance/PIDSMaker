@@ -17,9 +17,8 @@ def cal_word_weight(n,percentage):
         sequence.append(a_i)
     return sequence
 
-def get_indexid2vec(indexid2msg, model_path, use_node_types, logger, decline_percentage, node_list):
+def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage, node_list):
     model = Word2Vec.load(model_path)
-    logger.info(f"Loaded model from {model_path}")
 
     indexid2vec = {}
     # for indexid, msg in tqdm(indexid2msg.items(), desc='processing indexid2vec:'):
@@ -50,7 +49,6 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, logger, decline_per
 
         indexid2vec[int(indexid)] = np.array(normalized_vector)
 
-    logger.info(f"Finish generating normalized node vectors.")
 
     return indexid2vec
 
@@ -63,14 +61,13 @@ def gen_relation_onehot(rel2id):
             rel2vec[relvec[rel2id[i]-1]]=i
     return rel2vec
 
-def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, logger, cfg):
+def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
         file = path.split("/")[-1]
 
-        logger.info(f"Processing graph: {file}")
         graph = torch.load(path)
 
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -105,14 +102,9 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         os.makedirs(out_dir, exist_ok=True)
         torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
-    logger = get_logger(
-        name="embed_edges_by_trw_word2vec",
-        filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
-    )
-
+    log_start(__file__)
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, (cfg.dataset.train_files +
                                                          cfg.dataset.test_files +
@@ -128,14 +120,12 @@ def main(cfg):
     use_port = cfg.featurization.embed_nodes.temporal_rw.use_port
     decline_rate = cfg.featurization.embed_nodes.temporal_rw.decline_rate
 
-    logger.info("Loading node msg from database...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
 
-    logger.info("Generating node vectors...")
     trw_word2vec_model_path = cfg.featurization.embed_nodes.temporal_rw._model_dir + 'trw_word2vec.model'
     indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=trw_word2vec_model_path,
-                                  use_node_types=use_node_types, logger=logger, decline_percentage=decline_rate,
+                                  use_node_types=use_node_types, decline_percentage=decline_rate,
                                   node_list=used_nodes)
 
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
@@ -147,7 +137,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.train_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "train/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -157,7 +146,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.val_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "val/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -167,7 +155,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.test_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test/"),
-                          logger=logger,
                           cfg=cfg
                           )
 

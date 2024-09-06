@@ -124,7 +124,7 @@ def generate_timestamps(start_time, end_time, interval_minutes):
     timestamps.append(end)
     return timestamps
 
-def generate_graphs(cur, uuid2type, logger, graph_out_dir, hash2uuid, cfg):
+def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
     include_edge_type = rel2id
     node_type_dict = ntype2id
 
@@ -195,7 +195,7 @@ def generate_graphs(cur, uuid2type, logger, graph_out_dir, hash2uuid, cfg):
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
-                    logger.info(f"Saving graph for {time_interval}")
+                    print(f"Saving graph for {time_interval}")
                     torch.save(g, graph_name)
 
                     start_time = batch_edges[-1][-2]
@@ -207,11 +207,7 @@ def generate_graphs(cur, uuid2type, logger, graph_out_dir, hash2uuid, cfg):
     return
 
 def main(cfg):
-    logger = get_logger(
-        name="graph_construction_edge_fused_tw",
-        filename=os.path.join(cfg.preprocessing.build_graphs._logs_dir, "edge_fused_tw_graph.log"))
-    logger.info(f"build_graphs path: {cfg.preprocessing.build_graphs._task_path}")
-
+    log_start(__file__)
     cur, connect = init_database_connection(cfg)
     uuid2idx, uuid2type, uuid2name, hash2uuid = get_node_list(cur=cur, cfg=cfg)
 
@@ -227,7 +223,6 @@ def main(cfg):
 
     generate_graphs(cur=cur,
                     uuid2type=uuid2type,
-                    logger=logger,
                     graph_out_dir=graph_out_dir,
                     hash2uuid=hash2uuid,
                     cfg=cfg)

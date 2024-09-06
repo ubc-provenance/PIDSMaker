@@ -333,24 +333,8 @@ def gen_darpa_adj_files(graph, filename):
             writer.writerow(data)
         f.close()
 
-def get_logger(name: str, filename: str):
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    file_handler = logging.FileHandler(filename)
-    file_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
-    logger.info("")
-    logger.info(f"START LOGGING FOR SUBTASK: {name}")
-    logger.info("")
-    
-    log("")
-    log(f"START LOGGING FOR SUBTASK: {name}")
-    log("")
-    
-    return logger
+def log_start(_file_: str):
+    print(f"======= START SUBTASK {os.path.basename(_file_)} =======")
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths = [os.path.abspath(os.path.join(base_dir, sub, f))

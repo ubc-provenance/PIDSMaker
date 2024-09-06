@@ -116,9 +116,9 @@ def get_attrs_different_files(indexid2vec):
 
     return embeddings
 
-def build_tsne_visualization(embeddings, fig_path, logger):
+def build_tsne_visualization(embeddings, fig_path):
     log(f"Building TSNE visualization")
-    logger.info("Building TSNE visualization")
+    print("Building TSNE visualization")
     tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, learning_rate=100, metric='euclidean', init='pca')
 
     dic_2d = {}
@@ -146,11 +146,7 @@ def build_tsne_visualization(embeddings, fig_path, logger):
     log(f"Fig saved to {fig_path}")
 
 def main(cfg, gen_index2vec=False):
-    logger = get_logger(
-        name="test_hierarchical_feature_hashing",
-        filename=os.path.join(cfg.featurization.build_doc2vec._logs_dir, "test_HFH.log")
-    )
-
+    log_start(__file__)
     log("loading indexid2msg...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
@@ -173,7 +169,7 @@ def main(cfg, gen_index2vec=False):
         indexid2vec = torch.load(indexid2vec_path)
 
     embeddings = get_attrs_different_files(indexid2vec)
-    build_tsne_visualization(embeddings, fig_path, logger=logger)
+    build_tsne_visualization(embeddings, fig_path)
 
 if __name__ == '__main__':
     args = get_runtime_required_args()
