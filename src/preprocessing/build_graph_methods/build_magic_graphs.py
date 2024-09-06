@@ -132,12 +132,21 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
         for i in range(0, len(arr), batch_size):
             yield arr[i:i + batch_size]
 
-    start, end = cfg.dataset.start_end_day_range
-    for day in range(start, end):
+    # In test mode, we ensure to get 1 TW in each set
+    if cfg._test_mode:
+        # Get the day number of the first day in each set
+        days = [int(days[0].split("_")[-1]) for days in \
+                [cfg.dataset.train_files, cfg.dataset.val_files, cfg.dataset.test_files]]
+    else:
+        start, end = cfg.dataset.start_end_day_range
+        days = range(start, end)
+
+    for day in days:
         date_start = cfg.dataset.year_month + '-' + str(day) + ' 00:00:00'
         date_stop = cfg.dataset.year_month + '-' + str(day + 1) + ' 00:00:00'
 
         timestamps = [date_start, date_stop]
+        test_mode_set_done = False
 
         for i in range(0, len(timestamps) - 1):
             start = timestamps[i]
@@ -203,7 +212,8 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
 
                     # For unit tests, we only edges from the first graph
                     if cfg._test_mode:
-                        return
+                        test_mode_set_done = True
+                        break
     return
 
 def main(cfg):
