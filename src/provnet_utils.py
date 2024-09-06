@@ -334,7 +334,7 @@ def gen_darpa_adj_files(graph, filename):
         f.close()
 
 def log_start(_file_: str):
-    print(f"======= START SUBTASK {os.path.basename(_file_)} =======")
+    log(f"\n======= START SUBTASK {os.path.basename(_file_)} =======")
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths = [os.path.abspath(os.path.join(base_dir, sub, f))
@@ -503,10 +503,10 @@ def tokenize_file(sentence: str):
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
 
-def log(msg: str, *args):
+def log(msg: str, *args, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"{timestamp} - {msg}", *args)
+    print(f"{timestamp} - {msg}", *args, **kwargs)
 
 def get_device(cfg):
     if cfg._use_cpu:

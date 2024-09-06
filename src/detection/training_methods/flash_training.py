@@ -14,6 +14,7 @@ from torch_geometric.data import Data
 from torch_geometric.loader import NeighborLoader
 
 def main(cfg):
+    log_start(__file__)
     model_save_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(model_save_dir, exist_ok=True)
 

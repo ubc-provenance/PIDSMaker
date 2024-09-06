@@ -55,6 +55,7 @@ def train_pro(cfg):
         log(f"Model of epoch {epoch} is saved")
 
 def main(cfg):
+    log_start(__file__)
     train_pro(cfg)
     log(f"Finish gnn_training")
 

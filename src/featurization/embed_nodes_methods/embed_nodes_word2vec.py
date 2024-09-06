@@ -798,10 +798,14 @@ def main(cfg):
     log_start(__file__)
 
     os.makedirs(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, exist_ok=True)
-
-    embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
-    embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
-    embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+    
+    # In test mode, we only have access to 
+    if cfg._test_mode:
+        embed_nodes_for_one_split("train", epochs=1, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
+    else:
+        embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
+        embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+        embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
 
 
 if __name__ == "__main__":

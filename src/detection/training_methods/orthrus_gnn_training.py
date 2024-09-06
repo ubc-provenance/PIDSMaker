@@ -33,6 +33,7 @@ def train(data,
 
 
 def main(cfg):
+    log_start(__file__)
     gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(gnn_models_dir, exist_ok=True)
     device = get_device(cfg)

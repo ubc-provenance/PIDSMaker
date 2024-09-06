@@ -20,6 +20,7 @@ from collections import defaultdict
 import cudf
 
 def main(cfg):
+    log_start(__file__)
     checkpoints_dir = cfg.featurization.embed_edges.magic._magic_checkpoints_dir
 
     device = get_device(cfg)

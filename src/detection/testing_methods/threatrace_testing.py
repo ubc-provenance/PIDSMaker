@@ -75,6 +75,7 @@ def test_pro(cfg):
     torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data.pth"))
 
 def main(cfg):
+    log_start(__file__)
     test_pro(cfg)
     log("Finish gnn_testing")
 

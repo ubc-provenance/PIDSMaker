@@ -47,8 +47,8 @@ def main(cfg):
         else:
             node_seen.add(int(uuid2nids[uuid]))
 
-    print(f"Number of unseen nodes: {len(node_unseen)}")
-    print(f"Number of seen nodes: {len(node_seen)}")
+    log(f"Number of unseen nodes: {len(node_unseen)}")
+    log(f"Number of seen nodes: {len(node_seen)}")
 
     none_file_number = 0
     node_not_None = set()
@@ -56,26 +56,26 @@ def main(cfg):
         if nid2msg[int(nid)] == ['file', 'None']:
             none_file_number += 1
         else:
-            print(nid, " : ", nid2msg[int(nid)])
+            log(nid, " : ", nid2msg[int(nid)])
             node_not_None.add(nid)
 
-    print(f"There are {none_file_number} None files")
-    print("==" * 30)
+    log(f"There are {none_file_number} None files")
+    log("==" * 30)
 
-    print(f"There are {len(set(GPs)-set(node_seen))} nodes in our ground truth but not in their file")
+    log(f"There are {len(set(GPs)-set(node_seen))} nodes in our ground truth but not in their file")
     for nid in set(GPs)-set(node_seen):
-        print(f"{nid} : {nid2msg[nid]}")
-    print("==" * 30)
+        log(f"{nid} : {nid2msg[nid]}")
+    log("==" * 30)
 
-    print(f"There are {len(set(node_not_None)-set(GPs))} non-None nodes in their ground truth but not in ours")
+    log(f"There are {len(set(node_not_None)-set(GPs))} non-None nodes in their ground truth but not in ours")
     for nid in set(node_not_None)-set(GPs):
-        print(f"{nid} : {nid2msg[nid]}")
-    print("==" * 30)
+        log(f"{nid} : {nid2msg[nid]}")
+    log("==" * 30)
 
-    print(f"There are {len(set(node_seen) & set(GPs))} nodes in both ground truth")
+    log(f"There are {len(set(node_seen) & set(GPs))} nodes in both ground truth")
     for nid in set(node_seen) & set(GPs):
-        print(f"{nid} : {nid2msg[nid]}")
-    print("==" * 30)
+        log(f"{nid} : {nid2msg[nid]}")
+    log("==" * 30)
 
 
 if __name__ == "__main__":

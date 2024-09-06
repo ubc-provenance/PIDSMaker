@@ -89,6 +89,7 @@ def test(
 
 
 def main(cfg):
+    log_start(__file__)
     # load the map between nodeID and node labels
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
