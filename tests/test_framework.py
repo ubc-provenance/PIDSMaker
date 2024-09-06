@@ -83,8 +83,7 @@ def test_whole_framework(dataset: str):
     wandb.init(mode="disabled")
     
     featurization_methods = [
-        "doc2vec", "feature_word2vec", "hierarchical_hashing", "only_type", "magic", "flash",
-        # "temporal_rw", "word2vec", "doc2vec", "feature_word2vec", "hierarchical_hashing", "only_type", "magic", "flash",
+        "temporal_rw", "word2vec", "doc2vec", "feature_word2vec", "hierarchical_hashing", "only_type", "magic", "flash",
     ]
     # "word2vec"
     base_model = "tests"
