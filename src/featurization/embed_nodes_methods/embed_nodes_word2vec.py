@@ -796,8 +796,6 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
 
 def main(cfg):
     log_start(__file__)
-    use_seed = cfg.featurization.embed_nodes.use_seed
-
 
     os.makedirs(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, exist_ok=True)
 
