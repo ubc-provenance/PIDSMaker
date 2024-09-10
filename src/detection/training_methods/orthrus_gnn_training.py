@@ -35,14 +35,12 @@ def train(data,
 
 def main(cfg):
     log_start(__file__)
-    gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
-    os.makedirs(gnn_models_dir, exist_ok=True)
     device = get_device(cfg)
     
     # Reset the peak memory usage counter
     torch.cuda.reset_peak_memory_stats(device=device)
 
-    train_data, _, _, full_data, max_node_num = load_all_datasets(cfg)
+    train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
 
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
@@ -91,7 +89,14 @@ def main(cfg):
             # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             # save_model(model, model_path, cfg)
             log(f"\nTesting for epoch {epoch}")
-            orthrus_gnn_testing.main(cfg)
+            orthrus_gnn_testing.main(
+                cfg=cfg,
+                model=model,
+                val_data=val_data,
+                test_data=test_data,
+                full_data=full_data,
+                epoch=epoch,
+            )
             
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),
