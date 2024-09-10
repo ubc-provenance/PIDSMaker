@@ -70,7 +70,7 @@ def test_pro(cfg):
 
                 tw_node_data[tw][node]['y_hat'] = int(tw_node_data[tw][node]['y_hat'] or y_hat)
 
-    out_dir = cfg.detection.gnn_testing._threatrace_test_dir
+    out_dir = cfg.detection.gnn_training._threatrace_test_dir
     os.makedirs(out_dir, exist_ok=True)
     torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data.pth"))
 

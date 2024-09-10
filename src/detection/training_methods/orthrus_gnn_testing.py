@@ -52,8 +52,8 @@ def test(
             srcnode = int(edge_index[0, i])
             dstnode = int(edge_index[1, i])
 
-            srcmsg = nodeid2msg[srcnode]
-            dstmsg = nodeid2msg[dstnode]
+            # srcmsg = nodeid2msg[srcnode]
+            # dstmsg = nodeid2msg[dstnode]
             t_var = int(batch.t[i])
             # edge_type_idx = edge_types[i].item()
             # edge_type = rel2id[edge_type_idx]
@@ -77,7 +77,7 @@ def test(
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list[-1]["time"])
 
     end = time.perf_counter()
-    logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
+    logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
@@ -89,7 +89,6 @@ def test(
 
 
 def main(cfg):
-    log_start(__file__)
     # load the map between nodeID and node labels
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)

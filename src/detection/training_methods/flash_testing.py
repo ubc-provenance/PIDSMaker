@@ -20,7 +20,7 @@ def main(cfg):
     model_save_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(model_save_dir, exist_ok=True)
 
-    result_dir = cfg.detection.gnn_testing._flash_preds_dir
+    result_dir = cfg.detection.gnn_training._flash_preds_dir
     os.makedirs(result_dir, exist_ok=True)
 
     word2vec_model_dir = cfg.featurization.embed_nodes.flash._model_dir

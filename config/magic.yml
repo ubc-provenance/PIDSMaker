@@ -128,8 +128,6 @@ detection:
         out_activation: none
         edge_decoder: none
 
-  gnn_testing:
-    threshold_method: str
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4

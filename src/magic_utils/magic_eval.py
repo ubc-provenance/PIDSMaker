@@ -41,7 +41,7 @@ def get_node_predictions(cfg, tw_to_malicious_nodes):
                 y_test.append(0)
         tw_to_nids_ytest[tw]['y_test'] = y_test
 
-    in_dir = cfg.detection.gnn_testing._magic_test_dir
+    in_dir = cfg.detection.gnn_training._magic_test_dir
     tw_score = torch.load(os.path.join(in_dir, "tw_score.pth"))
 
     log("Get results")

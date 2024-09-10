@@ -16,7 +16,6 @@ from featurization import (
 )
 from detection import (
     gnn_training,
-    gnn_testing,
     evaluation,
 )
 
@@ -79,32 +78,26 @@ def main(cfg, **kwargs):
         torch.cuda.empty_cache()
     t4 = time.time()
     
-    if should_restart["gnn_testing"]:
-        gnn_testing.main(cfg)
-        set_task_to_done(cfg.detection.gnn_testing._task_path)
-    t5 = time.time()
-    
     if should_restart["evaluation"]:
         evaluation.main(cfg)
         set_task_to_done(cfg.detection.evaluation._task_path)
-    t6 = time.time()
+    t5 = time.time()
 
     # Triage
     if should_restart["tracing"] and cfg.triage.tracing.used_method is not None:
         if cfg.detection.evaluation.used_method.strip() in ['node_evaluation', 'node_tw_evaluation']:
             tracing.main(cfg)
             set_task_to_done(cfg.triage.tracing._task_path)
-    t7 = time.time()
+    t6 = time.time()
 
     time_consumption = {
-        "time_total": round(t7 - t0, 2),
+        "time_total": round(t6 - t0, 2),
         "time_build_graphs": round(t1 - t0, 2),
         "time_embed_nodes": round(t2 - t1, 2),
         "time_embed_edges": round(t3 - t2, 2),
         "time_gnn_training": round(t4 - t3, 2),
-        "time_gnn_testing": round(t5 - t4, 2),
-        "time_evaluation": round(t6 - t5, 2),
-        "time_tracing": round(t7 - t6, 2),
+        "time_evaluation": round(t5 - t4, 2),
+        "time_tracing": round(t6 - t5, 2),
     }
 
     log("==" * 30)
@@ -126,7 +119,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="orthrus", # Can be changed
+        project="orthrus_master", # Can be changed
         name=exp_name,
         tags=tags,
     )

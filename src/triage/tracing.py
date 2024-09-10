@@ -76,7 +76,7 @@ def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
 
 def main(cfg):
     in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
-    test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
+    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}
     best_model_epoch = listdir_sorted(test_losses_dir)[-1]

@@ -141,7 +141,7 @@ def main(cfg):
 
     #save tw_score
 
-    out_dir = cfg.detection.gnn_testing._magic_test_dir
+    out_dir = cfg.detection.gnn_training._magic_test_dir
     os.makedirs(out_dir, exist_ok=True)
 
     torch.save(tw_score, os.path.join(out_dir, "tw_score.pth"))

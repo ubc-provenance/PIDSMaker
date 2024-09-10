@@ -8,6 +8,7 @@ from encoders import TGNEncoder
 from config import *
 from data_utils import *
 from factory import *
+from . import orthrus_gnn_testing
 
 
 def train(data,
@@ -87,8 +88,10 @@ def main(cfg):
 
         # Check points
         if cfg._test_mode or epoch % 1 == 0:
-            model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-            save_model(model, model_path, cfg)
+            # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+            # save_model(model, model_path, cfg)
+            log(f"\nTesting for epoch {epoch}")
+            orthrus_gnn_testing.main(cfg)
             
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),
