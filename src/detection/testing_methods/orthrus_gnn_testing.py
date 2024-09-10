@@ -47,7 +47,7 @@ def test(
             edge_index = batch.edge_index
         
         num_events = each_edge_loss.shape[0]
-        edge_types = torch.argmax(batch.edge_type, dim=1) + 1
+        # edge_types = torch.argmax(batch.edge_type, dim=1) + 1
         for i in range(num_events):
             srcnode = int(edge_index[0, i])
             dstnode = int(edge_index[1, i])
@@ -55,17 +55,17 @@ def test(
             srcmsg = nodeid2msg[srcnode]
             dstmsg = nodeid2msg[dstnode]
             t_var = int(batch.t[i])
-            edge_type_idx = edge_types[i].item()
-            edge_type = rel2id[edge_type_idx]
+            # edge_type_idx = edge_types[i].item()
+            # edge_type = rel2id[edge_type_idx]
             loss = each_edge_loss[i]
 
             temp_dic = {
                 'loss': float(loss),
                 'srcnode': srcnode,
                 'dstnode': dstnode,
-                'srcmsg': srcmsg,
-                'dstmsg': dstmsg,
-                'edge_type': edge_type,
+                # 'srcmsg': srcmsg,
+                # 'dstmsg': dstmsg,
+                # 'edge_type': edge_type,
                 'time': t_var,
             }
             edge_list.append(temp_dic)
