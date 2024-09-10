@@ -2,7 +2,8 @@ from config import *
 from .training_methods import (
     orthrus_gnn_training,
     flash_training,
-    threatrace_training
+    threatrace_training,
+    magic_testing,
 )
 
 def main(cfg):
@@ -10,7 +11,7 @@ def main(cfg):
     if method == 'orthrus':
         orthrus_gnn_training.main(cfg)
     elif method == 'magic':
-        set_task_to_done(cfg.detection.gnn_training._task_path)
+        magic_testing.main(cfg)
     elif method == 'flash':
         flash_training.main(cfg)
     elif method == "threatrace":

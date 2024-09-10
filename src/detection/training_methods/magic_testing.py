@@ -145,8 +145,3 @@ def main(cfg):
     os.makedirs(out_dir, exist_ok=True)
 
     torch.save(tw_score, os.path.join(out_dir, "tw_score.pth"))
-
-
-
-
-
