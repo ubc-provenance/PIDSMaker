@@ -21,8 +21,8 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
         is_in_malicious_tw = max_val_loss_tw[i] in malicious_tws
         num_fps_in_malicious_tw += int(is_in_malicious_tw)
 
-        log(f"FP node {nodes[i]} -> max loss: {pred_scores[i]:.3f} | max TW: {max_val_loss_tw[i]} "
-            f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
+        # log(f"FP node {nodes[i]} -> max loss: {pred_scores[i]:.3f} | max TW: {max_val_loss_tw[i]} "
+        #     f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
 
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
@@ -126,12 +126,12 @@ def main(cfg):
     attack_to_GPs = get_GP_of_each_attack(cfg) #int
     tw_to_malicious_nodes = compute_tw_labels(cfg) #int
 
-    out_dir = cfg.detection.gnn_training._edge_losses_dir
+    in_dir = cfg.detection.gnn_training._edge_losses_dir
     node_tw_list = listdir_sorted(in_dir)
     
     best_mcc, best_stats = -1e6, {}
     for model_epoch_dir in node_tw_list:
-        tw_to_data = torch.load(model_epoch_dir)
+        tw_to_data = torch.load(os.path.join(in_dir, model_epoch_dir))
         results = transfer_result_to_node_evaluation(tw_to_data, GPs)
         results = uniforming_nodes(results, cfg)
 
