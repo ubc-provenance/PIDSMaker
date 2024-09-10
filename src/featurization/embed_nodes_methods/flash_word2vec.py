@@ -24,6 +24,7 @@ class RepeatableIterator:
                 yield sentence
 
 def main(cfg):
+    log_start(__file__)
     model_save_dir = cfg.featurization.embed_nodes.flash._model_dir
     os.makedirs(model_save_dir, exist_ok=True)
 

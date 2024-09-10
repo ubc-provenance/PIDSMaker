@@ -48,7 +48,7 @@ def main(cfg):
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
-    for epoch in tqdm(range(1, num_epochs + 1)):
+    for epoch in tqdm(range(0, num_epochs)):
         start = timer()
 
         # Before each epoch, we reset the memory

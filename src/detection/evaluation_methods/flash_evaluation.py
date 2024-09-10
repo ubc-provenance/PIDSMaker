@@ -74,7 +74,7 @@ def uniforming_nodes(results, cfg):
 
     return new_results
 
-def main(cfg):
+def main(cfg, model, epoch):
     log("Get ground truth")
     GP_nids, _, _ = get_ground_truth(cfg)
     GPs = set(str(nid) for nid in GP_nids)
@@ -85,34 +85,34 @@ def main(cfg):
 
     log("Processing testing results ")
     in_dir = cfg.detection.gnn_training._flash_preds_dir
-    node_tw_results = torch.load(os.path.join(in_dir, 'epoch_to_tw_to_mp.pth'))
+    node_tw_list = listdir_sorted(in_dir)
+    tw_to_data = torch.load(node_tw_list[epoch])
 
     results = {}
     nid_to_max_score = {}
     nid_to_max_score_tw = {}
-    for epoch, tw_to_data in node_tw_results.items():
-        # note that currently there is only one epoch
-        for tw, data in tw_to_data.items():
-            for i in range(len(data['nids'])):
-                node_id = data['nids'][i]
-                score = data['score'][i]
-                y_hat = data['y_hat'][i]
-                y_true = 1 if node_id in GPs else 0
+    # note that currently there is only one epoch
+    for tw, data in tw_to_data.items():
+        for i in range(len(data['nids'])):
+            node_id = data['nids'][i]
+            score = data['score'][i]
+            y_hat = data['y_hat'][i]
+            y_true = 1 if node_id in GPs else 0
 
-                if node_id not in results:
-                    results[node_id] = {}
-                    results[node_id]['y_true'] = 0
-                    results[node_id]['y_hat'] = 0
-                results[node_id]['y_true'] = results[node_id]['y_true'] or y_true
-                results[node_id]['y_hat'] = results[node_id]['y_hat'] or y_hat
+            if node_id not in results:
+                results[node_id] = {}
+                results[node_id]['y_true'] = 0
+                results[node_id]['y_hat'] = 0
+            results[node_id]['y_true'] = results[node_id]['y_true'] or y_true
+            results[node_id]['y_hat'] = results[node_id]['y_hat'] or y_hat
 
-                if node_id not in nid_to_max_score:
-                    nid_to_max_score[node_id] = score
-                    nid_to_max_score_tw[node_id] = tw
+            if node_id not in nid_to_max_score:
+                nid_to_max_score[node_id] = score
+                nid_to_max_score_tw[node_id] = tw
 
-                if score > nid_to_max_score[node_id]:
-                    nid_to_max_score[node_id] = score
-                    nid_to_max_score_tw[node_id] = tw
+            if score > nid_to_max_score[node_id]:
+                nid_to_max_score[node_id] = score
+                nid_to_max_score_tw[node_id] = tw
 
     for n in results.keys():
         results[n]['score'] = nid_to_max_score[n]

@@ -15,11 +15,7 @@ from torch_geometric.loader import NeighborLoader
 
 from torch_geometric import utils
 
-def main(cfg):
-    log_start(__file__)
-    model_save_dir = cfg.detection.gnn_training._trained_models_dir
-    os.makedirs(model_save_dir, exist_ok=True)
-
+def main(cfg, model, epoch):
     result_dir = cfg.detection.gnn_training._flash_preds_dir
     os.makedirs(result_dir, exist_ok=True)
 
@@ -32,79 +28,71 @@ def main(cfg):
 
     in_channel = cfg.detection.gnn_training.flash.in_channel
     out_channel = cfg.detection.gnn_training.flash.out_channel
-    epochs = cfg.detection.gnn_training.flash.epochs
-
-    model = GCN(in_channel, out_channel).to(device)
 
     graph_dir = cfg.preprocessing.build_graphs._graphs_dir
     split_files = cfg.dataset.test_files
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
     indexid2type, indexid2props = get_nid2props(cfg)
 
-    epoch_to_tw_to_result = {}
+    tw_to_result = {}
+    log(f"Start testing epoch {epoch} in device {device}")
 
-    # for epoch in range(epochs):
-    for epoch in [epochs - 1]:
-        log(f"Start testing epoch {epoch} in device {device}")
-        epoch_to_tw_to_result[epoch] = {}
-        model.load_state_dict(
-            torch.load(os.path.join(model_save_dir,f'lword2vec_gnn_{epoch}.pth'), map_location=torch.device(device)))
+    for i in range(len(sorted_paths)):
+        tw_to_result[i] = {}
+        tw_to_result[i]['nids'] = []
+        tw_to_result[i]['score'] = []
+        tw_to_result[i]['y_hat'] = []
 
-        for i in range(len(sorted_paths)):
-            epoch_to_tw_to_result[epoch][i] = {}
-            epoch_to_tw_to_result[epoch][i]['nids'] = []
-            epoch_to_tw_to_result[epoch][i]['score'] = []
-            epoch_to_tw_to_result[epoch][i]['y_hat'] = []
+        phrases, labels, edges, mapp = load_one_graph_data(sorted_paths[i], indexid2type, indexid2props)
 
-            phrases, labels, edges, mapp = load_one_graph_data(sorted_paths[i], indexid2type, indexid2props)
+        nodes = [infer(x, w2vmodel, PositionalEncoder(w2v_vector_size)) for x in phrases]
+        nodes = np.array(nodes)
 
-            nodes = [infer(x, w2vmodel, PositionalEncoder(w2v_vector_size)) for x in phrases]
-            nodes = np.array(nodes)
+        graph = Data(x=torch.tensor(nodes, dtype=torch.float).to(device),
+                        y=torch.tensor(labels, dtype=torch.long).to(device),
+                        edge_index=torch.tensor(edges, dtype=torch.long).to(device))
+        graph.n_id = torch.arange(graph.num_nodes)
+        flag = torch.tensor([True] * graph.num_nodes, dtype=torch.bool).to(device)
 
-            graph = Data(x=torch.tensor(nodes, dtype=torch.float).to(device),
-                         y=torch.tensor(labels, dtype=torch.long).to(device),
-                         edge_index=torch.tensor(edges, dtype=torch.long).to(device))
-            graph.n_id = torch.arange(graph.num_nodes)
-            flag = torch.tensor([True] * graph.num_nodes, dtype=torch.bool).to(device)
+        loader = NeighborLoader(graph, num_neighbors=[-1, -1], batch_size=5000)
 
-            loader = NeighborLoader(graph, num_neighbors=[-1, -1], batch_size=5000)
+        for subg in loader:
+            model.eval()
+            out = model(subg.x, subg.edge_index)
 
-            for subg in loader:
-                model.eval()
-                out = model(subg.x, subg.edge_index)
+            sorted, indices = out.sort(dim=1, descending=True)
+            conf = (sorted[:, 0] - sorted[:, 1]) / sorted[:, 0]
+            # conf = (conf - conf.min()) / conf.max()
+            conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf  # Handle division by zero
 
-                sorted, indices = out.sort(dim=1, descending=True)
-                conf = (sorted[:, 0] - sorted[:, 1]) / sorted[:, 0]
-                # conf = (conf - conf.min()) / conf.max()
-                conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf  # Handle division by zero
+            pred = indices[:, 0]
+            cond = (pred == subg.y) & (conf > 0.53)
 
-                pred = indices[:, 0]
-                cond = (pred == subg.y) & (conf > 0.53)
+            cond = cond.to(device)
+            # Ensure subg.n_id[cond] is on the same device as mask
+            subg_n_id = subg.n_id.to(device)
 
-                cond = cond.to(device)
-                # Ensure subg.n_id[cond] is on the same device as mask
-                subg_n_id = subg.n_id.to(device)
+            flag[subg_n_id[cond]] = torch.logical_and(flag[subg_n_id[cond]],
+                                                        torch.tensor([False] * len(flag[subg_n_id[cond]]),dtype=torch.bool).to(device))
 
-                flag[subg_n_id[cond]] = torch.logical_and(flag[subg_n_id[cond]],
-                                                          torch.tensor([False] * len(flag[subg_n_id[cond]]),dtype=torch.bool).to(device))
+            index = utils.mask_to_index(flag).tolist()
+            MP_ids = [mapp[x] for x in index]
+            MP_set = set(MP_ids)
 
-                index = utils.mask_to_index(flag).tolist()
-                MP_ids = [mapp[x] for x in index]
-                MP_set = set(MP_ids)
-
-                subg_n_ids = subg.n_id.tolist()
-                subg_actual_ids = [mapp[x] for x in subg_n_ids]
+            subg_n_ids = subg.n_id.tolist()
+            subg_actual_ids = [mapp[x] for x in subg_n_ids]
 
 
-                epoch_to_tw_to_result[epoch][i]['nids'].extend(subg_actual_ids)
-                epoch_to_tw_to_result[epoch][i]['score'].extend(conf.tolist())
-                epoch_to_tw_to_result[epoch][i]['y_hat'].extend(1 if x in MP_set else 0 for x in subg_actual_ids)
+            tw_to_result[i]['nids'].extend(subg_actual_ids)
+            tw_to_result[i]['score'].extend(conf.tolist())
+            tw_to_result[i]['y_hat'].extend(1 if x in MP_set else 0 for x in subg_actual_ids)
 
 
-            log(f'Model# {epoch} and graph {i}/{len(sorted_paths)} evaluation finished.')
+        log(f'Model# {epoch} and graph {i}/{len(sorted_paths)} evaluation finished.')
 
-    torch.save(epoch_to_tw_to_result, os.path.join(result_dir, 'epoch_to_tw_to_mp.pth'))
-    log(f"Model positive nodes are saved in {os.path.join(result_dir, 'epoch_to_tw_to_mp.pth')}")
+    out_file = os.path.join(result_dir, f'tw_to_mp{epoch}.pth')
+    torch.save(tw_to_result, out_file)
+    log(f"Model positive nodes are saved in {out_file}")
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
