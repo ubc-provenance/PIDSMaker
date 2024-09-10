@@ -127,7 +127,7 @@ def main(cfg):
 
     tw_to_malicious_nodes = compute_tw_labels(cfg) #int
 
-    out_dir = cfg.detection.gnn_training._threatrace_test_dir
+    out_dir = cfg.detection.gnn_training._edge_losses_dir
 
     node_tw_results = torch.load(os.path.join(out_dir, f"tw_node_data.pth"))
 

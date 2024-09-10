@@ -16,7 +16,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric import utils
 
 def main(cfg, model, epoch):
-    result_dir = cfg.detection.gnn_training._flash_preds_dir
+    result_dir = cfg.detection.gnn_training._edge_losses_dir
     os.makedirs(result_dir, exist_ok=True)
 
     word2vec_model_dir = cfg.featurization.embed_nodes.flash._model_dir

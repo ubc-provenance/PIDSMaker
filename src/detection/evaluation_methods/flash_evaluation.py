@@ -84,7 +84,7 @@ def main(cfg, model, epoch):
     tw_to_malicious_nodes = compute_tw_labels(cfg)
 
     log("Processing testing results ")
-    in_dir = cfg.detection.gnn_training._flash_preds_dir
+    in_dir = cfg.detection.gnn_training._edge_losses_dir
     node_tw_list = listdir_sorted(in_dir)
     tw_to_data = torch.load(node_tw_list[epoch])
 
