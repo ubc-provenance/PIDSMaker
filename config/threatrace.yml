@@ -26,7 +26,6 @@ detection:
     node_out_dim: 64
     threatrace:
       batch_size: 5000
-      model: SAGE
       thre: 1.5
       lr: 0.01
       weight_decay: 0.0005

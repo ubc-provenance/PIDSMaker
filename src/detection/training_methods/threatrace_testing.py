@@ -9,28 +9,19 @@ from threatrace_utils.data_process import load_train_graph
 from torch_geometric.loader import NeighborSampler, DataLoader, NeighborLoader
 import torch.nn.functional as F
 
-def test_pro(cfg):
-    model_save_dir = cfg.detection.gnn_training._trained_models_dir
-
-    log(f"Get training args")
-    model_name = cfg.detection.gnn_training.threatrace.model
+def test_pro(model, epoch, cfg):
     b_size = cfg.detection.gnn_training.threatrace.batch_size
     thre = cfg.detection.gnn_training.threatrace.thre
-    lr = cfg.detection.gnn_training.threatrace.lr
-    weight_decay = cfg.detection.gnn_training.threatrace.weight_decay
-    epochs = cfg.detection.gnn_training.threatrace.epochs
 
     split_files = cfg.dataset.test_files
     graph_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
     device = get_device(cfg)
 
-    model = SAGENet(10 * 2, 3).to(device)
-    model.load_state_dict(torch.load(os.path.join(model_save_dir, f'model_{epochs - 1}.pth')))
     model.eval()
 
     tw_node_data = {}
-    for tw,graph in tqdm(enumerate(sorted_paths), desc="Testing model"):
+    for tw, graph in tqdm(enumerate(sorted_paths), desc="Testing model"):
         tw_node_data[tw] = {}
 
         data, feature_num, label_num, adj, adj2, node_list = load_train_graph(graph)
@@ -72,10 +63,10 @@ def test_pro(cfg):
 
     out_dir = cfg.detection.gnn_training._threatrace_test_dir
     os.makedirs(out_dir, exist_ok=True)
-    torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data.pth"))
+    torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data{epoch}.pth"))
 
-def main(cfg):
-    test_pro(cfg)
+def main(model, epoch, cfg):
+    test_pro(model, epoch, cfg)
     log("Finish gnn_testing")
 
 if __name__ == "__main__":

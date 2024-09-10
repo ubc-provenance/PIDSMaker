@@ -119,7 +119,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="orthrus_master", # Can be changed
+        project="test", # Can be changed
         name=exp_name,
         tags=tags,
     )
