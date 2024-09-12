@@ -12,8 +12,10 @@ from torch.nn import CrossEntropyLoss
 import numpy as np
 from torch_geometric.data import Data
 from torch_geometric.loader import NeighborLoader
+from . import flash_testing
 
 def main(cfg):
+    log_start(__file__)
     model_save_dir = cfg.detection.gnn_training._trained_models_dir
     os.makedirs(model_save_dir, exist_ok=True)
 
@@ -94,7 +96,8 @@ def main(cfg):
 
             log(f'Model# {epoch} and graph {i}/{len(sorted_paths)}. {mask.sum().item()} nodes still misclassified \n')
 
-        torch.save(model.state_dict(), os.path.join(model_save_dir,f'lword2vec_gnn_{epoch}.pth'))
+        # torch.save(model.state_dict(), os.path.join(model_save_dir,f'lword2vec_gnn_{epoch}.pth'))
+        flash_testing.main(cfg, model, epoch)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import torch
 
 from tqdm import tqdm
 import os
+from . import threatrace_testing
 
 def train(model, loader, optimizer, data, device):
     model.train()
@@ -24,11 +25,6 @@ def train(model, loader, optimizer, data, device):
     return total_loss / data.train_mask.sum().item()
 
 def train_pro(cfg):
-    model_save_dir = cfg.detection.gnn_training._trained_models_dir
-    os.makedirs(model_save_dir, exist_ok=True)
-
-    log(f"Get training args")
-    model_name = cfg.detection.gnn_training.threatrace.model
     b_size = cfg.detection.gnn_training.threatrace.batch_size
     thre = cfg.detection.gnn_training.threatrace.thre
     lr = cfg.detection.gnn_training.threatrace.lr
@@ -51,10 +47,13 @@ def train_pro(cfg):
 
             loader = NeighborLoader(data, num_neighbors=[-1, -1], batch_size=b_size, shuffle=False, input_nodes=data.train_mask)
             loss = train(model, loader, optimizer, data, device)
-        torch.save(model.state_dict(), os.path.join(model_save_dir, f'model_{epoch}.pth'))
-        log(f"Model of epoch {epoch} is saved")
+        # torch.save(model.state_dict(), os.path.join(model_save_dir, f'model_{epoch}.pth'))
+        # log(f"Model of epoch {epoch} is saved")
+        log(f"\nTesting for epoch {epoch}")
+        threatrace_testing.main(model, epoch, cfg)
 
 def main(cfg):
+    log_start(__file__)
     train_pro(cfg)
     log(f"Finish gnn_training")
 

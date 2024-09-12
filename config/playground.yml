@@ -86,8 +86,6 @@ detection:
         recon_use_bias: True
         out_activation: tanh
 
-  gnn_testing:
-    threshold_method: str
   evaluation:
     used_method: node_evaluation
     node_evaluation:

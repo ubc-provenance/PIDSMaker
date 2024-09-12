@@ -18,7 +18,7 @@ def gen_relation_onehot(rel2id):
     return rel2vec
 
 
-def gen_vectorized_graphs(node2higvec, rel2vec, node2vec, split_files, out_dir, is_test, trained_w2v_dir, logger, cfg):
+def gen_vectorized_graphs(node2higvec, rel2vec, node2vec, split_files, out_dir, is_test, trained_w2v_dir, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
@@ -61,14 +61,10 @@ def gen_vectorized_graphs(node2higvec, rel2vec, node2vec, split_files, out_dir, 
         os.makedirs(out_dir, exist_ok=True)
         torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 
 def main(cfg):
-    logger = get_logger(
-        name="embed_edges",
-        filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log"))
-
+    log_start(__file__)
     trained_w2v_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
     graphs_dir = cfg.preprocessing.build_graphs._graphs_dir
     out_dir = cfg.featurization.embed_edges._edge_embeds_dir
@@ -85,7 +81,6 @@ def main(cfg):
                           out_dir=os.path.join(out_dir, "train/"),
                           is_test=False,
                           trained_w2v_dir=trained_w2v_dir,
-                          logger=logger,
                           cfg=cfg,
                           )
 
@@ -97,7 +92,6 @@ def main(cfg):
                           out_dir=os.path.join(out_dir, "val/"),
                           is_test=False,
                           trained_w2v_dir=trained_w2v_dir,
-                          logger=logger,
                           cfg=cfg,
                           )
 
@@ -109,7 +103,6 @@ def main(cfg):
                           out_dir=os.path.join(out_dir, "test/"),
                           is_test=True,
                           trained_w2v_dir=trained_w2v_dir,
-                          logger=logger,
                           cfg=cfg,
                           )
 

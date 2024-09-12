@@ -16,14 +16,13 @@ def gen_relation_onehot(rel2id):
             rel2vec[relvec[rel2id[i]-1]]=i
     return rel2vec
 
-def gen_vectorized_graphs(etype2oh, ntype2oh, split_files, out_dir, logger, cfg):
+def gen_vectorized_graphs(etype2oh, ntype2oh, split_files, out_dir, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
         file = path.split("/")[-1]
 
-        logger.info(f"Processing graph: {file}")
         graph = torch.load(path)
 
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -56,16 +55,9 @@ def gen_vectorized_graphs(etype2oh, ntype2oh, split_files, out_dir, logger, cfg)
         os.makedirs(out_dir, exist_ok=True)
         torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
-    logger = get_logger(
-        name="embed_edges_with_node_type_only",
-        filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
-    )
-
-    logger.info("Loading node msg from database...")
-
+    log_start(__file__)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 
@@ -75,7 +67,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.train_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "train/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -85,7 +76,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.val_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "val/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -95,7 +85,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.test_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test/"),
-                          logger=logger,
                           cfg=cfg
                           )
 

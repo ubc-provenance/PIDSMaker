@@ -97,19 +97,28 @@ def generate_timestamps(start_time, end_time, interval_minutes):
     return timestamps
 
 
-def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
+def gen_edge_fused_tw(cur, nodeid2msg, cfg):
     include_edge_type = rel2id
 
     def get_batches(arr, batch_size):
         for i in range(0, len(arr), batch_size):
             yield arr[i:i + batch_size]
 
-    start, end = cfg.dataset.start_end_day_range
-    for day in range(start, end):
+    # In test mode, we ensure to get 1 TW in each set
+    if cfg._test_mode:
+        # Get the day number of the first day in each set
+        days = [int(days[0].split("_")[-1]) for days in \
+                [cfg.dataset.train_files, cfg.dataset.val_files, cfg.dataset.test_files]]
+    else:
+        start, end = cfg.dataset.start_end_day_range
+        days = range(start, end)
+
+    for day in days:
         date_start = cfg.dataset.year_month + '-' + str(day) + ' 00:00:00'
         date_stop = cfg.dataset.year_month + '-' + str(day + 1) + ' 00:00:00'
 
         timestamps = [date_start, date_stop]
+        test_mode_set_done = False
 
         for i in range(0, len(timestamps) - 1):
             start = timestamps[i]
@@ -202,7 +211,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                                 'event_uuid': sorted_data[k][2]
                             })
 
-                    logger.info(f"Start creating graph for {time_interval}")
+                    log(f"Start creating graph for {time_interval}")
                     graph = nx.MultiDiGraph()
 
                     for node, info in node_info.items():
@@ -230,32 +239,29 @@ def gen_edge_fused_tw(cur, nodeid2msg, logger, cfg):
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
-                    logger.info(f"Saving graph for {time_interval}")
+                    log(f"Saving graph for {time_interval}")
                     torch.save(graph, graph_name)
 
-                    logger.info(f"[{time_interval}] Num of edges: {len(edge_list)}")
-                    logger.info(f"[{time_interval}] Num of events: {len(temp_list)}")
-                    logger.info(f"[{time_interval}] Num of nodes: {len(node_info.keys())}")
+                    log(f"[{time_interval}] Num of edges: {len(edge_list)}")
+                    log(f"[{time_interval}] Num of events: {len(temp_list)}")
+                    log(f"[{time_interval}] Num of nodes: {len(node_info.keys())}")
                     start_time = batch_edges[-1][-2]
                     temp_list.clear()
 
                     # For unit tests, we only edges from the first graph
                     if cfg._test_mode:
-                        return
-    return
+                        test_mode_set_done = True
+                        break
+
 
 def main(cfg):
-    logger = get_logger(
-        name="graph_construction_edge_fused_tw",
-        filename=os.path.join(cfg.preprocessing.build_graphs._logs_dir, "edge_fused_tw_graph.log"))
-    logger.info(f"build_graphs path: {cfg.preprocessing.build_graphs._task_path}")
-
+    log_start(__file__)
     cur, connect = init_database_connection(cfg)
     nodeid2msg = get_node_list(cur=cur, cfg=cfg)
 
     os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)
 
-    gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, logger=logger, cfg=cfg)
+    gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, cfg=cfg)
 
     del nodeid2msg
 

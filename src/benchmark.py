@@ -5,6 +5,7 @@ import torch
 import wandb
 import numpy as np
 from provnet_utils import remove_underscore_keys, log
+from config import set_task_to_done
 
 from preprocessing import (
     build_graphs,
@@ -15,7 +16,6 @@ from featurization import (
 )
 from detection import (
     gnn_training,
-    gnn_testing,
     evaluation,
 )
 
@@ -57,44 +57,47 @@ def main(cfg, **kwargs):
     # Preprocessing
     if should_restart["build_graphs"]:
         build_graphs.main(cfg)
-
+        set_task_to_done(cfg.preprocessing.build_graphs._task_path)
     t1 = time.time()
     
     # Featurization
     if should_restart["embed_nodes"]:
         embed_nodes.main(cfg)
+        set_task_to_done(cfg.featurization.embed_nodes._task_path)
     t2 = time.time()
+
     if should_restart["embed_edges"]:
         embed_edges.main(cfg)
+        set_task_to_done(cfg.featurization.embed_edges._task_path)
     t3 = time.time()
 
     # Detection
     if should_restart["gnn_training"]:
         gnn_training.main(cfg, **kwargs)
+        set_task_to_done(cfg.detection.gnn_training._task_path)
         torch.cuda.empty_cache()
     t4 = time.time()
-    if should_restart["gnn_testing"]:
-        gnn_testing.main(cfg)
-    t5 = time.time()
+    
     if should_restart["evaluation"]:
         evaluation.main(cfg)
-    t6 = time.time()
+        set_task_to_done(cfg.detection.evaluation._task_path)
+    t5 = time.time()
 
     # Triage
     if should_restart["tracing"] and cfg.triage.tracing.used_method is not None:
         if cfg.detection.evaluation.used_method.strip() in ['node_evaluation', 'node_tw_evaluation']:
             tracing.main(cfg)
-    t7 = time.time()
+            set_task_to_done(cfg.triage.tracing._task_path)
+    t6 = time.time()
 
     time_consumption = {
-        "time_total": round(t7 - t0, 2),
+        "time_total": round(t6 - t0, 2),
         "time_build_graphs": round(t1 - t0, 2),
         "time_embed_nodes": round(t2 - t1, 2),
         "time_embed_edges": round(t3 - t2, 2),
         "time_gnn_training": round(t4 - t3, 2),
-        "time_gnn_testing": round(t5 - t4, 2),
-        "time_evaluation": round(t6 - t5, 2),
-        "time_tracing": round(t7 - t6, 2),
+        "time_evaluation": round(t5 - t4, 2),
+        "time_tracing": round(t6 - t5, 2),
     }
 
     log("==" * 30)
@@ -116,7 +119,7 @@ if __name__ == '__main__':
     
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="orthrus", # Can be changed
+        project="test", # Can be changed
         name=exp_name,
         tags=tags,
     )

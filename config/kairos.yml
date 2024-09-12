@@ -47,8 +47,6 @@ detection:
       predict_edge_type:
         used_method: kairos
 
-  gnn_testing:
-    threshold_method: str
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4

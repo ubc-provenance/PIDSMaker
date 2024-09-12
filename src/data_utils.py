@@ -35,9 +35,6 @@ def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
     """
     Returns a list of time window graphs for a given `split` (train/val/test set).
     """
-    # In case we run unit tests, only some edges in the train set are present
-    if cfg._test_mode:
-        split = "train"
 
     data_list = []
     for f in sorted(os.listdir(os.path.join(path, split))):

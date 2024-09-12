@@ -7,7 +7,7 @@ from .embed_edges_methods import (
     embed_edges_feature_word2vec,
     embed_edges_only_type,
     embed_edges_TRW,
-    magic_train,
+    embed_edges_magic,
 )
 
 
@@ -26,7 +26,7 @@ def main(cfg):
     elif method == "temporal_rw":
         embed_edges_TRW.main(cfg)
     elif method == "magic":
-        magic_train.main(cfg)
+        embed_edges_magic.main(cfg)
     elif method == "flash" or method == "threatrace":
         set_task_to_done(cfg.featurization.embed_edges._task_path)
     else:

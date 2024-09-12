@@ -63,7 +63,7 @@ def gen_relation_onehot(rel2id):
             rel2vec[relvec[rel2id[i]-1]]=i
     return rel2vec
 
-def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, logger, cfg):
+def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
@@ -108,12 +108,7 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         log(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
-    # TODO: support both word2vec and doc2vec
-    logger = get_logger(
-        name="embed_edges_by_feature_word2vec",
-        filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
-    )
-
+    log_start(__file__)
     use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
@@ -136,7 +131,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.train_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "train/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -146,7 +140,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.val_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "val/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -156,7 +149,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.test_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test/"),
-                          logger=logger,
                           cfg=cfg
                           )
 

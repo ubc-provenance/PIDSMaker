@@ -47,25 +47,25 @@ def test(
             edge_index = batch.edge_index
         
         num_events = each_edge_loss.shape[0]
-        edge_types = torch.argmax(batch.edge_type, dim=1) + 1
+        # edge_types = torch.argmax(batch.edge_type, dim=1) + 1
         for i in range(num_events):
             srcnode = int(edge_index[0, i])
             dstnode = int(edge_index[1, i])
 
-            srcmsg = nodeid2msg[srcnode]
-            dstmsg = nodeid2msg[dstnode]
+            # srcmsg = nodeid2msg[srcnode]
+            # dstmsg = nodeid2msg[dstnode]
             t_var = int(batch.t[i])
-            edge_type_idx = edge_types[i].item()
-            edge_type = rel2id[edge_type_idx]
+            # edge_type_idx = edge_types[i].item()
+            # edge_type = rel2id[edge_type_idx]
             loss = each_edge_loss[i]
 
             temp_dic = {
                 'loss': float(loss),
                 'srcnode': srcnode,
                 'dstnode': dstnode,
-                'srcmsg': srcmsg,
-                'dstmsg': dstmsg,
-                'edge_type': edge_type,
+                # 'srcmsg': srcmsg,
+                # 'dstmsg': dstmsg,
+                # 'edge_type': edge_type,
                 'time': t_var,
             }
             edge_list.append(temp_dic)
@@ -77,7 +77,7 @@ def test(
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list[-1]["time"])
 
     end = time.perf_counter()
-    logs_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, split, model_epoch_file)
+    logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
@@ -88,47 +88,38 @@ def test(
         f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
 
-def main(cfg):
+def main(cfg, model, val_data, test_data, full_data, epoch):
     # load the map between nodeID and node labels
     cur, _ = init_database_connection(cfg)
     nodeid2msg = gen_nodeid2msg(cur=cur)
     nodeid2msg = {k: str(v) for k, v in nodeid2msg.items()}  # pre-compute because it's too slow in main loop
-
-    _, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
-
-    # For each model trained at a given epoch, we test
-    gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
-    all_trained_models = listdir_sorted(gnn_models_dir)
-
     device = get_device(cfg)
 
-    for trained_model in all_trained_models:
-        log(f"Evaluation with model {trained_model}...")
-        torch.cuda.empty_cache()
-        model = build_model(data_sample=test_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
-        model = load_model(model, os.path.join(gnn_models_dir, trained_model), cfg, map_location=device)
+    model_epoch_file = f"model_epoch_{epoch}"
+    log(f"Testing with model at epoch {epoch}...")
+    torch.cuda.empty_cache()
 
-        # TODO: we may want to move the validation set into the training for early stopping
-        for graphs, split in [
-            (val_data, "val"),
-            (test_data, "test"),
-        ]:
-            log(f"    Testing {split} set...")
-            for g in tqdm(graphs, desc=f"{split} set with {trained_model}"):
-                g.to(device=device)
-                test(
-                    data=g,
-                    full_data=full_data,
-                    model=model,
-                    nodeid2msg=nodeid2msg,
-                    split=split,
-                    model_epoch_file=trained_model,
-                    cfg=cfg,
-                    device=device,
-                )
-                g.to("cpu")
+    # TODO: we may want to move the validation set into the training for early stopping
+    for graphs, split in [
+        (val_data, "val"),
+        (test_data, "test"),
+    ]:
+        log(f"    Testing {split} set...")
+        for g in tqdm(graphs, desc=f"{split} set with {model_epoch_file}"):
+            g.to(device=device)
+            test(
+                data=g,
+                full_data=full_data,
+                model=model,
+                nodeid2msg=nodeid2msg,
+                split=split,
+                model_epoch_file=model_epoch_file,
+                cfg=cfg,
+                device=device,
+            )
+            g.to("cpu")
 
-        del model
+    del model
 
 
 if __name__ == "__main__":

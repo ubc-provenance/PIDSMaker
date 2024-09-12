@@ -11,6 +11,7 @@ import torch
 import os
 
 def main(cfg):
+    log_start(__file__)
     checkpoints_dir = cfg.featurization.embed_edges.magic._magic_checkpoints_dir
     os.makedirs(checkpoints_dir, exist_ok=True)
 

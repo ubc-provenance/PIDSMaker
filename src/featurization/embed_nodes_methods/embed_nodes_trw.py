@@ -123,25 +123,10 @@ def update_word2vec(corpus, model_save_path, cfg):
 
 
 def main(cfg):
-    use_seed = cfg.featurization.embed_nodes.use_seed
-
-    if use_seed:
-        SEED = 0
-        np.random.seed(SEED)
-        random.seed(SEED)
-
-        torch.manual_seed(SEED)
-        torch.cuda.manual_seed_all(SEED)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
+    log_start(__file__)
     model_save_path = cfg.featurization.embed_nodes.temporal_rw._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
-    logger = get_logger(
-        name="build_trw_word2vec",
-        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "trw_word2vec.log")
-    )
     log(f"Building TRW based word2vec model and save model to {model_save_path}")
 
     use_node_types = cfg.featurization.embed_nodes.temporal_rw.use_node_types

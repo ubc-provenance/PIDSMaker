@@ -44,7 +44,6 @@ def doc2vec(cfg,
             train_set: list[str],
             model_save_path: str,
             indexid2msg: dict,
-            logger: logging.Logger,
             epochs: int,
             emb_dim: int,
             alpha: float,
@@ -53,59 +52,35 @@ def doc2vec(cfg,
     use_seed = cfg.featurization.embed_nodes.use_seed
     SEED = 0
 
-    logger.info('Preprocessing training data...')
     words, tags = preprocess(indexid2msg, train_set)
     tagged_data = [TaggedDocument(words=word_list, tags=[tag]) for word_list, tag in zip(words, tags)]
 
-    logger.info('Initializing Doc2Vec model...')
     if use_seed:
         model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED)
     else:
         model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True)
     model.build_vocab(tagged_data)
 
-    logger.info('Start training...')
 
     for epoch in range(epochs):
         model.train(tagged_data, total_examples=len(words), epochs=1, compute_loss=True)
         model.alpha -= 0.0002
         if model.alpha < min_alpha:
             model.alpha = min_alpha
-        logger.info(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
         log(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
 
-    logger.info(f'Saving Doc2Vec model to {model_save_path}')
     log(f'Saving Doc2Vec model to {model_save_path}')
     model.save(model_save_path + 'doc2vec_model.model')
     pass
 
 def main(cfg):
-    use_seed = cfg.featurization.embed_nodes.use_seed
-
-    if use_seed:
-        SEED = 0
-        np.random.seed(SEED)
-        random.seed(SEED)
-
-        torch.manual_seed(SEED)
-        torch.cuda.manual_seed_all(SEED)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
+    log_start(__file__)
     model_save_path = cfg.featurization.embed_nodes.doc2vec._model_dir
     os.makedirs(model_save_path,exist_ok=True)
 
-    logger = get_logger(
-        name="doc2vec",
-        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "doc2vec.log")
-    )
-    logger.info(f"Building doc2vec and save model to {model_save_path}")
-
-    logger.info(f"Get indexid2msg from database...")
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
 
-    logger.info(f"Splitting datasets...")
     train_set_nodes = splitting_label_set(split_files=cfg.dataset.train_files, cfg=cfg)
     # val_set_nodes = splitting_label_set(split_files=cfg.dataset.val_files, cfg=cfg)
     # test_set_nodes = splitting_label_set(split_files=cfg.dataset.test_files, cfg=cfg)
@@ -115,12 +90,10 @@ def main(cfg):
     alpha = cfg.featurization.embed_nodes.doc2vec.alpha
     min_alpha = cfg.featurization.embed_nodes.doc2vec.min_alpha
 
-    logger.info(f"Start building and training Doc2Vec model...")
     log(f"Start building and training Doc2Vec model...")
     doc2vec(train_set=train_set_nodes,
                   model_save_path=model_save_path,
                   indexid2msg=indexid2msg,
-                  logger=logger,
                   epochs=epochs,
                   emb_dim=emb_dim,
                   alpha=alpha,

@@ -19,8 +19,8 @@ from .evaluation_methods.evaluation_utils import *
 
 
 def standard_evaluation(cfg, evaluation_fn):
-    test_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "test")
-    val_losses_dir = os.path.join(cfg.detection.gnn_testing._edge_losses_dir, "val")
+    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
+    val_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "val")
     
     tw_to_malicious_nodes = compute_tw_labels(cfg)
     

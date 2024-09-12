@@ -7,11 +7,9 @@ import numpy as np
 from tqdm import tqdm
 from torch_geometric.data import *
 
-def get_indexid2vec(indexid2msg, model_path, logger):
-
+def get_indexid2vec(indexid2msg, model_path):
 
     model = Doc2Vec.load(model_path)
-    logger.info(f"Loaded model from {model_path}")
 
     indexid2vec = {}
     for indexid, msg in tqdm(indexid2msg.items(), desc='processing indexid2vec:'):
@@ -27,7 +25,6 @@ def get_indexid2vec(indexid2msg, model_path, logger):
 
         indexid2vec[int(indexid)] = normalized_vector
 
-    logger.info(f"Finish generating normalized node vectors.")
 
     return indexid2vec
 
@@ -40,14 +37,13 @@ def gen_relation_onehot(rel2id):
             rel2vec[relvec[rel2id[i]-1]]=i
     return rel2vec
 
-def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, logger, cfg):
+def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
         file = path.split("/")[-1]
 
-        logger.info(f"Processing graph: {file}")
         graph = torch.load(path)
 
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -82,22 +78,14 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
         os.makedirs(out_dir, exist_ok=True)
         torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
-        logger.info(f'Graph: {file}. Events num: {len(sorted_edges)}. Node num: {len(graph.nodes)}')
 
 def main(cfg):
-    # TODO: support both word2vec and doc2vec
-    logger = get_logger(
-        name="embed_edges_by_doc2vec",
-        filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
-    )
-
-    logger.info("Loading node msg from database...")
+    log_start(__file__)
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
 
-    logger.info("Generating node vectors...")
     doc2vec_model_path = cfg.featurization.embed_nodes.doc2vec._model_dir + 'doc2vec_model.model'
-    indexid2vec = get_indexid2vec(indexid2msg, doc2vec_model_path, logger=logger)
+    indexid2vec = get_indexid2vec(indexid2msg, doc2vec_model_path)
 
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
@@ -108,7 +96,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.train_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "train/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -118,7 +105,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.val_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "val/"),
-                          logger=logger,
                           cfg=cfg
                           )
 
@@ -128,7 +114,6 @@ def main(cfg):
                           ntype2oh=ntype2onehot,
                           split_files=cfg.dataset.test_files,
                           out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test/"),
-                          logger=logger,
                           cfg=cfg
                           )
 

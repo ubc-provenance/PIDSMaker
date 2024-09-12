@@ -7,7 +7,7 @@ import torch
 import numpy as np
 import random
 
-def run_temporal_random_walk(split_files, out_dir, logger, cfg):
+def run_temporal_random_walk(split_files, out_dir, cfg):
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
@@ -21,7 +21,6 @@ def run_temporal_random_walk(split_files, out_dir, logger, cfg):
     for path in tqdm(sorted_paths, desc='Building temporal random walks'):
         file = path.split('/')[-1]
 
-        logger.info(f'Processing {file}')
         graph = torch.load(path)
 
         save_path = os.path.join(out_dir, f"{file}.txt")
@@ -36,22 +35,7 @@ def run_temporal_random_walk(split_files, out_dir, logger, cfg):
         trw.run()
 
 def main(cfg):
-    use_seed = cfg.featurization.embed_nodes.use_seed
-
-    if use_seed:
-        SEED = 0
-        np.random.seed(SEED)
-        random.seed(SEED)
-
-        torch.manual_seed(SEED)
-        torch.cuda.manual_seed_all(SEED)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
-    logger = get_logger(
-        name="build_temporal_random_walk",
-        filename=os.path.join(cfg.featurization.embed_nodes._logs_dir, "temporal_random_walk.log")
-    )
+    log_start(__file__)
 
     os.makedirs(cfg.featurization.embed_nodes.temporal_rw._random_walk_dir, exist_ok=True)
     os.makedirs(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir, exist_ok=True)
@@ -59,25 +43,21 @@ def main(cfg):
     run_temporal_random_walk(split_files=cfg.dataset.train_files,
                              out_dir=os.path.join(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir,
                                                   "train/"),
-                             logger=logger,
                              cfg=cfg)
 
     run_temporal_random_walk(split_files=cfg.dataset.val_files,
                              out_dir=os.path.join(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir,
                                                   "val/"),
-                             logger=logger,
                              cfg=cfg)
 
     run_temporal_random_walk(split_files=cfg.dataset.test_files,
                              out_dir=os.path.join(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir,
                                                   "test/"),
-                             logger=logger,
                              cfg=cfg)
 
     run_temporal_random_walk(split_files=cfg.dataset.unused_files,
                              out_dir=os.path.join(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir,
                                                   "unused/"),
-                             logger=logger,
                              cfg=cfg)
 
 

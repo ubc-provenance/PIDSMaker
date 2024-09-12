@@ -8,10 +8,10 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import random
 
-def get_msg2vec(indexid2msg, model_path, logger):
+def get_msg2vec(indexid2msg, model_path):
 
     model = Doc2Vec.load(model_path)
-    logger.info(f"Loaded model from {model_path}")
+    log(f"Loaded model from {model_path}")
 
     num_sub, num_file, num_net = 0, 0, 0
     msg2vec = {}
@@ -34,15 +34,15 @@ def get_msg2vec(indexid2msg, model_path, logger):
 
         msg2vec[msg[1]] = [label, normalized_vector]
 
-    logger.info(f"Number of subjects: {num_sub}; Number of files: {num_file}; Number of netflows: {num_net}")
+    log(f"Number of subjects: {num_sub}; Number of files: {num_file}; Number of netflows: {num_net}")
 
-    logger.info(f"Finish generating normalized node vectors.")
+    log(f"Finish generating normalized node vectors.")
 
     return msg2vec
 
-def get_attrs_different_files(indexid2msg, model_path, logger):
+def get_attrs_different_files(indexid2msg, model_path):
     model = Doc2Vec.load(model_path)
-    logger.info(f"Loaded model from {model_path}")
+    log(f"Loaded model from {model_path}")
 
     embeddings = {}
 
@@ -92,7 +92,7 @@ def get_attrs_different_files(indexid2msg, model_path, logger):
 
     return embeddings
 
-def get_attrs_one_type(msg2vec, logger, num_each_type, sampled_type):
+def get_attrs_one_type(msg2vec, num_each_type, sampled_type):
     embeddings_sub = []
 
     for key,value in msg2vec.items():
@@ -116,11 +116,11 @@ def get_attrs_one_type(msg2vec, logger, num_each_type, sampled_type):
         'color': color
     }
 
-    logger.info(f"Finish generating node embeddings.")
+    log(f"Finish generating node embeddings.")
 
     return embeddings
 
-def get_attrs_each_type(msg2vec, logger, num_each_type):
+def get_attrs_each_type(msg2vec, num_each_type):
 
     embeddings_sub = []
     embeddings_file = []
@@ -134,9 +134,9 @@ def get_attrs_each_type(msg2vec, logger, num_each_type):
         elif value[0] == 2:
             embeddings_net.append(value[1])
 
-    logger.info(f"Number fo subjects: {len(embeddings_sub)}")
-    logger.info(f"Number of files: {len(embeddings_file)}")
-    logger.info(f"Number of netflows: {len(embeddings_net)}")
+    log(f"Number fo subjects: {len(embeddings_sub)}")
+    log(f"Number of files: {len(embeddings_file)}")
+    log(f"Number of netflows: {len(embeddings_net)}")
 
     embeddings = {}
     sampled_sub = random.sample(range(len(embeddings_sub)), num_each_type)
@@ -157,11 +157,11 @@ def get_attrs_each_type(msg2vec, logger, num_each_type):
         'color': 'b'
     }
 
-    logger.info(f"Finish generating node embeddings.")
+    log(f"Finish generating node embeddings.")
 
     return embeddings
 
-def get_attrs(msg2vec, logger):
+def get_attrs(msg2vec):
     element_info = []
     embeddings = []
 
@@ -169,12 +169,12 @@ def get_attrs(msg2vec, logger):
         element_info.append([key, value[0]])
         embeddings.append(value[1])
 
-    logger.info(f"Finish generating node embeddings.")
+    log(f"Finish generating node embeddings.")
 
     return element_info, embeddings
 
 
-def get_vec_csv(msg2vec, csv_path, logger):
+def get_vec_csv(msg2vec, csv_path):
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 
     element_info_path = os.path.join(csv_path, 'element_info.csv')
@@ -195,9 +195,9 @@ def get_vec_csv(msg2vec, csv_path, logger):
     log(f"Saving embeddings to: {embedding_path}")
     pass
 
-def build_tsne_visualization(embeddings, fig_path, logger):
+def build_tsne_visualization(embeddings, fig_path):
     log(f"Building TSNE visualization")
-    logger.info("Building TSNE visualization")
+    log("Building TSNE visualization")
     tsne = TSNE(n_components=2, perplexity=30, n_iter=1000, learning_rate=100, metric='euclidean', init='pca')
 
     dic_2d = {}
@@ -225,27 +225,24 @@ def build_tsne_visualization(embeddings, fig_path, logger):
     log(f"Fig saved to {fig_path}")
 
 def main(cfg):
-    logger = get_logger(
-        name="test_doc2vec",
-        filename=os.path.join(cfg.featurization.build_doc2vec._logs_dir, "test_doc2vec_different_files.log")
-    )
+    log_start(__file__)
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
 
     doc2vec_model_path = cfg.featurization.build_doc2vec._model_dir + 'doc2vec_model.model'
-    msg2vec = get_msg2vec(indexid2msg, doc2vec_model_path, logger=logger)
+    msg2vec = get_msg2vec(indexid2msg, doc2vec_model_path)
 
-    # get_vec_csv(msg2vec, cfg.featurization.build_doc2vec._task_path, logger=logger)
+    # get_vec_csv(msg2vec, cfg.featurization.build_doc2vec._task_path)
 
 
     fig_name = f"tsne_different_files.png"
     fig_path = os.path.join(cfg.featurization.build_doc2vec._task_path, fig_name)
 
-    # embeddings = get_attrs_each_type(msg2vec, logger=logger, num_each_type=1000)
-    # embeddings = get_attrs_one_type(msg2vec, logger=logger, num_each_type=1500, sampled_type=2)
-    embeddings = get_attrs_different_files(indexid2msg, doc2vec_model_path, logger=logger)
+    # embeddings = get_attrs_each_type(msg2vec, num_each_type=1000)
+    # embeddings = get_attrs_one_type(msg2vec, num_each_type=1500, sampled_type=2)
+    embeddings = get_attrs_different_files(indexid2msg, doc2vec_model_path)
 
-    build_tsne_visualization(embeddings, fig_path, logger=logger)
+    build_tsne_visualization(embeddings, fig_path)
 
 
 
