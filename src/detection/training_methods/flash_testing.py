@@ -90,7 +90,7 @@ def main(cfg, model, epoch):
 
         log(f'Model# {epoch} and graph {i}/{len(sorted_paths)} evaluation finished.')
 
-    out_file = os.path.join(result_dir, f'tw_to_mp{epoch}.pth')
+    out_file = os.path.join(result_dir, f'tw_to_mp_{epoch}.pth')
     torch.save(tw_to_result, out_file)
     log(f"Model positive nodes are saved in {out_file}")
 

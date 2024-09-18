@@ -63,7 +63,7 @@ def test_pro(model, epoch, cfg):
 
     out_dir = cfg.detection.gnn_training._edge_losses_dir
     os.makedirs(out_dir, exist_ok=True)
-    torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data{epoch}.pth"))
+    torch.save(tw_node_data, os.path.join(out_dir, f"tw_node_data_{epoch}.pth"))
 
 def main(model, epoch, cfg):
     test_pro(model, epoch, cfg)

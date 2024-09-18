@@ -117,4 +117,4 @@ def main(cfg, model, n_train, n_test, epoch):
     out_dir = cfg.detection.gnn_training._edge_losses_dir
     os.makedirs(out_dir, exist_ok=True)
 
-    torch.save(tw_score, os.path.join(out_dir, f"tw_score{epoch}.pth"))
+    torch.save(tw_score, os.path.join(out_dir, f"tw_score_{epoch}.pth"))
