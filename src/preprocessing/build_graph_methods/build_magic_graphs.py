@@ -175,12 +175,17 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
             start_time = events_list[0][-2]
             temp_list = []
             BATCH = 1024
+            window_size_in_sec = cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000
+
+            last_batch = False
             for batch_edges in get_batches(events_list, BATCH):
                 for j in batch_edges:
                     temp_list.append(j)
 
-                window_size_in_sec = cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000
-                if batch_edges[-1][-2] > start_time + window_size_in_sec:
+                if (len(batch_edges) < BATCH) or (temp_list[-1] == events_list[-1]):
+                    last_batch = True
+
+                if (batch_edges[-1][-2] > start_time + window_size_in_sec) or last_batch:
                     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(
                         batch_edges[-1][-2])
 
