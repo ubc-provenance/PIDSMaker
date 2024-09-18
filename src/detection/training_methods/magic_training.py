@@ -1,5 +1,6 @@
-from config import *
 from provnet_utils import *
+from config import *
+
 from yacs.config import CfgNode as CN
 
 from magic_utils.utils import set_random_seed, create_optimizer
@@ -9,15 +10,21 @@ from magic_utils.autoencoder import build_model
 from tqdm import tqdm
 import torch
 import os
+import numpy as np
+
+import random
+from cuml.neighbors import NearestNeighbors
+import cudf
+
+from . import magic_testing
 
 def main(cfg):
     log_start(__file__)
-    checkpoints_dir = cfg.featurization.embed_edges.magic._magic_checkpoints_dir
-    os.makedirs(checkpoints_dir, exist_ok=True)
+    model_save_dir = cfg.detection.gnn_training._trained_models_dir
+    os.makedirs(model_save_dir, exist_ok=True)
 
     device = get_device(cfg)
 
-    log("Get training args")
     train_args = CN()
     train_args.num_hidden = cfg.featurization.embed_edges.magic.num_hidden
     train_args.num_layers = cfg.featurization.embed_edges.magic.num_layers
@@ -31,21 +38,19 @@ def main(cfg):
 
     set_random_seed(0)
 
-    log("Get metadata")
     metadata = load_metadata(cfg=cfg)
     train_args.n_dim = metadata['node_feature_dim']
     train_args.e_dim = metadata['edge_feature_dim']
 
-    log("Build model")
     model = build_model(train_args, device)
     model = model.to(device)
-    model.train()
+    # model.train()
 
     optimizer = create_optimizer(train_args.optimizer, model, train_args.lr, train_args.weight_decay)
     epoch_iter = tqdm(range(train_args.max_epoch), desc='Epoch of MAGIC training')
     n_train = metadata['n_train']
+    n_test = metadata['n_test']
 
-    log("Start training")
     for epoch in epoch_iter:
         epoch_loss = 0.0
         for i in range(n_train):
@@ -61,10 +66,7 @@ def main(cfg):
             del g
         epoch_iter.set_description(f"Epoch {epoch} | train_loss: {epoch_loss:.4f}")
 
-    torch.save(model.state_dict(), checkpoints_dir + "checkpoints.pt")
-    log(f"state dict of trained model saved at {checkpoints_dir}")
-    log("Training finished")
-
+        magic_testing.main(cfg, model, n_train, n_test, epoch)
 
 if __name__ == "__main__":
     args = get_runtime_required_args()

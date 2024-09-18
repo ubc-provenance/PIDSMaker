@@ -19,39 +19,13 @@ from cuml.neighbors import NearestNeighbors
 from collections import defaultdict
 import cudf
 
-def main(cfg):
-    checkpoints_dir = cfg.featurization.embed_edges.magic._magic_checkpoints_dir
-
+def main(cfg, model, n_train, n_test, epoch):
     device = get_device(cfg)
-    log(f"Magic testing on device: {device}")
-
-    log("Get testing args")
-    train_args = CN()
-    train_args.num_hidden = cfg.featurization.embed_edges.magic.num_hidden
-    train_args.num_layers = cfg.featurization.embed_edges.magic.num_layers
-    train_args.max_epoch = cfg.featurization.embed_edges.magic.max_epoch
-    train_args.negative_slope = cfg.featurization.embed_edges.magic.negative_slope
-    train_args.mask_rate = cfg.featurization.embed_edges.magic.mask_rate
-    train_args.alpha_l = cfg.featurization.embed_edges.magic.alpha_l
-    train_args.optimizer = cfg.featurization.embed_edges.magic.optimizer
-    train_args.lr = cfg.featurization.embed_edges.magic.lr
-    train_args.weight_decay = cfg.featurization.embed_edges.magic.weight_decay
-
     set_random_seed(0)
 
-    log("Get metadata")
-    metadata = load_metadata(cfg=cfg)
-    train_args.n_dim = metadata['node_feature_dim']
-    train_args.e_dim = metadata['edge_feature_dim']
-
-    log("Build model")
-    model = build_model(train_args, device)
-    model.load_state_dict(torch.load(checkpoints_dir + "checkpoints.pt", map_location=device))
     model = model.to(device)
     model.eval()
 
-    n_train = metadata['n_train']
-    n_test = metadata['n_test']
 
     with torch.no_grad():
 
@@ -66,10 +40,10 @@ def main(cfg):
 
         num_nodes = x_train.shape[0]
         sample_size = 50000 * 2
-        log(f"x_train shape: {x_train.shape}")
+        # log(f"x_train shape: {x_train.shape}")
         sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
         x_train_sampled = x_train[sample_indices]
-        log(f"x_train_sampled shape: {x_train_sampled.shape}")
+        # log(f"x_train_sampled shape: {x_train_sampled.shape}")
 
         del x_train
 
@@ -80,15 +54,15 @@ def main(cfg):
         torch.cuda.empty_cache()
 
         x_train_sampled = cudf.DataFrame.from_records(x_train_sampled)
-        log(f"x_train DataFrame created with shape: {x_train_sampled.shape}")
+        # log(f"x_train DataFrame created with shape: {x_train_sampled.shape}")
 
         n_neighbors = 10
 
-        log("Initialize and train KNN")
+        # log("Initialize and train KNN")
         nbrs = NearestNeighbors(n_neighbors=n_neighbors)
         nbrs.fit(x_train_sampled)
 
-        log("Get mean distance of training data")
+        # log("Get mean distance of training data")
         idx = list(range(x_train_sampled.shape[0]))
         random.shuffle(idx)
 
@@ -143,4 +117,4 @@ def main(cfg):
     out_dir = cfg.detection.gnn_training._edge_losses_dir
     os.makedirs(out_dir, exist_ok=True)
 
-    torch.save(tw_score, os.path.join(out_dir, "tw_score.pth"))
+    torch.save(tw_score, os.path.join(out_dir, f"tw_score{epoch}.pth"))
