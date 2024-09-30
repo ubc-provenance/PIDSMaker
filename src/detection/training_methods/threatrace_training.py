@@ -26,7 +26,6 @@ def train(model, loader, optimizer, data, device):
 
 def train_pro(cfg):
     b_size = cfg.detection.gnn_training.threatrace.batch_size
-    thre = cfg.detection.gnn_training.threatrace.thre
     lr = cfg.detection.gnn_training.threatrace.lr
     weight_decay = cfg.detection.gnn_training.threatrace.weight_decay
     epochs = cfg.detection.gnn_training.threatrace.epochs
@@ -49,13 +48,12 @@ def train_pro(cfg):
             loss = train(model, loader, optimizer, data, device)
         # torch.save(model.state_dict(), os.path.join(model_save_dir, f'model_{epoch}.pth'))
         # log(f"Model of epoch {epoch} is saved")
-        log(f"\nTesting for epoch {epoch}")
+        log(f"Testing for epoch {epoch}")
         threatrace_testing.main(model, epoch, cfg)
 
 def main(cfg):
     log_start(__file__)
     train_pro(cfg)
-    log(f"Finish gnn_training")
 
 
 if __name__ == "__main__":

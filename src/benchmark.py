@@ -117,9 +117,10 @@ if __name__ == '__main__':
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
+    PROJECT_PREFIX = "framework_"
     wandb.init(
         mode="online" if args.wandb else "disabled",
-        project="test", # Can be changed
+        project=PROJECT_PREFIX + "threatrace_tests",
         name=exp_name,
         tags=tags,
     )

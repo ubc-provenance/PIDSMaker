@@ -334,7 +334,7 @@ def gen_darpa_adj_files(graph, filename):
         f.close()
 
 def log_start(_file_: str):
-    log(f"\n======= START SUBTASK {os.path.basename(_file_)} =======")
+    log(f"======= START SUBTASK {os.path.basename(_file_)} =======")
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths = [os.path.abspath(os.path.join(base_dir, sub, f))

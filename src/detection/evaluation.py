@@ -26,7 +26,7 @@ def standard_evaluation(cfg, evaluation_fn):
     
     best_mcc, best_stats = -1e6, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        log(f"\nEvaluation of model {model_epoch_dir}...")
+        log(f"Evaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)

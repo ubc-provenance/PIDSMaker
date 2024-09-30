@@ -67,7 +67,6 @@ def test_pro(model, epoch, cfg):
 
 def main(model, epoch, cfg):
     test_pro(model, epoch, cfg)
-    log("Finish gnn_testing")
 
 if __name__ == "__main__":
     args = get_runtime_required_args()

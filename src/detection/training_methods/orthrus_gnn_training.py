@@ -88,7 +88,7 @@ def main(cfg):
         if cfg._test_mode or epoch % 1 == 0:
             # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             # save_model(model, model_path, cfg)
-            log(f"\nTesting for epoch {epoch}")
+            log(f"Testing for epoch {epoch}")
             orthrus_gnn_testing.main(
                 cfg=cfg,
                 model=model,
