@@ -115,6 +115,11 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
         "dst_type": node_type_dim,
         "dst_emb": emb_dim,
     }
+    
+    if "edges_distribution" in selected_node_feats:
+        max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
+        x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
+    
     for g in data_set:
         fields = {}
         idx = 0
@@ -135,27 +140,16 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
                 x_dst.append(fields["dst_type"])
                 
             elif feat == "edges_distribution": # as in ThreaTrace
-                # We need to reindex from 0
-                id_map, idx = {}, 0
-                for i in range(len(g.msg)):
-                    for node in [g.src[i].item(), g.dst[i].item()]:
-                        if node not in id_map:
-                            id_map[node] = idx
-                            idx += 1
-                    
-                x_distrib = torch.zeros(idx, edge_type_dim*2, dtype=torch.float)
-                for i in range(len(g.msg)):
-                    x_distrib[id_map[g.src[i].item()]][fields["edge_type"][i].argmax()] += 1
-                    x_distrib[id_map[g.dst[i].item()]][fields["edge_type"][i].argmax() + edge_type_dim] +=1
-                    
+                x_distrib.scatter_add_(0, g.src.unsqueeze(1).expand(-1, edge_type_dim), fields["edge_type"])
+                x_distrib[:, edge_type_dim:].scatter_add_(0, g.dst.unsqueeze(1).expand(-1, edge_type_dim), fields["edge_type"])
+                
                 # In ThreaTrace they don't standardize, here we do standardize by max value in TW
                 x_distrib = x_distrib / x_distrib.max()
                 
-                src_idx = torch.tensor([id_map[node.item()] for node in g.src])
-                dst_idx = torch.tensor([id_map[node.item()] for node in g.dst])
+                x_src.append(x_distrib[g.src])
+                x_dst.append(x_distrib[g.dst])
                 
-                x_src.append(x_distrib[src_idx])
-                x_dst.append(x_distrib[dst_idx])
+                x_distrib.fill_(0)
                 
             else:
                 raise ValueError(f"Node feature {feat} is invalid.")
