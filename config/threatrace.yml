@@ -19,17 +19,24 @@ detection:
   gnn_training:
     used_method: threatrace
     use_seed: True
-    num_epochs: 6
-    lr: 0.00001
-    weight_decay: 0.00001
-    node_hid_dim: 128
-    node_out_dim: 64
+    num_epochs: 30
+    lr: 0.01
+    weight_decay: 0.0005
+    node_hid_dim: 32
+    node_out_dim: 3
     threatrace:
       batch_size: 5000
       thre: 1.5
-      lr: 0.01
-      weight_decay: 0.0005
-      epochs: 30
+    encoder:
+      node_features: node_emb,node_type,edges_distribution
+      neighbor_sampling: [-1, -1]
+      edge_features: edge_type # add edge type distrib
+      used_methods: sage
+      sage:
+        dropout: 0.5
+        activation: relu
+    decoder:
+      used_methods: predict_node_type
 
   evaluation:
     viz_malicious_nodes: False

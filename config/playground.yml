@@ -49,7 +49,7 @@ detection:
     node_hid_dim: 64
     node_out_dim: 64
     encoder:
-      use_node_type_in_node_feats: True
+      node_features: node_emb,node_type
       neighbor_sampling: []
       used_methods: tgn,graph_attention
       graph_attention:

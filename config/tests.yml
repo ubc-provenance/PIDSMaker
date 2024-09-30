@@ -72,7 +72,7 @@ detection:
     node_hid_dim: 16
     node_out_dim: 16
     encoder:
-      use_node_type_in_node_feats: True
+      node_features: node_emb,node_type,edges_distribution
       neighbor_sampling: []
       edge_features: edge_type
       used_methods: tgn,graph_attention

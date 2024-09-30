@@ -101,32 +101,67 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
+    selected_node_feats = cfg.detection.gnn_training.encoder.node_features
     
     msg_len = data_set[0].msg.shape[1]
     expected_msg_len = (emb_dim*2) + (node_type_dim*2) + edge_type_dim
     if msg_len != expected_msg_len:
         raise ValueError(f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len}")
     
-    field_to_size = [
-        ("src_type", node_type_dim),
-        ("src_emb", emb_dim),
-        ("edge_type", edge_type_dim),
-        ("dst_type", node_type_dim),
-        ("dst_emb", emb_dim),
-    ]
+    field_to_size = {
+        "src_type": node_type_dim,
+        "src_emb": emb_dim,
+        "edge_type": edge_type_dim,
+        "dst_type": node_type_dim,
+        "dst_emb": emb_dim,
+    }
     for g in data_set:
         fields = {}
         idx = 0
-        for field, size in field_to_size:
+        for field, size in field_to_size.items():
             fields[field] = g.msg[:, idx: idx + size]
             idx += size
             
-        x_src = fields["src_emb"]
-        x_dst = fields["dst_emb"]
+        # Selects only the node features we want
+        x_src, x_dst = [], []
+        for feat in map(lambda x: x.strip(), selected_node_feats.split(",")):
         
-        if cfg.detection.gnn_training.encoder.use_node_type_in_node_feats:
-            x_src = torch.cat([x_src, fields["src_type"]], dim=-1)
-            x_dst = torch.cat([x_dst, fields["dst_type"]], dim=-1)
+            if feat == "node_emb":
+                x_src.append(fields["src_emb"])
+                x_dst.append(fields["dst_emb"])
+        
+            elif feat == "node_type":
+                x_src.append(fields["src_type"])
+                x_dst.append(fields["dst_type"])
+                
+            elif feat == "edges_distribution": # as in ThreaTrace
+                # We need to reindex from 0
+                id_map, idx = {}, 0
+                for i in range(len(g.msg)):
+                    for node in [g.src[i].item(), g.dst[i].item()]:
+                        if node not in id_map:
+                            id_map[node] = idx
+                            idx += 1
+                    
+                x_distrib = torch.zeros(idx, edge_type_dim*2, dtype=torch.float)
+                for i in range(len(g.msg)):
+                    x_distrib[id_map[g.src[i].item()]][fields["edge_type"][i].argmax()] += 1
+                    x_distrib[id_map[g.dst[i].item()]][fields["edge_type"][i].argmax() + edge_type_dim] +=1
+                    
+                # In ThreaTrace they don't standardize, here we do standardize by max value in TW
+                x_distrib = x_distrib / x_distrib.max()
+                
+                src_idx = torch.tensor([id_map[node.item()] for node in g.src])
+                dst_idx = torch.tensor([id_map[node.item()] for node in g.dst])
+                
+                x_src.append(x_distrib[src_idx])
+                x_dst.append(x_distrib[dst_idx])
+                
+            else:
+                raise ValueError(f"Node feature {feat} is invalid.")
+            
+        x_src = torch.cat(x_src, dim=-1)
+        x_dst = torch.cat(x_dst, dim=-1)
         
         # If we want to predict the edge type, we remove the edge type from the message
         if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
