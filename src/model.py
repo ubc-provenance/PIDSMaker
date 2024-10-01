@@ -74,6 +74,7 @@ class Model(nn.Module):
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
+                    node_type=batch.node_type if hasattr(batch, "node_type") else None,
                 )
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")

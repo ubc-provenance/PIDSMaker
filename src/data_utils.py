@@ -171,6 +171,10 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
         g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
         g.edge_index = torch.stack([g.src, g.dst])
+        
+        if cfg.detection.gnn_training.node_level:
+            g.node_type_src = fields["src_type"]
+            g.node_type_dst = fields["dst_type"]
     
     return data_set
 
@@ -247,6 +251,11 @@ class GraphReindexer:
         data = data.clone()
         data.original_edge_index = data.edge_index
         (data.x_src, data.x_dst), data.edge_index = self._reindex_graph(data.edge_index, data.x_src, data.x_dst)
+        
+        # When it's node-level detection, we also need to reshape the node types if we do node type pred. (e.g. ThreaTrace)
+        if hasattr(data, "node_type_src"):
+            (data.node_type, _), _ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst)
+        
         return data
     
     def _reindex_graph(self, edge_index, x_src, x_dst):

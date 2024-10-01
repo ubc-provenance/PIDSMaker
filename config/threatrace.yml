@@ -11,7 +11,7 @@ preprocessing:
 
 featurization:
   embed_nodes:
-    used_method: threatrace
+    used_method: only_type
   embed_edges:
     to_remove: True
 
@@ -24,13 +24,14 @@ detection:
     weight_decay: 0.0005
     node_hid_dim: 32
     node_out_dim: 3
+    node_level: True
     threatrace:
       batch_size: 5000
       thre: 1.5
     encoder:
       node_features: node_emb,node_type,edges_distribution
       neighbor_sampling: [-1, -1]
-      edge_features: edge_type # add edge type distrib
+      edge_features: edge_type
       used_methods: sage
       sage:
         dropout: 0.5

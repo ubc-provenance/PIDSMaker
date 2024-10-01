@@ -25,6 +25,7 @@ detection:
     weight_decay: 0.01
     node_hid_dim: 100
     node_out_dim: 100
+    node_level: False
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []

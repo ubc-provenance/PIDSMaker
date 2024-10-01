@@ -32,6 +32,7 @@ detection:
     weight_decay: 0.00001
     node_hid_dim: 128
     node_out_dim: 64
+    node_level: False
     flash:
       in_channel: 30
       out_channel: 3

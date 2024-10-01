@@ -59,7 +59,7 @@ def main(cfg):
         for g in train_data:
             g.to(device=device)
             loss = train(
-                data=g,  # avoids alteration of the graph across epochs
+                data=g,
                 full_data=full_data,  # full list of edge messages (do not store on CPU)
                 model=model,
                 optimizer=optimizer,

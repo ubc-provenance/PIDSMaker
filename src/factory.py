@@ -245,6 +245,12 @@ def decoder_factory(cfg, in_dim, device, max_node_num):
                 activation=activation,
             )
             decoders.append(decoder)
+            
+        elif method == "predict_node_type":
+            loss_fn = categorical_loss_fn_factory("cross_entropy")
+            
+            decoder = NodeTypeDecoder(loss_fn=loss_fn)
+            decoders.append(decoder)
         
         elif method == "predict_edge_contrastive":
             predict_edge_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.used_method.strip()
@@ -325,19 +331,22 @@ def batch_loader_factory(cfg, data, graph_reindexer):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 
-        data = graph_reindexer.reindex_graph(data)
+        if graph_reindexer is not None:
+            data = graph_reindexer.reindex_graph(data)
         data = temporal_data_to_data(data)
         return NeighborLoader(
             data,
             num_neighbors=neigh_sampling,
             batch_size=10_000_000, # no need for batching as a time window is already small
+            shuffle=False,
         )
     # Use TGN batch loader
     if use_tgn:
         return custom_temporal_data_loader(data, batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size)
     
     # Don't use any batching
-    data = graph_reindexer.reindex_graph(data)
+    if graph_reindexer is not None:
+        data = graph_reindexer.reindex_graph(data)
     return [data]
 
 def recon_loss_fn_factory(loss: str):
@@ -372,8 +381,8 @@ def optimizer_factory(cfg, parameters):
     return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay) # TODO: parametrize
 
 def get_dimensions_from_data_sample(data):
-    msg_dim = data.msg.shape[1]
     edge_dim = data.edge_feats.shape[1] if hasattr(data, "edge_feats") else None
-    in_dim = data.x_src.shape[1]
+    msg_dim = data.msg.shape[1] if hasattr(data, "msg") else edge_dim
+    in_dim = data.x_src.shape[1] if hasattr(data, "x_src") else data.x.shape[1]
     
     return msg_dim, edge_dim, in_dim

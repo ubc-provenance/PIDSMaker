@@ -4,7 +4,6 @@ from config import *
 import os
 
 from tqdm import tqdm
-from threatrace_utils.model import SAGENet
 from threatrace_utils.data_process import load_train_graph
 from torch_geometric.loader import NeighborSampler, DataLoader, NeighborLoader
 import torch.nn.functional as F

@@ -58,14 +58,10 @@ def load_train_graph(path):
 
     x_list = []
     y_list = []
-    train_mask = []
-    test_mask = []
 
     for i in range(len(node_list)):
         x_list.append([0]*edge_feature_num*2)
         y_list.append(0)
-        train_mask.append(True)
-        test_mask.append(True)
 
     for temp in provenance:
         srcId = temp[0]
@@ -81,34 +77,7 @@ def load_train_graph(path):
 
     x = torch.tensor(x_list, dtype=torch.float)
     y = torch.tensor(y_list, dtype=torch.long)
-    train_mask = torch.tensor(train_mask, dtype=torch.bool)
-    test_mask = train_mask
     edge_index = torch.tensor([edge_s, edge_e], dtype=torch.long)
-    data1 = Data(x=x, y=y, edge_index=edge_index, train_mask=train_mask, test_mask=test_mask)
+    data1 = Data(x=x, y=y, edge_index=edge_index)
 
     return data1, edge_feature_num * 2, node_label_num, 0, 0, node_list
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
