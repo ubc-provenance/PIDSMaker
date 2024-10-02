@@ -69,6 +69,8 @@ def main(cfg):
     graphs_dir = cfg.preprocessing.build_graphs._graphs_dir
     out_dir = cfg.featurization.embed_edges._edge_embeds_dir
 
+    rel2id = get_rel2id(cfg)
+
     node2higvec = torch.load(os.path.join(trained_w2v_dir, "nodelabel2vec_val"))  # From both train and val
     rel2vec = gen_relation_onehot(rel2id=rel2id)
     node2vec = gen_relation_onehot(rel2id=ntype2id)

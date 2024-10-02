@@ -552,3 +552,9 @@ def get_node_to_path_and_type(cfg):
         node_to_path_type = torch.load(out_file)
         
     return node_to_path_type
+
+def get_rel2id(cfg):
+    if cfg.dataset.name in OPTC_DATASETS:
+        return rel2id_optc
+    else:
+        return rel2id_darpa_tc

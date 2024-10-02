@@ -28,7 +28,10 @@ def get_node_list(cur, cfg):
             'remote_ip': str(i[4]),
             'remote_port': str(i[5])
         }
-        hash_id = i[1]
+        if cfg.dataset.name in OPTC_DATASETS:
+            hash_id = i[0]
+        else:
+            hash_id = i[1]
         features_used = []
         for label_used in node_label_features['netflow']:
             features_used.append(attrs[label_used])
@@ -45,7 +48,10 @@ def get_node_list(cur, cfg):
     cur.execute(sql)
     records = cur.fetchall()
     for i in records:
-        hash_id = i[1]
+        if cfg.dataset.name in OPTC_DATASETS:
+            hash_id = i[0]
+        else:
+            hash_id = i[1]
         attrs = {
             'type': 'subject',
             'path': str(i[2]),
@@ -71,7 +77,10 @@ def get_node_list(cur, cfg):
             'type': 'file',
             'path': str(i[2])
         }
-        hash_id = i[1]
+        if cfg.dataset.name in OPTC_DATASETS:
+            hash_id = i[0]
+        else:
+            hash_id = i[1]
         features_used = []
         for label_used in node_label_features['file']:
             features_used.append(attrs[label_used])
@@ -98,6 +107,7 @@ def generate_timestamps(start_time, end_time, interval_minutes):
 
 
 def gen_edge_fused_tw(cur, nodeid2msg, cfg):
+    rel2id = get_rel2id(cfg)
     include_edge_type = rel2id
 
     def get_batches(arr, batch_size):
