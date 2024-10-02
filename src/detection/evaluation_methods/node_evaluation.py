@@ -201,7 +201,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         log(f"attack {att}: {tps}")
         tps_in_atts.append((att, tps))
 
-    stats['percent_detected_attacks'] = round(len(attack_to_GPs) / len(attack_to_TPs), 2)
+    stats['percent_detected_attacks'] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
