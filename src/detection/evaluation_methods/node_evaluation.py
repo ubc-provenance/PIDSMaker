@@ -151,7 +151,8 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     return fp_in_malicious_tw_ratio
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    results = get_node_predictions_node_level(val_tw_path, test_tw_path, cfg)
+    get_preds_fn = get_node_predictions_node_level if cfg._is_node_level else get_node_predictions_node_level
+    results = get_preds_fn(val_tw_path, test_tw_path, cfg)
     node_to_path = get_node_to_path_and_type(cfg)
 
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
