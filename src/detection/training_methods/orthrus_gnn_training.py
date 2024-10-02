@@ -9,6 +9,7 @@ from config import *
 from data_utils import *
 from factory import *
 from . import orthrus_gnn_testing
+from . import threatrace_testing
 
 
 def train(data,
@@ -25,7 +26,7 @@ def train(data,
     for batch in batch_loader:
         optimizer.zero_grad()
 
-        loss = model(batch, full_data)
+        loss, *_ = model(batch, full_data)
 
         loss.backward()
         optimizer.step()
@@ -89,6 +90,7 @@ def main(cfg):
             # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             # save_model(model, model_path, cfg)
             log(f"Testing for epoch {epoch}")
+            
             orthrus_gnn_testing.main(
                 cfg=cfg,
                 model=model,

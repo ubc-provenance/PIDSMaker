@@ -42,63 +42,15 @@ def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
         data = torch.load(filepath).to("cpu")
         data_list.append(data)
 
-    if cfg.featurization.embed_nodes.used_method.strip() == "only_type":
-        data_list = extract_msg_node_type_only(data_list, cfg)
-    else:
-        data_list = extract_msg_from_data(data_list, cfg)
+    data_list = extract_msg_from_data(data_list, cfg)
     return data_list
-
-def extract_msg_node_type_only(data_set: list[TemporalData], cfg) -> list[TemporalData]:
-    """
-    Initializes the attributes of a `Data` object based on the `msg`
-    computed in previous tasks.
-    """
-    node_type_dim = cfg.dataset.num_node_types
-    edge_type_dim = cfg.dataset.num_edge_types
-
-    msg_len = data_set[0].msg.shape[1]
-    expected_msg_len = (node_type_dim * 2) + edge_type_dim
-    if msg_len != expected_msg_len:
-        raise ValueError(f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len}")
-
-    field_to_size = [
-        ("src_type", node_type_dim),
-        ("edge_type", edge_type_dim),
-        ("dst_type", node_type_dim),
-    ]
-    for g in data_set:
-        fields = {}
-        idx = 0
-        for field, size in field_to_size:
-            fields[field] = g.msg[:, idx: idx + size]
-            idx += size
-
-        x_src = fields["src_type"]
-        x_dst = fields["dst_type"]
-
-        # If we want to predict the edge type, we remove the edge type from the message
-        if "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
-            msg = torch.cat([x_src, x_dst], dim=-1)
-        else:
-            msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
-            
-        edge_feats = build_edge_feats(fields, msg, cfg)
-
-        g.x_src = x_src
-        g.x_dst = x_dst
-        g.msg = msg
-        g.edge_type = fields["edge_type"]
-        g.edge_feats = edge_feats
-        g.edge_index = torch.stack([g.src, g.dst])
-
-    return data_set
 
 def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalData]:
     """
     Initializes the attributes of a `Data` object based on the `msg`
     computed in previous tasks.
     """
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    emb_dim = cfg.featurization.embed_nodes.emb_dim or 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
     selected_node_feats = cfg.detection.gnn_training.encoder.node_features
@@ -172,7 +124,7 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
         g.edge_feats = edge_feats
         g.edge_index = torch.stack([g.src, g.dst])
         
-        if cfg.detection.gnn_training.node_level:
+        if cfg._is_node_level:
             g.node_type_src = fields["src_type"]
             g.node_type_dst = fields["dst_type"]
     
@@ -206,6 +158,15 @@ def temporal_data_to_data(data: TemporalData) -> Data:
     """
     return Data(num_nodes=data.x_src.shape[0], **{k: v for k, v in data._store.items()})
 
+class _Cache:
+    def __init__(self, shape, device):
+        self.src_cache = torch.zeros(shape, device=device)
+        self.dst_cache = torch.zeros(shape, device=device)
+        
+    def detach(self):
+        self.src_cache = self.src_cache.detach()
+        self.dst_cache = self.dst_cache.detach()
+
 class GraphReindexer:
     """
     Simply transforms an edge_index and its src/dst node features of shape (E, d)
@@ -218,43 +179,44 @@ class GraphReindexer:
         self.device = device
         
         self.assoc = None
-        self.x_src_cache = None
-        self.x_dst_cache = None
+        self.cache = {}
 
     def node_features_reshape(self, edge_index, x_src, x_dst, max_num_node=None):
         """
         Converts node features in shape (E, d) to a shape (N, d).
         Returns x as a tuple (x_src, x_dst).
         """
-        if self.x_src_cache is None:
-            self.x_src_cache = torch.zeros((self.num_nodes, x_src.shape[1]), device=self.device)
-            self.x_dst_cache = torch.zeros((self.num_nodes, x_src.shape[1]), device=self.device)
+        shape = (self.num_nodes, x_src.shape[1])
+        if shape not in self.cache:
+            self.cache[shape] = _Cache(shape, self.device)
+        cache = self.cache[shape]
             
         max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
         
         # To avoid storing gradients from all nodes, we detach() BEFORE caching. If we detach()
         # after storing, we loose the gradient for all operations happening before the reindexing.
-        self.x_src_cache = self.x_src_cache.detach()
-        self.x_dst_cache = self.x_dst_cache.detach()
+        cache.detach()
         
-        self.x_src_cache[edge_index[0, :]] = x_src
-        self.x_dst_cache[edge_index[1, :]] = x_dst
-        x = (self.x_src_cache[:max_num_node, :], self.x_dst_cache[:max_num_node, :])
+        cache.src_cache[edge_index[0, :]] = x_src
+        cache.dst_cache[edge_index[1, :]] = x_dst
+        x = (cache.src_cache[:max_num_node, :], cache.dst_cache[:max_num_node, :])
         
         return x
     
     def reindex_graph(self, data):
         """
         Reindexes edge_index from 0 + reshapes node features.
-        The old edge_index is stored in `data.original_edge_index`
+        The original edge_index and node IDs are also kept.
         """
         data = data.clone()
         data.original_edge_index = data.edge_index
-        (data.x_src, data.x_dst), data.edge_index = self._reindex_graph(data.edge_index, data.x_src, data.x_dst)
+        (data.x_src, data.x_dst), data.edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst)
+        
+        data.original_n_id = n_id
         
         # When it's node-level detection, we also need to reshape the node types if we do node type pred. (e.g. ThreaTrace)
         if hasattr(data, "node_type_src"):
-            (data.node_type, _), _ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst)
+            (data.node_type, _), *_ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst)
         
         return data
     
@@ -267,13 +229,13 @@ class GraphReindexer:
             self.assoc = torch.empty((self.num_nodes, ), dtype=torch.long, device=self.device)
 
         n_id = edge_index.unique()
-        self.assoc[n_id] = torch.arange(n_id.size(0), device=edge_index.device)
+        self.assoc[n_id] = torch.arange(n_id.size(0), device=self.assoc.device)
         edge_index = self.assoc[edge_index]
         
         # Associates each feature vector to each reindexed node ID
         x = self.node_features_reshape(edge_index, x_src, x_dst)
         
-        return x, edge_index
+        return x, edge_index, n_id
 
 def save_model(model, path: str, cfg):
     """

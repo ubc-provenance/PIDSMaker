@@ -13,6 +13,7 @@ class Model(nn.Module):
             use_contrastive_learning: bool,
             device,
             graph_reindexer,
+            node_level,
         ):
         super(Model, self).__init__()
 
@@ -25,6 +26,8 @@ class Model(nn.Module):
         if self.use_contrastive_learning:
             self.last_h_storage = torch.empty((num_nodes, out_dim), device=device)
             self.last_h_non_empty_nodes = torch.tensor([], dtype=torch.long, device=device)
+            
+        self.node_level = node_level
         
     def forward(self, batch, full_data, inference=False):
         train_mode = not inference
@@ -40,34 +43,40 @@ class Model(nn.Module):
                 edge_feats=batch.edge_feats if hasattr(batch, "edge_feats") else None,
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
-
                 edge_types= batch.edge_type
             )
 
-            # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h
-            # Here we simply transform to get a shape (E, d)
-            h_src, h_dst = (h[edge_index[0]], h[edge_index[1]]) \
-                if isinstance(h, torch.Tensor) \
-                else h
-        
-            # In case TGN is not used, x_src and x_dst have shape (N, d) instead
-            # of (E, d). To be iso with TGN to compute the loss, we transform to shape (E, d)
-            if x[0].shape[0] != edge_index.shape[1]:
-                x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
+            if self.node_level:
+                h_src, h_dst = None, None
+            else:
+                # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
+                # Here we simply transform to get a shape (E, d)
+                h_src, h_dst = (h[edge_index[0]], h[edge_index[1]]) \
+                    if isinstance(h, torch.Tensor) else h
             
+                # Same for features
+                if x[0].shape[0] != edge_index.shape[1]:
+                    x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
+
             if self.use_contrastive_learning:
                 involved_nodes = edge_index.flatten()
                 self.last_h_storage[involved_nodes] = torch.cat([h_src, h_dst]).detach()
                 self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
-            # Train mode: loss | Inference mode: edge scores
-            loss_or_scores = (torch.zeros(1) if train_mode else \
-                torch.zeros(edge_index.shape[1], dtype=torch.float)).to(h_src.device)
+            # Train mode: loss | Inference mode: scores
+            if self.node_level:
+                loss_or_scores = (torch.zeros(1) if train_mode else \
+                    torch.zeros(batch.x_src.shape[0], dtype=torch.float)).to(edge_index.device)
+            else:
+                loss_or_scores = (torch.zeros(1) if train_mode else \
+                    torch.zeros(edge_index.shape[1], dtype=torch.float)).to(edge_index.device)
             
+            pred = None
             for decoder in self.decoders:
                 loss = decoder(
-                    h_src=h_src,
-                    h_dst=h_dst,
+                    h_src=h_src, # shape (E, d)
+                    h_dst=h_dst, # shape (E, d)
+                    h=h, # shape (N, d)
                     x=x,
                     edge_index=edge_index,
                     edge_type=batch.edge_type,
@@ -76,8 +85,12 @@ class Model(nn.Module):
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
                     node_type=batch.node_type if hasattr(batch, "node_type") else None,
                 )
+                if isinstance(loss, tuple):
+                    loss, pred = loss
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
 
+            if pred is not None:
+                loss_or_scores = loss, pred
             return loss_or_scores

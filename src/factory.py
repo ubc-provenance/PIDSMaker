@@ -40,6 +40,7 @@ def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device, max_n
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
         graph_reindexer=graph_reindexer,
+        node_level=cfg._is_node_level,
     ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):
