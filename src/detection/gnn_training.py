@@ -2,7 +2,6 @@ from config import *
 from .training_methods import (
     orthrus_gnn_training,
     flash_training,
-    threatrace_training,
     magic_testing,
 )
 
@@ -14,8 +13,6 @@ def main(cfg):
         magic_testing.main(cfg)
     elif method == 'flash':
         flash_training.main(cfg)
-    elif method == "threatrace":
-        threatrace_training.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")
 

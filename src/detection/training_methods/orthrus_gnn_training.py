@@ -25,7 +25,7 @@ def train(data,
     for batch in batch_loader:
         optimizer.zero_grad()
 
-        loss = model(batch, full_data)
+        loss, *_ = model(batch, full_data)
 
         loss.backward()
         optimizer.step()
@@ -59,7 +59,7 @@ def main(cfg):
         for g in train_data:
             g.to(device=device)
             loss = train(
-                data=g,  # avoids alteration of the graph across epochs
+                data=g,
                 full_data=full_data,  # full list of edge messages (do not store on CPU)
                 model=model,
                 optimizer=optimizer,
@@ -88,7 +88,8 @@ def main(cfg):
         if cfg._test_mode or epoch % 1 == 0:
             # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             # save_model(model, model_path, cfg)
-            log(f"\nTesting for epoch {epoch}")
+            log(f"Testing for epoch {epoch}")
+            
             orthrus_gnn_testing.main(
                 cfg=cfg,
                 model=model,

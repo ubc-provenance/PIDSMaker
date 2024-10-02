@@ -10,11 +10,10 @@ import torch
 
 
 @torch.no_grad()
-def test(
+def test_edge_level(
         data,
         full_data,
         model,
-        nodeid2msg,
         split,
         model_epoch_file,
         cfg,
@@ -30,7 +29,7 @@ def test(
     tot_loss = 0
     start = time.perf_counter()
 
-    # NOTE: warning, this may reindex the graph is TGN is not used
+    # NOTE: warning, this may reindex the data is TGN is not used
     batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
 
     for batch in batch_loader:
@@ -39,7 +38,7 @@ def test(
         each_edge_loss = model(batch, full_data, inference=True)
         tot_loss += each_edge_loss.sum().item()
 
-        # If the graph has been reindexed in the loader, we retrieve original node IDs
+        # If the data has been reindexed in the loader, we retrieve original node IDs
         # to later find the labels
         if hasattr(batch, "original_edge_index"):
             edge_index = batch.original_edge_index
@@ -88,12 +87,78 @@ def test(
     log(
         f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
+@torch.no_grad()
+def test_node_level(
+    data,
+    full_data,
+    model,
+    split,
+    model_epoch_file,
+    cfg,
+    device,
+):
+    model.eval()
+
+    node_list = []
+    start_time = data.t[0]
+    end_time = data.t[-1]
+    node_count = 0
+    tot_loss = 0
+    start = time.perf_counter()
+
+    loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+
+    for batch in loader:
+        batch = batch.to(device)
+        
+        (loss, out) = model(batch, full_data, inference=True)
+        tot_loss += loss.sum().item()
+
+        # ThreaTrace code
+        pred = out.max(1)[1]
+        pro = F.softmax(out, dim=1)
+        pro1 = pro.max(1)
+        for i in range(len(batch.n_id)):
+            pro[i][pro1[1][i]] = -1
+        pro2 = pro.max(1)
+        
+        node_type_num = batch.node_type.argmax(1)
+        for i in range(len(batch.n_id)):
+            if pro2[0][i] != 0:
+                score = pro1[0][i] / pro2[0][i]
+            else:
+                score = pro1[0][i] / 1e-5
+            score = max(score.item(), 0)
+        
+            node = batch.original_n_id[i].item()
+            correct_pred = int((node_type_num[batch.n_id[i]] == pred[i]).item())
+
+            temp_dic = {
+                'node': node,
+                'loss': float(loss[i].item()),
+                'threatrace_score': score,
+                'correct_pred': correct_pred,
+            }
+            node_list.append(temp_dic)
+
+        node_count += len(batch.n_id)
+    tot_loss /= node_count
+
+    time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)
+
+    end = time.perf_counter()
+    logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
+    os.makedirs(logs_dir, exist_ok=True)
+    csv_file = os.path.join(logs_dir, time_interval + ".csv")
+
+    df = pd.DataFrame(node_list)
+    df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
+
+    log(
+        f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
+
 
 def main(cfg, model, val_data, test_data, full_data, epoch):
-    # load the map between nodeID and node labels
-    cur, _ = init_database_connection(cfg)
-    nodeid2msg = gen_nodeid2msg(cur=cur)
-    nodeid2msg = {k: str(v) for k, v in nodeid2msg.items()}  # pre-compute because it's too slow in main loop
     device = get_device(cfg)
 
     model_epoch_file = f"model_epoch_{epoch}"
@@ -108,11 +173,11 @@ def main(cfg, model, val_data, test_data, full_data, epoch):
         log(f"    Testing {split} set...")
         for g in tqdm(graphs, desc=f"{split} set with {model_epoch_file}"):
             g.to(device=device)
-            test(
+            test_fn = test_node_level if cfg._is_node_level else test_edge_level
+            test_fn(
                 data=g,
                 full_data=full_data,
                 model=model,
-                nodeid2msg=nodeid2msg,
                 split=split,
                 model_epoch_file=model_epoch_file,
                 cfg=cfg,

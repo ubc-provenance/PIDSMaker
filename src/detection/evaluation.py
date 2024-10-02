@@ -11,7 +11,6 @@ from .evaluation_methods import (
     node_tw_evaluation,
     magic_evaluation,
     flash_evaluation,
-    threatrace_evaluation,
 )
 from data_utils import *
 from provnet_utils import log
@@ -26,7 +25,7 @@ def standard_evaluation(cfg, evaluation_fn):
     
     best_mcc, best_stats = -1e6, {}
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        log(f"\nEvaluation of model {model_epoch_dir}...")
+        log(f"Evaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
@@ -72,8 +71,6 @@ def main(cfg):
         magic_evaluation.main(cfg)
     elif method == "flash_evaluation":
         flash_evaluation.main(cfg)
-    elif method == "threatrace_evaluation":
-        threatrace_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 
