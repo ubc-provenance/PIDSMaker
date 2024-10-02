@@ -87,6 +87,8 @@ def main(cfg):
     doc2vec_model_path = cfg.featurization.embed_nodes.doc2vec._model_dir + 'doc2vec_model.model'
     indexid2vec = get_indexid2vec(indexid2msg, doc2vec_model_path)
 
+    rel2id = get_rel2id(cfg)
+
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 

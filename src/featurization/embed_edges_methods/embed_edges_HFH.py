@@ -118,6 +118,8 @@ def main(cfg):
 
     indexid2vec = feature_string_hashing(vec_size=emb_dim, indexid2msg=indexid2msg)
 
+    rel2id = get_rel2id(cfg)
+
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 

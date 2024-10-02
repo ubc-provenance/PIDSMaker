@@ -56,6 +56,7 @@ def test(
             # dstmsg = nodeid2msg[dstnode]
             t_var = int(batch.t[i])
             # edge_type_idx = edge_types[i].item()
+            # rel2id = get_rel2id(cfg)
             # edge_type = rel2id[edge_type_idx]
             loss = each_edge_loss[i]
 

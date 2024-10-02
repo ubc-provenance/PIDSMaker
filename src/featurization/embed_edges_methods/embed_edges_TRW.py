@@ -128,6 +128,8 @@ def main(cfg):
                                   use_node_types=use_node_types, decline_percentage=decline_rate,
                                   node_list=used_nodes)
 
+    rel2id = get_rel2id(cfg)
+
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 

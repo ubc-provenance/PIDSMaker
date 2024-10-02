@@ -122,6 +122,7 @@ def main(cfg):
     feature_word2vec_model_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir + 'feature_word2vec.model'
     indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, decline_percentage=decline_percentage)
 
+    rel2id = get_rel2id(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 
