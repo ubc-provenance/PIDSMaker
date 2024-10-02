@@ -9,7 +9,6 @@ from config import *
 from data_utils import *
 from factory import *
 from . import orthrus_gnn_testing
-from . import threatrace_testing
 
 
 def train(data,

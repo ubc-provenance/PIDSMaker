@@ -26,14 +26,17 @@ def get_GP_of_each_attack(cfg):
 
     attack_to_nids = {}
 
-    for i, file in enumerate(cfg.dataset.ground_truth_relative_path):
-        attack_to_nids[i] = set()
-        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+    for i, (path, attack_to_time_window) in enumerate(zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)):
+        attack_to_nids[i] = {}
+        attack_to_nids[i]["nids"] = set()
+        attack_to_nids[i]["time_range"] =[datetime_to_ns_time_US(tw) for tw in [attack_to_time_window[1], attack_to_time_window[2]]]
+        
+        with open(os.path.join(cfg._ground_truth_dir, path), 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
                 node_id = uuid2nids[node_uuid]
-                attack_to_nids[i].add(int(node_id))
+                attack_to_nids[i]["nids"].add(int(node_id))
     return attack_to_nids
 
 

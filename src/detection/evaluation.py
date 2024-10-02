@@ -60,7 +60,7 @@ def standard_evaluation(cfg, evaluation_fn):
 
 def main(cfg):
     method = cfg.detection.evaluation.used_method.strip()
-    if method == "node_evaluation":
+    if method == "node_evaluation" or method == "threatrace_evaluation":
         standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
     elif method == "tw_evaluation":
         standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
@@ -72,8 +72,6 @@ def main(cfg):
         magic_evaluation.main(cfg)
     elif method == "flash_evaluation":
         flash_evaluation.main(cfg)
-    elif method == "threatrace_evaluation":
-        threatrace_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 

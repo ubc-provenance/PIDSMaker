@@ -78,44 +78,44 @@ def get_set_nodes(split_files, cfg):
 
     return all_nids
 
-def uniforming_nodes(results, cfg):
-    log("Get ground truth")
-    GP_nids, _, _ = get_ground_truth(cfg)
-    GPs = set(str(nid) for nid in GP_nids)
-    log(f"There are {len(GPs)} GPs")
+# def uniforming_nodes(results, cfg):
+#     log("Get ground truth")
+#     GP_nids, _, _ = get_ground_truth(cfg)
+#     GPs = set(str(nid) for nid in GP_nids)
+#     log(f"There are {len(GPs)} GPs")
 
-    log("Get testing nodes")
-    all_nids = get_set_nodes(split_files=cfg.dataset.test_files, cfg=cfg)
-    log(f'There are {len(all_nids)} testing set nodes')
+#     log("Get testing nodes")
+#     all_nids = get_set_nodes(split_files=cfg.dataset.test_files, cfg=cfg)
+#     log(f'There are {len(all_nids)} testing set nodes')
 
-    log("Generate results for testing set nodes")
-    new_results = {}
-    missing_num = 0
+#     log("Generate results for testing set nodes")
+#     new_results = {}
+#     missing_num = 0
 
-    if isinstance(list(results.keys())[0], int):
-        key_type = 'int'
-    elif isinstance(list(results.keys())[0], str):
-        key_type = 'str'
+#     if isinstance(list(results.keys())[0], int):
+#         key_type = 'int'
+#     elif isinstance(list(results.keys())[0], str):
+#         key_type = 'str'
 
-    for n in all_nids:
-        if key_type == 'int':
-            node_id = int(n)
-        elif key_type == 'str':
-            node_id = str(n)
+#     for n in all_nids:
+#         if key_type == 'int':
+#             node_id = int(n)
+#         elif key_type == 'str':
+#             node_id = str(n)
 
-        if node_id in results.keys():
-            new_results[node_id] = results[node_id]
-        else:
-            new_results[node_id] = {
-                'score': 0,
-                'tw_with_max_loss': 0,
-                'y_hat': 0,
-                'y_true': int(str(node_id) in GPs)
-            }
-            missing_num += 1
-    log(f"There are {missing_num} missing nodes")
+#         if node_id in results.keys():
+#             new_results[node_id] = results[node_id]
+#         else:
+#             new_results[node_id] = {
+#                 'score': 0,
+#                 'tw_with_max_loss': 0,
+#                 'y_hat': 0,
+#                 'y_true': int(str(node_id) in GPs)
+#             }
+#             missing_num += 1
+#     log(f"There are {missing_num} missing nodes")
 
-    return new_results
+#     return new_results
 
 def main(cfg):
     log("Get ground truth")

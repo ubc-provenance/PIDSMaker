@@ -9,7 +9,6 @@ import torch
 
 from tqdm import tqdm
 import os
-from . import threatrace_testing
 
 def train(encoder, decoder, loader, optimizer, data, device):
     encoder.train()
