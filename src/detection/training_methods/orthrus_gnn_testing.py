@@ -96,8 +96,6 @@ def test_node_level(
     cfg,
     device,
 ):
-    thre = 1.5
-
     model.eval()
 
     node_list = []

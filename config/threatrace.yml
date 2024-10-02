@@ -38,6 +38,6 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4
-    used_method: threatrace_evaluation
+    used_method: node_evaluation
     node_evaluation:
       threshold_method: threatrace

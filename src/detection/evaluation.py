@@ -11,7 +11,6 @@ from .evaluation_methods import (
     node_tw_evaluation,
     magic_evaluation,
     flash_evaluation,
-    threatrace_evaluation,
 )
 from data_utils import *
 from provnet_utils import log
@@ -60,7 +59,7 @@ def standard_evaluation(cfg, evaluation_fn):
 
 def main(cfg):
     method = cfg.detection.evaluation.used_method.strip()
-    if method == "node_evaluation" or method == "threatrace_evaluation":
+    if method == "node_evaluation":
         standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
     elif method == "tw_evaluation":
         standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
