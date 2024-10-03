@@ -25,7 +25,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
-    decoder = decoder_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
+    decoder = objective_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     
     return model
@@ -159,31 +159,17 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
 def decoder_factory(method, objective, cfg, in_dim, out_dim):
     decoder_cfg = dict(getattr(getattr(cfg.detection.gnn_training.decoder, objective), method))
     
-    if method == "autoencoder":
-        return AutoEncoder(
-            in_dim=in_dim,
-            out_dim=out_dim,
-            h_dim=decoder_cfg.get("h_dim", None),
-            use_bias=decoder_cfg.get("use_bias", None),
-            out_activation=activation_fn_factory(decoder_cfg.get("out_activation", "none")),
-            hid_activation=activation_fn_factory("relu"),
-        )
     if method == "edge_mlp":
         return EdgeMLPDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
-            use_kairos_decoder=use_kairos_decoder,
-            dropout=decoder_cfg["dropout"],
-            num_layers=decoder_cfg["num_layers"],
-            activation=decoder_cfg["activation"],
+            architecture=decoder_cfg["architecture_str"],
         )
     if method == "node_mlp":
         return NodeMLPDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
-            dropout=decoder_cfg["dropout"],
-            num_layers=decoder_cfg["num_layers"],
-            activation=decoder_cfg["activation"],
+            architecture=decoder_cfg["architecture_str"],
         )
 
 def objective_factory(cfg, in_dim, device, max_node_num):
@@ -191,7 +177,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
 
     decoders = []
     for objective in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
-        method = getattr(getattr(cfg.detection.gnn_training.decoder.strip(), objective), "decoder")
+        method = getattr(getattr(cfg.detection.gnn_training.decoder, objective.strip()), "decoder")
 
         if objective == "reconstruct_node_features":
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
@@ -218,9 +204,6 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             
         elif objective == "predict_edge_type":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
-            use_kairos_decoder = method == "kairos"
-            activation = None if use_kairos_decoder else \
-                activation_fn_factory(cfg.detection.gnn_training.decoder.predict_edge_type.custom.activation)
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=cfg.dataset.num_edge_types)
             decoders.append(
