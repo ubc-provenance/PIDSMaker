@@ -108,8 +108,8 @@ detection:
           dropout: 0.0
       reconstruct_node_features:
         loss: MSE
-        recon_hid_dim: 128
-        recon_use_bias: True
+        h_dim: 128
+        use_bias: True
         out_activation: tanh
       reconstruct_node_embeddings:
         loss: MSE
