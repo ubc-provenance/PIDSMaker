@@ -83,9 +83,12 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
             loss = line['loss']
             
             node_to_values[node]["loss"].append(loss)
-            node_to_values[node]["threatrace_score"].append(line["threatrace_score"])
-            node_to_values[node]["correct_pred"].append(line["correct_pred"])
             node_to_values[node]["tw"].append(tw)
+            
+            if "threatrace_score" in line:
+                node_to_values[node]["threatrace_score"].append(line["threatrace_score"])
+            if "correct_pred" in line:
+                node_to_values[node]["correct_pred"].append(line["correct_pred"])
 
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss

@@ -181,7 +181,7 @@ class GraphReindexer:
         self.assoc = None
         self.cache = {}
 
-    def node_features_reshape(self, edge_index, x_src, x_dst, max_num_node=None):
+    def node_features_reshape(self, edge_index, x_src, x_dst, max_num_node=None, x_is_tuple=False):
         """
         Converts node features in shape (E, d) to a shape (N, d).
         Returns x as a tuple (x_src, x_dst).
@@ -197,30 +197,39 @@ class GraphReindexer:
         # after storing, we loose the gradient for all operations happening before the reindexing.
         cache.detach()
         
-        cache.src_cache[edge_index[0, :]] = x_src
-        cache.dst_cache[edge_index[1, :]] = x_dst
-        x = (cache.src_cache[:max_num_node, :], cache.dst_cache[:max_num_node, :])
+        if x_is_tuple:
+            cache.src_cache[edge_index[0, :]] = x_src
+            cache.dst_cache[edge_index[1, :]] = x_dst
+            x = (cache.src_cache[:max_num_node, :], cache.dst_cache[:max_num_node, :])
+        else:
+            cache.src_cache[edge_index[0, :]] = x_src
+            cache.src_cache[edge_index[1, :]] = x_dst
+            x = cache.src_cache[:max_num_node, :]
         
         return x
     
-    def reindex_graph(self, data):
+    def reindex_graph(self, data, x_is_tuple=False):
         """
         Reindexes edge_index from 0 + reshapes node features.
         The original edge_index and node IDs are also kept.
         """
         data = data.clone()
         data.original_edge_index = data.edge_index
-        (data.x_src, data.x_dst), data.edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst)
+        x, data.edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
+        if x_is_tuple:
+            data.x_src, data.x_dst = x
+        else:
+            data.x = x
         
         data.original_n_id = n_id
         
         # When it's node-level detection, we also need to reshape the node types if we do node type pred. (e.g. ThreaTrace)
         if hasattr(data, "node_type_src"):
-            (data.node_type, _), *_ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst)
+            data.node_type, *_ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst, x_is_tuple=False)
         
         return data
     
-    def _reindex_graph(self, edge_index, x_src, x_dst):
+    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False):
         """
         Reindexes edge_index with indices starting from 0.
         Also reshapes the node features.
@@ -233,7 +242,7 @@ class GraphReindexer:
         edge_index = self.assoc[edge_index]
         
         # Associates each feature vector to each reindexed node ID
-        x = self.node_features_reshape(edge_index, x_src, x_dst)
+        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple)
         
         return x, edge_index, n_id
 

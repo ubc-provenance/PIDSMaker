@@ -31,7 +31,10 @@ class Model(nn.Module):
         
     def forward(self, batch, full_data, inference=False):
         train_mode = not inference
-        x = (batch.x_src, batch.x_dst)
+        if self.node_level:
+            x = batch.x
+        else:
+            x = (batch.x_src, batch.x_dst)
         edge_index = batch.edge_index
 
         with torch.set_grad_enabled(train_mode):
@@ -46,8 +49,10 @@ class Model(nn.Module):
                 edge_types= batch.edge_type
             )
 
+            num_elements = None
             if self.node_level:
                 h_src, h_dst = None, None
+                num_elements = h.shape[0]
             else:
                 # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
                 # Here we simply transform to get a shape (E, d)
@@ -57,6 +62,8 @@ class Model(nn.Module):
                 # Same for features
                 if x[0].shape[0] != edge_index.shape[1]:
                     x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
+                    
+                num_elements = h_src.shape[0]
 
             if self.use_contrastive_learning:
                 involved_nodes = edge_index.flatten()
@@ -64,12 +71,8 @@ class Model(nn.Module):
                 self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: scores
-            if self.node_level:
-                loss_or_scores = (torch.zeros(1) if train_mode else \
-                    torch.zeros(batch.x_src.shape[0], dtype=torch.float)).to(edge_index.device)
-            else:
-                loss_or_scores = (torch.zeros(1) if train_mode else \
-                    torch.zeros(edge_index.shape[1], dtype=torch.float)).to(edge_index.device)
+            loss_or_scores = (torch.zeros(1) if train_mode else \
+                torch.zeros(num_elements, dtype=torch.float)).to(edge_index.device)
             
             pred = None
             for decoder in self.decoders:

@@ -183,7 +183,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
-            decoders.append(NodeFeatDecoder(decoder=decoder, loss_fn=loss_fn))
+            decoders.append(NodeFeatReconstruction(decoder=decoder, loss_fn=loss_fn))
             
         elif objective == "reconstruct_node_embeddings":
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_embeddings.loss)
