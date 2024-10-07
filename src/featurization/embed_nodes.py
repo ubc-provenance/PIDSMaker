@@ -7,6 +7,7 @@ from .embed_nodes_methods import (
     build_temporal_random_walk,
     embed_nodes_trw,
     flash_word2vec,
+    embed_nodes_rcaid,
 )
 
 
@@ -29,6 +30,8 @@ def main(cfg):
         embed_nodes_trw.main(cfg)
     elif method == "flash":
         flash_word2vec.main(cfg)
+    elif method == "rcaid":
+        embed_nodes_rcaid.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 
