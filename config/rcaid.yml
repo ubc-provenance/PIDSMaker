@@ -15,7 +15,7 @@ featurization:
     use_seed: True
     used_method: doc2vec
     doc2vec:
-      include_neighbors: False
+      include_neighbors: True
       epochs: 5
       alpha: 0.025
       min_alpha: 0.00025
@@ -24,25 +24,22 @@ featurization:
 
 detection:
   gnn_training:
-    used_method: rcaid
+    used_method: orthrus
     use_seed: True
     num_epochs: 6
     lr: 0.0001
-    weight_decay: 0.00001
+    weight_decay: 0.0001
     node_hid_dim: 128
-    node_out_dim: 2
+    node_out_dim: 3
     encoder:
       node_features: node_emb
       neighbor_sampling: []
       edge_features: none
-      used_methods: gat
-      # gat:
+      used_methods: rcaid_gat
     decoder:
       used_methods: predict_node_type
       predict_node_type:
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: linear*2 | relu
+        decoder: none
 
   evaluation:
     viz_malicious_nodes: False
