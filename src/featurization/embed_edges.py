@@ -25,7 +25,7 @@ def main(cfg):
     elif method == "temporal_rw":
         embed_edges_TRW.main(cfg)
     elif method == "flash" or method == 'magic':
-        set_task_to_done(cfg.featurization.embed_edges._task_path)
+        pass
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 

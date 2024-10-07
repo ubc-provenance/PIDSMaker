@@ -8,6 +8,8 @@ preprocessing:
       subject: path
       file: path
       netflow: remote_ip, remote_port
+  transformation:
+    used_method: none
 
 featurization:
   embed_nodes:
