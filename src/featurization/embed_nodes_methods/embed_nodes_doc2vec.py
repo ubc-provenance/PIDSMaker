@@ -22,7 +22,6 @@ def splitting_label_set(split_files: list[str], cfg):
     return list(node_set)  #list[str]
 
 def preprocess(indexid2msg: dict, nodes: list[str]):
-
     tags = []
     words = []
 
@@ -41,37 +40,52 @@ def preprocess(indexid2msg: dict, nodes: list[str]):
 
 
 def doc2vec(cfg,
-            train_set: list[str],
+            tagged_data: list[str],
             model_save_path: str,
             indexid2msg: dict,
             epochs: int,
             emb_dim: int,
             alpha: float,
             min_alpha: float,
-            dm: int = 1):
-    use_seed = cfg.featurization.embed_nodes.use_seed
+            dm: int = 1,
+):
     SEED = 0
-
-    words, tags = preprocess(indexid2msg, train_set)
-    tagged_data = [TaggedDocument(words=word_list, tags=[tag]) for word_list, tag in zip(words, tags)]
-
-    if use_seed:
-        model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED)
-    else:
-        model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True)
+    model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED)
     model.build_vocab(tagged_data)
 
-
     for epoch in range(epochs):
-        model.train(tagged_data, total_examples=len(words), epochs=1, compute_loss=True)
+        model.train(tagged_data, total_examples=model.corpus_count, epochs=1, compute_loss=True)
         model.alpha -= 0.0002
         if model.alpha < min_alpha:
             model.alpha = min_alpha
         log(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
 
     log(f'Saving Doc2Vec model to {model_save_path}')
-    model.save(model_save_path + 'doc2vec_model.model')
-    pass
+    model.save(os.path.join(model_save_path, 'doc2vec_model.model'))
+
+
+# Used in Rcaid
+def tokenize_using_neighbors_features(graph_list):
+    documents = []
+    nodes = set()
+    for idx, G in enumerate(graph_list):
+        # Prepare the training data for Doc2Vec: each node and its neighbors as a 'document'
+        for node in G.nodes():
+            if node not in nodes:
+                node_label = G.nodes[node].get('label', '')  # Assumes each node has a 'label' attribute
+                neighbors = list(G.neighbors(node))
+                neighbor_labels = []
+                nodes.add(node)
+                for neighbor in neighbors:
+                    label = G.nodes[neighbor].get('label', '')
+                    if isinstance(label, list):
+                        label = ' '.join(label)
+                    neighbor_labels.append(label)
+
+                document = node_label + ' ' + ' '.join(neighbor_labels)
+                documents.append(TaggedDocument(words=document.split(), tags=[str(node)]))
+
+    return documents
 
 def main(cfg):
     log_start(__file__)
@@ -81,9 +95,26 @@ def main(cfg):
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
 
-    train_set_nodes = splitting_label_set(split_files=cfg.dataset.train_files, cfg=cfg)
-    # val_set_nodes = splitting_label_set(split_files=cfg.dataset.val_files, cfg=cfg)
-    # test_set_nodes = splitting_label_set(split_files=cfg.dataset.test_files, cfg=cfg)
+    train_files = cfg.dataset.train_files
+    
+    # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
+    if cfg.featurization.embed_nodes.doc2vec.include_neighbors:
+        sorted_paths = get_all_files_from_folders(cfg.preprocessing.build_graphs._graphs_dir, train_files)
+        graph_list = []
+        for path in tqdm(sorted_paths, desc='Loading graphs'):
+            graph = torch.load(path)
+            # TODO: add in transformation task
+            # root_nodes = identify_root_nodes(graph)
+            # pseudo_graph = create_pseudo_graph(graph,root_nodes)
+            # new_G = prune_pseudo_roots(pseudo_graph, graph, 0.5)
+            graph_list.append(graph)
+        tagged_data = tokenize_using_neighbors_features(graph_list)
+    
+    # Standard token-level Doc2vec
+    else:
+        train_set_nodes = splitting_label_set(split_files=train_files, cfg=cfg)
+        words, tags = preprocess(indexid2msg, train_set_nodes)
+        tagged_data = [TaggedDocument(words=word_list, tags=[tag]) for word_list, tag in zip(words, tags)]
 
     epochs = cfg.featurization.embed_nodes.doc2vec.epochs
     emb_dim = cfg.featurization.embed_nodes.emb_dim
@@ -91,7 +122,7 @@ def main(cfg):
     min_alpha = cfg.featurization.embed_nodes.doc2vec.min_alpha
 
     log(f"Start building and training Doc2Vec model...")
-    doc2vec(train_set=train_set_nodes,
+    doc2vec(tagged_data=tagged_data,
                   model_save_path=model_save_path,
                   indexid2msg=indexid2msg,
                   epochs=epochs,
@@ -101,7 +132,7 @@ def main(cfg):
                   cfg=cfg)
 
 if __name__ == '__main__':
-    args =get_runtime_required_args()
+    args = get_runtime_required_args()
     cfg = get_yml_cfg(args)
 
     main(cfg)

@@ -103,9 +103,15 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                  typed_hidden_rep=False,
                  edge_dim=None,
                  full_param=False,
-                 num_edge_type = 15
+                 num_edge_type = 15 # TODO: we should use 10 here
             
             ).to(device)
+        elif method == "rcaid_gat":
+            encoder = RCaidGAT(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+            )
         else:
             raise ValueError(f"Invalid encoder {method}")
     

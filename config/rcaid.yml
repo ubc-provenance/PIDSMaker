@@ -1,0 +1,50 @@
+preprocessing:
+  build_graphs:
+    used_method: orthrus
+    use_all_files: True
+    time_window_size: 15.0
+    use_hashed_label: False
+    node_label_features:
+      subject: path, cmd_line
+      file: path
+      netflow: remote_ip
+
+featurization:
+  embed_nodes:
+    emb_dim: 128
+    use_seed: True
+    used_method: doc2vec
+    doc2vec:
+      include_neighbors: True
+      epochs: 5
+      alpha: 0.025
+      min_alpha: 0.00025
+  embed_edges:
+    to_remove: True
+
+detection:
+  gnn_training:
+    used_method: orthrus
+    use_seed: True
+    num_epochs: 6
+    lr: 0.0001
+    weight_decay: 0.0001
+    node_hid_dim: 128
+    node_out_dim: 3
+    encoder:
+      node_features: node_emb
+      neighbor_sampling: []
+      edge_features: none
+      used_methods: rcaid_gat
+    decoder:
+      used_methods: predict_node_type
+      predict_node_type:
+        decoder: none
+
+  evaluation:
+    viz_malicious_nodes: False
+    ground_truth_version: darpa_v4
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True

@@ -65,10 +65,10 @@ class Model(nn.Module):
                     
                 num_elements = h_src.shape[0]
 
-            if self.use_contrastive_learning:
-                involved_nodes = edge_index.flatten()
-                self.last_h_storage[involved_nodes] = torch.cat([h_src, h_dst]).detach()
-                self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
+            # if self.use_contrastive_learning:
+            #     involved_nodes = edge_index.flatten()
+            #     self.last_h_storage[involved_nodes] = torch.cat([h_src, h_dst]).detach()
+            #     self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: scores
             loss_or_scores = (torch.zeros(1) if train_mode else \

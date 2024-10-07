@@ -33,6 +33,7 @@ featurization:
       negative: 5
       decline_rate: 30
     doc2vec:
+      include_neighbors: False
       epochs: 1
       alpha: 0.025
       min_alpha: 0.00025
