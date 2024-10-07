@@ -553,6 +553,46 @@ def get_node_to_path_and_type(cfg):
         
     return node_to_path_type
 
+def build_mlp_from_string(arch_str, in_dim, out_dim):
+    def parse_layer(layer_str, in_dim):
+        layers = []
+        parts = layer_str.lower().split(',')
+        
+        for part in parts:            
+            if part.startswith('linear'):
+                _, coeff_out = part.split('*')
+                out_dim = int(in_dim * float(coeff_out.strip()))
+                layers.append(nn.Linear(in_dim, out_dim))
+                in_dim = out_dim  # Update in_dim for the next layer
+                
+            elif part.startswith('dropout'):
+                _, dropout_prob = part.split('(')
+                dropout_prob = float(dropout_prob.strip(')'))
+                layers.append(nn.Dropout(dropout_prob))
+            
+            elif part == 'tanh':
+                layers.append(nn.Tanh())
+                
+            elif part == 'relu':
+                layers.append(nn.ReLU())
+                
+            else:
+                raise ValueError(f"Invalid layer {part}")
+
+        return layers, in_dim
+
+
+    arch_str = arch_str.strip().lower().replace(" ", "")
+    layer_groups = arch_str.split('|')
+    
+    layers = []
+    for group in layer_groups:
+        group_layers, in_dim = parse_layer(group, in_dim)
+        layers.extend(group_layers)
+    layers.append(nn.Linear(in_dim, out_dim))
+    
+    return nn.Sequential(*layers)
+
 def get_rel2id(cfg):
     if cfg.dataset.name in OPTC_DATASETS:
         return rel2id_optc

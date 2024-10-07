@@ -111,37 +111,48 @@ def test_node_level(
     for batch in loader:
         batch = batch.to(device)
         
-        (loss, out) = model(batch, full_data, inference=True)
+        loss = model(batch, full_data, inference=True)
+        if isinstance(loss, tuple):
+            loss, out = loss
         tot_loss += loss.sum().item()
 
         # ThreaTrace code
-        pred = out.max(1)[1]
-        pro = F.softmax(out, dim=1)
-        pro1 = pro.max(1)
-        for i in range(len(batch.n_id)):
-            pro[i][pro1[1][i]] = -1
-        pro2 = pro.max(1)
-        
-        node_type_num = batch.node_type.argmax(1)
-        for i in range(len(batch.n_id)):
-            if pro2[0][i] != 0:
-                score = pro1[0][i] / pro2[0][i]
-            else:
-                score = pro1[0][i] / 1e-5
-            score = max(score.item(), 0)
-        
-            node = batch.original_n_id[i].item()
-            correct_pred = int((node_type_num[batch.n_id[i]] == pred[i]).item())
+        if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
+            pred = out.max(1)[1]
+            pro = F.softmax(out, dim=1)
+            pro1 = pro.max(1)
+            for i in range(len(out)):
+                pro[i][pro1[1][i]] = -1
+            pro2 = pro.max(1)
+            
+            node_type_num = batch.node_type.argmax(1)
+            for i in range(len(out)):
+                if pro2[0][i] != 0:
+                    score = pro1[0][i] / pro2[0][i]
+                else:
+                    score = pro1[0][i] / 1e-5
+                score = max(score.item(), 0)
+            
+                node = batch.original_n_id[i].item()
+                correct_pred = int((node_type_num[i] == pred[i]).item())
 
-            temp_dic = {
-                'node': node,
-                'loss': float(loss[i].item()),
-                'threatrace_score': score,
-                'correct_pred': correct_pred,
-            }
-            node_list.append(temp_dic)
-
-        node_count += len(batch.n_id)
+                temp_dic = {
+                    'node': node,
+                    'loss': float(loss[i].item()),
+                    'threatrace_score': score,
+                    'correct_pred': correct_pred,
+                }
+                node_list.append(temp_dic)
+            
+        else:
+            for i, node in enumerate(batch.original_n_id):
+                temp_dic = {
+                    'node': node.item(),
+                    'loss': float(loss[i].item()),
+                }
+                node_list.append(temp_dic)
+                
+        node_count += len(loss)
     tot_loss /= node_count
 
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)

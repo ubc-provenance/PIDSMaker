@@ -34,6 +34,8 @@ detection:
         activation: relu
     decoder:
       used_methods: predict_node_type
+      predict_node_type:
+        decoder: none
 
   evaluation:
     viz_malicious_nodes: False

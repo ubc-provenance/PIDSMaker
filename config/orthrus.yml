@@ -94,30 +94,16 @@ detection:
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
-        used_method: custom
-        custom:
-          dropout: 0.0
-          num_layers: 2
-          activation: relu
-      predict_edge_contrastive:
-        neg_sampling_method: previously_seen_nodes
-        used_method: linear
-        inner_product:
-          dropout: 0.0
-        linear:
-          dropout: 0.0
-      reconstruct_node_features:
-        loss: MSE
-        recon_hid_dim: 128
-        recon_use_bias: True
-        out_activation: tanh
-      reconstruct_node_embeddings:
-        loss: MSE
-        out_activation: none
-      reconstruct_edge_embeddings:
-        loss: MSE
-        out_activation: none
-        edge_decoder: none
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear*0.5 | relu
+      # predict_edge_contrastive:
+      #   neg_sampling_method: previously_seen_nodes
+      #   used_method: linear
+      #   inner_product:
+      #     dropout: 0.0
+      #   linear:
+      #     dropout: 0.0
 
   evaluation:
     viz_malicious_nodes: False
