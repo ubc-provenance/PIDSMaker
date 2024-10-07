@@ -6,7 +6,7 @@ from torch_geometric.data import Data
 from gensim.models import Doc2Vec
 from provnet_utils import *
 from flash_utils.utils import load_one_graph_data, get_nid2props
-from ...encoders import GATModel
+from encoders import GATModel
 
 
 # Training loop
@@ -68,10 +68,10 @@ def main(cfg):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Hyperparameters
-    in_channels = cfg.detection.gnn_training.rcaid.in_channels  # Number of input features per node
+    in_channels = cfg.detection.gnn_training.in_channels  # Number of input features per node
     hidden_dim = cfg.detection.gnn_training.node_hid_dim  # Number of hidden units in GAT layers and MLP
-    out_channels = cfg.detection.gnn_training.rcaid.out_channels  # Number of output classes for classification
-    learning_rate = cfg.detection.gnn_training.rcaid.lr
+    out_channels = cfg.detection.gnn_training.node_out_dim  # Number of output classes for classification
+    lr = cfg.detection.gnn_training.lr
     num_epochs = 200
 
     graph_dir = cfg.preprocessing.build_graphs._graphs_dir
@@ -82,7 +82,7 @@ def main(cfg):
 
     # Initialize model, optimizer, and loss function
     model = GATModel(in_channels=in_channels,out_channels=out_channels,hidden_dim=hidden_dim).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=5e-4)
     criterion = torch.nn.CrossEntropyLoss().to(device)
 
     # Create sample graph data (replace this with your actual graph dataset)

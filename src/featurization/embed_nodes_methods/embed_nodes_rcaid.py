@@ -95,7 +95,6 @@ def doc2vec(cfg,
 
     log(f'Saving Doc2Vec model to {model_save_path}')
     model.save(model_save_path + 'doc2vec_model.model')
-    pass
 
 def identify_root_nodes(G):
     root_nodes = set()
@@ -232,19 +231,7 @@ def generate_doc2vec_embeddings_for_graphs(graph_list, vector_size=128, epochs=1
 
 
 def main(cfg):
-    use_seed = cfg.featurization.embed_nodes.use_seed
-
-    if use_seed:
-        SEED = 0
-        np.random.seed(SEED)
-        random.seed(SEED)
-
-        torch.manual_seed(SEED)
-        torch.cuda.manual_seed_all(SEED)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
-
+    log_start(__file__)
     #os.makedirs(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, exist_ok=True)
     read_graphs(split_files=cfg.dataset.train_files,cfg = cfg)
     #read_graphs(split_files=cfg.dataset.val_files,cfg = cfg)

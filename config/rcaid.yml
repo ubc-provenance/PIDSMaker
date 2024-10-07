@@ -5,9 +5,9 @@ preprocessing:
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
-      subject: type, path, cmd_line
-      file: type, path
-      netflow: type, remote_ip, remote_port
+      subject: path, cmd_line
+      file: path
+      netflow: remote_ip
 
 featurization:
   embed_nodes:
@@ -72,77 +72,23 @@ detection:
     used_method: rcaid
     use_seed: True
     num_epochs: 6
-    lr: 0.00001
+    lr: 0.0001
     weight_decay: 0.00001
     node_hid_dim: 128
-    node_out_dim: 64
-    rcaid:
-      in_channel: 128
-      out_channel: 2
-      lr: 0.0001
-    threatrace:
-      batch_size: 5000
-      model: SAGE
-      thre: 1.5
-      lr: 0.01
-      weight_decay: 0.0005
-      epochs: 30
-    flash:
-      in_channel: 30
-      out_channel: 3
-      lr: 0.01
-      weight_decay: 0.0005
-      epochs: 22
+    node_out_dim: 2
     encoder:
-      use_node_type_in_node_feats: True
+      node_features: node_emb
       neighbor_sampling: []
-      edge_features: edge_type
-      used_methods: tgn,graph_attention
-      graph_attention:
-        dropout: 0.5
-        activation: relu
-        num_heads: 8
-      tgn:
-        tgn_batch_size: 1024
-        tgn_memory_dim: 100
-        tgn_time_dim: 100
-        tgn_neighbor_size: 20
-        use_node_feats_in_gnn: True
-        use_memory: False
-        use_time_order_encoding: False
-      sage:
-        dropout: 0.0
-        activation: relu
+      edge_features: none
+      used_methods: gat
+      # gat:
     decoder:
       used_methods: predict_node_type
-      predict_edge_type:
-        used_method: custom
-        custom:
-          dropout: 0.0
-          num_layers: 2
-          activation: relu
-      predict_edge_contrastive:
-        neg_sampling_method: previously_seen_nodes
-        used_method: linear
-        inner_product:
-          dropout: 0.0
-        linear:
-          dropout: 0.0
-      reconstruct_node_features:
-        loss: MSE
-        recon_hid_dim: 128
-        recon_use_bias: True
-        out_activation: tanh
-      reconstruct_node_embeddings:
-        loss: MSE
-        out_activation: none
-      reconstruct_edge_embeddings:
-        loss: MSE
-        out_activation: none
-        edge_decoder: none
+      predict_node_type:
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear*2 | relu
 
-  gnn_testing:
-    threshold_method: str
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4
@@ -150,20 +96,3 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
-    node_tw_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-    queue_evaluation:
-      queue_threshold: 20
-      used_method: kairos_idf_queue
-      kairos_idf_queue:
-        include_test_set_in_IDF: True
-
-triage :
-  tracing:
-    used_method: depimpact
-    depimpact:
-      used_method: component
-      score_method: degree
-      workers: 8
-      visualize: False
