@@ -1,14 +1,14 @@
 from config import *
 from .transformation_methods import (
-    transformation_rcaid_pruning,
+    transformation_rcaid_pseudo_graph,
 )
 
 def main(cfg):
     method  = cfg.preprocessing.transformation.used_method
     if method == "none":
         pass
-    elif method == "rcaid_pruning":
-        transformation_rcaid_pruning.main(cfg)
+    elif method == "rcaid_pseudo_graph":
+        transformation_rcaid_pseudo_graph.main(cfg)
     else:
         raise ValueError(f"Unrecognized transformation method: {method}")
 

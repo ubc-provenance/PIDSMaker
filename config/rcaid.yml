@@ -9,7 +9,9 @@ preprocessing:
       file: path
       netflow: remote_ip
   transformation:
-    used_method: none
+    used_method: rcaid_pseudo_graph
+    rcaid_pseudo_graph:
+      use_pruning: True
 
 featurization:
   embed_nodes:
