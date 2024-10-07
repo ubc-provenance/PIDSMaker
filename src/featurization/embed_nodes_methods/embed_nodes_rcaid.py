@@ -40,13 +40,6 @@ def read_graphs(split_files,cfg):
         new_G = prune_pseudo_roots(pseudo_graph, graph, 0.5)
         graph_list.append(new_G)
     documents,lens = generate_doc2vec_embeddings_for_graphs(graph_list, vector_size=128, epochs=10, model_path=cfg.featurization.embed_nodes.doc2vec._model_dir)
-    output_file = './documents.txt'
-
-    with open(output_file, 'w') as f:
-        for doc in documents:
-            tags = ' '.join(doc.tags)
-            words = ' '.join(doc.words)
-            f.write(f'Tags: [{tags}] Words: [{words}]\n')
 
     log(f'Documents saved to {output_file}')
     model_save_path = cfg.detection.gnn_training._trained_models_dir
@@ -181,53 +174,6 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
         pseudo_graph.remove_node(pseudo_root)
 
     return pseudo_graph
-
-
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-import os
-
-
-def generate_doc2vec_embeddings_for_graphs(graph_list, vector_size=128, epochs=10, model_path='./models'):
-    """
-    Generate node embeddings for a list of graphs using Doc2Vec based on node labels and their neighbors.
-
-    Args:
-        graph_list (list of nx.Graph): List of input graphs.
-        vector_size (int): The size of the resulting embeddings.
-        epochs (int): Number of epochs for training Doc2Vec.
-        model_path (str): Directory to save the trained Doc2Vec models.
-
-    Returns:
-        dict: A dictionary of node embeddings for each graph, keyed by graph index.
-    """
-    os.makedirs(model_path, exist_ok=True)  # Ensure the model directory exists
-
-    all_embeddings = {}  # Store embeddings for all graphs
-    documents = []
-    nodes = []
-    for idx, G in enumerate(graph_list):
-        # Prepare the training data for Doc2Vec: each node and its neighbors as a 'document'
-        for node in G.nodes():
-            if node not in nodes:
-                node_label = G.nodes[node].get('label', '')  # Assumes each node has a 'label' attribute
-                parts = node_label.split(maxsplit=1)
-                node_label = parts[1] if len(parts) > 1 else None
-                neighbors = list(G.neighbors(node))
-                neighbor_labels = []
-                nodes.append(node)
-                for neighbor in neighbors:
-                    label = G.nodes[neighbor].get('label', '')
-                    parts = label.split(maxsplit=1)
-                    label = parts[1] if len(parts) > 1 else None
-                    if isinstance(label, list):
-                        label = ' '.join(label)
-                    neighbor_labels.append(label)
-
-                document = node_label + ' ' + ' '.join(neighbor_labels)
-                documents.append(TaggedDocument(words=document.split(), tags=[str(node)]))
-
-
-    return documents,len(nodes)
 
 
 def main(cfg):
