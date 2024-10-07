@@ -1,0 +1,114 @@
+ffea2b80-71eb-46cf-8e9c-c4f868d662f1,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/radEB31A.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/radEB31A.tmp/biGuWCmNsuCIG.exe"" '}",9729
+032dd166-06d6-48f3-bbc4-9c2c2f2b5fec,{'netflow': '53.192.68.50:58888->142.20.56.52:3389'},1396226
+0a10b5f4-de5a-4ab8-aac9-4954c811e6d4,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad076F2.tmp/biGuWCmNsuCIG.exe None'},9732
+cc5f647d-9b84-4851-abf1-604ebf727db4,{'subject': '/Device/HarddiskVolume1/Windows/Temp/radAF010.tmp/biGuWCmNsuCIG.exe None'},9736
+02a75e67-86a1-4d4f-b395-d01738062068,{'netflow': '142.20.56.52:49842->53.192.68.50:8080'},1346058
+d5b8fe6b-f1e5-4463-a72c-420e57eca18e,{'subject': '%SystemRoot%/system32/csrss.exe gpupdate.exe /target:user'},9741
+bd9cab1c-de1f-4d4b-a6b3-e6ea7823190f,{'netflow': '53.192.68.50:8080->142.20.56.52:49886'},1352718
+2ff2b40a-7916-4c1a-8f77-421dac210de3,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/radB895D.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/radB895D.tmp/biGuWCmNsuCIG.exe"" '}",9743
+1a31f996-c9c7-45f3-bcc1-ceb920af3805,{'netflow': '142.20.56.52:49876->53.192.68.50:8080'},1349391
+a04800b1-eedb-4187-a910-6aa9c88a64c7,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad9DD75.tmp/biGuWCmNsuCIG.exe None'},9747
+edafc97f-93c1-4110-bc03-96bf42f68710,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad95EBC.tmp/biGuWCmNsuCIG.exe None'},9751
+4097136b-416f-46c3-b55e-dacd38908a7e,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad231B5.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad231B5.tmp/biGuWCmNsuCIG.exe"" '}",9754
+9c1de7a1-aca5-47f8-9625-9069a96c0da9,{'netflow': '142.20.56.52:3389->53.192.68.50:58878'},1348379
+4d247c96-0e0b-4a2f-9be3-19365de05b15,{'netflow': '53.192.68.50:58878->142.20.56.52:3389'},1348380
+38e48c8c-e2a5-43e9-93fe-73f0c6a50065,{'file': '/Device/HarddiskVolume1/windows/system32/scdeviceenum.dll'},92445
+a8aebfcf-1aff-492e-9516-69a9d7e07e05,{'netflow': '142.20.56.52:49838->53.192.68.50:8080'},1345310
+1221cf99-37a9-4f14-a195-6ea5de4925c3,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad640CA.tmp/biGuWCmNsuCIG.exe None'},9759
+71c8a6f9-33a0-4a8c-b9c4-1140a957bd09,{'subject': '/Device/HarddiskVolume1/Windows/Temp/radCBB57.tmp/biGuWCmNsuCIG.exe None'},9765
+615837b8-8762-419e-ad26-9f21554cd147,{'netflow': '142.20.56.52:3389->53.192.68.50:58888'},1396266
+d4412f7a-0e13-46e9-b506-86f30895e2f8,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad38E8A.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad38E8A.tmp/biGuWCmNsuCIG.exe"" '}",9771
+db3159c4-e4a4-4917-bbeb-cdaf2325edbf,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad41041.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad41041.tmp/biGuWCmNsuCIG.exe"" '}",9774
+08de4ac1-963f-460d-a37c-bd66596d9054,{'netflow': '142.20.56.52:50251->53.192.68.50:8000'},1418289
+7ab09050-8fbf-4f73-82ef-05288f0f3e59,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/radE1BA0.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/radE1BA0.tmp/biGuWCmNsuCIG.exe"" '}",9778
+e19df24b-4bc0-4a0e-87ce-85952cfc5ba6,{'file': '/Device/HarddiskVolume1/Users/dcoombes/Downloads/update.exe'},96561
+982464a2-4263-4c78-8aad-bec16a8d651e,{'file': '/Device/HarddiskVolume1/Users/dcoombes/Downloads/update.exe:Zone.Identifier'},96564
+e52d55fd-aa64-4d62-baf9-dc52474140be,{'netflow': '142.20.56.52:50253->53.192.68.50:8000'},1418294
+b4979ed5-8570-4d8e-b775-acb464827be3,{'netflow': '142.20.56.52:50252->53.192.68.50:8000'},1418295
+ee78f05c-cbd6-4dcf-8cab-a17d5f31dd83,{'netflow': '142.20.56.52:50254->53.192.68.50:8000'},1418296
+b6ddb414-05b7-43c1-ab39-39dfca583c90,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad5446E.tmp/biGuWCmNsuCIG.exe None'},9782
+704c241b-a024-4f2b-a1f2-4ab18199cd56,{'netflow': '142.20.56.52:49803->53.192.68.50:8080'},1335097
+bc0a3ebf-c9a6-4b8a-9ee3-e95fd14c0acd,"{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe ""C:/Windows/SysWOW64/OneDriveSetup.exe"" C:/Windows/SysWOW64/OneDriveSetup.exe /uninstall  /permachine  /silent  /childprocess /cusid:S-1-5-18 '}",10301
+43cac6d0-283b-4029-bc56-db6e8a583ee5,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad71B66.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad71B66.tmp/biGuWCmNsuCIG.exe"" '}",9790
+6720b5f8-5de3-43c9-ba6b-2d5fee3d4381,{'netflow': '142.20.56.52:49878->53.192.68.50:8080'},1350207
+f4a2c66e-09a4-4bf3-925d-e743ecc28e40,{'netflow': '53.192.68.50:8000->142.20.56.52:50253'},1418304
+22792a23-39f1-418f-9f4b-47b235f81a57,{'netflow': '53.192.68.50:8000->142.20.56.52:50251'},1418303
+2b3f93f3-6acf-469d-95ea-83540fb44ba4,{'netflow': '53.192.68.50:8000->142.20.56.52:50252'},1418307
+34c58ffc-61c0-409a-a4f4-f1ac822b4aba,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad28DC8.tmp/biGuWCmNsuCIG.exe None'},9798
+63028e08-b3e3-4021-ad12-ba11b64b1a76,{'netflow': '142.20.56.52:49882->53.192.68.50:8080'},1351758
+d06491f9-f5e1-4e8c-aadf-4adc64be9db3,{'subject': '/Device/HarddiskVolume1/Windows/Temp/radC5EB1.tmp/biGuWCmNsuCIG.exe None'},9806
+f39a55d0-a578-4534-8ea8-3e13fcc3c39b,{'netflow': '53.192.68.50:8080->142.20.56.52:49803'},1335120
+ab5af342-614e-43b0-a953-28144b2ea63e,{'netflow': '142.20.56.52:49817->53.192.68.50:8080'},1342545
+54626cdf-4234-40bb-9de0-a27078c5834f,{'netflow': '142.20.56.52:49843->53.192.68.50:8080'},1346387
+88c11df4-b5c0-4266-9e6d-9e7284a5674c,{'netflow': '142.20.56.52:49837->53.192.68.50:8080'},1345109
+eb348c2c-72f7-4097-b757-623b8117d2fd,{'subject': 'gpupdate.exe None'},7260
+1106edff-d104-48ca-a5e5-e731e466a08a,{'subject': 'cmd.exe None'},9820
+8c5cd159-4d81-475e-a1b9-945a54df0ef7,{'netflow': '142.20.56.52:49870->53.192.68.50:8080'},1348444
+6bb11cd4-bb6c-49c3-bebf-3c5a48d66a80,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad4F110.tmp/biGuWCmNsuCIG.exe None'},9826
+c07b7d2c-38c2-4a0a-bbfd-740f611fc5b4,{'netflow': '142.20.56.52:49880->53.192.68.50:8080'},1351279
+ff9f6df1-61d0-4497-822b-35a401116fe4,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad1BA52.tmp/biGuWCmNsuCIG.exe None'},9840
+6ae840cd-1bee-412a-a509-aa65fccc9296,{'netflow': '142.20.56.52:49879->53.192.68.50:8080'},1350770
+7090045f-075a-4ad5-88d6-b42a4f5a34e3,{'netflow': '142.20.56.52:49833->53.192.68.50:8080'},1343861
+be04f585-8395-42aa-a59a-7129266d5d26,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/radC50E7.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/radC50E7.tmp/biGuWCmNsuCIG.exe"" '}",9846
+579c4101-5eb7-4f19-a0cd-12ac25d134ec,{'netflow': '142.20.56.52:49847->53.192.68.50:8080'},1347958
+f144bda9-8890-4d6b-a17d-be390ec5b1f5,{'netflow': '142.20.56.52:49877->53.192.68.50:8080'},1349752
+e53ceb09-1a73-47c3-ab68-50a089ed1e28,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad99E71.tmp/biGuWCmNsuCIG.exe None'},9855
+a5e9769b-ad18-4d56-86b7-81deb81defb4,{'netflow': '142.20.56.52:49873->53.192.68.50:8080'},1349249
+98031f5d-d754-4547-8bbb-b8a04f537037,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad54E46.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad54E46.tmp/biGuWCmNsuCIG.exe"" '}",9859
+56e91e8c-461b-4d23-9fb9-fee233d9a986,{'netflow': '53.192.68.50:8000->142.20.56.52:50254'},1418373
+db469a8d-0394-4e01-90ca-8842d66a416b,{'netflow': '142.20.56.52:49844->53.192.68.50:8080'},1346956
+2648086d-5bb1-4fc6-af38-0301d3e8f841,"{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe schtasks  /delete /tn ""KickoffAutoLoginRandom"" /F'}",9870
+15357384-f34d-4fff-89e6-bd9829afe0e6,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad1C3A2.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad1C3A2.tmp/biGuWCmNsuCIG.exe"" '}",9874
+6782be54-c923-4dc7-9d35-910df0f7b3ad,{'netflow': '142.20.56.52:49883->53.192.68.50:8080'},1352341
+4ff9949d-d284-4e02-80b5-8955e330f725,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad1CC6C.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad1CC6C.tmp/biGuWCmNsuCIG.exe"" '}",9878
+21461510-7e0c-444e-bd2e-8e66a400d7c6,{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe None'},10645
+bfeedba5-1a48-4219-8bda-f309cbf3da0e,{'subject': '/Device/HarddiskVolume1/Windows/system32/services.exe None'},10646
+453dedf3-2abf-48ec-a8ba-4a32bc7cba0e,{'netflow': '142.20.56.52:49812->53.192.68.50:8080'},1341595
+0577b558-bd23-4ac2-8061-6369d9bc33d6,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/radD85FE.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/radD85FE.tmp/biGuWCmNsuCIG.exe"" '}",9884
+af7787a1-b092-43fb-aba8-72597d13bb6a,"{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe C:/Windows/system32/RunDll32.exe C:/Windows/system32/migration/WininetPlugin.dll,MigrateCacheForUser /m /0'}",10397
+0c38ecf1-faac-4464-8905-ca951cc96f32,"{'subject': '/Device/HarddiskVolume1/Windows/system32/svchost.exe ""C:/Users/dcoombes/AppData/Local/Temp/cKfGW.exe"" '}",9630
+c55388d3-5fbb-4cc3-9748-7e3c67122576,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad9FAD6.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad9FAD6.tmp/biGuWCmNsuCIG.exe"" '}",9887
+854ac0d9-a8e9-4ccf-8837-0a283e30ece8,{'subject': '/Device/HarddiskVolume1/Windows/SYSTEM32/cmd.exe None'},10655
+0fd3958e-86f2-4215-95c4-526420be9298,{'subject': '/Device/HarddiskVolume1/Program Files (x86)/Google/Update/GoogleUpdate.exe None'},9633
+8edab1ce-e772-43f4-943c-874be2ab5233,{'netflow': '142.20.56.52:49829->53.192.68.50:8080'},1342882
+7ff56795-8366-40ae-a988-8ce6c3562508,{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe None'},10658
+18517951-a101-4f93-aed9-8c0f11eb85d5,{'netflow': '142.20.56.52:49871->53.192.68.50:8080'},1348777
+cb0cfca9-568f-458d-9d42-fcb5d4317ad3,{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad77CFB.tmp/biGuWCmNsuCIG.exe None'},9897
+ef26c2b4-c55c-4ec8-ba9b-eeecd99017fb,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad20015.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad20015.tmp/biGuWCmNsuCIG.exe"" '}",9901
+72fd4fed-89f1-499e-a0ef-e583fb600a23,"{'subject': '/Device/HarddiskVolume1/Windows/system32/svchost.exe ""C:/Windows/Temp/rad0C463.tmp/biGuWCmNsuCIG.exe"" '}",9904
+1c802c32-c9ee-4df8-bc90-3d9dc96b4c3b,{'netflow': '142.20.56.52:49839->53.192.68.50:8080'},1345457
+8393c035-9417-4fc5-a432-6043d82be556,{'subject': '%SystemRoot%/system32/csrss.exe None'},9141
+39be10bb-2c30-4eeb-ba8b-e5685f72ef80,{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe None'},9144
+86d6086a-7345-4077-b040-3765bb7e9839,{'netflow': '142.20.56.52:50259->53.192.68.50:8080'},1418426
+917f6126-dcb7-4e30-892f-9626ad012d89,{'subject': '/Device/HarddiskVolume1/Windows/system32/svchost.exe C:/Windows/Explorer.EXE'},10682
+9d77181b-5f33-49e4-bea3-b0aef01d0148,{'subject': '/Device/HarddiskVolume1/Windows/system32/svchost.exe None'},9148
+7bca7a30-e071-4755-857f-fcebede1a460,{'netflow': '53.192.68.50:8080->142.20.56.52:50259'},1418429
+0c458c07-dd0f-4416-8206-a66b1505e285,{'subject': 'sc.exe None'},9662
+9a8170a9-795d-4967-935b-54d3819c0ba5,{'subject': '/Device/HarddiskVolume1/Windows/system32/svchost.exe C:/Windows/System32/svchost.exe -k LocalSystemNetworkRestricted'},9155
+84b875d4-0d54-4d10-a568-0cd739751fb0,{'netflow': '142.20.56.52:49814->53.192.68.50:8080'},1341892
+c11fcefb-61d3-4426-80d1-37a7353403f4,{'netflow': '142.20.56.52:49840->53.192.68.50:8080'},1345733
+04a3e007-8373-40fe-9ba4-a5a5633d9a2f,{'subject': '/Device/HarddiskVolume1/Windows/system32/lsass.exe winlogon.exe'},10437
+3360bc38-784d-422d-9899-779f0e558da9,{'subject': '//?/C:/Program Files (x86)/Mozilla Firefox/firefox.exe None'},10694
+57e9f33b-3652-4ee4-81de-f51fd5220ccc,{'subject': '/Device/HarddiskVolume1/Windows/system32/conhost.exe None'},9670
+5ea9ecff-be55-4952-9dc6-5a967cf71b50,{'file': '/Device/HarddiskVolume1/$Extend/$UsnJrnl:$J'},50632
+6d30edfb-a90c-418e-91aa-9dd547700897,{'netflow': '142.20.56.52:49836->53.192.68.50:8080'},1344971
+82a9d235-5f3c-4c11-a4a4-6a5133f88892,{'netflow': '142.20.56.52:49846->53.192.68.50:8080'},1347532
+533c577a-2c03-4e7e-88b3-57e8e758b178,{'netflow': '142.20.56.52:49831->53.192.68.50:8080'},1343185
+e88d6a93-c38f-4353-81dd-5caf11e6f822,{'netflow': '142.20.56.52:49815->53.192.68.50:8080'},1342165
+f74e5749-a808-4aad-839a-4446908e381b,{'file': '/Device/HarddiskVolume1/Python27/Lib/site-packages/enum34-1.1.6-py2.7.egg'},81878
+b01e7efb-3454-457a-b274-78985d5b08c9,{'subject': 'gpupdate.exe None'},10199
+3b2eec89-962b-43d2-87a1-ff81bda6d6e4,{'netflow': '142.20.56.52:49872->53.192.68.50:8080'},1349080
+1b794bfe-d732-4ca4-b1d8-51a5c948c86d,{'subject': 'gpupdate.exe /??/C:/Windows/system32/conhost.exe 0xffffffff -ForceV1'},10204
+510d28c2-e313-4603-bbd8-8379f851b653,{'subject': '/Device/HarddiskVolume1/Windows/SYSTEM32/cmd.exe gpupdate.exe /target:computer'},10205
+cac09f8a-245d-4006-a035-919e4fdc9b8d,{'netflow': '142.20.56.52:49828->53.192.68.50:8080'},1342687
+2dacfcf6-0d09-42b6-9a42-9a7cd611ecbb,{'netflow': '142.20.56.52:49816->53.192.68.50:8080'},1342437
+56799f02-d8aa-4c3c-a5c0-108ffbf5b0fd,{'file': 'None'},50665
+394f882c-15fa-4e53-af4a-b8eebae61ac2,{'netflow': '142.20.56.52:49835->53.192.68.50:8080'},1344490
+3081546e-baf9-4047-b94b-765750e63b31,{'subject': '//?/C:/Program Files (x86)/Mozilla Firefox/firefox.exe None'},9964
+102b9229-0606-42f3-a5d9-b508cad95720,"{'subject': '/Device/HarddiskVolume1/Windows/system32/svchost.exe cscript ""C:/Windows/TEMP/myHbYXTpViwX.vbs""'}",9709
+9cd219ed-ecc9-4426-ad24-4fbdb1f4fd3b,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad0F93B.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad0F93B.tmp/biGuWCmNsuCIG.exe"" '}",9711
+1e542ead-96f8-47e6-9366-35e908971567,{'subject': '/Device/HarddiskVolume1/Users/dcoombes/Downloads/update.exe None'},10736
+63cf1a51-35c6-4fe3-8e1c-13ea782fc815,"{'subject': '/Device/HarddiskVolume1/Users/dcoombes/Downloads/update.exe ""C:/Users/dcoombes/Downloads/update.exe"" '}",10740
+14f154fe-e587-44e4-9402-55b58681885d,"{'subject': '/Device/HarddiskVolume1/Windows/Temp/rad838E6.tmp/biGuWCmNsuCIG.exe ""C:/Windows/Temp/rad838E6.tmp/biGuWCmNsuCIG.exe"" '}",9720
+a42e8c54-3406-4569-a83d-f1c21ed0f012,{'netflow': '142.20.56.52:49886->53.192.68.50:8080'},1352699
+a5e73e50-ef66-47c6-860c-992b7f375298,{'subject': '/Device/HarddiskVolume1/Windows/SYSTEM32/cmd.exe None'},9727

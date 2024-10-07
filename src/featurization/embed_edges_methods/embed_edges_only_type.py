@@ -58,6 +58,7 @@ def gen_vectorized_graphs(etype2oh, ntype2oh, split_files, out_dir, cfg):
 
 def main(cfg):
     log_start(__file__)
+    rel2id = get_rel2id(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 

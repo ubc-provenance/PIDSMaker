@@ -184,8 +184,8 @@ class DEPIMPACT():
         visited = set()
         for u, v, t in sorted_edges:
 
-            if u == v:
-                continue
+            # if u == v:
+            #     continue
 
             src = str(u) + '-' + str(node_version[u])
             visited.add(u)

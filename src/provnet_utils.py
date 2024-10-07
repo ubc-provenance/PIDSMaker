@@ -592,3 +592,9 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
     layers.append(nn.Linear(in_dim, out_dim))
     
     return nn.Sequential(*layers)
+
+def get_rel2id(cfg):
+    if cfg.dataset.name in OPTC_DATASETS:
+        return rel2id_optc
+    else:
+        return rel2id_darpa_tc
