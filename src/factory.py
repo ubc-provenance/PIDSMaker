@@ -157,7 +157,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     return encoder
 
 def decoder_factory(method, objective, cfg, in_dim, out_dim):
-    decoder_cfg = dict(getattr(getattr(cfg.detection.gnn_training.decoder, objective), method))
+    decoder_cfg = getattr(getattr(cfg.detection.gnn_training.decoder, objective), method, None)
     
     if method == "edge_mlp":
         return EdgeMLPDecoder(
@@ -165,12 +165,17 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
         )
-    if method == "node_mlp":
+    elif method == "node_mlp":
         return NodeMLPDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
         )
+    elif method == "none":
+        return lambda x: x
+    else:
+        raise ValueError(f"Invalid decoder {method}")
+        
 
 def objective_factory(cfg, in_dim, device, max_node_num):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
@@ -253,7 +258,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
         #     ))
         
         else:
-            raise ValueError(f"Invalid decoder {objective}")
+            raise ValueError(f"Invalid objective {objective}")
         
     return decoders
 
