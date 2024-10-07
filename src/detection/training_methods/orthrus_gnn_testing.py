@@ -120,12 +120,12 @@ def test_node_level(
             pred = out.max(1)[1]
             pro = F.softmax(out, dim=1)
             pro1 = pro.max(1)
-            for i in range(len(batch.n_id)):
+            for i in range(len(out)):
                 pro[i][pro1[1][i]] = -1
             pro2 = pro.max(1)
             
             node_type_num = batch.node_type.argmax(1)
-            for i in range(len(batch.n_id)):
+            for i in range(len(out)):
                 if pro2[0][i] != 0:
                     score = pro1[0][i] / pro2[0][i]
                 else:
@@ -133,7 +133,7 @@ def test_node_level(
                 score = max(score.item(), 0)
             
                 node = batch.original_n_id[i].item()
-                correct_pred = int((node_type_num[batch.n_id[i]] == pred[i]).item())
+                correct_pred = int((node_type_num[i] == pred[i]).item())
 
                 temp_dic = {
                     'node': node,
