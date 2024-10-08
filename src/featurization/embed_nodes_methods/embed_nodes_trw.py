@@ -7,27 +7,18 @@ import torch
 import numpy as np
 import random
 
-def tokenize_corpus(corpus, indexid2msg, use_node_types):
+def tokenize_corpus(corpus, indexid2msg):
     tokenized_corpus = []
     for line in corpus:
         tokenized_line = []
         for node in line.split(','):
             msg = indexid2msg[int(node)]
             if msg[0] == 'subject':
-                if use_node_types:
-                    tokens = tokenize_subject(msg[0] + ' ' + msg[1])
-                else:
-                    tokens = tokenize_subject(msg[1])
+                tokens = tokenize_subject(msg[1])
             elif msg[0] == 'file':
-                if use_node_types:
-                    tokens = tokenize_file(msg[0] + ' ' + msg[1])
-                else:
-                    tokens = tokenize_file(msg[1])
+                tokens = tokenize_file(msg[1])
             else:
-                if use_node_types:
-                    tokens = tokenize_netflow(msg[0] + ' ' + msg[1])
-                else:
-                    tokens = tokenize_netflow(msg[1])
+                tokens = tokenize_netflow(msg[1])
             tokenized_line.extend(tokens)
         tokenized_corpus.append(tokenized_line)
     return tokenized_corpus
@@ -129,7 +120,6 @@ def main(cfg):
 
     log(f"Building TRW based word2vec model and save model to {model_save_path}")
 
-    use_node_types = cfg.featurization.embed_nodes.temporal_rw.use_node_types
     use_cmd = cfg.featurization.embed_nodes.temporal_rw.use_cmd
     use_port = cfg.featurization.embed_nodes.temporal_rw.use_port
 
@@ -145,7 +135,7 @@ def main(cfg):
             corpus = f.readlines()
             log(f"\n{len(corpus)} lines read from {corpus_file_list[i]}")
 
-            tokenized_corpus = tokenize_corpus(corpus, indexid2msg, use_node_types)
+            tokenized_corpus = tokenize_corpus(corpus, indexid2msg)
 
             if i == 0:
                 train_word2vec(corpus=tokenized_corpus,

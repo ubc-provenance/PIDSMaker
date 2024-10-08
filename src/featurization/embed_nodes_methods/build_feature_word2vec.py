@@ -7,25 +7,16 @@ import numpy as np
 import random
 import torch
 
-def load_corpus_from_database(indexid2msg, use_node_types):
+def load_corpus_from_database(indexid2msg):
 
     corpus = {}
     for indexid, msg in tqdm(indexid2msg.items(), desc='Tokenizing corpus from database:'):
         if msg[0] == 'subject':
-            if use_node_types:
-                tokens = tokenize_subject(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_subject(msg[1])
+            tokens = tokenize_subject(msg[1])
         elif msg[0] == 'file':
-            if use_node_types:
-                tokens = tokenize_file(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_file(msg[1])
+            tokens = tokenize_file(msg[1])
         else:
-            if use_node_types:
-                tokens = tokenize_netflow(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_netflow(msg[1])
+            tokens = tokenize_netflow(msg[1])
         corpus[msg[1]] = tokens
     return list(corpus.values())
 
@@ -107,7 +98,6 @@ def main(cfg):
 
     log(f"Building feature word2vec model and save model to {model_save_path}")
 
-    use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
 
@@ -118,7 +108,7 @@ def main(cfg):
     log(f"Start building and training feature word2vec model...")
 
     log("Loading and tokenizing corpus from database...")
-    corpus = load_corpus_from_database(indexid2msg=indexid2msg, use_node_types=use_node_types)
+    corpus = load_corpus_from_database(indexid2msg=indexid2msg)
 
     train_feature_word2vec(corpus=corpus,
                            cfg=cfg,

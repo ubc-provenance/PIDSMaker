@@ -103,10 +103,6 @@ def main(cfg):
         graph_list = []
         for path in tqdm(sorted_paths, desc='Loading graphs'):
             graph = torch.load(path)
-            # TODO: add in transformation task
-            # root_nodes = identify_root_nodes(graph)
-            # pseudo_graph = create_pseudo_graph(graph,root_nodes)
-            # new_G = prune_pseudo_roots(pseudo_graph, graph, 0.5)
             graph_list.append(graph)
         tagged_data = tokenize_using_neighbors_features(graph_list)
     

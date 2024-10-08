@@ -22,7 +22,6 @@ featurization:
       trw_workers: 8
       time_weight: uniform
       half_life: 1
-      use_node_types: False
       use_cmd: True
       use_port: False
       show_epoch_loss: False
@@ -58,7 +57,6 @@ featurization:
       epochs: 50
       compute_loss: True
       negative: 5
-      use_node_types: False
       use_cmd: True
       use_port: False
       decline_rate: 30

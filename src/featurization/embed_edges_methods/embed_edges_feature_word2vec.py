@@ -16,7 +16,7 @@ def cal_word_weight(n,percentage):
         sequence.append(a_i)
     return sequence
 
-def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage):
+def get_indexid2vec(indexid2msg, model_path, decline_percentage):
 
 
     model = Word2Vec.load(model_path)
@@ -25,20 +25,11 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage)
     indexid2vec = {}
     for indexid, msg in indexid2msg.items():
         if msg[0] == 'subject':
-            if use_node_types:
-                tokens = tokenize_subject(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_subject(msg[1])
+            tokens = tokenize_subject(msg[1])
         elif msg[0] == 'file':
-            if use_node_types:
-                tokens = tokenize_file(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_file(msg[1])
+            tokens = tokenize_file(msg[1])
         else:
-            if use_node_types:
-                tokens = tokenize_netflow(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_netflow(msg[1])
+            tokens = tokenize_netflow(msg[1])
 
         weight_list = cal_word_weight(len(tokens), decline_percentage)
 
@@ -109,7 +100,6 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
 
 def main(cfg):
     log_start(__file__)
-    use_node_types = cfg.featurization.embed_nodes.feature_word2vec.use_node_types
     use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
     use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
     decline_percentage = cfg.featurization.embed_nodes.feature_word2vec.decline_rate
@@ -120,7 +110,7 @@ def main(cfg):
 
     log("Generating node vectors...")
     feature_word2vec_model_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir + 'feature_word2vec.model'
-    indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, use_node_types=use_node_types, decline_percentage=decline_percentage)
+    indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=feature_word2vec_model_path, decline_percentage=decline_percentage)
 
     rel2id = get_rel2id(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)

@@ -17,7 +17,7 @@ def cal_word_weight(n,percentage):
         sequence.append(a_i)
     return sequence
 
-def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage, node_list):
+def get_indexid2vec(indexid2msg, model_path, decline_percentage, node_list):
     model = Word2Vec.load(model_path)
 
     indexid2vec = {}
@@ -25,20 +25,11 @@ def get_indexid2vec(indexid2msg, model_path, use_node_types, decline_percentage,
     for indexid in tqdm(node_list, desc='processing indexid2vec:'):
         msg = indexid2msg[int(indexid)]
         if msg[0] == 'subject':
-            if use_node_types:
-                tokens = tokenize_subject(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_subject(msg[1])
+            tokens = tokenize_subject(msg[1])
         elif msg[0] == 'file':
-            if use_node_types:
-                tokens = tokenize_file(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_file(msg[1])
+            tokens = tokenize_file(msg[1])
         else:
-            if use_node_types:
-                tokens = tokenize_netflow(msg[0] + ' ' + msg[1])
-            else:
-                tokens = tokenize_netflow(msg[1])
+            tokens = tokenize_netflow(msg[1])
 
         weight_list = cal_word_weight(len(tokens), decline_percentage)
         word_vectors = [model.wv[word] for word in tokens]
@@ -115,7 +106,6 @@ def main(cfg):
         used_nodes = used_nodes | set(graph.nodes())
     used_nodes = list(used_nodes)
 
-    use_node_types = cfg.featurization.embed_nodes.temporal_rw.use_node_types
     use_cmd = cfg.featurization.embed_nodes.temporal_rw.use_cmd
     use_port = cfg.featurization.embed_nodes.temporal_rw.use_port
     decline_rate = cfg.featurization.embed_nodes.temporal_rw.decline_rate
@@ -125,7 +115,7 @@ def main(cfg):
 
     trw_word2vec_model_path = cfg.featurization.embed_nodes.temporal_rw._model_dir + 'trw_word2vec.model'
     indexid2vec = get_indexid2vec(indexid2msg=indexid2msg, model_path=trw_word2vec_model_path,
-                                  use_node_types=use_node_types, decline_percentage=decline_rate,
+                                decline_percentage=decline_rate,
                                   node_list=used_nodes)
 
     rel2id = get_rel2id(cfg)
