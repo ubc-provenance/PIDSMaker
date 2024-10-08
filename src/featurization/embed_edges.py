@@ -6,7 +6,6 @@ from .embed_edges_methods import (
     embed_edges_doc2vec,
     embed_edges_HFH,
     embed_edges_feature_word2vec,
-    embed_edges_only_type,
     embed_edges_TRW,
 )
 
@@ -20,15 +19,25 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
         for u, v, k, attr in sorted_edges:
             src.append(int(u))
             dst.append(int(v))
-
-            msg.append(torch.cat([
-                ntype2oh[graph.nodes[u]['node_type']],
-                torch.from_numpy(indexid2vec[int(u)]),
-                etype2oh[attr["label"]],
-                ntype2oh[graph.nodes[v]['node_type']],
-                torch.from_numpy(indexid2vec[int(v)])
-            ]))
             t.append(int(attr["time"]))
+
+            # Only types
+            if indexid2vec is None:
+                msg.append(torch.cat([
+                    ntype2oh[graph.nodes[u]['node_type']],
+                    etype2oh[attr["label"]],
+                    ntype2oh[graph.nodes[v]['node_type']],
+                ]))
+                
+            # Types + node embeddings
+            else:
+                msg.append(torch.cat([
+                    ntype2oh[graph.nodes[u]['node_type']],
+                    torch.from_numpy(indexid2vec[int(u)]),
+                    etype2oh[attr["label"]],
+                    ntype2oh[graph.nodes[v]['node_type']],
+                    torch.from_numpy(indexid2vec[int(v)])
+                ]))
 
         data = TemporalData(
             src=torch.tensor(src).to(torch.long),
@@ -52,11 +61,11 @@ def get_indexid2vec(cfg):
     if method == "feature_word2vec":
         return embed_edges_feature_word2vec.main(cfg)
     if method == "only_type":
-        return embed_edges_only_type.main(cfg)
+        return None
     if method == "temporal_rw":
         return embed_edges_TRW.main(cfg)
     if method == "flash" or method == 'magic':
-        return None
+        raise NotImplementedError("TODO (see with Baoxiang)")
     
     raise ValueError(f"Invalid node embedding method {method}")
 
@@ -70,9 +79,6 @@ def main(cfg):
     
     # Here we get a mapping {node_id => embedding vector}
     indexid2vec = get_indexid2vec(cfg)
-    
-    if indexid2vec is None:
-        return
     
     # Create edges for Train, Val, Test sets
     for split, sorted_paths in split_to_files.items():
