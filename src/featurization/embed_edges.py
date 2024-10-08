@@ -1,4 +1,5 @@
 from config import *
+from provnet_utils import *
 
 from .embed_edges_methods import (
     embed_edges_word2vec,
@@ -9,25 +10,87 @@ from .embed_edges_methods import (
     embed_edges_TRW,
 )
 
+def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
-def main(cfg):
+    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
+        file = path.split("/")[-1]
+
+        graph = torch.load(path)
+        sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
+
+        dataset = TemporalData()
+        src = []
+        dst = []
+        msg = []
+        t = []
+        for u, v, k, attr in sorted_edges:
+            src.append(int(u))
+            dst.append(int(v))
+
+            msg.append(torch.cat([
+                ntype2oh[graph.nodes[u]['node_type']],
+                torch.from_numpy(indexid2vec[int(u)]),
+                etype2oh[attr["label"]],
+                ntype2oh[graph.nodes[v]['node_type']],
+                torch.from_numpy(indexid2vec[int(v)])
+            ]))
+            t.append(int(attr["time"]))
+
+        dataset.src = torch.tensor(src)
+        dataset.dst = torch.tensor(dst)
+        dataset.t = torch.tensor(t)
+        dataset.msg = torch.vstack(msg)
+        dataset.src = dataset.src.to(torch.long)
+        dataset.dst = dataset.dst.to(torch.long)
+        dataset.msg = dataset.msg.to(torch.float)
+        dataset.t = dataset.t.to(torch.long)
+
+        os.makedirs(out_dir, exist_ok=True)
+        torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
+
+def get_indexid2vec(cfg):
     method = cfg.featurization.embed_nodes.used_method.strip()
     if method == "word2vec":
-        embed_edges_word2vec.main(cfg)
-    elif method == "doc2vec":
-        embed_edges_doc2vec.main(cfg)
-    elif method == "hierarchical_hashing":
-        embed_edges_HFH.main(cfg)
-    elif method == "feature_word2vec":
-        embed_edges_feature_word2vec.main(cfg)
-    elif method == "only_type":
-        embed_edges_only_type.main(cfg)
-    elif method == "temporal_rw":
-        embed_edges_TRW.main(cfg)
-    elif method == "flash" or method == 'magic':
-        pass
-    else:
-        raise ValueError(f"Invalid node embedding method {method}")
+        return embed_edges_word2vec.main(cfg)
+    if method == "doc2vec":
+        return embed_edges_doc2vec.main(cfg)
+    if method == "hierarchical_hashing":
+        return embed_edges_HFH.main(cfg)
+    if method == "feature_word2vec":
+        return embed_edges_feature_word2vec.main(cfg)
+    if method == "only_type":
+        return embed_edges_only_type.main(cfg)
+    if method == "temporal_rw":
+        return embed_edges_TRW.main(cfg)
+    if method == "flash" or method == 'magic':
+        return None
+    
+    raise ValueError(f"Invalid node embedding method {method}")
+
+def main(cfg):
+    rel2id = get_rel2id(cfg)
+    etype2onehot = gen_relation_onehot(rel2id=rel2id)
+    ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
+    
+    base_dir = cfg.preprocessing.transformation._graphs_dir
+    split_to_files = get_split_to_files(cfg, base_dir)
+    
+    # Here we get a mapping {node_id => embedding vector}
+    indexid2vec = get_indexid2vec(cfg)
+    
+    if indexid2vec is None:
+        return
+    
+    # Create edges for Train, Val, Test sets
+    for split, sorted_paths in split_to_files.items():
+        embed_edges(
+            indexid2vec=indexid2vec,
+            etype2oh=etype2onehot,
+            ntype2oh=ntype2onehot,
+            sorted_paths=sorted_paths,
+            out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, f"{split}/"),
+            cfg=cfg
+        )
 
 
 if __name__ == '__main__':

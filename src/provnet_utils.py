@@ -621,3 +621,19 @@ def copy_directory(src_path, dest_path):
         print(f"Directory copied successfully from '{src_path}' to '{dest_path}'.")
     except Exception as e:
         print(f"An error occurred while copying the directory: {e}")
+
+def get_split_to_files(cfg, base_dir):
+    return {
+        "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
+        "val": get_all_files_from_folders(base_dir, cfg.dataset.val_files),
+        "test": get_all_files_from_folders(base_dir, cfg.dataset.test_files),
+    }
+    
+def gen_relation_onehot(rel2id):
+    relvec=torch.nn.functional.one_hot(torch.arange(0, len(rel2id.keys())//2), num_classes=len(rel2id.keys())//2)
+    rel2vec={}
+    for i in rel2id.keys():
+        if type(i) is not int:
+            rel2vec[i]= relvec[rel2id[i]-1]
+            rel2vec[relvec[rel2id[i]-1]]=i
+    return rel2vec

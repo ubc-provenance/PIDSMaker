@@ -35,11 +35,7 @@ def main(cfg):
         dst_dir = cfg.preprocessing.transformation._graphs_dir
         graph_list = defaultdict(list)
 
-        split_to_files = {
-            "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
-            "val": get_all_files_from_folders(base_dir, cfg.dataset.val_files),
-            "test": get_all_files_from_folders(base_dir, cfg.dataset.test_files),
-        }
+        split_to_files = get_split_to_files(cfg, base_dir=cfg.preprocessing.build_graphs._graphs_dir)
         for split, files in split_to_files.items():
             for path in tqdm(files, desc=f'Transforming ({split})'):
                 graph = torch.load(path)
