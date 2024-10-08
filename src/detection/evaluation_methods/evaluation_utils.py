@@ -294,7 +294,7 @@ def compute_tw_labels(cfg):
         t_to_node = labelling.get_t2malicious_node(cfg)
         # test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
 
-        graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+        graph_dir = cfg.preprocessing.transformation._graphs_dir
         test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
 
         num_found_event_labels = 0

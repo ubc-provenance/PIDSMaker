@@ -56,7 +56,7 @@ def get_new_stats(tw_to_info,
     return new_stats
 
 def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     results = defaultdict(lambda: defaultdict(dict))
 
     for tw, timestr in tw_to_timestr.items():

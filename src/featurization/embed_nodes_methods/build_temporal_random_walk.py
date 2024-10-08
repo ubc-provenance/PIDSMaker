@@ -8,7 +8,7 @@ import numpy as np
 import random
 
 def run_temporal_random_walk(split_files, out_dir, cfg):
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     os.makedirs(out_dir, exist_ok=True)

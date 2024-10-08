@@ -35,7 +35,7 @@ def main(cfg):
     model = GCN(in_channel, out_channel).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     split_files = cfg.dataset.train_files
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
     indexid2type, indexid2props = get_nid2props(cfg)

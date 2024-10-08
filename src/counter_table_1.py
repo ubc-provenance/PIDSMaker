@@ -67,7 +67,7 @@ def get_n_hop_neighbors(graph, node, n):
 
 def compute_node_number_tw(split_files):
     num_nodes = []
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
     for graph_path in tqdm(sorted_paths, desc='Computing node number'):
         graph = torch.load(graph_path)
@@ -129,7 +129,7 @@ def main(cfg):
     GPs = [str(nid) for nid in GP_nids]
     print(f"There are {len(GPs)} malicious nodes")
 
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
 
     # test_graph = torch.load(sorted_paths[0])

@@ -95,7 +95,7 @@ def run(tasks,
 def main(evaluation_results,
          tw_to_timestr,
          cfg):
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     ground_truth_nids, _, _ = labelling.get_ground_truth(cfg) # int
 
     used_method = cfg.triage.tracing.depimpact.used_method

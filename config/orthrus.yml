@@ -8,6 +8,8 @@ preprocessing:
       subject: type, path, cmd_line
       file: type, path
       netflow: type, remote_ip, remote_port
+  transformation:
+    used_methods: none
 
 featurization:
   embed_nodes:

@@ -8,6 +8,8 @@ preprocessing:
       subject: type, path, cmd_line
       file: type, path
       netflow: type, remote_ip, remote_port
+  transformation:
+    used_methods: none
 
 featurization:
   embed_nodes:
@@ -73,7 +75,7 @@ detection:
     node_hid_dim: 16
     node_out_dim: 16
     encoder:
-      node_features: node_emb,node_type,edges_distribution
+      node_features: node_emb,node_type
       neighbor_sampling: []
       edge_features: edge_type
       used_methods: tgn,graph_attention
@@ -95,30 +97,33 @@ detection:
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
-        used_method: custom
-        custom:
-          dropout: 0.0
-          num_layers: 2
-          activation: relu
-      predict_edge_contrastive:
-        neg_sampling_method: previously_seen_nodes
-        used_method: linear
-        inner_product:
-          dropout: 0.0
-        linear:
-          dropout: 0.0
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear*0.5 | relu
       reconstruct_node_features:
         loss: MSE
-        h_dim: 16
-        use_bias: True
-        out_activation: tanh
-      reconstruct_node_embeddings:
-        loss: MSE
-        out_activation: none
+        decoder: none
       reconstruct_edge_embeddings:
         loss: MSE
-        out_activation: none
-        edge_decoder: none
+        decoder: none
+      reconstruct_node_embeddings:
+        loss: MSE
+        decoder: none
+      predict_edge_type:
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear*0.5
+      predict_node_type:
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear*0.5
+      # predict_edge_contrastive:
+      #   neg_sampling_method: previously_seen_nodes
+      #   used_method: linear
+      #   inner_product:
+      #     dropout: 0.0
+      #   linear:
+      #     dropout: 0.0
 
   evaluation:
     viz_malicious_nodes: False
@@ -128,7 +133,7 @@ detection:
       threshold_method: max_val_loss
       use_dst_node_loss: True
       use_kmeans: True
-      kmeans_top_K: 30
+      kmeans_top_K: 20
     node_tw_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True

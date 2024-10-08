@@ -250,7 +250,7 @@ def gen_edge_fused_tw(cur, nodeid2msg, cfg):
                         if cfg._test_mode and i >= NUM_TEST_EDGES:
                             break
 
-                    date_dir = f"{cfg.preprocessing.build_graphs._graphs_dir}/graph_{day}/"
+                    date_dir = f"{cfg.preprocessing.transformation._graphs_dir}/graph_{day}/"
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
@@ -274,7 +274,7 @@ def main(cfg):
     cur, connect = init_database_connection(cfg)
     nodeid2msg = get_node_list(cur=cur, cfg=cfg)
 
-    os.makedirs(cfg.preprocessing.build_graphs._graphs_dir, exist_ok=True)
+    os.makedirs(cfg.preprocessing.transformation._graphs_dir, exist_ok=True)
 
     gen_edge_fused_tw(cur=cur, nodeid2msg=nodeid2msg, cfg=cfg)
 

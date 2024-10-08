@@ -219,7 +219,7 @@ def batch_type_graph(cfg, GPs, attack_num, node_dir, edge_dir):
 
     node_to_path_type = get_node_to_path_and_type(cfg)  # key type is int
 
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
 
     edge_set = set()

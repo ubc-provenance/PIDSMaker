@@ -9,6 +9,7 @@ from config import set_task_to_done
 
 from preprocessing import (
     build_graphs,
+    transformation,
 )
 from featurization import (
     embed_edges,
@@ -60,6 +61,11 @@ def main(cfg, **kwargs):
         set_task_to_done(cfg.preprocessing.build_graphs._task_path)
     t1 = time.time()
     
+    if should_restart["transformation"]:
+        transformation.main(cfg)
+        set_task_to_done(cfg.preprocessing.transformation._task_path)
+    tb = time.time()
+    
     # Featurization
     if should_restart["embed_nodes"]:
         embed_nodes.main(cfg)
@@ -93,7 +99,8 @@ def main(cfg, **kwargs):
     time_consumption = {
         "time_total": round(t6 - t0, 2),
         "time_build_graphs": round(t1 - t0, 2),
-        "time_embed_nodes": round(t2 - t1, 2),
+        "time_transformation": round(tb - t1, 2),
+        "time_embed_nodes": round(t2 - tb, 2),
         "time_embed_edges": round(t3 - t2, 2),
         "time_gnn_training": round(t4 - t3, 2),
         "time_evaluation": round(t5 - t4, 2),
