@@ -8,6 +8,7 @@ import os.path as osp
 import os
 import copy
 import logging
+import shutil
 import torch
 from torch.nn import Linear
 from torch_geometric.data import TemporalData
@@ -598,3 +599,18 @@ def get_rel2id(cfg):
         return rel2id_optc
     else:
         return rel2id_darpa_tc
+
+def copy_directory(src_path, dest_path):
+    if not os.path.isdir(src_path):
+        print(f"The source path '{src_path}' does not exist or is not a directory.")
+        return
+    
+    if os.path.exists(dest_path):
+        print(f"The destination path '{dest_path}' already exists. Removing it for a fresh copy.")
+        shutil.rmtree(dest_path)
+    
+    try:
+        shutil.copytree(src_path, dest_path)
+        print(f"Directory copied successfully from '{src_path}' to '{dest_path}'.")
+    except Exception as e:
+        print(f"An error occurred while copying the directory: {e}")

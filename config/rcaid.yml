@@ -9,7 +9,7 @@ preprocessing:
       file: path
       netflow: remote_ip
   transformation:
-    used_method: rcaid_pseudo_graph
+    used_methods: rcaid_pseudo_graph
     rcaid_pseudo_graph:
       use_pruning: True
 

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from config import *
 from provnet_utils import *
 
@@ -85,36 +84,11 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
 
     return pseudo_graph
 
-def main(cfg):
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+def main(graph: nx.Graph, cfg) -> nx.Graph:
+    root_nodes = identify_root_nodes(graph)
+    pseudo_graph = create_pseudo_graph(graph, root_nodes)
+    
     use_pruning = cfg.preprocessing.transformation.rcaid_pseudo_graph.use_pruning
-    graph_list = defaultdict(list)
-
-    split_to_files = {
-        "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
-        "val": get_all_files_from_folders(base_dir, cfg.dataset.val_files),
-        "test": get_all_files_from_folders(base_dir, cfg.dataset.test_files),
-    }
-    for split, files in split_to_files.items():
-        for path in tqdm(files, desc=f'Transforming to pseudo graphs ({split})'):
-            graph = torch.load(path)
-            root_nodes = identify_root_nodes(graph)
-            pseudo_graph = create_pseudo_graph(graph, root_nodes)
-            
-            if use_pruning:
-                pseudo_graph = prune_pseudo_roots(pseudo_graph, graph, 0.5)
-            graph_list[split].append(pseudo_graph)
-        
-    # We save to disk at the very end to avoid errors once a file is replaced on disk
-    for split, files in split_to_files.items():
-        for g, path in zip(graph_list[split], files):
-            file_name = path.split("/")[-1]
-            log(f"Replacing file {file_name}...")
-            torch.save(g, path)
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)
+    if use_pruning:
+        pseudo_graph = prune_pseudo_roots(pseudo_graph, graph, 0.5)
+    return pseudo_graph

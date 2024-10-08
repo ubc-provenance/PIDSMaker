@@ -9,7 +9,7 @@ preprocessing:
       file: type, path
       netflow: type, remote_ip, remote_port
   transformation:
-    used_method: none
+    used_methods: none
 
 featurization:
   embed_nodes:
