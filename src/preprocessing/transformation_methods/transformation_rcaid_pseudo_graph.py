@@ -1,6 +1,8 @@
 from config import *
 from provnet_utils import *
 
+from .transformation_utils import add_arbitrary_timestamps_to_graph
+
 def identify_root_nodes(G):
     root_nodes = set()
 
@@ -84,6 +86,19 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
 
     return pseudo_graph
 
+def remove_pseudo_prefix(graph):
+    # Rename nodes
+    mapping = {node: node.replace("pseudo_", "") for node in graph.nodes()}
+    graph = nx.relabel_nodes(graph, mapping)
+
+    # Rename edges
+    for u, v, data in graph.edges(data=True):
+        # Update edge attributes if they contain "pseudo_"
+        for key in list(data.keys()):
+            if isinstance(data[key], str) and "pseudo_" in data[key]:
+                data[key] = data[key].replace("pseudo_", "")
+    return graph
+
 def main(graph: nx.Graph, cfg) -> nx.Graph:
     root_nodes = identify_root_nodes(graph)
     pseudo_graph = create_pseudo_graph(graph, root_nodes)
@@ -91,4 +106,8 @@ def main(graph: nx.Graph, cfg) -> nx.Graph:
     use_pruning = cfg.preprocessing.transformation.rcaid_pseudo_graph.use_pruning
     if use_pruning:
         pseudo_graph = prune_pseudo_roots(pseudo_graph, graph, 0.5)
+        
+    pseudo_graph = remove_pseudo_prefix(pseudo_graph)
+    pseudo_graph = add_arbitrary_timestamps_to_graph(original_G=graph, new_G=pseudo_graph)
+
     return pseudo_graph
