@@ -30,7 +30,7 @@ featurization:
       min_count: 1
       use_skip_gram: True
       wv_workers: 6
-      epochs: 50
+      epochs: 1
       compute_loss: True
       negative: 5
       decline_rate: 30
