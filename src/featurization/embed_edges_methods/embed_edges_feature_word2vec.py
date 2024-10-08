@@ -14,6 +14,7 @@ def cal_word_weight(n, percentage):
     return sequence
 
 def main(cfg):
+    log_start(__file__)
     cur, connect = init_database_connection(cfg)
     indexid2msg = get_indexid2msg(cur)
 
