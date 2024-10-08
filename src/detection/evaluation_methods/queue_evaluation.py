@@ -197,7 +197,7 @@ def anomalous_queue_construction_kairos(test_tw_path, train_node_IDF, test_node_
 
 def create_queues_kairos(cfg):
     # In kairos, IDF is computed only on benign edges (train set)
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     train_feat_files = get_all_files_from_folders(base_dir, cfg.dataset.train_files)
     test_feat_files = get_all_files_from_folders(base_dir, cfg.dataset.test_files)
     

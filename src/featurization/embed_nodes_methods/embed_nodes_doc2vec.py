@@ -9,7 +9,7 @@ import numpy as np
 import random
 
 def splitting_label_set(split_files: list[str], cfg):
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     node_set = set()
@@ -99,7 +99,7 @@ def main(cfg):
     
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
     if cfg.featurization.embed_nodes.doc2vec.include_neighbors:
-        sorted_paths = get_all_files_from_folders(cfg.preprocessing.build_graphs._graphs_dir, train_files)
+        sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, train_files)
         graph_list = []
         for path in tqdm(sorted_paths, desc='Loading graphs'):
             graph = torch.load(path)

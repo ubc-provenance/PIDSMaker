@@ -51,7 +51,7 @@ def load_graph_data(t, cfg):
     elif t == "test":
         split_files = cfg.dataset.test_files
 
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
 
     data_of_graphs = []

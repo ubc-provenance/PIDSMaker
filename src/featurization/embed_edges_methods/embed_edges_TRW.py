@@ -62,7 +62,7 @@ def gen_relation_onehot(rel2id):
     return rel2vec
 
 def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir, cfg):
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
@@ -105,7 +105,7 @@ def gen_vectorized_graphs(indexid2vec, etype2oh, ntype2oh, split_files, out_dir,
 
 def main(cfg):
     log_start(__file__)
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, (cfg.dataset.train_files +
                                                          cfg.dataset.test_files +
                                                          cfg.dataset.val_files))

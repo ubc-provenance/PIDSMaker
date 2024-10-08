@@ -29,7 +29,7 @@ def main(cfg, model, epoch):
     in_channel = cfg.detection.gnn_training.flash.in_channel
     out_channel = cfg.detection.gnn_training.flash.out_channel
 
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     split_files = cfg.dataset.test_files
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
     indexid2type, indexid2props = get_nid2props(cfg)

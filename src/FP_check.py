@@ -181,7 +181,7 @@ def main(cfg):
     results = torch.load(results_file)
 
     sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'train')))
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     tw_to_graphdir = {}
     for tw, tw_file in enumerate(sorted_tw_paths):
         timestr = tw_file[:-20]

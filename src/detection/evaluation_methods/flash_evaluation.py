@@ -27,7 +27,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
 
 def get_set_nodes(split_files, cfg):
     all_nids = set()
-    graph_dir = cfg.preprocessing.build_graphs._graphs_dir
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(graph_dir, split_files)
     for graph_path in tqdm(sorted_paths, desc='Computing node number'):
         graph = torch.load(graph_path)
