@@ -24,7 +24,6 @@ featurization:
       half_life: 1
       use_cmd: True
       use_port: False
-      show_epoch_loss: False
       window_size: 5
       min_count: 1
       use_skip_gram: True
@@ -49,7 +48,6 @@ featurization:
       compute_loss: True
       add_paths: False
     feature_word2vec:
-      show_epoch_loss: True
       window_size: 5
       min_count: 1
       use_skip_gram: True

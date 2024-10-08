@@ -25,7 +25,6 @@ def tokenize_corpus(corpus, indexid2msg):
 
 def train_word2vec(corpus, model_save_path, cfg):
     emb_dim = cfg.featurization.embed_nodes.emb_dim
-    show_epoch_loss = cfg.featurization.embed_nodes.temporal_rw.show_epoch_loss
     window_size = cfg.featurization.embed_nodes.temporal_rw.window_size
     min_count = cfg.featurization.embed_nodes.temporal_rw.min_count
     use_skip_gram = cfg.featurization.embed_nodes.temporal_rw.use_skip_gram
@@ -36,28 +35,27 @@ def train_word2vec(corpus, model_save_path, cfg):
     use_seed = cfg.featurization.embed_nodes.use_seed
     SEED = 0
 
-    if show_epoch_loss:
-        if use_seed:
-            model = Word2Vec(corpus,
-                             vector_size=emb_dim,
-                             window=window_size,
-                             min_count=min_count,
-                             sg=use_skip_gram,
-                             workers=num_workers,
-                             epochs=1,
-                             compute_loss=compute_loss,
-                             negative=negative,
-                             seed=SEED)
-        else:
-            model = Word2Vec(corpus,
-                             vector_size=emb_dim,
-                             window=window_size,
-                             min_count=min_count,
-                             sg=use_skip_gram,
-                             workers=num_workers,
-                             epochs=1,
-                             compute_loss=compute_loss,
-                             negative=negative)
+    if use_seed:
+        model = Word2Vec(corpus,
+                            vector_size=emb_dim,
+                            window=window_size,
+                            min_count=min_count,
+                            sg=use_skip_gram,
+                            workers=num_workers,
+                            epochs=1,
+                            compute_loss=compute_loss,
+                            negative=negative,
+                            seed=SEED)
+    else:
+        model = Word2Vec(corpus,
+                            vector_size=emb_dim,
+                            window=window_size,
+                            min_count=min_count,
+                            sg=use_skip_gram,
+                            workers=num_workers,
+                            epochs=1,
+                            compute_loss=compute_loss,
+                            negative=negative)
         epoch_loss = model.get_latest_training_loss()
         log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
 
@@ -65,28 +63,7 @@ def train_word2vec(corpus, model_save_path, cfg):
             model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
             epoch_loss = model.get_latest_training_loss()
             log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
-    else:
-        if use_seed:
-            model = Word2Vec(corpus,
-                             vector_size=emb_dim,
-                             window=window_size,
-                             min_count=min_count,
-                             sg=use_skip_gram,
-                             workers=num_workers,
-                             epochs=epochs,
-                             compute_loss=compute_loss,
-                             negative=negative,
-                             seed=SEED)
-        else:
-            model = Word2Vec(corpus,
-                             vector_size=emb_dim,
-                             window=window_size,
-                             min_count=min_count,
-                             sg=use_skip_gram,
-                             workers=num_workers,
-                             epochs=epochs,
-                             compute_loss=compute_loss,
-                             negative=negative)
+
         loss = model.get_latest_training_loss()
         log(f"Epoch: {epochs}; loss: {loss}")
 
