@@ -23,8 +23,8 @@ def main(cfg):
     
     # If no transformation is used, we copy all original graphs to the transformation task path
     if len(methods) == 1 and methods[0] == "none":
-        src = cfg.preprocessing.build_graphs._task_path
-        dst = cfg.preprocessing.transformation._task_path
+        src = cfg.preprocessing.build_graphs._graphs_dir
+        dst = cfg.preprocessing.transformation._graphs_dir
         copy_directory(src, dst)
 
     else:
