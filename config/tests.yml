@@ -22,10 +22,6 @@ featurization:
       trw_workers: 8
       time_weight: uniform
       half_life: 1
-      use_node_types: False
-      use_cmd: True
-      use_port: False
-      show_epoch_loss: False
       window_size: 5
       min_count: 1
       use_skip_gram: True
@@ -50,7 +46,6 @@ featurization:
       compute_loss: True
       add_paths: False
     feature_word2vec:
-      show_epoch_loss: True
       window_size: 5
       min_count: 1
       use_skip_gram: True
@@ -58,9 +53,6 @@ featurization:
       epochs: 1
       compute_loss: True
       negative: 5
-      use_node_types: False
-      use_cmd: True
-      use_port: False
       decline_rate: 30
   embed_edges:
     to_remove: True
@@ -99,7 +91,7 @@ detection:
       predict_edge_type:
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear*0.5 | relu
+          architecture_str: linear(0.5) | relu
       reconstruct_node_features:
         loss: MSE
         decoder: none
@@ -112,11 +104,11 @@ detection:
       predict_edge_type:
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear*0.5
+          architecture_str: linear(0.5)
       predict_node_type:
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear*0.5
+          architecture_str: linear(0.5)
       # predict_edge_contrastive:
       #   neg_sampling_method: previously_seen_nodes
       #   used_method: linear

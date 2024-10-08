@@ -4,6 +4,7 @@ from config import *
 from provnet_utils import *
 from .transformation_methods import (
     transformation_rcaid_pseudo_graph,
+    transformation_undirected,
 )
 
 def apply_transformations(graph, methods, cfg):
@@ -12,6 +13,8 @@ def apply_transformations(graph, methods, cfg):
             pass
         elif method == "rcaid_pseudo_graph":
             graph = transformation_rcaid_pseudo_graph.main(graph, cfg)
+        elif method == "undirected":
+            graph = transformation_undirected.main(graph)
         else:
             raise ValueError(f"Unrecognized transformation method: {method}")
 
@@ -32,11 +35,7 @@ def main(cfg):
         dst_dir = cfg.preprocessing.transformation._graphs_dir
         graph_list = defaultdict(list)
 
-        split_to_files = {
-            "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
-            "val": get_all_files_from_folders(base_dir, cfg.dataset.val_files),
-            "test": get_all_files_from_folders(base_dir, cfg.dataset.test_files),
-        }
+        split_to_files = get_split_to_files(cfg, base_dir=cfg.preprocessing.build_graphs._graphs_dir)
         for split, files in split_to_files.items():
             for path in tqdm(files, desc=f'Transforming ({split})'):
                 graph = torch.load(path)

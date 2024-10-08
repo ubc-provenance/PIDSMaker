@@ -49,7 +49,7 @@ detection:
       predict_edge_type:
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear*2 | dropout(0.5) | tanh | linear*0.25 | dropout(0.25) | tanh | linear*0.25 | dropout(0.5) | tanh
+          architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.25) | tanh | linear(0.25) | dropout(0.5) | tanh
 
   evaluation:
     viz_malicious_nodes: False

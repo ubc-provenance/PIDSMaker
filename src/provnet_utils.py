@@ -436,9 +436,6 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     }
     return stats
 
-def get_detected_attacks(cfg):
-    cfg.dataset.attack_to_time_window
-
 def get_indexid2msg(cur, use_cmd=True, use_port=False):
     indexid2msg = {}
 
@@ -504,6 +501,15 @@ def tokenize_file(sentence: str):
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
 
+def tokenize_label(node_label, node_type):
+    if node_type == 'subject':
+        return tokenize_subject(node_label)
+    elif node_type == 'file':
+        return tokenize_file(node_label)
+    elif node_type == 'netflow':
+        return tokenize_netflow(node_label)
+    raise ValueError(f"Invalid node type")
+
 def log(msg: str, *args, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -561,8 +567,9 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
         
         for part in parts:            
             if part.startswith('linear'):
-                _, coeff_out = part.split('*')
-                out_dim = int(in_dim * float(coeff_out.strip()))
+                _, coeff_out = part.split('(')
+                coeff_out = float(coeff_out.strip(')'))
+                out_dim = int(in_dim * coeff_out)
                 layers.append(nn.Linear(in_dim, out_dim))
                 in_dim = out_dim  # Update in_dim for the next layer
                 
@@ -614,3 +621,19 @@ def copy_directory(src_path, dest_path):
         print(f"Directory copied successfully from '{src_path}' to '{dest_path}'.")
     except Exception as e:
         print(f"An error occurred while copying the directory: {e}")
+
+def get_split_to_files(cfg, base_dir):
+    return {
+        "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
+        "val": get_all_files_from_folders(base_dir, cfg.dataset.val_files),
+        "test": get_all_files_from_folders(base_dir, cfg.dataset.test_files),
+    }
+    
+def gen_relation_onehot(rel2id):
+    relvec=torch.nn.functional.one_hot(torch.arange(0, len(rel2id.keys())//2), num_classes=len(rel2id.keys())//2)
+    rel2vec={}
+    for i in rel2id.keys():
+        if type(i) is not int:
+            rel2vec[i]= relvec[rel2id[i]-1]
+            rel2vec[relvec[rel2id[i]-1]]=i
+    return rel2vec
