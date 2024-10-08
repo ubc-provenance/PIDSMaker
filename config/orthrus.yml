@@ -99,7 +99,7 @@ detection:
       predict_edge_type:
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear*0.5 | relu
+          architecture_str: linear(0.5) | relu
       # predict_edge_contrastive:
       #   neg_sampling_method: previously_seen_nodes
       #   used_method: linear

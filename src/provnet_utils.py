@@ -561,8 +561,9 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
         
         for part in parts:            
             if part.startswith('linear'):
-                _, coeff_out = part.split('*')
-                out_dim = int(in_dim * float(coeff_out.strip()))
+                _, coeff_out = part.split('(')
+                coeff_out = float(coeff_out.strip(')'))
+                out_dim = int(in_dim * coeff_out)
                 layers.append(nn.Linear(in_dim, out_dim))
                 in_dim = out_dim  # Update in_dim for the next layer
                 
