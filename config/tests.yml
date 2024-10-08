@@ -55,8 +55,6 @@ featurization:
       epochs: 1
       compute_loss: True
       negative: 5
-      use_cmd: True
-      use_port: False
       decline_rate: 30
   embed_edges:
     to_remove: True

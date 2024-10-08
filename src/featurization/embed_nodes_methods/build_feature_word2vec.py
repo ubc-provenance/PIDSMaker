@@ -75,12 +75,9 @@ def main(cfg):
 
     log(f"Building feature word2vec model and save model to {model_save_path}")
 
-    use_cmd =  cfg.featurization.embed_nodes.feature_word2vec.use_cmd
-    use_port = cfg.featurization.embed_nodes.feature_word2vec.use_port
-
     log(f"Get indexid2msg from database...")
     cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur, use_cmd=use_cmd, use_port=use_port)
+    indexid2msg = get_indexid2msg(cur)
 
     log(f"Start building and training feature word2vec model...")
 
