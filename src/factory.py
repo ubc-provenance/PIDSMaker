@@ -322,7 +322,7 @@ def recon_loss_fn_factory(loss: str):
         return sce_loss
     if loss == "MSE":
         return mse_loss
-    if activation == "none":
+    if loss == "none":
         return nn.Identity()
     raise ValueError(f"Invalid loss function {loss}")
 
