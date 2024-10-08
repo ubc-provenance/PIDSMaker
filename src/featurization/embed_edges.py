@@ -13,16 +13,10 @@ from .embed_edges_methods import (
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
     for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
-        file = path.split("/")[-1]
-
         graph = torch.load(path)
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
 
-        dataset = TemporalData()
-        src = []
-        dst = []
-        msg = []
-        t = []
+        src, dst, msg, t = [], [], [], []
         for u, v, k, attr in sorted_edges:
             src.append(int(u))
             dst.append(int(v))
@@ -36,17 +30,16 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
             ]))
             t.append(int(attr["time"]))
 
-        dataset.src = torch.tensor(src)
-        dataset.dst = torch.tensor(dst)
-        dataset.t = torch.tensor(t)
-        dataset.msg = torch.vstack(msg)
-        dataset.src = dataset.src.to(torch.long)
-        dataset.dst = dataset.dst.to(torch.long)
-        dataset.msg = dataset.msg.to(torch.float)
-        dataset.t = dataset.t.to(torch.long)
+        data = TemporalData(
+            src=torch.tensor(src).to(torch.long),
+            dst=torch.tensor(dst).to(torch.long),
+            t=torch.tensor(t).to(torch.long),
+            msg=torch.vstack(msg).to(torch.float),
+        )
 
         os.makedirs(out_dir, exist_ok=True)
-        torch.save(dataset, os.path.join(out_dir, f"{file}.TemporalData.simple"))
+        file = path.split("/")[-1]
+        torch.save(data, os.path.join(out_dir, f"{file}.TemporalData.simple"))
 
 def get_indexid2vec(cfg):
     method = cfg.featurization.embed_nodes.used_method.strip()
