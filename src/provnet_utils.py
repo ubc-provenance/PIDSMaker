@@ -436,9 +436,6 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     }
     return stats
 
-def get_detected_attacks(cfg):
-    cfg.dataset.attack_to_time_window
-
 def get_indexid2msg(cur, use_cmd=True, use_port=False):
     indexid2msg = {}
 
@@ -503,6 +500,15 @@ def tokenize_file(sentence: str):
     return word_tokenize(new_sentence.replace('/',' / '))
 def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
+
+def tokenize_label(node_label, node_type):
+    if node_type == 'subject':
+        return tokenize_subject(node_label)
+    elif node_type == 'file':
+        return tokenize_file(node_label)
+    elif node_type == 'netflow':
+        return tokenize_netflow(node_label)
+    raise ValueError(f"Invalid node type")
 
 def log(msg: str, *args, **kwargs):
     now = datetime.now()
