@@ -43,7 +43,7 @@ def compute_indexid2msg(cfg):
             'remote_ip': str(i[4]),
             'remote_port': str(i[5])
         }
-        index_id = i[-1] # int
+        index_id = str(i[-1]) # int
         node_type = attrs['type']
         label_str = get_label_str_from_features(attrs, node_type)
             
@@ -64,7 +64,7 @@ def compute_indexid2msg(cfg):
             'path': str(i[2]),
             'cmd_line': str(i[3])
         }
-        index_id = i[-1] # int
+        index_id = str(i[-1]) # int
         node_type = attrs['type']
         label_str = get_label_str_from_features(attrs, node_type)
             
@@ -84,7 +84,7 @@ def compute_indexid2msg(cfg):
             'type': 'file',
             'path': str(i[2])
         }
-        index_id = i[-1] # int
+        index_id = str(i[-1]) # int
         node_type = attrs['type']
         label_str = get_label_str_from_features(attrs, node_type)
             
@@ -215,9 +215,6 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                     node_info = {}
                     edge_info = {}
                     for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in temp_list:
-                        src_index_id = int(src_index_id)
-                        dst_index_id = int(dst_index_id)
-
                         if src_index_id not in node_info:
                             node_type, label = indexid2msg[src_index_id]
                             node_info[src_index_id] = {
