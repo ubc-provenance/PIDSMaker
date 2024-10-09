@@ -48,7 +48,7 @@ nltk.download('punkt')
 
 def stringtomd5(originstr):
     originstr = originstr.encode("utf-8")
-    signaturemd5 = hashlib.sha256() # TODO: check if we might remove it in the future
+    signaturemd5 = hashlib.sha256()
     signaturemd5.update(originstr)
     return signaturemd5.hexdigest()
 
@@ -142,63 +142,6 @@ def init_database_connection(cfg):
     cur = connect.cursor()
     return cur, connect
 
-def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
-    # node hash id to node label and type
-    # {hash_id: index_id} and {index_id: {node_type:msg}}
-    indexid2msg = {}
-
-    # netflow
-    sql = """
-        select * from netflow_node_table;
-        """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        hash_id = i[1]
-        remote_ip = str(i[4])
-        remote_port = str(i[5])
-        index_id = i[-1] # int
-        indexid2msg[hash_id] = index_id
-        if use_port:
-            indexid2msg[index_id] = {'netflow': remote_ip + ':' +remote_port}
-        else:
-            indexid2msg[index_id] = {'netflow': remote_ip}
-
-    # subject
-    sql = """
-    select * from subject_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        hash_id = i[1]
-        path = str(i[2])
-        cmd = str(i[3])
-        index_id = i[-1]
-        indexid2msg[hash_id] = index_id
-        if use_cmd:
-            indexid2msg[index_id] = {'subject': path + ' ' +cmd}
-        else:
-            indexid2msg[index_id] = {'subject': path}
-
-    # file
-    sql = """
-    select * from file_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        hash_id = i[1]
-        path = str(i[2])
-        index_id = i[-1]
-        indexid2msg[hash_id] = index_id
-        indexid2msg[index_id] = {'file': path}
-
-    return indexid2msg #{hash_id: index_id} and {index_id: {node_type:msg}}
-
 def std(t):
     t = np.array(t)
     return np.std(t)
@@ -215,39 +158,6 @@ def percentile_90(t):
     sorted_data = np.sort(t)
     Q = np.percentile(sorted_data, 90)
     return Q
-
-def percentile_75(t):
-    sorted_data = np.sort(t)
-    Q = np.percentile(sorted_data, 75)
-    return Q
-
-def percentile_50(t):
-    sorted_data = np.sort(t)
-    Q = np.percentile(sorted_data, 50)
-    return Q
-
-def hashgen(l):
-    """Generate a single hash value from a list. @l is a list of
-    string values, which can be properties of a node/edge. This
-    function returns a single hashed integer value."""
-    hasher = xxhash.xxh64()
-    for e in l:
-        hasher.update(e)
-    return hasher.intdigest()
-
-
-def split_filename(path):
-    '''
-    Given a path, split it based on '/' and file extension.
-    e.g.
-        "/home/test/Desktop/123.txt" => "home test Desktop 123 txt"
-    :param path: the name of the path
-    :return: the split path name
-    '''
-    file_name, file_extension = os.path.splitext(os.path.basename(path))
-    file_extension = file_extension.replace(".","")
-    result = ' '.join(path.split('/')[1:-1]) + ' ' + file_name + ' ' + file_extension
-    return result
 
 def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_walks=10):
     adj_list = {}
@@ -623,7 +533,6 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
 
         return layers, in_dim
 
-
     arch_str = arch_str.strip().lower().replace(" ", "")
     layer_groups = arch_str.split('|')
     
@@ -634,12 +543,6 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
     layers.append(nn.Linear(in_dim, out_dim))
     
     return nn.Sequential(*layers)
-
-def get_rel2id(cfg):
-    if cfg.dataset.name in OPTC_DATASETS:
-        return rel2id_optc
-    else:
-        return rel2id_darpa_tc
 
 def copy_directory(src_path, dest_path):
     if not os.path.isdir(src_path):
