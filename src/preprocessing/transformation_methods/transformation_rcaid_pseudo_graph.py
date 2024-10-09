@@ -87,16 +87,9 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
     return pseudo_graph
 
 def remove_pseudo_prefix(graph):
-    # Rename nodes
     mapping = {node: node.replace("pseudo_", "") for node in graph.nodes()}
     graph = nx.relabel_nodes(graph, mapping)
 
-    # Rename edges
-    for u, v, data in graph.edges(data=True):
-        # Update edge attributes if they contain "pseudo_"
-        for key in list(data.keys()):
-            if isinstance(data[key], str) and "pseudo_" in data[key]:
-                data[key] = data[key].replace("pseudo_", "")
     return graph
 
 def main(graph: nx.Graph, cfg) -> nx.Graph:

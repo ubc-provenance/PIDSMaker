@@ -21,6 +21,7 @@ def apply_transformations(graph, methods, cfg):
     return graph
 
 def main(cfg):
+    log_start(__file__)
     methods = cfg.preprocessing.transformation.used_methods
     methods = list(map(lambda x: x.strip(), methods.split(",")))
     
