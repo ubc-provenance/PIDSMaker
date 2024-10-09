@@ -436,8 +436,18 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     }
     return stats
 
-def get_indexid2msg(cur, use_cmd=True, use_port=False):
+def compute_and_save_indexid2msg(cfg):
+    cur, connect = init_database_connection(cfg)
+    
+    use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
+    node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
     indexid2msg = {}
+    
+    def get_label_str_from_features(attrs, node_type):
+        label_str = ' '.join([attrs[label_used] for label_used in node_label_features[node_type]])
+        if use_hashed_label:
+            label_str = stringtomd5(label_str)
+        return label_str
 
     # netflow
     sql = """
@@ -449,13 +459,18 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of netflow nodes: {len(records)}")
 
     for i in records:
-        remote_ip = str(i[4])
-        remote_port = str(i[5])
+        attrs = {
+            'type': 'netflow',
+            'local_ip': str(i[2]),
+            'local_port': str(i[3]),
+            'remote_ip': str(i[4]),
+            'remote_port': str(i[5])
+        }
         index_id = i[-1] # int
-        if use_port:
-            indexid2msg[index_id] = ['netflow', remote_ip + ':' +remote_port]
-        else:
-            indexid2msg[index_id] = ['netflow', remote_ip]
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
 
     # subject
     sql = """
@@ -467,13 +482,16 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of process nodes: {len(records)}")
 
     for i in records:
-        path = str(i[2])
-        cmd = str(i[3])
-        index_id = i[-1]
-        if use_cmd:
-            indexid2msg[index_id] = ['subject', path + ' ' +cmd]
-        else:
-            indexid2msg[index_id] = ['subject', path]
+        attrs = {
+            'type': 'subject',
+            'path': str(i[2]),
+            'cmd_line': str(i[3])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
 
     # file
     sql = """
@@ -485,11 +503,27 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of file nodes: {len(records)}")
 
     for i in records:
-        path = str(i[2])
-        index_id = i[-1]
-        indexid2msg[index_id] = ['file', path]
+        attrs = {
+            'type': 'file',
+            'path': str(i[2])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
+        
+    out_dir = cfg.preprocessing.build_graphs._indexid2msg_dir
+    os.makedirs(out_dir, exist_ok=True)
+    log("Saving indexid2msg to disk...")
+    torch.save(indexid2msg, os.path.join(out_dir, "indexid2msg.pkl"))
 
     return indexid2msg #{index_id: [node_type, msg]}
+
+def get_indexid2msg(cfg):
+    indexid2msg_file = os.path.join(cfg.preprocessing.build_graphs._indexid2msg_dir, "indexid2msg.pkl")
+    indexid2msg = torch.load(indexid2msg_file)
+    return indexid2msg
 
 def tokenize_subject(sentence: str):
     new_sentence = re.sub(r'\\+', '/', sentence)

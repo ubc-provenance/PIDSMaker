@@ -76,8 +76,7 @@ def main(cfg):
     log(f"Building feature word2vec model and save model to {model_save_path}")
 
     log(f"Get indexid2msg from database...")
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
+    indexid2msg = get_indexid2msg(cfg)
 
     log(f"Start building and training feature word2vec model...")
 

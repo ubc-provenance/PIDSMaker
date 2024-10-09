@@ -148,8 +148,7 @@ def build_tsne_visualization(embeddings, fig_path):
 def main(cfg, gen_index2vec=False):
     log_start(__file__)
     log("loading indexid2msg...")
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
+    indexid2msg = get_indexid2msg(cfg)
 
     fig_name = f"tsne_different_files.png"
     fig_save_dir = os.path.join(cfg.featurization.build_doc2vec._task_path, "test_HFH/")

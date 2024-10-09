@@ -98,8 +98,7 @@ def main(cfg):
     log(f"Building TRW based word2vec model and save model to {model_save_path}")
 
     log(f"Get indexid2msg from database...")
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
+    indexid2msg = get_indexid2msg(cfg)
 
     corpus_base_dir = cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir
     corpus_folders = ['train','val','test','unused']
