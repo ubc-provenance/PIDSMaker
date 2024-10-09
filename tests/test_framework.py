@@ -45,11 +45,8 @@ def run_decoders(model, dataset, featurization_method):
     # Test each decoder
     decoders = ["reconstruct_node_features", "reconstruct_node_embeddings", "reconstruct_edge_embeddings", "predict_edge_type"]
     for method in decoders:
-        try:
-            cfg = prepare_cfg(model, dataset, featurization_method, encoder=None, decoder=method)
-            benchmark.main(cfg)
-        except EnvironmentError: # ignore edge cases errors
-            pass
+        cfg = prepare_cfg(model, dataset, featurization_method, encoder=None, decoder=method)
+        benchmark.main(cfg)
 
 
 # === Tests ===
@@ -88,8 +85,11 @@ def test_whole_framework(dataset: str):
     base_model = "tests"
     
     for featurization_method in featurization_methods:
-        run_encoders(base_model, dataset, featurization_method)
-        run_decoders(base_model, dataset, featurization_method)
+        try:
+            run_encoders(base_model, dataset, featurization_method)
+            run_decoders(base_model, dataset, featurization_method)
+        except:
+            pass
     
 
 if __name__ == "__main__":

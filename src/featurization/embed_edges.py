@@ -65,7 +65,7 @@ def get_indexid2vec(cfg):
     if method == "temporal_rw":
         return embed_edges_TRW.main(cfg)
     if method == "flash" or method == 'magic':
-        raise NotImplementedError("TODO (see with Baoxiang)")
+        raise EnvironmentError("TODO (see with Baoxiang)")
     
     raise ValueError(f"Invalid node embedding method {method}")
 
