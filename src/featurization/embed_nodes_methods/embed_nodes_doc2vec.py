@@ -45,11 +45,11 @@ def main(cfg):
     
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
     if cfg.featurization.embed_nodes.doc2vec.include_neighbors:
-        tagged_data = get_corpus_using_neighbors_features(["train"], cfg, doc2vec_format=True)
+        tagged_data = get_corpus_using_neighbors_features(cfg, doc2vec_format=True)
     
     # Standard token-level Doc2vec
     else:
-        tagged_data = get_corpus(["train"], cfg, doc2vec_format=True)
+        tagged_data = get_corpus(cfg, doc2vec_format=True)
 
     epochs = cfg.featurization.embed_nodes.doc2vec.epochs
     emb_dim = cfg.featurization.embed_nodes.emb_dim

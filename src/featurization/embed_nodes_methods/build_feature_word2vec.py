@@ -7,18 +7,8 @@ import numpy as np
 import random
 import torch
 
-def load_corpus_from_database(indexid2msg):
+from featurization.featurization_utils import *
 
-    corpus = {}
-    for indexid, msg in tqdm(indexid2msg.items(), desc='Tokenizing corpus from database:'):
-        if msg[0] == 'subject':
-            tokens = tokenize_subject(msg[1])
-        elif msg[0] == 'file':
-            tokens = tokenize_file(msg[1])
-        else:
-            tokens = tokenize_netflow(msg[1])
-        corpus[msg[1]] = tokens
-    return list(corpus.values())
 
 def train_feature_word2vec(corpus, cfg, model_save_path):
     emb_dim = cfg.featurization.embed_nodes.emb_dim
@@ -81,7 +71,7 @@ def main(cfg):
     log(f"Start building and training feature word2vec model...")
 
     log("Loading and tokenizing corpus from database...")
-    corpus = load_corpus_from_database(indexid2msg=indexid2msg)
+    corpus = get_corpus(cfg)
 
     train_feature_word2vec(corpus=corpus,
                            cfg=cfg,

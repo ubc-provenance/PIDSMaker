@@ -1,10 +1,24 @@
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from itertools import chain
 
 from provnet_utils import *
 from config import *
 
 
-def get_corpus(splits: list[str], cfg, doc2vec_format=False):
+def get_splits_to_train_featurization(cfg):
+    """
+    Returns the splits on which train the embedding method.
+    """
+    training_split = cfg.featurization.embed_nodes.training_split.strip()
+    if training_split == "all":
+        return ["train", "val", "test"]
+    
+    if training_split == "train":
+        return ["train"]
+    
+    raise ValueError(f"Invalid training split {training_split}")
+
+def get_corpus(cfg, doc2vec_format=False):
     """
     Returns the tokenized labels of all nodes within a specific split.
     For training, the train split can be used to get only the corpus of train set.
@@ -14,7 +28,9 @@ def get_corpus(splits: list[str], cfg, doc2vec_format=False):
     split2nodes = get_split2nodes(cfg)
     indexid2msg = get_indexid2msg(cfg)
     
-    nodes_to_include = set({split2nodes[split] for split in splits})
+    splits = get_splits_to_train_featurization(cfg)
+    
+    nodes_to_include = set().union(*(split2nodes[split] for split in splits))
             
     words, tags = [], []
     nodes = set()
@@ -32,11 +48,14 @@ def get_corpus(splits: list[str], cfg, doc2vec_format=False):
     return words
 
 # Used in Rcaid
-def get_corpus_using_neighbors_features(split, cfg, doc2vec_format=False):
+def get_corpus_using_neighbors_features(cfg, doc2vec_format=False):
     """
     Same but also adds the tokens of neighbors in the final tokens.
+    We need to loop on the graphs here to find neighbors.
     """
-    sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, split)
+    splits = get_splits_to_train_featurization(cfg)
+    days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
+    sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, days)
     graph_list = [torch.load(path) for path in sorted_paths]
     
     words = []
