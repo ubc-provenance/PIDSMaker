@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import os
 from datetime import datetime, timedelta
@@ -6,6 +7,120 @@ import torch
 from config import *
 from provnet_utils import *
 
+
+def compute_and_save_indexid2msg(cfg):
+    """
+    Returns a dict that maps {
+        node => [node type, feature msg],
+    }
+    """
+    cur, connect = init_database_connection(cfg)
+    
+    use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
+    node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
+    indexid2msg = {}
+    
+    def get_label_str_from_features(attrs, node_type):
+        label_str = ' '.join([attrs[label_used] for label_used in node_label_features[node_type]])
+        if use_hashed_label:
+            label_str = stringtomd5(label_str)
+        return label_str
+
+    # netflow
+    sql = """
+        select * from netflow_node_table;
+        """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    log(f"Number of netflow nodes: {len(records)}")
+
+    for i in records:
+        attrs = {
+            'type': 'netflow',
+            'local_ip': str(i[2]),
+            'local_port': str(i[3]),
+            'remote_ip': str(i[4]),
+            'remote_port': str(i[5])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
+
+    # subject
+    sql = """
+    select * from subject_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    log(f"Number of process nodes: {len(records)}")
+
+    for i in records:
+        attrs = {
+            'type': 'subject',
+            'path': str(i[2]),
+            'cmd_line': str(i[3])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
+
+    # file
+    sql = """
+    select * from file_node_table;
+    """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    log(f"Number of file nodes: {len(records)}")
+
+    for i in records:
+        attrs = {
+            'type': 'file',
+            'path': str(i[2])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
+        
+    out_dir = cfg.preprocessing.build_graphs._dicts_dir
+    os.makedirs(out_dir, exist_ok=True)
+    log("Saving indexid2msg to disk...")
+    torch.save(indexid2msg, os.path.join(out_dir, "indexid2msg.pkl"))
+
+    return indexid2msg #{index_id: [node_type, msg]}
+
+def compute_and_save_split2nodes(cfg):
+    """
+    Returns a dict that maps {
+        "train" => nodes in train,
+        "test" => nodes in test,
+        "val" => nodes in val,
+    }
+    """
+    split_to_files = get_split_to_files(cfg, cfg.preprocessing.build_graphs._graphs_dir)
+    split2nodes = defaultdict(set)
+    
+    for split, files in split_to_files.items():
+        graph_list = [torch.load(path) for path in files]
+        for G in tqdm(graph_list, desc=f"Check nodes in {split} set"):
+            for node in G.nodes():
+                split2nodes[split].add(node)
+    split2nodes = dict(split2nodes)
+    
+    out_dir = cfg.preprocessing.build_graphs._dicts_dir
+    os.makedirs(out_dir, exist_ok=True)
+    log("Saving split2nodes to disk...")
+    torch.save(split2nodes, os.path.join(out_dir, "split2nodes.pkl"))
+    
+    return split2nodes
 
 def generate_timestamps(start_time, end_time, interval_minutes):
     start = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
@@ -192,6 +307,8 @@ def main(cfg):
     indexid2msg = compute_and_save_indexid2msg(cfg=cfg)
 
     gen_edge_fused_tw(indexid2msg=indexid2msg, cfg=cfg)
+    
+    compute_and_save_split2nodes(cfg)
 
 
 if __name__ == "__main__":

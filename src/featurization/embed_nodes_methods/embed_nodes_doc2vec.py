@@ -42,16 +42,14 @@ def main(cfg):
     os.makedirs(model_save_path,exist_ok=True)
 
     indexid2msg = get_indexid2msg(cfg)
-
-    train_files = cfg.dataset.train_files
     
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
     if cfg.featurization.embed_nodes.doc2vec.include_neighbors:
-        tagged_data = get_corpus_using_neighbors_features(train_files, cfg, doc2vec_format=True)
+        tagged_data = get_corpus_using_neighbors_features(["train"], cfg, doc2vec_format=True)
     
     # Standard token-level Doc2vec
     else:
-        tagged_data = get_corpus(train_files, cfg, doc2vec_format=True)
+        tagged_data = get_corpus(["train"], cfg, doc2vec_format=True)
 
     epochs = cfg.featurization.embed_nodes.doc2vec.epochs
     emb_dim = cfg.featurization.embed_nodes.emb_dim
