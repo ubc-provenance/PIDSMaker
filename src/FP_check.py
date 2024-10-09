@@ -18,8 +18,8 @@ def get_tasks(evaluation_results):
 
     return tw_to_poi
 
-def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur):
-    indexid2msg = get_node_infos(cur)
+def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg):
+    indexid2msg = get_node_infos(cfg)
     fp_to_samename = {}
     for fp in tqdm(list(fps),desc='get same-name nodes of FPs'):
         if fp not in fp_to_samename:
@@ -212,7 +212,7 @@ def main(cfg):
 
         tw_to_graphdir_test[tw] = graph_dir
 
-    check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur)
+    check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg)
     print("Finish checking!")
 
 if __name__ == "__main__":

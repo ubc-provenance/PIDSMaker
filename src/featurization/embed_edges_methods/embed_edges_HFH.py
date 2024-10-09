@@ -32,8 +32,7 @@ def list2str(l):
 
 def main(cfg):
     log_start(__file__)
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
+    indexid2msg = get_indexid2msg(cfg)
     
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     FH_string = FeatureHasher(n_features=emb_dim, input_type="string")

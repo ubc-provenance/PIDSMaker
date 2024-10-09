@@ -16,8 +16,7 @@ def get_label2indexid(indexid2msg):
 
 
 def main(cfg):
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur, use_port=False, use_cmd=False)
+    indexid2msg = get_indexid2msg(cfg)
 
     label2indexid = get_label2indexid(indexid2msg)
 

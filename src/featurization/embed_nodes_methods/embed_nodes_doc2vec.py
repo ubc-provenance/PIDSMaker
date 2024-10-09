@@ -41,8 +41,7 @@ def main(cfg):
     model_save_path = cfg.featurization.embed_nodes.doc2vec._model_dir
     os.makedirs(model_save_path,exist_ok=True)
 
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
+    indexid2msg = get_indexid2msg(cfg)
 
     train_files = cfg.dataset.train_files
     

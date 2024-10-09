@@ -29,7 +29,7 @@ def main(cfg):
     cur, connect = init_database_connection(cfg)
     uuid2nids, _ = get_uuid2nids(cur)
 
-    nid2msg = get_indexid2msg(cur)
+    nid2msg = get_indexid2msg(cfg)
 
     log("Get ground truth")
     GP_nids, _, _ = get_ground_truth(cfg)

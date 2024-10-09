@@ -226,8 +226,7 @@ def build_tsne_visualization(embeddings, fig_path):
 
 def main(cfg):
     log_start(__file__)
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
+    indexid2msg = get_indexid2msg(cfg)
 
     doc2vec_model_path = cfg.featurization.build_doc2vec._model_dir + 'doc2vec_model.model'
     msg2vec = get_msg2vec(indexid2msg, doc2vec_model_path)

@@ -48,7 +48,7 @@ nltk.download('punkt')
 
 def stringtomd5(originstr):
     originstr = originstr.encode("utf-8")
-    signaturemd5 = hashlib.sha256() # TODO: check if we might remove it in the future
+    signaturemd5 = hashlib.sha256()
     signaturemd5.update(originstr)
     return signaturemd5.hexdigest()
 
@@ -142,63 +142,6 @@ def init_database_connection(cfg):
     cur = connect.cursor()
     return cur, connect
 
-def gen_nodeid2msg(cur, use_cmd=True, use_port=False):
-    # node hash id to node label and type
-    # {hash_id: index_id} and {index_id: {node_type:msg}}
-    indexid2msg = {}
-
-    # netflow
-    sql = """
-        select * from netflow_node_table;
-        """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        hash_id = i[1]
-        remote_ip = str(i[4])
-        remote_port = str(i[5])
-        index_id = i[-1] # int
-        indexid2msg[hash_id] = index_id
-        if use_port:
-            indexid2msg[index_id] = {'netflow': remote_ip + ':' +remote_port}
-        else:
-            indexid2msg[index_id] = {'netflow': remote_ip}
-
-    # subject
-    sql = """
-    select * from subject_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        hash_id = i[1]
-        path = str(i[2])
-        cmd = str(i[3])
-        index_id = i[-1]
-        indexid2msg[hash_id] = index_id
-        if use_cmd:
-            indexid2msg[index_id] = {'subject': path + ' ' +cmd}
-        else:
-            indexid2msg[index_id] = {'subject': path}
-
-    # file
-    sql = """
-    select * from file_node_table;
-    """
-    cur.execute(sql)
-    records = cur.fetchall()
-
-    for i in records:
-        hash_id = i[1]
-        path = str(i[2])
-        index_id = i[-1]
-        indexid2msg[hash_id] = index_id
-        indexid2msg[index_id] = {'file': path}
-
-    return indexid2msg #{hash_id: index_id} and {index_id: {node_type:msg}}
-
 def std(t):
     t = np.array(t)
     return np.std(t)
@@ -215,39 +158,6 @@ def percentile_90(t):
     sorted_data = np.sort(t)
     Q = np.percentile(sorted_data, 90)
     return Q
-
-def percentile_75(t):
-    sorted_data = np.sort(t)
-    Q = np.percentile(sorted_data, 75)
-    return Q
-
-def percentile_50(t):
-    sorted_data = np.sort(t)
-    Q = np.percentile(sorted_data, 50)
-    return Q
-
-def hashgen(l):
-    """Generate a single hash value from a list. @l is a list of
-    string values, which can be properties of a node/edge. This
-    function returns a single hashed integer value."""
-    hasher = xxhash.xxh64()
-    for e in l:
-        hasher.update(e)
-    return hasher.intdigest()
-
-
-def split_filename(path):
-    '''
-    Given a path, split it based on '/' and file extension.
-    e.g.
-        "/home/test/Desktop/123.txt" => "home test Desktop 123 txt"
-    :param path: the name of the path
-    :return: the split path name
-    '''
-    file_name, file_extension = os.path.splitext(os.path.basename(path))
-    file_extension = file_extension.replace(".","")
-    result = ' '.join(path.split('/')[1:-1]) + ' ' + file_name + ' ' + file_extension
-    return result
 
 def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_walks=10):
     adj_list = {}
@@ -436,8 +346,18 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     }
     return stats
 
-def get_indexid2msg(cur, use_cmd=True, use_port=False):
+def compute_and_save_indexid2msg(cfg):
+    cur, connect = init_database_connection(cfg)
+    
+    use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
+    node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
     indexid2msg = {}
+    
+    def get_label_str_from_features(attrs, node_type):
+        label_str = ' '.join([attrs[label_used] for label_used in node_label_features[node_type]])
+        if use_hashed_label:
+            label_str = stringtomd5(label_str)
+        return label_str
 
     # netflow
     sql = """
@@ -449,13 +369,18 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of netflow nodes: {len(records)}")
 
     for i in records:
-        remote_ip = str(i[4])
-        remote_port = str(i[5])
+        attrs = {
+            'type': 'netflow',
+            'local_ip': str(i[2]),
+            'local_port': str(i[3]),
+            'remote_ip': str(i[4]),
+            'remote_port': str(i[5])
+        }
         index_id = i[-1] # int
-        if use_port:
-            indexid2msg[index_id] = ['netflow', remote_ip + ':' +remote_port]
-        else:
-            indexid2msg[index_id] = ['netflow', remote_ip]
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
 
     # subject
     sql = """
@@ -467,13 +392,16 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of process nodes: {len(records)}")
 
     for i in records:
-        path = str(i[2])
-        cmd = str(i[3])
-        index_id = i[-1]
-        if use_cmd:
-            indexid2msg[index_id] = ['subject', path + ' ' +cmd]
-        else:
-            indexid2msg[index_id] = ['subject', path]
+        attrs = {
+            'type': 'subject',
+            'path': str(i[2]),
+            'cmd_line': str(i[3])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
 
     # file
     sql = """
@@ -485,11 +413,27 @@ def get_indexid2msg(cur, use_cmd=True, use_port=False):
     log(f"Number of file nodes: {len(records)}")
 
     for i in records:
-        path = str(i[2])
-        index_id = i[-1]
-        indexid2msg[index_id] = ['file', path]
+        attrs = {
+            'type': 'file',
+            'path': str(i[2])
+        }
+        index_id = i[-1] # int
+        node_type = attrs['type']
+        label_str = get_label_str_from_features(attrs, node_type)
+            
+        indexid2msg[index_id] = [node_type, label_str]
+        
+    out_dir = cfg.preprocessing.build_graphs._indexid2msg_dir
+    os.makedirs(out_dir, exist_ok=True)
+    log("Saving indexid2msg to disk...")
+    torch.save(indexid2msg, os.path.join(out_dir, "indexid2msg.pkl"))
 
     return indexid2msg #{index_id: [node_type, msg]}
+
+def get_indexid2msg(cfg):
+    indexid2msg_file = os.path.join(cfg.preprocessing.build_graphs._indexid2msg_dir, "indexid2msg.pkl")
+    indexid2msg = torch.load(indexid2msg_file)
+    return indexid2msg
 
 def tokenize_subject(sentence: str):
     new_sentence = re.sub(r'\\+', '/', sentence)
@@ -589,7 +533,6 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
 
         return layers, in_dim
 
-
     arch_str = arch_str.strip().lower().replace(" ", "")
     layer_groups = arch_str.split('|')
     
@@ -600,12 +543,6 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
     layers.append(nn.Linear(in_dim, out_dim))
     
     return nn.Sequential(*layers)
-
-def get_rel2id(cfg):
-    if cfg.dataset.name in OPTC_DATASETS:
-        return rel2id_optc
-    else:
-        return rel2id_darpa_tc
 
 def copy_directory(src_path, dest_path):
     if not os.path.isdir(src_path):
