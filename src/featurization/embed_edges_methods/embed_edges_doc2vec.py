@@ -18,6 +18,6 @@ def main(cfg):
 
         vector = model.infer_vector(tokens)
         normalized_vector = vector / np.linalg.norm(vector)
-        indexid2vec[int(indexid)] = normalized_vector
+        indexid2vec[indexid] = normalized_vector
 
     return indexid2vec

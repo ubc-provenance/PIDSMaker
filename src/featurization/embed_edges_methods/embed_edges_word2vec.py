@@ -4,8 +4,8 @@ from provnet_utils import *
 
 def main(cfg, is_test_set: bool=False):
     log_start(__file__)
-    base_dir = cfg.preprocessing.transformation._graphs_dir
-    sorted_paths = get_all_files_from_folders(base_dir, split_files)
+    
+    # TODO: this part is broken, need some work to make it work (the training part of this method seems too complicated)
     
     trained_w2v_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
     if is_test_set:
@@ -13,5 +13,4 @@ def main(cfg, is_test_set: bool=False):
     else:
         indexid2vec = torch.load(os.path.join(trained_w2v_dir, "nodelabel2vec_val"))  # From both train and val
         
-    # TODO: check it works
     return indexid2vec

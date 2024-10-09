@@ -34,6 +34,6 @@ def main(cfg):
         sentence_vector = np.mean(weighted_vectors, axis=0)
 
         normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
-        indexid2vec[int(indexid)] = np.array(normalized_vector)
+        indexid2vec[indexid] = np.array(normalized_vector)
 
     return indexid2vec

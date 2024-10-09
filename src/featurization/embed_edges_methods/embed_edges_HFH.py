@@ -49,6 +49,6 @@ def main(cfg):
         dense_vector = FH_string.fit_transform([higstr]).toarray()
         
         normalized_vector = dense_vector/np.linalg.norm(dense_vector)
-        indexid2vec[int(indexid)] = normalized_vector.squeeze()
+        indexid2vec[indexid] = normalized_vector.squeeze()
 
     return indexid2vec

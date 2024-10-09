@@ -10,9 +10,10 @@ import random
 def tokenize_corpus(corpus, indexid2msg):
     tokenized_corpus = []
     for line in corpus:
+        line = line.strip()
         tokenized_line = []
         for node in line.split(','):
-            msg = indexid2msg[int(node)]
+            msg = indexid2msg[node]
             if msg[0] == 'subject':
                 tokens = tokenize_subject(msg[1])
             elif msg[0] == 'file':
