@@ -22,24 +22,21 @@ def get_corpus(cfg, doc2vec_format=False):
     """
     Returns the tokenized labels of all nodes within a specific split.
     For training, the train split can be used to get only the corpus of train set.
-    
-    get_corpus(["train", "val", "test"], cfg) => corpus that includes nodes from all splits
     """
-    split2nodes = get_split2nodes(cfg)
-    indexid2msg = get_indexid2msg(cfg)
-    
     splits = get_splits_to_train_featurization(cfg)
-    
+    split2nodes = get_split2nodes(cfg)
     nodes_to_include = set().union(*(split2nodes[split] for split in splits))
             
     words, tags = [], []
-    nodes = set()
+    node_labels = set()
+    indexid2msg = get_indexid2msg(cfg)
     for node, msg in indexid2msg.items():
-        if node in nodes_to_include:
-            nodes.add(node)
+        node_type, node_label = msg
+        
+        if (node in nodes_to_include) and (node_label not in node_labels):            
+            node_labels.add(node_label)
             tags.append(node)
             
-            node_type, node_label = msg
             words.append(tokenize_label(node_label, node_type))
 
     if doc2vec_format:

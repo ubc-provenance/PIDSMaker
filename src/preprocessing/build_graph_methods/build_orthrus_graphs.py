@@ -8,7 +8,7 @@ from config import *
 from provnet_utils import *
 
 
-def compute_and_save_indexid2msg(cfg):
+def compute_indexid2msg(cfg):
     """
     Returns a dict that maps {
         node => [node type, feature msg],
@@ -89,13 +89,22 @@ def compute_and_save_indexid2msg(cfg):
         label_str = get_label_str_from_features(attrs, node_type)
             
         indexid2msg[index_id] = [node_type, label_str]
-        
+
+    return indexid2msg #{index_id: [node_type, msg]}
+
+def save_indexid2msg(indexid2msg, split2nodes, cfg):
+    """
+    The saving must occur after the graph construction, because some edge types
+    are not considered and this results in some nodes that are not used in the pipeline.
+    These nodes must be removed before storing to disk to avoid future errors.
+    """
+    all_nodes = set().union(*(split2nodes[split] for split in ["train", "val", "test"]))
+    indexid2msg = {k: v for k, v in indexid2msg.items() if k in all_nodes}
+    
     out_dir = cfg.preprocessing.build_graphs._dicts_dir
     os.makedirs(out_dir, exist_ok=True)
     log("Saving indexid2msg to disk...")
     torch.save(indexid2msg, os.path.join(out_dir, "indexid2msg.pkl"))
-
-    return indexid2msg #{index_id: [node_type, msg]}
 
 def compute_and_save_split2nodes(cfg):
     """
@@ -304,11 +313,12 @@ def gen_edge_fused_tw(indexid2msg, cfg):
 def main(cfg):
     log_start(__file__)
     
-    indexid2msg = compute_and_save_indexid2msg(cfg=cfg)
+    indexid2msg = compute_indexid2msg(cfg=cfg)
 
     gen_edge_fused_tw(indexid2msg=indexid2msg, cfg=cfg)
     
-    compute_and_save_split2nodes(cfg)
+    split2nodes = compute_and_save_split2nodes(cfg)
+    save_indexid2msg(indexid2msg, split2nodes, cfg)
 
 
 if __name__ == "__main__":
