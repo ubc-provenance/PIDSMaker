@@ -154,13 +154,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             yield arr[i:i + batch_size]
 
     # In test mode, we ensure to get 1 TW in each set
-    if cfg._test_mode:
-        # Get the day number of the first day in each set
-        days = [int(days[0].split("_")[-1]) for days in \
-                [cfg.dataset.train_files, cfg.dataset.val_files, cfg.dataset.test_files]]
-    else:
-        start, end = cfg.dataset.start_end_day_range
-        days = range(start, end)
+    days = get_days_from_cfg(cfg)
 
     for day in days:
         date_start = cfg.dataset.year_month + '-' + str(day) + ' 00:00:00'

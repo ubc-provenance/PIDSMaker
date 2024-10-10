@@ -214,7 +214,7 @@ def extract_and_embed_paths(split_files, paras, cfg,type_data,is_test,trial=None
     alpha = paras["alpha"]
     mpl = paras["mpl"]
 
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    base_dir = cfg.preprocessing.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
     train_g = [torch.load(path) for path in sorted_paths]
     # Weight graphs
