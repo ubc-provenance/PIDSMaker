@@ -7,7 +7,6 @@ from .embed_edges_methods import (
     embed_edges_HFH,
     embed_edges_feature_word2vec,
     embed_edges_TRW,
-    provd_embed_paths,
 )
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
@@ -53,8 +52,6 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
 def get_indexid2vec(cfg):
     method = cfg.featurization.embed_nodes.used_method.strip()
-    if method == "provd":
-        provd_embed_paths.main(cfg)
     if method == "word2vec":
         return embed_edges_word2vec.main(cfg)
     if method == "doc2vec":

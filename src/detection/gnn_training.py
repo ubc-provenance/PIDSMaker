@@ -3,7 +3,6 @@ from .training_methods import (
     orthrus_gnn_training,
     flash_training,
     magic_testing,
-    provd_training,
 )
 
 def main(cfg):
@@ -14,8 +13,6 @@ def main(cfg):
         magic_testing.main(cfg)
     elif method == 'flash':
         flash_training.main(cfg)
-    elif method == 'provd':
-        provd_training.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")
 
