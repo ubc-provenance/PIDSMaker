@@ -6,6 +6,7 @@ def main(G: nx.Graph) -> nx.Graph:
     Also removes duplicate edges.
     Basically makes graph G a DAG.
     """
+    G = nx.DiGraph(G)
     G.remove_edges_from(nx.selfloop_edges(G))
     while True:
         try:
@@ -15,4 +16,5 @@ def main(G: nx.Graph) -> nx.Graph:
             
         except nx.NetworkXNoCycle:
             break
+    G = nx.MultiDiGraph(G)
     return G
