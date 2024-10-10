@@ -5,6 +5,7 @@ from provnet_utils import *
 from .transformation_methods import (
     transformation_rcaid_pseudo_graph,
     transformation_undirected,
+    transformation_dag,
 )
 
 def apply_transformations(graph, methods, cfg):
@@ -15,6 +16,8 @@ def apply_transformations(graph, methods, cfg):
             graph = transformation_rcaid_pseudo_graph.main(graph, cfg)
         elif method == "undirected":
             graph = transformation_undirected.main(graph)
+        elif method == "dag":
+            graph = transformation_dag.main(graph)
         else:
             raise ValueError(f"Unrecognized transformation method: {method}")
 
@@ -25,34 +28,40 @@ def main(cfg):
     methods = cfg.preprocessing.transformation.used_methods
     methods = list(map(lambda x: x.strip(), methods.split(",")))
     
+    base_dir = cfg.preprocessing.build_graphs._graphs_dir
+    dst_dir = cfg.preprocessing.transformation._graphs_dir
+    
     # If no transformation is used, we copy all original graphs to the transformation task path
     if len(methods) == 1 and methods[0] == "none":
-        src = cfg.preprocessing.build_graphs._graphs_dir
-        dst = cfg.preprocessing.transformation._graphs_dir
-        copy_directory(src, dst)
+        copy_directory(base_dir, dst_dir)
 
     else:
-        base_dir = cfg.preprocessing.build_graphs._graphs_dir
-        dst_dir = cfg.preprocessing.transformation._graphs_dir
+        os.makedirs(dst_dir, exist_ok=True)
         graph_list = defaultdict(list)
 
-        split_to_files = get_split_to_files(cfg, base_dir=cfg.preprocessing.build_graphs._graphs_dir)
-        for split, files in split_to_files.items():
-            for path in tqdm(files, desc=f'Transforming ({split})'):
+        days = get_days_from_cfg(cfg)
+        for day in tqdm(days, desc=f'Transforming'):
+            sorted_paths = get_all_files_from_folders(base_dir, [f"graph_{day}"])
+            for path in sorted_paths:
                 graph = torch.load(path)
                 
                 # Apply all transformations to a single graph
                 graph = apply_transformations(graph, methods, cfg)
                 
-                graph_list[split].append(graph)
+                graph_list[day].append({
+                    "file": path.split("/")[-1],
+                    "graph": graph,
+                })
             
         # We save to disk at the very end to avoid errors once a file is replaced on disk
-        for split, files in split_to_files.items():
-            for g, path in zip(graph_list[split], files):
-                file_name = path.split("/")[-1]
-                dst_path = os.path.join(dst_dir, file_name)
+        for day, graphs in graph_list.items():
+            for d in graphs:
+                file_name = d["file"]
                 log(f"Creating file '{file_name}'...")
-                torch.save(g, path)
+                
+                dst_path = os.path.join(dst_dir, f"graph_{day}")
+                os.makedirs(dst_path, exist_ok=True)
+                torch.save(d["graph"], os.path.join(dst_path, file_name))
 
 
 if __name__ == "__main__":

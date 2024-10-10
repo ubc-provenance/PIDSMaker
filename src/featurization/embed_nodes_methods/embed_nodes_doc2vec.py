@@ -18,19 +18,14 @@ def doc2vec(cfg,
             epochs: int,
             emb_dim: int,
             alpha: float,
-            min_alpha: float,
             dm: int = 1,
 ):
     SEED = 0
     model = Doc2Vec(vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED)
     model.build_vocab(tagged_data)
 
-    for epoch in range(epochs):
-        model.train(tagged_data, total_examples=model.corpus_count, epochs=1, compute_loss=True)
-        model.alpha -= 0.0002
-        if model.alpha < min_alpha:
-            model.alpha = min_alpha
-        log(f'Epoch {epoch} / {epochs}, Training loss: {model.get_latest_training_loss()}')
+    log("Training Doc2vec...")
+    model.train(tagged_data, total_examples=model.corpus_count, epochs=epochs, compute_loss=True)
 
     log(f'Saving Doc2Vec model to {model_save_path}')
     model.save(os.path.join(model_save_path, 'doc2vec_model.model'))
@@ -54,7 +49,6 @@ def main(cfg):
     epochs = cfg.featurization.embed_nodes.doc2vec.epochs
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     alpha = cfg.featurization.embed_nodes.doc2vec.alpha
-    min_alpha = cfg.featurization.embed_nodes.doc2vec.min_alpha
 
     log(f"Start building and training Doc2Vec model...")
     doc2vec(tagged_data=tagged_data,
@@ -63,7 +57,6 @@ def main(cfg):
                   epochs=epochs,
                   emb_dim=emb_dim,
                   alpha=alpha,
-                  min_alpha=min_alpha,
                   cfg=cfg)
 
 if __name__ == '__main__':

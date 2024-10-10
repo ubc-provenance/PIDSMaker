@@ -23,7 +23,6 @@ featurization:
       include_neighbors: True
       epochs: 5
       alpha: 0.025
-      min_alpha: 0.00025
   embed_edges:
     to_remove: True
 
