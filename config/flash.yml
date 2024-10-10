@@ -28,24 +28,31 @@ featurization:
 
 detection:
   gnn_training:
-    used_method: flash
+    used_method: orthrus
     use_seed: True
-    num_epochs: 6
-    lr: 0.00001
-    weight_decay: 0.00001
-    node_hid_dim: 128
-    node_out_dim: 64
-    flash:
-      in_channel: 30
-      out_channel: 3
-      lr: 0.01
-      weight_decay: 0.0005
-      epochs: 22
+    num_epochs: 22
+    lr: 0.01
+    weight_decay: 0.0005
+    node_hid_dim: 30
+    node_out_dim: 3
+    encoder:
+      node_features: node_emb
+      neighbor_sampling: [-1, -1]
+      edge_features: none
+      used_methods: sage
+      sage:
+        dropout: 0.5
+        activation: relu
+    decoder:
+      # balanced_loss: True
+      used_methods: predict_node_type
+      predict_node_type:
+        decoder: none
 
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: darpa_v4
-    used_method: flash_evaluation
+    used_method: node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss
+      threshold_method: flash
       use_dst_node_loss: True

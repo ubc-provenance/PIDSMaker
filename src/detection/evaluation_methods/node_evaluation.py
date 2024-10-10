@@ -89,6 +89,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
                 node_to_values[node]["threatrace_score"].append(line["threatrace_score"])
             if "correct_pred" in line:
                 node_to_values[node]["correct_pred"].append(line["correct_pred"])
+            if "flash_score" in line:
+                node_to_values[node]["flash_score"].append(line["flash_score"])
 
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss
@@ -98,6 +100,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
     results = defaultdict(dict)
     for node_id, losses in node_to_values.items():
         threatrace_label = 0
+        flash_label = 0
         detected_tw = None
         if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
             max_score = 0
@@ -108,6 +111,17 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
                     threatrace_label = 1
                     max_score = score
                     detected_tw = tw
+        
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+            max_score = 0
+            pred_score = max(losses["flash_score"])
+
+            for score, node_type_pred, tw in zip(losses["flash_score"], losses["correct_pred"], losses["tw"]):
+                if score > thr and node_type_pred and score > max_score:
+                    flash_label = 1
+                    max_score = score
+                    detected_tw = tw
+        
         else:
             pred_score = reduce_losses_to_score(losses["loss"], cfg.detection.evaluation.node_evaluation.threshold_method)
         
@@ -127,6 +141,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
         else:
             if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
                 results[node_id]["y_hat"] = threatrace_label
+            elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+                results[node_id]["y_hat"] = flash_label
             else:
                 results[node_id]["y_hat"] = int(pred_score > thr)
         

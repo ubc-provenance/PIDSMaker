@@ -28,6 +28,8 @@ def get_threshold(val_tw_path, threshold_method: str):
         return calculate_threshold(val_tw_path)['mean']
     elif threshold_method == "threatrace":
         return 1.5
+    elif threshold_method == "flash":
+        return 0.53
     # elif threshold_method == "90_percent_val_loss":
     #     return calculate_threshold(val_tw_path)['percentile_90']
     raise ValueError(f"Invalid threshold method `{threshold_method}`")

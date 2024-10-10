@@ -143,6 +143,28 @@ def test_node_level(
                     'correct_pred': correct_pred,
                 }
                 node_list.append(temp_dic)
+                
+        # Flash code
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+            pred = out.max(1)[1]
+            sorted, indices = out.sort(dim=1, descending=True)
+            conf = (sorted[:, 0] - sorted[:, 1]) / sorted[:, 0]
+            conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
+
+            node_type_num = batch.node_type.argmax(1)
+            for i in range(len(out)):
+                score = max(conf[i].item(), 0)
+
+                node = batch.original_n_id[i].item()
+                correct_pred = int((node_type_num[i] == pred[i]).item())
+
+                temp_dic = {
+                    'node': node,
+                    'loss': float(loss[i].item()),
+                    'flash_score': score,
+                    'correct_pred': correct_pred,
+                }
+                node_list.append(temp_dic)
             
         else:
             for i, node in enumerate(batch.original_n_id):
