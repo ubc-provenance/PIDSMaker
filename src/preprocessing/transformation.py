@@ -5,6 +5,7 @@ from provnet_utils import *
 from .transformation_methods import (
     transformation_rcaid_pseudo_graph,
     transformation_undirected,
+    transformation_dag,
 )
 
 def apply_transformations(graph, methods, cfg):
@@ -15,6 +16,8 @@ def apply_transformations(graph, methods, cfg):
             graph = transformation_rcaid_pseudo_graph.main(graph, cfg)
         elif method == "undirected":
             graph = transformation_undirected.main(graph)
+        elif method == "dag":
+            graph = transformation_dag.main(graph)
         else:
             raise ValueError(f"Unrecognized transformation method: {method}")
 

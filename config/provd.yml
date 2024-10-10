@@ -9,7 +9,7 @@ preprocessing:
       file: type, path
       netflow: type, remote_ip, remote_port
   transformation:
-    used_methods: none
+    used_methods: dag
 
 featurization:
   embed_nodes:
