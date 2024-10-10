@@ -25,17 +25,7 @@ def train(data,
     for batch in batch_loader:
         optimizer.zero_grad()
 
-        if cfg.detection.gnn_training.decoder.balanced_loss:
-            l = data.node_type_list.cpu().numpy()
-            num_classes = l.max() + 1
-            class_weights = np.zeros(num_classes)
-            calculated_weights = class_weight.compute_class_weight(class_weight="balanced", classes=np.unique(l), y=l)
-            for j, c in enumerate(np.unique(l)):
-                class_weights[c] = calculated_weights[j]
-            class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
-            loss, *_ = model(batch, full_data, weight=class_weights)
-        else:
-            loss, *_ = model(batch, full_data)
+        loss, *_ = model(batch, full_data)
 
         loss.backward()
         optimizer.step()

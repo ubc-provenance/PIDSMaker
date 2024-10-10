@@ -38,6 +38,7 @@ detection:
       used_methods: predict_node_type
       predict_node_type:
         decoder: none
+        balanced_loss: False
 
   evaluation:
     viz_malicious_nodes: False

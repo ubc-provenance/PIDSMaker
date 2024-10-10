@@ -215,22 +215,28 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             
         elif objective == "predict_edge_type":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
+            balanced_loss = cfg.detection.gnn_training.decoder.predict_edge_type.balanced_loss
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=cfg.dataset.num_edge_types)
             decoders.append(
                 EdgeTypePrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
+                    balanced_loss=balanced_loss,
+                    edge_type_dim=cfg.dataset.num_edge_types,
                 ))
             
         elif objective == "predict_node_type":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
+            balanced_loss = cfg.detection.gnn_training.decoder.predict_node_type.balanced_loss
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
             decoders.append(
                 NodeTypePrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
+                    balanced_loss=balanced_loss,
+                    node_type_dim=cfg.dataset.num_node_types,
                 ))
         
         # elif objective == "predict_edge_contrastive":

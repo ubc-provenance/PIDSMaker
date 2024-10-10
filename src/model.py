@@ -29,7 +29,7 @@ class Model(nn.Module):
             
         self.node_level = node_level
         
-    def forward(self, batch, full_data, inference=False, weight=None):
+    def forward(self, batch, full_data, inference=False):
         train_mode = not inference
         if self.node_level:
             x = batch.x
@@ -87,7 +87,6 @@ class Model(nn.Module):
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
                     node_type=batch.node_type if hasattr(batch, "node_type") else None,
-                    weight=weight,
                 )
                 if isinstance(loss, tuple):
                     loss, pred = loss

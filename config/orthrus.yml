@@ -86,6 +86,7 @@ detection:
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
+        balanced_loss: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu

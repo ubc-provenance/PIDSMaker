@@ -499,3 +499,31 @@ def get_split2nodes(cfg):
     path = os.path.join(cfg.preprocessing.build_graphs._dicts_dir, "split2nodes.pkl")
     split2nodes = torch.load(path)
     return split2nodes
+
+def compute_class_weights(labels, num_classes):
+    """
+    Compute balanced class weights for a given set of labels using PyTorch,
+    and pad the weights with 0s if some classes are missing in the batch.
+    
+    Parameters:
+        labels (Tensor): A 1D tensor containing class indices for each sample.
+        num_classes (int): The number of unique classes.
+        
+    Returns:
+        Tensor: A tensor containing the weight for each class, padded to num_classes.
+    """
+    # From 1-hot to label index
+    labels = labels.argmax(dim=-1)
+    
+    # Count the number of instances for each class
+    class_counts = torch.bincount(labels, minlength=num_classes).float()
+    total_count = len(labels)
+    
+    # Initialize weights with zeros for all classes
+    class_weights = torch.zeros(num_classes, device=labels.device)
+    
+    # Avoid division by zero by checking for non-zero class counts
+    non_zero_classes = class_counts > 0
+    class_weights[non_zero_classes] = total_count / (num_classes * class_counts[non_zero_classes])
+    
+    return class_weights

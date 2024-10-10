@@ -102,10 +102,12 @@ detection:
         loss: MSE
         decoder: none
       predict_edge_type:
+        balanced_loss: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5)
       predict_node_type:
+        balanced_loss: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5)
