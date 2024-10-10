@@ -42,7 +42,6 @@ detection:
         dropout: 0.5
         activation: relu
     decoder:
-      # balanced_loss: True
       used_methods: predict_node_type
       predict_node_type:
         decoder: none
