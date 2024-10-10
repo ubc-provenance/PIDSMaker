@@ -15,13 +15,13 @@ preprocessing:
 
 featurization:
   embed_nodes:
+    epochs: 5
     emb_dim: 128
     use_seed: True
     training_split: all
     used_method: doc2vec
     doc2vec:
       include_neighbors: True
-      epochs: 5
       alpha: 0.025
   embed_edges:
     to_remove: True

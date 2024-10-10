@@ -13,12 +13,12 @@ preprocessing:
 
 featurization:
   embed_nodes:
+    epochs: 100
     emb_dim: 256
     use_seed: True
     training_split: train
     used_method: fasttext
     fasttext:
-      epochs: 100
       min_count: 2
       alpha: 0.01
       window: 3

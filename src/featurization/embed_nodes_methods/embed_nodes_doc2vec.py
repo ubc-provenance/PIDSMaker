@@ -46,7 +46,7 @@ def main(cfg):
     else:
         tagged_data = get_corpus(cfg, doc2vec_format=True)
 
-    epochs = cfg.featurization.embed_nodes.doc2vec.epochs
+    epochs = cfg.featurization.embed_nodes.epochs
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     alpha = cfg.featurization.embed_nodes.doc2vec.alpha
 

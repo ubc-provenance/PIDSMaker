@@ -75,13 +75,13 @@ def main(cfg):
     training_files = get_splits_to_train_featurization(cfg)
     all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files).values())
 
-    vector_size = cfg.featurization.embed_nodes.flash.vector_size
+    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    epochs = cfg.featurization.embed_nodes.epochs
     min_count = cfg.featurization.embed_nodes.flash.min_count
     workers = cfg.featurization.embed_nodes.flash.workers
-    epochs = cfg.featurization.embed_nodes.flash.epochs
 
     log(f"Training word2vec model...")
-    model = Word2Vec(vector_size=vector_size, min_count=min_count, workers=workers, epochs=epochs)
+    model = Word2Vec(vector_size=emb_dim, min_count=min_count, workers=workers, epochs=epochs)
     model.build_vocab(RepeatableIterator(all_phrases), progress_per=10000)
     model.train(RepeatableIterator(all_phrases), total_examples=model.corpus_count, epochs=epochs)
 

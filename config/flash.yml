@@ -13,15 +13,14 @@ preprocessing:
 
 featurization:
   embed_nodes:
-    emb_dim: 128
+    emb_dim: 30
+    epochs: 10 # 300
     training_split: train
     used_method: flash
     use_seed: True
     flash:
-      vector_size: 30
       min_count: 1
       workers: 8
-      epochs: 10 # 300
   embed_edges:
     to_remove: True
 

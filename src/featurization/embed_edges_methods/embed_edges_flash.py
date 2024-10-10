@@ -44,7 +44,7 @@ def main(cfg):
     
     trained_w2v_dir = cfg.featurization.embed_nodes.flash._model_dir
     w2vmodel = Word2Vec.load(os.path.join(trained_w2v_dir, "word2vec_model_final.model"))
-    w2v_vector_size = cfg.featurization.embed_nodes.flash.vector_size
+    w2v_vector_size = cfg.featurization.embed_nodes.emb_dim
 
     node2corpus = get_node2corpus(cfg, splits=["train", "val", "test"])
     indexid2vec = {}
