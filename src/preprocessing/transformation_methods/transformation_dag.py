@@ -6,11 +6,13 @@ def main(G: nx.Graph) -> nx.Graph:
     Also removes duplicate edges.
     Basically makes graph G a DAG.
     """
-    G = nx.DiGraph(G) # removes duplicate edges
     G.remove_edges_from(nx.selfloop_edges(G))
-    
-    cycles = nx.find_cycle(G)
-    for u, v in cycles:
-        G.remove_edge(u, v)
-
+    while True:
+        try:
+            cycle = nx.find_cycle(G)
+            edge_to_remove = cycle[0]
+            G.remove_edge(*edge_to_remove)
+            
+        except nx.NetworkXNoCycle:
+            break
     return G
