@@ -17,6 +17,7 @@ featurization:
   embed_nodes:
     emb_dim: 128
     use_seed: True
+    training_split: all
     used_method: doc2vec
     doc2vec:
       include_neighbors: True

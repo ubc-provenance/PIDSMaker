@@ -14,6 +14,7 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 16
+    training_split: all
     used_method: feature_word2vec
     use_seed: True
     temporal_rw:

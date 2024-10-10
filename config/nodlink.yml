@@ -15,6 +15,7 @@ featurization:
   embed_nodes:
     emb_dim: 256
     use_seed: True
+    training_split: train
     used_method: fasttext
     fasttext:
       epochs: 100

@@ -50,7 +50,9 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
     Initializes the attributes of a `Data` object based on the `msg`
     computed in previous tasks.
     """
-    emb_dim = cfg.featurization.embed_nodes.emb_dim or 0
+    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    if cfg.featurization.embed_nodes.used_method.strip() == "only_type" or emb_dim is None:
+        emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
     selected_node_feats = cfg.detection.gnn_training.encoder.node_features

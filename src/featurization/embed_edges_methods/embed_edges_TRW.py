@@ -29,10 +29,11 @@ def main(cfg):
     
     trw_word2vec_model_path = cfg.featurization.embed_nodes.temporal_rw._model_dir + 'trw_word2vec.model'
     model = Word2Vec.load(trw_word2vec_model_path)
+    decline_percentage = cfg.featurization.embed_nodes.temporal_rw.decline_rate
 
     indexid2vec = {}
     for indexid in tqdm(used_nodes, desc='Embeding all nodes in the dataset'):
-        msg = indexid2msg[int(indexid)]
+        msg = indexid2msg[indexid]
         node_type, node_label = msg[0], msg[1]
         tokens = tokenize_label(node_label, node_type)
 
@@ -42,6 +43,6 @@ def main(cfg):
         sentence_vector = np.mean(weighted_vectors, axis=0)
 
         normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
-        indexid2vec[int(indexid)] = np.array(normalized_vector)
+        indexid2vec[indexid] = np.array(normalized_vector)
 
     return indexid2vec

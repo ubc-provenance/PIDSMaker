@@ -33,10 +33,10 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
             else:
                 msg.append(torch.cat([
                     ntype2oh[graph.nodes[u]['node_type']],
-                    torch.from_numpy(indexid2vec[int(u)]),
+                    torch.from_numpy(indexid2vec[u]),
                     etype2oh[attr["label"]],
                     ntype2oh[graph.nodes[v]['node_type']],
-                    torch.from_numpy(indexid2vec[int(v)])
+                    torch.from_numpy(indexid2vec[v])
                 ]))
 
         data = TemporalData(
@@ -65,7 +65,7 @@ def get_indexid2vec(cfg):
     if method == "temporal_rw":
         return embed_edges_TRW.main(cfg)
     if method == "flash" or method == 'magic':
-        raise NotImplementedError("TODO (see with Baoxiang)")
+        raise EnvironmentError("TODO (see with Baoxiang)")
     
     raise ValueError(f"Invalid node embedding method {method}")
 
