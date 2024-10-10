@@ -365,6 +365,10 @@ def tokenize_label(node_label, node_type):
         return tokenize_netflow(node_label)
     raise ValueError(f"Invalid node type")
 
+def tokenize_arbitrary_label(sentence):
+    new_sentence = re.sub(r'\\+', '/', sentence)
+    return word_tokenize(new_sentence.replace('/',' / ').replace(':',' : ').replace('.',' . '))
+
 def log(msg: str, *args, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
