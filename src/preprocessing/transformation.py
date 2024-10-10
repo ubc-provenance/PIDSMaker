@@ -37,6 +37,7 @@ def main(cfg):
     else:
         base_dir = cfg.preprocessing.build_graphs._graphs_dir
         dst_dir = cfg.preprocessing.transformation._graphs_dir
+        os.makedirs(dst_dir, exist_ok=True)
         graph_list = defaultdict(list)
 
         split_to_files = get_split_to_files(cfg, base_dir=cfg.preprocessing.build_graphs._graphs_dir)
@@ -55,7 +56,7 @@ def main(cfg):
                 file_name = path.split("/")[-1]
                 dst_path = os.path.join(dst_dir, file_name)
                 log(f"Creating file '{file_name}'...")
-                torch.save(g, path)
+                torch.save(g, dst_path)
 
 
 if __name__ == "__main__":
