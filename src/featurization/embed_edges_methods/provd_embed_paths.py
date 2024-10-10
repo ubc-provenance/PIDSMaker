@@ -230,19 +230,15 @@ def extract_and_embed_paths(split_files, paras, cfg,type_data,is_test,trial=None
         # extract and embed paths
         train_files = sorted_paths
         text_list = []
-        training_info = []
         i = 0
         for graph in tqdm(train_g, desc='Extracting the paths from training set'):
             cycles = list(nx.simple_cycles(graph))
-
             if cycles:
-                print("The graph contains cycles.")
-            else:
-                print("The graph does not contain cycles.")
+                raise RuntimeError("The graph contains cycles, use transformation 'dag'.")
+
             top_uncommon_paths = top_k_path(graph, k, mpl)
             texts = build_text_list(top_uncommon_paths, graph)
             text_list += texts
-            training_info.append([train_files[i], texts])
             i += 1
         train_pv = path_embedding(
             text_list=text_list,

@@ -35,7 +35,6 @@ featurization:
       include_neighbors: False
       epochs: 1
       alpha: 0.025
-      min_alpha: 0.00025
     word2vec:
       walk_length: 30
       num_walks: 10
