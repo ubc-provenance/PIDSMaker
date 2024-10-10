@@ -9,9 +9,9 @@ def main(G: nx.Graph) -> nx.Graph:
     G.remove_edges_from(nx.selfloop_edges(G))
     while True:
         try:
-            cycle = nx.find_cycle(G)
-            edge_to_remove = cycle[0]
-            G.remove_edge(*edge_to_remove)
+            cycles = nx.find_cycle(G)
+            for cycle in cycles: # fast approximation, the optimal would be to remove 1 by 1
+                G.remove_edge(*cycle)
             
         except nx.NetworkXNoCycle:
             break
