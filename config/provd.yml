@@ -5,7 +5,7 @@ preprocessing:
     time_window_size: 15.0
     use_hashed_label: True
     node_label_features:
-      subject: type, path, cmd_line
+      subject: type, path
       file: type, path
       netflow: type, remote_ip, remote_port
   transformation:
@@ -13,53 +13,13 @@ preprocessing:
 
 featurization:
   embed_nodes:
-    emb_dim: 128
-    used_method: feature_word2vec
-    use_seed: True
-    temporal_rw:
-      walk_length: 30
-      num_walks: 10
-      trw_workers: 8
-      time_weight: uniform
-      half_life: 1
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      wv_workers: 6
-      epochs: 50
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
-    doc2vec:
-      include_neighbors: False
-      epochs: 100
-      alpha: 0.025
-      min_alpha: 0.00025
-    word2vec:
-      walk_length: 30
-      num_walks: 10
-      epochs: 5
-      context_window_size: 5
-      min_count: 0
-      use_skip_gram: True
-      num_workers: 6
-      compute_loss: True
-      add_paths: False
-    feature_word2vec:
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      num_workers: 6
-      epochs: 50
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
+    used_method: provd
   embed_edges:
     to_remove: True
 
 detection:
   gnn_training:
-    used_method: orthrus
+    used_method: provd
     use_seed: True
     num_epochs: 6
     lr: 0.00001

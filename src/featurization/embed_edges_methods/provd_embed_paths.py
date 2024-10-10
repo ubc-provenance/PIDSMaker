@@ -1,43 +1,7 @@
-import cProfile
-import re
-import optuna
-from sklearn.metrics import *
-import networkx as nx
-import math
-import tqdm
-import json
-import os
-import random
-import networkx as nx
-import numpy as np
-import pandas as pd
-import argparse
-import copy
-from gensim.models.doc2vec import *
-from sklearn.neighbors import LocalOutlierFactor
-from joblib import dump, load
-from sklearn.manifold import TSNE
-from tqdm import tqdm
-from multiprocessing import Pool
-import graphviz
-from statistics import *
-import pickle
-import sklearn
-import logging
-import csv
-import datetime
-import time
-import re
-import cProfile
-import os
 from provnet_utils import *
 from config import *
 
 from gensim.models.doc2vec import Doc2Vec
-import numpy as np
-from tqdm import tqdm
-from torch_geometric.data import *
-import torch
 
 def get_edge_key(u, v, graph):
     edge_number_between_nodes = graph.new_edge_key(u, v) - 1
@@ -141,7 +105,7 @@ def build_event_map(graph_list:list):
             event = graph.nodes[u]["label"] + "->" + graph.edges[u, v, k]["label"] + "->" + graph.nodes[v]["label"]
             # Here, we assume each of 50 hosts has several graphs
             host_id = graph_list.index(graph) % num_of_host
-            if event not in event_mapping.keys():
+            if event not in event_mapping:
                 event_mapping[event] = [host_id]
             else:
                 if host_id not in event_mapping[event]:
@@ -218,19 +182,6 @@ def weight_edge_list(glist, n, event_mapping):
                 G.edges[edge[0], edge[1], edge[2]]["Rareness"] = r
                 G.edges[edge[0], edge[1], edge[2]]["weight"] = 0 - math.log(r, 2)
         i += 1
-    # # output the weight edge result
-    # sort_edges = sorted(G.edges(data=True, keys=True), key=lambda t: t[0])
-    # with open("list.txt", "w") as file:
-    #     file.write("")
-    # for edge in sort_edges:
-    #     list_write_to_file(edge)
-    # file1 = 'loop.txt'
-    # file2 = 'table.txt'
-    # file3 = 'list.txt'
-    # file4 = 'correct.txt'
-    # output_file = 'compare.txt'
-    # merge_files(file1, file2, file3, file4, output_file)
-
     return glist
 
 def path_embedding(text_list, model_path, alpha, dm=1, vector_size=100, epochs=100, window_size=5, is_train=True):
@@ -265,12 +216,7 @@ def extract_and_embed_paths(split_files, paras, cfg,type_data,is_test,trial=None
 
     base_dir = cfg.preprocessing.build_graphs._graphs_dir
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
-    train_g = []
-    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
-        file = path.split("/")[-1]
-        logger.info(f"Processing graph: {file}")
-        graph = torch.load(path)
-        train_g.append(graph)
+    train_g = [torch.load(path) for path in sorted_paths]
     # Weight graphs
     event_mapping = build_event_map(train_g)
     train_g = weight_edge_list(train_g, n_time_windows, event_mapping)
@@ -339,19 +285,6 @@ def extract_and_embed_paths(split_files, paras, cfg,type_data,is_test,trial=None
     return 0
 
 def main(cfg):
-    # TODO: support both word2vec and doc2vec
-    logger = get_logger(
-        name="embed_edges_by_provd",
-        filename=os.path.join(cfg.featurization.embed_edges._logs_dir, "embed_edges.log")
-    )
-
-    logger.info("Loading node msg from database...")
-    cur, connect = init_database_connection(cfg)
-    indexid2msg = get_indexid2msg(cur)
-
-    logger.info("Generating node vectors...")
-    doc2vec_model_path = cfg.featurization.embed_nodes.doc2vec._model_dir + 'doc2vec_model.model'
-
     paras = {}
     paras["n_time_windows"] = 100
     paras["k"] = 20
@@ -366,8 +299,6 @@ def main(cfg):
     extract_and_embed_paths(cfg.dataset.train_files,  paras,cfg,"train",False,trial=None, is_finetune=False)
     #extract_and_embed_paths(cfg.dataset.val_files, paras,cfg, "val",False, trial=None, is_finetune=False)
     extract_and_embed_paths(cfg.dataset.test_files,  paras, cfg,"test",True, trial=None, is_finetune=False)
-    # Vectorize training set
-
 
 
 if __name__ == '__main__':
