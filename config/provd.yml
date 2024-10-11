@@ -1,0 +1,38 @@
+preprocessing:
+  build_graphs:
+    used_method: orthrus
+    use_all_files: True
+    time_window_size: 15.0
+    use_hashed_label: False
+    node_label_features:
+      subject: type, path
+      file: type, path
+      netflow: type, remote_ip, remote_port
+  transformation:
+    used_methods: dag
+
+featurization:
+  embed_nodes:
+    emb_dim: 100
+    epochs: 100
+    training_split: train
+    use_seed: True
+    used_method: provd
+    provd:
+      alpha: 0.025
+      k: 20
+      mpl: 10
+      n_time_windows: 100
+      n_neighbors: 20
+      contamination: 0.04
+  embed_edges:
+    to_remove: True
+
+detection:
+  gnn_training:
+    used_method: provd
+
+  evaluation:
+    viz_malicious_nodes: False
+    ground_truth_version: darpa_v4
+    used_method: node_evaluation

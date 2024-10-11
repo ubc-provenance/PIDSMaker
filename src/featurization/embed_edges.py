@@ -8,6 +8,7 @@ from .embed_edges_methods import (
     embed_edges_feature_word2vec,
     embed_edges_TRW,
     embed_edges_flash,
+    embed_edges_provd,
 )
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
@@ -73,6 +74,12 @@ def get_indexid2vec(cfg):
     raise ValueError(f"Invalid node embedding method {method}")
 
 def main(cfg):
+    method = cfg.featurization.embed_nodes.used_method.strip()
+    # Specific methods here
+    if method == "provd":
+        embed_edges_provd.main(cfg)
+        return
+        
     rel2id = get_rel2id(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)

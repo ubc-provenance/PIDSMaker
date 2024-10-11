@@ -17,7 +17,7 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    feature_word2vec_model_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir + 'feature_word2vec.model'
+    feature_word2vec_model_path = cfg.featurization.embed_nodes._model_dir + 'feature_word2vec.model'
     model = Word2Vec.load(feature_word2vec_model_path)
     
     decline_percentage = cfg.featurization.embed_nodes.feature_word2vec.decline_rate

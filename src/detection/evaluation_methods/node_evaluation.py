@@ -10,7 +10,7 @@ from .evaluation_utils import *
 from labelling import get_GP_of_each_attack
 
 
-def get_node_predictions(val_tw_path, test_tw_path, cfg):
+def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
@@ -63,7 +63,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg):
         
     return results
 
-def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
+def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
@@ -151,6 +151,23 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg):
         
     return results
 
+def get_node_predictions_provd(cfg, **kwargs):
+    ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
+    node_list = torch.load(os.path.join(cfg.featurization.embed_edges._model_dir, "node_list.pkl"))
+    
+    results = defaultdict(dict)
+    for d in node_list:
+        node_id = d["node"]
+        score = d["score"]
+        y_hat = d["y_hat"]
+        
+        results[node_id]["score"] = score
+        results[node_id]["tw_with_max_loss"] = 0
+        results[node_id]["y_true"] = int(node_id in ground_truth_nids)
+        results[node_id]["time_range"] = None
+        results[node_id]["y_hat"] = y_hat
+
+    return results
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
     log(f"Analysis of false positives:")
@@ -170,8 +187,14 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     return fp_in_malicious_tw_ratio
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    get_preds_fn = get_node_predictions_node_level if cfg._is_node_level else get_node_predictions
-    results = get_preds_fn(val_tw_path, test_tw_path, cfg)
+    if cfg.detection.gnn_training.used_method == "provd": 
+        get_preds_fn = get_node_predictions_provd
+    elif cfg._is_node_level:
+        get_preds_fn = get_node_predictions_node_level
+    else:
+        get_preds_fn = get_node_predictions
+    
+    results = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
     node_to_path = get_node_to_path_and_type(cfg)
 
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
@@ -199,10 +222,11 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             
             if y_hat:
                 for att, d in attack_to_GPs.items():
-                    start_att, end_att = d["time_range"]
-                    start_node, end_node = result["time_range"]
-                    if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
-                        attack_to_TPs[att] += 1
+                    if "time_range" in result and result["time_range"]:
+                        start_att, end_att = d["time_range"]
+                        start_node, end_node = result["time_range"]
+                        if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
+                            attack_to_TPs[att] += 1
 
     # Plots the PR curve and scores for mean node loss
     print(f"Saving figures to {out_dir}...")

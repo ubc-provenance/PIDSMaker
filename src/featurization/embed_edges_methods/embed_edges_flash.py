@@ -42,7 +42,7 @@ class PositionalEncoder:
 def main(cfg):
     log_start(__file__)
     
-    trained_w2v_dir = cfg.featurization.embed_nodes.flash._model_dir
+    trained_w2v_dir = cfg.featurization.embed_nodes._model_dir
     w2vmodel = Word2Vec.load(os.path.join(trained_w2v_dir, "word2vec_model_final.model"))
     w2v_vector_size = cfg.featurization.embed_nodes.emb_dim
 

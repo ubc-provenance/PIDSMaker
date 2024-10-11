@@ -8,6 +8,7 @@ from .embed_nodes_methods import (
     embed_nodes_trw,
     embed_nodes_flash,
     embed_nodes_fasttext,
+    embed_paths_provd,
 )
 
 
@@ -31,6 +32,8 @@ def main(cfg):
         embed_nodes_flash.main(cfg)
     elif method == "fasttext":
         embed_nodes_fasttext.main(cfg)
+    elif method == "provd":
+        embed_paths_provd.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 

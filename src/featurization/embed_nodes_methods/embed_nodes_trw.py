@@ -93,7 +93,7 @@ def update_word2vec(corpus, model_save_path, cfg):
 
 def main(cfg):
     log_start(__file__)
-    model_save_path = cfg.featurization.embed_nodes.temporal_rw._model_dir
+    model_save_path = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
     log(f"Building TRW based word2vec model and save model to {model_save_path}")
