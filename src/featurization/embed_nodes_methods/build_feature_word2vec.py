@@ -60,7 +60,7 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
 
 def main(cfg):
     log_start(__file__)
-    model_save_path = cfg.featurization.embed_nodes.feature_word2vec._model_dir
+    model_save_path = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
     log(f"Building feature word2vec model and save model to {model_save_path}")

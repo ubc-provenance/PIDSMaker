@@ -8,7 +8,7 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
     
-    doc2vec_model_path = os.path.join(cfg.featurization.embed_nodes.doc2vec._model_dir, 'doc2vec_model.model')
+    doc2vec_model_path = os.path.join(cfg.featurization.embed_nodes._model_dir, 'doc2vec_model.model')
     model = Doc2Vec.load(doc2vec_model_path)
 
     indexid2vec = {}

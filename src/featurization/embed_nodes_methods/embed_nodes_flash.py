@@ -85,7 +85,7 @@ def main(cfg):
     model.build_vocab(RepeatableIterator(all_phrases), progress_per=10000)
     model.train(RepeatableIterator(all_phrases), total_examples=model.corpus_count, epochs=epochs)
 
-    model_save_dir = cfg.featurization.embed_nodes.flash._model_dir
+    model_save_dir = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_dir, exist_ok=True)
     model.save(os.path.join(model_save_dir, "word2vec_model_final.model"))
 

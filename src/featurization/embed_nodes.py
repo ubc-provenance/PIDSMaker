@@ -8,6 +8,7 @@ from .embed_nodes_methods import (
     embed_nodes_trw,
     embed_nodes_flash,
     embed_nodes_fasttext,
+    provd_embed_paths,
 )
 
 
@@ -18,7 +19,7 @@ def main(cfg):
         embed_nodes_word2vec.main(cfg)
     elif method == "doc2vec":
         embed_nodes_doc2vec.main(cfg)
-    elif method == "hierarchical_hashing" or method == "only_type" or method == "magic" or method == "provd":
+    elif method == "hierarchical_hashing" or method == "only_type" or method == "magic":
         # hierarchical feature hashing doesn't need to build or train any model
         # so we do nothing here and generate vectorized graphs directly in embed_edges.py
         pass
@@ -31,6 +32,8 @@ def main(cfg):
         embed_nodes_flash.main(cfg)
     elif method == "fasttext":
         embed_nodes_fasttext.main(cfg)
+    elif method == "provd":
+        provd_embed_paths.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")
 

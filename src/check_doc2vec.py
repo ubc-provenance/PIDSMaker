@@ -228,7 +228,7 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    doc2vec_model_path = cfg.featurization.build_doc2vec._model_dir + 'doc2vec_model.model'
+    doc2vec_model_path = cfg.featurization.build_._model_dir + 'doc2vec_model.model'
     msg2vec = get_msg2vec(indexid2msg, doc2vec_model_path)
 
     # get_vec_csv(msg2vec, cfg.featurization.build_doc2vec._task_path)

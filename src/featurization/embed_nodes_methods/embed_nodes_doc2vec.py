@@ -14,7 +14,6 @@ from featurization.featurization_utils import *
 def doc2vec(cfg,
             tagged_data: list[str],
             model_save_path: str,
-            indexid2msg: dict,
             epochs: int,
             emb_dim: int,
             alpha: float,
@@ -33,10 +32,9 @@ def doc2vec(cfg,
 
 def main(cfg):
     log_start(__file__)
-    model_save_path = cfg.featurization.embed_nodes.doc2vec._model_dir
+    model_save_path = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_path,exist_ok=True)
 
-    indexid2msg = get_indexid2msg(cfg)
     
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
     if cfg.featurization.embed_nodes.doc2vec.include_neighbors:
@@ -53,7 +51,6 @@ def main(cfg):
     log(f"Start building and training Doc2Vec model...")
     doc2vec(tagged_data=tagged_data,
                   model_save_path=model_save_path,
-                  indexid2msg=indexid2msg,
                   epochs=epochs,
                   emb_dim=emb_dim,
                   alpha=alpha,

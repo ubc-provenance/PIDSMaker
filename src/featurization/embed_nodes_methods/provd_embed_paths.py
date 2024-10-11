@@ -1,5 +1,6 @@
 from provnet_utils import *
 from config import *
+from featurization.featurization_utils import get_splits_to_train_featurization
 
 from gensim.models.doc2vec import Doc2Vec
 
@@ -90,12 +91,12 @@ def text_extraction(path, G):
     return text
 
 def build_text_list(path_list, G):
-    text_list = []
+    corpus = []
     for path in path_list:
-        text_list.append(
+        corpus.append(
             text_extraction(path[0], G)
         )
-    return text_list
+    return corpus
 
 def build_event_map(graph_list:list):
     event_mapping = {}
@@ -184,117 +185,63 @@ def weight_edge_list(glist, n, event_mapping):
         i += 1
     return glist
 
-def path_embedding(text_list, model_path, alpha, dm=1, vector_size=100, epochs=100, window_size=5, is_train=True):
-    if is_train:
-        train_data = []
-        for text in text_list:
-            document = TaggedDocument(text, tags=[text_list.index(text)])
-            train_data.append(document)
+def get_node2corpus(splits, cfg, model=None):
+    n_time_windows = cfg.featurization.embed_nodes.provd.n_time_windows
+    k = cfg.featurization.embed_nodes.provd.k
+    mpl = cfg.featurization.embed_nodes.provd.mpl
 
-        model = Doc2Vec(train_data, dm=dm, vector_size=vector_size, window=window_size, alpha=alpha, seed=0)
-        model.train(train_data, epochs=epochs, total_examples=model.corpus_count)
-        model.save(model_path)
-    else:
-        model = Doc2Vec.load(model_path)
-
-    path_vectors = []
-    for text in text_list:
-        model.random.seed(0)
-        pv = model.infer_vector(text)
-        path_vectors.append(pv)
-
-    return path_vectors
-
-def extract_and_embed_paths(split_files, paras, cfg,type_data,is_test,trial=None, is_finetune = False):
-    n_time_windows = paras["n_time_windows"]
-    k = paras["k"]
-    vd = paras["vd"]
-    ws = paras["ws"]
-    epoch = paras["epoch"]
-    alpha = paras["alpha"]
-    mpl = paras["mpl"]
-
-    base_dir = cfg.preprocessing.transformation._graphs_dir
-    sorted_paths = get_all_files_from_folders(base_dir, split_files)
+    days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
+    sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, days)
     train_g = [torch.load(path) for path in sorted_paths]
+    
     # Weight graphs
     event_mapping = build_event_map(train_g)
     train_g = weight_edge_list(train_g, n_time_windows, event_mapping)
 
+    # extract and embed paths
+    train_files = sorted_paths
+    corpus = []
+    i = 0
+    for graph in tqdm(train_g, desc='Extracting the paths for '):
+        cycles = list(nx.simple_cycles(graph))
+        if cycles:
+            raise RuntimeError("The graph contains cycles, use transformation 'dag'.")
 
-    output_dir = cfg.featurization.embed_edges._edge_embeds_dir
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        top_uncommon_paths = top_k_path(graph, k, mpl)
+        texts = build_text_list(top_uncommon_paths, graph)
+        corpus += texts
+        i += 1
+        
+    return corpus
 
-    if not is_test:
-        # extract and embed paths
-        train_files = sorted_paths
-        text_list = []
-        i = 0
-        for graph in tqdm(train_g, desc='Extracting the paths from training set'):
-            cycles = list(nx.simple_cycles(graph))
-            if cycles:
-                raise RuntimeError("The graph contains cycles, use transformation 'dag'.")
+def train_doc2vec(corpus, model_path, alpha, vector_size, epochs):
+    train_data = [TaggedDocument(text, tags=[corpus.index(text)]) for text in corpus]
 
-            top_uncommon_paths = top_k_path(graph, k, mpl)
-            texts = build_text_list(top_uncommon_paths, graph)
-            text_list += texts
-            i += 1
-        train_pv = path_embedding(
-            text_list=text_list,
-            model_path=output_dir +type_data,
+    doc2vec(tagged_data=train_data,
+            model_save_path=model_path,
+            epochs=epochs,
+            emb_dim=vector_size,
             alpha=alpha,
-            vector_size=vd,
-            epochs=epoch,
-            window_size=ws,
-            is_train=True)
+            cfg=cfg)
 
-        train_pv_path = output_dir+type_data + "embeddings.npy"
-        np.save(train_pv_path, train_pv)
 
-    if is_test:
-        tested_graphs = {}
-        test_files = sorted_paths
-        i = 0
-        for file in test_files:
-            tested_graphs[file] = train_g[i]
-            i += 1
-        tested_paths = {}
-        for graph in tqdm(train_g, desc='Extracting the paths from testing set'):
-            top_uncommon_paths = top_k_path(graph, k, mpl)
-            text_list = build_text_list(top_uncommon_paths, graph)
-            path_vectors = path_embedding(
-                text_list=text_list,
-                model_path=output_dir +type_data,
-                alpha=alpha,
-                vector_size=vd,
-                epochs=epoch,
-                window_size=ws,
-                is_train=False)
-            tested_paths[file_name] = [path_vectors, top_uncommon_paths, text_list]
-        test_pv_path = output_dir +type_data,+type_data + "embeddings.npy"
-        with open(test_pv_path, "wb") as f:
-            pickle.dump(tested_paths, f)
-            f.close()
-        #test_path_stats_path = "./Test_path" + "test_path_stats.csv"
-    #report_paths_stats_info(tested_paths, test_path_stats_path,k)
-    return 0
+def main(cfg):    
+    model_save_dir = cfg.featurization.embed_nodes._model_dir
 
-def main(cfg):
-    paras = {}
-    paras["n_time_windows"] = 100
-    paras["k"] = 20
-    paras["vd"] = 100
-    paras["ws"] = 5
-    paras["epoch"] = 100
-    paras["alpha"] = 0.025
-    paras["n_neighbors"] = 20
-    paras["contamination"] = 0.04
-    paras["mpl"] = 10
-
-    extract_and_embed_paths(cfg.dataset.train_files,  paras,cfg,"train",False,trial=None, is_finetune=False)
-    #extract_and_embed_paths(cfg.dataset.val_files, paras,cfg, "val",False, trial=None, is_finetune=False)
-    extract_and_embed_paths(cfg.dataset.test_files,  paras, cfg,"test",True, trial=None, is_finetune=False)
+    splits = get_splits_to_train_featurization(cfg)
+    corpus = get_node2corpus(splits, cfg)
+    
+    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    epochs = cfg.featurization.embed_nodes.epochs
+    alpha = cfg.featurization.embed_nodes.provd.alpha
+    
+    train_doc2vec(
+        corpus=corpus,
+        model_path=model_save_dir,
+        alpha=alpha,
+        vector_size=emb_dim,
+        epochs=epochs,
+    )
 
 
 if __name__ == '__main__':

@@ -27,7 +27,7 @@ def main(cfg):
     
     indexid2msg = get_indexid2msg(cfg)
     
-    trw_word2vec_model_path = cfg.featurization.embed_nodes.temporal_rw._model_dir + 'trw_word2vec.model'
+    trw_word2vec_model_path = cfg.featurization.embed_nodes._model_dir + 'trw_word2vec.model'
     model = Word2Vec.load(trw_word2vec_model_path)
     decline_percentage = cfg.featurization.embed_nodes.temporal_rw.decline_rate
 
