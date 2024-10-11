@@ -2,6 +2,7 @@ from config import *
 from .training_methods import (
     orthrus_gnn_training,
     magic_testing,
+    provd_testing,
 )
 
 def main(cfg):
@@ -10,6 +11,8 @@ def main(cfg):
         orthrus_gnn_training.main(cfg)
     elif method == 'magic':
         magic_testing.main(cfg)
+    elif method == "provd":
+        provd_testing.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")
 

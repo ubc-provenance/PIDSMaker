@@ -5,6 +5,7 @@ from config import *
 from featurization.featurization_utils import get_splits_to_train_featurization
 from .embed_nodes_doc2vec import doc2vec
 
+from sklearn.neighbors import LocalOutlierFactor
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 def get_edge_key(u, v, graph):
@@ -241,7 +242,7 @@ def main(cfg):
     epochs = cfg.featurization.embed_nodes.epochs
     alpha = cfg.featurization.embed_nodes.provd.alpha
 
-    doc2vec(
+    model = doc2vec(
         tagged_data=train_data,
         model_save_path=model_save_dir,
         epochs=epochs,
@@ -249,6 +250,24 @@ def main(cfg):
         alpha=alpha,
         cfg=cfg,
     )
+    
+    # Train classifier on training benign path embeddings
+    path2vec = {}
+    for _, corpus in node2corpus.items():
+        for path in corpus:
+            if str(path) not in path2vec:
+                vector = model.infer_vector(path)
+                path2vec[str(path)] = vector
+    
+    training_vectors = np.array(list(path2vec.values()))
+    
+    n_neighbors = cfg.featurization.embed_nodes.provd.n_neighbors
+    contamination = cfg.featurization.embed_nodes.provd.contamination
+    
+    log("Training LOF model")
+    clf = LocalOutlierFactor(novelty=True, n_neighbors=n_neighbors, contamination=contamination)
+    clf.fit(training_vectors)
+    torch.save(clf, os.path.join(model_save_dir, "lof.pkl"))
 
 
 if __name__ == '__main__':

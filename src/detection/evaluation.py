@@ -23,7 +23,10 @@ def standard_evaluation(cfg, evaluation_fn):
     tw_to_malicious_nodes = compute_tw_labels(cfg)
     
     best_mcc, best_stats = -1e6, {}
-    for model_epoch_dir in listdir_sorted(test_losses_dir):
+    
+    sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
+        
+    for model_epoch_dir in sorted_files:
         log(f"Evaluation of model {model_epoch_dir}...")
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)

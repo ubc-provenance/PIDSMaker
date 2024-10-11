@@ -29,6 +29,7 @@ def doc2vec(cfg,
     log(f'Saving Doc2Vec model to {model_save_path}')
     os.makedirs(model_save_path, exist_ok=True)
     model.save(os.path.join(model_save_path, 'doc2vec_model.model'))
+    return model
 
 
 def main(cfg):
