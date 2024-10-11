@@ -8,6 +8,7 @@ from .embed_edges_methods import (
     embed_edges_feature_word2vec,
     embed_edges_TRW,
     embed_edges_flash,
+    provd_embed_paths,
 )
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
@@ -67,6 +68,8 @@ def get_indexid2vec(cfg):
         return embed_edges_TRW.main(cfg)
     if method == 'flash':
         return embed_edges_flash.main(cfg)
+    if method == "provd":
+        return provd_embed_paths.main(cfg)
     if method == 'magic':
         raise EnvironmentError("TODO (see with Baoxiang)")
     
