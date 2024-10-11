@@ -53,16 +53,10 @@ def main(cfg):
     model_save_path = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
-    log(f"Building feature word2vec model and save model to {model_save_path}")
-
-    log(f"Get indexid2msg from database...")
-    indexid2msg = get_indexid2msg(cfg)
-
-    log(f"Start building and training feature word2vec model...")
-
     log("Loading and tokenizing corpus from database...")
     corpus = get_corpus(cfg)
 
+    log(f"Building feature word2vec model and save model to {model_save_path}")
     train_feature_word2vec(corpus=corpus,
                            cfg=cfg,
                            model_save_path=model_save_path)

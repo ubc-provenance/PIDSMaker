@@ -21,8 +21,9 @@ featurization:
     fasttext:
       min_count: 2
       alpha: 0.01
-      window: 3
+      window_size: 3
       negative: 3
+      num_workers: 30
   embed_edges:
     to_remove: True
 
