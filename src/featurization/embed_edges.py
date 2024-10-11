@@ -8,7 +8,7 @@ from .embed_edges_methods import (
     embed_edges_feature_word2vec,
     embed_edges_TRW,
     embed_edges_flash,
-    provd_embed_paths,
+    embed_edges_provd,
 )
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
@@ -68,14 +68,18 @@ def get_indexid2vec(cfg):
         return embed_edges_TRW.main(cfg)
     if method == 'flash':
         return embed_edges_flash.main(cfg)
-    if method == "provd":
-        return provd_embed_paths.main(cfg)
     if method == 'magic':
         raise EnvironmentError("TODO (see with Baoxiang)")
     
     raise ValueError(f"Invalid node embedding method {method}")
 
 def main(cfg):
+    method = cfg.featurization.embed_nodes.used_method.strip()
+    # Specific methods here
+    if method == "provd":
+        embed_edges_provd.main(cfg)
+        return
+        
     rel2id = get_rel2id(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)

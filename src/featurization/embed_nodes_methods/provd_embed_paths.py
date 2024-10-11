@@ -1,8 +1,11 @@
+from collections import defaultdict
+from itertools import chain
 from provnet_utils import *
 from config import *
 from featurization.featurization_utils import get_splits_to_train_featurization
+from .embed_nodes_doc2vec import doc2vec
 
-from gensim.models.doc2vec import Doc2Vec
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 def get_edge_key(u, v, graph):
     edge_number_between_nodes = graph.new_edge_key(u, v) - 1
@@ -14,7 +17,7 @@ def get_edge_key(u, v, graph):
             edge_key = k
     return edge_key
 
-def top_k_path(G, k, max_path_length):
+def get_node2paths(G, k, max_path_length):
     def shortest_path(graph: nx.MultiDiGraph, src, max_path_length):
         if graph.out_degree(src) == 0:
             return None
@@ -55,17 +58,31 @@ def top_k_path(G, k, max_path_length):
     # According to the wiki, finding the longest path on a dag G is equal to find the shortest path on -G
     for (u, v, key) in G.edges(keys=True):
         G.edges[u, v, key]["weight"] = 0 - G.edges[u, v, key]["weight"]
-    top_uncommon_paths = []
+    
     topo_order = nx.topological_sort(G)
+    top_uncommon_node2paths = defaultdict(list)
+    node2paths_cache = defaultdict(set) # we don't want duplicate paths for a node
+    token_cache = {}
+    def get_token(w):
+        if w not in token_cache:
+            token_cache[w] = tokenize_arbitrary_label(w)
+        return token_cache[w]
+    
     for src_node in topo_order:
         paths = shortest_path(G, src_node, max_path_length)
         if paths:
             for path in paths:
-                if path not in top_uncommon_paths:
-                    top_uncommon_paths.append(path)
+                path, score = path # todo: consider score + keep k
+                path_str = str(path)
+                if path_str not in node2paths_cache[src_node]:
+                    node2paths_cache[src_node].add(path_str)
+                    
+                    text_path = text_extraction(path, G)
+                    tokenized_path = list(chain(*[get_token(w) for w in text_path]))
+                    
+                    top_uncommon_node2paths[src_node].append([tokenized_path, score])
 
-    top_uncommon_paths = sorted(top_uncommon_paths, key=(lambda x: x[1]))[:k]
-    return top_uncommon_paths
+    return top_uncommon_node2paths
 
 def text_extraction(path, G):
     text = []
@@ -73,8 +90,8 @@ def text_extraction(path, G):
         src = edge[0]
         dst = edge[1]
 
-        src_text = G.nodes[src]['name'] if "name" in list(dict(G.nodes[src]).keys()) else G.nodes[src]['label']
-        dst_text = G.nodes[dst]['name'] if "name" in list(dict(G.nodes[dst]).keys()) else G.nodes[dst]['label']
+        src_text = G.nodes[src]['label']
+        dst_text = G.nodes[dst]['label']
 
         # As in top-k path extraction algorithm, we always select the edge with the lowest weight.
         edge_key = get_edge_key(src, dst, G)
@@ -89,14 +106,6 @@ def text_extraction(path, G):
             text.append(dst_text)
 
     return text
-
-def build_text_list(path_list, G):
-    corpus = []
-    for path in path_list:
-        corpus.append(
-            text_extraction(path[0], G)
-        )
-    return corpus
 
 def build_event_map(graph_list:list):
     event_mapping = {}
@@ -201,46 +210,44 @@ def get_node2corpus(splits, cfg, model=None):
     # extract and embed paths
     train_files = sorted_paths
     corpus = []
-    i = 0
-    for graph in tqdm(train_g, desc='Extracting the paths for '):
+    all_node2paths = defaultdict(list)
+    for graph in tqdm(train_g, desc=f'Extracting the paths for {splits}'):
         cycles = list(nx.simple_cycles(graph))
         if cycles:
             raise RuntimeError("The graph contains cycles, use transformation 'dag'.")
 
-        top_uncommon_paths = top_k_path(graph, k, mpl)
-        texts = build_text_list(top_uncommon_paths, graph)
-        corpus += texts
-        i += 1
+        node2paths = get_node2paths(graph, k, mpl)
         
-    return corpus
-
-def train_doc2vec(corpus, model_path, alpha, vector_size, epochs):
-    train_data = [TaggedDocument(text, tags=[corpus.index(text)]) for text in corpus]
-
-    doc2vec(tagged_data=train_data,
-            model_save_path=model_path,
-            epochs=epochs,
-            emb_dim=vector_size,
-            alpha=alpha,
-            cfg=cfg)
+        for node, paths in node2paths.items():
+            all_node2paths[node].extend(paths)
+            
+    # For each node, we keep its k most uncommon paths
+    for node, paths in all_node2paths.items():
+        all_node2paths[node] = [path[0] for path in sorted(paths, key=(lambda x: x[1]))[:k]]
+        
+    return all_node2paths
 
 
 def main(cfg):    
     model_save_dir = cfg.featurization.embed_nodes._model_dir
 
     splits = get_splits_to_train_featurization(cfg)
-    corpus = get_node2corpus(splits, cfg)
+    node2corpus = get_node2corpus(splits, cfg)
+    corpus = [list(chain(*v)) for k, v in node2corpus.items()]
+    
+    train_data = [TaggedDocument(text, tags=[corpus.index(text)]) for text in corpus]
     
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     epochs = cfg.featurization.embed_nodes.epochs
     alpha = cfg.featurization.embed_nodes.provd.alpha
-    
-    train_doc2vec(
-        corpus=corpus,
-        model_path=model_save_dir,
-        alpha=alpha,
-        vector_size=emb_dim,
+
+    doc2vec(
+        tagged_data=train_data,
+        model_save_path=model_save_dir,
         epochs=epochs,
+        emb_dim=emb_dim,
+        alpha=alpha,
+        cfg=cfg,
     )
 
 
