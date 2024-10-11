@@ -16,7 +16,7 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
     min_count = cfg.featurization.embed_nodes.feature_word2vec.min_count
     use_skip_gram = cfg.featurization.embed_nodes.feature_word2vec.use_skip_gram
     num_workers = cfg.featurization.embed_nodes.feature_word2vec.num_workers
-    epochs = cfg.featurization.embed_nodes.feature_word2vec.epochs
+    epochs = cfg.featurization.embed_nodes.epochs
     compute_loss = cfg.featurization.embed_nodes.feature_word2vec.compute_loss
     negative = cfg.featurization.embed_nodes.feature_word2vec.negative
     use_seed = cfg.featurization.embed_nodes.use_seed

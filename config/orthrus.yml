@@ -14,6 +14,7 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
+    epochs: 50
     training_split: all
     used_method: feature_word2vec
     use_seed: True
@@ -27,18 +28,15 @@ featurization:
       min_count: 1
       use_skip_gram: True
       wv_workers: 6
-      epochs: 50
       compute_loss: True
       negative: 5
       decline_rate: 30
     doc2vec:
       include_neighbors: False
-      epochs: 100
       alpha: 0.025
     word2vec:
       walk_length: 30
       num_walks: 10
-      epochs: 5
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
@@ -50,7 +48,6 @@ featurization:
       min_count: 1
       use_skip_gram: True
       num_workers: 6
-      epochs: 50
       compute_loss: True
       negative: 5
       decline_rate: 30
@@ -89,6 +86,7 @@ detection:
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
+        balanced_loss: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu

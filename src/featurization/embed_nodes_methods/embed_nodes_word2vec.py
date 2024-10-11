@@ -415,7 +415,7 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
     matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None
     model_input = os.path.join(out_dir, "model.bin") if use_pretrained_model else None
 
-    epochs = cfg.featurization.embed_nodes.word2vec.epochs
+    epochs = cfg.featurization.embed_nodes.epochs
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     window_size = cfg.featurization.embed_nodes.word2vec.context_window_size
     min_count = cfg.featurization.embed_nodes.word2vec.min_count

@@ -88,7 +88,7 @@ def test_whole_framework(dataset: str):
         try:
             run_encoders(base_model, dataset, featurization_method)
             run_decoders(base_model, dataset, featurization_method)
-        except:
+        except EnvironmentError:
             pass
     
 

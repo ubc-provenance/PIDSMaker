@@ -30,7 +30,7 @@ def train_word2vec(corpus, model_save_path, cfg):
     min_count = cfg.featurization.embed_nodes.temporal_rw.min_count
     use_skip_gram = cfg.featurization.embed_nodes.temporal_rw.use_skip_gram
     num_workers = cfg.featurization.embed_nodes.temporal_rw.wv_workers
-    epochs = cfg.featurization.embed_nodes.temporal_rw.epochs
+    epochs = cfg.featurization.embed_nodes.epochs
     compute_loss = cfg.featurization.embed_nodes.temporal_rw.compute_loss
     negative = cfg.featurization.embed_nodes.temporal_rw.negative
     use_seed = cfg.featurization.embed_nodes.use_seed
@@ -73,7 +73,7 @@ def train_word2vec(corpus, model_save_path, cfg):
     log(f"Save word2vec to {os.path.join(model_save_path, 'trw_word2vec.model')}")
 
 def update_word2vec(corpus, model_save_path, cfg):
-    epochs = cfg.featurization.embed_nodes.temporal_rw.epochs
+    epochs = cfg.featurization.embed_nodes.epochs
     compute_loss = cfg.featurization.embed_nodes.temporal_rw.compute_loss
 
     log(f"Loading word2vec from {model_save_path}")

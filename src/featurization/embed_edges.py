@@ -7,6 +7,7 @@ from .embed_edges_methods import (
     embed_edges_HFH,
     embed_edges_feature_word2vec,
     embed_edges_TRW,
+    embed_edges_flash,
 )
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
@@ -64,7 +65,9 @@ def get_indexid2vec(cfg):
         return None
     if method == "temporal_rw":
         return embed_edges_TRW.main(cfg)
-    if method == "flash" or method == 'magic':
+    if method == 'flash':
+        return embed_edges_flash.main(cfg)
+    if method == 'magic':
         raise EnvironmentError("TODO (see with Baoxiang)")
     
     raise ValueError(f"Invalid node embedding method {method}")
