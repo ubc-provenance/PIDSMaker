@@ -151,14 +151,14 @@ def main(cfg, gen_index2vec=False):
     indexid2msg = get_indexid2msg(cfg)
 
     fig_name = f"tsne_different_files.png"
-    fig_save_dir = os.path.join(cfg.featurization.build_doc2vec._task_path, "test_HFH/")
+    fig_save_dir = os.path.join(cfg.featurization.embed_nodes._task_path, "test_HFH/")
     os.makedirs(fig_save_dir, exist_ok=True)
     fig_path = os.path.join(fig_save_dir, fig_name)
 
     dict_name = f"indexid2vec.pth"
     indexid2vec_path = os.path.join(fig_save_dir, dict_name)
 
-    vec_size = cfg.featurization.build_doc2vec.vec_size
+    vec_size = cfg.featurization.embed_nodes.vec_size
 
     if gen_index2vec:
         log("Start generating indexid2vec...")

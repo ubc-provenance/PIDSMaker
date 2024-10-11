@@ -1,7 +1,7 @@
 from collections import defaultdict
 from provnet_utils import *
 from config import *
-from featurization.embed_nodes_methods.provd_embed_paths import get_node2corpus
+from featurization.embed_nodes_methods.embed_paths_provd import get_node2corpus
 
 from gensim.models.doc2vec import Doc2Vec
 
