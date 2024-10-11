@@ -38,7 +38,9 @@ def reduce_losses_to_score(losses: list[float], threshold_method: str):
     threshold_method = threshold_method.strip()
     if threshold_method == "mean_val_loss":
         return np.mean(losses)
-    elif threshold_method == "max_val_loss":
+    elif threshold_method == "max_val_loss" or \
+        threshold_method == "threatrace" or \
+        threshold_method == "flash":
         return np.max(losses)
     raise ValueError(f"Invalid threshold method {threshold_method}")
 

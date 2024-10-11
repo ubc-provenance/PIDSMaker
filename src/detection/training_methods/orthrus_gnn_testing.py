@@ -148,7 +148,8 @@ def test_node_level(
         elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
             pred = out.max(1)[1]
             sorted, indices = out.sort(dim=1, descending=True)
-            conf = (sorted[:, 0] - sorted[:, 1]) / sorted[:, 0]
+            eps = 1e-6
+            conf = (sorted[:, 0] - sorted[:, 1]) / (sorted[:, 0] + eps)
             conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
 
             node_type_num = batch.node_type.argmax(1)
