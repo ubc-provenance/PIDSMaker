@@ -24,6 +24,7 @@ featurization:
       window_size: 3
       negative: 3
       num_workers: 30
+      use_pretrained_fb_model: False
   embed_edges:
     to_remove: True
 

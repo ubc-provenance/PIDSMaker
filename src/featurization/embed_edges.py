@@ -9,6 +9,7 @@ from .embed_edges_methods import (
     embed_edges_TRW,
     embed_edges_flash,
     embed_edges_provd,
+    embed_edges_fasttext,
 )
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
@@ -68,6 +69,8 @@ def get_indexid2vec(cfg):
         return embed_edges_TRW.main(cfg)
     if method == 'flash':
         return embed_edges_flash.main(cfg)
+    if method == 'fasttext':
+        return embed_edges_fasttext.main(cfg)
     if method == 'magic':
         raise EnvironmentError("TODO (see with Baoxiang)")
     
