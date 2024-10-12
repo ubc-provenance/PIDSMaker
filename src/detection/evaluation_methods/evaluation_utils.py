@@ -30,8 +30,8 @@ def get_threshold(val_tw_path, threshold_method: str):
         return 1.5
     elif threshold_method == "flash":
         return 0.53
-    # elif threshold_method == "90_percent_val_loss":
-    #     return calculate_threshold(val_tw_path)['percentile_90']
+    elif threshold_method == "nodlink":
+        return calculate_threshold(val_tw_path)['percentile_90']
     raise ValueError(f"Invalid threshold method `{threshold_method}`")
 
 def reduce_losses_to_score(losses: list[float], threshold_method: str):
@@ -40,7 +40,8 @@ def reduce_losses_to_score(losses: list[float], threshold_method: str):
         return np.mean(losses)
     elif threshold_method == "max_val_loss" or \
         threshold_method == "threatrace" or \
-        threshold_method == "flash":
+        threshold_method == "flash" or \
+        threshold_method == "nodlink":
         return np.max(losses)
     raise ValueError(f"Invalid threshold method {threshold_method}")
 

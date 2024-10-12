@@ -12,12 +12,19 @@ def sce_loss(x, y, alpha=3, inference=False, **kwargs):
         loss = loss.mean()
     return loss
 
-def mse_loss(x, y, inference=False, **kwargs):
+def mse_loss(x, y, inference=False, reduction="mean", is_mae=False, **kwargs):
+    loss_fn = F.l1_loss if is_mae else F.mse_loss
     if inference:
-        losses = F.mse_loss(x, y, reduction="none")
+        losses = loss_fn(x, y, reduction="none")
         return torch.sum(losses, dim=1)
     
-    return F.mse_loss(x, y, reduction="mean")
+    return loss_fn(x, y, reduction=reduction)
+
+def mse_loss_sum(x, y, **kwargs):
+    return mse_loss(x, y, reduction="sum", **kwargs)
+
+def mae_loss(x, y, **kwargs):
+    return mse_loss(x, y, is_mae=True, **kwargs)
 
 def bce_contrastive(positive, negative, inference=False, **kwargs):
     reduction = "none" if inference else "mean"

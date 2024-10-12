@@ -5,7 +5,7 @@ from torch_geometric.loader import NeighborLoader
 from provnet_utils import *
 from config import *
 from model import *
-from losses import sce_loss, mse_loss, bce_contrastive, cross_entropy
+from losses import *
 from encoders import *
 from decoders import *
 from data_utils import *
@@ -335,6 +335,10 @@ def recon_loss_fn_factory(loss: str):
         return sce_loss
     if loss == "MSE":
         return mse_loss
+    if loss == "MSE_sum":
+        return mse_loss_sum
+    if loss == "MAE":
+        return mae_loss
     if loss == "none":
         return nn.Identity()
     raise ValueError(f"Invalid loss function {loss}")
