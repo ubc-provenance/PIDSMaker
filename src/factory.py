@@ -112,6 +112,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
             )
+        elif method == "sum_aggregation":
+            encoder = SumAggregation()
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -176,6 +178,11 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
+        )
+    elif method == "nodlink":
+        return NodLinkDecoder(
+            in_dim=in_dim,
+            out_dim=out_dim,
         )
     elif method == "none":
         return lambda x: x

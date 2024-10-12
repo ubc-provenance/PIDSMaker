@@ -35,18 +35,18 @@ detection:
     num_epochs: 6
     lr: 0.0001
     weight_decay: 0.0001
-    node_hid_dim: 128
-    node_out_dim: 3
+    node_hid_dim: 256
+    node_out_dim: 256
     encoder:
       node_features: node_emb
       neighbor_sampling: []
       edge_features: none
-      used_methods: rcaid_gat
+      used_methods: sum_aggregation
     decoder:
-      used_methods: predict_node_type
-      predict_node_type:
-        decoder: none
-        balanced_loss: False
+      used_methods: reconstruct_node_features
+      reconstruct_node_features:
+        loss: MSE
+        decoder: nodlink
 
   evaluation:
     viz_malicious_nodes: False
