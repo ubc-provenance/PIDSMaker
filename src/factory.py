@@ -113,7 +113,19 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 out_dim=node_out_dim,
             )
         elif method == "sum_aggregation":
-            encoder = SumAggregation()
+            encoder = SumAggregation(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+            )
+        elif method == "GIN":
+            encoder = GIN(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                edge_dim=edge_dim or None,
+                # activation=activation_fn_factory("relu"),
+            )
         else:
             raise ValueError(f"Invalid encoder {method}")
     

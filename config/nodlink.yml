@@ -45,7 +45,7 @@ detection:
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:
-        loss: MSE_sum
+        loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink
 
   evaluation:
