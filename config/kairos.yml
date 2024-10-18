@@ -39,9 +39,11 @@ detection:
         num_heads: 8
       tgn:
         tgn_batch_size: 1024
+        tgn_batch_size_test: 1024
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
+        tgn_neighbor_n_hop: 1
         use_node_feats_in_gnn: False
         use_memory: True
         use_time_order_encoding: False

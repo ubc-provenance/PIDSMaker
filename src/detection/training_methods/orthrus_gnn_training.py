@@ -36,9 +36,11 @@ def train(data,
 def main(cfg):
     log_start(__file__)
     device = get_device(cfg)
+    use_cuda = device == torch.device("cuda")
     
     # Reset the peak memory usage counter
-    torch.cuda.reset_peak_memory_stats(device=device)
+    if use_cuda:
+        torch.cuda.reset_peak_memory_stats(device=device)
 
     train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
 
@@ -48,7 +50,7 @@ def main(cfg):
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
-    for epoch in tqdm(range(0, num_epochs)):
+    for epoch in tqdm(range(0, num_epochs), "Training epochs"):
         start = timer()
 
         # Before each epoch, we reset the memory
@@ -75,8 +77,11 @@ def main(cfg):
         epoch_times.append(timer() - start)
         
         # Log peak CUDA memory usage
-        peak_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)  # Convert to GB
-        log(f'Peak CUDA memory usage Epoch {epoch}: {peak_memory:.2f} GB')
+        if use_cuda:
+            peak_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)  # Convert to GB
+            log(f'Peak CUDA memory usage Epoch {epoch}: {peak_memory:.2f} GB')
+        else:
+            peak_memory = 0
         
         wandb.log({
             "train_epoch": epoch,
