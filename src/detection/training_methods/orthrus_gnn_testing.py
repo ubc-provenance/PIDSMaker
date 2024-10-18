@@ -193,7 +193,11 @@ def test_node_level(
 
 
 def main(cfg, model, val_data, test_data, full_data, epoch):
-    device = get_device(cfg)
+    device = cfg.detection.gnn_training.encoder.tgn.tgn_device_inference.strip()
+    if device not in ["cpu", "cuda"]:
+        raise ValueError(f"Invalid inference device {device}")
+
+    device = torch.device(device)
     use_cuda = device == torch.device("cuda")
 
     model_epoch_file = f"model_epoch_{epoch}"

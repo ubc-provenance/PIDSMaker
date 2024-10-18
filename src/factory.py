@@ -337,7 +337,7 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         )
     # Use TGN batch loader
     if use_tgn:
-        batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_test if test_mode \
+        batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_inference if test_mode \
             else cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
         return custom_temporal_data_loader(data, batch_size=batch_size)
     

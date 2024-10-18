@@ -58,7 +58,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 3
+    num_epochs: 6
     lr: 0.00001
     weight_decay: 0.00001
     node_hid_dim: 128
@@ -75,7 +75,8 @@ detection:
         num_heads: 8
       tgn:
         tgn_batch_size: 1024
-        tgn_batch_size_test: 10
+        tgn_batch_size_inference: 10
+        tgn_device_inference: cpu
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
