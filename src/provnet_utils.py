@@ -11,9 +11,12 @@ import logging
 import shutil
 import torch
 from torch.nn import Linear
-from torch_geometric.nn import TransformerConv
+from torch_geometric.data import TemporalData
+from torch_geometric.nn import TGNMemory, TransformerConv
 import torch.nn as nn
 import torch.nn.functional as F
+from torch_geometric.nn.models.tgn import (LastNeighborLoader, IdentityMessage, MeanAggregator,
+                                           LastAggregator)
 import pandas as pd
 from torch_geometric import *
 from tqdm import tqdm

@@ -30,7 +30,7 @@ def test_edge_level(
     start = time.perf_counter()
 
     # NOTE: warning, this may reindex the data is TGN is not used
-    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer, test_mode=True)
+    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
 
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
@@ -194,12 +194,10 @@ def test_node_level(
 
 def main(cfg, model, val_data, test_data, full_data, epoch):
     device = get_device(cfg)
-    use_cuda = device == torch.device("cuda")
 
     model_epoch_file = f"model_epoch_{epoch}"
     log(f"Testing with model at epoch {epoch}...")
-    if use_cuda:
-        torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
 
     # TODO: we may want to move the validation set into the training for early stopping
     for graphs, split in [

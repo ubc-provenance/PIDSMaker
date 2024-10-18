@@ -9,7 +9,7 @@ from losses import *
 from encoders import *
 from decoders import *
 from data_utils import *
-from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
+from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -136,7 +136,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
         use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
-        tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
 
         if use_memory:
             memory = TGNMemory(
@@ -173,7 +172,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             use_time_enc=use_time_enc,
             edge_dim=edge_dim,
             use_time_order_encoding=use_time_order_encoding,
-            tgn_neighbor_n_hop=tgn_neighbor_n_hop,
         )
 
     return encoder
@@ -307,7 +305,7 @@ def edge_decoder_factory(edge_decoder, in_dim):
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
 
-def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
+def batch_loader_factory(cfg, data, graph_reindexer):
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
     
@@ -337,9 +335,7 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         )
     # Use TGN batch loader
     if use_tgn:
-        batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_test if test_mode \
-            else cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
-        return custom_temporal_data_loader(data, batch_size=batch_size)
+        return custom_temporal_data_loader(data, batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size)
     
     # Don't use any batching
     if graph_reindexer is not None:
