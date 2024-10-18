@@ -22,37 +22,27 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
     use_seed = cfg.featurization.embed_nodes.use_seed
     SEED = 0
 
-    if use_seed:
-        model = Word2Vec(corpus,
-                            vector_size=emb_dim,
-                            window=window_size,
-                            min_count=min_count,
-                            sg=use_skip_gram,
-                            workers=num_workers,
-                            epochs=1,
-                            compute_loss=compute_loss,
-                            negative=negative,
-                            seed=SEED)
-    else:
-        model = Word2Vec(corpus,
-                            vector_size=emb_dim,
-                            window=window_size,
-                            min_count=min_count,
-                            sg=use_skip_gram,
-                            workers=num_workers,
-                            epochs=1,
-                            compute_loss=compute_loss,
-                            negative=negative)
+    model = Word2Vec(corpus,
+                        vector_size=emb_dim,
+                        window=window_size,
+                        min_count=min_count,
+                        sg=use_skip_gram,
+                        workers=num_workers,
+                        epochs=1,
+                        compute_loss=compute_loss,
+                        negative=negative,
+                        seed=SEED)
+
+    epoch_loss = model.get_latest_training_loss()
+    log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
+
+    for epoch in range(epochs - 1):
+        model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
         epoch_loss = model.get_latest_training_loss()
-        log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
+        log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
 
-        for epoch in range(epochs - 1):
-            model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
-            epoch_loss = model.get_latest_training_loss()
-            log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
-
-        loss = model.get_latest_training_loss()
-        log(f"Epoch: {epochs}; loss: {loss}")
+    loss = model.get_latest_training_loss()
+    log(f"Epoch: {epochs}; loss: {loss}")
 
     model.init_sims(replace=True)
     model.save(os.path.join(model_save_path, 'feature_word2vec.model'))
@@ -63,16 +53,10 @@ def main(cfg):
     model_save_path = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
-    log(f"Building feature word2vec model and save model to {model_save_path}")
-
-    log(f"Get indexid2msg from database...")
-    indexid2msg = get_indexid2msg(cfg)
-
-    log(f"Start building and training feature word2vec model...")
-
     log("Loading and tokenizing corpus from database...")
     corpus = get_corpus(cfg)
 
+    log(f"Building feature word2vec model and save model to {model_save_path}")
     train_feature_word2vec(corpus=corpus,
                            cfg=cfg,
                            model_save_path=model_save_path)

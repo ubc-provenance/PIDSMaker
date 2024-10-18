@@ -5,7 +5,7 @@ from torch_geometric.loader import NeighborLoader
 from provnet_utils import *
 from config import *
 from model import *
-from losses import sce_loss, mse_loss, bce_contrastive, cross_entropy
+from losses import *
 from encoders import *
 from decoders import *
 from data_utils import *
@@ -112,6 +112,20 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
             )
+        elif method == "sum_aggregation":
+            encoder = SumAggregation(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+            )
+        elif method == "GIN":
+            encoder = GIN(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                edge_dim=edge_dim or None,
+                # activation=activation_fn_factory("relu"),
+            )
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -176,6 +190,11 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
+        )
+    elif method == "nodlink":
+        return NodLinkDecoder(
+            in_dim=in_dim,
+            out_dim=out_dim,
         )
     elif method == "none":
         return lambda x: x
@@ -328,6 +347,10 @@ def recon_loss_fn_factory(loss: str):
         return sce_loss
     if loss == "MSE":
         return mse_loss
+    if loss == "MSE_sum":
+        return mse_loss_sum
+    if loss == "MAE":
+        return mae_loss
     if loss == "none":
         return nn.Identity()
     raise ValueError(f"Invalid loss function {loss}")
