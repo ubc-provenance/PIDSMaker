@@ -226,6 +226,11 @@ class _Cache:
     def detach(self):
         self.src_cache = self.src_cache.detach()
         self.dst_cache = self.dst_cache.detach()
+        
+    def to(self, device):
+        self.src_cache = self.src_cache.to(device)
+        self.dst_cache = self.dst_cache.to(device)
+        return self
 
 class GraphReindexer:
     """
@@ -305,6 +310,16 @@ class GraphReindexer:
         x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple)
         
         return x, edge_index, n_id
+    
+    def to(self, device):
+        self.device = device
+        if self.assoc is not None:
+            self.assoc = self.assoc.to(device)
+
+        for k, v in self.cache.items():
+            self.cache[k] = v.to(device)
+        return self
+        
 
 def save_model(model, path: str, cfg):
     """

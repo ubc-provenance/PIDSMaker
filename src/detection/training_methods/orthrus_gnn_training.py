@@ -83,19 +83,13 @@ def main(cfg):
         else:
             peak_memory = 0
         
-        wandb.log({
-            "train_epoch": epoch,
-            "train_loss": round(tot_loss, 4),
-            "peak_cuda_memory_GB": round(peak_memory, 2),
-        })
-
         # Check points
         if cfg._test_mode or epoch % 1 == 0:
             # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             # save_model(model, model_path, cfg)
             log(f"Testing for epoch {epoch}")
             
-            orthrus_gnn_testing.main(
+            val_ap = orthrus_gnn_testing.main(
                 cfg=cfg,
                 model=model,
                 val_data=val_data,
@@ -103,6 +97,15 @@ def main(cfg):
                 full_data=full_data,
                 epoch=epoch,
             )
+            model.to_device(device)
+            
+        wandb.log({
+            "train_epoch": epoch,
+            "train_loss": round(tot_loss, 4),
+            "peak_cuda_memory_GB": round(peak_memory, 2),
+            "val_ap": round(val_ap, 5),
+        })
+
             
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),

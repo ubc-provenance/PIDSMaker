@@ -31,11 +31,13 @@ def test_edge_level(
 
     # NOTE: warning, this may reindex the data is TGN is not used
     batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer, test_mode=True)
+    
+    validation = split == "val"
 
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
 
-        each_edge_loss = model(batch, full_data, inference=True)
+        each_edge_loss = model(batch, full_data, inference=True, validation=validation)
         tot_loss += each_edge_loss.sum().item()
 
         # If the data has been reindexed in the loader, we retrieve original node IDs
@@ -199,13 +201,15 @@ def main(cfg, model, val_data, test_data, full_data, epoch):
 
     device = torch.device(device)
     use_cuda = device == torch.device("cuda")
+    
+    model.to_device(device)
 
     model_epoch_file = f"model_epoch_{epoch}"
     log(f"Testing with model at epoch {epoch}...")
     if use_cuda:
         torch.cuda.empty_cache()
 
-    # TODO: we may want to move the validation set into the training for early stopping
+    val_ap = None
     for graphs, split in [
         (val_data, "val"),
         (test_data, "test"),
@@ -224,8 +228,12 @@ def main(cfg, model, val_data, test_data, full_data, epoch):
                 device=device,
             )
             g.to("cpu")
+            
+        if split == "val":
+            val_ap = model.get_val_ap()
 
     del model
+    return val_ap
 
 
 if __name__ == "__main__":

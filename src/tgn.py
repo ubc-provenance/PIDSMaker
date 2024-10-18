@@ -343,6 +343,12 @@ class LastNeighborLoader:
         self._assoc = torch.empty(num_nodes, dtype=torch.long, device=device)
 
         self.reset_state()
+        
+    def to(self, device):
+        self.neighbors = self.neighbors.to(device)
+        self.e_id = self.e_id.to(device)
+        self._assoc = self._assoc.to(device)
+        return self
 
     def __call__(self, n_id: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         neighbors = self.neighbors[n_id]
