@@ -194,7 +194,16 @@ def test_node_level(
         f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
-def main(cfg, model, val_data, test_data, full_data, epoch):
+def main(cfg, model, val_data, test_data, full_data, epoch, split):
+    if split == "all":
+        splits = [(val_data, "val"), (test_data, "test")]
+    elif split == "val":
+        splits = [(val_data, "val")]
+    elif split == "test":
+        splits = [(test_data, "test")]
+    else:
+        raise ValueError(f"Invalid split {split}")
+    
     device = cfg.detection.gnn_training.inference_device.strip()
     if device not in ["cpu", "cuda"]:
         raise ValueError(f"Invalid inference device {device}")
@@ -210,10 +219,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch):
         torch.cuda.empty_cache()
 
     val_ap = None
-    for graphs, split in [
-        (val_data, "val"),
-        (test_data, "test"),
-    ]:
+    for graphs, split in splits:
         log(f"    Testing {split} set...")
         for g in tqdm(graphs, desc=f"{split} set with {model_epoch_file}"):
             g.to(device=device)
