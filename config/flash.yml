@@ -33,6 +33,7 @@ detection:
     weight_decay: 0.0005
     node_hid_dim: 30
     node_out_dim: 3
+    inference_device: cuda
     encoder:
       node_features: node_emb
       neighbor_sampling: [-1, -1]

@@ -1,12 +1,42 @@
+import math
 import os
 
 import pickle
 import torch
 from torch_geometric.data import Data, TemporalData
 from torch_geometric.loader import TemporalDataLoader
+from torch_geometric.data.collate import collate
+from torch_geometric.data.data import size_repr
 
 from encoders import TGNEncoder
 
+class CollatableTemporalData(TemporalData):
+    """
+    We use this class instead of TemporalData in order to easily concatenate data
+    objects together without any batching behavior.
+    Normal TemporalData doesn't support edge_index so we define it here.
+    """
+    def __init__(
+        self,
+        src=None,
+        dst=None,
+        t=None,
+        msg=None,
+        **kwargs,
+    ):
+        super().__init__(src=src, dst=dst, t=t, msg=msg, **kwargs)
+        
+    def __inc__(self, key: str, value, *args, **kwargs):
+        return 0
+
+    def __cat_dim__(self, key: str, value, *args, **kwargs):
+        return 1 if "index" in key else 0
+    
+    def __repr__(self) -> str:
+        cls = self.__class__.__name__
+        info = ', '.join([size_repr(k, v) for k, v in self._store.items()])
+        info += ", " + size_repr("edge_index", self.edge_index)
+        return f'{cls}({info})'
 
 def load_all_datasets(cfg):
     train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
@@ -29,9 +59,17 @@ def load_all_datasets(cfg):
     max_node = max_node + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
     
+    # Concatenates all data into a single data so that iterating over batches
+    # of edges is more consistent with TGN
+    batch_size = cfg.detection.gnn_training.edge_batch_size
+    if batch_size is not None:
+        train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size)
+        val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size)
+        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size)
+    
     return train_data, val_data, test_data, full_data, max_node
 
-def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
+def load_data_set(cfg, path: str, split: str) -> list[CollatableTemporalData]:
     """
     Returns a list of time window graphs for a given `split` (train/val/test set).
     """
@@ -45,7 +83,7 @@ def load_data_set(cfg, path: str, split: str) -> list[TemporalData]:
     data_list = extract_msg_from_data(data_list, cfg)
     return data_list
 
-def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalData]:
+def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[CollatableTemporalData]:
     """
     Initializes the attributes of a `Data` object based on the `msg`
     computed in previous tasks.
@@ -124,7 +162,9 @@ def extract_msg_from_data(data_set: list[TemporalData], cfg) -> list[TemporalDat
         g.msg = msg
         g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
-        g.edge_index = torch.stack([g.src, g.dst])
+        
+        # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
+        # g.edge_index = ...
         
         if cfg._is_node_level:
             g.node_type_src = fields["src_type"]
@@ -142,7 +182,7 @@ def build_edge_feats(fields, msg, cfg):
     edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
     return edge_feats
 
-def custom_temporal_data_loader(data: TemporalData, batch_size: int, *args, **kwargs):
+def custom_temporal_data_loader(data: CollatableTemporalData, batch_size: int, *args, **kwargs):
     """
     A simple `TemporalDataLoader` which also update the edge_index with the
     sampled edges of size `batch_size`. By default, only attributes of shape (E, d)
@@ -150,15 +190,33 @@ def custom_temporal_data_loader(data: TemporalData, batch_size: int, *args, **kw
     """
     loader = TemporalDataLoader(data, batch_size=batch_size, *args, **kwargs)
     for batch in loader:
-        batch.edge_index = torch.stack([batch.src, batch.dst])
         yield batch
 
-def temporal_data_to_data(data: TemporalData) -> Data:
+def temporal_data_to_data(data: CollatableTemporalData) -> Data:
     """
     NeighborLoader requires a `Data` object.
-    We need to convert `TemporalData` to `Data` before using it.
+    We need to convert `CollatableTemporalData` to `Data` before using it.
     """
     return Data(num_nodes=data.x_src.shape[0], **{k: v for k, v in data._store.items()})
+
+def collate_temporal_data(data_list: list[CollatableTemporalData]) -> CollatableTemporalData:
+    """
+    Concatenates attributes from data ojects into a single data object.
+    Do not use with `Data` directly because it will use batching when collating.
+    """
+    assert all([not isinstance(data, Data) for data in data_list]), "Concatenating Data objects result in batching."
+    
+    data = collate(CollatableTemporalData, data_list)[0]
+    del data.ptr
+    del data.batch
+
+    return data
+
+def batch_temporal_data(data: CollatableTemporalData, batch_size: int) -> list[CollatableTemporalData]:
+    num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
+    
+    data_list = [data[i*batch_size: (i+1)*batch_size] for i in range(num_batches)]
+    return data_list
 
 class _Cache:
     def __init__(self, shape, device):
@@ -168,6 +226,11 @@ class _Cache:
     def detach(self):
         self.src_cache = self.src_cache.detach()
         self.dst_cache = self.dst_cache.detach()
+        
+    def to(self, device):
+        self.src_cache = self.src_cache.to(device)
+        self.dst_cache = self.dst_cache.to(device)
+        return self
 
 class GraphReindexer:
     """
@@ -247,6 +310,16 @@ class GraphReindexer:
         x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple)
         
         return x, edge_index, n_id
+    
+    def to(self, device):
+        self.device = device
+        if self.assoc is not None:
+            self.assoc = self.assoc.to(device)
+
+        for k, v in self.cache.items():
+            self.cache[k] = v.to(device)
+        return self
+        
 
 def save_model(model, path: str, cfg):
     """

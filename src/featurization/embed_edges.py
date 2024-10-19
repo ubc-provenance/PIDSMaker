@@ -1,5 +1,6 @@
 from config import *
 from provnet_utils import *
+from data_utils import CollatableTemporalData
 
 from .embed_edges_methods import (
     embed_edges_word2vec,
@@ -42,7 +43,7 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
                     torch.from_numpy(indexid2vec[v])
                 ]))
 
-        data = TemporalData(
+        data = CollatableTemporalData(
             src=torch.tensor(src).to(torch.long),
             dst=torch.tensor(dst).to(torch.long),
             t=torch.tensor(t).to(torch.long),

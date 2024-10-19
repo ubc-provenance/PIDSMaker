@@ -1,6 +1,7 @@
 from provnet_utils import *
 from config import *
 import torch.nn as nn
+from encoders import TGNEncoder
 
 
 class Model(nn.Module):
@@ -21,6 +22,7 @@ class Model(nn.Module):
         self.decoders = nn.ModuleList(decoders)
         self.use_contrastive_learning = use_contrastive_learning
         self.graph_reindexer = graph_reindexer
+        self.device = device
         
         self.last_h_storage, self.last_h_non_empty_nodes = None, None
         if self.use_contrastive_learning:
@@ -29,7 +31,7 @@ class Model(nn.Module):
             
         self.node_level = node_level
         
-    def forward(self, batch, full_data, inference=False):
+    def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
         if self.node_level:
             x = batch.x
@@ -75,8 +77,8 @@ class Model(nn.Module):
                 torch.zeros(num_elements, dtype=torch.float)).to(edge_index.device)
             
             pred = None
-            for decoder in self.decoders:
-                loss = decoder(
+            for objective in self.decoders:
+                loss = objective(
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
                     h=h, # shape (N, d)
@@ -87,6 +89,7 @@ class Model(nn.Module):
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
                     node_type=batch.node_type if hasattr(batch, "node_type") else None,
+                    validation=validation,
                 )
                 if isinstance(loss, tuple):
                     loss, pred = loss
@@ -97,3 +100,20 @@ class Model(nn.Module):
             if pred is not None:
                 loss_or_scores = loss, pred
             return loss_or_scores
+        
+    def get_val_ap(self):
+        return self.decoders[0].get_ap()
+
+    def to_device(self, device):
+        if self.device == device:
+            return self
+        
+        for decoder in self.decoders:
+            decoder.graph_reindexer.to(device)
+        
+        if isinstance(self.encoder, TGNEncoder):
+            self.encoder.to_device(device)
+            
+        self.device = device
+        self.graph_reindexer.to(device)
+        return self.to(device)

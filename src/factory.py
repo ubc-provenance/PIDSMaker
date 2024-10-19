@@ -9,7 +9,7 @@ from losses import *
 from encoders import *
 from decoders import *
 from data_utils import *
-from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader
+from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -136,6 +136,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
         use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
+        tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
 
         if use_memory:
             memory = TGNMemory(
@@ -172,6 +173,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             use_time_enc=use_time_enc,
             edge_dim=edge_dim,
             use_time_order_encoding=use_time_order_encoding,
+            tgn_neighbor_n_hop=tgn_neighbor_n_hop,
         )
 
     return encoder
@@ -205,7 +207,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
 def objective_factory(cfg, in_dim, device, max_node_num):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
 
-    decoders = []
+    objectives = []
     for objective in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
         method = getattr(getattr(cfg.detection.gnn_training.decoder, objective.strip()), "decoder")
 
@@ -213,20 +215,20 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
-            decoders.append(NodeFeatReconstruction(decoder=decoder, loss_fn=loss_fn))
+            objectives.append(NodeFeatReconstruction(decoder=decoder, loss_fn=loss_fn))
             
         elif objective == "reconstruct_node_embeddings":
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_embeddings.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
-            decoders.append(NodeEmbDecoder(decoder=decoder, loss_fn=loss_fn))
+            objectives.append(NodeEmbDecoder(decoder=decoder, loss_fn=loss_fn))
         
         elif objective == "reconstruct_edge_embeddings":
             loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_edge_embeddings.loss)
             in_dim_edge = node_out_dim * 2  # concatenation of 2 nodes
             
             decoder = decoder_factory(method, objective, cfg, in_dim=in_dim_edge, out_dim=in_dim_edge)
-            decoders.append(
+            objectives.append(
                 EdgeEmbReconstruction(
                     decoder=decoder,
                     loss_fn=loss_fn,
@@ -237,7 +239,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             balanced_loss = cfg.detection.gnn_training.decoder.predict_edge_type.balanced_loss
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=cfg.dataset.num_edge_types)
-            decoders.append(
+            objectives.append(
                 EdgeTypePrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
@@ -250,7 +252,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             balanced_loss = cfg.detection.gnn_training.decoder.predict_node_type.balanced_loss
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
-            decoders.append(
+            objectives.append(
                 NodeTypePrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
@@ -281,7 +283,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
         #     if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
         #         raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
             
-        #     decoders.append(EdgeContrastiveDecoder(
+        #     objectives.append(EdgeContrastiveDecoder(
         #         decoder=edge_decoder,
         #         loss_fn=loss_fn,
         #         graph_reindexer=contrastive_graph_reindexer,
@@ -291,7 +293,20 @@ def objective_factory(cfg, in_dim, device, max_node_num):
         else:
             raise ValueError(f"Invalid objective {objective}")
         
-    return decoders
+    # We wrap objectives into this class to calculate some metrics on validation set easily
+    graph_reindexer = GraphReindexer(
+        num_nodes=max_node_num,
+        device=device,
+    )
+    is_edge_type_prediction = cfg.detection.gnn_training.decoder.used_methods.strip() == "predict_edge_type"
+    objectives = [
+        ValidationContrastiveStopper(
+            objective,
+            graph_reindexer,
+            is_edge_type_prediction,
+        ) for objective in objectives]
+    
+    return objectives
 
 def edge_decoder_factory(edge_decoder, in_dim):
     if edge_decoder == "MLP":
@@ -305,7 +320,7 @@ def edge_decoder_factory(edge_decoder, in_dim):
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
 
-def batch_loader_factory(cfg, data, graph_reindexer):
+def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
     
@@ -335,7 +350,9 @@ def batch_loader_factory(cfg, data, graph_reindexer):
         )
     # Use TGN batch loader
     if use_tgn:
-        return custom_temporal_data_loader(data, batch_size=cfg.detection.gnn_training.encoder.tgn.tgn_batch_size)
+        batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_inference if test_mode \
+            else cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
+        return custom_temporal_data_loader(data, batch_size=batch_size)
     
     # Don't use any batching
     if graph_reindexer is not None:

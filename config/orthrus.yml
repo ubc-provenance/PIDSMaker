@@ -63,6 +63,7 @@ detection:
     weight_decay: 0.00001
     node_hid_dim: 128
     node_out_dim: 64
+    inference_device: cuda
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
@@ -74,9 +75,11 @@ detection:
         num_heads: 8
       tgn:
         tgn_batch_size: 1024
+        tgn_batch_size_inference: 1024
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20
+        tgn_neighbor_n_hop: 1
         use_node_feats_in_gnn: True
         use_memory: False
         use_time_order_encoding: False
