@@ -64,6 +64,9 @@ detection:
     node_hid_dim: 128
     node_out_dim: 64
     edge_batch_size: 51200
+    inference_device: cpu
+
+    
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
@@ -76,7 +79,6 @@ detection:
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 10
-        tgn_device_inference: cpu
         tgn_memory_dim: 100
         tgn_time_dim: 100
         tgn_neighbor_size: 20

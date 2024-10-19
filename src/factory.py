@@ -298,7 +298,13 @@ def objective_factory(cfg, in_dim, device, max_node_num):
         num_nodes=max_node_num,
         device=device,
     )
-    objectives = [ValidationContrastiveStopper(objective, graph_reindexer) for objective in objectives]
+    is_edge_type_prediction = cfg.detection.gnn_training.decoder.used_methods.strip() == "predict_edge_type"
+    objectives = [
+        ValidationContrastiveStopper(
+            objective,
+            graph_reindexer,
+            is_edge_type_prediction,
+        ) for objective in objectives]
     
     return objectives
 

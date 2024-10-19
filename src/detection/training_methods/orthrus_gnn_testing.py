@@ -195,7 +195,7 @@ def test_node_level(
 
 
 def main(cfg, model, val_data, test_data, full_data, epoch):
-    device = cfg.detection.gnn_training.encoder.tgn.tgn_device_inference.strip()
+    device = cfg.detection.gnn_training.inference_device.strip()
     if device not in ["cpu", "cuda"]:
         raise ValueError(f"Invalid inference device {device}")
 
