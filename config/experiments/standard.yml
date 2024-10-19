@@ -1,0 +1,2 @@
+training_loop:
+  run_evaluation: each_epoch
