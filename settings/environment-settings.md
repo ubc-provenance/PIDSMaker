@@ -15,8 +15,8 @@ or use our [`requirements.txt`](requirements.txt):
 conda create -n orthrus python=3.9
 conda activate orthrus
 # Note: using "pip install psycopg2" to install may fail
-conda install psycopg2
-conda install tqdm
+conda install -y psycopg2
+conda install -y tqdm
 # We encountered a problem in feature hashing functions with version 1.2.2
 pip install scikit-learn==1.2.0
 pip install networkx==2.8.7
@@ -33,7 +33,7 @@ pip install cairocffi==1.7.0
 pip install wget==3.2
 
 # PyTorch GPU version
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install -y pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 pip install torch_geometric==2.5.3 --no-cache-dir
 pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 torch_cluster==1.6.1 torch_spline_conv==1.2.2 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html --no-cache-dir
 
