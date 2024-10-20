@@ -27,7 +27,7 @@ def preload_entity_level_dataset(cfg):
             metadata = json.load(f)
         return metadata
     else:
-        magic_graph_dir = cfg.preprocessing.build_graphs.magic_graphs_dir
+        magic_graph_dir = cfg.preprocessing.build_graphs._magic_graphs_dir
         train_nx_filelist = get_all_files_from_folders(magic_graph_dir, cfg.dataset.train_files)
         test_nx_filelist = get_all_files_from_folders(magic_graph_dir, cfg.dataset.test_files)
 
@@ -76,7 +76,7 @@ def load_entity_level_dataset(t, n, cfg):
     elif t == "test":
         split_files = cfg.dataset.test_files
 
-    magic_graph_dir = cfg.preprocessing.build_graphs.magic_graphs_dir
+    magic_graph_dir = cfg.preprocessing.build_graphs._magic_graphs_dir
     sorted_paths = get_all_files_from_folders(magic_graph_dir, split_files)
     file_path = sorted_paths[n]
 

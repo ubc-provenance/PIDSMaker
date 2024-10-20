@@ -1,11 +1,14 @@
 import argparse
+import copy
 import random
+from collections import defaultdict
 
 import torch
 import wandb
 import numpy as np
 from provnet_utils import remove_underscore_keys, log
-from config import set_task_to_done
+from config import set_task_to_done, get_updated_should_restart
+from experiments import update_cfg_for_uncertainty_exp, fuse_hyperparameter_metrics
 
 from preprocessing import (
     build_graphs,
@@ -84,28 +87,73 @@ def main(cfg, **kwargs):
         },
     }
     
-    def run_task(task: str):
+    def run_task(task: str, cfg):
         module = task_to_module[task]["module"]
         task_path = task_to_module[task]["task_path"]
         
         start = time.time()
         return_value = None
         
+        should_restart = get_updated_should_restart(cfg)
         if should_restart[task]:
             return_value = module.main(cfg)
             set_task_to_done(task_path)
         
         return {"time": time.time() - start, "return": return_value}
     
-    # Standard behavior: we run the whole pipeline
-    if cfg.experiments.experiment.used_method == "none":
-        task_results = {task: run_task(task) for task in task_to_module}
+    def run_pipeline(cfg):
+        task_results = {task: run_task(task, cfg) for task in task_to_module}
         
         metrics = task_results["evaluation"]["return"]
-        wandb.log(metrics)
-        
         times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}
+        return metrics, times
+    
+    # Standard behavior: we run the whole pipeline
+    if cfg.experiments.experiment.used_method == "none":
+        metrics, times = run_pipeline(cfg)
+        wandb.log(metrics)
         wandb.log(times)
+        
+    elif cfg.experiments.experiment.used_method == "uncertainty":
+        method_to_metrics = defaultdict(list)
+        original_cfg = copy.deepcopy(cfg)
+        for method in ["hyperparameter", "MC", "DE", "BE"]:            
+            if method == "hyperparameter":
+                hyperparameters = cfg.experiments.experiment.uncertainty.hyperparameter.hyperparameters
+                hyperparameters = map(lambda x: x.strip(), hyperparameters.split(","))
+                iterations = cfg.experiments.experiment.uncertainty.hyperparameter.iterations
+                assert iterations % 2 != 0, f"The number of iterations for hyperparameters should be odd, found {iterations}"
+                
+                for hyper in hyperparameters:
+                    hyper_to_metrics = defaultdict(list)
+                    for i in range(iterations):
+                        cfg = update_cfg_for_uncertainty_exp(
+                            method=method,
+                            index=i,
+                            iterations=iterations,
+                            cfg=original_cfg,
+                            hyperparameter=hyper,
+                        )
+                        metrics, times = run_pipeline(cfg)
+                        hyper_to_metrics[hyper].append(metrics)
+                        
+                metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
+                method_to_metrics[method].append(metrics)
+            
+            else:
+                for i in range(iterations):
+                    cfg = update_cfg_for_uncertainty_exp(
+                            method=method,
+                            index=i,
+                            iterations=iterations,
+                            cfg=original_cfg,
+                            hyperparameter=None,
+                        )
+                    metrics, times = run_pipeline(cfg)
+                    
+                    method_to_metrics[method].append(metrics)
+            
+        
         
     log("==" * 30)
     log("Run finished.")

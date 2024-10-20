@@ -367,7 +367,7 @@ def compute_tw_labels_for_magic(cfg):
 
         t_to_node = labelling.get_t2malicious_node(cfg)
 
-        base_dir = cfg.preprocessing.build_graphs.magic_graphs_dir
+        base_dir = cfg.preprocessing.build_graphs._magic_graphs_dir
         test_tw = get_all_files_from_folders(base_dir, cfg.dataset.test_files)
 
         num_found_event_labels = 0
