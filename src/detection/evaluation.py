@@ -56,21 +56,21 @@ def standard_evaluation(cfg, evaluation_fn):
             best_mcc = stats["mcc"]
             best_stats = stats
         
-    wandb.log(best_stats)
+    return best_stats
 
 
 def main(cfg):
     method = cfg.detection.evaluation.used_method.strip()
     if method == "node_evaluation":
-        standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
+        return standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
     elif method == "tw_evaluation":
-        standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
+        return standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
     elif method == "node_tw_evaluation":
-        standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
+        return standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
     elif method == "queue_evaluation":
-        queue_evaluation.main(cfg)
+        return queue_evaluation.main(cfg)
     elif method == "magic_evaluation" or method == "magic_node_evaluation":
-        magic_evaluation.main(cfg)
+        return magic_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 

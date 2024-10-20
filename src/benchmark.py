@@ -53,67 +53,64 @@ def main(cfg, **kwargs):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    t0 = time.time()
-
-    # Preprocessing
-    if should_restart["build_graphs"]:
-        build_graphs.main(cfg)
-        set_task_to_done(cfg.preprocessing.build_graphs._task_path)
-    t1 = time.time()
-    
-    if should_restart["transformation"]:
-        transformation.main(cfg)
-        set_task_to_done(cfg.preprocessing.transformation._task_path)
-    tb = time.time()
-    
-    # Featurization
-    if should_restart["embed_nodes"]:
-        embed_nodes.main(cfg)
-        set_task_to_done(cfg.featurization.embed_nodes._task_path)
-    t2 = time.time()
-
-    if should_restart["embed_edges"]:
-        embed_edges.main(cfg)
-        set_task_to_done(cfg.featurization.embed_edges._task_path)
-    t3 = time.time()
-
-    # Detection
-    if should_restart["gnn_training"]:
-        gnn_training.main(cfg, **kwargs)
-        set_task_to_done(cfg.detection.gnn_training._task_path)
-        torch.cuda.empty_cache()
-    t4 = time.time()
-    
-    if should_restart["evaluation"]:
-        evaluation.main(cfg)
-        set_task_to_done(cfg.detection.evaluation._task_path)
-    t5 = time.time()
-
-    # Triage
-    if should_restart["tracing"] and cfg.triage.tracing.used_method is not None:
-        if cfg.detection.evaluation.used_method.strip() in ['node_evaluation', 'node_tw_evaluation']:
-            tracing.main(cfg)
-            set_task_to_done(cfg.triage.tracing._task_path)
-    t6 = time.time()
-
-    time_consumption = {
-        "time_total": round(t6 - t0, 2),
-        "time_build_graphs": round(t1 - t0, 2),
-        "time_transformation": round(tb - t1, 2),
-        "time_embed_nodes": round(t2 - tb, 2),
-        "time_embed_edges": round(t3 - t2, 2),
-        "time_gnn_training": round(t4 - t3, 2),
-        "time_evaluation": round(t5 - t4, 2),
-        "time_tracing": round(t6 - t5, 2),
+    task_to_module = {
+        "build_graphs": {
+            "module": build_graphs,
+            "task_path": cfg.preprocessing.build_graphs._task_path,
+        },
+        "transformation": {
+            "module": transformation,
+            "task_path": cfg.preprocessing.transformation._task_path,
+        },
+        "embed_nodes": {
+            "module": embed_nodes,
+            "task_path": cfg.featurization.embed_nodes._task_path,
+        },
+        "embed_edges": {
+            "module": embed_edges,
+            "task_path": cfg.featurization.embed_edges._task_path,
+        },
+        "gnn_training": {
+            "module": gnn_training,
+            "task_path": cfg.detection.gnn_training._task_path,
+        },
+        "evaluation": {
+            "module": evaluation,
+            "task_path": cfg.detection.evaluation._task_path,
+        },
+        "tracing": {
+            "module": tracing,
+            "task_path": cfg.triage.tracing._task_path,
+        },
     }
-
+    
+    def run_task(task: str):
+        module = task_to_module[task]["module"]
+        task_path = task_to_module[task]["task_path"]
+        
+        start = time.time()
+        return_value = None
+        
+        if should_restart[task]:
+            return_value = module.main(cfg)
+            set_task_to_done(task_path)
+        
+        return {"time": time.time() - start, "return": return_value}
+    
+    # Standard behavior: we run the whole pipeline
+    if cfg.experiments.experiment.used_method == "none":
+        task_results = {task: run_task(task) for task in task_to_module}
+        
+        metrics = task_results["evaluation"]["return"]
+        wandb.log(metrics)
+        
+        times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}
+        wandb.log(times)
+        
     log("==" * 30)
-    log("Run finished. Time consumed in each step:")
-    for k, v in time_consumption.items():
-        log(f"{k}: {v} s")
-
+    log("Run finished.")
     log("==" * 30)
-    wandb.log(time_consumption)
+    
 
 
 if __name__ == '__main__':
