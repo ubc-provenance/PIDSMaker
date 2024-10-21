@@ -117,23 +117,18 @@ def main(cfg, **kwargs):
     elif cfg.experiments.experiment.used_method == "uncertainty":
         method_to_metrics = defaultdict(list)
         original_cfg = copy.deepcopy(cfg)
-        for method in ["hyperparameter", "MC", "DE", "BE"]:            
+        for method in ["mc_dropout", "hyperparameter", "deep_ensemble", "bagged_ensemble"]:
+            iterations = getattr(cfg.experiments.experiment.uncertainty, method).iterations
+            
             if method == "hyperparameter":
                 hyperparameters = cfg.experiments.experiment.uncertainty.hyperparameter.hyperparameters
                 hyperparameters = map(lambda x: x.strip(), hyperparameters.split(","))
-                iterations = cfg.experiments.experiment.uncertainty.hyperparameter.iterations
                 assert iterations % 2 != 0, f"The number of iterations for hyperparameters should be odd, found {iterations}"
                 
                 for hyper in hyperparameters:
                     hyper_to_metrics = defaultdict(list)
                     for i in range(iterations):
-                        cfg = update_cfg_for_uncertainty_exp(
-                            method=method,
-                            index=i,
-                            iterations=iterations,
-                            cfg=original_cfg,
-                            hyperparameter=hyper,
-                        )
+                        cfg = update_cfg_for_uncertainty_exp(method, i, iterations, original_cfg, hyperparameter=hyper)
                         metrics, times = run_pipeline(cfg)
                         hyper_to_metrics[hyper].append(metrics)
                         
@@ -142,18 +137,14 @@ def main(cfg, **kwargs):
             
             else:
                 for i in range(iterations):
-                    cfg = update_cfg_for_uncertainty_exp(
-                            method=method,
-                            index=i,
-                            iterations=iterations,
-                            cfg=original_cfg,
-                            hyperparameter=None,
-                        )
+                    cfg = update_cfg_for_uncertainty_exp(method, i, iterations, original_cfg, hyperparameter=None)
                     metrics, times = run_pipeline(cfg)
-                    
                     method_to_metrics[method].append(metrics)
+                    
+                    # We force restart in some methods so we avoid forced restart for other methods
+                    cfg._force_restart = ""
+                    cfg._is_running_mc_dropout = False
             
-        
         
     log("==" * 30)
     log("Run finished.")

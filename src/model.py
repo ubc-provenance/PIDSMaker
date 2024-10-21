@@ -2,6 +2,7 @@ from provnet_utils import *
 from config import *
 import torch.nn as nn
 from encoders import TGNEncoder
+from experiments import activate_dropout_inference
 
 
 class Model(nn.Module):
@@ -15,6 +16,7 @@ class Model(nn.Module):
             device,
             graph_reindexer,
             node_level,
+            is_running_mc_dropout,
         ):
         super(Model, self).__init__()
 
@@ -30,6 +32,7 @@ class Model(nn.Module):
             self.last_h_non_empty_nodes = torch.tensor([], dtype=torch.long, device=device)
             
         self.node_level = node_level
+        self.is_running_mc_dropout = is_running_mc_dropout
         
     def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
@@ -117,3 +120,10 @@ class Model(nn.Module):
         self.device = device
         self.graph_reindexer.to(device)
         return self.to(device)
+
+    # override
+    def eval(self):
+        super().eval()
+        
+        if self.is_running_mc_dropout:
+            activate_dropout_inference(self)
