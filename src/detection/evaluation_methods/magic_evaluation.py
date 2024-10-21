@@ -57,7 +57,6 @@ def transfer_result_to_node_evaluation(results, node_to_max_loss_tw):
 
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
-    log(f"Analysis of false positives:")
     fp_indices = [i for i, (true, pred) in enumerate(zip(y_truth, y_preds)) if pred and not true]
     malicious_tws = set(tw_to_malicious_nodes.keys())
     num_fps_in_malicious_tw = 0
@@ -70,7 +69,6 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
         #     f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
 
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
-    log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
 def get_set_nodes(split_files, cfg):
@@ -171,7 +169,7 @@ def main(cfg):
             node_to_path[nid]['path']))
 
     # Plots the PR curve and scores for mean node loss
-    print(f"Saving figures to {out_dir}...")
+    log(f"Saving figures to {out_dir}...")
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
     plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)

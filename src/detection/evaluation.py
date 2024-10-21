@@ -27,12 +27,15 @@ def standard_evaluation(cfg, evaluation_fn):
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
         
     for model_epoch_dir in sorted_files:
-        log(f"Evaluation of model {model_epoch_dir}...")
+        log(f"[@{model_epoch_dir} - Evaluation", pre_return_line=True)
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
 
         stats = evaluation_fn(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes=tw_to_malicious_nodes)
+        log(f"[@{model_epoch_dir} - Stats")
+        for k, v in stats.items():
+            log(f"{k}: {v}")
             
         out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])

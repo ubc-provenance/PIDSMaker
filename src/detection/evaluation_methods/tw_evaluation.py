@@ -55,7 +55,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             log(f"-> Malicious TW {tw}: loss={score:.3f} | is TP:" + (" ✅" if y_true == y_hat else " ❌"))
             
     # Plots the PR curve and scores for mean node loss
-    print(f"Saving figures to {out_dir}...")
+    log(f"Saving figures to {out_dir}...")
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
     plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
