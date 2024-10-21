@@ -56,7 +56,7 @@ def main(cfg):
     epoch_times = []
     best_val_ap, best_model, best_epoch = 0.0, None, None
     
-    for epoch in tqdm(range(0, num_epochs), "Training epochs"):
+    for epoch in range(0, num_epochs):
         start = timer()
 
         # Before each epoch, we reset the memory
@@ -64,7 +64,7 @@ def main(cfg):
             model.encoder.reset_state()
 
         tot_loss = 0
-        for g in train_data:
+        for g in log_tqdm(train_data, f"Training"):
             g.to(device=device)
             loss = train(
                 data=g,
@@ -73,27 +73,23 @@ def main(cfg):
                 optimizer=optimizer,
                 cfg=cfg,
             )
-            tot_loss += loss
-            log(f"Loss {loss:4f}")
             g.to("cpu")
+            tot_loss += loss
 
-        tot_loss /= len(train_data)
-        log(f'GNN training loss Epoch: {epoch:02d}, Loss: {tot_loss:.4f}')
-        
+        tot_loss /= len(train_data)    
         epoch_times.append(timer() - start)
         
-        # Log peak CUDA memory usage
         if use_cuda:
             peak_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)  # Convert to GB
-            log(f'Peak CUDA memory usage Epoch {epoch}: {peak_memory:.2f} GB')
         else:
             peak_memory = 0
+            
+        log(f'[@epoch{epoch:02d}] Training finished - Mean Loss: {tot_loss:.4f}, Peak CUDA memory: {peak_memory:.2f} GB', return_line=True)
         
         # Check points
         if cfg._test_mode or epoch % 1 == 0:
             # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
             # save_model(model, model_path, cfg)
-            log(f"Testing for epoch {epoch}")
             
             split_to_run = "val" if best_epoch_mode else "all"
             val_ap = orthrus_gnn_testing.main(

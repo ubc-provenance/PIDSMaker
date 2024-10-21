@@ -366,10 +366,17 @@ def tokenize_arbitrary_label(sentence):
     new_sentence = re.sub(r'\\+', '/', sentence)
     return word_tokenize(new_sentence.replace('/',' / ').replace(':',' : ').replace('.',' . '))
 
-def log(msg: str, *args, **kwargs):
+def log(msg: str, return_line=False, *args, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     print(f"{timestamp} - {msg}", *args, **kwargs)
+    if return_line:
+        print("")
+
+def log_tqdm(iterator, desc, **kwargs):
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+    return tqdm(iterator, desc=f"{timestamp} - {desc}", **kwargs)
 
 def get_device(cfg):
     if cfg._use_cpu:
