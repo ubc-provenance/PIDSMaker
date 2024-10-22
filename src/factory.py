@@ -124,6 +124,18 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
             )
+        elif method == "magic_gat":
+            n_layers = cfg.detection.gnn_training.encoder.magic_gat.num_layers
+            n_heads = cfg.detection.gnn_training.encoder.magic_gat.num_heads
+            assert node_hid_dim % n_heads == 0, "Invalid shape dim for number of heads"
+            enc_hidden_dim = node_hid_dim // n_heads
+
+            negative_slope = cfg.detection.gnn_training.encoder.magic_gat.negative_slope
+            encoder = MagicGAT(n_dim=in_dim, hidden_dim=enc_hidden_dim, out_dim=enc_hidden_dim, n_layers=n_layers,
+                               n_heads=n_heads, feat_drop=0.1, attn_drop=0.0, negative_slope=negative_slope,
+                               concat_out=True, residual=True,
+                               activation=activation_fn_factory(
+                                   cfg.detection.gnn_training.encoder.magic_gat.activation))
         elif method == "GIN":
             encoder = GIN(
                 in_dim=in_dim,
@@ -204,6 +216,32 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             in_dim=in_dim,
             out_dim=out_dim,
         )
+    elif method == "magic_gat":
+        n_layers = decoder_cfg.num_layers
+        n_heads = decoder_cfg.num_heads
+        negative_slope = decoder_cfg.negative_slope
+
+        node_hid_dim = cfg.detection.gnn_training.node_hid_dim
+        node_out_dim = cfg.detection.gnn_training.node_out_dim
+
+        return MagicGAT(
+            n_dim=node_hid_dim,
+            hidden_dim=node_hid_dim,
+            out_dim=node_out_dim,
+            n_layers=n_layers,
+            n_heads=n_heads,
+            feat_drop=0.1,
+            attn_drop=0.0,
+            negative_slope=negative_slope,
+            concat_out=True,residual=True,
+            activation=activation_fn_factory(cfg.detection.gnn_training.encoder.magic_gat.activation),
+        )
+    elif method == "struct_mlp":
+        return MLPStructRecon(
+            input_dim=decoder_cfg.input_dim,
+            hidden_dim=decoder_cfg.hidden_dim,
+            negative_slope=decoder_cfg.negative_slope,
+        )
     elif method == "none":
         return lambda x: x
     else:
@@ -212,6 +250,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
 
 def objective_factory(cfg, in_dim, device, max_node_num):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
+    node_hid_dim = cfg.detection.gnn_training.node_hid_dim
 
     objectives = []
     for objective in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
@@ -265,6 +304,33 @@ def objective_factory(cfg, in_dim, device, max_node_num):
                     balanced_loss=balanced_loss,
                     node_type_dim=cfg.dataset.num_node_types,
                 ))
+            
+        elif objective == "reconstruct_masked_features":
+            mask_rate = cfg.detection.gnn_training.decoder.reconstruct_masked_features.mask_rate
+            edim_to_ddim = cfg.detection.gnn_training.decoder.reconstruct_masked_features.encoder_to_decoder
+
+            loss_fn = categorical_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_masked_features.loss)
+
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_hid_dim, out_dim=node_out_dim)
+            decoders.append(
+                GMAEFeatureDecoder(
+                    decoder=decoder,
+                    loss_fn=loss_fn,
+                    mask_rate=mask_rate,
+                    edim_to_ddim=edim_to_ddim,
+                )
+            )
+        
+        elif objective == "reconstruct_masked_struct":
+            loss_fn = categorical_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_masked_structure.loss)
+
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_hid_dim, out_dim=node_out_dim)
+            decoders.append(
+                GMAEStructDecoder(
+                    decoder=decoder,
+                    loss_fn=loss_fn,
+                )
+            )
         
         # elif objective == "predict_edge_contrastive":
         #     predict_edge_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.used_method.strip()
@@ -381,6 +447,8 @@ def recon_loss_fn_factory(loss: str):
 def categorical_loss_fn_factory(loss: str):
     if loss == "cross_entropy":
         return cross_entropy
+    if loss == "BCE":
+        return binary_cross_entropy
     raise ValueError(f"Invalid loss function {loss}")
 
 def activation_fn_factory(activation: str):
@@ -390,6 +458,8 @@ def activation_fn_factory(activation: str):
         return nn.ReLU()
     if activation == "tanh":
         return nn.Tanh()
+    if activation == "prelu":
+        return nn.PReLU()
     if activation == "none":
         return nn.Identity()
     raise ValueError(f"Invalid activation function {activation}")

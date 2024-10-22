@@ -14,7 +14,11 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
-    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_evaluation.threshold_method)
+    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    if threshold_method == 'magic':
+        thr = get_threshold(test_tw_path, threshold_method)
+    else:
+        thr = get_threshold(val_tw_path, threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     node_to_losses = defaultdict(list)
@@ -67,7 +71,11 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
-    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_evaluation.threshold_method)
+    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    if threshold_method == 'magic':
+        thr = get_threshold(test_tw_path, threshold_method)
+    else:
+        thr = get_threshold(val_tw_path, threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     node_to_values = defaultdict(lambda: defaultdict(list))
@@ -91,6 +99,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                 node_to_values[node]["correct_pred"].append(line["correct_pred"])
             if "flash_score" in line:
                 node_to_values[node]["flash_score"].append(line["flash_score"])
+            if "magic_score" in line:
+                node_to_values[node]["magic_score"].append(line["magic_score"])
 
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss
@@ -118,6 +128,16 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
             for score, node_type_pred, tw in zip(losses["flash_score"], losses["correct_pred"], losses["tw"]):
                 if score > thr and node_type_pred and score > max_score:
+                    flash_label = 1
+                    max_score = score
+                    detected_tw = tw
+                    
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
+            max_score = 0
+            pred_score = max(losses["magic_score"])
+
+            for score, tw in zip(losses["magic_score"], losses["tw"]):
+                if score > thr and score > max_score:
                     flash_label = 1
                     max_score = score
                     detected_tw = tw

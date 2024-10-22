@@ -39,3 +39,7 @@ def bce_contrastive(positive, negative, inference=False, **kwargs):
 def cross_entropy(x, y, inference=False, weight=None, **kwargs):
     reduction = "none" if inference else "mean"
     return F.cross_entropy(x, y, reduction=reduction, weight=weight)
+
+def binary_cross_entropy(x, y, inference=False, weight=None, **kwargs):
+    reduction = "none" if inference else "mean"
+    return F.binary_cross_entropy_with_logits(x, y, reduction=reduction, weight=weight)

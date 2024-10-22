@@ -7,6 +7,8 @@ from config import *
 from model import *
 from factory import *
 import torch
+import cudf
+from cuml.neighbors import NearestNeighbors
 
 
 @torch.no_grad()
@@ -168,6 +170,78 @@ def test_node_level(
                 }
                 node_list.append(temp_dic)
             
+        # Magic codes
+        elif cfg.detection.evaluation.edge_evaluation.threshold_method == "magic":
+            if split == 'val':
+                x_train = model.embed(batch, full_data, inference=True).cpu().numpy()
+                num_nodes = x_train.shape[0]
+                sample_size = 5000
+                sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
+                x_train_sampled = x_train[sample_indices]
+                x_train_mean = x_train_sampled.mean(axis=0)
+                x_train_std = x_train_sampled.std(axis=0)
+                x_train_sampled = (x_train_sampled - x_train_mean) / x_train_std
+
+                torch.cuda.empty_cache()
+                x_train_sampled = cudf.DataFrame.from_records(x_train_sampled)
+
+                n_neighbors = 10
+                nbrs = NearestNeighbors(n_neighbors=n_neighbors)
+                nbrs.fit(x_train_sampled)
+                idx = list(range(x_train_sampled.shape[0]))
+                random.shuffle(idx)
+                try:
+                    distances_train, _ = nbrs.kneighbors(
+                        x_train_sampled.iloc[idx[:min(50000, x_train_sampled.shape[0])]].to_pandas(),
+                        n_neighbors=n_neighbors)
+                except KeyError as e:
+                    log(f"KeyError encountered: {e}")
+                    log(f"Available columns in x_train: {x_train_sampled.columns}")
+                    raise
+                mean_distance_train = distances_train.mean().mean()
+                if mean_distance_train == 0:
+                    mean_distance_train = 1e-9
+                torch.cuda.empty_cache()
+
+                train_distance_file = os.path.join(cfg.detection.gnn_training._magic_dir, "train_distance.txt")
+                with open(train_distance_file, "a") as f:
+                    f.write(f"{mean_distance_train}\n")
+
+                return
+            elif split == 'test':
+                train_distance_file = os.path.join(cfg.detection.gnn_training._magic_dir, "train_distance.txt")
+                mean_distance_train = calculate_average_from_file(train_distance_file)
+
+                x_test = model.embed(batch, full_data, inference=True).cpu().numpy()
+                num_nodes = x_test.shape[0]
+                sample_size = 5000
+                sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
+                x_test_sampled = x_test[sample_indices]
+                x_test_mean = x_test_sampled.mean(axis=0)
+                x_test_std = x_test_sampled.std(axis=0)
+                x_test_sampled = (x_test_sampled - x_test_mean) / x_test_std
+
+                torch.cuda.empty_cache()
+                x_test_sampled = cudf.DataFrame.from_records(x_test_sampled)
+
+                n_neighbors = 10
+                nbrs = NearestNeighbors(n_neighbors=n_neighbors)
+                nbrs.fit(x_test_sampled)
+
+                distances, _ = nbrs.kneighbors(x_test, n_neighbors=n_neighbors)
+                distances = distances.mean(axis=1)
+                distances = distances.to_numpy()
+                score = distances / mean_distance_train
+                score = score.to_list()
+
+                for i, node in enumerate(batch.original_n_id):
+                    temp_dic = {
+                        'node': node.item(),
+                        'magic_score': float(score[i]),
+                        'loss': float(loss[i].item()),
+                    }
+                    node_list.append(temp_dic)
+        
         else:
             for i, node in enumerate(batch.original_n_id):
                 temp_dic = {

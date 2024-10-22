@@ -23,15 +23,17 @@ import torch
 def get_threshold(val_tw_path, threshold_method: str):
     threshold_method = threshold_method.strip()
     if threshold_method == "max_val_loss":
-        return calculate_threshold(val_tw_path)['max']
+        return calculate_threshold(val_tw_path, threshold_method)['max']
     elif threshold_method == "mean_val_loss":
-        return calculate_threshold(val_tw_path)['mean']
+        return calculate_threshold(val_tw_path, threshold_method)['mean']
     elif threshold_method == "threatrace":
         return 1.5
     elif threshold_method == "flash":
         return 0.53
     elif threshold_method == "nodlink":
-        return calculate_threshold(val_tw_path)['percentile_90']
+        return calculate_threshold(val_tw_path, threshold_method)['percentile_90']
+    elif threshold_method == 'magic':
+        return calculate_threshold(val_tw_path, threshold_method)['mean']
     raise ValueError(f"Invalid threshold method `{threshold_method}`")
 
 def reduce_losses_to_score(losses: list[float], threshold_method: str):
@@ -45,14 +47,17 @@ def reduce_losses_to_score(losses: list[float], threshold_method: str):
         return np.max(losses)
     raise ValueError(f"Invalid threshold method {threshold_method}")
 
-def calculate_threshold(val_tw_dir):
+def calculate_threshold(val_tw_dir, threshold_method):
     filelist = listdir_sorted(val_tw_dir)
 
     loss_list = []
     for file in sorted(filelist):
         f = os.path.join(val_tw_dir, file)
         df = pd.read_csv(f).to_dict()
-        loss_list.extend(df["loss"].values())
+        if threshold_method == "magic":
+            loss_list.extend(df['magic_score'].values())
+        else:
+            loss_list.extend(df["loss"].values())
 
     thr = {
         'max': max(loss_list),

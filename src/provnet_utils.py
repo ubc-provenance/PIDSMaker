@@ -517,3 +517,17 @@ def compute_class_weights(labels, num_classes):
     class_weights[non_zero_classes] = total_count / (num_classes * class_counts[non_zero_classes])
     
     return class_weights
+
+def calculate_average_from_file(filename):
+    numbers = []
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                numbers.append(float(line.strip()))
+        if numbers:
+            return sum(numbers) / len(numbers)
+        else:
+            return 1e-9
+    except FileNotFoundError:
+        log(f"{filename} does not exist")
+        return None

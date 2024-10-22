@@ -34,6 +34,26 @@ class Model(nn.Module):
         self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
         
+    def embed(self, batch, full_data, inference=False, **kwargs):
+        train_mode = not inference
+        if self.node_level:
+            x = batch.x
+        else:
+            x = (batch.x_src, batch.x_dst)
+        edge_index = batch.edge_index
+        with torch.set_grad_enabled(train_mode):
+            h = self.encoder(
+                edge_index=edge_index,
+                t=batch.t,
+                x=x,
+                msg=batch.msg,
+                edge_feats=batch.edge_feats if hasattr(batch, "edge_feats") else None,
+                full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
+                inference=inference,
+                edge_types= batch.edge_type
+            )
+        return h
+        
     def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
         if self.node_level:
