@@ -44,7 +44,7 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
         clear_files_from_gnn_training(cfg)
         
     elif method == "bagged_ensemble":
-        clear_files_from_gnn_training(cfg)
+        # Here, force_restart will be at the beninning so no need to rm files
         min_num_days = cfg.experiments.experiment.uncertainty.bagged_ensemble.min_num_days
         num_days = min_num_days + index - 1
         available_train_days = sorted(cfg.dataset.train_files + cfg.dataset.unused_files)
