@@ -27,12 +27,15 @@ def standard_evaluation(cfg, evaluation_fn):
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
         
     for model_epoch_dir in sorted_files:
-        log(f"Evaluation of model {model_epoch_dir}...")
+        log(f"[@{model_epoch_dir}] - Test Evaluation", pre_return_line=True)
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
 
         stats = evaluation_fn(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes=tw_to_malicious_nodes)
+        log(f"[@{model_epoch_dir}] - Stats")
+        for k, v in stats.items():
+            log(f"{k}: {v}")
             
         out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
@@ -56,21 +59,21 @@ def standard_evaluation(cfg, evaluation_fn):
             best_mcc = stats["mcc"]
             best_stats = stats
         
-    wandb.log(best_stats)
+    return best_stats
 
 
 def main(cfg):
     method = cfg.detection.evaluation.used_method.strip()
     if method == "node_evaluation":
-        standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
+        return standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
     elif method == "tw_evaluation":
-        standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
+        return standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
     elif method == "node_tw_evaluation":
-        standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
+        return standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
     elif method == "queue_evaluation":
-        queue_evaluation.main(cfg)
+        return queue_evaluation.main(cfg)
     elif method == "magic_evaluation" or method == "magic_node_evaluation":
-        magic_evaluation.main(cfg)
+        return magic_evaluation.main(cfg)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 

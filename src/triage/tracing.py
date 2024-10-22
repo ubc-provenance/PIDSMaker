@@ -75,6 +75,9 @@ def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
     return results
 
 def main(cfg):
+    if cfg.triage.tracing.used_method is None:
+        return
+    
     in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
 

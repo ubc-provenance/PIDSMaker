@@ -86,8 +86,7 @@ def test_edge_level(
     df = pd.DataFrame(edge_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
 
-    log(
-        f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
+    # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
 @torch.no_grad()
 def test_node_level(
@@ -190,32 +189,35 @@ def test_node_level(
     df = pd.DataFrame(node_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
 
-    log(
-        f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
+    # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
-def main(cfg, model, val_data, test_data, full_data, epoch):
+def main(cfg, model, val_data, test_data, full_data, epoch, split):
+    if split == "all":
+        splits = [(val_data, "val"), (test_data, "test")]
+    elif split == "val":
+        splits = [(val_data, "val")]
+    elif split == "test":
+        splits = [(test_data, "test")]
+    else:
+        raise ValueError(f"Invalid split {split}")
+    
     device = cfg.detection.gnn_training.inference_device.strip()
     if device not in ["cpu", "cuda"]:
         raise ValueError(f"Invalid inference device {device}")
 
     device = torch.device(device)
     use_cuda = device == torch.device("cuda")
-    
     model.to_device(device)
 
     model_epoch_file = f"model_epoch_{epoch}"
-    log(f"Testing with model at epoch {epoch}...")
     if use_cuda:
         torch.cuda.empty_cache()
 
     val_ap = None
-    for graphs, split in [
-        (val_data, "val"),
-        (test_data, "test"),
-    ]:
-        log(f"    Testing {split} set...")
-        for g in tqdm(graphs, desc=f"{split} set with {model_epoch_file}"):
+    for graphs, split in splits:
+        desc = f"Validation" if split == "val" else f"Testing"
+        for g in log_tqdm(graphs, desc=desc):
             g.to(device=device)
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
             test_fn(
@@ -231,6 +233,9 @@ def main(cfg, model, val_data, test_data, full_data, epoch):
             
         if split == "val":
             val_ap = model.get_val_ap()
+            log(f'[@epoch{epoch:02d}] Validation finished - Val AP: {val_ap:.4f}', return_line=True)
+        else:
+            log(f'[@epoch{epoch:02d}] Test finished', return_line=True)
 
     del model
     return val_ap

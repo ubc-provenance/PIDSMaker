@@ -228,9 +228,9 @@ def main(cfg):
     uuid2idx, uuid2type, uuid2name, hash2uuid = get_node_list(cur=cur, cfg=cfg)
 
     os.makedirs(cfg.preprocessing.build_graphs._magic_dir, exist_ok=True)
-    os.makedirs(cfg.preprocessing.build_graphs.magic_graphs_dir, exist_ok=True)
+    os.makedirs(cfg.preprocessing.build_graphs._magic_graphs_dir, exist_ok=True)
     file_out_dir = cfg.preprocessing.build_graphs._magic_dir
-    graph_out_dir = cfg.preprocessing.build_graphs.magic_graphs_dir
+    graph_out_dir = cfg.preprocessing.build_graphs._magic_graphs_dir
 
     with open(os.path.join(file_out_dir, 'names.json'), 'w', encoding='utf-8') as fw:
         json.dump(uuid2name,fw)

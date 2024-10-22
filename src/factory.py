@@ -10,6 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
+from experiments import add_dropout_to_model
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -28,6 +29,10 @@ def build_model(data_sample, device, cfg, max_node_num):
     decoder = objective_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     
+    if cfg._is_running_mc_dropout:
+        dropout = cfg.experiments.experiment.uncertainty.mc_dropout.dropout
+        add_dropout_to_model(model, p=dropout)
+    
     return model
 
 def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device, max_node_num):
@@ -41,6 +46,7 @@ def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device, max_n
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
         graph_reindexer=graph_reindexer,
         node_level=cfg._is_node_level,
+        is_running_mc_dropout=cfg._is_running_mc_dropout,
     ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):

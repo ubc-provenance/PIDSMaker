@@ -283,11 +283,12 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     else:
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
 
+    eps = 1e-12
     fpr = fp/(fp+tn)
     precision=tp/(tp+fp)
     recall=tp/(tp+fn)
     accuracy=(tp+tn)/(tp+tn+fp+fn)
-    fscore=2*(precision*recall)/(precision+recall)
+    fscore=2*(precision*recall)/(precision+recall+eps)
 
     try:
         auc_val=roc_auc_score(y_test, scores)
@@ -301,28 +302,9 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
-    lr_plus = sensitivity / (1 - specificity)
+    lr_plus = sensitivity / (1 - specificity + eps)
     dor = (tp * tn) / (fp * fn)
     mcc = compute_mcc(tp, fp, tn, fn)
-    
-    log(f'total num: {len(y_test)}')
-    log(f'tn: {tn}')
-    log(f'fp: {fp}')
-    log(f'fn: {fn}')
-    log(f'tp: {tp}')
-    log('')
-
-    log(f"ap: {ap}")
-    log(f"precision: {precision}")
-    log(f"recall: {recall}")
-    log(f"fpr: {fpr}")
-    log(f"fscore: {fscore}")
-    log(f"accuracy: {accuracy}")
-    log(f"balanced acc: {balanced_acc}")
-    log(f"auc: {auc_val}")
-    log(f"lr(+): {lr_plus}")
-    log(f"dor: {dor}")
-    log(f"mcc: {mcc}")
 
     stats = {
         "precision": round(precision, 5),
@@ -335,7 +317,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "auc": round(auc_val, 5),
         "lr(+)": round(lr_plus, 5),
         "dor": round(dor, 5),
-        "mcc": mcc,
+        "mcc": round(mcc, 5),
         "tp": tp,
         "fp": fp,
         "tn": tn,
@@ -366,10 +348,21 @@ def tokenize_arbitrary_label(sentence):
     new_sentence = re.sub(r'\\+', '/', sentence)
     return word_tokenize(new_sentence.replace('/',' / ').replace(':',' : ').replace('.',' . '))
 
-def log(msg: str, *args, **kwargs):
+def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
+    if pre_return_line:
+        print("")
+
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     print(f"{timestamp} - {msg}", *args, **kwargs)
+    
+    if return_line:
+        print("")
+
+def log_tqdm(iterator, desc, **kwargs):
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+    return tqdm(iterator, desc=f"{timestamp} - {desc}", **kwargs)
 
 def get_device(cfg):
     if cfg._use_cpu:

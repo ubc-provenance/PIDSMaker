@@ -22,7 +22,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     node_to_max_loss = defaultdict(int)
     
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
+    for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
         df = pd.read_csv(file).to_dict(orient='records')
         for line in df:
@@ -75,7 +75,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     node_to_max_loss = defaultdict(int)
     
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
+    for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
         df = pd.read_csv(file).to_dict(orient='records')
         for line in df:
@@ -170,7 +170,6 @@ def get_node_predictions_provd(cfg, **kwargs):
     return results
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
-    log(f"Analysis of false positives:")
     fp_indices = [i for i, (true, pred) in enumerate(zip(y_truth, y_preds)) if pred and not true]
     malicious_tws = set(tw_to_malicious_nodes.keys())
     num_fps_in_malicious_tw = 0
@@ -179,11 +178,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
         is_in_malicious_tw = max_val_loss_tw[i] in malicious_tws
         num_fps_in_malicious_tw += int(is_in_malicious_tw)
 
-        # log(f"FP node {nodes[i]} -> max loss: {pred_scores[i]:.3f} | max TW: {max_val_loss_tw[i]} "
-        #     f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
-    
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
-    log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
@@ -229,11 +224,11 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                             attack_to_TPs[att] += 1
 
     # Plots the PR curve and scores for mean node loss
-    print(f"Saving figures to {out_dir}...")
+    log(f"Saving figures to {out_dir}...")
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
-    plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
+    plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
