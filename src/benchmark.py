@@ -130,7 +130,7 @@ def main(cfg, **kwargs):
         method_to_metrics = defaultdict(list)
         original_cfg = copy.deepcopy(cfg)
         
-        for method in ["bagged_ensemble", "hyperparameter", "mc_dropout", "deep_ensemble"]:
+        for method in ["mc_dropout", "deep_ensemble", "bagged_ensemble", "hyperparameter"]:
             iterations = getattr(cfg.experiments.experiment.uncertainty, method).iterations
             log(f"[@method {method}] - Started", pre_return_line=True)
             
