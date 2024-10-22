@@ -34,29 +34,8 @@ from triage import (
 
 import time
 
-def main(cfg, **kwargs):
-    modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
-    should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
-    
-    log("\n" + ("*" * 100))
-    log("Tasks modified since last runs:")
-    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
-
-    log("\nTasks requiring re-execution:")
-    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
-    log(("*" * 100) + "\n")
-    
-    if cfg.detection.gnn_training.use_seed:
-        seed = 0
-        random.seed(seed)
-        np.random.seed(seed)
-
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
-    task_to_module = {
+def get_task_to_module(cfg):
+    return {
         "build_graphs": {
             "module": build_graphs,
             "task_path": cfg.preprocessing.build_graphs._task_path,
@@ -86,15 +65,40 @@ def main(cfg, **kwargs):
             "task_path": cfg.triage.tracing._task_path,
         },
     }
+
+def main(cfg, **kwargs):
+    modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
+    should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
+    log("\n" + ("*" * 100))
+    log("Tasks modified since last runs:")
+    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
+
+    log("\nTasks requiring re-execution:")
+    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
+    log(("*" * 100) + "\n")
+    
+    if cfg.detection.gnn_training.use_seed:
+        seed = 0
+        random.seed(seed)
+        np.random.seed(seed)
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     def run_task(task: str, cfg):
-        module = task_to_module[task]["module"]
-        task_path = task_to_module[task]["task_path"]
-        
         start = time.time()
         return_value = None
         
+        # This updates all task paths
         should_restart = get_updated_should_restart(cfg)
+        
+        task_to_module = get_task_to_module(cfg)
+        module = task_to_module[task]["module"]
+        task_path = task_to_module[task]["task_path"]
+        
         if should_restart[task]:
             return_value = module.main(cfg)
             set_task_to_done(task_path)
@@ -102,7 +106,8 @@ def main(cfg, **kwargs):
         return {"time": time.time() - start, "return": return_value}
     
     def run_pipeline(cfg):
-        task_results = {task: run_task(task, cfg) for task in task_to_module}
+        tasks = get_task_to_module(cfg).keys()
+        task_results = {task: run_task(task, cfg) for task in tasks}
         
         metrics = task_results["evaluation"]["return"]
         metrics = {
@@ -125,7 +130,7 @@ def main(cfg, **kwargs):
         method_to_metrics = defaultdict(list)
         original_cfg = copy.deepcopy(cfg)
         
-        for method in ["hyperparameter", "mc_dropout", "deep_ensemble", "bagged_ensemble"]:
+        for method in ["bagged_ensemble", "hyperparameter", "mc_dropout", "deep_ensemble"]:
             iterations = getattr(cfg.experiments.experiment.uncertainty, method).iterations
             log(f"[@method {method}] - Started", pre_return_line=True)
             
@@ -158,7 +163,7 @@ def main(cfg, **kwargs):
                     cfg._force_restart = ""
                     cfg._is_running_mc_dropout = False
                     
-        uncertainty_stats = compute_uncertainty_stats(method_to_metrics)
+        uncertainty_stats = compute_uncertainty_stats(method_to_metrics, cfg)
         wandb.log(uncertainty_stats)
             
         
