@@ -24,38 +24,38 @@ detection:
     num_epochs: 10
     lr: 0.001
     weight_decay: 0.0005
-    node_in_dim: 3
     node_hid_dim: 64
-    node_out_dim: 3
+    node_out_dim: 64
+    inference_device: cuda
     encoder:
       node_features: node_type
       neighbor_sampling: []
-      edge_features: edge_type
+      edge_features: none
       used_methods: magic_gat
       magic_gat:
+        hid_dim: 64
         num_layers: 3
         num_heads: 4
         negative_slope: 0.2
         alpha_l: 3.0
-        optimizer: adam
         activation: prelu
     decoder:
-      balanced_loss: False
-      used_methods: reconstruct_masked_features,reconstruct_masked_struct
+      used_methods: reconstruct_masked_features,predict_masked_struct
       reconstruct_masked_features:
-        decoder: magic_gat
-        mask_rate: 0.5
         loss: SCE
-        num_layers: 3
-        num_heads: 4
-        negative_slope: 0.2
-        encoder_to_decoder: 16,64
-      reconstruct_masked_struct:
-        decoder: struct_mlp
+        mask_rate: 0.5
+        decoder: magic_gat
+        magic_gat:
+          hid_dim: 64
+          num_layers: 3
+          num_heads: 4
+          negative_slope: 0.2
+      predict_masked_struct:
         loss: BCE
-        negative_slope: 0.2
-        input_dim: 16
-        hidden_dim: 64
+        decoder: node_mlp
+        node_mlp:
+          architecture_str: linear(4) | leaky_relu
+        balanced_loss: False
 
   evaluation:
     viz_malicious_nodes: False

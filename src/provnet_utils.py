@@ -433,6 +433,9 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
             elif part == 'relu':
                 layers.append(nn.ReLU())
                 
+            elif part == "leaky_relu":
+                layers.append(nn.LeakyReLU())
+                
             else:
                 raise ValueError(f"Invalid layer {part}")
 

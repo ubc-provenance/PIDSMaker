@@ -171,7 +171,7 @@ def test_node_level(
                 node_list.append(temp_dic)
             
         # Magic codes
-        elif cfg.detection.evaluation.edge_evaluation.threshold_method == "magic":
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
             if split == 'val':
                 x_train = model.embed(batch, full_data, inference=True).cpu().numpy()
                 num_nodes = x_train.shape[0]
