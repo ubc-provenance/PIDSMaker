@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import wandb
 from collections import defaultdict
+from pprint import pprint
 
 from encoders import *
 
@@ -81,6 +82,7 @@ def plot_metric(metric_to_plot: str, method_to_metrics, cfg):
         },
     }
     plt.figure(figsize=(10, 6))
+    longest_x_axis = []
     
     for method, metrics in method_to_metrics.items():
         y = [m[metric_to_plot] for m in metrics]
@@ -88,14 +90,28 @@ def plot_metric(metric_to_plot: str, method_to_metrics, cfg):
         style = method_to_style[method]
         x = list(range(1, len(y)+1))
         
+        if len(x) > len(longest_x_axis):
+            longest_x_axis = x
+        
         plt.plot(x, y, label=style["label"], marker=style["marker"], linestyle=style["linestyle"], color=style["color"])
 
-    plt.xlabel("Iteration", fontsize=14)
-    plt.ylabel("AP Score", fontsize=14)
+    if metric_to_plot == "ap":
+        plt.yscale('log')
 
-    # Customize tick parameters
-    # plt.xticks(epochs, fontsize=12)
-    # plt.yticks(fontsize=12)
+    if metric_to_plot == "val_ap":
+        plt.yticks([0.0, 1.0])
+        y_label = "Val AP"
+    elif metric_to_plot == "mcc":
+        plt.yticks([-0.001, 0.001, 0.01 ,0.1])
+        y_label = "MCC"
+    else:
+        plt.yticks([1e-3, 1e-2, 1e-1, 1.0])
+        y_label = "AP Score"
+        
+    plt.xlabel("Iteration", fontsize=14)
+    plt.ylabel(y_label, fontsize=14)
+
+    plt.xticks(longest_x_axis)
     plt.grid(True, linestyle='--', alpha=0.6)
     
     out_dir = cfg.detection.evaluation.node_evaluation._uncertainty_exp_dir
@@ -117,10 +133,14 @@ def plot_metric(metric_to_plot: str, method_to_metrics, cfg):
 
 PICKED_METRICS = ["ap", "val_ap", "mcc"]
 def compute_uncertainty_stats(method_to_metrics, cfg):
+    pprint(method_to_metrics)
+    
     stats = defaultdict(dict)
+    all_plot_imgs = {}
     
     for met in PICKED_METRICS:
         plots_imgs = plot_metric(met, method_to_metrics, cfg)
+        all_plot_imgs = {**all_plot_imgs, **plots_imgs}
         
         for method, metrics in method_to_metrics.items():
         
@@ -137,7 +157,7 @@ def compute_uncertainty_stats(method_to_metrics, cfg):
     stats = {
         "uncertainty": {
             **stats,
-            **plots_imgs,
+            **all_plot_imgs,
         }
     }
     return stats
