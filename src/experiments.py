@@ -1,5 +1,9 @@
 import math
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import numpy as np
+import wandb
+from collections import defaultdict
 
 from encoders import *
 
@@ -9,32 +13,38 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
     if method == "hyperparameter":
         delta = cfg.experiments.experiment.uncertainty.hyperparameter.delta
         mid_value = math.floor(iterations / 2) + 1
-        if index == mid_value:
-            return cfg
         
-        delta = delta * index
+        # we want delta to be like [-0.4, -0.2, 0, 0.2, 0.4], for delta=0.2
         if index < mid_value:
-            delta = -delta
-            
-        if hyperparameter == "lr":
-            cfg.detection.gnn_training.lr *= delta
-        elif hyperparameter == "num_epochs":
-            cfg.detection.gnn_training.num_epochs *= delta
-        elif hyperparameter == "text_h_dim":
-            cfg.featurization.embed_nodes.emb_dim *= delta
-        elif hyperparameter == "gnn_h_dim":
-            cfg.detection.gnn_training.node_hid_dim *= delta
+            delta = -delta * (mid_value - index)
+        elif index > mid_value:
+            delta = delta * index
         else:
-            raise ValueError(f"Invalid hyperparameter {hyperparameter}")
+            delta = 0
+            
+        if hyperparameter == "text_h_dim":
+            clear_files_from_embed_nodes(cfg)
+            cfg.featurization.embed_nodes.emb_dim += int(delta * cfg.featurization.embed_nodes.emb_dim)
+        else:
+            clear_files_from_gnn_training(cfg)
+            if hyperparameter == "lr":
+                cfg.detection.gnn_training.lr += delta * cfg.detection.gnn_training.lr
+            elif hyperparameter == "num_epochs":
+                cfg.detection.gnn_training.num_epochs += int(delta * cfg.detection.gnn_training.num_epochs)
+            elif hyperparameter == "gnn_h_dim":
+                cfg.detection.gnn_training.node_hid_dim += int(delta * cfg.detection.gnn_training.node_hid_dim)
+            else:
+                raise ValueError(f"Invalid hyperparameter {hyperparameter}")
         
     elif method == "mc_dropout":
+        clear_files_from_gnn_training(cfg)
         cfg._is_running_mc_dropout = True
-        cfg._force_restart = "gnn_training"
     
     elif method == "deep_ensemble":
-        cfg._force_restart = "gnn_training"
+        clear_files_from_gnn_training(cfg)
         
     elif method == "bagged_ensemble":
+        clear_files_from_gnn_training(cfg)
         min_num_days = cfg.experiments.experiment.uncertainty.bagged_ensemble.min_num_days
         num_days = min_num_days + index - 1
         available_train_days = sorted(cfg.dataset.train_files + cfg.dataset.unused_files)
@@ -43,9 +53,133 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
         
     return cfg
 
+def plot_metric(metric_to_plot: str, method_to_metrics, cfg):
+    method_to_style = {
+        "hyperparameter": {
+            "label": "Hyperparameter Ensemble",
+            "marker": "o",
+            "linestyle": "-",
+            "color": '#1f77b4',
+        },
+        "mc_dropout": {
+            "label": "MC Dropout",
+            "marker": "s",
+            "linestyle": "--",
+            "color": '#ff7f0e',
+        },
+        "deep_ensemble": {
+            "label": "Deep Ensemble",
+            "marker": "D",
+            "linestyle": "-",
+            "color": '#2ca02c',
+        },
+        "bagged_ensemble": {
+            "label": "Bagged Ensemble",
+            "marker": "x",
+            "linestyle": ":",
+            "color": '#d62728',
+        },
+    }
+    plt.figure(figsize=(10, 6))
+    
+    for method, metrics in method_to_metrics.items():
+        y = [m[metric_to_plot] for m in metrics]
+
+        style = method_to_style[method]
+        x = list(range(1, len(y)+1))
+        
+        plt.plot(x, y, label=style["label"], marker=style["marker"], linestyle=style["linestyle"], color=style["color"])
+
+    plt.xlabel("Iteration", fontsize=14)
+    plt.ylabel("AP Score", fontsize=14)
+
+    # Customize tick parameters
+    # plt.xticks(epochs, fontsize=12)
+    # plt.yticks(fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    
+    out_dir = cfg.detection.evaluation.node_evaluation._uncertainty_exp_dir
+    os.makedirs(out_dir, exist_ok=True)
+    log(f"Saving uncertainty figures to {out_dir}...")
+    plot1 = os.path.join(out_dir, f"uncertainty_{metric_to_plot}_{cfg._model}.png")
+    plt.savefig(plot1)
+    
+    plt.legend(fontsize=12)
+    plt.tight_layout()
+    
+    plot2 = os.path.join(out_dir, f"uncertainty_{metric_to_plot}_with_legend_{cfg._model}.png")
+    plt.savefig(plot2)
+    
+    return {
+        f"uncertainty_{metric_to_plot}": wandb.Image(plot1),
+        f"uncertainty_with_legend_{metric_to_plot}": wandb.Image(plot2),
+    }
+
+PICKED_METRICS = ["ap", "val_ap", "mcc"]
+def compute_uncertainty_stats(method_to_metrics, cfg):
+    stats = defaultdict(dict)
+    
+    for met in PICKED_METRICS:
+        plots_imgs = plot_metric(met, method_to_metrics, cfg)
+        
+        for method, metrics in method_to_metrics.items():
+        
+            values = [m[met] for m in metrics]
+            
+            stats[method][f"{met}_std"] = round(np.std(values), 6)
+            stats[method][f"{met}_%std"] = round(np.std(values) / np.mean(values), 6)
+            stats[method][f"{met}_%relative_range"] = round((np.max(values) - np.min(values)) / np.mean(values), 6)
+            stats[method][f"{met}_variance"] = round(np.var(values), 6)
+            stats[method][f"{met}_mean"] = round(np.mean(values), 6)
+            stats[method][f"{met}_max-mean"] = round(np.max(values) - np.mean(values), 6)
+            stats[method][f"{met}_mean-min"] = round(np.mean(values) - np.min(values), 6)
+            
+    stats = {
+        "uncertainty": {
+            **stats,
+            **plots_imgs,
+        }
+    }
+    return stats
+
+
+# Utils
+def clear_files_from_gnn_training(cfg):
+    """Removes task paths to avoid old artifacts + consequently force restarts from gnn_training"""
+    paths = [cfg.detection.gnn_training._task_path, cfg.detection.evaluation._task_path]
+    
+    for path in paths:
+        shutil.rmtree(path, ignore_errors=True)
+        os.makedirs(path)
+    
+def clear_files_from_embed_nodes(cfg):
+    paths = [cfg.featurization.embed_nodes._task_path, cfg.featurization.embed_edges._task_path]
+    
+    for path in paths:
+        shutil.rmtree(path, ignore_errors=True)
+        os.makedirs(path)
+        
+    clear_files_from_gnn_training(cfg)
     
 def fuse_hyperparameter_metrics(hyper_to_metrics):
-    pass
+    """
+    For each hyperparameter i \in H at iteration j, we do the mean of the metrics for all hyperparameters
+    in H. Basically, we compute a single list of metrics from all lists of metrics for each hyperparam.
+    """
+    mean_metrics = {}
+    metrics = hyper_to_metrics[list(hyper_to_metrics.keys())[0]][0].keys()
+
+    for metric in metrics:
+        if metric in PICKED_METRICS:
+            all_values = []
+            for param, list_of_dict in hyper_to_metrics.items():
+                values = [d[metric] for d in list_of_dict]
+                all_values.append(values)
+            mean_metrics[metric] = np.mean(all_values, axis=0)
+
+    list_of_dict = [dict(zip(mean_metrics.keys(), values)) for values in zip(*mean_metrics.values())]
+    return list_of_dict
+
 
 # MC Dropout
 class DropoutWrapper(nn.Module):

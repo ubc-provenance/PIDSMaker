@@ -170,7 +170,6 @@ def get_node_predictions_provd(cfg, **kwargs):
     return results
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
-    log(f"Analysis of false positives:")
     fp_indices = [i for i, (true, pred) in enumerate(zip(y_truth, y_preds)) if pred and not true]
     malicious_tws = set(tw_to_malicious_nodes.keys())
     num_fps_in_malicious_tw = 0
@@ -179,11 +178,7 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
         is_in_malicious_tw = max_val_loss_tw[i] in malicious_tws
         num_fps_in_malicious_tw += int(is_in_malicious_tw)
 
-        # log(f"FP node {nodes[i]} -> max loss: {pred_scores[i]:.3f} | max TW: {max_val_loss_tw[i]} "
-        #     f"| is malicious TW: " + (" ✅" if is_in_malicious_tw else " ❌"))
-    
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
-    log(f"Percentage of FPs present in malicious TWs: {fp_in_malicious_tw_ratio:.3f}")
     return fp_in_malicious_tw_ratio
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):

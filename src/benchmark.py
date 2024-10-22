@@ -8,7 +8,7 @@ import wandb
 import numpy as np
 from provnet_utils import remove_underscore_keys, log
 from config import set_task_to_done, get_updated_should_restart
-from experiments import update_cfg_for_uncertainty_exp, fuse_hyperparameter_metrics
+from experiments import *
 
 from preprocessing import (
     build_graphs,
@@ -105,6 +105,11 @@ def main(cfg, **kwargs):
         task_results = {task: run_task(task, cfg) for task in task_to_module}
         
         metrics = task_results["evaluation"]["return"]
+        metrics = {
+            **metrics,
+            "val_ap": task_results["gnn_training"]["return"],
+        }
+        
         times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}
         return metrics, times
     
@@ -120,35 +125,41 @@ def main(cfg, **kwargs):
         method_to_metrics = defaultdict(list)
         original_cfg = copy.deepcopy(cfg)
         
-        for method in ["mc_dropout", "hyperparameter", "deep_ensemble", "bagged_ensemble"]:
+        for method in ["hyperparameter", "mc_dropout", "deep_ensemble", "bagged_ensemble"]:
             iterations = getattr(cfg.experiments.experiment.uncertainty, method).iterations
-            log(f"[@method {method}] - Started")
+            log(f"[@method {method}] - Started", pre_return_line=True)
             
             if method == "hyperparameter":
                 hyperparameters = cfg.experiments.experiment.uncertainty.hyperparameter.hyperparameters
                 hyperparameters = map(lambda x: x.strip(), hyperparameters.split(","))
                 assert iterations % 2 != 0, f"The number of iterations for hyperparameters should be odd, found {iterations}"
                 
+                hyper_to_metrics = defaultdict(list)
                 for hyper in hyperparameters:
-                    log(f"[@hyperparameter {hyper}] - Started")
-                    hyper_to_metrics = defaultdict(list)
+                    log(f"[@hyperparameter {hyper}] - Started", pre_return_line=True)
+                    
                     for i in range(iterations):
-                        cfg = update_cfg_for_uncertainty_exp(method, i, iterations, original_cfg, hyperparameter=hyper)
+                        log(f"[@iteration {i}]", pre_return_line=True)
+                        cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=hyper)
                         metrics, times = run_pipeline(cfg)
                         hyper_to_metrics[hyper].append(metrics)
                         
                 metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
-                method_to_metrics[method].append(metrics)
+                method_to_metrics[method] = metrics
             
             else:
                 for i in range(iterations):
-                    cfg = update_cfg_for_uncertainty_exp(method, i, iterations, original_cfg, hyperparameter=None)
+                    log(f"[@iteration {i}]", pre_return_line=True)
+                    cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
                     metrics, times = run_pipeline(cfg)
                     method_to_metrics[method].append(metrics)
                     
                     # We force restart in some methods so we avoid forced restart for other methods
                     cfg._force_restart = ""
                     cfg._is_running_mc_dropout = False
+                    
+        uncertainty_stats = compute_uncertainty_stats(method_to_metrics)
+        wandb.log(uncertainty_stats)
             
         
     log("==" * 30)

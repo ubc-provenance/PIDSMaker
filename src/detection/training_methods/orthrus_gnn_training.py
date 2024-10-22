@@ -54,7 +54,7 @@ def main(cfg):
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
-    best_val_ap, best_model, best_epoch = 0.0, None, None
+    best_val_ap, best_model, best_epoch = -1.0, None, None
     
     for epoch in range(0, num_epochs):
         start = timer()
@@ -126,10 +126,12 @@ def main(cfg):
             split="test",
         )
 
-            
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),
+        "val_ap": round(best_val_ap, 5),
     })
+    
+    return best_val_ap
 
 
 if __name__ == "__main__":

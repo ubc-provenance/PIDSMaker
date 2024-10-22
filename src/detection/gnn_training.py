@@ -8,11 +8,11 @@ from .training_methods import (
 def main(cfg):
     method = cfg.detection.gnn_training.used_method.strip()
     if method == 'orthrus':
-        orthrus_gnn_training.main(cfg)
+        return orthrus_gnn_training.main(cfg)
     elif method == 'magic':
-        magic_testing.main(cfg)
+        return magic_testing.main(cfg)
     elif method == "provd":
-        provd_testing.main(cfg)
+        return provd_testing.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")
 
