@@ -110,11 +110,13 @@ def test_node_level(
     start = time.perf_counter()
 
     loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+    
+    validation = split == "val"
 
     for batch in loader:
         batch = batch.to(device)
         
-        loss = model(batch, full_data, inference=True)
+        loss = model(batch, full_data, inference=True, validation=validation)
         if isinstance(loss, tuple):
             loss, out = loss
         tot_loss += loss.sum().item()

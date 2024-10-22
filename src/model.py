@@ -125,7 +125,8 @@ class Model(nn.Module):
             return loss_or_scores
         
     def get_val_ap(self):
-        return self.decoders[0].get_ap()
+        # If multiple decoders are used, we take the average of the val scores
+        return np.mean([d.get_val_score() for d in self.decoders])
 
     def to_device(self, device):
         if self.device == device:
