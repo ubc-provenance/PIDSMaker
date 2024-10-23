@@ -33,7 +33,7 @@ def create_pseudo_graph(G,root_nodes):
     Returns:
         nx.DiGraph: Pseudo-graph with pseudo-root nodes and directed edges to descendants.
     """
-    pseudo_graph = nx.DiGraph()
+    pseudo_graph = nx.MultiDiGraph()
 
     # Step 1: Add all original nodes and edges to the pseudo-graph
     for node, attr in G.nodes(data=True):
