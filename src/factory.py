@@ -171,11 +171,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 time_dim,
                 message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
                 aggregator_module=LastAggregator(),
+                device=device,
             )
         elif use_time_enc:
             memory = TimeEncodingMemory(
                 max_node_num,
                 time_dim,
+                device=device,
             )
         else:
             memory = None

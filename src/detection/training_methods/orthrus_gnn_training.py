@@ -11,12 +11,13 @@ from factory import *
 from . import orthrus_gnn_testing
 
 
-def train(data,
-          full_data,
-          model,
-          optimizer,
-          cfg
-          ):
+def train(
+    data,
+    full_data,
+    model,
+    optimizer,
+    cfg,
+):
     model.train()
 
     losses = []
@@ -25,7 +26,8 @@ def train(data,
     for batch in batch_loader:
         optimizer.zero_grad()
 
-        loss, *_ = model(batch, full_data)
+        results = model(batch, full_data)
+        loss = results["loss"]
 
         loss.backward()
         optimizer.step()
