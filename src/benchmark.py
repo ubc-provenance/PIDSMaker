@@ -109,7 +109,7 @@ def main(cfg, **kwargs):
         tasks = get_task_to_module(cfg).keys()
         task_results = {task: run_task(task, cfg) for task in tasks}
         
-        metrics = task_results["evaluation"]["return"]
+        metrics = task_results["evaluation"]["return"] or {}
         metrics = {
             **metrics,
             "val_ap": task_results["gnn_training"]["return"],
@@ -119,23 +119,23 @@ def main(cfg, **kwargs):
         return metrics, times
     
     # Standard behavior: we run the whole pipeline
-    if cfg.experiments.experiment.used_method == "standard":
+    if cfg.experiment.used_method == "standard":
         log("Running pipeline in 'Standard' mode.")
         metrics, times = run_pipeline(cfg)
         wandb.log(metrics)
         wandb.log(times)
         
-    elif cfg.experiments.experiment.used_method == "uncertainty":
+    elif cfg.experiment.used_method == "uncertainty":
         log("Running pipeline in 'Uncertainty' mode.")
         method_to_metrics = defaultdict(list)
         original_cfg = copy.deepcopy(cfg)
         
         for method in ["mc_dropout", "deep_ensemble", "bagged_ensemble", "hyperparameter"]:
-            iterations = getattr(cfg.experiments.experiment.uncertainty, method).iterations
+            iterations = getattr(cfg.experiment.uncertainty, method).iterations
             log(f"[@method {method}] - Started", pre_return_line=True)
             
             if method == "hyperparameter":
-                hyperparameters = cfg.experiments.experiment.uncertainty.hyperparameter.hyperparameters
+                hyperparameters = cfg.experiment.uncertainty.hyperparameter.hyperparameters
                 hyperparameters = map(lambda x: x.strip(), hyperparameters.split(","))
                 assert iterations % 2 != 0, f"The number of iterations for hyperparameters should be odd, found {iterations}"
                 
