@@ -39,7 +39,8 @@ def test_edge_level(
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
 
-        each_edge_loss = model(batch, full_data, inference=True, validation=validation)
+        results = model(batch, full_data, inference=True, validation=validation)
+        each_edge_loss = results["loss"]
         tot_loss += each_edge_loss.sum().item()
 
         # If the data has been reindexed in the loader, we retrieve original node IDs
@@ -116,13 +117,13 @@ def test_node_level(
     for batch in loader:
         batch = batch.to(device)
         
-        loss = model(batch, full_data, inference=True, validation=validation)
-        if isinstance(loss, tuple):
-            loss, out = loss
+        results = model(batch, full_data, inference=True, validation=validation)
+        loss = results["loss"]
         tot_loss += loss.sum().item()
 
         # ThreaTrace code
         if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
+            out = results["out"]
             pred = out.max(1)[1]
             pro = F.softmax(out, dim=1)
             pro1 = pro.max(1)
@@ -151,6 +152,7 @@ def test_node_level(
                 
         # Flash code
         elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+            out = results["out"]
             pred = out.max(1)[1]
             sorted, indices = out.sort(dim=1, descending=True)
             eps = 1e-6

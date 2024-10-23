@@ -100,7 +100,7 @@ class Model(nn.Module):
                 torch.zeros(num_elements, dtype=torch.float)).to(edge_index.device)
             
             for objective in self.decoders:
-                return_value = objective(
+                results = objective(
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
                     h=h, # shape (N, d)
@@ -113,13 +113,12 @@ class Model(nn.Module):
                     node_type=batch.node_type if hasattr(batch, "node_type") else None,
                     validation=validation,
                 )
-                if isinstance(return_value, tuple):
-                    loss, *_ = return_value
+                loss = results["loss"]
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
 
-            return return_value
+            return results
         
     def get_val_ap(self):
         # If multiple decoders are used, we take the average of the val scores
