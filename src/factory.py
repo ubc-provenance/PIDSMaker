@@ -30,7 +30,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     
     if cfg._is_running_mc_dropout:
-        dropout = cfg.experiments.experiment.uncertainty.mc_dropout.dropout
+        dropout = cfg.experiment.uncertainty.mc_dropout.dropout
         add_dropout_to_model(model, p=dropout)
     
     return model

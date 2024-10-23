@@ -12,7 +12,7 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
     index = index + 1
     
     if method == "hyperparameter":
-        delta = cfg.experiments.experiment.uncertainty.hyperparameter.delta
+        delta = cfg.experiment.uncertainty.hyperparameter.delta
         mid_value = math.floor(iterations / 2) + 1
         
         # we want delta to be like [-0.4, -0.2, 0, 0.2, 0.4], for delta=0.2
@@ -46,7 +46,7 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
         
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files
-        min_num_days = cfg.experiments.experiment.uncertainty.bagged_ensemble.min_num_days
+        min_num_days = cfg.experiment.uncertainty.bagged_ensemble.min_num_days
         num_days = min_num_days + index - 1
         available_train_days = sorted(cfg.dataset.train_files + cfg.dataset.unused_files)
         days = available_train_days[:num_days]

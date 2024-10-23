@@ -49,7 +49,7 @@ def main(cfg):
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
-    run_evaluation = cfg.experiments.training_loop.run_evaluation
+    run_evaluation = cfg.training_loop.run_evaluation
     assert run_evaluation in ["best_epoch", "each_epoch"], f"Invalid run evaluation {run_evaluation}"
     best_epoch_mode = run_evaluation == "best_epoch"
 
