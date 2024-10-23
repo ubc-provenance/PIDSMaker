@@ -109,7 +109,7 @@ def main(cfg, **kwargs):
         tasks = get_task_to_module(cfg).keys()
         task_results = {task: run_task(task, cfg) for task in tasks}
         
-        metrics = task_results["evaluation"]["return"]
+        metrics = task_results["evaluation"]["return"] or {}
         metrics = {
             **metrics,
             "val_ap": task_results["gnn_training"]["return"],
