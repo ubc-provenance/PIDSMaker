@@ -19,7 +19,7 @@ def main(cfg):
     path2vector_cache = {}
     
     # Create an embedding for each path in the dataset and associate the nodes that are from these paths
-    for indexid, _ in tqdm(indexid2msg.items(), desc='Embeding all paths in the dataset'):
+    for indexid, _ in log_tqdm(indexid2msg.items(), desc='Embeding all paths in the dataset'):
         corpus = node2corpus[indexid]
         for path in corpus:
             path_str = str(path)

@@ -139,7 +139,7 @@ def weight_edge_list(glist, n, event_mapping):
         interval = (max_time - min_time) / n
         res_dic = {}
 
-        pbar = tqdm(total=len(G.edges))
+        pbar = log_tqdm(total=len(G.edges))
         pbar.set_description('load tasks：')
         for edge in sorted_edges:
             num_window = int((edge[3]['time'] - min_time) // interval)
@@ -155,7 +155,7 @@ def weight_edge_list(glist, n, event_mapping):
                 res_dic[edge[1]][1].append(num_window)
             pbar.update()
 
-        for edge in tqdm(G.edges.data(keys=True), desc='weight edges of graph {}'.format(i)):
+        for edge in log_tqdm(G.edges.data(keys=True), desc='weight edges of graph {}'.format(i)):
             # According to the paper, the weight of all pseudo_link is 1
             if G.edges[edge[0], edge[1], edge[2]]["label"] == "pseudo_link":
                 G.edges[edge[0], edge[1], edge[2]]["Rareness"] = 0.5
@@ -212,7 +212,7 @@ def get_node2corpus(splits, cfg, model=None):
     train_files = sorted_paths
     corpus = []
     all_node2paths = defaultdict(list)
-    for graph in tqdm(train_g, desc=f'Extracting the paths for {splits}'):
+    for graph in log_tqdm(train_g, desc=f'Extracting the paths for {splits}'):
         cycles = list(nx.simple_cycles(graph))
         if cycles:
             raise RuntimeError("The graph contains cycles, use transformation 'dag'.")

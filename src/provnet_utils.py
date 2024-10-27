@@ -362,7 +362,7 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
 def log_tqdm(iterator, desc, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    return tqdm(iterator, desc=f"{timestamp} - {desc}", **kwargs)
+    return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
 
 def get_device(cfg):
     if cfg._use_cpu:

@@ -15,7 +15,7 @@ from .embed_edges_methods import (
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
-    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
+    for path in log_tqdm(sorted_paths, desc="Computing edge embeddings"):
         graph = torch.load(path)
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
 

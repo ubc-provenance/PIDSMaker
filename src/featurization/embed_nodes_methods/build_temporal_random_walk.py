@@ -18,7 +18,7 @@ def run_temporal_random_walk(split_files, out_dir, cfg):
     time_weight = cfg.featurization.embed_nodes.temporal_rw.time_weight
     half_life = cfg.featurization.embed_nodes.temporal_rw.half_life
 
-    for path in tqdm(sorted_paths, desc='Building temporal random walks'):
+    for path in log_tqdm(sorted_paths, desc='Building temporal random walks'):
         file = path.split('/')[-1]
 
         graph = torch.load(path)
