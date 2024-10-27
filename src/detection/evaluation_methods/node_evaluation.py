@@ -201,6 +201,24 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     return fp_in_malicious_tw_ratio
 
+def get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
+    nodes_per_attack = [v["nids"] for k, v in attack_to_GPs.items()]
+    reverse_scores, reverse_nodes = zip(*sorted(zip(pred_scores, nodes), reverse=True))
+    fps = 0
+    detected_attacks = {}
+    
+    for score, node in zip(reverse_scores, reverse_nodes):
+        detected = False
+        for i, nodes_set in enumerate(nodes_per_attack):
+            if node in nodes_set:
+                detected_attacks[i] = 1
+                detected = True
+        if len(detected_attacks) == len(nodes_per_attack):
+            break
+        if not detected:
+            fps += 1
+    return fps
+
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     if cfg.detection.gnn_training.used_method == "provd": 
         get_preds_fn = get_node_predictions_provd
@@ -252,14 +270,15 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
-    stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
+    stats["fp_in_malicious_tw_ratio"] = round(fp_in_malicious_tw_ratio, 3)
     
     tps_in_atts = []
     for att, tps in attack_to_TPs.items():
         log(f"attack {att}: {tps}")
         tps_in_atts.append((att, tps))
 
-    stats['percent_detected_attacks'] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
+    stats["percent_detected_attacks"] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
+    stats["fps_if_all_attacks_detected"] = get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs)
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")

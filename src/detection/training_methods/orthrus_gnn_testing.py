@@ -8,6 +8,7 @@ from model import *
 from factory import *
 import torch
 import cudf
+import tracemalloc
 from cuml.neighbors import NearestNeighbors
 
 
@@ -291,32 +292,54 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     model_epoch_file = f"model_epoch_{epoch}"
     if use_cuda:
         torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device=device)
 
     val_ap = None
-    for graphs, split in splits:
-        desc = f"Validation" if split == "val" else f"Testing"
+    peak_inference_cpu_mem = 0
+    peak_inference_gpu_mem = 0
+
+    for graphs, split_name in splits:
+        desc = "Validation" if split_name == "val" else "Testing"
+        tracemalloc.start()
+        
         for g in log_tqdm(graphs, desc=desc):
             g.to(device=device)
+            
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
             test_fn(
                 data=g,
                 full_data=full_data,
                 model=model,
-                split=split,
+                split=split_name,
                 model_epoch_file=model_epoch_file,
                 cfg=cfg,
                 device=device,
             )
-            g.to("cpu")
+            g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
             
-        if split == "val":
+        _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
+        peak_inference_cpu_mem = max(peak_inference_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
+        tracemalloc.stop()
+        
+        if use_cuda:
+            peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
+            peak_inference_gpu_mem = max(peak_inference_gpu_mem, peak_inference_gpu_memory)
+            torch.cuda.reset_peak_memory_stats(device=device)
+        
+        if split_name == "val":
             val_ap = model.get_val_ap()
             log(f'[@epoch{epoch:02d}] Validation finished - Val AP: {val_ap:.4f}', return_line=True)
         else:
             log(f'[@epoch{epoch:02d}] Test finished', return_line=True)
 
     del model
-    return val_ap
+    
+    stats = {
+        "val_ap": val_ap,
+        "peak_inference_cpu_memory": peak_inference_cpu_mem,
+        "peak_inference_gpu_memory": peak_inference_gpu_mem
+    }
+    return stats
 
 
 if __name__ == "__main__":
