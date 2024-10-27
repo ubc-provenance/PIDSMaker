@@ -297,6 +297,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     val_ap = None
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
+    tpb = []
 
     for graphs, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
@@ -305,6 +306,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         for g in log_tqdm(graphs, desc=desc):
             g.to(device=device)
             
+            s = time.time()
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
             test_fn(
                 data=g,
@@ -315,6 +317,8 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
                 cfg=cfg,
                 device=device,
             )
+            tpb.append(time.time() - s)
+            
             g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
             
         _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
@@ -337,7 +341,8 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     stats = {
         "val_ap": val_ap,
         "peak_inference_cpu_memory": peak_inference_cpu_mem,
-        "peak_inference_gpu_memory": peak_inference_gpu_mem
+        "peak_inference_gpu_memory": peak_inference_gpu_mem,
+        "time_per_batch_inference": np.mean(tpb),
     }
     return stats
 

@@ -147,6 +147,7 @@ def main(cfg):
         "peak_train_gpu_memory": round(peak_train_gpu_mem, 3),
         "peak_inference_cpu_memory": round(test_stats["peak_inference_cpu_memory"], 3),
         "peak_inference_gpu_memory": round(test_stats["peak_inference_gpu_memory"], 3),
+        "time_per_batch_inference": round(test_stats["time_per_batch_inference"], 3),
     })
     
     return best_val_ap
