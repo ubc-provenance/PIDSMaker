@@ -107,8 +107,9 @@ def plot_metric(metric_to_plots: list[str], method_to_metrics, cfg):
             style = method_to_style[method]
             suffix_style = metric_suffix_styles[i % len(metric_suffix_styles)]  # Cycle through suffix styles
 
+            metric_label = metric_to_plot.upper() if metric_to_plot in ["ap", "mcc"] else metric_to_plot
             plt.plot(
-                x, y, label=f"{style['label']} ({metric_to_plot})",  # Add metric to the label for clarity
+                x, y, label=f"{style['label']} ({metric_label})",  # Add metric to the label for clarity
                 marker=style["marker"] if suffix_style["marker"] is None else suffix_style["marker"],
                 linestyle=suffix_style["linestyle"],
                 color=style["color"],
