@@ -43,7 +43,6 @@ def main(cfg):
     
     # Reset the peak memory usage counter
     if use_cuda:
-        torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats(device=device)
     tracemalloc.start()
 
@@ -83,6 +82,9 @@ def main(cfg):
                 cfg=cfg,
             )
             g.to("cpu")
+            if use_cuda:
+                torch.cuda.empty_cache()
+            
             tot_loss += loss
 
         tot_loss /= len(train_data)
@@ -119,7 +121,7 @@ def main(cfg):
             if best_epoch_mode:
                 if val_ap > best_val_ap:
                     best_val_ap = val_ap
-                    best_model = copy.deepcopy(model)
+                    best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
                     best_epoch = epoch
             model.to_device(device)
             
@@ -130,6 +132,7 @@ def main(cfg):
         })
         
     if best_epoch_mode:
+        best_model = model.load_state_dict(best_model)
         test_stats = orthrus_gnn_testing.main(
             cfg=cfg,
             model=best_model,

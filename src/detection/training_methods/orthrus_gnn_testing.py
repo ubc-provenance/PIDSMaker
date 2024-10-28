@@ -291,7 +291,6 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
 
     model_epoch_file = f"model_epoch_{epoch}"
     if use_cuda:
-        torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats(device=device)
 
     val_ap = None
@@ -320,6 +319,8 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
             tpb.append(time.time() - s)
             
             g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
+            if use_cuda:
+                torch.cuda.empty_cache()
             
         _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
         peak_inference_cpu_mem = max(peak_inference_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
