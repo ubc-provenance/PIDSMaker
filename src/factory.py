@@ -405,7 +405,7 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         raise ValueError(f"Invalid neighbor sampling {neigh_sampling}. Expected 'None' or a list of integers.")
     
     # Use neigh sampling batch loader
-    if use_neigh_sampling and len(neigh_sampling) > 0:
+    if use_neigh_sampling and len(neigh_sampling) > 0 and not all([n == -1 for n in neigh_sampling]):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 

@@ -58,7 +58,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 6
+    num_epochs: 15
     lr: 0.00001
     weight_decay: 0.00001
     node_hid_dim: 128
@@ -109,7 +109,7 @@ detection:
       threshold_method: max_val_loss
       use_dst_node_loss: True
       use_kmeans: True
-      kmeans_top_K: 20
+      kmeans_top_K: 30
     node_tw_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
