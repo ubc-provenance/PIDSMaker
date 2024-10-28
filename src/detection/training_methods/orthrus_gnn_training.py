@@ -142,7 +142,7 @@ def main(cfg):
 
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),
-        "val_ap": round(best_val_ap, 5),
+        "val_score": round(best_val_ap, 5),
         "peak_train_cpu_memory": round(peak_train_cpu_mem, 3),
         "peak_train_gpu_memory": round(peak_train_gpu_mem, 3),
         "peak_inference_cpu_memory": round(test_stats["peak_inference_cpu_memory"], 3),

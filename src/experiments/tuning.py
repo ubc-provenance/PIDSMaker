@@ -6,7 +6,7 @@ import yaml
 from config import get_yml_file
 
 def get_tuning_sweep_cfg(cfg):
-    yml_file = get_yml_file(filename=f"exp_tuning_{cfg._model}", folder="experiments/tuning/")
+    yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder="experiments/tuning/")
     if not os.path.exists(yml_file):
         raise FileNotFoundError(f"Missing tuning yml file for model {cfg._model}")
     

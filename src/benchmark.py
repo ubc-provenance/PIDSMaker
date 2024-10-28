@@ -119,55 +119,9 @@ def main(cfg, sweep_cfg=None, **kwargs):
         times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}
         return metrics, times
     
-    # Standard behavior: we run the whole pipeline
-    if cfg.experiment.used_method == "standard":
-        log("Running pipeline in 'Standard' mode.")
-        metrics, times = run_pipeline(cfg)
-        wandb.log(metrics)
-        wandb.log(times)
-        
-    elif cfg.experiment.used_method == "uncertainty":
-        log("Running pipeline in 'Uncertainty' mode.")
-        method_to_metrics = defaultdict(list)
-        original_cfg = copy.deepcopy(cfg)
-        
-        for method in ["mc_dropout", "deep_ensemble", "bagged_ensemble", "hyperparameter"]:
-            iterations = getattr(cfg.experiment.uncertainty, method).iterations
-            log(f"[@method {method}] - Started", pre_return_line=True)
-            
-            if method == "hyperparameter":
-                hyperparameters = cfg.experiment.uncertainty.hyperparameter.hyperparameters
-                hyperparameters = map(lambda x: x.strip(), hyperparameters.split(","))
-                assert iterations % 2 != 0, f"The number of iterations for hyperparameters should be odd, found {iterations}"
-                
-                hyper_to_metrics = defaultdict(list)
-                for hyper in hyperparameters:
-                    log(f"[@hyperparameter {hyper}] - Started", pre_return_line=True)
-                    
-                    for i in range(iterations):
-                        log(f"[@iteration {i}]", pre_return_line=True)
-                        cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=hyper)
-                        metrics, times = run_pipeline(cfg)
-                        hyper_to_metrics[hyper].append(metrics)
-                        
-                metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
-                method_to_metrics[method] = metrics
-            
-            else:
-                for i in range(iterations):
-                    log(f"[@iteration {i}]", pre_return_line=True)
-                    cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
-                    metrics, times = run_pipeline(cfg)
-                    method_to_metrics[method].append(metrics)
-                    
-                    # We force restart in some methods so we avoid forced restart for other methods
-                    cfg._force_restart = ""
-                    cfg._is_running_mc_dropout = False
-                    
-        uncertainty_stats = compute_uncertainty_stats(method_to_metrics, cfg)
-        wandb.log(uncertainty_stats)
-        
-    elif cfg.experiment.used_method == "tuning":
+    # Fine-tuning mode
+    if cfg._tune:
+        log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
         project = sweep_config.pop("wandb_project")
         sweep_id = wandb.sweep(sweep_config, project=project)
@@ -179,10 +133,60 @@ def main(cfg, sweep_cfg=None, **kwargs):
                 run_pipeline(cfg)
         
         wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=5)
-        
+    
     else:
-        raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
+    
+        # Standard behavior: we run the whole pipeline
+        if cfg.experiment.used_method == "no_experiment":
+            log("Running pipeline in 'Standard' mode.")
+            metrics, times = run_pipeline(cfg)
+            wandb.log(metrics)
+            wandb.log(times)
             
+        elif cfg.experiment.used_method == "uncertainty":
+            log("Running pipeline in 'Uncertainty' mode.")
+            method_to_metrics = defaultdict(list)
+            original_cfg = copy.deepcopy(cfg)
+            
+            for method in ["mc_dropout", "deep_ensemble", "bagged_ensemble", "hyperparameter"]:
+                iterations = getattr(cfg.experiment.uncertainty, method).iterations
+                log(f"[@method {method}] - Started", pre_return_line=True)
+                
+                if method == "hyperparameter":
+                    hyperparameters = cfg.experiment.uncertainty.hyperparameter.hyperparameters
+                    hyperparameters = map(lambda x: x.strip(), hyperparameters.split(","))
+                    assert iterations % 2 != 0, f"The number of iterations for hyperparameters should be odd, found {iterations}"
+                    
+                    hyper_to_metrics = defaultdict(list)
+                    for hyper in hyperparameters:
+                        log(f"[@hyperparameter {hyper}] - Started", pre_return_line=True)
+                        
+                        for i in range(iterations):
+                            log(f"[@iteration {i}]", pre_return_line=True)
+                            cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=hyper)
+                            metrics, times = run_pipeline(cfg)
+                            hyper_to_metrics[hyper].append(metrics)
+                            
+                    metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
+                    method_to_metrics[method] = metrics
+                
+                else:
+                    for i in range(iterations):
+                        log(f"[@iteration {i}]", pre_return_line=True)
+                        cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
+                        metrics, times = run_pipeline(cfg)
+                        method_to_metrics[method].append(metrics)
+                        
+                        # We force restart in some methods so we avoid forced restart for other methods
+                        cfg._force_restart = ""
+                        cfg._is_running_mc_dropout = False
+                        
+            uncertainty_stats = compute_uncertainty_stats(method_to_metrics, cfg)
+            wandb.log(uncertainty_stats)
+            
+        else:
+            raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
+
     
     log("==" * 30)
     log("Run finished.")
@@ -200,7 +204,7 @@ if __name__ == '__main__':
     
     PROJECT_PREFIX = "framework_"
     wandb.init(
-        mode="online" if (args.wandb and not cfg.experiment.used_method == "tuning") else "disabled",
+        mode="online" if (args.wandb and args.experiment != "tuning") else "disabled",
         project=PROJECT_PREFIX + "nodlink_tests",
         name=exp_name,
         tags=tags,
