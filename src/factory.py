@@ -10,7 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments import add_dropout_to_model
+from experiments.uncertainty import add_dropout_to_model
 
 
 def build_model(data_sample, device, cfg, max_node_num):

@@ -8,7 +8,8 @@ import wandb
 import numpy as np
 from provnet_utils import remove_underscore_keys, log
 from config import set_task_to_done, get_updated_should_restart
-from experiments import *
+from experiments.uncertainty import *
+from experiments.tuning import get_tuning_sweep_cfg, fuse_cfg_with_sweep_cfg
 
 from preprocessing import (
     build_graphs,
@@ -66,7 +67,7 @@ def get_task_to_module(cfg):
         },
     }
 
-def main(cfg, **kwargs):
+def main(cfg, sweep_cfg=None, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
@@ -165,8 +166,24 @@ def main(cfg, **kwargs):
                     
         uncertainty_stats = compute_uncertainty_stats(method_to_metrics, cfg)
         wandb.log(uncertainty_stats)
-            
         
+    elif cfg.experiment.used_method == "tuning":
+        sweep_config = get_tuning_sweep_cfg(cfg)
+        project = sweep_config.pop("wandb_project")
+        sweep_id = wandb.sweep(sweep_config, project=project)
+        
+        def run_pipeline_from_sweep(cfg):
+            with wandb.init():
+                sweep_cfg = wandb.config
+                cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
+                run_pipeline(cfg)
+        
+        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=5)
+        
+    else:
+        raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
+            
+    
     log("==" * 30)
     log("Run finished.")
     log("==" * 30)
@@ -183,7 +200,7 @@ if __name__ == '__main__':
     
     PROJECT_PREFIX = "framework_"
     wandb.init(
-        mode="online" if args.wandb else "disabled",
+        mode="online" if (args.wandb and not cfg.experiment.used_method == "tuning") else "disabled",
         project=PROJECT_PREFIX + "nodlink_tests",
         name=exp_name,
         tags=tags,

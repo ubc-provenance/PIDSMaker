@@ -272,6 +272,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
     stats["fp_in_malicious_tw_ratio"] = round(fp_in_malicious_tw_ratio, 3)
     
+    log("TPs per attack:")
     tps_in_atts = []
     for att, tps in attack_to_TPs.items():
         log(f"attack {att}: {tps}")
