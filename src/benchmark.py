@@ -132,7 +132,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
                 run_pipeline(cfg)
         
-        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=5)
+        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=sweep_config["count"])
     
     else:
     
@@ -204,7 +204,7 @@ if __name__ == '__main__':
     
     PROJECT_PREFIX = "framework_"
     wandb.init(
-        mode="online" if (args.wandb and args.experiment != "tuning") else "disabled",
+        mode="online" if (args.wandb and not args.tune) else "disabled",
         project=PROJECT_PREFIX + "nodlink_tests",
         name=exp_name,
         tags=tags,

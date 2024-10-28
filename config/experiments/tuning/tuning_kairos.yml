@@ -6,20 +6,14 @@ count: 16
 
 parameters:
   detection.gnn_training.lr:
-    values: [0.001, 0.0001]
+    values: [0.00005, 0.0001]
   featurization.embed_nodes.emb_dim:
-    values: [128, 256]
+    values: [16, 32]
   detection.gnn_training.node_hid_dim:
-    values: [128, 256]
+    values: [100, 200]
   detection.gnn_training.node_out_dim:
-    values: [128, 256]
+    values: [100, 200]
   # detection.gnn_training.edge_batch_size:
   #   values: [0, 3000]
 
-wandb_project: tuning_nodlink
-
-# early_terminate:
-#   type: hyperband
-#   # s: 2
-#   eta: 2
-#   min_iter: 5
+wandb_project: tuning_kairos

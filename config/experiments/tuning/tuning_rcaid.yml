@@ -11,15 +11,7 @@ parameters:
     values: [128, 256]
   detection.gnn_training.node_hid_dim:
     values: [128, 256]
-  detection.gnn_training.node_out_dim:
-    values: [128, 256]
-  # detection.gnn_training.edge_batch_size:
-  #   values: [0, 3000]
+  detection.gnn_training.edge_batch_size:
+    values: [0, 3000]
 
-wandb_project: tuning_nodlink
-
-# early_terminate:
-#   type: hyperband
-#   # s: 2
-#   eta: 2
-#   min_iter: 5
+wandb_project: tuning_rcaid

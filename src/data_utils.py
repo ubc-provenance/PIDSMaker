@@ -62,7 +62,7 @@ def load_all_datasets(cfg):
     # Concatenates all data into a single data so that iterating over batches
     # of edges is more consistent with TGN
     batch_size = cfg.detection.gnn_training.edge_batch_size
-    if batch_size is not None:
+    if batch_size not in [None, 0]:
         train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size)
         val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size)
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size)
