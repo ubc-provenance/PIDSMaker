@@ -139,7 +139,7 @@ def weight_edge_list(glist, n, event_mapping):
         interval = (max_time - min_time) / n
         res_dic = {}
 
-        pbar = log_tqdm(total=len(G.edges))
+        pbar = log_tqdm(total=len(G.edges), desc="Embed provd")
         pbar.set_description('load tasks：')
         for edge in sorted_edges:
             num_window = int((edge[3]['time'] - min_time) // interval)
