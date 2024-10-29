@@ -120,7 +120,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
         return metrics, times
     
     # Fine-tuning mode
-    if cfg._tune:
+    if cfg._tuning_mode != "none":
         log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
         project = sweep_config.pop("wandb_project")

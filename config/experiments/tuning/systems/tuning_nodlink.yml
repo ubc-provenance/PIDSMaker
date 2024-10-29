@@ -2,19 +2,18 @@ method: grid
 metric:
   name: val_score
   goal: maximize
-count: 16
 
 parameters:
   detection.gnn_training.lr:
     values: [0.001, 0.0001]
-  featurization.embed_nodes.emb_dim:
-    values: [128, 256]
   detection.gnn_training.node_hid_dim:
     values: [128, 256]
   detection.gnn_training.node_out_dim:
     values: [128, 256]
-  # detection.gnn_training.edge_batch_size:
-  #   values: [0, 3000]
+  detection.gnn_training.edge_batch_size:
+    values: [0, 1024]
+  featurization.embed_nodes.epochs:
+    values: [10, 100]
 
 wandb_project: tuning_nodlink
 

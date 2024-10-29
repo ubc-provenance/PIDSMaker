@@ -2,7 +2,6 @@ method: grid
 metric:
   name: val_score
   goal: maximize
-count: 16
 
 parameters:
   detection.gnn_training.lr:

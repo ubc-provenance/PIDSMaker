@@ -56,6 +56,5 @@ detection:
     ground_truth_version: darpa_v4
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: nodlink
-      use_dst_node_loss: True
+      threshold_method: max_val_loss # nodlink
       use_kmeans: False

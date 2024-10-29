@@ -1,0 +1,16 @@
+featurization:
+  embed_nodes:
+    epochs: 20
+    emb_dim: 128
+    use_seed: True
+    training_split: train
+    used_method: word2vec
+    word2vec:
+      walk_length: 10
+      num_walks: 10
+      context_window_size: 5
+      min_count: 0
+      use_skip_gram: True
+      num_workers: 6
+      compute_loss: True
+      add_paths: False

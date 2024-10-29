@@ -1,0 +1,10 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  embedding_techniques:
+    values: [tuned_doc2vec_train, tuned_doc2vec_all, tuned_fasttext_train, tuned_fasttext_all, tuned_hfh_train, tuned_hfh_all, tuned_word2vec_alacarte_train, tuned_word2vec_alacarte_all]
+
+wandb_project: tuning_featurization
