@@ -34,5 +34,5 @@ detection:
 
   evaluation:
     viz_malicious_nodes: False
-    ground_truth_version: darpa_v4
+    ground_truth_version: orthrus
     used_method: node_evaluation
