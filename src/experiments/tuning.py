@@ -44,6 +44,10 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
                 
                 # Train or Train+Test embedding method training
                 cfg.featurization.embed_nodes.training_split = split
+                
+                # If a model doesn't use embedding in features, we add them to benchmark
+                if "node_emb" not in cfg.detection.gnn_training.encoder.node_features:
+                    cfg.detection.gnn_training.encoder.node_features += ",node_emb"
             
         # default cfg path
         else:
