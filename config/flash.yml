@@ -38,9 +38,9 @@ detection:
       node_features: node_emb
       neighbor_sampling: [-1, -1]
       edge_features: none
+      dropout: 0.5
       used_methods: sage
       sage:
-        dropout: 0.5
         activation: relu
     decoder:
       used_methods: predict_node_type

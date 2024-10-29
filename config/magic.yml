@@ -31,6 +31,7 @@ detection:
       node_features: node_type
       neighbor_sampling: []
       edge_features: none
+      dropout: 0.0
       used_methods: magic_gat
       magic_gat:
         hid_dim: 64

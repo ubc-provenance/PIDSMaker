@@ -11,7 +11,7 @@ parameters:
     values: [128, 256]
   detection.gnn_training.node_out_dim:
     values: [64, 128]
-  detection.gnn_training.encoder.graph_attention.dropout:
+  detection.gnn_training.encoder.dropout:
     values: [0.25, 0.5]
 
 wandb_project: tuning_orthrus

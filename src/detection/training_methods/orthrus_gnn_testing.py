@@ -148,7 +148,7 @@ def test_node_level(
                 temp_dic = {
                     'node': node,
                     'loss': float(loss[i].item()),
-                    'threatrace_score': score,
+                    'threatrace_score': float(loss[i].item()), #score,
                     'correct_pred': correct_pred,
                 }
                 node_list.append(temp_dic)
@@ -320,7 +320,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
                 cfg=cfg,
                 device=device,
             )
-            all_losses.extend(tot_loss)
+            all_losses.append(tot_loss)
             tpb.append(time.time() - s)
             
             g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch

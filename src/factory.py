@@ -87,7 +87,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 out_dim=node_out_dim,
                 edge_dim=edge_dim or None,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
-                dropout=cfg.detection.gnn_training.encoder.graph_attention.dropout,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
             )
         elif method == "sage":
@@ -96,7 +96,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
-                dropout=cfg.detection.gnn_training.encoder.sage.dropout,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         elif method == "LSTM":
             encoder = LSTM(

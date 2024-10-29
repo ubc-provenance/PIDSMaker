@@ -32,9 +32,9 @@ detection:
       node_features: node_type,edges_distribution
       neighbor_sampling: [-1, -1]
       edge_features: edge_type
+      dropout: 0.5
       used_methods: sage
       sage:
-        dropout: 0.5
         activation: relu
     decoder:
       used_methods: predict_node_type

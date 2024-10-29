@@ -40,6 +40,7 @@ detection:
       node_features: node_emb
       neighbor_sampling: []
       edge_features: none
+      dropout: 0.0
       used_methods: rcaid_gat
     decoder:
       used_methods: predict_node_type
