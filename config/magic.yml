@@ -22,6 +22,7 @@ detection:
     used_method: orthrus
     use_seed: True
     num_epochs: 10
+    patience: 3
     lr: 0.001
     weight_decay: 0.0005
     node_hid_dim: 64

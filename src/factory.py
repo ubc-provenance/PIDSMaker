@@ -117,6 +117,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         elif method == "sum_aggregation":
             encoder = SumAggregation(

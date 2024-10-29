@@ -62,6 +62,8 @@ def main(cfg):
     peak_train_cpu_mem = 0
     peak_train_gpu_mem = 0
     test_stats = None
+    patience = cfg.detection.gnn_training.patience
+    patience_counter = 0
     
     for epoch in range(0, num_epochs):
         start = timer()
@@ -101,36 +103,43 @@ def main(cfg):
             
         log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
         
-        # Check points
-        if cfg._test_mode or epoch % 1 == 0:
-            # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-            # save_model(model, model_path, cfg)
-            
-            split_to_run = "val" if best_epoch_mode else "all"
-            test_stats = orthrus_gnn_testing.main(
-                cfg=cfg,
-                model=model,
-                val_data=val_data,
-                test_data=test_data,
-                full_data=full_data,
-                epoch=epoch,
-                split=split_to_run,
-            )
-            val_ap = test_stats["val_ap"]
-            
-            if best_epoch_mode:
-                if val_ap > best_val_ap:
-                    best_val_ap = val_ap
-                    best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
-                    best_epoch = epoch
-            model.to_device(device)
-            
+        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+        # save_model(model, model_path, cfg)
+        
+        # Validation    
+        split_to_run = "val" if best_epoch_mode else "all"
+        test_stats = orthrus_gnn_testing.main(
+            cfg=cfg,
+            model=model,
+            val_data=val_data,
+            test_data=test_data,
+            full_data=full_data,
+            epoch=epoch,
+            split=split_to_run,
+        )
+        val_ap = test_stats["val_ap"]
+        
+        if best_epoch_mode:
+            if val_ap > best_val_ap:
+                best_val_ap = val_ap
+                best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
+                best_epoch = epoch
+                patience_counter = 0
+            else:
+                patience_counter += 1
+        model.to_device(device)
+        
+        if patience_counter >= patience:
+            log(f"Early stopping: best score is {best_val_ap:.4f}")
+            break
+        
         wandb.log({
             "train_epoch": epoch,
             "train_loss": round(tot_loss, 4),
             "val_ap": round(val_ap, 5),
         })
         
+    # After training
     if best_epoch_mode:
         model.load_state_dict(best_model)
         test_stats = orthrus_gnn_testing.main(
