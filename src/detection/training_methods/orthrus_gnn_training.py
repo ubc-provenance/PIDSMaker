@@ -132,10 +132,10 @@ def main(cfg):
         })
         
     if best_epoch_mode:
-        best_model = model.load_state_dict(best_model)
+        model.load_state_dict(best_model)
         test_stats = orthrus_gnn_testing.main(
             cfg=cfg,
-            model=best_model,
+            model=model,
             val_data=val_data,
             test_data=test_data,
             full_data=full_data,

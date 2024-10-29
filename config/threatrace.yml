@@ -27,6 +27,7 @@ detection:
     node_hid_dim: 32
     node_out_dim: 3
     inference_device: cuda
+    edge_batch_size: 1024
     encoder:
       node_features: node_type,edges_distribution
       neighbor_sampling: [-1, -1]

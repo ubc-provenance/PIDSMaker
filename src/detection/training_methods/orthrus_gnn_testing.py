@@ -89,6 +89,7 @@ def test_edge_level(
 
     df = pd.DataFrame(edge_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
+    return tot_loss
 
     # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
@@ -138,6 +139,7 @@ def test_node_level(
                     score = pro1[0][i] / pro2[0][i]
                 else:
                     score = pro1[0][i] / 1e-5
+                score = torch.log(score + 1e-12) # we do that or the score is much too high
                 score = max(score.item(), 0)
             
                 node = batch.original_n_id[i].item()
@@ -267,6 +269,7 @@ def test_node_level(
 
     df = pd.DataFrame(node_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
+    return tot_loss
 
     # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
@@ -297,6 +300,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
     tpb = []
+    all_losses = []
 
     for graphs, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
@@ -307,7 +311,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
             
             s = time.time()
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
-            test_fn(
+            tot_loss = test_fn(
                 data=g,
                 full_data=full_data,
                 model=model,
@@ -316,6 +320,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
                 cfg=cfg,
                 device=device,
             )
+            all_losses.extend(tot_loss)
             tpb.append(time.time() - s)
             
             g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
@@ -331,11 +336,12 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
             peak_inference_gpu_mem = max(peak_inference_gpu_mem, peak_inference_gpu_memory)
             torch.cuda.reset_peak_memory_stats(device=device)
         
+        mean_loss = np.mean(all_losses)
         if split_name == "val":
             val_ap = model.get_val_ap()
-            log(f'[@epoch{epoch:02d}] Validation finished - Val AP: {val_ap:.4f}', return_line=True)
+            log(f'[@epoch{epoch:02d}] Validation finished - Mean Loss: {mean_loss:.4f} - Val AP: {val_ap:.4f}', return_line=True)
         else:
-            log(f'[@epoch{epoch:02d}] Test finished', return_line=True)
+            log(f'[@epoch{epoch:02d}] Test finished - Mean Loss: {mean_loss:.4f}', return_line=True)
 
     del model
     

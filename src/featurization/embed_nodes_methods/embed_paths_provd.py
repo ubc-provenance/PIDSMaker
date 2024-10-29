@@ -139,8 +139,6 @@ def weight_edge_list(glist, n, event_mapping):
         interval = (max_time - min_time) / n
         res_dic = {}
 
-        pbar = log_tqdm(total=len(G.edges), desc="Embed provd")
-        pbar.set_description('load tasks：')
         for edge in sorted_edges:
             num_window = int((edge[3]['time'] - min_time) // interval)
             if edge[3]['time'] == max_time:
@@ -153,7 +151,6 @@ def weight_edge_list(glist, n, event_mapping):
                 res_dic[edge[0]][0].append(num_window)
             if num_window not in res_dic[edge[1]][1]:  # in & dst node
                 res_dic[edge[1]][1].append(num_window)
-            pbar.update()
 
         for edge in log_tqdm(G.edges.data(keys=True), desc='weight edges of graph {}'.format(i)):
             # According to the paper, the weight of all pseudo_link is 1
