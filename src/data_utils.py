@@ -136,7 +136,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
                 x_distrib[:, edge_type_dim:].scatter_add_(0, g.dst.unsqueeze(1).expand(-1, edge_type_dim), fields["edge_type"])
                 
                 # In ThreaTrace they don't standardize, here we do standardize by max value in TW
-                x_distrib = x_distrib / x_distrib.max()
+                x_distrib = x_distrib / (x_distrib.max() + 1e-12)
                 
                 x_src.append(x_distrib[g.src])
                 x_dst.append(x_distrib[g.dst])
