@@ -148,7 +148,7 @@ def test_node_level(
                 temp_dic = {
                     'node': node,
                     'loss': float(loss[i].item()),
-                    'threatrace_score': float(loss[i].item()), #score,
+                    'threatrace_score': score,
                     'correct_pred': correct_pred,
                 }
                 node_list.append(temp_dic)

@@ -21,7 +21,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 15
+    num_epochs: 20
     lr: 0.01
     weight_decay: 0.0005
     node_hid_dim: 32
@@ -47,4 +47,5 @@ detection:
     ground_truth_version: darpa_v4
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: threatrace
+      threshold_method: max_val_loss # threatrace
+      use_kmeans: False

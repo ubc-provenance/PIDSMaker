@@ -2,14 +2,15 @@ method: grid
 metric:
   name: val_score
   goal: maximize
-count: 16
 
 parameters:
   detection.gnn_training.lr:
     values: [0.01, 0.001, 0.0001]
   detection.gnn_training.node_hid_dim:
-    values: [32, 128]
+    values: [32, 64, 128]
   detection.gnn_training.edge_batch_size:
-    values: [0, 3000]
+    values: [1024, 2048]
+  detection.gnn_training.dropout:
+    values: [0.25, 0.5]
 
 wandb_project: tuning_threatrace
