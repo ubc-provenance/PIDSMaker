@@ -1,0 +1,10 @@
+featurization:
+  embed_nodes:
+    epochs: 10
+
+detection:
+  gnn_training:
+    lr: 0.0001
+    node_hid_dim: 128
+    node_hid_dim: 256
+  

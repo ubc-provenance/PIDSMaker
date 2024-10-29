@@ -57,7 +57,7 @@ def get_corpus_using_neighbors_features(cfg, doc2vec_format=False):
     
     words = []
     nodes = set()
-    for G in tqdm(graph_list, desc="Get corpus with neighbors"):
+    for G in log_tqdm(graph_list, desc="Get corpus with neighbors"):
         # Prepare the training data for Doc2Vec: each node and its neighbors as a 'document'
         for node in G.nodes():
             if node not in nodes:

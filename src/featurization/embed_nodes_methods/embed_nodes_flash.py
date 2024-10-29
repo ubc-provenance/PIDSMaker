@@ -14,7 +14,7 @@ def get_node2corpus(cfg, splits):
 
     data_of_graphs = []
 
-    for file_path in tqdm(sorted_paths, desc=f"Loading training data for {str(splits)}"):
+    for file_path in log_tqdm(sorted_paths, desc=f"Loading training data for {str(splits)}"):
         graph = torch.load(file_path)
 
         sorted_edges = sorted([(u, v, attr['label'], int(attr['time'])) \
@@ -48,7 +48,7 @@ def get_node2corpus(cfg, splits):
         
     token_cache = {}
     node2corpus = defaultdict(list)
-    for graphs in tqdm(data_of_graphs, desc="Tokenizing corpus"):
+    for graphs in log_tqdm(data_of_graphs, desc="Tokenizing corpus"):
         for msg, node_type, node_id in zip(graphs[0], graphs[1], graphs[2]):
             for sentence in msg:
                 if sentence not in token_cache:

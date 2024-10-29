@@ -20,7 +20,7 @@ def main(cfg):
                                                          cfg.dataset.test_files +
                                                          cfg.dataset.val_files))
     used_nodes = set()
-    for file_path in tqdm(sorted_paths, desc="Get nodes in graphs"):
+    for file_path in log_tqdm(sorted_paths, desc="Get nodes in graphs"):
         graph = torch.load(file_path)
         used_nodes = used_nodes | set(graph.nodes())
     used_nodes = list(used_nodes)
@@ -32,7 +32,7 @@ def main(cfg):
     decline_percentage = cfg.featurization.embed_nodes.temporal_rw.decline_rate
 
     indexid2vec = {}
-    for indexid in tqdm(used_nodes, desc='Embeding all nodes in the dataset'):
+    for indexid in log_tqdm(used_nodes, desc='Embeding all nodes in the dataset'):
         msg = indexid2msg[indexid]
         node_type, node_label = msg[0], msg[1]
         tokens = tokenize_label(node_label, node_type)

@@ -29,6 +29,7 @@ detection:
     used_method: orthrus
     use_seed: True
     num_epochs: 22
+    patience: 3
     lr: 0.01
     weight_decay: 0.0005
     node_hid_dim: 30
@@ -38,9 +39,9 @@ detection:
       node_features: node_emb
       neighbor_sampling: [-1, -1]
       edge_features: none
+      dropout: 0.5
       used_methods: sage
       sage:
-        dropout: 0.5
         activation: relu
     decoder:
       used_methods: predict_node_type

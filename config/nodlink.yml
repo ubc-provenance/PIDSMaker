@@ -32,7 +32,8 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 6
+    num_epochs: 15
+    patience: 3
     lr: 0.001
     weight_decay: 0.00001
     node_hid_dim: 256
@@ -42,6 +43,7 @@ detection:
       node_features: node_emb
       neighbor_sampling: []
       edge_features: none
+      dropout: 0.0
       used_methods: sum_aggregation
     decoder:
       used_methods: reconstruct_node_features
@@ -54,6 +56,5 @@ detection:
     ground_truth_version: darpa_v4
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: nodlink
-      use_dst_node_loss: True
+      threshold_method: max_val_loss # nodlink
       use_kmeans: False

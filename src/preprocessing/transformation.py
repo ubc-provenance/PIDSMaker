@@ -40,7 +40,7 @@ def main(cfg):
         graph_list = defaultdict(list)
 
         days = get_days_from_cfg(cfg)
-        for day in tqdm(days, desc=f'Transforming'):
+        for day in log_tqdm(days, desc=f'Transforming'):
             sorted_paths = get_all_files_from_folders(base_dir, [f"graph_{day}"])
             for path in sorted_paths:
                 graph = torch.load(path)

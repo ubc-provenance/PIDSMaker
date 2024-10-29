@@ -284,10 +284,10 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
 
     eps = 1e-12
-    fpr = fp/(fp+tn)
-    precision=tp/(tp+fp)
-    recall=tp/(tp+fn)
-    accuracy=(tp+tn)/(tp+tn+fp+fn)
+    fpr = fp/(fp+tn+eps)
+    precision=tp/(tp+fp+eps)
+    recall=tp/(tp+fn+eps)
+    accuracy=(tp+tn)/(tp+tn+fp+fn+eps)
     fscore=2*(precision*recall)/(precision+recall+eps)
 
     try:
@@ -300,10 +300,10 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
     except: balanced_acc=float("nan")
     
-    sensitivity = tp / (tp + fn)
-    specificity = tn / (tn + fp)
+    sensitivity = tp / (tp + fn+eps)
+    specificity = tn / (tn + fp+eps)
     lr_plus = sensitivity / (1 - specificity + eps)
-    dor = (tp * tn) / (fp * fn)
+    dor = (tp * tn) / (fp * fn+eps)
     mcc = compute_mcc(tp, fp, tn, fn)
 
     stats = {
@@ -359,10 +359,12 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
     if return_line:
         print("")
 
-def log_tqdm(iterator, desc, **kwargs):
+def log_tqdm(iterator, desc="", **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    return tqdm(iterator, desc=f"{timestamp} - {desc}", **kwargs)
+    if DISABLE_TQDM:
+        log(f"{desc}...")
+    return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
 
 def get_device(cfg):
     if cfg._use_cpu:

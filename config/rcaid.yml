@@ -30,7 +30,8 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 6
+    num_epochs: 20
+    patience: 3
     lr: 0.0001
     weight_decay: 0.0001
     node_hid_dim: 128
@@ -40,6 +41,7 @@ detection:
       node_features: node_emb
       neighbor_sampling: []
       edge_features: none
+      dropout: 0.5
       used_methods: rcaid_gat
     decoder:
       used_methods: predict_node_type
@@ -53,4 +55,4 @@ detection:
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
-      use_dst_node_loss: True
+      use_kmeans: False

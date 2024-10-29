@@ -12,7 +12,7 @@ def main(cfg):
     model = Doc2Vec.load(doc2vec_model_path)
 
     indexid2vec = {}
-    for indexid, msg in tqdm(indexid2msg.items(), desc='Embeding all nodes in the dataset'):
+    for indexid, msg in log_tqdm(indexid2msg.items(), desc='Embeding all nodes in the dataset'):
         node_type, node_label = msg[0], msg[1]
         tokens = tokenize_label(node_label, node_type)
 

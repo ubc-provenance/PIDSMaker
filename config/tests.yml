@@ -62,6 +62,7 @@ detection:
     used_method: orthrus
     use_seed: True
     num_epochs: 1
+    patience: 3
     lr: 0.00001
     weight_decay: 0.00001
     node_hid_dim: 16
@@ -71,9 +72,9 @@ detection:
       node_features: node_emb,node_type
       neighbor_sampling: []
       edge_features: edge_type
+      dropout: 0.5
       used_methods: tgn,graph_attention
       graph_attention:
-        dropout: 0.5
         activation: relu
         num_heads: 8
       tgn:
@@ -87,7 +88,6 @@ detection:
         use_memory: False
         use_time_order_encoding: False
       sage:
-        dropout: 0.0
         activation: relu
     decoder:
       used_methods: predict_edge_type

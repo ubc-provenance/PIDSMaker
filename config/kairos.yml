@@ -23,7 +23,8 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 6
+    num_epochs: 15
+    patience: 3
     lr: 0.00005
     weight_decay: 0.01
     node_hid_dim: 100
@@ -33,9 +34,9 @@ detection:
       node_features: node_emb,node_type
       neighbor_sampling: []
       edge_features: msg,time_encoding
+      dropout: 0.0
       used_methods: graph_attention,tgn
       graph_attention:
-        dropout: 0.0
         activation: relu
         num_heads: 8
       tgn:

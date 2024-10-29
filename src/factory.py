@@ -10,7 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments import add_dropout_to_model
+from experiments.uncertainty import add_dropout_to_model
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -87,7 +87,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 out_dim=node_out_dim,
                 edge_dim=edge_dim or None,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
-                dropout=cfg.detection.gnn_training.encoder.graph_attention.dropout,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
             )
         elif method == "sage":
@@ -96,7 +96,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
-                dropout=cfg.detection.gnn_training.encoder.sage.dropout,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         elif method == "LSTM":
             encoder = LSTM(
@@ -117,6 +117,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         elif method == "sum_aggregation":
             encoder = SumAggregation(
@@ -405,7 +406,7 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         raise ValueError(f"Invalid neighbor sampling {neigh_sampling}. Expected 'None' or a list of integers.")
     
     # Use neigh sampling batch loader
-    if use_neigh_sampling and len(neigh_sampling) > 0:
+    if use_neigh_sampling and len(neigh_sampling) > 0 and not all([n == -1 for n in neigh_sampling]):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 

@@ -150,7 +150,7 @@ class DEPIMPACT():
         out_to_in = {}
         in_degrees = dict(self.graph.in_degree())
         out_degrees = dict(self.graph.out_degree())
-        for node in tqdm(self.graph.nodes(), desc="calculating degree score"):
+        for node in log_tqdm(self.graph.nodes(), desc="calculating degree score"):
             if int(in_degrees[node]) == 0:
                 out_to_in[node] = 0
             else:
@@ -159,7 +159,7 @@ class DEPIMPACT():
 
     def _cal_loss_score(self, node_to_score):
         node_scores = {}
-        for node in tqdm(self.graph.nodes(), desc="calculating degree score"):
+        for node in log_tqdm(self.graph.nodes(), desc="calculating degree score"):
             if str(node) in node_scores:
                 node_scores[node] = int(node_to_score[str(node)])
             else:

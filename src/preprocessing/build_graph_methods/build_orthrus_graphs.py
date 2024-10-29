@@ -119,7 +119,7 @@ def compute_and_save_split2nodes(cfg):
     
     for split, files in split_to_files.items():
         graph_list = [torch.load(path) for path in files]
-        for G in tqdm(graph_list, desc=f"Check nodes in {split} set"):
+        for G in log_tqdm(graph_list, desc=f"Check nodes in {split} set"):
             for node in G.nodes():
                 split2nodes[split].add(node)
     split2nodes = dict(split2nodes)
