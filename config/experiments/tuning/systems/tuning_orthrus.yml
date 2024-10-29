@@ -12,5 +12,3 @@ parameters:
     values: [64, 128]
   detection.gnn_training.encoder.dropout:
     values: [0.25, 0.5]
-
-wandb_project: tuning_orthrus

@@ -15,5 +15,3 @@ parameters:
     values: [100, 200]
   # detection.gnn_training.edge_batch_size:
   #   values: [0, 3000]
-
-wandb_project: tuning_kairos

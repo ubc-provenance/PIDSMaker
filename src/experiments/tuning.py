@@ -3,7 +3,7 @@ import os
 import functools
 import yaml
 
-from config import get_yml_file, validate_yml_file, TASK_ARGS
+from config import get_yml_file, merge_cfg_and_check_syntax
 
 def get_tuning_sweep_cfg(cfg):
     if cfg._tuning_mode == "hyperparameters":
@@ -29,17 +29,21 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
         
         # special keys
         if key == "embedding_techniques":
-            method = "_".join(value.split("_")[:-1])
-            split = value.split("_")[-1]
-            if split not in ["train", "all"]:
-                raise ValueError(f"Invalid split {split} for embedding technique")
+            if value == "no_featurization":
+                yml_file = get_yml_file(value, folder="tuned_components/")
+                merge_cfg_and_check_syntax(cfg, yml_file)
             
-            yml_file = get_yml_file(method, folder="tuned_components/")
-            validate_yml_file(yml_file, TASK_ARGS)
-            cfg.merge_from_file(yml_file)
-            
-            # Train or Train+Test embedding method training
-            cfg.featurization.embed_nodes.training_split = split
+            else:
+                method = "_".join(value.split("_")[:-1])
+                split = value.split("_")[-1]
+                if split not in ["train", "all"]:
+                    raise ValueError(f"Invalid split {split} for embedding technique")
+                
+                yml_file = get_yml_file(method, folder="tuned_components/")
+                merge_cfg_and_check_syntax(cfg, yml_file)
+                
+                # Train or Train+Test embedding method training
+                cfg.featurization.embed_nodes.training_split = split
             
         # default cfg path
         else:

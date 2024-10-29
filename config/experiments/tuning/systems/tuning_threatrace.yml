@@ -12,5 +12,3 @@ parameters:
     values: [1024, 2048]
   detection.gnn_training.dropout:
     values: [0.25, 0.5]
-
-wandb_project: tuning_threatrace

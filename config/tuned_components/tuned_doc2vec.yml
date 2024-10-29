@@ -1,6 +1,6 @@
 featurization:
   embed_nodes:
-    epochs: 5
+    epochs: 10
     emb_dim: 128
     use_seed: True
     training_split: train

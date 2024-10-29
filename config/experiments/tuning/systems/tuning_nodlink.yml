@@ -15,8 +15,6 @@ parameters:
   featurization.embed_nodes.epochs:
     values: [10, 100]
 
-wandb_project: tuning_nodlink
-
 # early_terminate:
 #   type: hyperband
 #   # s: 2
