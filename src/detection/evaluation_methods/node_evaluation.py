@@ -283,8 +283,15 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+    scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
 
     torch.save(results, results_file)
     torch.save(stats, stats_file)
+    torch.save({
+        "pred_scores": pred_scores,
+        "y_truth": y_truth,
+        "y_preds": y_preds,
+    }, scores_file)
+    wandb.save(scores_file, out_dir)
     
     return stats
