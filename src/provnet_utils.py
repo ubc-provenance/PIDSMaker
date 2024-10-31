@@ -156,8 +156,9 @@ def percentile_90(t):
     Q = np.percentile(sorted_data, 90)
     return Q
 
-def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_walks=10):
+def gen_darpa_rw_file(walk_len, corpus_fd, adjfilename, overall_fd, num_walks=10):
     adj_list = {}
+    back_adj_list = {}
     with open(adjfilename, 'r') as adj_file:
         for line in tqdm(adj_file, desc="creating adj list"):
             line = line.strip().split(",")
@@ -171,16 +172,23 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
             if dstID not in adj_list[srcID]:
                 adj_list[srcID][dstID] = set()
 
-            adj_list[srcID][dstID].add(edgeLabel)
+            if dstID not in back_adj_list:
+                back_adj_list[dstID] = {}
 
-    with open(filename, "w") as f:
+            if srcID not in back_adj_list[dstID]:
+                back_adj_list[dstID][srcID] = set()
+
+            adj_list[srcID][dstID].add(edgeLabel)
+            back_adj_list[dstID][srcID].add(edgeLabel)
+
+    if True:
         lines_buffer = []
 
         # Computing random neighbors for each iteration is extremely slow.
         # We thus pre-compute a list of random indices for all unique numbers of neighbors.
         # These indices can then be accessed given the length of the neighbors.
-        unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]))
-        cache_size = 15 * len(adj_list) * num_walks * walk_len
+        unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]) | set(len(v) for k,v in back_adj_list.items()))
+        cache_size = 30 * len(adj_list) * num_walks * walk_len
         random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
         random_idx = {count: 0 for count in unique_neighbors_count}
 
@@ -192,7 +200,7 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
                 return np.random.randint(0, idx)
             return val
 
-        for src in tqdm(adj_list, desc="Random walking"):
+        for src in tqdm(adj_list, desc="Forward random walking"):
             walk_num = len(adj_list[src]) * num_walks
             for i in range(walk_num):
                 start = src
@@ -205,9 +213,11 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
                     edge_type = start_dst[get_rand(len(start_dst))]
 
                     if len(path_sentence) == 0:
-                        path_sentence.append(f"{graph.nodes[start]['label']},{edge_type},{graph.nodes[dst]['label']}")
+                        # path_sentence.append(f"{graph.nodes[start]['label']},{edge_type},{graph.nodes[dst]['label']}")
+                        path_sentence.append(f"{start},{edge_type},{dst}")
                     else:
-                        path_sentence.append(f"{edge_type},{graph.nodes[dst]['label']}")
+                        # path_sentence.append(f"{edge_type},{graph.nodes[dst]['label']}")
+                        path_sentence.append(f"{edge_type},{dst}")
 
                     if dst not in adj_list:
                         break
@@ -219,9 +229,41 @@ def gen_darpa_rw_file(graph, walk_len, filename, adjfilename, overall_fd, num_wa
                 if len(path_sentence) != 0:
                     path_str = ",".join(path_sentence)
                     lines_buffer.append(path_str)
+
+        # Run bidirectional random walking to ensure that every node appears in the corpus
+        # Missing sink nodes leads to issues when training A La Carte Matrix
+        for dst in tqdm(back_adj_list, desc="Backward random walking"):
+            walk_num = len(back_adj_list[dst]) * num_walks
+            for i in range(walk_num):
+                start = dst
+                path_sentence = []
+                for j in range(walk_len):
+                    start_keys = list(back_adj_list[start].keys())
+                    src = start_keys[get_rand(len(start_keys))]
+
+                    start_src = list(back_adj_list[start][src])
+                    edge_type = start_src[get_rand(len(start_src))]
+
+                    if len(path_sentence) == 0:
+                        # path_sentence.append(f"{graph.nodes[start]['label']},{edge_type},{graph.nodes[dst]['label']}")
+                        path_sentence.append(f"{start},{edge_type},{src}")
+                    else:
+                        # path_sentence.append(f"{edge_type},{graph.nodes[dst]['label']}")
+                        path_sentence.append(f"{edge_type},{src}")
+
+                    if src not in back_adj_list:
+                        break
+                    else:
+                        start = src
+
+                # We do not consider the nodes without any outgoing edges.
+                # We only record the paths.
+                if len(path_sentence) != 0:
+                    path_str = ",".join(path_sentence)
+                    lines_buffer.append(path_str)
         
         lines = "\n".join(lines_buffer)
-        f.write(lines)
+        corpus_fd.write(lines)
         overall_fd.write(lines)
 
 def gen_darpa_adj_files(graph, filename):

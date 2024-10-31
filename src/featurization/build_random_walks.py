@@ -20,13 +20,16 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     random_walks_file = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir, f"{split}.csv")
     random_walks_file_fd = open(random_walks_file, 'w')
     adjacency_path = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj")
+
+    corpus_file = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv")
+    corpus_file_fd = open(corpus_file, 'w')
     
     for path in sorted_paths:
         file = path.split("/")[-1]
         adjacency_file = os.path.join(adjacency_path, f"{split}-{file}.csv")
         os.makedirs(adjacency_path, exist_ok=True)
 
-        log("load file: ", path)
+        log(f"load file: {path}")
         graph = torch.load(path)
         gen_darpa_adj_files(graph, adjacency_file)
         g.append(graph)
@@ -34,17 +37,17 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
             adjacency_file,
             len(graph.nodes)
         ])
-        corpus_file = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv")
+
         gen_darpa_rw_file(
-            graph=graph,
             walk_len=cfg.featurization.embed_nodes.word2vec.walk_length,
-            filename=corpus_file,
+            corpus_fd=corpus_file_fd,
             adjfilename=adjacency_file,
             overall_fd=random_walks_file_fd,
             num_walks=num_walks,
         )
     graph_info.close()
     random_walks_file_fd.close()
+    corpus_file_fd.close()
 
 def main(cfg):
     log_start(__file__)
