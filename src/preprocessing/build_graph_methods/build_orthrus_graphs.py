@@ -204,7 +204,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(
                         batch_edges[-1][-2])
 
-                    log(f"Start create edge fused time window graph for {time_interval}")
+                    # log(f"Start create edge fused time window graph for {time_interval}")
 
                     node_info = {}
                     edge_info = {}
@@ -258,7 +258,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                                 'event_uuid': sorted_data[k][2]
                             })
 
-                    log(f"Start creating graph for {time_interval}")
+                    # log(f"Start creating graph for {time_interval}")
                     graph = nx.MultiDiGraph()
 
                     for node, info in node_info.items():
@@ -286,12 +286,12 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
-                    log(f"Saving graph for {time_interval}")
+                    # log(f"Saving graph for {time_interval}")
                     torch.save(graph, graph_name)
 
-                    log(f"[{time_interval}] Num of edges: {len(edge_list)}")
-                    log(f"[{time_interval}] Num of events: {len(temp_list)}")
-                    log(f"[{time_interval}] Num of nodes: {len(node_info.keys())}")
+                    # log(f"[{time_interval}] Num of edges: {len(edge_list)}")
+                    # log(f"[{time_interval}] Num of events: {len(temp_list)}")
+                    # log(f"[{time_interval}] Num of nodes: {len(node_info.keys())}")
                     start_time = batch_edges[-1][-2]
                     temp_list.clear()
 
