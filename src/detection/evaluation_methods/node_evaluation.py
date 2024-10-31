@@ -233,6 +233,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
+    adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png") # average detection precision
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
     dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
@@ -261,9 +262,23 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                         if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
                             attack_to_TPs[att] += 1
 
+    
+    def transform_attack2nodes_to_node2attacks(attack2nodes):
+        node2attacks = {}
+        for attack, nodes in enumerate(attack2nodes):
+            for node in nodes:
+                if node not in node2attacks:
+                    node2attacks[node] = set()
+                node2attacks[node].add(attack)
+        return node2attacks
+    
+    attack2nodes = [v["nids"] for k, v in attack_to_GPs.items()]
+    node2attacks = transform_attack2nodes_to_node2attacks(attack2nodes)
+    
     # Plots the PR curve and scores for mean node loss
     log(f"Saving figures to {out_dir}...")
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
+    adp_score = plot_detected_attacks_vs_precision(pred_scores, nodes, node2attacks, y_truth, adp_img_file)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
@@ -280,6 +295,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     stats["percent_detected_attacks"] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
     stats["fps_if_all_attacks_detected"] = get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs)
+    stats["adp_score"] = round(adp_score, 3)
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
@@ -287,10 +303,12 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     torch.save(results, results_file)
     torch.save(stats, stats_file)
+    
     torch.save({
         "pred_scores": pred_scores,
         "y_truth": y_truth,
-        "y_preds": y_preds,
+        "nodes": nodes,
+        "node2attacks": node2attacks,
     }, scores_file)
     wandb.save(scores_file, out_dir)
     
