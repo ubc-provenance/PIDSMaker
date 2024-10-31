@@ -391,11 +391,13 @@ def obtain_targets_from_file(input_path, w2v):
     for line in f:
         edge = [''] + line.strip().split(",")
 
-        src_name = edge[3]
+        # src_name = edge[3]
+        src_name = str(edge[1])
         if src_name not in w2v:
                 ret.add(src_name)
 
-        dst_name = edge[4]
+        # dst_name = edge[4]
+        dst_name = str(edge[2])
         if dst_name not in w2v:
                 ret.add(dst_name)
 
@@ -406,7 +408,7 @@ def obtain_targets_from_file(input_path, w2v):
 
     return ret
 
-def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, cfg, verbose=True):
+def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, cfg, verbose=True):
     out_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
     adjacency_dir = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj")
     dataset = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv")
@@ -538,11 +540,12 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
 
     print("Loading adjacency lists from: {}".format(adjacency_dir))
 
-    if "test" not in adjacency_dir:
+    # if split in {'train', 'val'}:
+    if True:
         try:
-            nodelabel2vec = torch.load(f"{out_dir}/nodelabel2vec")
+            indexid2vec = torch.load(f"{out_dir}/indexid2vec")
         except:
-            nodelabel2vec = {}
+            indexid2vec = {}
 
         try:
             edgelabel2vec = torch.load(f"{out_dir}/edgelabel2vec")
@@ -585,61 +588,54 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                     for gram, vector in zip(targets, target_vecs):
                         if np.count_nonzero(vector) == 0:
                             print("[!]Zero-vector target: {}".format(gram))
-                            assert (np.count_nonzero(vector) > 0), "zero-vector target could result in NaN"
-                        vector = vector / np.linalg.norm(vector)
+                            # assert (np.count_nonzero(vector) > 0), "zero-vector target could result in NaN"
+                        else:
+                            vector = vector / np.linalg.norm(vector)
                         target_dict[gram] = vector
 
-
-                print(filename)
                 csv_graph = open(input_path, 'r')
                 for line in csv_graph:
                     edge = [''] + line.strip().split(',')
 
-                    row = []
-                    srcid = edge[1]
-                    row.append(srcid)
-                    dstid = edge[2]
-                    row.append(dstid)
-                    src_name = edge[3]
-                    dst_name = edge[4]
+                    srcid = str(edge[1])
+                    dstid = str(edge[2])
+                    # src_name = edge[3]
+                    # dst_name = edge[4]
+                    src_name = str(edge[1])
+                    dst_name = str(edge[2])
+
                     edge_name = edge[5]
-                    src_type = edge[6]
-                    dst_type = edge[7]
 
                     # Source Node
                     if src_name in wv:
                         src_feature = wv[src_name]
                         assert len(src_feature) == emb_dim, "src feature dimension from wv is {}, not {}"\
                             .format(len(src_feature), emb_dim)
-                        row.extend(src_feature)
                     # Note: if we manually expand wv, we should not take this branch
                     elif src_name in target_dict:
                         src_feature = target_dict[src_name]
                         assert len(src_feature) == emb_dim, "src feature dimension from alc is {}, not {}" \
                             .format(len(src_feature), emb_dim)
-                        row.extend(np.array(src_feature))
                     else:
-                        print("Unknown source node name: {}".format(src_name))
+                        print(f"Unknown node name for source node {srcid}: {src_name}")
 
-                    if src_name not in nodelabel2vec:
-                        nodelabel2vec[src_name] = src_feature
+                    if srcid not in indexid2vec:
+                        indexid2vec[srcid] = src_feature
 
                     # Destination Node
                     if dst_name in wv:
                         dst_feature = wv[dst_name]
                         assert len(dst_feature) == emb_dim, "dst feature dimension from wv is {}, not {}" \
                             .format(len(dst_feature), emb_dim)
-                        row.extend(dst_feature)
                     elif dst_name in target_dict:
                         dst_feature = target_dict[dst_name]
                         assert len(dst_feature) == emb_dim, "dst feature dimension from alc is {}, not {}" \
                             .format(len(dst_feature), emb_dim)
-                        row.extend(np.array(dst_feature))
                     else:
-                        print("Unknown destination node name: {}".format(dst_name))
+                        print(f"Unknown node name for destination node {dstid}: {dst_name}")
 
-                    if dst_name not in nodelabel2vec:
-                        nodelabel2vec[dst_name] = dst_feature
+                    if dstid not in indexid2vec:
+                        indexid2vec[dstid] = dst_feature
 
 
                     # Edge type
@@ -647,12 +643,10 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                         edge_feature = wv[edge_name]
                         assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
                             .format(len(edge_feature), emb_dim)
-                        row.extend(edge_feature)
                     elif edge_name in target_dict:
                         edge_feature = target_dict[edge_name]
                         assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
                             .format(len(edge_feature), emb_dim)
-                        row.extend(np.array(edge_feature))
                     else:
                         print("Unknown edge name: {}".format(edge_name))
 
@@ -660,124 +654,9 @@ def embed_nodes_for_one_split(split: str, epochs: int, use_corpus: bool, use_mat
                         edgelabel2vec[edge_name] = edge_feature
 
         # The one after validation is used in embedding.py
-        torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec_{split}")
-        torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec")
+        # torch.save(indexid2vec, f"{out_dir}/indexid2vec_{split}")
+        torch.save(indexid2vec, f"{out_dir}/indexid2vec")
         torch.save(edgelabel2vec, f"{out_dir}/edgelabel2vec")
-    else:
-        for filename in sorted(os.listdir(adjacency_dir)):
-            if filename:
-                nodelabel2vec = {}
-                # edgelabel2vec = {}
-
-                print("Loading adjacency list: {}".format(filename))
-                input_path = os.path.join(adjacency_dir, filename)
-
-                # Going through the input data to find all the targets
-                print("Loading targets from: {}".format(input_path))
-                targets = obtain_targets_from_file(input_path, w2v)
-                print("A total number of {} targets identified".format(len(targets)))
-                # target_dict now holds all unknown OOV embeddings
-                # TODO: we also manually add the new embeddings into the word2vec keyed vectors (see wv.add method)
-                target_dict = {}
-                if not len(targets):
-                    print("No uncovered targets found")
-                else:
-                    # reloading ALC reader for new targets
-                    alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
-                                         comm=None)
-                    print("Rebuilding A La Carte context vectors for {}".format(filename))
-                    corpus_file = os.path.join(adjacency_dir, filename)
-                    test_context_vectors = FLOAT(0.0)
-                    test_target_counts = INT(0)
-                    print("Source corpus for {}: {}".format(filename, corpus_file))
-                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc,
-                                                                                verbose=verbose,
-                                                                                comm=None, english=None, lower=None)
-                    test_nz = test_target_counts > 0
-
-                    dump_vectors(zip(targets, test_target_counts),
-                                 log_dir + '/' + filename + '_target_vocab_counts.txt')
-                    # Generate feature vectors for targets
-                    test_context_vectors[test_nz] = np.true_divide(test_context_vectors[test_nz],
-                                                                   test_target_counts[test_nz, None], dtype=FLOAT)
-                    target_vecs = test_context_vectors.dot(M.T)
-                    for gram, vector in zip(targets, target_vecs):
-                        if np.count_nonzero(vector) == 0:
-                            print("[!]Zero-vector target: {}".format(gram))
-                            assert (np.count_nonzero(vector) > 0), "zero-vector target could result in NaN"
-                        vector = vector / np.linalg.norm(vector)
-                        target_dict[gram] = vector
-
-                print(filename)
-                csv_graph = open(input_path, 'r')
-                for line in csv_graph:
-                    edge = [''] + line.strip().split(',')
-
-                    row = []
-                    srcid = edge[1]
-                    row.append(srcid)
-                    dstid = edge[2]
-                    row.append(dstid)
-                    src_name = edge[3]
-                    dst_name = edge[4]
-                    edge_name = edge[5]
-                    src_type = edge[6]
-                    dst_type = edge[7]
-
-                    # Source Node
-                    if src_name in wv:
-                        src_feature = wv[src_name]
-                        assert len(src_feature) == emb_dim, "src feature dimension from wv is {}, not {}" \
-                            .format(len(src_feature), emb_dim)
-                        row.extend(src_feature)
-                    # Note: if we manually expand wv, we should not take this branch
-                    elif src_name in target_dict:
-                        src_feature = target_dict[src_name]
-                        assert len(src_feature) == emb_dim, "src feature dimension from alc is {}, not {}" \
-                            .format(len(src_feature), emb_dim)
-                        row.extend(np.array(src_feature))
-                    else:
-                        print("Unknown source node name: {}".format(src_name))
-
-                    if src_name not in nodelabel2vec:
-                        nodelabel2vec[src_name] = src_feature
-
-                    # Destination Node
-                    if dst_name in wv:
-                        dst_feature = wv[dst_name]
-                        assert len(dst_feature) == emb_dim, "dst feature dimension from wv is {}, not {}" \
-                            .format(len(dst_feature), emb_dim)
-                        row.extend(dst_feature)
-                    elif dst_name in target_dict:
-                        dst_feature = target_dict[dst_name]
-                        assert len(dst_feature) == emb_dim, "dst feature dimension from alc is {}, not {}" \
-                            .format(len(dst_feature), emb_dim)
-                        row.extend(np.array(dst_feature))
-                    else:
-                        print("Unknown destination node name: {}".format(dst_name))
-
-                    if dst_name not in nodelabel2vec:
-                        nodelabel2vec[dst_name] = dst_feature
-
-                    # Edge type
-                    if edge_name in wv:
-                        edge_feature = wv[edge_name]
-                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), emb_dim)
-                        row.extend(edge_feature)
-                    elif edge_name in target_dict:
-                        edge_feature = target_dict[edge_name]
-                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), emb_dim)
-                        row.extend(np.array(edge_feature))
-                    else:
-                        print("Unknown edge name: {}".format(edge_name))
-                    #
-                    # if edge_name not in edgelabel2vec:
-                    #     edgelabel2vec[edge_name] = edge_feature
-
-                torch.save(nodelabel2vec, f"{out_dir}/nodelabel2vec_{filename.replace('.csv','')}")
-                # torch.save(edgelabel2vec, f"{out_dir}/edgelabel2vec_{filename}")
 
 
     # ===-----------------------------------------------------------------------===
@@ -801,11 +680,11 @@ def main(cfg):
     
     # In test mode, we only have access to 
     if cfg._test_mode:
-        embed_nodes_for_one_split("train", epochs=1, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
+        embed_nodes_for_one_split("train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
     else:
-        embed_nodes_for_one_split("train", epochs=100, use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
-        embed_nodes_for_one_split("val", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
-        embed_nodes_for_one_split("test", epochs=5, use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+        embed_nodes_for_one_split("train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
+        embed_nodes_for_one_split("val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+        embed_nodes_for_one_split("test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
 
 
 if __name__ == "__main__":
