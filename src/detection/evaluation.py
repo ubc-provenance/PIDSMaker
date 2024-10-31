@@ -51,6 +51,10 @@ def standard_evaluation(cfg, evaluation_fn):
         pr = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
         if os.path.exists(pr):
             stats["precision_recall_img"] = wandb.Image(pr)
+            
+        adp = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
+        if os.path.exists(adp):
+            stats["adp_img"] = wandb.Image(adp)
         
         wandb.log(stats)
         

@@ -3,7 +3,7 @@ preprocessing:
     used_method: orthrus
     use_all_files: True
     time_window_size: 15.0
-    use_hashed_label: True
+    use_hashed_label: False
     node_label_features:
       subject: type, path, cmd_line
       file: type, path

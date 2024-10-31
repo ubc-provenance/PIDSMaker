@@ -122,7 +122,10 @@ def main(cfg):
         if best_epoch_mode:
             if val_ap > best_val_ap:
                 best_val_ap = val_ap
-                best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
+                if cfg._model == "kairos":
+                    best_model = copy.deepcopy(model)
+                else:
+                    best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
                 best_epoch = epoch
                 patience_counter = 0
             else:
@@ -141,7 +144,10 @@ def main(cfg):
         
     # After training
     if best_epoch_mode:
-        model.load_state_dict(best_model)
+        if cfg._model == "kairos":
+            model = best_model
+        else:
+            model.load_state_dict(best_model)
         test_stats = orthrus_gnn_testing.main(
             cfg=cfg,
             model=model,

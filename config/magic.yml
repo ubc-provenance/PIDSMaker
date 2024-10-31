@@ -3,7 +3,7 @@ preprocessing:
     used_method: orthrus
     use_all_files: True
     time_window_size: 15.0
-    use_hashed_label: True
+    use_hashed_label: False
     node_label_features:
       subject: path, cmd_line
       file: path
@@ -21,7 +21,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 10
+    num_epochs: 20
     patience: 3
     lr: 0.001
     weight_decay: 0.0005
