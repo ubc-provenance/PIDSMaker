@@ -1,0 +1,13 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+count: 16
+
+parameters:
+  detection.gnn_training.lr:
+    values: [0.00005, 0.0001]
+  featurization.embed_nodes.emb_dim:
+    values: [16, 64]
+  detection.gnn_training.encoder.tgn.use_memory:
+    values: [True, False]

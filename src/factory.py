@@ -10,7 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments import add_dropout_to_model
+from experiments.uncertainty import add_dropout_to_model
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -30,7 +30,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     
     if cfg._is_running_mc_dropout:
-        dropout = cfg.experiments.experiment.uncertainty.mc_dropout.dropout
+        dropout = cfg.experiment.uncertainty.mc_dropout.dropout
         add_dropout_to_model(model, p=dropout)
     
     return model
@@ -87,7 +87,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 out_dim=node_out_dim,
                 edge_dim=edge_dim or None,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
-                dropout=cfg.detection.gnn_training.encoder.graph_attention.dropout,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
             )
         elif method == "sage":
@@ -96,7 +96,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.sage.activation),
-                dropout=cfg.detection.gnn_training.encoder.sage.dropout,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         elif method == "LSTM":
             encoder = LSTM(
@@ -117,12 +117,32 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         elif method == "sum_aggregation":
             encoder = SumAggregation(
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
+            )
+        elif method == "magic_gat":
+            n_layers = cfg.detection.gnn_training.encoder.magic_gat.num_layers
+            n_heads = cfg.detection.gnn_training.encoder.magic_gat.num_heads
+            negative_slope = cfg.detection.gnn_training.encoder.magic_gat.negative_slope
+            hid_dim = cfg.detection.gnn_training.encoder.magic_gat.hid_dim
+            assert hid_dim % n_heads == 0, "Invalid shape dim for number of heads"
+
+            return MagicGAT(
+                n_dim=in_dim,
+                hidden_dim=hid_dim,
+                out_dim=node_out_dim,
+                n_layers=n_layers,
+                n_heads=n_heads,
+                feat_drop=0.1,
+                attn_drop=0.0,
+                negative_slope=negative_slope,
+                concat_out=True,residual=True,
+                activation=activation_fn_factory(cfg.detection.gnn_training.encoder.magic_gat.activation),
             )
         elif method == "GIN":
             encoder = GIN(
@@ -152,11 +172,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 time_dim,
                 message_module=IdentityMessage(msg_dim, tgn_memory_dim, time_dim),
                 aggregator_module=LastAggregator(),
+                device=device,
             )
         elif use_time_enc:
             memory = TimeEncodingMemory(
                 max_node_num,
                 time_dim,
+                device=device,
             )
         else:
             memory = None
@@ -203,6 +225,24 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
         return NodLinkDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
+        )
+    elif method == "magic_gat":
+        n_layers = decoder_cfg.num_layers
+        n_heads = decoder_cfg.num_heads
+        negative_slope = decoder_cfg.negative_slope
+        hid_dim = decoder_cfg.hid_dim
+
+        return MagicGAT(
+            n_dim=in_dim,
+            hidden_dim=hid_dim,
+            out_dim=out_dim,
+            n_layers=n_layers,
+            n_heads=n_heads,
+            feat_drop=0.1,
+            attn_drop=0.0,
+            negative_slope=negative_slope,
+            concat_out=True,residual=True,
+            activation=activation_fn_factory(cfg.detection.gnn_training.encoder.magic_gat.activation),
         )
     elif method == "none":
         return lambda x: x
@@ -265,6 +305,31 @@ def objective_factory(cfg, in_dim, device, max_node_num):
                     balanced_loss=balanced_loss,
                     node_type_dim=cfg.dataset.num_node_types,
                 ))
+            
+        elif objective == "reconstruct_masked_features":
+            mask_rate = cfg.detection.gnn_training.decoder.reconstruct_masked_features.mask_rate
+
+            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_masked_features.loss)
+
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
+            objectives.append(
+                GMAEFeatReconstruction(
+                    decoder=decoder,
+                    loss_fn=loss_fn,
+                    mask_rate=mask_rate,
+                )
+            )
+        
+        elif objective == "predict_masked_struct":
+            loss_fn = categorical_loss_fn_factory(cfg.detection.gnn_training.decoder.predict_masked_struct.loss)
+
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim * 2, out_dim=1)
+            objectives.append(
+                GMAEStructPrediction(
+                    decoder=decoder,
+                    loss_fn=loss_fn,
+                )
+            )
         
         # elif objective == "predict_edge_contrastive":
         #     predict_edge_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.used_method.strip()
@@ -341,7 +406,7 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         raise ValueError(f"Invalid neighbor sampling {neigh_sampling}. Expected 'None' or a list of integers.")
     
     # Use neigh sampling batch loader
-    if use_neigh_sampling and len(neigh_sampling) > 0:
+    if use_neigh_sampling and len(neigh_sampling) > 0 and not all([n == -1 for n in neigh_sampling]):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 
@@ -381,6 +446,8 @@ def recon_loss_fn_factory(loss: str):
 def categorical_loss_fn_factory(loss: str):
     if loss == "cross_entropy":
         return cross_entropy
+    if loss == "BCE":
+        return binary_cross_entropy
     raise ValueError(f"Invalid loss function {loss}")
 
 def activation_fn_factory(activation: str):
@@ -390,6 +457,8 @@ def activation_fn_factory(activation: str):
         return nn.ReLU()
     if activation == "tanh":
         return nn.Tanh()
+    if activation == "prelu":
+        return nn.PReLU()
     if activation == "none":
         return nn.Identity()
     raise ValueError(f"Invalid activation function {activation}")

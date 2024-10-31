@@ -7,6 +7,9 @@ from config import *
 from model import *
 from factory import *
 import torch
+import cudf
+import tracemalloc
+from cuml.neighbors import NearestNeighbors
 
 
 @torch.no_grad()
@@ -37,7 +40,8 @@ def test_edge_level(
     for batch in batch_loader:
         unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
 
-        each_edge_loss = model(batch, full_data, inference=True, validation=validation)
+        results = model(batch, full_data, inference=True, validation=validation)
+        each_edge_loss = results["loss"]
         tot_loss += each_edge_loss.sum().item()
 
         # If the data has been reindexed in the loader, we retrieve original node IDs
@@ -85,6 +89,7 @@ def test_edge_level(
 
     df = pd.DataFrame(edge_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
+    return tot_loss
 
     # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
@@ -108,17 +113,19 @@ def test_node_level(
     start = time.perf_counter()
 
     loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+    
+    validation = split == "val"
 
     for batch in loader:
         batch = batch.to(device)
         
-        loss = model(batch, full_data, inference=True)
-        if isinstance(loss, tuple):
-            loss, out = loss
+        results = model(batch, full_data, inference=True, validation=validation)
+        loss = results["loss"]
         tot_loss += loss.sum().item()
 
         # ThreaTrace code
         if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
+            out = results["out"]
             pred = out.max(1)[1]
             pro = F.softmax(out, dim=1)
             pro1 = pro.max(1)
@@ -132,6 +139,7 @@ def test_node_level(
                     score = pro1[0][i] / pro2[0][i]
                 else:
                     score = pro1[0][i] / 1e-5
+                score = torch.log(score + 1e-12) # we do that or the score is much too high
                 score = max(score.item(), 0)
             
                 node = batch.original_n_id[i].item()
@@ -147,6 +155,7 @@ def test_node_level(
                 
         # Flash code
         elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+            out = results["out"]
             pred = out.max(1)[1]
             sorted, indices = out.sort(dim=1, descending=True)
             eps = 1e-6
@@ -168,6 +177,78 @@ def test_node_level(
                 }
                 node_list.append(temp_dic)
             
+        # Magic codes
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
+            if split == 'val':
+                x_train = model.embed(batch, full_data, inference=True).cpu().numpy()
+                num_nodes = x_train.shape[0]
+                sample_size = 5000
+                sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
+                x_train_sampled = x_train[sample_indices]
+                x_train_mean = x_train_sampled.mean(axis=0)
+                x_train_std = x_train_sampled.std(axis=0)
+                x_train_sampled = (x_train_sampled - x_train_mean) / x_train_std
+
+                torch.cuda.empty_cache()
+                x_train_sampled = cudf.DataFrame.from_records(x_train_sampled)
+
+                n_neighbors = 10
+                nbrs = NearestNeighbors(n_neighbors=n_neighbors)
+                nbrs.fit(x_train_sampled)
+                idx = list(range(x_train_sampled.shape[0]))
+                random.shuffle(idx)
+                try:
+                    distances_train, _ = nbrs.kneighbors(
+                        x_train_sampled.iloc[idx[:min(50000, x_train_sampled.shape[0])]].to_pandas(),
+                        n_neighbors=n_neighbors)
+                except KeyError as e:
+                    log(f"KeyError encountered: {e}")
+                    log(f"Available columns in x_train: {x_train_sampled.columns}")
+                    raise
+                mean_distance_train = distances_train.mean().mean()
+                if mean_distance_train == 0:
+                    mean_distance_train = 1e-9
+                torch.cuda.empty_cache()
+
+                train_distance_file = os.path.join(cfg.detection.gnn_training._magic_dir, "train_distance.txt")
+                with open(train_distance_file, "a") as f:
+                    f.write(f"{mean_distance_train}\n")
+
+                return
+            elif split == 'test':
+                train_distance_file = os.path.join(cfg.detection.gnn_training._magic_dir, "train_distance.txt")
+                mean_distance_train = calculate_average_from_file(train_distance_file)
+
+                x_test = model.embed(batch, full_data, inference=True).cpu().numpy()
+                num_nodes = x_test.shape[0]
+                sample_size = 5000
+                sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
+                x_test_sampled = x_test[sample_indices]
+                x_test_mean = x_test_sampled.mean(axis=0)
+                x_test_std = x_test_sampled.std(axis=0)
+                x_test_sampled = (x_test_sampled - x_test_mean) / x_test_std
+
+                torch.cuda.empty_cache()
+                x_test_sampled = cudf.DataFrame.from_records(x_test_sampled)
+
+                n_neighbors = 10
+                nbrs = NearestNeighbors(n_neighbors=n_neighbors)
+                nbrs.fit(x_test_sampled)
+
+                distances, _ = nbrs.kneighbors(x_test, n_neighbors=n_neighbors)
+                distances = distances.mean(axis=1)
+                distances = distances.to_numpy()
+                score = distances / mean_distance_train
+                score = score.to_list()
+
+                for i, node in enumerate(batch.original_n_id):
+                    temp_dic = {
+                        'node': node.item(),
+                        'magic_score': float(score[i]),
+                        'loss': float(loss[i].item()),
+                    }
+                    node_list.append(temp_dic)
+        
         else:
             for i, node in enumerate(batch.original_n_id):
                 temp_dic = {
@@ -188,6 +269,7 @@ def test_node_level(
 
     df = pd.DataFrame(node_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
+    return tot_loss
 
     # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
@@ -212,33 +294,64 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
 
     model_epoch_file = f"model_epoch_{epoch}"
     if use_cuda:
-        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device=device)
 
     val_ap = None
-    for graphs, split in splits:
-        desc = f"Validation" if split == "val" else f"Testing"
+    peak_inference_cpu_mem = 0
+    peak_inference_gpu_mem = 0
+    tpb = []
+    all_losses = []
+
+    for graphs, split_name in splits:
+        desc = "Validation" if split_name == "val" else "Testing"
+        tracemalloc.start()
+        
         for g in log_tqdm(graphs, desc=desc):
             g.to(device=device)
+            
+            s = time.time()
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
-            test_fn(
+            tot_loss = test_fn(
                 data=g,
                 full_data=full_data,
                 model=model,
-                split=split,
+                split=split_name,
                 model_epoch_file=model_epoch_file,
                 cfg=cfg,
                 device=device,
             )
-            g.to("cpu")
+            all_losses.append(tot_loss)
+            tpb.append(time.time() - s)
             
-        if split == "val":
+            g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
+            if use_cuda:
+                torch.cuda.empty_cache()
+            
+        _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
+        peak_inference_cpu_mem = max(peak_inference_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
+        tracemalloc.stop()
+        
+        if use_cuda:
+            peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
+            peak_inference_gpu_mem = max(peak_inference_gpu_mem, peak_inference_gpu_memory)
+            torch.cuda.reset_peak_memory_stats(device=device)
+        
+        mean_loss = np.mean(all_losses)
+        if split_name == "val":
             val_ap = model.get_val_ap()
-            log(f'[@epoch{epoch:02d}] Validation finished - Val AP: {val_ap:.4f}', return_line=True)
+            log(f'[@epoch{epoch:02d}] Validation finished - Mean Loss: {mean_loss:.4f} - Val AP: {val_ap:.4f}', return_line=True)
         else:
-            log(f'[@epoch{epoch:02d}] Test finished', return_line=True)
+            log(f'[@epoch{epoch:02d}] Test finished - Mean Loss: {mean_loss:.4f}', return_line=True)
 
     del model
-    return val_ap
+    
+    stats = {
+        "val_ap": val_ap,
+        "peak_inference_cpu_memory": peak_inference_cpu_mem,
+        "peak_inference_gpu_memory": peak_inference_gpu_mem,
+        "time_per_batch_inference": np.mean(tpb),
+    }
+    return stats
 
 
 if __name__ == "__main__":

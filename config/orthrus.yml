@@ -3,7 +3,7 @@ preprocessing:
     used_method: orthrus
     use_all_files: True
     time_window_size: 15.0
-    use_hashed_label: True
+    use_hashed_label: False
     node_label_features:
       subject: type, path, cmd_line
       file: type, path
@@ -58,7 +58,8 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 6
+    num_epochs: 20
+    patience: 3
     lr: 0.00001
     weight_decay: 0.00001
     node_hid_dim: 128
@@ -68,9 +69,9 @@ detection:
       node_features: node_emb,node_type
       neighbor_sampling: []
       edge_features: edge_type
+      dropout: 0.5
       used_methods: tgn,graph_attention
       graph_attention:
-        dropout: 0.5
         activation: relu
         num_heads: 8
       tgn:
@@ -84,7 +85,6 @@ detection:
         use_memory: False
         use_time_order_encoding: False
       sage:
-        dropout: 0.0
         activation: relu
     decoder:
       used_methods: predict_edge_type
@@ -109,7 +109,7 @@ detection:
       threshold_method: max_val_loss
       use_dst_node_loss: True
       use_kmeans: True
-      kmeans_top_K: 20
+      kmeans_top_K: 30
     node_tw_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True

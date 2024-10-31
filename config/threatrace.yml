@@ -3,7 +3,7 @@ preprocessing:
     used_method: orthrus
     use_all_files: True
     time_window_size: 15.0
-    use_hashed_label: True
+    use_hashed_label: False
     node_label_features:
       subject: type, path, cmd_line
       file: type, path
@@ -21,19 +21,21 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 30
+    num_epochs: 20
+    patience: 3
     lr: 0.01
     weight_decay: 0.0005
     node_hid_dim: 32
     node_out_dim: 3
     inference_device: cuda
+    # edge_batch_size: 1024
     encoder:
       node_features: node_type,edges_distribution
       neighbor_sampling: [-1, -1]
-      edge_features: edge_type
+      edge_features: none
+      dropout: 0.5
       used_methods: sage
       sage:
-        dropout: 0.5
         activation: relu
     decoder:
       used_methods: predict_node_type
@@ -46,4 +48,5 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: threatrace
+      threshold_method: max_val_loss # threatrace
+      use_kmeans: False

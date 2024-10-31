@@ -15,7 +15,7 @@ from .embed_edges_methods import (
 
 def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
-    for path in tqdm(sorted_paths, desc="Computing edge embeddings"):
+    for path in log_tqdm(sorted_paths, desc="Computing edge embeddings"):
         graph = torch.load(path)
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
 
@@ -24,12 +24,19 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
             src.append(int(u))
             dst.append(int(v))
             t.append(int(attr["time"]))
+            
+            # If the graph structure has been changed in transformation, we may loose
+            # the edge label
+            if "label" in attr:
+                edge_label = etype2oh[attr["label"]]
+            else:
+                edge_label = torch.zeros_like(etype2oh[list(etype2oh.keys())[0]])
 
             # Only types
             if indexid2vec is None:
                 msg.append(torch.cat([
                     ntype2oh[graph.nodes[u]['node_type']],
-                    etype2oh[attr["label"]],
+                    edge_label,
                     ntype2oh[graph.nodes[v]['node_type']],
                 ]))
                 
@@ -38,7 +45,7 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
                 msg.append(torch.cat([
                     ntype2oh[graph.nodes[u]['node_type']],
                     torch.from_numpy(indexid2vec[u]),
-                    etype2oh[attr["label"]],
+                    edge_label,
                     ntype2oh[graph.nodes[v]['node_type']],
                     torch.from_numpy(indexid2vec[v])
                 ]))

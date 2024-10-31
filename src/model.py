@@ -2,7 +2,7 @@ from provnet_utils import *
 from config import *
 import torch.nn as nn
 from encoders import TGNEncoder
-from experiments import activate_dropout_inference
+from experiments.uncertainty import activate_dropout_inference
 
 
 class Model(nn.Module):
@@ -33,6 +33,26 @@ class Model(nn.Module):
             
         self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
+        
+    def embed(self, batch, full_data, inference=False, **kwargs):
+        train_mode = not inference
+        if self.node_level:
+            x = batch.x
+        else:
+            x = (batch.x_src, batch.x_dst)
+        edge_index = batch.edge_index
+        with torch.set_grad_enabled(train_mode):
+            h = self.encoder(
+                edge_index=edge_index,
+                t=batch.t,
+                x=x,
+                msg=batch.msg,
+                edge_feats=batch.edge_feats if hasattr(batch, "edge_feats") else None,
+                full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
+                inference=inference,
+                edge_types= batch.edge_type
+            )
+        return h
         
     def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
@@ -79,9 +99,8 @@ class Model(nn.Module):
             loss_or_scores = (torch.zeros(1) if train_mode else \
                 torch.zeros(num_elements, dtype=torch.float)).to(edge_index.device)
             
-            pred = None
             for objective in self.decoders:
-                loss = objective(
+                results = objective(
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
                     h=h, # shape (N, d)
@@ -94,18 +113,16 @@ class Model(nn.Module):
                     node_type=batch.node_type if hasattr(batch, "node_type") else None,
                     validation=validation,
                 )
-                if isinstance(loss, tuple):
-                    loss, pred = loss
+                loss = results["loss"]
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
 
-            if pred is not None:
-                loss_or_scores = loss, pred
-            return loss_or_scores
+            return results
         
     def get_val_ap(self):
-        return self.decoders[0].get_ap()
+        # If multiple decoders are used, we take the average of the val scores
+        return np.mean([d.get_val_score() for d in self.decoders])
 
     def to_device(self, device):
         if self.device == device:

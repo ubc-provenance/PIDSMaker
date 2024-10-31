@@ -14,7 +14,11 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
-    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_evaluation.threshold_method)
+    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    if threshold_method == 'magic':
+        thr = get_threshold(test_tw_path, threshold_method)
+    else:
+        thr = get_threshold(val_tw_path, threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     node_to_losses = defaultdict(list)
@@ -67,7 +71,11 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
     
-    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_evaluation.threshold_method)
+    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    if threshold_method == 'magic':
+        thr = get_threshold(test_tw_path, threshold_method)
+    else:
+        thr = get_threshold(val_tw_path, threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     node_to_values = defaultdict(lambda: defaultdict(list))
@@ -91,6 +99,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                 node_to_values[node]["correct_pred"].append(line["correct_pred"])
             if "flash_score" in line:
                 node_to_values[node]["flash_score"].append(line["flash_score"])
+            if "magic_score" in line:
+                node_to_values[node]["magic_score"].append(line["magic_score"])
 
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss
@@ -118,6 +128,16 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
             for score, node_type_pred, tw in zip(losses["flash_score"], losses["correct_pred"], losses["tw"]):
                 if score > thr and node_type_pred and score > max_score:
+                    flash_label = 1
+                    max_score = score
+                    detected_tw = tw
+                    
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
+            max_score = 0
+            pred_score = max(losses["magic_score"])
+
+            for score, tw in zip(losses["magic_score"], losses["tw"]):
+                if score > thr and score > max_score:
                     flash_label = 1
                     max_score = score
                     detected_tw = tw
@@ -181,6 +201,24 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     return fp_in_malicious_tw_ratio
 
+def get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
+    nodes_per_attack = [v["nids"] for k, v in attack_to_GPs.items()]
+    reverse_scores, reverse_nodes = zip(*sorted(zip(pred_scores, nodes), reverse=True))
+    fps = 0
+    detected_attacks = {}
+    
+    for score, node in zip(reverse_scores, reverse_nodes):
+        detected = False
+        for i, nodes_set in enumerate(nodes_per_attack):
+            if node in nodes_set:
+                detected_attacks[i] = 1
+                detected = True
+        if len(detected_attacks) == len(nodes_per_attack):
+            break
+        if not detected:
+            fps += 1
+    return fps
+
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     if cfg.detection.gnn_training.used_method == "provd": 
         get_preds_fn = get_node_predictions_provd
@@ -195,6 +233,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
+    adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png") # average detection precision
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
     dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
@@ -223,28 +262,55 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                         if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
                             attack_to_TPs[att] += 1
 
+    
+    def transform_attack2nodes_to_node2attacks(attack2nodes):
+        node2attacks = {}
+        for attack, nodes in enumerate(attack2nodes):
+            for node in nodes:
+                if node not in node2attacks:
+                    node2attacks[node] = set()
+                node2attacks[node].add(attack)
+        return node2attacks
+    
+    attack2nodes = [v["nids"] for k, v in attack_to_GPs.items()]
+    node2attacks = transform_attack2nodes_to_node2attacks(attack2nodes)
+    
     # Plots the PR curve and scores for mean node loss
     log(f"Saving figures to {out_dir}...")
     plot_precision_recall(pred_scores, y_truth, pr_img_file)
+    adp_score = plot_detected_attacks_vs_precision(pred_scores, nodes, node2attacks, y_truth, adp_img_file)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)
-    stats["fp_in_malicious_tw_ratio"] = fp_in_malicious_tw_ratio
+    stats["fp_in_malicious_tw_ratio"] = round(fp_in_malicious_tw_ratio, 3)
     
+    log("TPs per attack:")
     tps_in_atts = []
     for att, tps in attack_to_TPs.items():
         log(f"attack {att}: {tps}")
         tps_in_atts.append((att, tps))
 
-    stats['percent_detected_attacks'] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
+    stats["percent_detected_attacks"] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
+    stats["fps_if_all_attacks_detected"] = get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs)
+    stats["adp_score"] = round(adp_score, 3)
+    stats["adp_ap_mean"] = round((adp_score + stats["ap"])/2, 5)
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+    scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
 
     torch.save(results, results_file)
     torch.save(stats, stats_file)
+    
+    torch.save({
+        "pred_scores": pred_scores,
+        "y_truth": y_truth,
+        "nodes": nodes,
+        "node2attacks": node2attacks,
+    }, scores_file)
+    wandb.save(scores_file, out_dir)
     
     return stats

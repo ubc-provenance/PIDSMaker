@@ -1,5 +1,0 @@
-training_loop:
-  run_evaluation: each_epoch
-
-experiment:
-  used_method: standard

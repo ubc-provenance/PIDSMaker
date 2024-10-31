@@ -1,0 +1,14 @@
+featurization:
+  embed_nodes:
+    epochs: 10
+    emb_dim: 256
+    use_seed: True
+    training_split: train
+    used_method: fasttext
+    fasttext:
+      min_count: 2
+      alpha: 0.01
+      window_size: 3
+      negative: 3
+      num_workers: 10
+      use_pretrained_fb_model: False

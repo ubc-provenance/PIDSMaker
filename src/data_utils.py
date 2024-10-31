@@ -62,7 +62,7 @@ def load_all_datasets(cfg):
     # Concatenates all data into a single data so that iterating over batches
     # of edges is more consistent with TGN
     batch_size = cfg.detection.gnn_training.edge_batch_size
-    if batch_size is not None:
+    if batch_size not in [None, 0]:
         train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size)
         val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size)
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size)
@@ -136,7 +136,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
                 x_distrib[:, edge_type_dim:].scatter_add_(0, g.dst.unsqueeze(1).expand(-1, edge_type_dim), fields["edge_type"])
                 
                 # In ThreaTrace they don't standardize, here we do standardize by max value in TW
-                x_distrib = x_distrib / x_distrib.max()
+                x_distrib = x_distrib / (x_distrib.max() + 1e-12)
                 
                 x_src.append(x_distrib[g.src])
                 x_dst.append(x_distrib[g.dst])
@@ -197,7 +197,9 @@ def temporal_data_to_data(data: CollatableTemporalData) -> Data:
     NeighborLoader requires a `Data` object.
     We need to convert `CollatableTemporalData` to `Data` before using it.
     """
-    return Data(num_nodes=data.x_src.shape[0], **{k: v for k, v in data._store.items()})
+    data = Data(num_nodes=data.x_src.shape[0], **{k: v for k, v in data._store.items()})
+    del data.num_nodes
+    return data
 
 def collate_temporal_data(data_list: list[CollatableTemporalData]) -> CollatableTemporalData:
     """

@@ -37,13 +37,14 @@ class TGNMemory(torch.nn.Module):
     """
     def __init__(self, num_nodes: int, raw_msg_dim: int, memory_dim: int,
                  time_dim: int, message_module: Callable,
-                 aggregator_module: Callable):
+                 aggregator_module: Callable, device):
         super().__init__()
 
         self.num_nodes = num_nodes
         self.raw_msg_dim = raw_msg_dim
         self.memory_dim = memory_dim
         self.time_dim = time_dim
+        self.device = device
 
         self.msg_s_module = message_module
         self.msg_d_module = copy.deepcopy(message_module)
@@ -61,10 +62,6 @@ class TGNMemory(torch.nn.Module):
         self.msg_d_store = {}
 
         self.reset_parameters()
-
-    @property
-    def device(self) -> torch.device:
-        return self.time_enc.lin.weight.device
 
     def reset_parameters(self):
         r"""Resets all learnable parameters of the module."""
@@ -195,11 +192,13 @@ class TGNMemory(torch.nn.Module):
 class TimeEncodingMemory(torch.nn.Module):
     """Custom lightweight class to only memorize past timestamps.
     """
-    def __init__(self, num_nodes: int, time_dim: int):
+    def __init__(self, num_nodes: int, time_dim: int, device):
         super().__init__()
 
         self.num_nodes = num_nodes
+        self.device = device
         self.time_enc = TimeEncoder(time_dim)
+        self.device = device
 
         last_update = torch.empty(self.num_nodes, dtype=torch.long)
         self.register_buffer('last_update', last_update)
@@ -210,10 +209,6 @@ class TimeEncodingMemory(torch.nn.Module):
         self.msg_d_store = {}
 
         self.reset_parameters()
-
-    @property
-    def device(self) -> torch.device:
-        return self.time_enc.lin.weight.device
 
     def reset_parameters(self):
         r"""Resets all learnable parameters of the module."""

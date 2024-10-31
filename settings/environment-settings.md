@@ -43,12 +43,13 @@ pip install gensim==4.3.1
 pip install pytz==2024.1 pandas==2.2.2 yacs==0.1.8
 pip install wandb
 
-# install dgl, cuML and cuDF for magic
-conda install -c dglteam dgl-cuda11.7
+# install cuML and cuDF for magic
 pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.6.* cuml-cu12==24.6.*
 # dgl installation breaks scipy, which can be fixed by re-installing
 pip uninstall scipy
 pip install scipy==1.10.1
+pip uninstall numpy
+pip install numpy==1.26.4
 ```
 
 ## Troubleshooting

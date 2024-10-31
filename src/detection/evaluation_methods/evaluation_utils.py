@@ -23,15 +23,17 @@ import torch
 def get_threshold(val_tw_path, threshold_method: str):
     threshold_method = threshold_method.strip()
     if threshold_method == "max_val_loss":
-        return calculate_threshold(val_tw_path)['max']
+        return calculate_threshold(val_tw_path, threshold_method)['max']
     elif threshold_method == "mean_val_loss":
-        return calculate_threshold(val_tw_path)['mean']
+        return calculate_threshold(val_tw_path, threshold_method)['mean']
     elif threshold_method == "threatrace":
         return 1.5
     elif threshold_method == "flash":
         return 0.53
     elif threshold_method == "nodlink":
-        return calculate_threshold(val_tw_path)['percentile_90']
+        return calculate_threshold(val_tw_path, threshold_method)['percentile_90']
+    elif threshold_method == 'magic':
+        return calculate_threshold(val_tw_path, threshold_method)['mean']
     raise ValueError(f"Invalid threshold method `{threshold_method}`")
 
 def reduce_losses_to_score(losses: list[float], threshold_method: str):
@@ -45,14 +47,17 @@ def reduce_losses_to_score(losses: list[float], threshold_method: str):
         return np.max(losses)
     raise ValueError(f"Invalid threshold method {threshold_method}")
 
-def calculate_threshold(val_tw_dir):
+def calculate_threshold(val_tw_dir, threshold_method):
     filelist = listdir_sorted(val_tw_dir)
 
     loss_list = []
     for file in sorted(filelist):
         f = os.path.join(val_tw_dir, file)
         df = pd.read_csv(f).to_dict()
-        loss_list.extend(df["loss"].values())
+        if threshold_method == "magic":
+            loss_list.extend(df['magic_score'].values())
+        else:
+            loss_list.extend(df["loss"].values())
 
     thr = {
         'max': max(loss_list),
@@ -251,6 +256,144 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
     plt.grid(True)
     plt.legend()
     plt.savefig(out_file)
+    
+
+def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_file):
+    """
+    Plot the percentage of detected attacks vs precision using anomaly scores, node IDs,
+    ground truth labels, and mapping of nodes to their respective attack numbers.
+    
+    This function calculates the precision on the x-axis and the cumulative percentage of 
+    detected attacks on the y-axis, handles duplicate x-values by averaging, and then plots 
+    it with a filled area under the curve.
+    Ensures that the plot starts at (0, 0).
+    """
+    # Sort nodes by descending anomaly scores
+    sorted_indices = np.argsort(scores)[::-1]
+    sorted_nodes = [nodes[i] for i in sorted_indices]
+    sorted_labels = [labels[i] for i in sorted_indices]
+
+    # Initialize variables for tracking detected attacks and total attacks
+    total_attacks = len(set(attack for attacks in node2attacks.values() for attack in attacks))
+    detected_attacks = set()
+    detected_attacks_percentages = [0]  # Start at y=0
+    precisions = [0]  # Start at x=0
+
+    # Count detected attacks and precision at each threshold
+    tp = 0  # True positives
+    fp = 0  # False positives
+
+    for i, node in enumerate(sorted_nodes):
+        # Update tp and fp based on label
+        if sorted_labels[i] == 1:
+            tp += 1
+        else:
+            fp += 1
+
+        # Update detected attacks set if node has associated attacks
+        if node in node2attacks:
+            detected_attacks.update(node2attacks[node])
+
+        # Calculate precision and detected attacks percentage
+        precision = tp / (tp + fp)
+        detected_attacks_percentage = (len(detected_attacks) / total_attacks) * 100
+
+        precisions.append(precision)
+        detected_attacks_percentages.append(detected_attacks_percentage)
+
+    # Average out duplicate x-values (precision) by grouping y-values (detected attacks percentages)
+    precision_to_attacks = defaultdict(float)
+    for precision, detected_percentage in zip(precisions, detected_attacks_percentages):
+        precision_to_attacks[precision] = max(precision_to_attacks[precision], detected_percentage)
+
+    unique_precisions = []
+    max_detected_attacks_percentages = []
+    for precision, attack_list in sorted(precision_to_attacks.items()):
+        unique_precisions.append(precision)
+        max_detected_attacks_percentages.append(attack_list)
+
+    # Calculate area under the curve for % detected attacks vs precision
+    area_under_curve = np.trapz(max_detected_attacks_percentages, unique_precisions) / 100
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(unique_precisions, max_detected_attacks_percentages, color='b', label=f'Area under curve = {area_under_curve:.2f}')
+    plt.fill_between(unique_precisions, max_detected_attacks_percentages, color='blue', alpha=0.2)
+    plt.xlabel("Precision")
+    plt.ylabel("% of Detected Attacks")
+    plt.title("Percentage of Detected Attacks vs Precision")
+    plt.legend(loc="lower left")
+    plt.xlim(0, 1)
+    plt.ylim(0, 100.5)
+    plt.grid(True)
+    plt.savefig(out_file)
+    return area_under_curve
+    
+def plot_recall_vs_precision(scores, nodes, node2attacks, labels, out_file):
+    """
+    Plot the recall vs precision using anomaly scores, node IDs, ground truth labels,
+    and a mapping of node IDs to their respective attack numbers.
+    
+    This function calculates precision on the x-axis and recall on the y-axis, handles duplicate 
+    x-values by taking the maximum y-value for each unique x-value, and then plots it with a 
+    filled area under the curve.
+    Ensures that the plot starts at (0, 0).
+    """
+    # Sort nodes by descending anomaly scores
+    sorted_indices = np.argsort(scores)[::-1]
+    sorted_nodes = [nodes[i] for i in sorted_indices]
+    sorted_labels = [labels[i] for i in sorted_indices]
+
+    # Initialize variables for tracking true positives and recall
+    total_positives = np.sum(labels)  # Total number of actual positives
+    tp = 0  # True positives
+    fp = 0  # False positives
+
+    recalls = [0]  # Start at y=0
+    precisions = [0]  # Start at x=0
+
+    # Count true positives and calculate precision and recall at each threshold
+    for i, node in enumerate(sorted_nodes):
+        # Update tp and fp based on the current label
+        if sorted_labels[i] == 1:
+            tp += 1
+        else:
+            fp += 1
+
+        # Calculate precision and recall
+        precision = tp / (tp + fp)
+        recall = tp / total_positives
+
+        precisions.append(precision)
+        recalls.append(recall)
+
+    # Use max recall for each unique precision
+    precision_to_recall = defaultdict(list)
+    for precision, recall in zip(precisions, recalls):
+        precision_to_recall[precision].append(recall)
+
+    unique_precisions = []
+    max_recalls = []
+    for precision, recall_list in sorted(precision_to_recall.items()):
+        unique_precisions.append(precision)
+        max_recalls.append(np.max(recall_list))
+
+    # Calculate area under the curve for recall vs precision
+    area_under_curve = np.trapz(max_recalls, unique_precisions) / 100
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(unique_precisions, max_recalls, color='b', label=f'Area under curve = {area_under_curve:.2f}')
+    plt.fill_between(unique_precisions, max_recalls, color='blue', alpha=0.2)
+    plt.xlabel("Precision")
+    plt.ylabel("Recall")
+    plt.title("Recall vs Precision")
+    plt.legend(loc="lower left")
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    plt.grid(True)
+    plt.savefig(out_file)
+    return area_under_curve
 
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}
@@ -349,63 +492,6 @@ def datetime_to_ns_time_US(nano_date_str):
     timestamp = timestamp.timestamp()
     timeStamp = str(timestamp).split('.')[0] + nanos
     return int(timeStamp)
-
-def compute_tw_labels_for_magic(cfg):
-    """
-    Gets the malcious node IDs present in each time window.
-    """
-    out_path = cfg.preprocessing.build_graphs._tw_labels
-    out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
-    uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
-
-    if os.path.exists(out_file):
-        os.remove(out_file)
-
-    if not os.path.exists(out_file):
-        log(f"Computing time-window labels...")
-        os.makedirs(out_path, exist_ok=True)
-
-        t_to_node = labelling.get_t2malicious_node(cfg)
-
-        base_dir = cfg.preprocessing.build_graphs._magic_graphs_dir
-        test_tw = get_all_files_from_folders(base_dir, cfg.dataset.test_files)
-
-        num_found_event_labels = 0
-        tw_to_malicious_nodes = defaultdict(list)
-        for i, tw in enumerate(test_tw):
-            filename = tw.split('/')[-1]
-            start_time = filename.split('~')[0]
-            end_time = filename.split('~')[1]
-
-            start = datetime_to_ns_time_US(start_time)
-            end = datetime_to_ns_time_US(end_time)
-
-            for t, node_ids in t_to_node.items():
-                if start < t < end:
-                    for node_id in node_ids:  # src, dst, or [src, dst] malicious nodes
-                        tw_to_malicious_nodes[i].append(node_id)
-                    num_found_event_labels += 1
-
-        log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
-        torch.save(tw_to_malicious_nodes, out_file)
-
-    # Used to retrieve node ID from node raw UUID
-    # node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
-
-    # uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
-
-    # Create a mapping TW number => malicious node IDs
-    tw_to_malicious_nodes = torch.load(out_file)
-    for tw, nodes in tw_to_malicious_nodes.items():
-        unique_nodes, counts = np.unique(nodes, return_counts=True)
-        node_to_count = {node: count for node, count in zip(unique_nodes, counts)}
-        log(f"TW {tw} -> {len(unique_nodes)} malicious nodes + {len(nodes)} malicious edges")
-
-        node_to_count = {uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()}
-        pprint(node_to_count, width=1)
-        tw_to_malicious_nodes[tw] = node_to_count
-
-    return tw_to_malicious_nodes
 
 def viz_graph(
     edge_index,

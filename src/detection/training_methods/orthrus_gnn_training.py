@@ -2,6 +2,7 @@ import logging
 from time import perf_counter as timer
 
 import torch.nn as nn
+import tracemalloc
 import wandb
 
 from encoders import TGNEncoder
@@ -11,12 +12,13 @@ from factory import *
 from . import orthrus_gnn_testing
 
 
-def train(data,
-          full_data,
-          model,
-          optimizer,
-          cfg
-          ):
+def train(
+    data,
+    full_data,
+    model,
+    optimizer,
+    cfg,
+):
     model.train()
 
     losses = []
@@ -25,7 +27,8 @@ def train(data,
     for batch in batch_loader:
         optimizer.zero_grad()
 
-        loss, *_ = model(batch, full_data)
+        results = model(batch, full_data)
+        loss = results["loss"]
 
         loss.backward()
         optimizer.step()
@@ -41,13 +44,14 @@ def main(cfg):
     # Reset the peak memory usage counter
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
+    tracemalloc.start()
 
     train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
 
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
-    run_evaluation = cfg.experiments.training_loop.run_evaluation
+    run_evaluation = cfg.training_loop.run_evaluation
     assert run_evaluation in ["best_epoch", "each_epoch"], f"Invalid run evaluation {run_evaluation}"
     best_epoch_mode = run_evaluation == "best_epoch"
 
@@ -55,9 +59,15 @@ def main(cfg):
     tot_loss = 0.0
     epoch_times = []
     best_val_ap, best_model, best_epoch = -1.0, None, None
+    peak_train_cpu_mem = 0
+    peak_train_gpu_mem = 0
+    test_stats = None
+    patience = cfg.detection.gnn_training.patience
+    patience_counter = 0
     
     for epoch in range(0, num_epochs):
         start = timer()
+        tracemalloc.start()
 
         # Before each epoch, we reset the memory
         if isinstance(model.encoder, TGNEncoder):
@@ -74,51 +84,73 @@ def main(cfg):
                 cfg=cfg,
             )
             g.to("cpu")
+            if use_cuda:
+                torch.cuda.empty_cache()
+            
             tot_loss += loss
 
-        tot_loss /= len(train_data)    
+        tot_loss /= len(train_data)
         epoch_times.append(timer() - start)
         
-        if use_cuda:
-            peak_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)  # Convert to GB
-        else:
-            peak_memory = 0
-            
-        log(f'[@epoch{epoch:02d}] Training finished - Mean Loss: {tot_loss:.4f}, Peak CUDA memory: {peak_memory:.2f} GB', return_line=True)
+        _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
+        peak_train_cpu_mem = max(peak_train_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
+        tracemalloc.stop()
         
-        # Check points
-        if cfg._test_mode or epoch % 1 == 0:
-            # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-            # save_model(model, model_path, cfg)
+        if use_cuda:
+            peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
+            peak_train_gpu_mem = max(peak_train_gpu_mem, peak_inference_gpu_memory)
+            torch.cuda.reset_peak_memory_stats(device=device)
             
-            split_to_run = "val" if best_epoch_mode else "all"
-            val_ap = orthrus_gnn_testing.main(
-                cfg=cfg,
-                model=model,
-                val_data=val_data,
-                test_data=test_data,
-                full_data=full_data,
-                epoch=epoch,
-                split=split_to_run,
-            )
-            if best_epoch_mode:
-                if val_ap > best_val_ap:
-                    best_val_ap = val_ap
+        log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
+        
+        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+        # save_model(model, model_path, cfg)
+        
+        # Validation    
+        split_to_run = "val" if best_epoch_mode else "all"
+        test_stats = orthrus_gnn_testing.main(
+            cfg=cfg,
+            model=model,
+            val_data=val_data,
+            test_data=test_data,
+            full_data=full_data,
+            epoch=epoch,
+            split=split_to_run,
+        )
+        val_ap = test_stats["val_ap"]
+        
+        if best_epoch_mode:
+            if val_ap > best_val_ap:
+                best_val_ap = val_ap
+                if cfg._model == "kairos":
                     best_model = copy.deepcopy(model)
-                    best_epoch = epoch
-            model.to_device(device)
-            
+                else:
+                    best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
+                best_epoch = epoch
+                patience_counter = 0
+            else:
+                patience_counter += 1
+        model.to_device(device)
+        
+        if patience_counter >= patience:
+            log(f"Early stopping: best score is {best_val_ap:.4f}")
+            break
+        
         wandb.log({
             "train_epoch": epoch,
             "train_loss": round(tot_loss, 4),
-            "peak_cuda_memory_GB": round(peak_memory, 2),
             "val_ap": round(val_ap, 5),
         })
         
+    # After training
     if best_epoch_mode:
-        orthrus_gnn_testing.main(
+        if cfg._model == "kairos":
+            model = best_model
+        else:
+            model.load_state_dict(best_model)
+        test_stats = orthrus_gnn_testing.main(
             cfg=cfg,
-            model=best_model,
+            model=model,
             val_data=val_data,
             test_data=test_data,
             full_data=full_data,
@@ -128,7 +160,12 @@ def main(cfg):
 
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),
-        "val_ap": round(best_val_ap, 5),
+        "val_score": round(best_val_ap, 5),
+        "peak_train_cpu_memory": round(peak_train_cpu_mem, 3),
+        "peak_train_gpu_memory": round(peak_train_gpu_mem, 3),
+        "peak_inference_cpu_memory": round(test_stats["peak_inference_cpu_memory"], 3),
+        "peak_inference_gpu_memory": round(test_stats["peak_inference_gpu_memory"], 3),
+        "time_per_batch_inference": round(test_stats["time_per_batch_inference"], 3),
     })
     
     return best_val_ap

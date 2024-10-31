@@ -102,5 +102,6 @@ def main(graph: nx.Graph, cfg) -> nx.Graph:
         
     pseudo_graph = remove_pseudo_prefix(pseudo_graph)
     pseudo_graph = add_arbitrary_timestamps_to_graph(original_G=graph, new_G=pseudo_graph)
+    pseudo_graph = nx.MultiDiGraph(pseudo_graph)
 
     return pseudo_graph
