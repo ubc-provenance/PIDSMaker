@@ -54,5 +54,6 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: flash
+      threshold_method: max_val_loss # flash
       use_dst_node_loss: True
+      use_kmeans: False
