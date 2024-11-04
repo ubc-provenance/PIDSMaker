@@ -215,7 +215,13 @@ def test_node_level(
                 with open(train_distance_file, "a") as f:
                     f.write(f"{mean_distance_train}\n")
 
-                return
+                for i, node in enumerate(batch.original_n_id):
+                    temp_dic = {
+                        'node': node.item(),
+                        'loss': float(loss[i].item()),
+                    }
+                    node_list.append(temp_dic)
+
             elif split == 'test':
                 train_distance_file = os.path.join(cfg.detection.gnn_training._magic_dir, "train_distance.txt")
                 mean_distance_train = calculate_average_from_file(train_distance_file)
