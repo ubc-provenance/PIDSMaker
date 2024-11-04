@@ -228,7 +228,7 @@ def test_node_level(
 
                 x_test = model.embed(batch, full_data, inference=True).cpu().numpy()
                 num_nodes = x_test.shape[0]
-                sample_size = 5000
+                sample_size = 5000 if num_nodes > 5000 else num_nodes
                 sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
                 x_test_sampled = x_test[sample_indices]
                 x_test_mean = x_test_sampled.mean(axis=0)
