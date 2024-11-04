@@ -276,7 +276,7 @@ def gen_darpa_adj_files(graph, filename):
                 v,
                 graph.nodes[u]["label"],
                 graph.nodes[v]["label"],
-                graph.edges[u,v,k]["label"],
+                graph.edges[u,v,k]["label"] if "label" in graph.edges[u,v,k] else "",
                 graph.nodes[u]["node_type"],
                 graph.nodes[v]["node_type"]
             ]
