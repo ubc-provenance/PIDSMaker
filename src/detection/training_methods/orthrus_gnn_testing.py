@@ -179,10 +179,11 @@ def test_node_level(
             
         # Magic codes
         elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
+            os.makedirs(cfg.detection.gnn_training._magic_dir, exist_ok=True)
             if split == 'val':
                 x_train = model.embed(batch, full_data, inference=True).cpu().numpy()
                 num_nodes = x_train.shape[0]
-                sample_size = 5000
+                sample_size = 5000 if num_nodes > 5000 else num_nodes
                 sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
                 x_train_sampled = x_train[sample_indices]
                 x_train_mean = x_train_sampled.mean(axis=0)
