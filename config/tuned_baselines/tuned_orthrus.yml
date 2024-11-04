@@ -1,0 +1,8 @@
+# https://wandb.ai/tristan_research/tuning_orthrus/runs/gaiu0hjs?nw=nwusertristanbilot
+detection:
+  gnn_training:
+    lr: 0.0005
+    node_hid_dim: 256
+    node_out_dim: 320
+    encoder:
+      dropout: 0.5
