@@ -1,0 +1,8 @@
+# https://wandb.ai/tristan_research/tuning_flash/runs/aru3pgpn?nw=nwusertristanbilot
+detection:
+  gnn_training:
+    lr: 0.01
+    node_hid_dim: 32
+    encoder:
+      dropout: 0.25
+  
