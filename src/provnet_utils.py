@@ -160,7 +160,7 @@ def gen_darpa_rw_file(walk_len, corpus_fd, adjfilename, overall_fd, num_walks=10
     adj_list = {}
     back_adj_list = {}
     with open(adjfilename, 'r') as adj_file:
-        for line in tqdm(adj_file, desc="creating adj list"):
+        for line in log_tqdm(adj_file, desc="Creating adj list"):
             line = line.strip().split(",")
             srcID = line[0]
             dstID = line[1]
@@ -187,20 +187,20 @@ def gen_darpa_rw_file(walk_len, corpus_fd, adjfilename, overall_fd, num_walks=10
         # Computing random neighbors for each iteration is extremely slow.
         # We thus pre-compute a list of random indices for all unique numbers of neighbors.
         # These indices can then be accessed given the length of the neighbors.
-        unique_neighbors_count = list(set([len(v) for k, v in adj_list.items()]) | set(len(v) for k,v in back_adj_list.items()))
-        cache_size = 30 * len(adj_list) * num_walks * walk_len
+        unique_neighbors_count = set(len(v) for v in adj_list.values()) | set(len(v) for v in back_adj_list.values())
+        cache_size = 10 * len(adj_list) * num_walks * walk_len
         random_cache = {count: np.random.randint(0, count, size=cache_size) for count in unique_neighbors_count}
         random_idx = {count: 0 for count in unique_neighbors_count}
 
-        def get_rand(idx: int):
-            try:
-                val = random_cache[idx][random_idx[idx]]
-                random_idx[idx] += 1
-            except KeyError:
-                return np.random.randint(0, idx)
+        def get_rand(count):
+            if count not in random_cache:
+                return np.random.randint(0, count)
+            idx = random_idx[count]
+            val = random_cache[count][idx]
+            random_idx[count] = (idx + 1) % cache_size  # Wrap-around cache
             return val
 
-        for src in tqdm(adj_list, desc="Forward random walking"):
+        for src in log_tqdm(adj_list, desc="Forward random walking"):
             walk_num = len(adj_list[src]) * num_walks
             for i in range(walk_num):
                 start = src
@@ -232,8 +232,9 @@ def gen_darpa_rw_file(walk_len, corpus_fd, adjfilename, overall_fd, num_walks=10
 
         # Run bidirectional random walking to ensure that every node appears in the corpus
         # Missing sink nodes leads to issues when training A La Carte Matrix
-        for dst in tqdm(back_adj_list, desc="Backward random walking"):
-            walk_num = len(back_adj_list[dst]) * num_walks
+        for dst in log_tqdm(back_adj_list, desc="Backward random walking"):
+            # walk_num = len(back_adj_list[dst]) * num_walks
+            walk_num = num_walks
             for i in range(walk_num):
                 start = dst
                 path_sentence = []
@@ -498,18 +499,18 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
 
 def copy_directory(src_path, dest_path):
     if not os.path.isdir(src_path):
-        print(f"The source path '{src_path}' does not exist or is not a directory.")
+        log(f"The source path '{src_path}' does not exist or is not a directory.")
         return
     
     if os.path.exists(dest_path):
-        print(f"The destination path '{dest_path}' already exists. Removing it for a fresh copy.")
+        log(f"The destination path '{dest_path}' already exists. Removing it for a fresh copy.")
         shutil.rmtree(dest_path)
     
     try:
         shutil.copytree(src_path, dest_path)
-        print(f"Directory copied successfully from '{src_path}' to '{dest_path}'.")
+        log(f"Directory copied successfully from '{src_path}' to '{dest_path}'.")
     except Exception as e:
-        print(f"An error occurred while copying the directory: {e}")
+        log(f"An error occurred while copying the directory: {e}")
 
 def get_split_to_files(cfg, base_dir):
     return {
