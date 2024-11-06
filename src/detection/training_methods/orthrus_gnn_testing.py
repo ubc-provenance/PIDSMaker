@@ -244,9 +244,9 @@ def test_node_level(
 
                 distances, _ = nbrs.kneighbors(x_test, n_neighbors=n_neighbors)
                 distances = distances.mean(axis=1)
-                distances = distances.to_numpy()
+                # distances = distances.to_numpy()
                 score = distances / mean_distance_train
-                score = score.to_list()
+                score = score.tolist()
 
                 for i, node in enumerate(batch.original_n_id):
                     temp_dic = {
