@@ -18,6 +18,7 @@ class Model(nn.Module):
             graph_reindexer,
             node_level,
             is_running_mc_dropout,
+            val_stopping_aug_coef,
         ):
         super(Model, self).__init__()
 
@@ -34,6 +35,7 @@ class Model(nn.Module):
             
         self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
+        self.val_stopping_aug_coef = val_stopping_aug_coef
         
         self.positives = []
         self.negatives = []
@@ -77,14 +79,14 @@ class Model(nn.Module):
     
         return results
     
-    def _fast_negative_sampling(self, batch, aug_coef=0.2, **kwargs):        
+    def _fast_negative_sampling(self, batch, **kwargs):        
         edge_index = batch.edge_index
         
         candidates = edge_index.unique() # we consider both src and dst nodes in the batch as candidates to be negative
         neg_idx = torch.randint(0, len(candidates), (len(edge_index[0]),))
         candidates = candidates[neg_idx]
         
-        picked_idx = torch.randint(0, len(edge_index[0]), (int(len(edge_index[0])*aug_coef),))
+        picked_idx = torch.randint(0, len(edge_index[0]), (int(len(edge_index[0]) * self.val_stopping_aug_coef),))
         edge_index[0, picked_idx] = candidates[picked_idx]
         
         batch.src = edge_index[0]
