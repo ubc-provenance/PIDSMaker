@@ -167,4 +167,5 @@ cython_debug/
 wandb/
 nohup.out
 artifacts/
-src/viz_scripts/**/*.pkl
+# src/viz_scripts/**/*.pkl
+src/viz_scripts/**/*.svg

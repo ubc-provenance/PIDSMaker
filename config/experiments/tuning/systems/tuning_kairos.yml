@@ -8,6 +8,8 @@ parameters:
   detection.gnn_training.lr:
     values: [0.00005, 0.0001]
   featurization.embed_nodes.emb_dim:
-    values: [16, 64]
-  detection.gnn_training.encoder.tgn.use_memory:
-    values: [True, False]
+    values: [16, 32]
+  detection.gnn_training.node_hid_dim:
+    values: [100, 200]
+  detection.gnn_training.node_out_dim:
+    values: [100, 200]
