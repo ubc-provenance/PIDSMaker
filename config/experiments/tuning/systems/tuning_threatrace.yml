@@ -10,5 +10,5 @@ parameters:
     values: [32, 64]
   detection.gnn_training.weight_decay:
     values: [0.0005, 0.00001]
-  detection.gnn_training.dropout:
+  detection.gnn_training.encoder.dropout:
     values: [0.4, 0.5]

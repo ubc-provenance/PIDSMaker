@@ -1,6 +1,5 @@
-# https://wandb.ai/tristan_research/tuning_threatrace/runs/b7upqea5/overview
+# https://wandb.ai/tristan_research/tuning_threatrace/sweeps/ino0pe40/workspace?nw=nwusertristanbilot
 detection:
   gnn_training:
-    lr: 0.01
-    node_hid_dim: 128
-    edge_batch_size: 3000
+    lr: 0.0001
+    node_hid_dim: 32
