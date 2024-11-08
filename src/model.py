@@ -44,7 +44,7 @@ class Model(nn.Module):
                 t=batch.t,
                 x=x,
                 msg=batch.msg,
-                edge_feats=getattr(batch.edge_feats, None),
+                edge_feats=getattr(batch, "edge_feats", None),
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
                 edge_types= batch.edge_type
@@ -95,7 +95,7 @@ class Model(nn.Module):
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
-                    node_type=getattr(batch.node_type, None),
+                    node_type=getattr(batch, "node_type", None),
                     validation=validation,
                 )
                 loss = results["loss"]
