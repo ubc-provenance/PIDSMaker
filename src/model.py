@@ -66,34 +66,116 @@ class Model(nn.Module):
         
         if validation:
             neg_batch, picked_idx = self._fast_negative_sampling(batch)
-            neg_losses = self._forward(batch, full_data, inference=inference, validation=validation, ignore_tgn=True)["loss"]
+            neg_losses = self._forward(neg_batch, full_data, inference=inference, validation=validation, ignore_tgn=True)["loss"]
             
             if self.node_level:
-                neg_dst_nodes = batch.dst[picked_idx].unique()
-                picked_neg_losses = neg_losses[neg_dst_nodes]
-            else:
-                picked_neg_losses = neg_losses[picked_idx]
+                picked_idx = neg_batch.dst[picked_idx].unique()
+                
+            picked_neg_losses = neg_losses[picked_idx]
+            picked_pos_losses = loss_or_losses[picked_idx]
             
-            self.positives.extend(loss_or_losses)
+            self.positives.extend(picked_pos_losses)
             self.negatives.extend(picked_neg_losses)
     
         return results
     
-    def _fast_negative_sampling(self, batch, **kwargs):        
+    # def _fast_negative_sampling(self, batch, **kwargs):
+    #     edge_index = batch.edge_index
+    #     num_edges = edge_index.size(1)
+    #     val_stopping_aug_coef = self.val_stopping_aug_coef
+
+    #     # Calculate the number of edges to modify based on val_stopping_aug_coef
+    #     num_to_pick = int(num_edges * val_stopping_aug_coef)
+
+    #     # Deterministically select edge indices to modify
+    #     if num_to_pick > 0:
+    #         step = max(num_edges // num_to_pick, 1)
+    #         picked_idx = torch.arange(0, num_edges, step)[:num_to_pick]
+    #     else:
+    #         picked_idx = torch.tensor([], dtype=torch.long)
+
+    #     if len(picked_idx) > 0:
+    #         # Generate synthetic attack edges
+    #         # Get the necessary attributes from the batch
+            
+    #         node_id_flat = torch.cat([batch.src, batch.dst])
+    #         node_type_flat = torch.cat([batch.node_type_src, batch.node_type_dst])
+    #         node_feat_flat = torch.cat([batch.x_src, batch.x_dst])
+
+    #         subject_nodes = (node_type_flat[:,0] == 1).nonzero(as_tuple=True)[0].unique()
+    #         file_nodes = (node_type_flat[:,1] == 1).nonzero(as_tuple=True)[0].unique()
+    #         netflow_nodes = (node_type_flat[:,2] == 1).nonzero(as_tuple=True)[0].unique()
+
+    #         # Ensure we have enough nodes to create attack patterns
+    #         if len(subject_nodes) == 0 or (len(file_nodes) == 0 and len(netflow_nodes) == 0):
+    #             raise ValueError("Not enough nodes to create attack patterns.")
+
+    #         edge_type2one_hot = gen_relation_onehot(rel2id=rel2id_darpa_tc) # TODO: replace
+
+    #         for idx in picked_idx:
+    #             # Select a random attack pattern
+    #             # For deterministic behavior, we'll cycle through predefined patterns
+    #             pattern_type = idx % 3  # Three types of attack patterns
+
+    #             if pattern_type == 0 and len(netflow_nodes) > 0:
+    #                 # Pattern: subject -> netflow (EVENT_CONNECT)
+    #                 src_node = subject_nodes[idx % len(subject_nodes)]
+    #                 dst_node = netflow_nodes[idx % len(netflow_nodes)]
+    #                 edge_type = edge_type2one_hot['EVENT_CONNECT']
+    #             elif pattern_type == 1 and len(file_nodes) > 0:
+    #                 # Pattern: subject -> file (EVENT_READ)
+    #                 src_node = subject_nodes[idx % len(subject_nodes)]
+    #                 dst_node = file_nodes[idx % len(file_nodes)]
+    #                 edge_type = edge_type2one_hot['EVENT_READ']
+    #             elif pattern_type == 2 and len(subject_nodes) > 1:
+    #                 # Pattern: subject -> subject (EVENT_EXECUTE)
+    #                 src_node = subject_nodes[idx % len(subject_nodes)]
+    #                 dst_node = subject_nodes[(idx + 1) % len(subject_nodes)]
+    #                 edge_type = edge_type2one_hot['EVENT_EXECUTE']
+    #             else:
+    #                 # Default pattern if specific nodes are unavailable
+    #                 src_node = subject_nodes[idx % len(subject_nodes)]
+    #                 dst_node = subject_nodes[(idx + 1) % len(subject_nodes)]
+    #                 edge_type = edge_type2one_hot['EVENT_EXECUTE']
+                
+    #             # Replace the edge in edge_index
+    #             batch.src[idx] = src_node
+    #             batch.dst[idx] = dst_node
+    #             batch.edge_type[idx] = edge_type
+
+    #     return batch, picked_idx
+    
+    def _fast_negative_sampling(self, batch, **kwargs):
         edge_index = batch.edge_index
-        
-        candidates = edge_index.unique() # we consider both src and dst nodes in the batch as candidates to be negative
-        neg_idx = torch.randint(0, len(candidates), (len(edge_index[0]),))
-        candidates = candidates[neg_idx]
-        
-        picked_idx = torch.randint(0, len(edge_index[0]), (int(len(edge_index[0]) * self.val_stopping_aug_coef),))
-        edge_index[0, picked_idx] = candidates[picked_idx]
-        
+        num_edges = edge_index.size(1)
+        val_stopping_aug_coef = self.val_stopping_aug_coef
+
+        # Get unique nodes from edge_index as candidates for negative sampling
+        candidates = edge_index.unique()
+        num_candidates = len(candidates)
+
+        # Deterministically select candidate nodes by repeating the candidates list if necessary
+        neg_idx = torch.arange(num_edges) % num_candidates
+        candidates_neg = candidates[neg_idx]
+
+        # Calculate the number of edges to modify based on val_stopping_aug_coef
+        num_to_pick = int(num_edges * val_stopping_aug_coef)
+
+        # Deterministically select edge indices to modify
+        if num_to_pick > 0:
+            step = max(num_edges // num_to_pick, 1)
+            picked_idx = torch.arange(0, num_edges, step)[:num_to_pick]
+        else:
+            picked_idx = torch.tensor([], dtype=torch.long)
+
+        # Replace the destination nodes of the selected edges with the candidate nodes
+        edge_index[1, picked_idx] = candidates_neg[picked_idx]
+
         batch.src = edge_index[0]
         batch.dst = edge_index[1]
-        
-        return batch, picked_idx
 
+        return batch, picked_idx
+    
     def _forward(self, batch, full_data, inference=False, validation=False, ignore_tgn=False):
         train_mode = not inference
         if self.node_level:
