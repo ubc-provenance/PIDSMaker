@@ -28,7 +28,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 18
+    num_epochs: 15
     patience: 3
     lr: 0.01
     weight_decay: 0.0005
