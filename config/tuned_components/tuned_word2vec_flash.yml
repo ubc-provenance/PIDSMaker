@@ -7,4 +7,4 @@ featurization:
     use_seed: True
     flash:
       min_count: 1
-      workers: 8
+      workers: 10

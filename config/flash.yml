@@ -20,7 +20,7 @@ featurization:
     use_seed: True
     flash:
       min_count: 1
-      workers: 8
+      workers: 15
   embed_edges:
     to_remove: True
 
