@@ -206,7 +206,7 @@ if __name__ == '__main__':
     PROJECT_PREFIX = "framework_"
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
-        project=PROJECT_PREFIX + "nodlink_tests",
+        project=PROJECT_PREFIX + "new_experiments",
         name=exp_name,
         tags=tags,
     )
