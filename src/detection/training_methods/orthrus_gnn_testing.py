@@ -174,10 +174,11 @@ def test_node_level(
             
         # Magic codes
         elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
+            os.makedirs(cfg.detection.gnn_training._magic_dir, exist_ok=True)
             if split == 'val':
                 x_train = model.embed(batch, full_data, inference=True).cpu().numpy()
                 num_nodes = x_train.shape[0]
-                sample_size = 5000
+                sample_size = 5000 if num_nodes > 5000 else num_nodes
                 sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
                 x_train_sampled = x_train[sample_indices]
                 x_train_mean = x_train_sampled.mean(axis=0)
@@ -209,14 +210,20 @@ def test_node_level(
                 with open(train_distance_file, "a") as f:
                     f.write(f"{mean_distance_train}\n")
 
-                return
+                for i, node in enumerate(batch.original_n_id):
+                    temp_dic = {
+                        'node': node.item(),
+                        'loss': float(loss[i].item()),
+                    }
+                    node_list.append(temp_dic)
+
             elif split == 'test':
                 train_distance_file = os.path.join(cfg.detection.gnn_training._magic_dir, "train_distance.txt")
                 mean_distance_train = calculate_average_from_file(train_distance_file)
 
                 x_test = model.embed(batch, full_data, inference=True).cpu().numpy()
                 num_nodes = x_test.shape[0]
-                sample_size = 5000
+                sample_size = 5000 if num_nodes > 5000 else num_nodes
                 sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
                 x_test_sampled = x_test[sample_indices]
                 x_test_mean = x_test_sampled.mean(axis=0)
@@ -232,9 +239,9 @@ def test_node_level(
 
                 distances, _ = nbrs.kneighbors(x_test, n_neighbors=n_neighbors)
                 distances = distances.mean(axis=1)
-                distances = distances.to_numpy()
+                # distances = distances.to_numpy()
                 score = distances / mean_distance_train
-                score = score.to_list()
+                score = score.tolist()
 
                 for i, node in enumerate(batch.original_n_id):
                     temp_dic = {
