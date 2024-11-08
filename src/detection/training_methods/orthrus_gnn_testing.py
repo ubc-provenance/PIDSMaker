@@ -28,7 +28,7 @@ def test_edge_level(
     edge_list = []
     unique_nodes = torch.tensor([]).to(device=device)
     start_time = data.t[0]
-    losses = 0
+    losses = []
     start = time.perf_counter()
 
     # NOTE: warning, this may reindex the data is TGN is not used

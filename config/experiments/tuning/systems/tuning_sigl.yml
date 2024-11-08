@@ -9,4 +9,4 @@ parameters:
   detection.gnn_training.node_hid_dim:
     values: [128, 256]
   detection.gnn_training.node_out_dim:
-    values: [128]
+    values: [-1]
