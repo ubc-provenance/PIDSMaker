@@ -1,5 +1,5 @@
 training_loop:
-  run_evaluation: best_epoch
+  run_evaluation: each_epoch
 
 experiment:
   used_method: uncertainty

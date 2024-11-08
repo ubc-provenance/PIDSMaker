@@ -20,7 +20,7 @@ featurization:
     use_seed: True
     flash:
       min_count: 1
-      workers: 8
+      workers: 15
   embed_edges:
     to_remove: True
 
@@ -28,7 +28,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 22
+    num_epochs: 15
     patience: 3
     lr: 0.01
     weight_decay: 0.0005
@@ -54,5 +54,6 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: flash
+      threshold_method: max_val_loss # flash
       use_dst_node_loss: True
+      use_kmeans: False

@@ -106,48 +106,43 @@ def main(cfg):
         # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
         # save_model(model, model_path, cfg)
         
-        # Validation    
-        split_to_run = "val" if best_epoch_mode else "all"
-        test_stats = orthrus_gnn_testing.main(
-            cfg=cfg,
-            model=model,
-            val_data=val_data,
-            test_data=test_data,
-            full_data=full_data,
-            epoch=epoch,
-            split=split_to_run,
-        )
-        val_ap = test_stats["val_ap"]
-        
-        if best_epoch_mode:
-            if val_ap > best_val_ap:
-                best_val_ap = val_ap
-                if cfg._model == "kairos":
-                    best_model = copy.deepcopy(model)
-                else:
+        # Validation
+        if (epoch+1) % 3 == 0:
+            split_to_run = "val" if best_epoch_mode else "all"
+            test_stats = orthrus_gnn_testing.main(
+                cfg=cfg,
+                model=model,
+                val_data=val_data,
+                test_data=test_data,
+                full_data=full_data,
+                epoch=epoch,
+                split=split_to_run,
+            )
+            val_ap = test_stats["val_ap"]
+            
+            if best_epoch_mode:
+                if val_ap > best_val_ap:
+                    best_val_ap = val_ap
                     best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
-                best_epoch = epoch
-                patience_counter = 0
-            else:
-                patience_counter += 1
-        model.to_device(device)
-        
-        if patience_counter >= patience:
-            log(f"Early stopping: best score is {best_val_ap:.4f}")
-            break
-        
-        wandb.log({
-            "train_epoch": epoch,
-            "train_loss": round(tot_loss, 4),
-            "val_ap": round(val_ap, 5),
-        })
+                    best_epoch = epoch
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+            model.to_device(device)
+            
+            # if patience_counter >= patience:
+            #     log(f"Early stopping: best score is {best_val_ap:.4f}")
+            #     break
+            
+            wandb.log({
+                "train_epoch": epoch,
+                "train_loss": round(tot_loss, 4),
+                "val_ap": round(val_ap, 5),
+            })
         
     # After training
     if best_epoch_mode:
-        if cfg._model == "kairos":
-            model = best_model
-        else:
-            model.load_state_dict(best_model)
+        model.load_state_dict(best_model)
         test_stats = orthrus_gnn_testing.main(
             cfg=cfg,
             model=model,

@@ -23,7 +23,7 @@ featurization:
       alpha: 0.01
       window_size: 3
       negative: 3
-      num_workers: 30
+      num_workers: 15
       use_pretrained_fb_model: False
   embed_edges:
     to_remove: True
@@ -32,7 +32,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 20
+    num_epochs: 15
     patience: 3
     lr: 0.001
     weight_decay: 0.00001

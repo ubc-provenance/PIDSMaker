@@ -7,6 +7,8 @@ parameters:
   detection.gnn_training.lr:
     values: [0.001, 0.0001]
   detection.gnn_training.node_hid_dim:
-    values: [128, 192]
-  detection.gnn_training.dropout:
+    values: [64, 128]
+  detection.gnn_training.node_out_dim:
+    values: [-1]
+  detection.gnn_training.encoder.dropout:
     values: [0.2, 0.4]

@@ -5,7 +5,24 @@ metric:
 
 parameters:
   embedding_techniques:
-    values: [tuned_doc2vec_train, tuned_doc2vec_all, tuned_fasttext_train, tuned_fasttext_all, tuned_hfh_train, tuned_hfh_all, tuned_word2vec_train, tuned_word2vec_all, no_featurization] # TODO: replace by tuned_word2vec_alacarte_train
+    values: [
+      tuned_word2vec_alacarte_train,
+      tuned_word2vec_alacarte_all,
+      
+      tuned_word2vec_flash_train,
+      tuned_word2vec_flash_all,
+      
+      tuned_doc2vec_train,
+      tuned_doc2vec_all,
+      
+      tuned_fasttext_train,
+      tuned_fasttext_all,
+      
+      tuned_hfh_train,
+      tuned_hfh_all,
+      
+      no_featurization,
+    ]
 
   featurization.embed_nodes.emb_dim:
     values: [32, 128, 256]

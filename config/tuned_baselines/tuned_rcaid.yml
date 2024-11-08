@@ -1,3 +1,4 @@
+# https://wandb.ai/tristan_research/tuning_rcaid/runs/gficfs59/overview
 detection:
   gnn_training:
     lr: 0.001

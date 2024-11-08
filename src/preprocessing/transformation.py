@@ -57,7 +57,7 @@ def main(cfg):
         for day, graphs in graph_list.items():
             for d in graphs:
                 file_name = d["file"]
-                log(f"Creating file '{file_name}'...")
+                # log(f"Creating file '{file_name}'...")
                 
                 dst_path = os.path.join(dst_dir, f"graph_{day}")
                 os.makedirs(dst_path, exist_ok=True)

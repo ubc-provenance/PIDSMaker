@@ -1,3 +1,4 @@
+# https://wandb.ai/tristan_research/tuning_threatrace/runs/b7upqea5/overview
 detection:
   gnn_training:
     lr: 0.01
