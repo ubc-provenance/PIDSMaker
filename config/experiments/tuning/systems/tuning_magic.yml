@@ -11,4 +11,4 @@ parameters:
   detection.gnn_training.node_out_dim:
     values: [-1]
   detection.gnn_training.encoder.dropout:
-    values: [0, 0.25]
+    values: [0.2, 0.4]

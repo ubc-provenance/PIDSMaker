@@ -7,8 +7,8 @@ count: 16
 parameters:
   detection.gnn_training.lr:
     values: [0.00005, 0.0001]
-  featurization.embed_nodes.emb_dim:
-    values: [16, 32]
+  detection.gnn_training.encoder.dropout:
+    values: [0.2, 0.4]
   detection.gnn_training.node_hid_dim:
     values: [100, 200]
   detection.gnn_training.node_out_dim:

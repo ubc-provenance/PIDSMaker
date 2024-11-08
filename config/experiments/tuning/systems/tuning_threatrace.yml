@@ -5,10 +5,10 @@ metric:
 
 parameters:
   detection.gnn_training.lr:
-    values: [0.001, 0.0001]
+    values: [0.0001]
   detection.gnn_training.node_hid_dim:
-    values: [32, 128, 256]
-  detection.gnn_training.edge_batch_size:
-    values: [0, 3000]
+    values: [32, 64]
+  detection.gnn_training.weight_decay:
+    values: [0.0005, 0.00001]
   detection.gnn_training.dropout:
-    values: [0.25, 0.4]
+    values: [0.4, 0.5]
