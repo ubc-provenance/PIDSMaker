@@ -233,8 +233,7 @@ def gen_darpa_rw_file(walk_len, corpus_fd, adjfilename, overall_fd, num_walks=10
         # Run bidirectional random walking to ensure that every node appears in the corpus
         # Missing sink nodes leads to issues when training A La Carte Matrix
         for dst in log_tqdm(back_adj_list, desc="Backward random walking"):
-            # walk_num = len(back_adj_list[dst]) * num_walks
-            walk_num = num_walks
+            walk_num = len(back_adj_list[dst]) * num_walks
             for i in range(walk_num):
                 start = dst
                 path_sentence = []
