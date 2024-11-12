@@ -311,6 +311,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         "nodes": nodes,
         "node2attacks": node2attacks,
     }, scores_file)
-    wandb.save(scores_file, out_dir)
+    stats["scores_file"] = scores_file
     
     return stats
