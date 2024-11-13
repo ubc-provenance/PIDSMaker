@@ -7,7 +7,7 @@ from config import get_yml_file, merge_cfg_and_check_syntax
 
 def get_tuning_sweep_cfg(cfg):
     if cfg._tuning_mode == "hyperparameters":
-        yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder="experiments/tuning/systems/")
+        yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder=f"experiments/tuning/systems/{cfg.dataset.name.lower()}/")
     elif cfg._tuning_mode == "featurization":
         yml_file = get_yml_file(filename="tuning_featurization_methods", folder="experiments/tuning/components/")
     else:
