@@ -130,7 +130,9 @@ def main(cfg, sweep_cfg=None, **kwargs):
             with wandb.init():
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
-                run_pipeline(cfg)
+                metrics, times = run_pipeline(cfg)
+                wandb.log(metrics)
+                wandb.log(times)
         
         count = sweep_config["count"] if "count" in sweep_config else None
         wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=count)
