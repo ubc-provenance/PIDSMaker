@@ -123,7 +123,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
     if cfg._tuning_mode != "none":
         log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
-        project = f"tuning_{cfg._model}"
+        project = f"framework_tuning_{cfg._model}"
         sweep_id = wandb.sweep(sweep_config, project=project)
         
         def run_pipeline_from_sweep(cfg):
