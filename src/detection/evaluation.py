@@ -21,9 +21,10 @@ def standard_evaluation(cfg, evaluation_fn):
     
     tw_to_malicious_nodes = compute_tw_labels(cfg)
     
-    best_mcc, best_stats = -1e6, {}
+    best_adp, best_stats = -1e6, {}
     
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
+    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         
     for model_epoch_dir in sorted_files:
         log(f"[@{model_epoch_dir}] - Test Evaluation", pre_return_line=True)
@@ -36,7 +37,6 @@ def standard_evaluation(cfg, evaluation_fn):
         for k, v in stats.items():
             log(f"{k}: {v}")
             
-        out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
         stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
         
@@ -55,13 +55,19 @@ def standard_evaluation(cfg, evaluation_fn):
         adp = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
         if os.path.exists(adp):
             stats["adp_img"] = wandb.Image(adp)
+            
+        scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
+        
         
         wandb.log(stats)
         
-        if stats["mcc"] > best_mcc:
-            best_mcc = stats["mcc"]
+        if stats["adp_score"] > best_adp:
+            best_adp = stats["adp_score"]
             best_stats = stats
         
+    # We only store the scores for the best run
+    wandb.save(best_stats["scores_file"], out_dir)
+    
     return best_stats
 
 

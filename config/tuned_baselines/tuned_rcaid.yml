@@ -1,7 +1,5 @@
-# https://wandb.ai/tristan_research/tuning_rcaid/runs/gficfs59/overview
+# https://wandb.ai/tristan_research/tuning_rcaid/sweeps/91bnqspl/workspace
 detection:
   gnn_training:
     lr: 0.001
     node_hid_dim: 192
-    encoder:
-      dropout: 0.25

@@ -36,10 +36,7 @@ class Model(nn.Module):
         
     def embed(self, batch, full_data, inference=False, **kwargs):
         train_mode = not inference
-        if self.node_level:
-            x = batch.x
-        else:
-            x = (batch.x_src, batch.x_dst)
+        x = self._reshape_x(batch)
         edge_index = batch.edge_index
         with torch.set_grad_enabled(train_mode):
             h = self.encoder(
@@ -47,7 +44,7 @@ class Model(nn.Module):
                 t=batch.t,
                 x=x,
                 msg=batch.msg,
-                edge_feats=batch.edge_feats if hasattr(batch, "edge_feats") else None,
+                edge_feats=getattr(batch, "edge_feats", None),
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
                 edge_types= batch.edge_type
@@ -56,23 +53,11 @@ class Model(nn.Module):
         
     def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
-        if self.node_level:
-            x = batch.x
-        else:
-            x = (batch.x_src, batch.x_dst)
+        x = self._reshape_x(batch)
         edge_index = batch.edge_index
 
         with torch.set_grad_enabled(train_mode):
-            h = self.encoder(
-                edge_index=edge_index,
-                t=batch.t,
-                x=x,
-                msg=batch.msg,
-                edge_feats=batch.edge_feats if hasattr(batch, "edge_feats") else None,
-                full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
-                inference=inference,
-                edge_types= batch.edge_type
-            )
+            h = self.embed(batch, full_data, inference=inference)
 
             num_elements = None
             if self.node_level:
@@ -110,7 +95,7 @@ class Model(nn.Module):
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
-                    node_type=batch.node_type if hasattr(batch, "node_type") else None,
+                    node_type=getattr(batch, "node_type", None),
                     validation=validation,
                 )
                 loss = results["loss"]
@@ -119,6 +104,13 @@ class Model(nn.Module):
                 loss_or_scores = loss_or_scores + loss
 
             return results
+    
+    def _reshape_x(self, batch):
+        if self.node_level:
+            x = batch.x
+        else:
+            x = (batch.x_src, batch.x_dst)
+        return x
         
     def get_val_ap(self):
         # If multiple decoders are used, we take the average of the val scores

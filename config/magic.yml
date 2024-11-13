@@ -64,5 +64,5 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation # magic_node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss # magic
+      threshold_method: magic # can't use anything else here
       use_dst_node_loss: True

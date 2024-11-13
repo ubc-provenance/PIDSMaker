@@ -2,5 +2,5 @@
 detection:
   gnn_training:
     lr: 0.001
-    node_hid_dim: 128
-    node_out_dim: 128
+    node_hid_dim: 256
+    node_out_dim: 256
