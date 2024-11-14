@@ -1,5 +1,8 @@
-# https://wandb.ai/tristan_research/tuning_threatrace/sweeps/ino0pe40/workspace?nw=nwusertristanbilot
+# ADP@0.35 => https://wandb.ai/tristan_research/framework_tuning_threatrace/sweeps/74jk4jda/workspace
+
 detection:
   gnn_training:
     lr: 0.0001
-    node_hid_dim: 32
+    node_hid_dim: 64
+    encoder:
+      dropout: 0.4

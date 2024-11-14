@@ -1,6 +1,9 @@
-# https://wandb.ai/tristan_research/tuning_kairos/sweeps/1efs9fzi/workspace
+# ADP@0.006 => https://wandb.ai/tristan_research/framework_tuning_kairos/sweeps/jr2qkqvs?nw=nwusertristanbilot
+
 detection:
   gnn_training:
     lr: 0.00005
-    node_hid_dim: 200
-    node_out_dim: 200
+    node_hid_dim: 100
+    node_out_dim: 100
+    encoder:
+      dropout: 0.4

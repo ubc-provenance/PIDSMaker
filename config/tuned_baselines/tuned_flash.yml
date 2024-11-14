@@ -1,6 +1,8 @@
-# https://wandb.ai/tristan_research/tuning_flash/sweeps/it1zdw4i/workspace
+# ADP@0.078 => https://wandb.ai/tristan_research/framework_tuning_flash/sweeps/ys5dt19i?nw=nwusertristanbilot
 detection:
   gnn_training:
     lr: 0.001
     node_hid_dim: 256
+    encoder:
+      dropout: 0.25
   
