@@ -1,6 +1,0 @@
-# https://wandb.ai/tristan_research/tuning_flash/sweeps/it1zdw4i/workspace
-detection:
-  gnn_training:
-    lr: 0.001
-    node_hid_dim: 256
-  

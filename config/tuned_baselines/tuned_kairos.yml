@@ -1,6 +1,0 @@
-# https://wandb.ai/tristan_research/tuning_kairos/sweeps/1efs9fzi/workspace
-detection:
-  gnn_training:
-    lr: 0.00005
-    node_hid_dim: 200
-    node_out_dim: 200

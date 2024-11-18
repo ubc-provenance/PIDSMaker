@@ -1,5 +1,0 @@
-# https://wandb.ai/tristan_research/tuning_threatrace/sweeps/ino0pe40/workspace?nw=nwusertristanbilot
-detection:
-  gnn_training:
-    lr: 0.0001
-    node_hid_dim: 32

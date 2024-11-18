@@ -1,8 +1,0 @@
-# https://wandb.ai/tristan_research/tuning_magic/runs/csdoptvt?nw=nwusertristanbilot
-detection:
-  gnn_training:
-    lr: 0.001
-    node_hid_dim: 128
-    node_out_dim: 128
-    encoder:
-      dropout: 0.2
