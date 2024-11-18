@@ -1,0 +1,10 @@
+featurization:
+  embed_nodes:
+    emb_dim: 30
+    epochs: 10
+    training_split: train
+    used_method: flash
+    use_seed: True
+    flash:
+      min_count: 1
+      workers: 10

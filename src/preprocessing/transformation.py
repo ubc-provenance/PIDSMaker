@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from config import *
 from provnet_utils import *
 from .transformation_methods import (
@@ -37,7 +35,6 @@ def main(cfg):
 
     else:
         os.makedirs(dst_dir, exist_ok=True)
-        graph_list = defaultdict(list)
 
         days = get_days_from_cfg(cfg)
         for day in log_tqdm(days, desc=f'Transforming'):
@@ -48,21 +45,11 @@ def main(cfg):
                 # Apply all transformations to a single graph
                 graph = apply_transformations(graph, methods, cfg)
                 
-                graph_list[day].append({
-                    "file": path.split("/")[-1],
-                    "graph": graph,
-                })
-            
-        # We save to disk at the very end to avoid errors once a file is replaced on disk
-        for day, graphs in graph_list.items():
-            for d in graphs:
-                file_name = d["file"]
-                log(f"Creating file '{file_name}'...")
-                
+                file_name = path.split("/")[-1]
                 dst_path = os.path.join(dst_dir, f"graph_{day}")
                 os.makedirs(dst_path, exist_ok=True)
-                torch.save(d["graph"], os.path.join(dst_path, file_name))
-
+                torch.save(graph, os.path.join(dst_path, file_name))
+                
 
 if __name__ == "__main__":
     args = get_runtime_required_args()

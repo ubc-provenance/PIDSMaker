@@ -5,16 +5,14 @@ metric:
 
 parameters:
   detection.gnn_training.lr:
-    values: [0.0001, 0.00001]
+    values: [0.0001]
+  detection.gnn_training.encoder.dropout:
+    values: [0.0, 0.2, 0.4]
   detection.gnn_training.node_hid_dim:
     values: [128, 256]
   detection.gnn_training.node_out_dim:
-    values: [128, 256]
+    values: [-1]
   featurization.embed_nodes.epochs:
-    values: [5, 10, 20]
-
-# early_terminate:
-#   type: hyperband
-#   # s: 2
-#   eta: 2
-#   min_iter: 5
+    values: [20]
+  preprocessing.transformation.used_methods:
+    values: [undirected, none]

@@ -28,8 +28,7 @@ def test_edge_level(
     edge_list = []
     unique_nodes = torch.tensor([]).to(device=device)
     start_time = data.t[0]
-    event_count = 0
-    tot_loss = 0
+    losses = []
     start = time.perf_counter()
 
     # NOTE: warning, this may reindex the data is TGN is not used
@@ -42,7 +41,7 @@ def test_edge_level(
 
         results = model(batch, full_data, inference=True, validation=validation)
         each_edge_loss = results["loss"]
-        tot_loss += each_edge_loss.sum().item()
+        losses.extend(each_edge_loss.cpu().numpy().tolist())
 
         # If the data has been reindexed in the loader, we retrieve original node IDs
         # to later find the labels
@@ -76,9 +75,6 @@ def test_edge_level(
             }
             edge_list.append(temp_dic)
 
-        event_count += num_events
-    tot_loss /= event_count
-
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list[-1]["time"])
 
@@ -89,9 +85,9 @@ def test_edge_level(
 
     df = pd.DataFrame(edge_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
-    return tot_loss
+    return losses
 
-    # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
+    # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
 @torch.no_grad()
 def test_node_level(
@@ -108,8 +104,7 @@ def test_node_level(
     node_list = []
     start_time = data.t[0]
     end_time = data.t[-1]
-    node_count = 0
-    tot_loss = 0
+    losses = []
     start = time.perf_counter()
 
     loader = batch_loader_factory(cfg, data, model.graph_reindexer)
@@ -121,7 +116,7 @@ def test_node_level(
         
         results = model(batch, full_data, inference=True, validation=validation)
         loss = results["loss"]
-        tot_loss += loss.sum().item()
+        losses.extend(loss.cpu().numpy().tolist())
 
         # ThreaTrace code
         if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
@@ -264,8 +259,6 @@ def test_node_level(
                 }
                 node_list.append(temp_dic)
                 
-        node_count += len(loss)
-    tot_loss /= node_count
 
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)
 
@@ -276,9 +269,9 @@ def test_node_level(
 
     df = pd.DataFrame(node_list)
     df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
-    return tot_loss
+    return losses
 
-    # log(f'Time: {time_interval}, Loss: {tot_loss:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
+    # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
 def main(cfg, model, val_data, test_data, full_data, epoch, split):
@@ -307,18 +300,19 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
     tpb = []
-    all_losses = []
+    split2loss = {}
 
     for graphs, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
         tracemalloc.start()
         
+        all_losses = []
         for g in log_tqdm(graphs, desc=desc):
             g.to(device=device)
             
             s = time.time()
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
-            tot_loss = test_fn(
+            losses = test_fn(
                 data=g,
                 full_data=full_data,
                 model=model,
@@ -327,7 +321,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
                 cfg=cfg,
                 device=device,
             )
-            all_losses.append(tot_loss)
+            all_losses.extend(losses)
             tpb.append(time.time() - s)
             
             g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
@@ -344,6 +338,8 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
             torch.cuda.reset_peak_memory_stats(device=device)
         
         mean_loss = np.mean(all_losses)
+        split2loss[split_name] = mean_loss
+        
         if split_name == "val":
             val_ap = model.get_val_ap()
             log(f'[@epoch{epoch:02d}] Validation finished - Mean Loss: {mean_loss:.4f} - Val AP: {val_ap:.4f}', return_line=True)
@@ -354,6 +350,8 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     
     stats = {
         "val_ap": val_ap,
+        "val_loss": split2loss["val"],
+        "test_loss": split2loss["test"],
         "peak_inference_cpu_memory": peak_inference_cpu_mem,
         "peak_inference_gpu_memory": peak_inference_gpu_mem,
         "time_per_batch_inference": np.mean(tpb),

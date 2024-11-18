@@ -7,8 +7,8 @@ from config import get_yml_file, merge_cfg_and_check_syntax
 
 def get_tuning_sweep_cfg(cfg):
     if cfg._tuning_mode == "hyperparameters":
-        yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder="experiments/tuning/systems/")
-    elif cfg._tuning_mode == "best_featurization_methods":
+        yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder=f"experiments/tuning/systems/{cfg.dataset.name.lower()}/")
+    elif cfg._tuning_mode == "featurization":
         yml_file = get_yml_file(filename="tuning_featurization_methods", folder="experiments/tuning/components/")
     else:
         raise ValueError(f"Invalid tuning mode {cfg._tuning_mode}")
@@ -52,4 +52,9 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
         # default cfg path
         else:
             set_nested_attr(cfg, key, value)
+            
+    # Special cases
+    if cfg.detection.gnn_training.node_out_dim == -1:
+        cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim
+    
     return cfg

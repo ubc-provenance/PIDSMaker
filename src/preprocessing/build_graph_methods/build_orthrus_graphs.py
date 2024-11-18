@@ -156,6 +156,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
     # In test mode, we ensure to get 1 TW in each set
     days = get_days_from_cfg(cfg)
 
+    log(f"Building graphs...")
     for day in days:
         date_start = cfg.dataset.year_month + '-' + str(day) + ' 00:00:00'
         date_stop = cfg.dataset.year_month + '-' + str(day + 1) + ' 00:00:00'

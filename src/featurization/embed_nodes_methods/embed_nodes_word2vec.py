@@ -319,7 +319,7 @@ def process_documents(func):
             reader.read_document(document)
 
         reader.reduce()
-        print("Finished Processing Corpus. Targets Covered: {}".format(reader.target_coverage()))
+        log("Finished Processing Corpus. Targets Covered: {}".format(reader.target_coverage()))
         return reader.vector_array, reader.count_array
 
     return wrapper
@@ -430,25 +430,25 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
 
     log_dir = out_dir
 
-    print("=== PARAMETER SUMMARY ----------------------------------------------------------------------")
-    print("Training data: {}".format(dataset))
-    print("Total number of epochs: {}".format(epochs))
+    log("=== PARAMETER SUMMARY ----------------------------------------------------------------------")
+    log("Training data: {}".format(dataset))
+    log("Total number of epochs: {}".format(epochs))
     if model_input is None:
-        print("Node vector dimensionality: {}".format(emb_dim))
+        log("Node vector dimensionality: {}".format(emb_dim))
         # adjust word2vec context window size for segmentation
-        print("word2vec context window size: {}".format(window_size))
-        print("Minimal count threshold: {}".format(min_count))
-        print("Training algorithm: {}".format("CBOW" if not use_skip_gram else "Skip-Gram"))
-        print("Number of working threads: {}".format(num_workers))
+        log("word2vec context window size: {}".format(window_size))
+        log("Minimal count threshold: {}".format(min_count))
+        log("Training algorithm: {}".format("CBOW" if not use_skip_gram else "Skip-Gram"))
+        log("Number of working threads: {}".format(num_workers))
     else:
-        print("Other parameters follow the input model from: {}".format(model_input))
+        log("Other parameters follow the input model from: {}".format(model_input))
         if add_paths:
-            print("Current training data is additional training data: {}".format(add_paths))
-    print("Context information for OOV embedding learning is in directory: {}".format(corpus_dir))
+            log("Current training data is additional training data: {}".format(add_paths))
+    log("Context information for OOV embedding learning is in directory: {}".format(corpus_dir))
     # adjust A La Carte context window size for segmentation
-    print("A La Carte context window size: {}".format(window_size))
-    print("Model is used to fulfill adjacency lists in directory: {}".format(adjacency_dir))
-    print("=== ----------------------------------------------------------------------------------------")
+    log("A La Carte context window size: {}".format(window_size))
+    log("Model is used to fulfill adjacency lists in directory: {}".format(adjacency_dir))
+    log("=== ----------------------------------------------------------------------------------------")
 
     # ===-----------------------------------------------------------------------===
     # Importing data (only if Word2Vec model needs to be trained or modified)
@@ -456,7 +456,7 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     if model_input is None or add_paths:
         paths = load_data(dataset)
         if verbose:
-            print("{} paths loaded".format(len(paths)))
+            log("{} paths loaded".format(len(paths)))
 
     # ===-----------------------------------------------------------------------===
     # Training using Word2Vec if needed
@@ -469,16 +469,16 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
             model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
                              workers=num_workers, epochs=epochs, compute_loss=compute_loss)
     else:
-        print("Loading existing model from: {}".format(model_input))
+        log("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)
         if add_paths:
-            print("Resuming training using additional data")
+            log("Resuming training using additional data")
             model.train(paths, epochs=epochs, compute_loss=compute_loss)
 
     # Note: currently word2vec outputs normalized vectors (and replaces the original un-normalized ones)
     model.init_sims(replace=True)
     wv = model.wv
-    print("Trained embedding vectors have shape: {}".format(wv.vectors.shape))
+    log("Trained embedding vectors have shape: {}".format(wv.vectors.shape))
 
     # ===-----------------------------------------------------------------------===
     # Saving models
@@ -486,14 +486,14 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     # Save the model, which supports later online training (e.g., add addition training paths)
     if model_input is None or add_paths:
         out_path = os.path.join(log_dir, "model.bin")
-        print("Saving the model at: {}".format(out_path))
+        log("Saving the model at: {}".format(out_path))
         model.save(out_path)
 
     # ===-----------------------------------------------------------------------===
     # Using trained embeddings to train A La Carte model and save the model
     # or use an existing A La Carte matrix model
     # ===-----------------------------------------------------------------------===
-    print("Loading w2v embeddings as source embeddings to A La Carte model")
+    log("Loading w2v embeddings as source embeddings to A La Carte model")
     w2v = OrderedDict(load_vectors(wv))
 
     if matrix_input is not None:
@@ -504,20 +504,20 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
         M = M.reshape(d, d)
     else:
         matrix_file = os.path.join(log_dir, "matrix.bin")
-        print("Learning induction matrix and saving to {}".format(matrix_file))
+        log("Learning induction matrix and saving to {}".format(matrix_file))
         targets = w2v.keys()
         M = None
 
         alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None, comm=None)
 
-        print("Building A La Carte context vectors")
+        log("Building A La Carte context vectors")
         if corpus:
             context_vectors = FLOAT(0.0)
             target_counts = INT(0)
-            print("Source corpus: {}".format(corpus))
+            log("Source corpus: {}".format(corpus))
             context_vectors, target_counts = corpus_documents(corpus, alc, verbose=verbose, comm=None, english=None, lower=None)
         else:
-            print("At least one corpus file is required by A La Carte model to learn")
+            log("At least one corpus file is required by A La Carte model to learn")
             exit(1)
 
         nz = target_counts > 0
@@ -526,19 +526,19 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
         from sklearn.linear_model import LinearRegression as LR
         from sklearn.preprocessing import normalize
 
-        print("Learning induction matrix")
+        log("Learning induction matrix")
         X = np.true_divide(context_vectors[nz], target_counts[nz, None], dtype=FLOAT)
         Y = np.vstack([vector for vector, count in zip(w2v.values(), target_counts) if count])
         M = LR(fit_intercept=False).fit(X, Y).coef_.astype(FLOAT)
-        print("Finished learning transform; Average cosine similarity: {}".format(
+        log("Finished learning transform; Average cosine similarity: {}".format(
             np.mean(np.sum(normalize(X.dot(M.T)) * normalize(Y), axis=1))))
 
-        print("Saving induction transform to {}".format(matrix_file))
+        log("Saving induction transform to {}".format(matrix_file))
         dump_vectors(zip(targets, target_counts), log_dir + '/source_vocab_counts.txt')
         context_vectors.tofile(log_dir + '/source_context_vectors.bin')
         M.tofile(matrix_file)
 
-    print("Loading adjacency lists from: {}".format(adjacency_dir))
+    log("Loading adjacency lists from: {}".format(adjacency_dir))
 
     # if split in {'train', 'val'}:
     if True:
@@ -555,27 +555,27 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
 
         for filename in sorted(os.listdir(adjacency_dir)):
             if filename:
-                print("Loading adjacency list: {}".format(filename))
+                log("Loading adjacency list: {}".format(filename))
                 input_path = os.path.join(adjacency_dir, filename)
 
                 # Going through the input data to find all the targets
-                print("Loading targets from: {}".format(input_path))
+                log("Loading targets from: {}".format(input_path))
                 targets = obtain_targets_from_file(input_path, w2v)
-                print("A total number of {} targets identified".format(len(targets)))
+                log("A total number of {} targets identified".format(len(targets)))
                 # target_dict now holds all unknown OOV embeddings
                 # TODO: we also manually add the new embeddings into the word2vec keyed vectors (see wv.add method)
                 target_dict = {}
                 if not len(targets):
-                    print("No uncovered targets found")
+                    log("No uncovered targets found")
                 else:
                     # reloading ALC reader for new targets
                     alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
                                          comm=None)
-                    print("Rebuilding A La Carte context vectors for {}".format(filename))
+                    log("Rebuilding A La Carte context vectors for {}".format(filename))
                     corpus_file = os.path.join(adjacency_dir, filename)
                     test_context_vectors = FLOAT(0.0)
                     test_target_counts = INT(0)
-                    print("Source corpus for {}: {}".format(filename, corpus_file))
+                    log("Source corpus for {}: {}".format(filename, corpus_file))
                     test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, verbose=verbose,
                                                                                 comm=None, english=None, lower=None)
                     test_nz = test_target_counts > 0
@@ -587,7 +587,7 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                     target_vecs = test_context_vectors.dot(M.T)
                     for gram, vector in zip(targets, target_vecs):
                         if np.count_nonzero(vector) == 0:
-                            print("[!]Zero-vector target: {}".format(gram))
+                            log("[!]Zero-vector target: {}".format(gram))
                             # assert (np.count_nonzero(vector) > 0), "zero-vector target could result in NaN"
                         else:
                             vector = vector / np.linalg.norm(vector)
@@ -617,7 +617,7 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                         assert len(src_feature) == emb_dim, "src feature dimension from alc is {}, not {}" \
                             .format(len(src_feature), emb_dim)
                     else:
-                        print(f"Unknown node name for source node {srcid}: {src_name}")
+                        log(f"Unknown node name for source node {srcid}: {src_name}")
 
                     if srcid not in indexid2vec:
                         indexid2vec[srcid] = src_feature
@@ -632,7 +632,7 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                         assert len(dst_feature) == emb_dim, "dst feature dimension from alc is {}, not {}" \
                             .format(len(dst_feature), emb_dim)
                     else:
-                        print(f"Unknown node name for destination node {dstid}: {dst_name}")
+                        log(f"Unknown node name for destination node {dstid}: {dst_name}")
 
                     if dstid not in indexid2vec:
                         indexid2vec[dstid] = dst_feature
@@ -648,7 +648,7 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                         assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
                             .format(len(edge_feature), emb_dim)
                     else:
-                        print("Unknown edge name: {}".format(edge_name))
+                        log("Unknown edge name: {}".format(edge_name))
 
                     if edge_name not in edgelabel2vec:
                         edgelabel2vec[edge_name] = edge_feature
@@ -663,15 +663,15 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     # Saving embeddings (for reuse or checking embedding quality)
     # ===-----------------------------------------------------------------------===
     embed_file_name = "model.wv"
-    print("Saving the embeddings at: {}".format(log_dir + "/" + embed_file_name))
+    log("Saving the embeddings at: {}".format(log_dir + "/" + embed_file_name))
     torch.save(wv, log_dir + "/" + embed_file_name)
     # ===-----------------------------------------------------------------------===
     # Output some stats and results
     # ===-----------------------------------------------------------------------===
-    print("=== RESULTS REPORT -------------------------------------------------------------------------")
+    log("=== RESULTS REPORT -------------------------------------------------------------------------")
     w2v_loss = model.get_latest_training_loss()
-    print("word2vec Training loss: {}".format(w2v_loss))
-    print("=== ----------------------------------------------------------------------------------------")
+    log("word2vec Training loss: {}".format(w2v_loss))
+    log("=== ----------------------------------------------------------------------------------------")
 
 def main(cfg):
     log_start(__file__)

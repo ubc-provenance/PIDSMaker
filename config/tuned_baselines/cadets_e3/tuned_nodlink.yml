@@ -1,0 +1,15 @@
+# ADP@1.0 => https://wandb.ai/tristan_research/framework_tuning_nodlink/sweeps/af91ugyt?nw=nwusertristanbilot
+# ADP@0.96 => https://wandb.ai/tristan_research/tuning_nodlink/runs/1jk0yvtv?nw=nwusertristanbilot
+
+featurization:
+  embed_nodes:
+    epochs: 20
+
+detection:
+  gnn_training:
+    lr: 0.0001
+    node_out_dim: 256
+    node_hid_dim: 256
+    encoder:
+      dropout: 0.2
+  

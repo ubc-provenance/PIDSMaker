@@ -1,5 +1,0 @@
-detection:
-  gnn_training:
-    lr: 0.01
-    node_hid_dim: 128
-    edge_batch_size: 3000
