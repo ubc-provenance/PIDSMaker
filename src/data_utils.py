@@ -52,10 +52,13 @@ def load_all_datasets(cfg):
             all_edge_types.append(data.edge_type)
             max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
-    all_msg = torch.cat(all_msg)
-    all_t = torch.cat(all_t)
-    all_edge_types = torch.cat(all_edge_types)
-    full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+        all_msg = torch.cat(all_msg)
+        all_t = torch.cat(all_t)
+        all_edge_types = torch.cat(all_edge_types)
+        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    else:
+        full_data = None
     max_node = max_node + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
     
