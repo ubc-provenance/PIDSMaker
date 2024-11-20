@@ -25,7 +25,8 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
             
         if hyperparameter == "text_h_dim":
             clear_files_from_embed_nodes(cfg)
-            cfg.featurization.embed_nodes.emb_dim += int(delta * cfg.featurization.embed_nodes.emb_dim)
+            if cfg.featurization.embed_nodes.emb_dim is not None:
+                cfg.featurization.embed_nodes.emb_dim += int(delta * cfg.featurization.embed_nodes.emb_dim)
         else:
             clear_files_from_gnn_training(cfg)
             if hyperparameter == "lr":
