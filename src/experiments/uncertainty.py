@@ -158,17 +158,17 @@ def plot_metric(metric_to_plots: list[str], method_to_metrics, cfg):
         f"uncertainty_with_legend_{metric_to_plot}": wandb.Image(plot2+".png"),
     }
 
-PICKED_METRICS = ["ap", "precision", "val_ap", "mcc"]
-def compute_uncertainty_stats(method_to_metrics, cfg):
+PICKED_METRICS = ["ap", "precision", "val_ap", "mcc", "adp_score"]
+def compute_uncertainty_stats(method_to_metrics):
     pprint(method_to_metrics)
     
     stats = defaultdict(dict)
-    all_plot_imgs = {}
+    # all_plot_imgs = {}
     
     for met in PICKED_METRICS:
-        metrics_to_plot = ["precision"] if met == "precision" else [met, "precision"] # we plot both a metric and precision
-        plots_imgs = plot_metric(metrics_to_plot, method_to_metrics, cfg)
-        all_plot_imgs = {**all_plot_imgs, **plots_imgs}
+        # metrics_to_plot = ["precision"] if met == "precision" else [met, "precision"] # we plot both a metric and precision
+        # plots_imgs = plot_metric(metrics_to_plot, method_to_metrics, cfg)
+        # # all_plot_imgs = {**all_plot_imgs, **plots_imgs}
         
         for method, metrics in method_to_metrics.items():
         
@@ -186,7 +186,7 @@ def compute_uncertainty_stats(method_to_metrics, cfg):
     stats = {
         "uncertainty": {
             **stats,
-            **all_plot_imgs,
+            # **all_plot_imgs,
         }
     }
     return stats
