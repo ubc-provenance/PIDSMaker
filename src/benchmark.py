@@ -191,8 +191,8 @@ def main(cfg, sweep_cfg=None, **kwargs):
             torch.save(method_to_metrics, method_to_metrics_path)
             wandb.save(method_to_metrics_path, out_dir)
             
-            uncertainty_stats = compute_uncertainty_stats(method_to_metrics)
-            wandb.log(uncertainty_stats)
+            # uncertainty_stats = compute_uncertainty_stats(method_to_metrics)
+            # wandb.log(uncertainty_stats)
             
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
