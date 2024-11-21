@@ -1,5 +1,9 @@
 # ADP@0.45 => https://wandb.ai/tristan_research/framework_tuning_rcaid/sweeps/newjk6o0?nw=nwusertristanbilot
 
+preprocessing:
+  transformation:
+    used_methods: none
+
 detection:
   gnn_training:
     lr: 0.001
