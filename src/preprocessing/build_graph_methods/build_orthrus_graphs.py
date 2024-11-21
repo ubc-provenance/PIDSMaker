@@ -1,11 +1,12 @@
 from collections import defaultdict
-import logging
 import os
 from datetime import datetime, timedelta
 import networkx as nx
 import torch
 from config import *
 from provnet_utils import *
+
+import mimicry
 
 
 def compute_indexid2msg(cfg):
@@ -149,6 +150,12 @@ def gen_edge_fused_tw(indexid2msg, cfg):
     rel2id = get_rel2id(cfg)
     include_edge_type = rel2id
 
+    mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
+    if mimicry_edge_num > 0:
+        attack_mimicry_events = mimicry.gen_mimicry_edges(cfg)
+    else:
+        attack_mimicry_events = defaultdict(list)
+
     def get_batches(arr, batch_size):
         for i in range(0, len(arr), batch_size):
             yield arr[i:i + batch_size]
@@ -169,6 +176,19 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             stop = timestamps[i + 1]
             start_ns_timestamp = datetime_to_ns_time_US(start)
             end_ns_timestamp = datetime_to_ns_time_US(stop)
+
+            attack_index = 0
+            mimicry_events = []
+            for attack_tuple in cfg.dataset.attack_to_time_window:
+                attack = attack_tuple[0]
+                attack_start_time = datetime_to_ns_time_US(attack_tuple[1])
+                attack_end_time = datetime_to_ns_time_US(attack_tuple[2])
+
+                if attack_start_time >= start_ns_timestamp and attack_end_time <= end_ns_timestamp:
+                    log(f"Insert mimicry events into attack {attack_index} when building graphs from {date_start} to {date_stop}")
+                    mimicry_events.extend(attack_mimicry_events[attack_index])
+                attack_index += 1
+
             sql = """
             select * from event_table
             where
@@ -183,6 +203,13 @@ def gen_edge_fused_tw(indexid2msg, cfg):
 
             events_list = []
             for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in events:
+                if operation in include_edge_type:
+                    event_tuple = (
+                    src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id)
+                    events_list.append(event_tuple)
+
+            log(f"{len(mimicry_events)} mimicry events inserted")
+            for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in mimicry_events:
                 if operation in include_edge_type:
                     event_tuple = (
                     src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id)

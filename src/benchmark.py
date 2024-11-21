@@ -208,7 +208,7 @@ if __name__ == '__main__':
     PROJECT_PREFIX = "framework_"
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
-        project=PROJECT_PREFIX + "magic_runs",
+        project=PROJECT_PREFIX + "mimicry",
         name=exp_name,
         tags=tags,
     )
