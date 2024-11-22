@@ -25,6 +25,8 @@ def standard_evaluation(cfg, evaluation_fn):
     
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    
+    save_files_to_wandb = cfg.experiment.used_method != "uncertainty"
         
     for model_epoch_dir in sorted_files:
         log(f"[@{model_epoch_dir}] - Test Evaluation", pre_return_line=True)
@@ -38,26 +40,25 @@ def standard_evaluation(cfg, evaluation_fn):
             log(f"{k}: {v}")
             
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
-        stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
         
-        scores = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
-        if os.path.exists(scores):
-            stats["scores_img"] = wandb.Image(scores)
-        
-        dor = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
-        if os.path.exists(dor):
-            stats["dor_img"] = wandb.Image(dor)
-        
-        pr = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
-        if os.path.exists(pr):
-            stats["precision_recall_img"] = wandb.Image(pr)
+        if save_files_to_wandb:
+            stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
             
-        adp = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
-        if os.path.exists(adp):
-            stats["adp_img"] = wandb.Image(adp)
+            scores = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
+            if os.path.exists(scores):
+                stats["scores_img"] = wandb.Image(scores)
             
-        scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
-        
+            dor = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
+            if os.path.exists(dor):
+                stats["dor_img"] = wandb.Image(dor)
+            
+            pr = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
+            if os.path.exists(pr):
+                stats["precision_recall_img"] = wandb.Image(pr)
+                
+            adp = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
+            if os.path.exists(adp):
+                stats["adp_img"] = wandb.Image(adp)
         
         wandb.log(stats)
         
@@ -65,8 +66,9 @@ def standard_evaluation(cfg, evaluation_fn):
             best_adp = stats["adp_score"]
             best_stats = stats
         
-    # We only store the scores for the best run
-    wandb.save(best_stats["scores_file"], out_dir)
+    if save_files_to_wandb:
+        # We only store the scores for the best run
+        wandb.save(best_stats["scores_file"], out_dir)
     
     return best_stats
 

@@ -184,8 +184,15 @@ def main(cfg, sweep_cfg=None, **kwargs):
                         cfg._force_restart = ""
                         cfg._is_running_mc_dropout = False
                         
-            uncertainty_stats = compute_uncertainty_stats(method_to_metrics, cfg)
-            wandb.log(uncertainty_stats)
+            # Save metrics to disk for future analysis and plots
+            out_dir = cfg.detection.evaluation.node_evaluation._uncertainty_exp_dir
+            os.makedirs(out_dir, exist_ok=True)
+            method_to_metrics_path = os.path.join(out_dir, "method_to_metrics.pkl")
+            torch.save(method_to_metrics, method_to_metrics_path)
+            wandb.save(method_to_metrics_path, out_dir)
+            
+            # uncertainty_stats = compute_uncertainty_stats(method_to_metrics)
+            # wandb.log(uncertainty_stats)
             
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
@@ -200,15 +207,15 @@ def main(cfg, sweep_cfg=None, **kwargs):
 if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
-    exp_name = args.exp if args.exp != "" else \
-        args.__dict__["dataset"]
+    exp_name = args.exp if args.exp != "" else f"{args.dataset}_{args.model}"
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
     PROJECT_PREFIX = "framework_"
+    project = "uncertainty" if args.experiment == "uncertainty" else "project_name"
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
-        project=PROJECT_PREFIX + "magic_runs",
+        project=PROJECT_PREFIX + project,
         name=exp_name,
         tags=tags,
     )
