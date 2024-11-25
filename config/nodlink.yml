@@ -45,6 +45,19 @@ detection:
       edge_features: none
       dropout: 0.0
       used_methods: sum_aggregation
+      graph_attention:
+        activation: relu
+        num_heads: 8
+      tgn:
+        tgn_batch_size: 1024
+        tgn_batch_size_inference: 1024
+        tgn_memory_dim: 100
+        tgn_time_dim: 100
+        tgn_neighbor_size: 20
+        tgn_neighbor_n_hop: 1
+        use_node_feats_in_gnn: True
+        use_memory: False
+        use_time_order_encoding: False
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:

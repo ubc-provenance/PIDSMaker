@@ -10,7 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments.uncertainty import add_dropout_to_model
+from experiments.uncertainty import add_dropout_to_model, IdentityWrapper
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -247,7 +247,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             activation=activation_fn_factory(cfg.detection.gnn_training.encoder.magic_gat.activation),
         )
     elif method == "none":
-        return lambda x: x
+        return IdentityWrapper()
     else:
         raise ValueError(f"Invalid decoder {method}")
         

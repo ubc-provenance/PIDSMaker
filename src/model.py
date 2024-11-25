@@ -55,25 +55,33 @@ class Model(nn.Module):
         train_mode = not inference
         x = self._reshape_x(batch)
         edge_index = batch.edge_index
+        num_nodes = len(batch.edge_index.unique())
 
         with torch.set_grad_enabled(train_mode):
             h = self.embed(batch, full_data, inference=inference)
-
-            num_elements = None
-            if self.node_level:
-                h_src, h_dst = None, None
-                num_elements = h.shape[0]
+            
+            if isinstance(h, tuple):
+                h_src, h_dst = h
             else:
                 # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
                 # Here we simply transform to get a shape (E, d)
                 h_src, h_dst = (h[edge_index[0]], h[edge_index[1]]) \
                     if isinstance(h, torch.Tensor) else h
             
-                # Same for features
-                if x[0].shape[0] != edge_index.shape[1]:
-                    x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
-                    
+            num_elements = None    
+            if self.node_level:
+                num_elements = num_nodes
+                if isinstance(h, tuple):
+                    h, _, n_id = self.graph_reindexer._reindex_graph(edge_index, h[0], h[1])
+                    batch.original_n_id = n_id
+                if isinstance(x, tuple):
+                    x, _, n_id = self.graph_reindexer._reindex_graph(edge_index, x[0], x[1])
+                    batch.original_n_id = n_id
+                
+            else:
                 num_elements = h_src.shape[0]
+                if not isinstance(x, tuple):
+                    x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
 
             # if self.use_contrastive_learning:
             #     involved_nodes = edge_index.flatten()
@@ -106,7 +114,7 @@ class Model(nn.Module):
             return results
     
     def _reshape_x(self, batch):
-        if self.node_level:
+        if self.node_level and hasattr(batch, "x"):
             x = batch.x
         else:
             x = (batch.x_src, batch.x_dst)
