@@ -43,7 +43,10 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
         cfg._is_running_mc_dropout = True
     
     elif method == "deep_ensemble":
-        clear_files_from_gnn_training(cfg)
+        if cfg._experiment == "run_n_times":
+            clear_files_from_embed_nodes(cfg)
+        else:
+            clear_files_from_gnn_training(cfg)
         
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files

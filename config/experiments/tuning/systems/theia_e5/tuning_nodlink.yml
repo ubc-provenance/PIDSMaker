@@ -1,0 +1,20 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  preprocessing.build_graphs.time_window_size:
+    values: [10.0, 15.0]
+  detection.gnn_training.lr:
+    values: [0.0001, 0.00001]
+  detection.gnn_training.encoder.dropout:
+    values: [0.4]
+  detection.gnn_training.node_hid_dim:
+    values: [128, 256]
+  detection.gnn_training.node_out_dim:
+    values: [-1]
+  featurization.embed_nodes.epochs:
+    values: [10, 30]
+  preprocessing.transformation.used_methods:
+    values: [none]
