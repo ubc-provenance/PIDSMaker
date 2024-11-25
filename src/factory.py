@@ -153,7 +153,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 # activation=activation_fn_factory("relu"),
             )
         elif method == "none":
-            return lambda x: x
+            return IdentityWrapper()
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -247,7 +247,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             activation=activation_fn_factory(cfg.detection.gnn_training.encoder.magic_gat.activation),
         )
     elif method == "none":
-        return IdentityWrapper()
+        return lambda x: x
     else:
         raise ValueError(f"Invalid decoder {method}")
         
