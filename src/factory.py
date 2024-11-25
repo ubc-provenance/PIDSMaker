@@ -152,6 +152,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 edge_dim=edge_dim or None,
                 # activation=activation_fn_factory("relu"),
             )
+        elif method == "none":
+            return lambda x: x
         else:
             raise ValueError(f"Invalid encoder {method}")
     
