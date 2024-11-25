@@ -74,25 +74,36 @@ def clear_files_from_embed_nodes(cfg):
         
     clear_files_from_gnn_training(cfg)
     
-PICKED_METRICS = ["ap", "precision", "val_ap", "mcc", "adp_score"]
-def fuse_hyperparameter_metrics(hyper_to_metrics):
+def fuse_hyperparameter_metrics(method_to_metrics):
     """
     For each hyperparameter i \in H at iteration j, we do the mean of the metrics for all hyperparameters
     in H. Basically, we compute a single list of metrics from all lists of metrics for each hyperparam.
     """
     mean_metrics = {}
-    metrics = hyper_to_metrics[list(hyper_to_metrics.keys())[0]][0].keys()
+    metrics = method_to_metrics[list(method_to_metrics.keys())[0]][0].items()
 
-    for metric in metrics:
-        if metric in PICKED_METRICS:
+    for metric, val in metrics:
+        if isinstance(val, (int, float)):
             all_values = []
-            for param, list_of_dict in hyper_to_metrics.items():
+            for param, list_of_dict in method_to_metrics.items():
                 values = [d[metric] for d in list_of_dict]
                 all_values.append(values)
             mean_metrics[metric] = np.mean(all_values, axis=0)
 
     list_of_dict = [dict(zip(mean_metrics.keys(), values)) for values in zip(*mean_metrics.values())]
     return list_of_dict
+
+def avg_std_metrics(method_to_metrics):
+    metrics = fuse_hyperparameter_metrics(method_to_metrics)
+    
+    result = {}
+    metric_keys = metrics[0].keys()
+    for key in metric_keys:
+        values = [entry[key] for entry in metrics]
+        result[f"{key}_mean"] = np.mean(values)
+        result[f"{key}_std"] = np.std(values)
+    
+    return result
 
 # MC Dropout
 class DropoutWrapper(nn.Module):
