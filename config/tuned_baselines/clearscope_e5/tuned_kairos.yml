@@ -2,7 +2,7 @@
 
 preprocessing:
   build_graphs:
-    time_window_size: 10
+    time_window_size: 10.0
 
 detection:
   gnn_training:
