@@ -93,6 +93,9 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu
+      reconstruct_node_features:
+        loss: MSE # MSE_sum originally but too large loss
+        decoder: nodlink
       # predict_edge_contrastive:
       #   neg_sampling_method: previously_seen_nodes
       #   used_method: linear
