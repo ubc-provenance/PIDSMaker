@@ -216,8 +216,8 @@ if __name__ == '__main__':
     PROJECT_PREFIX = "framework_"
     if args.experiment == "uncertainty":
         project = "uncertainty"
-    elif args.experiment == "run_n_times2":
-        project = "component_ablation_study"
+    elif args.experiment == "run_n_times":
+        project = f"component_ablation_study_{args.model}"
     else:
         project = "project_name"
     
