@@ -378,7 +378,9 @@ def tokenize_netflow(sentence: str):
     return word_tokenize(sentence.replace(':',' : ').replace('.',' . '))
 
 def tokenize_label(node_label, node_type):
-    if node_type == 'subject':
+    if node_label == "":
+        return [""]
+    elif node_type == 'subject':
         return tokenize_subject(node_label)
     elif node_type == 'file':
         return tokenize_file(node_label)

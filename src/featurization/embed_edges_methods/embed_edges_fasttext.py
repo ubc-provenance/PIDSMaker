@@ -15,8 +15,6 @@ def main(cfg):
     for indexid, msg in log_tqdm(indexid2msg.items(), desc='Embeding all nodes in the dataset'):
         node_type, node_label = msg[0], msg[1]
         tokens = tokenize_label(node_label, node_type)
-        if len(tokens) == 0:
-            continue
 
         word_vectors = [model.wv[word] for word in tokens]
         sentence_vector = np.mean(word_vectors, axis=0)
