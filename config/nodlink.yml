@@ -63,6 +63,8 @@ detection:
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink
+        node_mlp:
+          architecture_str: linear(0.5) | relu
 
   evaluation:
     viz_malicious_nodes: False
