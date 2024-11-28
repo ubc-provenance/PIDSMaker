@@ -15,11 +15,13 @@ def main(cfg):
     for indexid, msg in log_tqdm(indexid2msg.items(), desc='Embeding all nodes in the dataset'):
         node_type, node_label = msg[0], msg[1]
         tokens = tokenize_label(node_label, node_type)
+        if len(tokens) == 0:
+            continue
 
         word_vectors = [model.wv[word] for word in tokens]
         sentence_vector = np.mean(word_vectors, axis=0)
 
-        normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
+        normalized_vector = sentence_vector / (np.linalg.norm(sentence_vector) + 1e-12)
         indexid2vec[indexid] = np.array(normalized_vector)
 
     return indexid2vec
