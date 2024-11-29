@@ -121,11 +121,11 @@ detection:
       kairos_idf_queue:
         include_test_set_in_IDF: True
 
-# triage :
-#   tracing:
-#     used_method: depimpact
-#     depimpact:
-#       used_method: component
-#       score_method: degree
-#       workers: 8
-#       visualize: False
+triage :
+  tracing:
+    used_method: depimpact
+    depimpact:
+      used_method: component
+      score_method: degree
+      workers: 8
+      visualize: False
