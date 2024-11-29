@@ -68,9 +68,7 @@ class Model(nn.Module):
                 h_src, h_dst = (h[edge_index[0]], h[edge_index[1]]) \
                     if isinstance(h, torch.Tensor) else h
             
-            num_elements = None    
             if self.node_level:
-                num_elements = num_nodes
                 if isinstance(h, tuple):
                     h, _, n_id = self.graph_reindexer._reindex_graph(edge_index, h[0], h[1])
                     batch.original_n_id = n_id
@@ -79,7 +77,6 @@ class Model(nn.Module):
                     batch.original_n_id = n_id
                 
             else:
-                num_elements = h_src.shape[0]
                 if not isinstance(x, tuple):
                     x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
 
@@ -89,8 +86,7 @@ class Model(nn.Module):
             #     self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: scores
-            loss_or_scores = (torch.zeros(1) if train_mode else \
-                torch.zeros(num_elements, dtype=torch.float)).to(edge_index.device)
+            loss_or_scores = None
             
             for objective in self.decoders:
                 results = objective(
@@ -107,6 +103,11 @@ class Model(nn.Module):
                     validation=validation,
                 )
                 loss = results["loss"]
+                
+                if loss_or_scores is None:
+                    loss_or_scores = (torch.zeros(1) if train_mode else \
+                        torch.zeros(loss.shape[0], dtype=torch.float)).to(edge_index.device)
+                
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
