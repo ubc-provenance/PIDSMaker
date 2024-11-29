@@ -107,7 +107,7 @@ def main(cfg):
         # save_model(model, model_path, cfg)
         
         # Validation
-        if (epoch+1) % 3 == 0:
+        if (epoch+1) % 2 == 0:
             split_to_run = "val" if best_epoch_mode else "all"
             test_stats = orthrus_gnn_testing.main(
                 cfg=cfg,
