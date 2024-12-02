@@ -201,11 +201,13 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     return fp_in_malicious_tw_ratio
 
-def get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
+def get_metrics_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
     nodes_per_attack = [v["nids"] for k, v in attack_to_GPs.items()]
     reverse_scores, reverse_nodes = zip(*sorted(zip(pred_scores, nodes), reverse=True))
     fps = 0
     detected_attacks = {}
+    tps, fps = 0, 0
+    total_attack_nodes = sum(len(nodes_set) for nodes_set in nodes_per_attack)
     
     for score, node in zip(reverse_scores, reverse_nodes):
         detected = False
@@ -215,9 +217,15 @@ def get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
                 detected = True
         if len(detected_attacks) == len(nodes_per_attack):
             break
-        if not detected:
+        if detected:
+            tps += 1
+        else:
             fps += 1
-    return fps
+            
+    precision = tps / (tps+fps+1e-12)
+    recall = tps / (total_attack_nodes + 1e-12)
+    
+    return fps, tps, precision, recall
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     if cfg.detection.gnn_training.used_method == "provd": 
@@ -256,11 +264,13 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
             
             if y_hat:
                 for att, d in attack_to_GPs.items():
-                    if "time_range" in result and result["time_range"]:
-                        start_att, end_att = d["time_range"]
-                        start_node, end_node = result["time_range"]
-                        if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
-                            attack_to_TPs[att] += 1
+                    if nid in d["nids"]:
+                        attack_to_TPs[att] += 1
+                    # if "time_range" in result and result["time_range"]:
+                    #     start_att, end_att = d["time_range"]
+                    #     start_node, end_node = result["time_range"]
+                    #     if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
+                    #         attack_to_TPs[att] += 1
 
     
     def transform_attack2nodes_to_node2attacks(attack2nodes):
@@ -294,7 +304,13 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         tps_in_atts.append((att, tps))
 
     stats["percent_detected_attacks"] = round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
-    stats["fps_if_all_attacks_detected"] = get_num_fps_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs)
+    
+    fps, tps, precision, recall = get_metrics_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs)
+    stats["fps_if_all_attacks_detected"] = fps
+    stats["tps_if_all_attacks_detected"] = tps
+    stats["precision_if_all_attacks_detected"] = precision
+    stats["recall_if_all_attacks_detected"] = recall
+    
     stats["adp_score"] = round(adp_score, 3)
     stats["adp_ap_mean"] = round((adp_score + stats["ap"])/2, 5)
     
