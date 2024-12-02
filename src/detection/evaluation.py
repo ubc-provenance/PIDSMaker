@@ -26,7 +26,7 @@ def standard_evaluation(cfg, evaluation_fn):
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     
-    save_files_to_wandb = cfg.experiment.used_method != "uncertainty"
+    save_files_to_wandb = cfg._experiment != "uncertainty"
         
     for model_epoch_dir in sorted_files:
         log(f"[@{model_epoch_dir}] - Test Evaluation", pre_return_line=True)

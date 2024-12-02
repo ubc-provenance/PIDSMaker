@@ -151,7 +151,8 @@ def main(cfg, sweep_cfg=None, **kwargs):
             method_to_metrics = defaultdict(list)
             original_cfg = copy.deepcopy(cfg)
             
-            for method in ["mc_dropout", "deep_ensemble", "bagged_ensemble", "hyperparameter"]:
+            uncertainty_methods = get_uncertainty_methods_to_run(cfg)
+            for method in uncertainty_methods:
                 iterations = getattr(cfg.experiment.uncertainty, method).iterations
                 log(f"[@method {method}] - Started", pre_return_line=True)
                 
@@ -168,7 +169,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
                             log(f"[@iteration {i}]", pre_return_line=True)
                             cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=hyper)
                             metrics, times = run_pipeline(cfg)
-                            hyper_to_metrics[hyper].append(metrics)
+                            hyper_to_metrics[hyper].append({**metrics, **times})
                             
                     metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
                     method_to_metrics[method] = metrics
@@ -178,7 +179,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
                         log(f"[@iteration {i}]", pre_return_line=True)
                         cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
                         metrics, times = run_pipeline(cfg)
-                        method_to_metrics[method].append(metrics)
+                        method_to_metrics[method].append({**metrics, **times})
                         
                         # We force restart in some methods so we avoid forced restart for other methods
                         cfg._force_restart = ""
@@ -191,8 +192,9 @@ def main(cfg, sweep_cfg=None, **kwargs):
             torch.save(method_to_metrics, method_to_metrics_path)
             wandb.save(method_to_metrics_path, out_dir)
             
-            # uncertainty_stats = compute_uncertainty_stats(method_to_metrics)
-            # wandb.log(uncertainty_stats)
+            if cfg._experiment == "run_n_times":
+                averaged_metrics = avg_std_metrics(method_to_metrics)
+                wandb.log(averaged_metrics)
             
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
@@ -212,7 +214,13 @@ if __name__ == '__main__':
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
     PROJECT_PREFIX = "framework_"
-    project = "uncertainty" if args.experiment == "uncertainty" else "project_name"
+    if args.experiment == "uncertainty":
+        project = "uncertainty"
+    elif args.experiment == "run_n_times":
+        project = f"component_ablation_study_{args.model}"
+    else:
+        project = "project_name"
+    
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
         project=PROJECT_PREFIX + project,

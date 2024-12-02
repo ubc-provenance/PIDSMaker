@@ -1,14 +1,10 @@
-# ADP@0.334 => https://wandb.ai/tristan_research/framework_tuning_nodlink/sweeps/lvtogf5e?nw=nwusertristanbilot
-
 preprocessing:
   build_graphs:
     time_window_size: 1.0
-  transformation:
-    used_methods: none
 
 featurization:
   embed_nodes:
-    epochs: 10
+    epochs: 20
 
 detection:
   gnn_training:
@@ -16,5 +12,5 @@ detection:
     node_out_dim: 128
     node_hid_dim: 128
     encoder:
-      dropout: 0.4
+      dropout: 0.2
   

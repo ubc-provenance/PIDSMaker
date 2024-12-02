@@ -10,7 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments.uncertainty import add_dropout_to_model
+from experiments.uncertainty import add_dropout_to_model, IdentityWrapper
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -152,6 +152,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 edge_dim=edge_dim or None,
                 # activation=activation_fn_factory("relu"),
             )
+        elif method == "none":
+            return IdentityWrapper()
         else:
             raise ValueError(f"Invalid encoder {method}")
     

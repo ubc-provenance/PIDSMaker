@@ -1,3 +1,5 @@
+# Runs a same experiment multiple times with different uncertainty experiments + return a file with all metrics
+
 training_loop:
   run_evaluation: each_epoch
 

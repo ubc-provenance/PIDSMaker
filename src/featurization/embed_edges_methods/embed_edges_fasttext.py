@@ -19,7 +19,7 @@ def main(cfg):
         word_vectors = [model.wv[word] for word in tokens]
         sentence_vector = np.mean(word_vectors, axis=0)
 
-        normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
+        normalized_vector = sentence_vector / (np.linalg.norm(sentence_vector) + 1e-12)
         indexid2vec[indexid] = np.array(normalized_vector)
 
     return indexid2vec
