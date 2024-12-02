@@ -26,7 +26,7 @@ done
 NOHUP_CMD=${NOHUP_CMD%" ; "}
 NOHUP_CMD+="\" &"
 
-echo $NOHUP_CMD
+eval $NOHUP_CMD
 
 # Notify the user
 echo "Command is running in the background with nohup."
