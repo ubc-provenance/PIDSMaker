@@ -64,11 +64,12 @@ def load_all_datasets(cfg):
     
     # Concatenates all data into a single data so that iterating over batches
     # of edges is more consistent with TGN
+    batch_mode = cfg.detection.gnn_training.batch_mode
     batch_size = cfg.detection.gnn_training.edge_batch_size
     if batch_size not in [None, 0]:
-        train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size)
-        val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size)
-        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size)
+        train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size, batch_mode, cfg)
+        val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size, batch_mode, cfg)
+        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size, batch_mode, cfg)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -217,11 +218,44 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
 
     return data
 
-def batch_temporal_data(data: CollatableTemporalData, batch_size: int) -> list[CollatableTemporalData]:
-    num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
+def batch_temporal_data(data: CollatableTemporalData, batch_size: int, batch_mode: str, cfg) -> list[CollatableTemporalData]:
+    if batch_mode == "edges":
+        num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
+        
+        data_list = [data[i*batch_size: (i+1)*batch_size] for i in range(num_batches)]
+        return data_list
     
-    data_list = [data[i*batch_size: (i+1)*batch_size] for i in range(num_batches)]
-    return data_list
+    elif batch_mode == "minutes":
+        window_length_ns = int(cfg.preprocessing.build_graphs.time_window_size*60_000_000_000)
+        sliding_ns = int(batch_size*60_000_000_000) # min to ns
+    
+        t0 = data.t.min()
+        t1 = data.t.max()
+        t0_aligned = (t0 // sliding_ns) * sliding_ns
+
+        # Mapping from window index to list of data points
+        window_data = {}
+
+        for p in data:
+            # Compute window indices for each data point
+            i0 = ((p.t - window_length_ns - t0_aligned) + sliding_ns - 1) // sliding_ns
+            i1 = (p.t - t0_aligned) // sliding_ns
+            i0 = max(i0, 0)  # Ensure i0 is non-negative
+
+            for i in range(i0, i1 + 1):
+                window_data.setdefault(i, []).append(p)
+
+        # Build the list of windows
+        windows = []
+        for i in sorted(window_data.keys()):
+            s = t0_aligned + i * sliding_ns          # Window start time (ns)
+            e = s + window_length_ns                 # Window end time (ns)
+            data_in_window = window_data[i]
+            windows.append(collate_temporal_data(data_in_window))
+        
+        return windows
+    
+    raise ValueError(f"Invalid or missing batch mode {batch_mode}")
 
 class _Cache:
     def __init__(self, shape, device):
