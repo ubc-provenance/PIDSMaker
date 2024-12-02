@@ -47,6 +47,15 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
                 if loss > node_to_max_loss[dstnode]:
                     node_to_max_loss[dstnode] = loss
                     node_to_max_loss_tw[dstnode] = tw
+
+    # For plotting the scores of seen and unseen nodes
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
+    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
+
+    train_node_set = set()
+    for train_path in train_set_paths:
+        train_graph = torch.load(train_path)
+        train_node_set |= set(train_graph.nodes())
                     
     use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
@@ -56,6 +65,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         results[node_id]["score"] = pred_score
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
+        results[node_id]['is_seen'] = int(str(node_id) in train_node_set)
         
         if use_kmeans: # in this mode, we add the label after
             results[node_id]["y_hat"] = 0
@@ -63,8 +73,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
             results[node_id]["y_hat"] = int(pred_score > thr)
         
     if use_kmeans:
-        results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)
-        
+        results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)        
     return results
 
 def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
@@ -105,7 +114,16 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss
                 node_to_max_loss_tw[node] = tw
-                    
+
+    # For plotting the scores of seen and unseen nodes
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
+    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
+
+    train_node_set = set()
+    for train_path in train_set_paths:
+        train_graph = torch.load(train_path)
+        train_node_set |= set(train_graph.nodes())
+
     use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_values.items():
@@ -148,6 +166,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         results[node_id]["score"] = pred_score
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
+        results[node_id]['is_seen'] = int(str(node_id) in train_node_set)
         
         # We need the detected TW range to check if the detected node spans in an attack TW
         detected_tw = detected_tw or node_to_max_loss_tw.get(node_id, None)
@@ -168,7 +187,6 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         
     if use_kmeans:
         results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)
-        
     return results
 
 def get_node_predictions_provd(cfg, **kwargs):
@@ -237,15 +255,19 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
     dor_img_file = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
+    seen_score_img_file = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
     
     attack_to_GPs = get_GP_of_each_attack(cfg)
     attack_to_TPs = defaultdict(int)
 
     log("Analysis of malicious nodes:")
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
+    is_seen = []
     for nid, result in results.items():
         nodes.append(nid)
         score, y_hat, y_true, max_tw = result["score"], result["y_hat"], result["y_true"], result["tw_with_max_loss"]
+        seen_flag = result['is_seen']
+        is_seen.append(seen_flag)
         y_truth.append(y_true)
         y_preds.append(y_hat)
         pred_scores.append(score)
@@ -282,6 +304,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
     plot_dor_recall_curve(pred_scores, y_truth, dor_img_file)
+    plot_score_seen(pred_scores, is_seen, seen_score_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
     fp_in_malicious_tw_ratio = analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes)

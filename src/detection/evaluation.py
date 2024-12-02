@@ -59,6 +59,10 @@ def standard_evaluation(cfg, evaluation_fn):
             adp = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
             if os.path.exists(adp):
                 stats["adp_img"] = wandb.Image(adp)
+            
+            seen_scores = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
+            if os.path.exists(seen_scores):
+                stats['seen_scores_img'] = wandb.Image(seen_scores)
         
         wandb.log(stats)
         
