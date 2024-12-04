@@ -71,5 +71,5 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss # nodlink
+      threshold_method: nodlink
       use_kmeans: False

@@ -48,5 +48,5 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss # threatrace
+      threshold_method: threatrace
       use_kmeans: False
