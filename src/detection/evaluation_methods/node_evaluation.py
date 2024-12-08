@@ -246,6 +246,13 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         get_preds_fn = get_node_predictions
     
     results = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
+    
+    #save results for future checking
+    os.makedirs(cfg.detection.evaluation._results_dir, exist_ok=True)
+    results_save_dir = os.path.join(cfg.detection.evaluation._results_dir, "results.pth")
+    torch.save(results, results_save_dir)
+    log(f"Resutls saved to {results_save_dir}")
+    
     node_to_path = get_node_to_path_and_type(cfg)
 
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
