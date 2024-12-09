@@ -4,6 +4,8 @@
 preprocessing:
   build_graphs:
     time_window_size: 1.0
+  transformation:
+    used_methods: none
 
 featurization:
   embed_nodes:
