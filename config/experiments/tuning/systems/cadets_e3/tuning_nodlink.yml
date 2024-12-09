@@ -15,4 +15,4 @@ parameters:
   detection.gnn_training.encoder.dropout:
     values: [0.3]
   preprocessing.transformation.used_methods:
-    values: undirected
+    values: [undirected]
