@@ -77,7 +77,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         original_in_dim = in_dim
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
-    for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.split(",-")):
+    for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(",")):
         if method == "tgn":
             pass
         elif method == "graph_attention":
