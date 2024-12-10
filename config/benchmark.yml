@@ -67,7 +67,7 @@ detection:
     edge_batch_size: 1
     batch_mode: minutes
     inference_device: cpu
-
+    grad_accumulation: 1
     
     encoder:
       neighbor_sampling: []

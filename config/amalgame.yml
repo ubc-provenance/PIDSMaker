@@ -72,6 +72,7 @@ detection:
     node_hid_dim: 128
     node_out_dim: 64
     inference_device: cuda
+    grad_accumulation: 5
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
