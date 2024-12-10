@@ -18,5 +18,5 @@ parameters:
   detection.gnn_training.decoder.used_methods:
     values: [reconstruct_node_features, predict_node_type, predict_edge_type]
   detection.gnn_training.encoder.used_methods:
-    values: [graph_attention, sage, tgn-graph_attention]
+    values: [tgn-graph_attention, graph_attention, sage]
     
