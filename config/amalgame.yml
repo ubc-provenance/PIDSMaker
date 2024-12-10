@@ -1,0 +1,132 @@
+preprocessing:
+  build_graphs:
+    used_method: orthrus
+    use_all_files: True
+    time_window_size: 15.0
+    use_hashed_label: False
+    node_label_features:
+      subject: type, path, cmd_line
+      file: type, path
+      netflow: type, remote_ip, remote_port
+  transformation:
+    used_methods: none
+
+featurization:
+  embed_nodes:
+    emb_dim: 128
+    epochs: 50
+    training_split: train
+    used_method: feature_word2vec
+    use_seed: True
+    temporal_rw:
+      walk_length: 30
+      num_walks: 10
+      trw_workers: 8
+      time_weight: uniform
+      half_life: 1
+      window_size: 5
+      min_count: 1
+      use_skip_gram: True
+      wv_workers: 6
+      compute_loss: True
+      negative: 5
+      decline_rate: 30
+    doc2vec:
+      include_neighbors: False
+      alpha: 0.025
+    word2vec:
+      walk_length: 30
+      num_walks: 10
+      context_window_size: 5
+      min_count: 0
+      use_skip_gram: True
+      num_workers: 15
+      compute_loss: True
+      add_paths: False
+    feature_word2vec:
+      window_size: 5
+      min_count: 1
+      use_skip_gram: True
+      num_workers: 15
+      compute_loss: True
+      negative: 5
+      decline_rate: 30
+    fasttext:
+      min_count: 2
+      alpha: 0.01
+      window_size: 3
+      negative: 3
+      num_workers: 15
+      use_pretrained_fb_model: False
+  embed_edges:
+    to_remove: True
+
+detection:
+  gnn_training:
+    used_method: orthrus
+    use_seed: True
+    num_epochs: 12
+    patience: 3
+    lr: 0.00001
+    weight_decay: 0.00001
+    node_hid_dim: 128
+    node_out_dim: 64
+    inference_device: cuda
+    encoder:
+      node_features: node_emb,node_type
+      neighbor_sampling: []
+      edge_features: edge_type
+      dropout: 0.5
+      used_methods: tgn,graph_attention
+      graph_attention:
+        activation: relu
+        num_heads: 8
+      tgn:
+        tgn_batch_size: 1024
+        tgn_batch_size_inference: 1024
+        tgn_memory_dim: 100
+        tgn_time_dim: 100
+        tgn_neighbor_size: 20
+        tgn_neighbor_n_hop: 1
+        use_node_feats_in_gnn: True
+        use_memory: False
+        use_time_order_encoding: False
+      sage:
+        activation: relu
+    decoder:
+      used_methods: predict_edge_type
+      predict_edge_type:
+        balanced_loss: False
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear(0.5) | relu
+      predict_node_type:
+        decoder:  node_mlp
+        node_mlp:
+          architecture_str: linear(0.5) | relu
+        balanced_loss: False
+      reconstruct_node_features:
+        loss: MSE
+        decoder: node_mlp
+        node_mlp:
+          architecture_str: linear(0.5) | relu
+
+  evaluation:
+    viz_malicious_nodes: False
+    ground_truth_version: orthrus
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_kmeans: True
+      kmeans_top_K: 30
+    node_tw_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_kmeans: True
+      kmeans_top_K: 3
+    queue_evaluation:
+      queue_threshold: 20
+      used_method: kairos_idf_queue
+      kairos_idf_queue:
+        include_test_set_in_IDF: True
