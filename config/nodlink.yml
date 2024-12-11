@@ -39,6 +39,7 @@ detection:
     node_hid_dim: 256
     node_out_dim: 256
     inference_device: cuda
+    grad_accumulation: 1
     encoder:
       node_features: node_emb
       neighbor_sampling: []
@@ -71,5 +72,5 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss # nodlink
+      threshold_method: nodlink
       use_kmeans: False

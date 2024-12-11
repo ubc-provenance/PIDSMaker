@@ -30,6 +30,7 @@ detection:
     node_hid_dim: 100
     node_out_dim: 100
     inference_device: cuda
+    grad_accumulation: 1
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
@@ -64,8 +65,7 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 30
+      use_kmeans: False
     queue_evaluation:
       queue_threshold: 20
       used_method: kairos_idf_queue

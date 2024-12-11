@@ -64,9 +64,10 @@ detection:
     weight_decay: 0.00001
     node_hid_dim: 128
     node_out_dim: 64
-    edge_batch_size: 51200
+    edge_batch_size: 1
+    batch_mode: minutes
     inference_device: cpu
-
+    grad_accumulation: 1
     
     encoder:
       neighbor_sampling: []

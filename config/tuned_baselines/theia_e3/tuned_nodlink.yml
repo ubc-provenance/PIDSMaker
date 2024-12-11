@@ -1,12 +1,13 @@
-featurization:
-  embed_nodes:
-    epochs: 20
+# ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_nodlink/sweeps/7r4189p2?nw=nwusertristanbilot
+
+preprocessing:
+  transformation:
+    used_methods: undirected
 
 detection:
   gnn_training:
-    lr: 0.0001
-    node_out_dim: 128
-    node_hid_dim: 128
+    lr: 0.001
+    node_out_dim: 64
+    node_hid_dim: 64
     encoder:
-      dropout: 0.2
-  
+      dropout: 0.3

@@ -24,15 +24,32 @@ def train(
     losses = []
     batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
 
-    for batch in batch_loader:
+    grad_acc = cfg.detection.gnn_training.grad_accumulation
+    loss_acc = None
+    
+    for i, batch in enumerate(batch_loader):
         optimizer.zero_grad()
 
         results = model(batch, full_data)
         loss = results["loss"]
 
-        loss.backward()
-        optimizer.step()
+        if loss_acc is None:
+            loss_acc = loss
+        else:
+            loss_acc += loss
+        
+        if (i+1) % grad_acc == 0:
+            loss_acc.backward()
+            optimizer.step()
+            loss_acc = None
+        
         losses.append(loss.item())
+    
+    # Last batch
+    if loss_acc is not None:
+        loss_acc.backward()
+        optimizer.step()
+    
     return np.mean(losses)
 
 

@@ -1,4 +1,4 @@
-# ADP@0.709 => https://wandb.ai/tristan_research/framework_tuning_rcaid/runs/iyu89o4g/overview
+# ADP@0.085 => https://wandb.ai/tristan_research/framework_tuning_rcaid/sweeps/vfg99jy3?nw=nwusertristanbilot
 
 featurization:
   embed_nodes:

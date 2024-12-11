@@ -28,6 +28,7 @@ detection:
     node_hid_dim: 32
     node_out_dim: 3
     inference_device: cuda
+    grad_accumulation: 1
     # edge_batch_size: 1024
     encoder:
       node_features: node_type,edges_distribution
@@ -48,5 +49,5 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss # threatrace
+      threshold_method: threatrace
       use_kmeans: False

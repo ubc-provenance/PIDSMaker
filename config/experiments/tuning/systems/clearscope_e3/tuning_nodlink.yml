@@ -5,20 +5,14 @@ metric:
 
 parameters:
   preprocessing.build_graphs.time_window_size:
-    values: [1.0, 5.0, 15.0]
+    values: [5.0, 15.0]
   detection.gnn_training.lr:
     values: [0.001, 0.0001]
-  detection.gnn_training.encoder.dropout:
-    values: [0.4]
   detection.gnn_training.node_hid_dim:
-    values: [128]
-  detection.gnn_training.node_out_dim:
     values: [64, 128]
-  featurization.embed_nodes.epochs:
-    values: [10]
+  detection.gnn_training.node_out_dim:
+    values: [-1]
+  detection.gnn_training.encoder.dropout:
+    values: [0.3]
   preprocessing.transformation.used_methods:
-    values: [none]
-  detection.gnn_training.encoder.used_methods:
-    values: [graph_attention]
-  detection.gnn_training.decoder.reconstruct_node_features.decoder:
-    values: [node_mlp, nodlink]
+    values: [undirected]
