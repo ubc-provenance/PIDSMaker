@@ -194,9 +194,10 @@ def test_node_level(
                 idx = list(range(x_train_sampled.shape[0]))
                 random.shuffle(idx)
                 try:
+                    sample = x_train_sampled.iloc[idx[:min(50000, x_train_sampled.shape[0])]].to_pandas()
                     distances_train, _ = nbrs.kneighbors(
-                        x_train_sampled.iloc[idx[:min(50000, x_train_sampled.shape[0])]].to_pandas(),
-                        n_neighbors=n_neighbors)
+                        sample,
+                        n_neighbors=min(len(sample), n_neighbors))
                 except KeyError as e:
                     log(f"KeyError encountered: {e}")
                     log(f"Available columns in x_train: {x_train_sampled.columns}")
