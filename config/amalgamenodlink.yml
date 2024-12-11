@@ -1,0 +1,77 @@
+preprocessing:
+  build_graphs:
+    used_method: orthrus
+    use_all_files: True
+    time_window_size: 15.0
+    use_hashed_label: False
+    node_label_features:
+      subject: cmd_line
+      file: path
+      netflow: remote_ip, remote_port
+  transformation:
+    used_methods: undirected
+
+featurization:
+  embed_nodes:
+    epochs: 100
+    emb_dim: 256
+    use_seed: True
+    training_split: train
+    used_method: fasttext
+    fasttext:
+      min_count: 2
+      alpha: 0.01
+      window_size: 3
+      negative: 3
+      num_workers: 15
+      use_pretrained_fb_model: False
+  embed_edges:
+    to_remove: True
+
+detection:
+  gnn_training:
+    used_method: orthrus
+    use_seed: True
+    num_epochs: 12
+    patience: 3
+    lr: 0.001
+    weight_decay: 0.00001
+    node_hid_dim: 256
+    node_out_dim: 256
+    inference_device: cuda
+    grad_accumulation: 1
+    encoder:
+      node_features: node_emb
+      neighbor_sampling: []
+      edge_features: none
+      dropout: 0.0
+      used_methods: sum_aggregation
+      graph_attention:
+        activation: relu
+        num_heads: 8
+      tgn:
+        tgn_batch_size: 1024
+        tgn_batch_size_inference: 1024
+        tgn_memory_dim: 100
+        tgn_time_dim: 100
+        tgn_neighbor_size: 20
+        tgn_neighbor_n_hop: 1
+        use_node_feats_in_gnn: True
+        use_memory: False
+        use_time_order_encoding: False
+    decoder:
+      used_methods: reconstruct_node_features
+      reconstruct_node_features:
+        loss: MSE # MSE_sum originally but too large loss
+        decoder: nodlink
+        node_mlp:
+          architecture_str: linear(0.5) | relu
+
+  evaluation:
+    viz_malicious_nodes: False
+    ground_truth_version: orthrus
+    used_method: node_evaluation
+    node_evaluation:
+      threshold_method: max_val_loss
+      use_dst_node_loss: True
+      use_kmeans: False
