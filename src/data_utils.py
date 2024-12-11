@@ -93,7 +93,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     computed in previous tasks.
     """
     emb_dim = cfg.featurization.embed_nodes.emb_dim
-    if cfg.featurization.embed_nodes.used_method.strip() == "only_type" or emb_dim is None:
+    only_type = cfg.featurization.embed_nodes.used_method.strip() == "only_type"
+    if only_type or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
@@ -115,6 +116,11 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     if "edges_distribution" in selected_node_feats:
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
+        
+    if only_type:
+        selected_node_feats = ["node_type"]
+    else:
+        selected_node_feats = map(lambda x: x.strip(), selected_node_feats.split(","))
     
     for g in data_set:
         fields = {}
@@ -125,7 +131,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
             
         # Selects only the node features we want
         x_src, x_dst = [], []
-        for feat in map(lambda x: x.strip(), selected_node_feats.split(",")):
+        for feat in selected_node_feats:
         
             if feat == "node_emb":
                 x_src.append(fields["src_emb"])
