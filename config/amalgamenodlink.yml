@@ -9,11 +9,11 @@ preprocessing:
       file: path
       netflow: remote_ip, remote_port
   transformation:
-    used_methods: undirected
+    used_methods: none # TODO: remove
 
 featurization:
   embed_nodes:
-    epochs: 100
+    epochs: 10
     emb_dim: 256
     use_seed: True
     training_split: train
@@ -44,15 +44,15 @@ detection:
     patience: 3
     lr: 0.001
     weight_decay: 0.00001
-    node_hid_dim: 256
-    node_out_dim: 256
+    node_hid_dim: 128
+    node_out_dim: 64
     inference_device: cuda
     grad_accumulation: 1
     encoder:
       node_features: node_emb
       neighbor_sampling: []
       edge_features: none
-      dropout: 0.0
+      dropout: 0.3
       used_methods: sum_aggregation
       graph_attention:
         activation: relu
@@ -72,10 +72,8 @@ detection:
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:
-        loss: MSE # MSE_sum originally but too large loss
+        loss: MSE
         decoder: nodlink
-        node_mlp:
-          architecture_str: linear(0.5) | relu
       predict_edge_type:
         balanced_loss: False
         decoder: edge_mlp
