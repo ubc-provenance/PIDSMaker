@@ -42,7 +42,7 @@ def main(cfg):
         weighted_vectors = [weight * word_vec for weight, word_vec in zip(weight_list, word_vectors)]
         sentence_vector = np.mean(weighted_vectors, axis=0)
 
-        normalized_vector = sentence_vector / np.linalg.norm(sentence_vector)
+        normalized_vector = sentence_vector / (np.linalg.norm(sentence_vector) + 1e-12)
         indexid2vec[indexid] = np.array(normalized_vector)
 
     return indexid2vec
