@@ -10,9 +10,19 @@ parameters:
     values: [0.3]
 
   featurization.embed_nodes.used_method:
-    values: [fasttext, feature_word2vec, hierarchical_hashing, only_type]
+    values: [fasttext]
   detection.gnn_training.decoder.used_methods:
-    values: [reconstruct_node_features, predict_node_type, predict_edge_type]
+    values: [reconstruct_node_features]
+  detection.gnn_training.decoder.reconstruct_node_features.decoder:
+    values: [nodlink,linear(0.5) | relu]
   detection.gnn_training.encoder.used_methods:
-    values: [sum_aggregation, tgn-graph_attention, graph_attention, sage]
+    values: [graph_attention]
+  detection.gnn_training.encoder.graph_attention.concat:
+    values: [True, False]
+  detection.gnn_training.encoder.node_features:
+    values: [node_emb, node_emb-node_type]
+  detection.gnn_training.node_hid_dim:
+    values: [64, 128]
+  detection.gnn_training.node_out_dim:
+    values: [-2]
     
