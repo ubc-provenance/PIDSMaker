@@ -89,6 +89,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
                 dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
+                concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
             )
         elif method == "sage":
             encoder = SAGE(

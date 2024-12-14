@@ -57,6 +57,7 @@ detection:
       graph_attention:
         activation: relu
         num_heads: 8
+        concat: True
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 1024

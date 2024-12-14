@@ -120,7 +120,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     if only_type:
         selected_node_feats = ["node_type"]
     else:
-        selected_node_feats = list(map(lambda x: x.strip(), selected_node_feats.split(",")))
+        selected_node_feats = list(map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(",")))
     
     for g in data_set:
         fields = {}

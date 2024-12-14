@@ -56,5 +56,7 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
     # Special cases
     if cfg.detection.gnn_training.node_out_dim == -1:
         cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim
+    elif cfg.detection.gnn_training.node_out_dim == -2:
+        cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim // 2
     
     return cfg
