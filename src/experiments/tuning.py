@@ -6,13 +6,26 @@ import yaml
 from config import get_yml_file, merge_cfg_and_check_syntax
 
 def get_tuning_sweep_cfg(cfg):
-    if cfg._tuning_mode == "hyperparameters":
-        yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder=f"experiments/tuning/systems/{cfg.dataset.name.lower()}/")
-    elif cfg._tuning_mode == "featurization":
-        yml_file = get_yml_file(filename="tuning_featurization_methods", folder="experiments/tuning/components/")
+    # Priority to a manual path.
+    if cfg._tuning_file_path != "":
+        splitted_path = cfg._tuning_file_path.split("/")
+        path = "/".join(splitted_path[:-1])
+        filename = splitted_path[-1]
+        yml_file = get_yml_file(filename=filename, folder=f"experiments/tuning/{path}/")
+    
     else:
-        raise ValueError(f"Invalid tuning mode {cfg._tuning_mode}")
+        if cfg._tuning_mode == "hyperparameters":
+            # First looks for a specific yml file in the dataset folder. If not present, takes the default tuning config.
+            yml_file = get_yml_file(filename=f"tuning_{cfg._model}", folder=f"experiments/tuning/systems/{cfg.dataset.name.lower()}/")
+            if not os.path.exists(yml_file):
+                yml_file = get_yml_file(filename=f"tuning_default_baselines", folder=f"experiments/tuning/systems/default/")
         
+        elif cfg._tuning_mode == "featurization":
+            yml_file = get_yml_file(filename="tuning_featurization_methods", folder="experiments/tuning/components/")
+        
+        else:
+            raise ValueError(f"Invalid tuning mode {cfg._tuning_mode}")
+            
     if not os.path.exists(yml_file):
         raise FileNotFoundError("Missing tuning yml file")
     
