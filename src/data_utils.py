@@ -7,6 +7,7 @@ from torch_geometric.data import Data, TemporalData
 from torch_geometric.loader import TemporalDataLoader
 from torch_geometric.data.collate import collate
 from torch_geometric.data.data import size_repr
+from torch_scatter import scatter
 
 from encoders import TGNEncoder
 
@@ -93,7 +94,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     computed in previous tasks.
     """
     emb_dim = cfg.featurization.embed_nodes.emb_dim
-    if cfg.featurization.embed_nodes.used_method.strip() == "only_type" or emb_dim is None:
+    only_type = cfg.featurization.embed_nodes.used_method.strip() == "only_type"
+    if only_type or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
@@ -115,6 +117,11 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     if "edges_distribution" in selected_node_feats:
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
+        
+    if only_type:
+        selected_node_feats = ["node_type"]
+    else:
+        selected_node_feats = list(map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(",")))
     
     for g in data_set:
         fields = {}
@@ -125,7 +132,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
             
         # Selects only the node features we want
         x_src, x_dst = [], []
-        for feat in map(lambda x: x.strip(), selected_node_feats.split(",")):
+        for feat in selected_node_feats:
         
             if feat == "node_emb":
                 x_src.append(fields["src_emb"])
@@ -163,9 +170,11 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         
         g.x_src = x_src
         g.x_dst = x_dst
-        g.msg = msg
         g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
+        
+        if "tgn" in cfg.detection.gnn_training.encoder.used_methods and cfg.detection.gnn_training.encoder.tgn.use_memory:
+            g.msg = msg
         
         # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
         # g.edge_index = ...
@@ -290,27 +299,22 @@ class GraphReindexer:
         Converts node features in shape (E, d) to a shape (N, d).
         Returns x as a tuple (x_src, x_dst).
         """
-        shape = (self.num_nodes, x_src.shape[1])
-        if shape not in self.cache:
-            self.cache[shape] = _Cache(shape, self.device)
-        cache = self.cache[shape]
-            
         max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
-        
-        # To avoid storing gradients from all nodes, we detach() BEFORE caching. If we detach()
-        # after storing, we loose the gradient for all operations happening before the reindexing.
-        cache.detach()
+        feature_dim = x_src.size(1)
+        output = torch.zeros((max_num_node, feature_dim), device=x_src.device)
         
         if x_is_tuple:
-            cache.src_cache[edge_index[0, :]] = x_src
-            cache.dst_cache[edge_index[1, :]] = x_dst
-            x = (cache.src_cache[:max_num_node, :], cache.dst_cache[:max_num_node, :])
+            scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
+            x_src_result = output.clone()
+            output.zero_()
+            
+            scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
+            x_dst_result = output.clone()
+            return x_src_result, x_dst_result
         else:
-            cache.src_cache[edge_index[0, :]] = x_src
-            cache.src_cache[edge_index[1, :]] = x_dst
-            x = cache.src_cache[:max_num_node, :]
-        
-        return x
+            scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
+            scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
+            return output
     
     def reindex_graph(self, data, x_is_tuple=False):
         """
