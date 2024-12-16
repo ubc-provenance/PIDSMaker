@@ -192,9 +192,8 @@ def main(cfg, sweep_cfg=None, **kwargs):
             torch.save(method_to_metrics, method_to_metrics_path)
             wandb.save(method_to_metrics_path, out_dir)
             
-            if cfg._experiment == "run_n_times":
-                averaged_metrics = avg_std_metrics(method_to_metrics)
-                wandb.log(averaged_metrics)
+            averaged_metrics = avg_std_metrics(method_to_metrics)
+            wandb.log(averaged_metrics)
             
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
@@ -214,7 +213,9 @@ if __name__ == '__main__':
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
     PROJECT_PREFIX = "framework_"
-    if args.experiment == "uncertainty":
+    if args.project != "":
+        project = args.project
+    elif args.experiment == "uncertainty":
         project = "uncertainty"
     elif args.experiment == "run_n_times":
         project = f"component_ablation_study_{args.model}"
@@ -237,3 +238,7 @@ if __name__ == '__main__':
     main(cfg)
     
     wandb.finish()
+    
+    # If it's a one-time run, we delete the files as we can't leverage them in future
+    if cfg._restart_from_scratch:
+        shutil.rmtree(cfg.preprocessing.build_graphs._task_path, ignore_errors=True)

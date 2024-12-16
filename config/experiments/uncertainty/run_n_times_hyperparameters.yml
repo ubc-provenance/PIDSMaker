@@ -1,0 +1,12 @@
+# Simply runs an experiment N times with Hyperparameter ensemble uncertainty
+
+training_loop:
+  run_evaluation: each_epoch
+
+experiment:
+  used_method: uncertainty
+  uncertainty:
+    hyperparameter:
+      hyperparameters: lr, gnn_h_dim
+      iterations: 5
+      delta: 0.2

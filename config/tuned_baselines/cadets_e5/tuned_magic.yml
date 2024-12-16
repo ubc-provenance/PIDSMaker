@@ -1,0 +1,14 @@
+# ADP@0.112 => https://wandb.ai/tristan_research/framework_tuning_magic/sweeps/z1a8wkqb/workspace
+
+preprocessing:
+  build_graphs:
+    time_window_size: 5.0
+
+detection:
+  gnn_training:
+    lr: 0.001
+    node_out_dim: 128
+    node_hid_dim: 128
+    encoder:
+      dropout: 0.3
+  

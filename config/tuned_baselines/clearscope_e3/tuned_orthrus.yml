@@ -1,0 +1,14 @@
+# ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_orthrus/sweeps/7t3iyuyy?nw=nwusertristanbilot
+
+preprocessing:
+  build_graphs:
+    time_window_size: 15.0
+
+detection:
+  gnn_training:
+    lr: 0.001
+    node_out_dim: 128
+    node_hid_dim: 128
+    encoder:
+      dropout: 0.3
+  
