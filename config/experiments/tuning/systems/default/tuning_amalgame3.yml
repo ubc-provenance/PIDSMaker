@@ -17,6 +17,6 @@ parameters:
   detection.gnn_training.decoder.used_methods:
     values: [predict_node_type, reconstruct_node_features]
   detection.gnn_training.encoder.used_methods:
-    values: [graph_attention]
+    values: [graph_attention, tgn-graph_attention]
   detection.gnn_training.encoder.node_features:
     values: [node_emb, node_emb-node_type]
