@@ -61,6 +61,12 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
                 # If a model doesn't use embedding in features, we add them to benchmark
                 if "node_emb" not in cfg.detection.gnn_training.encoder.node_features:
                     cfg.detection.gnn_training.encoder.node_features += ",node_emb"
+        
+        elif key == "orthrus_node_label_features":
+            if value == True:
+                cfg.preprocessing.build_graphs.node_label_features.subject = "type, path, cmd_line"
+                cfg.preprocessing.build_graphs.node_label_features.file = "type, path"
+                cfg.preprocessing.build_graphs.node_label_features.netflow = "type, remote_ip, remote_port"
             
         # default cfg path
         else:

@@ -1,0 +1,22 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  detection.gnn_training.lr:
+    values: [0.001, 0.0001]
+  detection.gnn_training.encoder.dropout:
+    values: [0.3]
+
+  orthrus_node_label_features:
+    values: [True, False]
+  
+  featurization.embed_nodes.used_method:
+    values: [hierarchical_hashing, fasttext]
+  detection.gnn_training.decoder.used_methods:
+    values: [predict_node_type, reconstruct_node_features]
+  detection.gnn_training.encoder.used_methods:
+    values: [graph_attention]
+  detection.gnn_training.encoder.node_features:
+    values: [node_emb, node_emb-node_type]

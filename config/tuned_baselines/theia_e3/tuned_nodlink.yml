@@ -1,4 +1,4 @@
-# ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_nodlink/sweeps/7r4189p2?nw=nwusertristanbilot
+# ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_nodlink/runs/vu1gquu0/overview
 
 preprocessing:
   transformation:
@@ -6,7 +6,7 @@ preprocessing:
 
 detection:
   gnn_training:
-    lr: 0.001
+    lr: 0.0001
     node_out_dim: 64
     node_hid_dim: 64
     encoder:
