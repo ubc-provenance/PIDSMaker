@@ -4,13 +4,13 @@ metric:
   goal: maximize
 
 parameters:
-  preprocessing.build_graphs.time_window_size:
-    values: [5.0, 15.0]
   detection.gnn_training.lr:
-    values: [0.001, 0.0001]
+    values: [0.001, 0.0001, 0.00001]
   detection.gnn_training.node_hid_dim:
-    values: [64, 128]
+    values: [128, 256]
   detection.gnn_training.node_out_dim:
-    values: [-1]
+    values: [-2]
   detection.gnn_training.encoder.dropout:
     values: [0.3]
+  detection.gnn_training.num_epochs:
+    values: [20]
