@@ -268,16 +268,17 @@ def batch_temporal_data(data: CollatableTemporalData, batch_size: int, batch_mod
 
 class _Cache:
     def __init__(self, shape, device):
-        self.src_cache = torch.zeros(shape, device=device)
-        self.dst_cache = torch.zeros(shape, device=device)
+        self._cache = torch.zeros(shape, device=device)
+    
+    @property
+    def cache(self):
+        return self._cache
         
     def detach(self):
-        self.src_cache = self.src_cache.detach()
-        self.dst_cache = self.dst_cache.detach()
+        self._cache = self._cache.detach()
         
     def to(self, device):
-        self.src_cache = self.src_cache.to(device)
-        self.dst_cache = self.dst_cache.to(device)
+        self._cache = self._cache.to(device)
         return self
 
 class GraphReindexer:
@@ -293,15 +294,28 @@ class GraphReindexer:
         
         self.assoc = None
         self.cache = {}
+        self.is_warning = False
 
     def node_features_reshape(self, edge_index, x_src, x_dst, max_num_node=None, x_is_tuple=False):
         """
         Converts node features in shape (E, d) to a shape (N, d).
         Returns x as a tuple (x_src, x_dst).
         """
+        if edge_index.min() != 0 and not self.is_warning:
+            print(f"Warning: reshaping features with non-reindexed edge index leads to large cache stored in GPU memory.")
+            self.is_warning = True
+        
         max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
         feature_dim = x_src.size(1)
-        output = torch.zeros((max_num_node, feature_dim), device=x_src.device)
+        
+        if feature_dim not in self.cache or self.cache[feature_dim].cache.shape[0] <= max_num_node:
+            self.cache[feature_dim] = _Cache((max_num_node, feature_dim), self.device)
+        output = self.cache[feature_dim].cache
+        
+        # To avoid storing gradients from all nodes, we detach() BEFORE caching. If we detach()
+        # after storing, we loose the gradient for all operations happening before the reindexing.
+        output.detach()
+        output.zero_()
         
         if x_is_tuple:
             scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
@@ -310,11 +324,11 @@ class GraphReindexer:
             
             scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
             x_dst_result = output.clone()
-            return x_src_result, x_dst_result
+            return x_src_result[:max_num_node], x_dst_result[:max_num_node]
         else:
             scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
             scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
-            return output
+            return output[:max_num_node]
     
     def reindex_graph(self, data, x_is_tuple=False):
         """
