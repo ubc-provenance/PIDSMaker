@@ -310,10 +310,11 @@ class GraphReindexer:
         
         if feature_dim not in self.cache or self.cache[feature_dim].cache.shape[0] <= max_num_node:
             self.cache[feature_dim] = _Cache((max_num_node, feature_dim), self.device)
-        output = self.cache[feature_dim].cache
+        self.cache[feature_dim].detach()
         
         # To avoid storing gradients from all nodes, we detach() BEFORE caching. If we detach()
         # after storing, we loose the gradient for all operations happening before the reindexing.
+        output = self.cache[feature_dim].cache
         output.detach()
         output.zero_()
         
