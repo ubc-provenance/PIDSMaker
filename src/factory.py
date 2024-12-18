@@ -154,8 +154,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 # activation=activation_fn_factory("relu"),
             )
         elif method == "none":
-            if use_tgn:
-                encoder = LinearEncoder(in_dim, node_hid_dim, node_out_dim)
+            if use_tgn or "predict_edge_type" in cfg.detection.gnn_training.decoder.used_methods:
+                encoder = LinearEncoder(in_dim, node_out_dim)
             else:
                 encoder = IdentityWrapper()
         else:
