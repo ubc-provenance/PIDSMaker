@@ -154,7 +154,10 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 # activation=activation_fn_factory("relu"),
             )
         elif method == "none":
-            return IdentityWrapper()
+            if use_tgn:
+                encoder = LinearEncoder(in_dim, node_hid_dim, node_out_dim)
+            else:
+                encoder = IdentityWrapper()
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -166,6 +169,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
         use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
         tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
+        use_buggy_orthrus_TGN = cfg.detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN
 
         if use_memory:
             memory = TGNMemory(
@@ -205,6 +209,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             edge_dim=edge_dim,
             use_time_order_encoding=use_time_order_encoding,
             tgn_neighbor_n_hop=tgn_neighbor_n_hop,
+            use_buggy_orthrus_TGN=use_buggy_orthrus_TGN,
         )
 
     return encoder

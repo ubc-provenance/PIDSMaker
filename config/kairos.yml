@@ -51,6 +51,7 @@ detection:
         use_node_feats_in_gnn: False
         use_memory: True
         use_time_order_encoding: False
+        use_buggy_orthrus_TGN: True
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:

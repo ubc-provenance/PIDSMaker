@@ -352,7 +352,7 @@ class GraphReindexer:
         
         return data
     
-    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False):
+    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False, max_num_node=None):
         """
         Reindexes edge_index with indices starting from 0.
         Also reshapes the node features.
@@ -365,7 +365,7 @@ class GraphReindexer:
         edge_index = self.assoc[edge_index]
         
         # Associates each feature vector to each reindexed node ID
-        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple)
+        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple, max_num_node=max_num_node)
         
         return x, edge_index, n_id
     

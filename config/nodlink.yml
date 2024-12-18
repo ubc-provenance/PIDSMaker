@@ -60,6 +60,7 @@ detection:
         use_node_feats_in_gnn: True
         use_memory: False
         use_time_order_encoding: False
+        use_buggy_orthrus_TGN: True
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:
