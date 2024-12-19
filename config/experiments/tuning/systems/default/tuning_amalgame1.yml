@@ -10,9 +10,9 @@ parameters:
     values: [0.3]
 
   featurization.embed_nodes.used_method:
-    values: [fasttext, feature_word2vec, hierarchical_hashing, only_type]
+    values: [hierarchical_hashing, fasttext, feature_word2vec, only_type]
   detection.gnn_training.decoder.used_methods:
-    values: [reconstruct_node_features, predict_node_type, predict_edge_type]
+    values: [predict_node_type, reconstruct_node_features, predict_edge_type]
   detection.gnn_training.encoder.used_methods:
-    values: [graph_attention, sum_aggregation, sage, tgn-graph_attention]
+    values: [tgn-graph_attention, graph_attention, sum_aggregation, sage]
     

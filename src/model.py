@@ -71,7 +71,7 @@ class Model(nn.Module):
             
             if self.node_level:
                 if isinstance(h, tuple):
-                    h, _, n_id = self.graph_reindexer._reindex_graph(edge_index, h[0], h[1])
+                    h, _, n_id = self.graph_reindexer._reindex_graph(edge_index, h[0], h[1]) # TODO: duplicate with the one in TGN encoder, remove
                     batch.original_n_id = n_id
                 if isinstance(x, tuple):
                     x, _, n_id = self.graph_reindexer._reindex_graph(edge_index, x[0], x[1])

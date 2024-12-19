@@ -25,10 +25,10 @@ def test_edge_level(
     model.eval()
 
     time_with_loss = {}  # key: time，  value： the losses
-    edge_list = []
+    edge_list = None
     unique_nodes = torch.tensor([]).to(device=device)
     start_time = data.t[0]
-    losses = []
+    all_losses = []
     start = time.perf_counter()
 
     # NOTE: warning, this may reindex the data is TGN is not used
@@ -41,7 +41,7 @@ def test_edge_level(
 
         results = model(batch, full_data, inference=True, validation=validation)
         each_edge_loss = results["loss"]
-        losses.extend(each_edge_loss.cpu().numpy().tolist())
+        all_losses.extend(each_edge_loss.cpu().numpy().tolist())
 
         # If the data has been reindexed in the loader, we retrieve original node IDs
         # to later find the labels
@@ -50,42 +50,35 @@ def test_edge_level(
         else:
             edge_index = batch.edge_index
         
-        num_events = each_edge_loss.shape[0]
         # edge_types = torch.argmax(batch.edge_type, dim=1) + 1
-        for i in range(num_events):
-            srcnode = int(edge_index[0, i])
-            dstnode = int(edge_index[1, i])
+        
+        srcnodes = edge_index[0, :].cpu().numpy()
+        dstnodes = edge_index[1, :].cpu().numpy()
+        t_vars = batch.t.cpu().numpy()
+        losses = each_edge_loss.cpu().numpy()
+        
+        edge_df = pd.DataFrame({
+            'loss': losses.astype(float),
+            'srcnode': srcnodes.astype(int),
+            'dstnode': dstnodes.astype(int),
+            'time': t_vars.astype(int)
+        })
+        if edge_list is None:
+            edge_list = edge_df
+        else:
+            edge_list = pd.concat([edge_list, edge_df])
 
-            # srcmsg = nodeid2msg[srcnode]
-            # dstmsg = nodeid2msg[dstnode]
-            t_var = int(batch.t[i])
-            # edge_type_idx = edge_types[i].item()
-            # rel2id = get_rel2id(cfg)
-            # edge_type = rel2id[edge_type_idx]
-            loss = each_edge_loss[i]
-
-            temp_dic = {
-                'loss': float(loss),
-                'srcnode': srcnode,
-                'dstnode': dstnode,
-                # 'srcmsg': srcmsg,
-                # 'dstmsg': dstmsg,
-                # 'edge_type': edge_type,
-                'time': t_var,
-            }
-            edge_list.append(temp_dic)
 
     # Here is a checkpoint, which records all edge losses in the current time window
-    time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list[-1]["time"])
+    time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list["time"].max())
 
     end = time.perf_counter()
     logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
-    df = pd.DataFrame(edge_list)
-    df.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
-    return losses
+    edge_list.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
+    return all_losses
 
     # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
