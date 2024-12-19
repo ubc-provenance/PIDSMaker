@@ -66,7 +66,7 @@ def test_edge_level(
         if edge_list is None:
             edge_list = edge_df
         else:
-            edge_list = pd.concatenate([edge_list, edge_df])
+            edge_list = pd.concat([edge_list, edge_df])
 
 
     # Here is a checkpoint, which records all edge losses in the current time window
