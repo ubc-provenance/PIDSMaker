@@ -20,7 +20,7 @@ ADDITIONAL_ARGS="${@:2}"
 NOHUP_CMD="nohup sh -c \""
 
 for DATASET in "${DATASETS[@]}"; do
-  NOHUP_CMD+="./run_serial.sh $COMMAND $DATASET $ADDITIONAL_ARGS ; "
+  NOHUP_CMD+="./run_serial.sh $COMMAND $DATASET $ADDITIONAL_ARGS && "
 done
 
 # Remove the trailing semicolon and space

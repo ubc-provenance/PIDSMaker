@@ -28,7 +28,7 @@ def test_edge_level(
     edge_list = None
     unique_nodes = torch.tensor([]).to(device=device)
     start_time = data.t[0]
-    losses = []
+    all_losses = []
     start = time.perf_counter()
 
     # NOTE: warning, this may reindex the data is TGN is not used
@@ -41,7 +41,7 @@ def test_edge_level(
 
         results = model(batch, full_data, inference=True, validation=validation)
         each_edge_loss = results["loss"]
-        losses.extend(each_edge_loss.cpu().numpy().tolist())
+        all_losses.extend(each_edge_loss.cpu().numpy().tolist())
 
         # If the data has been reindexed in the loader, we retrieve original node IDs
         # to later find the labels
@@ -78,7 +78,7 @@ def test_edge_level(
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
     edge_list.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
-    return losses
+    return all_losses
 
     # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
