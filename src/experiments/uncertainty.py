@@ -43,10 +43,13 @@ def update_cfg_for_uncertainty_exp(method: str, index: int, iterations: int, cfg
         cfg._is_running_mc_dropout = True
     
     elif method == "deep_ensemble":
-        if cfg._experiment == "run_n_times":
+        restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
+        if restart_from == "embed_nodes":
             clear_files_from_embed_nodes(cfg)
-        else:
+        elif restart_from == "gnn_training":
             clear_files_from_gnn_training(cfg)
+        else:
+            raise ValueError(f"Unsupported 'restart from' value: {restart_from}")
         
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files

@@ -3,7 +3,7 @@ import os
 import functools
 import yaml
 
-from config import get_yml_file, merge_cfg_and_check_syntax
+from config import get_yml_file, merge_cfg_and_check_syntax, update_task_paths_to_restart
 
 def get_tuning_sweep_cfg(cfg):
     # Priority to a manual path.
@@ -77,5 +77,8 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
         cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim
     elif cfg.detection.gnn_training.node_out_dim == -2:
         cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim // 2
+        
+    # We modified the cfg so we have to update the task paths accordingly
+    update_task_paths_to_restart(cfg)
     
     return cfg

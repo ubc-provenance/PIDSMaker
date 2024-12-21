@@ -7,7 +7,7 @@ import torch
 import wandb
 import numpy as np
 from provnet_utils import remove_underscore_keys, log
-from config import set_task_to_done, get_updated_should_restart
+from config import set_task_to_done, update_task_paths_to_restart
 from experiments.uncertainty import *
 from experiments.tuning import get_tuning_sweep_cfg, fuse_cfg_with_sweep_cfg
 
@@ -94,7 +94,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
         return_value = None
         
         # This updates all task paths
-        should_restart = get_updated_should_restart(cfg)
+        should_restart = update_task_paths_to_restart(cfg)
         
         task_to_module = get_task_to_module(cfg)
         module = task_to_module[task]["module"]
@@ -119,26 +119,8 @@ def main(cfg, sweep_cfg=None, **kwargs):
         times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}
         return metrics, times
     
-    # Fine-tuning mode
-    if cfg._tuning_mode != "none":
-        log("Running pipeline in 'Tuning' mode.")
-        sweep_config = get_tuning_sweep_cfg(cfg)
-        project = f"framework_tuning_{cfg._model}"
-        sweep_id = wandb.sweep(sweep_config, project=project)
         
-        def run_pipeline_from_sweep(cfg):
-            with wandb.init():
-                sweep_cfg = wandb.config
-                cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
-                metrics, times = run_pipeline(cfg)
-                wandb.log(metrics)
-                wandb.log(times)
-        
-        count = sweep_config["count"] if "count" in sweep_config else None
-        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=count)
-    
-    else:
-    
+    def run_pipeline_with_experiments(cfg):
         # Standard behavior: we run the whole pipeline
         if cfg.experiment.used_method == "no_experiment":
             log("Running pipeline in 'Standard' mode.")
@@ -197,7 +179,27 @@ def main(cfg, sweep_cfg=None, **kwargs):
             
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
-
+    
+    
+    # Normal mode
+    if cfg._tuning_mode == "none":
+        run_pipeline_with_experiments(cfg)
+    
+    # Sweep  mode
+    else:
+        log("Running pipeline in 'Tuning' mode.")
+        sweep_config = get_tuning_sweep_cfg(cfg)
+        project = f"framework_tuning_{cfg._model}"
+        sweep_id = wandb.sweep(sweep_config, project=project)
+        
+        def run_pipeline_from_sweep(cfg):
+            with wandb.init():
+                sweep_cfg = wandb.config
+                cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
+                run_pipeline_with_experiments(cfg)
+        
+        count = sweep_config["count"] if "count" in sweep_config else None
+        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=count)
     
     log("==" * 30)
     log("Run finished.")
