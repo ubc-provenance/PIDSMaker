@@ -7,7 +7,7 @@ experiment:
   used_method: uncertainty
   uncertainty:
     hyperparameter:
-      hyperparameters: lr, num_epochs, text_h_dim, gnn_h_dim
+      hyperparameters: lr, text_h_dim, gnn_h_dim
       iterations: 5
       delta: 0.2
     mc_dropout:
@@ -15,6 +15,7 @@ experiment:
       dropout: 0.4
     deep_ensemble:
       iterations: 10
+      restart_from: gnn_training
     bagged_ensemble:
       iterations: 5
       min_num_days: 3
