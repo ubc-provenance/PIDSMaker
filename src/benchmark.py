@@ -196,6 +196,11 @@ def main(cfg, sweep_cfg=None, **kwargs):
             with wandb.init():
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
+
+                run_name = f"{cfg._model}_{cfg.dataset.name}_{cfg.featurization.embed_nodes.training_split}_{cfg.featurization.embed_nodes.used_method}"
+                wandb.run.name = run_name
+                wandb.run.save()
+
                 run_pipeline_with_experiments(cfg)
         
         count = sweep_config["count"] if "count" in sweep_config else None
