@@ -13,7 +13,7 @@ parameters:
     values: [0.001, 0.0001]
 
   featurization.embed_nodes.used_method:
-    values: [word2vec]
+    values: [feature_word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_node_type, predict_edge_type, reconstruct_node_features]
   detection.gnn_training.encoder.node_features:
