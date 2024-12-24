@@ -157,6 +157,10 @@ def main(cfg, sweep_cfg=None, **kwargs):
                     method_to_metrics[method] = metrics
                 
                 else:
+                    if method == "deep_ensemble":
+                        new_tag = f"from_{cfg.experiment.uncertainty.deep_ensemble.restart_from}"
+                        wandb.run.tags = list(wandb.run.tags) + [str(new_tag)]
+
                     for i in range(iterations):
                         log(f"[@iteration {i}]", pre_return_line=True)
                         cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
@@ -197,7 +201,7 @@ def main(cfg, sweep_cfg=None, **kwargs):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
 
-                run_name = f"{cfg._model}_{cfg.dataset.name}_{cfg.featurization.embed_nodes.training_split}_{cfg.featurization.embed_nodes.used_method}"
+                run_name = f"{cfg.dataset.name}_{cfg.featurization.embed_nodes.training_split}_{cfg.featurization.embed_nodes.used_method}"
                 wandb.run.name = run_name
                 wandb.run.save()
 
