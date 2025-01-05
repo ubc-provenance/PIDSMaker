@@ -16,7 +16,7 @@ def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> 
     timestamps = [edge[2]["time"] for edge in original_G.edges(data=True)]
 
     adj_list = defaultdict(list)
-    for src, dst, t in zip(edge_src[0], edge_dst[1], timestamps):
+    for src, dst, t in zip(edge_src, edge_dst, timestamps):
         adj_list[src].append((dst, t))
 
     for (src, dst) in new_G.edges():
@@ -29,7 +29,6 @@ def add_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> nx.Graph:
         timestamps = [edge[2]["time"] for edge in original_G.edges(data=True) if edge[1] == dst]
         earliest = min(timestamps)
         new_G[src][dst]["time"] = earliest
-
     return new_G
 
 
@@ -41,21 +40,16 @@ def find_earliest_paths(adj_list, s, d):
     :param sd_pairs: List of (s, d) pairs to compute earliest paths for.
     :return: A dictionary mapping (s, d) pairs to (earliest_path, earliest_time).
     """
-    results = {}
-
     queue = deque([(s, [], 0)])  # (current_node, path, max_timestamp_so_far)
     earliest_time = float('inf')
-    best_path = None
     visited = {}  # Cache the earliest time to reach each node
 
     while queue:
         current_node, path, current_time = queue.popleft()
         new_path = path + [current_node]
-
         if current_node == d:
             if current_time < earliest_time:
                 earliest_time = current_time
-                best_path = new_path
             continue
 
         for neighbor, edge_time in adj_list[current_node]:

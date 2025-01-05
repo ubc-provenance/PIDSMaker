@@ -1,7 +1,7 @@
 from config import *
 from provnet_utils import *
 
-from .transformation_utils import add_arbitrary_timestamps_to_graph
+from .transformation_utils import add_arbitrary_timestamps_to_graph,add_timestamps_to_graph
 
 def identify_root_nodes(G):
     root_nodes = set()
@@ -35,21 +35,31 @@ def create_pseudo_graph(G,root_nodes):
     """
     pseudo_graph = nx.DiGraph()
 
-    # Step 1: Add all original nodes and edges to the pseudo-graph
     for node, attr in G.nodes(data=True):
         pseudo_graph.add_node(node, **attr)
+    for u, v in G.edges():
+        pseudo_graph.add_edge(u, v)
 
-
-    # Step 3: Create pseudo-root nodes and add edges to descendants
+        # Step 2: Replace each root node with a pseudo-root node
     for root in root_nodes:
-        # Create pseudo-root node (retaining the same initial feature vector)
         pseudo_root = f"pseudo_{root}"
-        pseudo_graph.add_node(pseudo_root, **G.nodes[root])  # Copy features from root node
+        # Copy the features of the root node to the pseudo-root node
+        pseudo_graph.add_node(pseudo_root, **G.nodes[root])
 
-        # Add edges from pseudo-root to all descendants of the original root
+        # Redirect all incoming edges to the pseudo-root
+        for predecessor in list(pseudo_graph.predecessors(root)):
+            pseudo_graph.add_edge(predecessor, pseudo_root)
+
+        # Redirect all outgoing edges to the pseudo-root
+        for successor in list(pseudo_graph.successors(root)):
+            pseudo_graph.add_edge(pseudo_root, successor)
+
         descendants = nx.descendants(G, root)
         for descendant in descendants:
             pseudo_graph.add_edge(pseudo_root, descendant)
+
+        # Remove the original root node
+        pseudo_graph.remove_node(root)
 
     return pseudo_graph
 
