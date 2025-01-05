@@ -92,7 +92,7 @@ def fuse_hyperparameter_metrics(method_to_metrics):
         if isinstance(val, (int, float)):
             all_values = []
             for param, list_of_dict in method_to_metrics.items():
-                values = [d[metric] for d in list_of_dict]
+                values = [d[metric] for d in list_of_dict if "precision" in d]
                 all_values.append(values)
             mean_metrics[metric] = np.mean(all_values, axis=0)
 
