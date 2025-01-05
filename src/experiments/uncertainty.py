@@ -111,6 +111,32 @@ def avg_std_metrics(method_to_metrics):
     
     return result
 
+def max_metrics(method_to_metrics, metric='adp_score'):
+    metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
+    max_idx = np.argmax([m[metric] for m in metrics])
+    
+    result = {}
+    metric_keys = metrics[0].keys()
+    for key in metric_keys:
+        value = metrics[max_idx][key]
+        if isinstance(value, (int, float)):
+            result[f"{key}_max"] = value
+    
+    return result
+
+def min_metrics(method_to_metrics, metric='adp_score'):
+    metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
+    min_idx = np.argmin([m[metric] for m in metrics])
+    
+    result = {}
+    metric_keys = metrics[0].keys()
+    for key in metric_keys:
+        value = metrics[min_idx][key]
+        if isinstance(value, (int, float)):
+            result[f"{key}_min"] = value
+    
+    return result
+
 # MC Dropout
 class DropoutWrapper(nn.Module):
     def __init__(self, module: nn.Module, p):

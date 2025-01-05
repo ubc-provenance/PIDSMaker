@@ -175,7 +175,12 @@ def main(cfg, project, **kwargs):
             wandb.save(method_to_metrics_path, out_dir)
             
             averaged_metrics = avg_std_metrics(method_to_metrics)
+            minimum_metrics = min_metrics(method_to_metrics)
+            maximum_metrics = max_metrics(method_to_metrics)
+            
             wandb.log(averaged_metrics)
+            wandb.log(minimum_metrics)
+            wandb.log(maximum_metrics)
             
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
