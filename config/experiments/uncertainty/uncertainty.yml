@@ -11,10 +11,10 @@ experiment:
       iterations: 5
       delta: 0.2
     mc_dropout:
-      iterations: 10
+      iterations: 5
       dropout: 0.4
     deep_ensemble:
-      iterations: 10
+      iterations: 5
       restart_from: gnn_training
     bagged_ensemble:
       iterations: 5

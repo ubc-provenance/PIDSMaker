@@ -1,0 +1,21 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  detection.gnn_training.encoder.used_methods:
+    values: [none]
+
+  preprocessing.build_graphs.time_window_size:
+    values: [1.0, 5.0, 15.0]
+  detection.gnn_training.lr:
+    values: [0.001, 0.0001]
+
+  featurization.embed_nodes.used_method:
+    values: [feature_word2vec]
+  detection.gnn_training.decoder.used_methods:
+    values: [predict_node_type, predict_edge_type, reconstruct_node_features]
+  detection.gnn_training.encoder.node_features:
+    values: [node_emb-node_type]
+  
