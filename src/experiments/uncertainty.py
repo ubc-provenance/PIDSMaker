@@ -89,7 +89,7 @@ def fuse_hyperparameter_metrics(method_to_metrics):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]][0].items()
 
     for metric, val in metrics:
-        if isinstance(val, (int, float)):
+        if np.isreal(val):
             all_values = []
             for param, list_of_dict in method_to_metrics.items():
                 values = [d[metric] for d in list_of_dict if "precision" in d]
@@ -119,7 +119,7 @@ def max_metrics(method_to_metrics, metric='adp_score'):
     metric_keys = metrics[0].keys()
     for key in metric_keys:
         value = metrics[max_idx][key]
-        if isinstance(value, (int, float)):
+        if np.isreal(value):
             result[f"{key}_max"] = value
     
     return result
@@ -132,7 +132,7 @@ def min_metrics(method_to_metrics, metric='adp_score'):
     metric_keys = metrics[0].keys()
     for key in metric_keys:
         value = metrics[min_idx][key]
-        if isinstance(value, (int, float)):
+        if np.isreal(value):
             result[f"{key}_min"] = value
     
     return result
