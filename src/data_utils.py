@@ -39,10 +39,15 @@ class CollatableTemporalData(TemporalData):
         info += ", " + size_repr("edge_index", self.edge_index)
         return f'{cls}({info})'
 
-def load_all_datasets(cfg):
+def load_all_datasets(cfg, only_keep=None):
     train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
     val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    
+    if only_keep is not None:
+        train_data = train_data[:only_keep]
+        val_data = val_data[:only_keep]
+        test_data = test_data[:only_keep]
     
     all_msg, all_t, all_edge_types = [], [], []
     max_node = 0
