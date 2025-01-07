@@ -1,0 +1,12 @@
+# ADP@0.085 => https://wandb.ai/tristan_research/framework_tuning_rcaid/sweeps/vfg99jy3?nw=nwusertristanbilot
+
+featurization:
+  embed_nodes:
+    emb_dim: 32
+
+detection:
+  gnn_training:
+    lr: 0.001
+    node_hid_dim: 128
+    encoder:
+      dropout: 0.2
