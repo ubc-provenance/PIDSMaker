@@ -80,6 +80,9 @@ def clear_files_from_embed_nodes(cfg):
         
     clear_files_from_gnn_training(cfg)
     
+def include_metric_in_stats(value):
+    return np.isreal(value) and not isinstance(value, wandb.Image)
+    
 def fuse_hyperparameter_metrics(method_to_metrics):
     """
     For each hyperparameter i \in H at iteration j, we do the mean of the metrics for all hyperparameters
@@ -89,7 +92,7 @@ def fuse_hyperparameter_metrics(method_to_metrics):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]][0].items()
 
     for metric, val in metrics:
-        if np.isreal(val):
+        if include_metric_in_stats(val):
             all_values = []
             for param, list_of_dict in method_to_metrics.items():
                 values = [d[metric] for d in list_of_dict if "precision" in d]
@@ -119,7 +122,7 @@ def max_metrics(method_to_metrics, metric='adp_score'):
     metric_keys = metrics[0].keys()
     for key in metric_keys:
         value = metrics[max_idx][key]
-        if np.isreal(value):
+        if include_metric_in_stats(value):
             result[f"{key}_max"] = value
     
     return result
@@ -132,7 +135,7 @@ def min_metrics(method_to_metrics, metric='adp_score'):
     metric_keys = metrics[0].keys()
     for key in metric_keys:
         value = metrics[min_idx][key]
-        if np.isreal(value):
+        if include_metric_in_stats(value):
             result[f"{key}_min"] = value
     
     return result

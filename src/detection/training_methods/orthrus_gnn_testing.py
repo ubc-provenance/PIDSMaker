@@ -26,10 +26,8 @@ def test_edge_level(
 
     time_with_loss = {}  # key: time，  value： the losses
     edge_list = None
-    unique_nodes = torch.tensor([]).to(device=device)
     start_time = data.t[0]
     all_losses = []
-    start = time.perf_counter()
 
     # NOTE: warning, this may reindex the data is TGN is not used
     batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer, test_mode=True)
@@ -37,8 +35,6 @@ def test_edge_level(
     validation = split == "val"
 
     for batch in batch_loader:
-        unique_nodes = torch.cat([unique_nodes, batch.edge_index.flatten()]).unique()
-
         results = model(batch, full_data, inference=True, validation=validation)
         each_edge_loss = results["loss"]
         all_losses.extend(each_edge_loss.cpu().numpy().tolist())
@@ -72,7 +68,6 @@ def test_edge_level(
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list["time"].max())
 
-    end = time.perf_counter()
     logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")

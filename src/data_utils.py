@@ -39,10 +39,15 @@ class CollatableTemporalData(TemporalData):
         info += ", " + size_repr("edge_index", self.edge_index)
         return f'{cls}({info})'
 
-def load_all_datasets(cfg):
+def load_all_datasets(cfg, only_keep=None):
     train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
     val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    
+    if only_keep is not None:
+        train_data = train_data[:only_keep]
+        val_data = val_data[:only_keep]
+        test_data = test_data[:only_keep]
     
     all_msg, all_t, all_edge_types = [], [], []
     max_node = 0
@@ -67,10 +72,14 @@ def load_all_datasets(cfg):
     # of edges is more consistent with TGN
     batch_mode = cfg.detection.gnn_training.batch_mode
     batch_size = cfg.detection.gnn_training.edge_batch_size
+    batch_size_inference = cfg.detection.gnn_training.edge_batch_size_inference
     if batch_size not in [None, 0]:
         train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size, batch_mode, cfg)
         val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size, batch_mode, cfg)
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size, batch_mode, cfg)
+    
+    elif batch_size_inference not in [None, 0]:
+        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
     
     return train_data, val_data, test_data, full_data, max_node
 
