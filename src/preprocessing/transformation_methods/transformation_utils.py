@@ -1,6 +1,5 @@
 from provnet_utils import *
 
-
 def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> nx.Graph:
     """
     Some transformations change the shape of the graph by adding or removing edges.

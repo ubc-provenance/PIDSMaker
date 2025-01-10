@@ -11,7 +11,7 @@ def identify_root_nodes(G):
         out_edges = list(G.out_edges(node, data=True))
         in_edges = list(G.in_edges(node, data=True))
 
-        # out edge timestamp
+        # out edge
         earliest_out_time = min(edge[2]['time'] for edge in out_edges) if out_edges else None
         # in
         earliest_in_time = min(edge[2]['time'] for edge in in_edges) if in_edges else None
