@@ -335,17 +335,20 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
     area_under_curve = np.trapz(max_detected_attacks_percentages, unique_precisions) / 100
 
     # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(unique_precisions, max_detected_attacks_percentages, color='b', label=f'Area under curve = {area_under_curve:.2f}')
-    plt.fill_between(unique_precisions, max_detected_attacks_percentages, color='blue', alpha=0.2)
-    plt.xlabel("Precision")
-    plt.ylabel("% of Detected Attacks")
-    plt.title("Percentage of Detected Attacks vs Precision")
-    plt.legend(loc="lower left")
-    plt.xlim(0, 1)
-    plt.ylim(0, 100.5)
-    plt.grid(True)
-    plt.savefig(out_file)
+    try:
+        plt.figure(figsize=(10, 6))
+        plt.plot(unique_precisions, max_detected_attacks_percentages, color='b', label=f'Area under curve = {area_under_curve:.2f}')
+        plt.fill_between(unique_precisions, max_detected_attacks_percentages, color='blue', alpha=0.2)
+        plt.xlabel("Precision")
+        plt.ylabel("% of Detected Attacks")
+        plt.title("Percentage of Detected Attacks vs Precision")
+        plt.legend(loc="lower left")
+        plt.xlim(0, 1)
+        plt.ylim(0, 100.5)
+        plt.grid(True)
+        plt.savefig(out_file)
+    except:
+        print("Error while generating ADP plot")
     return area_under_curve
     
 def plot_recall_vs_precision(scores, nodes, node2attacks, labels, out_file):
