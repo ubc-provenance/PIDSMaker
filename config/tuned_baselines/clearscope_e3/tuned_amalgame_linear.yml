@@ -1,4 +1,4 @@
-# ADP@0.5 => https://wandb.ai/tristan_research/tuning_amalgame_linear3/sweeps/kkour0ox?nw=nwusertristanbilot
+# ADP@0.5 => https://wandb.ai/tristan_research/tuning_amalgame_linear/sweeps/kkour0ox?nw=nwusertristanbilot
 
 featurization:
   embed_nodes:
