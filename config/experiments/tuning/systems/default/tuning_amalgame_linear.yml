@@ -15,7 +15,7 @@ parameters:
     values: [128, 256, 64]
 
   featurization.embed_nodes.used_method:
-    values: [hierarchical_hashing]
+    values: [feature_word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_edge_type]
   detection.gnn_training.encoder.node_features:
