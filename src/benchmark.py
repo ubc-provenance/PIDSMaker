@@ -239,7 +239,7 @@ if __name__ == '__main__':
     else:
         project = "project_name"
         
-    # project = PROJECT_PREFIX + project
+    project = PROJECT_PREFIX + project
     
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
