@@ -230,16 +230,20 @@ if __name__ == '__main__':
     PROJECT_PREFIX = "framework_"
     if args.project != "":
         project = args.project
+    elif args.tuning_mode == "hyperparameters":
+        project = f"tuning_{args.model}"
     elif args.experiment == "uncertainty":
         project = "uncertainty"
     elif args.experiment == "run_n_times":
         project = f"component_ablation_study_{args.model}"
     else:
         project = "project_name"
+        
+    project = PROJECT_PREFIX + project
     
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
-        project=PROJECT_PREFIX + project,
+        project=project,
         name=exp_name,
         tags=tags,
     )
@@ -250,7 +254,7 @@ if __name__ == '__main__':
     cfg = get_yml_cfg(args)
     wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
 
-    main(cfg, project=args.project)
+    main(cfg, project=project)
     
     wandb.finish()
     
