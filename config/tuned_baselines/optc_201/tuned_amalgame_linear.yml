@@ -1,8 +1,12 @@
-# ADP@0.5 => https://wandb.ai/tristan_research/tuning_amalgame_linear/sweeps/k47b3hhk?nw=nwusertristanbilot&panelDisplayName=adp_score
+# ADP@1.00 => https://wandb.ai/tristan_research/tuning_amalgame_linear/sweeps/42pwlyz1?nw=nwusertristanbilot
+
+preprocessing:
+  build_graphs:
+    time_window_size: 1
 
 featurization:
   embed_nodes:
-    emb_dim: 128
+    emb_dim: 64
 
 detection:
   gnn_training:
