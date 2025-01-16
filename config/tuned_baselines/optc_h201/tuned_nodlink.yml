@@ -8,6 +8,6 @@ detection:
   gnn_training:
     lr: 0.0001
     node_hid_dim: 64
-    node_out_dim: -1
+    # node_out_dim: -1
     encoder:
       dropout: 0.3
