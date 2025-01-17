@@ -1,8 +1,9 @@
 # ADP@0.152 => https://wandb.ai/tristan_research/framework_tuning_magic/sweeps/229hbrqa?nw=nwusertristanbilot
+# in table ADP@0.178 => https://wandb.ai/tristan_research/framework_tuning_magic/sweeps/gwj9uvsi?nw=nwusertristanbilot
 
 preprocessing:
   build_graphs:
-    time_window_size: 1
+    time_window_size: 1.0
 
 detection:
   gnn_training:

@@ -1,0 +1,14 @@
+# ADP@0.5 => https://wandb.ai/tristan_research/framework_tuning_nodlink/sweeps/uwakf7wu?nw=nwusertristanbilot
+
+preprocessing:
+  build_graphs:
+    time_window_size: 5.0
+
+featurization:
+  embed_nodes:
+    emb_dim: 64
+
+detection:
+  gnn_training:
+    lr: 0.0001
+    node_out_dim: 64

@@ -7,6 +7,7 @@ from torch_geometric.data import Data, TemporalData
 from torch_geometric.loader import TemporalDataLoader
 from torch_geometric.data.collate import collate
 from torch_geometric.data.data import size_repr
+from torch_scatter import scatter
 
 from encoders import TGNEncoder
 
@@ -38,10 +39,15 @@ class CollatableTemporalData(TemporalData):
         info += ", " + size_repr("edge_index", self.edge_index)
         return f'{cls}({info})'
 
-def load_all_datasets(cfg):
+def load_all_datasets(cfg, only_keep=None):
     train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
     val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    
+    if only_keep is not None:
+        train_data = train_data[:only_keep]
+        val_data = val_data[:only_keep]
+        test_data = test_data[:only_keep]
     
     all_msg, all_t, all_edge_types = [], [], []
     max_node = 0
@@ -52,20 +58,28 @@ def load_all_datasets(cfg):
             all_edge_types.append(data.edge_type)
             max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
-    all_msg = torch.cat(all_msg)
-    all_t = torch.cat(all_t)
-    all_edge_types = torch.cat(all_edge_types)
-    full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+        all_msg = torch.cat(all_msg)
+        all_t = torch.cat(all_t)
+        all_edge_types = torch.cat(all_edge_types)
+        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+    else:
+        full_data = None
     max_node = max_node + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
     
     # Concatenates all data into a single data so that iterating over batches
     # of edges is more consistent with TGN
+    batch_mode = cfg.detection.gnn_training.batch_mode
     batch_size = cfg.detection.gnn_training.edge_batch_size
+    batch_size_inference = cfg.detection.gnn_training.edge_batch_size_inference
     if batch_size not in [None, 0]:
-        train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size)
-        val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size)
-        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size)
+        train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size, batch_mode, cfg)
+        val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size, batch_mode, cfg)
+        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size, batch_mode, cfg)
+    
+    elif batch_size_inference not in [None, 0]:
+        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -89,7 +103,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     computed in previous tasks.
     """
     emb_dim = cfg.featurization.embed_nodes.emb_dim
-    if cfg.featurization.embed_nodes.used_method.strip() == "only_type" or emb_dim is None:
+    only_type = cfg.featurization.embed_nodes.used_method.strip() == "only_type"
+    if only_type or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
@@ -111,6 +126,11 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     if "edges_distribution" in selected_node_feats:
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
+        
+    if only_type:
+        selected_node_feats = ["node_type"]
+    else:
+        selected_node_feats = list(map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(",")))
     
     for g in data_set:
         fields = {}
@@ -121,7 +141,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
             
         # Selects only the node features we want
         x_src, x_dst = [], []
-        for feat in map(lambda x: x.strip(), selected_node_feats.split(",")):
+        for feat in selected_node_feats:
         
             if feat == "node_emb":
                 x_src.append(fields["src_emb"])
@@ -159,9 +179,11 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         
         g.x_src = x_src
         g.x_dst = x_dst
-        g.msg = msg
         g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
+        
+        if "tgn" in cfg.detection.gnn_training.encoder.used_methods and cfg.detection.gnn_training.encoder.tgn.use_memory:
+            g.msg = msg
         
         # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
         # g.edge_index = ...
@@ -214,24 +236,58 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
 
     return data
 
-def batch_temporal_data(data: CollatableTemporalData, batch_size: int) -> list[CollatableTemporalData]:
-    num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
+def batch_temporal_data(data: CollatableTemporalData, batch_size: int, batch_mode: str, cfg) -> list[CollatableTemporalData]:
+    if batch_mode == "edges":
+        num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
+        
+        data_list = [data[i*batch_size: (i+1)*batch_size] for i in range(num_batches)]
+        return data_list
     
-    data_list = [data[i*batch_size: (i+1)*batch_size] for i in range(num_batches)]
-    return data_list
+    elif batch_mode == "minutes":
+        window_length_ns = int(cfg.preprocessing.build_graphs.time_window_size*60_000_000_000)
+        sliding_ns = int(batch_size*60_000_000_000) # min to ns
+    
+        t0 = data.t.min()
+        t1 = data.t.max()
+        t0_aligned = (t0 // sliding_ns) * sliding_ns
+
+        # Mapping from window index to list of data points
+        window_data = {}
+
+        for p in data:
+            # Compute window indices for each data point
+            i0 = ((p.t - window_length_ns - t0_aligned) + sliding_ns - 1) // sliding_ns
+            i1 = (p.t - t0_aligned) // sliding_ns
+            i0 = max(i0, 0)  # Ensure i0 is non-negative
+
+            for i in range(i0, i1 + 1):
+                window_data.setdefault(i, []).append(p)
+
+        # Build the list of windows
+        windows = []
+        for i in sorted(window_data.keys()):
+            s = t0_aligned + i * sliding_ns          # Window start time (ns)
+            e = s + window_length_ns                 # Window end time (ns)
+            data_in_window = window_data[i]
+            windows.append(collate_temporal_data(data_in_window))
+        
+        return windows
+    
+    raise ValueError(f"Invalid or missing batch mode {batch_mode}")
 
 class _Cache:
     def __init__(self, shape, device):
-        self.src_cache = torch.zeros(shape, device=device)
-        self.dst_cache = torch.zeros(shape, device=device)
+        self._cache = torch.zeros(shape, device=device)
+    
+    @property
+    def cache(self):
+        return self._cache
         
     def detach(self):
-        self.src_cache = self.src_cache.detach()
-        self.dst_cache = self.dst_cache.detach()
+        self._cache = self._cache.detach()
         
     def to(self, device):
-        self.src_cache = self.src_cache.to(device)
-        self.dst_cache = self.dst_cache.to(device)
+        self._cache = self._cache.to(device)
         return self
 
 class GraphReindexer:
@@ -247,33 +303,42 @@ class GraphReindexer:
         
         self.assoc = None
         self.cache = {}
+        self.is_warning = False
 
     def node_features_reshape(self, edge_index, x_src, x_dst, max_num_node=None, x_is_tuple=False):
         """
         Converts node features in shape (E, d) to a shape (N, d).
         Returns x as a tuple (x_src, x_dst).
         """
-        shape = (self.num_nodes, x_src.shape[1])
-        if shape not in self.cache:
-            self.cache[shape] = _Cache(shape, self.device)
-        cache = self.cache[shape]
-            
+        if edge_index.min() != 0 and not self.is_warning:
+            print(f"Warning: reshaping features with non-reindexed edge index leads to large cache stored in GPU memory.")
+            self.is_warning = True
+        
         max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
+        feature_dim = x_src.size(1)
+        
+        if feature_dim not in self.cache or self.cache[feature_dim].cache.shape[0] <= max_num_node:
+            self.cache[feature_dim] = _Cache((max_num_node, feature_dim), self.device)
+        self.cache[feature_dim].detach()
         
         # To avoid storing gradients from all nodes, we detach() BEFORE caching. If we detach()
         # after storing, we loose the gradient for all operations happening before the reindexing.
-        cache.detach()
+        output = self.cache[feature_dim].cache
+        output.detach()
+        output.zero_()
         
         if x_is_tuple:
-            cache.src_cache[edge_index[0, :]] = x_src
-            cache.dst_cache[edge_index[1, :]] = x_dst
-            x = (cache.src_cache[:max_num_node, :], cache.dst_cache[:max_num_node, :])
+            scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
+            x_src_result = output.clone()
+            output.zero_()
+            
+            scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
+            x_dst_result = output.clone()
+            return x_src_result[:max_num_node], x_dst_result[:max_num_node]
         else:
-            cache.src_cache[edge_index[0, :]] = x_src
-            cache.src_cache[edge_index[1, :]] = x_dst
-            x = cache.src_cache[:max_num_node, :]
-        
-        return x
+            scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
+            scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
+            return output[:max_num_node]
     
     def reindex_graph(self, data, x_is_tuple=False):
         """
@@ -296,7 +361,7 @@ class GraphReindexer:
         
         return data
     
-    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False):
+    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False, max_num_node=None):
         """
         Reindexes edge_index with indices starting from 0.
         Also reshapes the node features.
@@ -309,7 +374,7 @@ class GraphReindexer:
         edge_index = self.assoc[edge_index]
         
         # Associates each feature vector to each reindexed node ID
-        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple)
+        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple, max_num_node=max_num_node)
         
         return x, edge_index, n_id
     

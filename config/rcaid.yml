@@ -30,13 +30,14 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 15
+    num_epochs: 12
     patience: 3
     lr: 0.0001
     weight_decay: 0.0001
     node_hid_dim: 128
     node_out_dim: 3
     inference_device: cuda
+    grad_accumulation: 1
     encoder:
       node_features: node_emb
       neighbor_sampling: []

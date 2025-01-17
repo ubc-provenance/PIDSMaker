@@ -28,13 +28,14 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 15
+    num_epochs: 12
     patience: 3
     lr: 0.01
     weight_decay: 0.0005
     node_hid_dim: 30
     node_out_dim: 3
     inference_device: cuda
+    grad_accumulation: 1
     encoder:
       node_features: node_emb
       neighbor_sampling: [-1, -1]
@@ -54,6 +55,6 @@ detection:
     ground_truth_version: orthrus
     used_method: node_evaluation
     node_evaluation:
-      threshold_method: max_val_loss # flash
+      threshold_method: flash
       use_dst_node_loss: True
       use_kmeans: False

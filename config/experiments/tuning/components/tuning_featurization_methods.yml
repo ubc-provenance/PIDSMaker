@@ -6,6 +6,9 @@ metric:
 parameters:
   embedding_techniques:
     values: [
+      tuned_word2vec_train,
+      tuned_word2vec_all,
+
       tuned_word2vec_alacarte_train,
       tuned_word2vec_alacarte_all,
       

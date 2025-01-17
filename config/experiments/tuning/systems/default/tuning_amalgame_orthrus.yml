@@ -1,0 +1,18 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  detection.gnn_training.lr:
+    values: [0.001, 0.0001]
+  detection.gnn_training.encoder.dropout:
+    values: [0.3]
+
+  featurization.embed_nodes.used_method:
+    values: [hierarchical_hashing, fasttext, feature_word2vec, only_type]
+  detection.gnn_training.decoder.used_methods:
+    values: [predict_node_type, reconstruct_node_features, predict_edge_type]
+  detection.gnn_training.encoder.used_methods:
+    values: [none, tgn-graph_attention, sum_aggregation]
+    

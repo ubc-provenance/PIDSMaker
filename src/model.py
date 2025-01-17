@@ -3,6 +3,7 @@ from config import *
 import torch.nn as nn
 from encoders import TGNEncoder
 from experiments.uncertainty import activate_dropout_inference
+from decoders import NodeTypePrediction
 
 
 class Model(nn.Module):
@@ -55,36 +56,37 @@ class Model(nn.Module):
         train_mode = not inference
         x = self._reshape_x(batch)
         edge_index = batch.edge_index
+        num_nodes = len(batch.edge_index.unique())
 
         with torch.set_grad_enabled(train_mode):
             h = self.embed(batch, full_data, inference=inference)
-
-            num_elements = None
-            if self.node_level:
-                h_src, h_dst = None, None
-                num_elements = h.shape[0]
+            
+            if isinstance(h, tuple):
+                h_src, h_dst = h
             else:
                 # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
                 # Here we simply transform to get a shape (E, d)
                 h_src, h_dst = (h[edge_index[0]], h[edge_index[1]]) \
                     if isinstance(h, torch.Tensor) else h
             
-                # Same for features
-                if x[0].shape[0] != edge_index.shape[1]:
+            if self.node_level:
+                if isinstance(h, tuple):
+                    h, _, n_id = self.graph_reindexer._reindex_graph(edge_index, h[0], h[1]) # TODO: duplicate with the one in TGN encoder, remove
+                    batch.original_n_id = n_id
+                if isinstance(x, tuple):
+                    x, _, n_id = self.graph_reindexer._reindex_graph(edge_index, x[0], x[1])
+                    batch.original_n_id = n_id
+                
+            else:
+                if not isinstance(x, tuple):
                     x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
-                    
-                num_elements = h_src.shape[0]
-
-            # if self.use_contrastive_learning:
-            #     involved_nodes = edge_index.flatten()
-            #     self.last_h_storage[involved_nodes] = torch.cat([h_src, h_dst]).detach()
-            #     self.last_h_non_empty_nodes = torch.cat([involved_nodes, self.last_h_non_empty_nodes]).unique()
             
             # Train mode: loss | Inference mode: scores
-            loss_or_scores = (torch.zeros(1) if train_mode else \
-                torch.zeros(num_elements, dtype=torch.float)).to(edge_index.device)
+            loss_or_scores = None
             
             for objective in self.decoders:
+                node_type = self.get_node_type_if_needed(batch, objective)
+                    
                 results = objective(
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
@@ -95,10 +97,15 @@ class Model(nn.Module):
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
-                    node_type=getattr(batch, "node_type", None),
+                    node_type=node_type,
                     validation=validation,
                 )
                 loss = results["loss"]
+                
+                if loss_or_scores is None:
+                    loss_or_scores = (torch.zeros(1) if train_mode else \
+                        torch.zeros(loss.shape[0], dtype=torch.float)).to(edge_index.device)
+                
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
                 loss_or_scores = loss_or_scores + loss
@@ -106,7 +113,7 @@ class Model(nn.Module):
             return results
     
     def _reshape_x(self, batch):
-        if self.node_level:
+        if self.node_level and hasattr(batch, "x"):
             x = batch.x
         else:
             x = (batch.x_src, batch.x_dst)
@@ -136,3 +143,13 @@ class Model(nn.Module):
         
         if self.is_running_mc_dropout:
             activate_dropout_inference(self)
+
+    def get_node_type_if_needed(self, batch, objective):
+        node_type = getattr(batch, "node_type", None)
+        # Special case when TGN is used with node type pred, the batch is not already reindexed so we reindex
+        # only to get node types as shape (N, d)
+        if isinstance(objective.objective, NodeTypePrediction) and node_type is None:
+            reindexed_batch = self.graph_reindexer.reindex_graph(batch)
+            node_type = reindexed_batch.node_type
+        return node_type
+    

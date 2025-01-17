@@ -10,7 +10,7 @@ from encoders import *
 from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments.uncertainty import add_dropout_to_model
+from experiments.uncertainty import add_dropout_to_model, IdentityWrapper
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -77,7 +77,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         original_in_dim = in_dim
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
-    for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.split(",")):
+    for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(",")):
         if method == "tgn":
             pass
         elif method == "graph_attention":
@@ -89,6 +89,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 activation=activation_fn_factory(cfg.detection.gnn_training.encoder.graph_attention.activation),
                 dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
+                concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
             )
         elif method == "sage":
             encoder = SAGE(
@@ -152,6 +153,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 edge_dim=edge_dim or None,
                 # activation=activation_fn_factory("relu"),
             )
+        elif method == "none":
+            encoder = LinearEncoder(in_dim, node_out_dim)
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -163,6 +166,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
         use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
         tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
+        use_buggy_orthrus_TGN = cfg.detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN
 
         if use_memory:
             memory = TGNMemory(
@@ -202,6 +206,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             edge_dim=edge_dim,
             use_time_order_encoding=use_time_order_encoding,
             tgn_neighbor_n_hop=tgn_neighbor_n_hop,
+            use_buggy_orthrus_TGN=use_buggy_orthrus_TGN,
         )
 
     return encoder

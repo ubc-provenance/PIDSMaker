@@ -3,6 +3,7 @@ from provnet_utils import *
 
 from .transformation_utils import add_arbitrary_timestamps_to_graph
 
+
 def identify_root_nodes(G):
     root_nodes = set()
 
@@ -10,7 +11,7 @@ def identify_root_nodes(G):
         out_edges = list(G.out_edges(node, data=True))
         in_edges = list(G.in_edges(node, data=True))
 
-        # out edge timestamp
+        # out edge
         earliest_out_time = min(edge[2]['time'] for edge in out_edges) if out_edges else None
         # in
         earliest_in_time = min(edge[2]['time'] for edge in in_edges) if in_edges else None
@@ -21,7 +22,8 @@ def identify_root_nodes(G):
 
     return root_nodes
 
-def create_pseudo_graph(G,root_nodes):
+
+def create_pseudo_graph(G, root_nodes):
     """
     Create a pseudo-graph G' based on the original graph G.
     Each pseudo-root retains the initial feature vector of the original root node,
@@ -39,7 +41,6 @@ def create_pseudo_graph(G,root_nodes):
     for node, attr in G.nodes(data=True):
         pseudo_graph.add_node(node, **attr)
 
-
     # Step 3: Create pseudo-root nodes and add edges to descendants
     for root in root_nodes:
         # Create pseudo-root node (retaining the same initial feature vector)
@@ -52,6 +53,7 @@ def create_pseudo_graph(G,root_nodes):
             pseudo_graph.add_edge(pseudo_root, descendant)
 
     return pseudo_graph
+
 
 def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
     """
@@ -86,20 +88,22 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
 
     return pseudo_graph
 
+
 def remove_pseudo_prefix(graph):
     mapping = {node: node.replace("pseudo_", "") for node in graph.nodes()}
     graph = nx.relabel_nodes(graph, mapping)
 
     return graph
 
+
 def main(graph: nx.Graph, cfg) -> nx.Graph:
     root_nodes = identify_root_nodes(graph)
     pseudo_graph = create_pseudo_graph(graph, root_nodes)
-    
+
     use_pruning = cfg.preprocessing.transformation.rcaid_pseudo_graph.use_pruning
     if use_pruning:
         pseudo_graph = prune_pseudo_roots(pseudo_graph, graph, 0.5)
-        
+
     pseudo_graph = remove_pseudo_prefix(pseudo_graph)
     pseudo_graph = add_arbitrary_timestamps_to_graph(original_G=graph, new_G=pseudo_graph)
     pseudo_graph = nx.MultiDiGraph(pseudo_graph)

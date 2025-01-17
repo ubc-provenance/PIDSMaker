@@ -116,6 +116,25 @@ def plot_simple_scores(scores, y_truth, out_file):
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
 
+def plot_score_seen(scores, y_truth, out_file):
+    scores_0 = [score for score, label in zip(scores, y_truth) if label == 0]
+    scores_1 = [score for score, label in zip(scores, y_truth) if label == 1]
+
+    # Positions on the y-axis for the scatter plot (can be zero or any other constant)
+    y_zeros = [0] * len(scores_0)  # All zeros at y=0
+    y_ones = [1] * len(scores_1)  # All ones at y=1, you can also keep them at y=0 if you prefer
+
+    plt.figure(figsize=(6, 2))  # Width, height in inches
+    plt.scatter(scores_0, y_zeros, color='green')
+    plt.scatter(scores_1, y_ones, color='red')
+
+    plt.xlabel('Node anomaly scores')
+    plt.yticks([0, 1], ['Seen', 'Unseen'])
+    plt.ylim(-0.1, 1.1)  # Adjust if necessary to bring them even closer
+
+    plt.tight_layout()  # Ensures everything fits within the figure area
+    plt.savefig(out_file)
+
 def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
     node_to_path = get_node_to_path_and_type(cfg)
     paths, types = [], []
@@ -316,17 +335,20 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
     area_under_curve = np.trapz(max_detected_attacks_percentages, unique_precisions) / 100
 
     # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(unique_precisions, max_detected_attacks_percentages, color='b', label=f'Area under curve = {area_under_curve:.2f}')
-    plt.fill_between(unique_precisions, max_detected_attacks_percentages, color='blue', alpha=0.2)
-    plt.xlabel("Precision")
-    plt.ylabel("% of Detected Attacks")
-    plt.title("Percentage of Detected Attacks vs Precision")
-    plt.legend(loc="lower left")
-    plt.xlim(0, 1)
-    plt.ylim(0, 100.5)
-    plt.grid(True)
-    plt.savefig(out_file)
+    try:
+        plt.figure(figsize=(10, 6))
+        plt.plot(unique_precisions, max_detected_attacks_percentages, color='b', label=f'Area under curve = {area_under_curve:.2f}')
+        plt.fill_between(unique_precisions, max_detected_attacks_percentages, color='blue', alpha=0.2)
+        plt.xlabel("Precision")
+        plt.ylabel("% of Detected Attacks")
+        plt.title("Percentage of Detected Attacks vs Precision")
+        plt.legend(loc="lower left")
+        plt.xlim(0, 1)
+        plt.ylim(0, 100.5)
+        plt.grid(True)
+        plt.savefig(out_file)
+    except:
+        print("Error while generating ADP plot")
     return area_under_curve
     
 def plot_recall_vs_precision(scores, nodes, node2attacks, labels, out_file):
@@ -418,12 +440,6 @@ def get_ground_truth_uuid_to_node_id(cfg):
     ground_truth_nids, ground_truth_paths, uuid_to_node_id = labelling.get_ground_truth(cfg)
     return uuid_to_node_id
 
-def get_start_end_from_graph(graph):
-    time_list = []
-    for u, v, k, data in graph.edges(keys=True, data=True):
-        time_list.append(int(data['time']))
-    return min(time_list), max(time_list)
-
 def compute_tw_labels(cfg):
     """
     Gets the malcious node IDs present in each time window.
@@ -431,37 +447,32 @@ def compute_tw_labels(cfg):
     out_path = cfg.preprocessing.build_graphs._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
     uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
-
-    if os.path.exists(out_file):
-        os.remove(out_file)
     
-    if not os.path.exists(out_file):
-        log(f"Computing time-window labels...")
-        os.makedirs(out_path, exist_ok=True)
+    log(f"Computing time-window labels...")
+    os.makedirs(out_path, exist_ok=True)
 
-        t_to_node = labelling.get_t2malicious_node(cfg)
-        # test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    t_to_node = labelling.get_t2malicious_node(cfg)
+    # test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
 
-        graph_dir = cfg.preprocessing.transformation._graphs_dir
-        test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
+    graph_dir = cfg.preprocessing.transformation._graphs_dir
+    test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
 
-        num_found_event_labels = 0
-        tw_to_malicious_nodes = defaultdict(list)
-        for i, tw in enumerate(test_graphs):
-            graph = torch.load(tw)
-            start, end  = get_start_end_from_graph(graph)
-
-            # start = tw.t.min().item()
-            # end = tw.t.max().item()
-            
-            for t, node_ids in t_to_node.items():
-                if start < t < end:
-                    for node_id in node_ids: # src, dst, or [src, dst] malicious nodes
-                        tw_to_malicious_nodes[i].append(node_id)
-                    num_found_event_labels += 1
-                    
-        log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
-        torch.save(tw_to_malicious_nodes, out_file)
+    num_found_event_labels = 0
+    tw_to_malicious_nodes = defaultdict(list)
+    for i, tw in enumerate(test_graphs):
+        graph = torch.load(tw)
+        
+        date = tw.split("/")[-1]
+        start, end = datetime_to_ns_time_US(date.split("~")[0]), datetime_to_ns_time_US(date.split("~")[1])
+        
+        for t, node_ids in t_to_node.items():
+            if start < t < end:
+                for node_id in node_ids: # src, dst, or [src, dst] malicious nodes
+                    tw_to_malicious_nodes[i].append(node_id)
+                num_found_event_labels += 1
+                
+    log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
+    torch.save(tw_to_malicious_nodes, out_file)
         
     # Used to retrieve node ID from node raw UUID
     # node_labels_path = os.path.join(cfg._ground_truth_dir, cfg.dataset.ground_truth_events_relative_path)
@@ -469,7 +480,6 @@ def compute_tw_labels(cfg):
     # uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
     
     # Create a mapping TW number => malicious node IDs
-    tw_to_malicious_nodes = torch.load(out_file)
     for tw, nodes in tw_to_malicious_nodes.items():
         unique_nodes, counts = np.unique(nodes, return_counts=True)
         node_to_count = {node: count for node, count in zip(unique_nodes, counts)}

@@ -1,0 +1,10 @@
+# ADP@0.612 => https://wandb.ai/tristan_research/tuning_amalgame_linear/sweeps/dl233fd6?nw=nwusertristanbilot
+
+featurization:
+  embed_nodes:
+    emb_dim: 256
+
+detection:
+  gnn_training:
+    lr: 0.001
+    node_out_dim: 128

@@ -64,9 +64,10 @@ detection:
     weight_decay: 0.00001
     node_hid_dim: 128
     node_out_dim: 64
-    edge_batch_size: 51200
+    edge_batch_size: 1
+    batch_mode: minutes
     inference_device: cpu
-
+    grad_accumulation: 1
     
     encoder:
       neighbor_sampling: []
@@ -77,6 +78,7 @@ detection:
       graph_attention:
         activation: relu
         num_heads: 8
+        concat: True
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 10
@@ -87,6 +89,7 @@ detection:
         use_node_feats_in_gnn: True
         use_memory: False
         use_time_order_encoding: False
+        use_buggy_orthrus_TGN: True
       sage:
         activation: relu
     decoder:

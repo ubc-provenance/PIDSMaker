@@ -14,7 +14,3 @@ parameters:
     values: [128, 256]
   detection.gnn_training.node_out_dim:
     values: [-1]
-  featurization.embed_nodes.epochs:
-    values: [10]
-  preprocessing.transformation.used_methods:
-    values: [none]

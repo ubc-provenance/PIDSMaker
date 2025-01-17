@@ -1,0 +1,11 @@
+# Simply runs an experiment N times and return the mean of metrics + std
+
+training_loop:
+  run_evaluation: each_epoch
+
+experiment:
+  used_method: uncertainty
+  uncertainty:
+    deep_ensemble:
+      iterations: 5
+      restart_from: embed_nodes

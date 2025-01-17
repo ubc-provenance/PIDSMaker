@@ -1,4 +1,9 @@
-# https://wandb.ai/tristan_research/tuning_orthrus/runs/gaiu0hjs?nw=nwusertristanbilot
+# ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_orthrus/runs/gaiu0hjs?nw=nwusertristanbilot
+
+preprocessing:
+  build_graphs:
+    time_window_size: 3.0
+
 detection:
   gnn_training:
     lr: 0.0005

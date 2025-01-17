@@ -1,6 +1,5 @@
 from provnet_utils import *
 
-
 def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> nx.Graph:
     """
     Some transformations change the shape of the graph by adding or removing edges.
@@ -14,8 +13,8 @@ def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> 
     timestamps = [edge[2]["time"] for edge in original_G.edges(data=True)]
     min_t, max_t = min(timestamps), max(timestamps)
     rand_t = np.random.randint(min_t, max_t, size=len(new_G.edges()))
-    
+
     for t, (src, dst) in zip(rand_t, new_G.edges()):
         new_G[src][dst]["time"] = t
-    
+
     return new_G

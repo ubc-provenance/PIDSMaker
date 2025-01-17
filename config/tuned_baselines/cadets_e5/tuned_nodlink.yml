@@ -1,0 +1,16 @@
+preprocessing:
+  transformation:
+    used_methods: none
+
+featurization:
+  embed_nodes:
+    epochs: 20
+
+detection:
+  gnn_training:
+    lr: 0.0001
+    node_out_dim: 128
+    node_hid_dim: 128
+    encoder:
+      dropout: 0.2
+  
