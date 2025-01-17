@@ -11,6 +11,6 @@ featurization:
 detection:
   gnn_training:
     lr: 0.001
-    node_out_dim: 64
+    node_hid_dim: 64
     encoder:
       dropout: 0.3
