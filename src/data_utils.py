@@ -236,11 +236,11 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
 
     return data
 
-def batch_temporal_data(data: CollatableTemporalData, batch_size: int, batch_mode: str, cfg) -> list[CollatableTemporalData]:
+def batch_temporal_data(data: CollatableTemporalData, batch_size: float, batch_mode: str, cfg) -> list[CollatableTemporalData]:
     if batch_mode == "edges":
         num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
         
-        data_list = [data[i*batch_size: (i+1)*batch_size] for i in range(num_batches)]
+        data_list = [data[int(i*batch_size): int((i+1)*batch_size)] for i in range(num_batches)]
         return data_list
     
     elif batch_mode == "minutes":
