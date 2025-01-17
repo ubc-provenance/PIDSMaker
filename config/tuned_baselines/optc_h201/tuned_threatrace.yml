@@ -1,0 +1,13 @@
+#ADP@0.991 => https://wandb.ai/tristan_research/framework_tuning_threatrace/sweeps/ybqb5mtl/table?nw=nwuserbaoxiang
+
+preprocessing:
+  build_graphs:
+    time_window_size: 15.0
+
+detection:
+  gnn_training:
+    lr: 0.0001
+    node_hid_dim: 64
+    # node_out_dim: -1
+    encoder:
+      dropout: 0.3

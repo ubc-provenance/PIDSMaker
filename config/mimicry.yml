@@ -59,14 +59,13 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 12
+    num_epochs: 15
     patience: 3
     lr: 0.00001
     weight_decay: 0.00001
     node_hid_dim: 128
     node_out_dim: 64
     inference_device: cuda
-    grad_accumulation: 1
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
@@ -76,7 +75,6 @@ detection:
       graph_attention:
         activation: relu
         num_heads: 8
-        concat: True
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 1024
@@ -87,7 +85,6 @@ detection:
         use_node_feats_in_gnn: True
         use_memory: False
         use_time_order_encoding: False
-        use_buggy_orthrus_TGN: True
       sage:
         activation: relu
     decoder:
@@ -97,9 +94,6 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu
-      reconstruct_node_features:
-        loss: MSE # MSE_sum originally but too large loss
-        decoder: nodlink
       # predict_edge_contrastive:
       #   neg_sampling_method: previously_seen_nodes
       #   used_method: linear

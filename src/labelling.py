@@ -1,3 +1,4 @@
+import os.path
 from collections import defaultdict
 
 from config import *
@@ -5,7 +6,7 @@ from provnet_utils import *
 
 def get_ground_truth(cfg):
     cur, connect = init_database_connection(cfg)
-    uuid2nids, _ = get_uuid2nids(cur)
+    uuid2nids, nid2uuid = get_uuid2nids(cur)
 
     ground_truth_nids, ground_truth_paths = [], {}
     uuid_to_node_id = {}
@@ -18,6 +19,22 @@ def get_ground_truth(cfg):
                 ground_truth_nids.append(int(node_id))
                 ground_truth_paths[int(node_id)] = node_labels
                 uuid_to_node_id[node_uuid] = str(node_id)
+
+    if cfg.preprocessing.build_graphs.mimicry_edge_num > 0:
+        num_GPs= len(ground_truth_nids)
+        for file in cfg.dataset.ground_truth_relative_path:
+            file_name = file.split('/')[-1]
+            with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, file_name), 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    node_uuid, node_labels, _ = row[0], row[1], row[2]
+                    node_id = uuid2nids[node_uuid]
+                    ground_truth_nids.append(int(node_id))
+                    ground_truth_paths[int(node_id)] = node_labels
+                    uuid_to_node_id[node_uuid] = str(node_id)
+        num_mimicry_GPs = len(ground_truth_nids) - num_GPs
+        log(f"{num_mimicry_GPs} mimicry ground truth nodes loaded")
+
     return set(ground_truth_nids), ground_truth_paths, uuid_to_node_id
 
 def get_GP_of_each_attack(cfg):
@@ -37,6 +54,17 @@ def get_GP_of_each_attack(cfg):
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
                 node_id = uuid2nids[node_uuid]
                 attack_to_nids[i]["nids"].add(int(node_id))
+
+        if cfg.preprocessing.build_graphs.mimicry_edge_num > 0:
+            num_mimicry_GPs = 0
+            with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, path.split('/')[-1]), 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    num_mimicry_GPs += 1
+                    node_uuid, node_labels, _ = row[0], row[1], row[2]
+                    node_id = uuid2nids[node_uuid]
+                    attack_to_nids[i]["nids"].add(int(node_id))
+            log(f"{num_mimicry_GPs} mimicry ground truth nodes loaded")
     return attack_to_nids
 
 
@@ -92,22 +120,33 @@ def get_t2malicious_node(cfg) -> dict[list]:
         start_time = datetime_to_ns_time_US(attack_tuple[1])
         end_time = datetime_to_ns_time_US(attack_tuple[2])
 
-        ground_truth_nids = []
+        ground_truth_nids = set()
         with open(os.path.join(cfg._ground_truth_dir, attack), 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
                 node_id = uuid2nids[node_uuid]
-                ground_truth_nids.append(str(node_id))
+                ground_truth_nids.add(str(node_id))
 
-            rows = get_events(cur, start_time, end_time)
-            for row in rows:
-                src_id = row[1]
-                dst_id = row[4]
-                t = row[6]
-                if src_id in ground_truth_nids:
-                    t_to_node[int(t)].append(nid2uuid[int(src_id)])
-                if dst_id in ground_truth_nids:
-                    t_to_node[int(t)].append(nid2uuid[int(dst_id)])
+        if cfg.preprocessing.build_graphs.mimicry_edge_num > 0:
+            num_GPs= len(ground_truth_nids)
+            with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, attack.split('/')[-1]), 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    node_uuid, node_labels, _ = row[0], row[1], row[2]
+                    node_id = uuid2nids[node_uuid]
+                    ground_truth_nids.add(str(node_id))
+            num_mimicry_GPs = len(ground_truth_nids) - num_GPs
+            log(f"{num_mimicry_GPs} mimicry nodes loaded")
+
+        rows = get_events(cur, start_time, end_time)
+        for row in rows:
+            src_id = row[1]
+            dst_id = row[4]
+            t = row[6]
+            if src_id in ground_truth_nids:
+                t_to_node[int(t)].append(nid2uuid[int(src_id)])
+            if dst_id in ground_truth_nids:
+                t_to_node[int(t)].append(nid2uuid[int(dst_id)])
 
     return t_to_node

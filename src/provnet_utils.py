@@ -580,3 +580,62 @@ def calculate_average_from_file(filename):
     except FileNotFoundError:
         log(f"{filename} does not exist")
         return None
+
+def get_events_between_GPs(cur,
+               start_time,
+               end_time,
+               malicious_nodes : list):
+    malicious_nodes_str = ', '.join(f"'{node}'" for node in malicious_nodes)
+    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' AND src_index_id IN ({malicious_nodes_str}) AND dst_index_id IN ({malicious_nodes_str});"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    return rows
+
+def get_events_between_time_range(cur,
+               start_time,
+               end_time,):
+    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}';"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    return rows
+
+def generate_DAG(edges):
+    node_version = {}
+    for (u, v, t) in edges:
+        if u not in node_version:
+            node_version[u] = 0
+        if v not in node_version:
+            node_version[v] = 0
+
+    sorted_edges = sorted(edges, key=lambda x: x[2])
+
+    new_nodes = set()
+    new_edges = []
+    visited = set()
+    for u, v, t in sorted_edges:
+
+        if u == v:
+            continue
+
+        src = str(u) + '-' + str(node_version[u])
+        visited.add(u)
+        new_nodes.add(src)
+
+        if v not in visited:
+            dst = str(v) + '-' + str(node_version[v])
+            visited.add(v)
+            new_nodes.add(dst)
+            new_edges.append((src, dst, {'time': int(t)}))
+        else:
+            dst_current = str(v) + '-' + str(node_version[v])
+            dst_new = str(v) + '-' + str(node_version[v] + 1)
+            node_version[v] += 1
+            new_nodes.add(dst_new)
+            new_edges.append((src, dst_new, {'time': int(t)}))
+            new_edges.append((dst_current, dst_new, {'time': int(t)}))
+
+    DAG = nx.DiGraph()
+    DAG.add_nodes_from(list(new_nodes))
+    DAG.add_edges_from(new_edges)
+
+    return DAG, node_version
