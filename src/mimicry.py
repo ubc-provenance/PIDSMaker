@@ -9,7 +9,6 @@ import csv
 from config import *
 from provnet_utils import *
 
-from count_GT import get_events_between_GPs, generate_DAG, get_events_between_time_range
 import networkx as nx
 
 possible_structure = [
