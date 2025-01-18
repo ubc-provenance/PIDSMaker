@@ -1,0 +1,7 @@
+"Name","Tags","adp_score","mcc","tp","fp","tn","fn","detection.gnn_training.decoder.predict_node_type.node_mlp.architecture_str"
+"mimicry_5000","CADETS_E3, threatrace","0.917","-0.00178","1644","280855","68","1",""
+"mimicry_4000","CADETS_E3, threatrace","0.954","0","1357","281005","0","0",""
+"mimicry_3000","CADETS_E3, threatrace","0.884","0","1089","281085","0","0",""
+"mimicry_2000","CADETS_E3, threatrace","0.908","0.01161","781","264988","16199","5",""
+"mimicry_1000","CADETS_E3, threatrace","0.602","0.07943","338","34320","247023","88",""
+"mimicry_0","CADETS_E3, threatrace","0.004","-0.01436","67","281449","68","1",""
