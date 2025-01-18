@@ -151,7 +151,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
     include_edge_type = rel2id
 
     mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
-    if mimicry_edge_num > 0:
+    if mimicry_edge_num is not None and mimicry_edge_num > 0:
         attack_mimicry_events = mimicry.gen_mimicry_edges(cfg)
     else:
         attack_mimicry_events = defaultdict(list)
