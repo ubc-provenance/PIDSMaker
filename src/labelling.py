@@ -20,7 +20,8 @@ def get_ground_truth(cfg):
                 ground_truth_paths[int(node_id)] = node_labels
                 uuid_to_node_id[node_uuid] = str(node_id)
 
-    if cfg.preprocessing.build_graphs.mimicry_edge_num > 0:
+    mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
+    if mimicry_edge_num is not None and mimicry_edge_num > 0:
         num_GPs= len(ground_truth_nids)
         for file in cfg.dataset.ground_truth_relative_path:
             file_name = file.split('/')[-1]
@@ -55,7 +56,8 @@ def get_GP_of_each_attack(cfg):
                 node_id = uuid2nids[node_uuid]
                 attack_to_nids[i]["nids"].add(int(node_id))
 
-        if cfg.preprocessing.build_graphs.mimicry_edge_num > 0:
+        mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
+        if mimicry_edge_num is not None and mimicry_edge_num > 0:
             num_mimicry_GPs = 0
             with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, path.split('/')[-1]), 'r') as f:
                 reader = csv.reader(f)
@@ -128,7 +130,8 @@ def get_t2malicious_node(cfg) -> dict[list]:
                 node_id = uuid2nids[node_uuid]
                 ground_truth_nids.add(str(node_id))
 
-        if cfg.preprocessing.build_graphs.mimicry_edge_num > 0:
+        mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
+        if mimicry_edge_num is not None and mimicry_edge_num > 0:
             num_GPs= len(ground_truth_nids)
             with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, attack.split('/')[-1]), 'r') as f:
                 reader = csv.reader(f)
