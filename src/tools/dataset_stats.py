@@ -74,6 +74,7 @@ def get_stats(cfg):
 
     node_num_list = train_n_num_list + val_n_num_list + test_n_num_list + unused_n_num_list
     results["avg_tw_node_number"] = sum(node_num_list) / len(node_num_list)
+    results["max_edges_per_tw"] = max([*train_e_num_list, *val_e_num_list, *test_e_num_list, *unused_e_num_list])
 
     return results
 
