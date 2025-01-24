@@ -186,6 +186,8 @@ def main(cfg, project, exp, **kwargs):
             wandb.log(minimum_metrics)
             wandb.log(maximum_metrics)
             
+            push_best_files_to_wandb(method_to_metrics, cfg)
+            
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
     

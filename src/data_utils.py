@@ -10,6 +10,7 @@ from torch_geometric.data.data import size_repr
 from torch_scatter import scatter
 
 from encoders import TGNEncoder
+from provnet_utils import log_dataset_stats
 
 class CollatableTemporalData(TemporalData):
     """
@@ -80,6 +81,8 @@ def load_all_datasets(cfg, only_keep=None):
     
     elif batch_size_inference not in [None, 0]:
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
+        
+    log_dataset_stats(train_data, val_data, test_data)
     
     return train_data, val_data, test_data, full_data, max_node
 

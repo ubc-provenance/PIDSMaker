@@ -637,3 +637,15 @@ def generate_DAG(edges):
     DAG.add_edges_from(new_edges)
 
     return DAG, node_version
+
+def log_dataset_stats(train_data, val_data, test_data):
+    log("")
+    log("Dataset statistics")
+    for label, dataset in [("Train", train_data), ("Val", val_data), ("Test", test_data)]:
+        edges = torch.tensor([d.src.shape[0] for d in dataset])
+        nodes = torch.tensor([torch.unique(d.edge_index).shape[0] for d in dataset])
+
+        log(f"{label} num graphs: {len(dataset)}")
+        log(f"{label} edges | mean: {int(torch.mean(edges, dtype=torch.float))} | min: {int(torch.min(edges))} | max: {int(torch.max(edges))}")
+        log(f"{label} nodes | mean: {int(torch.mean(nodes, dtype=torch.float))} | min: {int(torch.min(nodes))} | max: {int(torch.max(nodes))}")
+        log("")
