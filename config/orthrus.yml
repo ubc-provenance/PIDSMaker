@@ -97,6 +97,7 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 2
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink

@@ -222,6 +222,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
             dropout=cfg.detection.gnn_training.encoder.dropout,
+            src_dst_projection_coef=cfg.detection.gnn_training.decoder.predict_edge_type.edge_mlp.src_dst_projection_coef,
         )
     elif method == "node_mlp":
         return NodeMLPDecoder(

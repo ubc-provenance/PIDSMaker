@@ -94,6 +94,7 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 2
       # predict_edge_contrastive:
       #   neg_sampling_method: previously_seen_nodes
       #   used_method: linear
