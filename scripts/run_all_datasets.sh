@@ -16,7 +16,7 @@ COMMAND=$1
 ADDITIONAL_ARGS="${@:2}"
 
 # Construct the nohup command
-NOHUP_CMD="nohup sh -c \""
+NOHUP_CMD=""
 
 for DATASET in "${DATASETS[@]}"; do
   if [ "$DATASET" != "${DATASETS[-1]}" ]; then
@@ -26,9 +26,7 @@ for DATASET in "${DATASETS[@]}"; do
   fi
 done
 
-NOHUP_CMD+="\" &"
-
-eval "$NOHUP_CMD"
+nohup bash -c "$NOHUP_CMD" &
 
 # Notify the user
 echo "Command is running in the background with nohup."

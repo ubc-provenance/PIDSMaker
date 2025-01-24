@@ -70,9 +70,9 @@ def standard_evaluation(cfg, evaluation_fn):
             best_adp = stats["adp_score"]
             best_stats = stats
         
-    if save_files_to_wandb:
-        # We only store the scores for the best run
-        wandb.save(best_stats["scores_file"], out_dir)
+    # if save_files_to_wandb:
+    #     # We only store the scores for the best run
+    #     wandb.save(best_stats["scores_file"], out_dir)
     
     return best_stats
 

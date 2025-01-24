@@ -455,7 +455,7 @@ def get_node_to_path_and_type(cfg):
         
     return node_to_path_type
 
-def build_mlp_from_string(arch_str, in_dim, out_dim):
+def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
     def parse_layer(layer_str, in_dim):
         layers = []
         parts = layer_str.lower().split(',')
@@ -469,9 +469,7 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
                 in_dim = out_dim  # Update in_dim for the next layer
                 
             elif part.startswith('dropout'):
-                _, dropout_prob = part.split('(')
-                dropout_prob = float(dropout_prob.strip(')'))
-                layers.append(nn.Dropout(dropout_prob))
+                layers.append(nn.Dropout(dropout))
             
             elif part == 'tanh':
                 layers.append(nn.Tanh())

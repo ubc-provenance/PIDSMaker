@@ -1,0 +1,30 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  detection.gnn_training.encoder.used_methods:
+    values: [linear]
+  # detection.gnn_training.decoder.predict_edge_type.edge_mlp.architecture_str:
+  #   values: [linear(0.5) | relu | dropout]
+  detection.gnn_training.num_epochs:
+    values: [16]
+  detection.gnn_training.batch_mode:
+    values: [edges]
+  detection.gnn_training.edge_batch_size:
+    values: [256.0, 512.0, 1024.0]
+  detection.gnn_training.lr:
+    values: [0.001, 0.0001]
+  detection.gnn_training.node_out_dim:
+    values: [128, 64, 256]
+  # featurization.embed_nodes.emb_dim:
+  #   values: [128, 64]
+
+  featurization.embed_nodes.used_method:
+    values: [feature_word2vec]
+  detection.gnn_training.decoder.used_methods:
+    values: [predict_edge_type]
+  detection.gnn_training.encoder.node_features:
+    values: [node_emb-node_type]
+  

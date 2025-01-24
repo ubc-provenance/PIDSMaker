@@ -15,4 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-python ../src/benchmark.py $args --wandb --force_restart=build_graphs,transformation,embed_nodes,embed_edges,gnn_training,evaluation,tracing
+python ../src/benchmark.py $args --wandb --restart_from_scratch

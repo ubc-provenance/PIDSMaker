@@ -67,7 +67,7 @@ def get_task_to_module(cfg):
         },
     }
 
-def main(cfg, project, **kwargs):
+def main(cfg, project, exp, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
@@ -201,7 +201,7 @@ def main(cfg, project, **kwargs):
         sweep_id = wandb.sweep(sweep_config, project=project)
         
         def run_pipeline_from_sweep(cfg):
-            with wandb.init():
+            with wandb.init(name=exp):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
 
@@ -212,7 +212,7 @@ def main(cfg, project, **kwargs):
                 run_pipeline_with_experiments(cfg)
         
         count = sweep_config["count"] if "count" in sweep_config else None
-        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=count)
+        wandb.agent("sweep_id", lambda: run_pipeline_from_sweep(cfg), count=count)
     
     log("==" * 30)
     log("Run finished.")
@@ -227,7 +227,7 @@ if __name__ == '__main__':
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
-    PROJECT_PREFIX = "framework_"
+    PROJECT_PREFIX = "uncertainty_exp_"
     if args.project != "":
         project = args.project
     elif args.tuning_mode == "hyperparameters":
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     cfg = get_yml_cfg(args)
     wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
 
-    main(cfg, project=project)
+    main(cfg, project=project, exp=exp_name)
     
     wandb.finish()
     
