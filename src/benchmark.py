@@ -212,7 +212,7 @@ def main(cfg, project, exp, **kwargs):
                 run_pipeline_with_experiments(cfg)
         
         count = sweep_config["count"] if "count" in sweep_config else None
-        wandb.agent("sweep_id", lambda: run_pipeline_from_sweep(cfg), count=count)
+        wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=count)
     
     log("==" * 30)
     log("Run finished.")
