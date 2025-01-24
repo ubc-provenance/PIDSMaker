@@ -417,6 +417,64 @@ def plot_recall_vs_precision(scores, nodes, node2attacks, labels, out_file):
     plt.savefig(out_file)
     return area_under_curve
 
+def plot_discrimination_metric(scores, y_truth, out_file):
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+    anomalous_scores = scores[y_truth == 1]
+    benign_scores = scores[y_truth == 0]
+
+    # Define the top K value
+    K = len(anomalous_scores)
+
+    # Get top K scores for anomalies and benign samples
+    top_anomalous_scores = np.sort(anomalous_scores)[-K:][::-1]
+    top_benign_scores = np.sort(benign_scores)[-K:][::-1]
+
+    # Calculate the boolean mask where anomalies > benign
+    mask = top_anomalous_scores > top_benign_scores
+
+    # Compute the raw separation area
+    if mask.sum() > 0:
+        # Positive overlap exists
+        raw_area = np.trapz(top_anomalous_scores[mask] - top_benign_scores[mask], dx=1)
+    else:
+        # No positive overlap; compute negative area
+        raw_area = -np.trapz(top_benign_scores - top_anomalous_scores, dx=1)
+
+    # Calculate the range of scores (y-axis normalization)
+    max_score = max(top_anomalous_scores.max(), top_benign_scores.max())
+    min_score = min(top_anomalous_scores.min(), top_benign_scores.min())
+    score_range = max_score - min_score
+
+    # Normalize the area
+    total_plot_area = score_range * K
+    area = raw_area / total_plot_area
+
+    # Visualization
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(K), top_anomalous_scores, label="Top Anomalies", color="red")
+    plt.plot(range(K), top_benign_scores, label="Top Benign", color="blue")
+
+    # Highlight the positive or negative area
+    if mask.sum() > 0:
+        # Positive overlap exists
+        plt.fill_between(range(K), top_anomalous_scores, top_benign_scores, 
+                        where=(top_anomalous_scores > top_benign_scores), 
+                        interpolate=True, color='purple', alpha=0.2, label=f"Positive Area {area:.2f}")
+    else:
+        # No positive overlap; negative area
+        plt.fill_between(range(K), top_anomalous_scores, top_benign_scores, 
+                        where=(top_anomalous_scores < top_benign_scores), 
+                        interpolate=True, color='orange', alpha=0.2, label=f"Negative Area {area:.2f}")
+
+    plt.xlabel("Rank")
+    plt.ylabel("Anomaly Score")
+    plt.title("Top K Anomalous vs Benign Scores")
+    plt.legend()
+    plt.grid(alpha=0.5)
+    plt.savefig(out_file)
+    return area
+
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}
     # for file in cfg.dataset.ground_truth_relative_path:

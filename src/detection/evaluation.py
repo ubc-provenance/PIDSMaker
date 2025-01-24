@@ -48,13 +48,9 @@ def standard_evaluation(cfg, evaluation_fn):
             if os.path.exists(scores):
                 stats["scores_img"] = wandb.Image(scores)
             
-            dor = os.path.join(out_dir, f"dor_{model_epoch_dir}.png")
-            if os.path.exists(dor):
-                stats["dor_img"] = wandb.Image(dor)
-            
-            pr = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
-            if os.path.exists(pr):
-                stats["precision_recall_img"] = wandb.Image(pr)
+            # pr = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
+            # if os.path.exists(pr):
+            #     stats["precision_recall_img"] = wandb.Image(pr)
                 
             adp = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
             if os.path.exists(adp):
@@ -63,6 +59,10 @@ def standard_evaluation(cfg, evaluation_fn):
             seen_scores = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
             if os.path.exists(seen_scores):
                 stats['seen_scores_img'] = wandb.Image(seen_scores)
+                
+            discrim = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
+            if os.path.exists(discrim):
+                stats["discrim_img"] = wandb.Image(discrim)
         
         wandb.log(stats)
         
