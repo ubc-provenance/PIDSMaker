@@ -145,6 +145,7 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
         for metric, value in best_run.items():
             if metric.endswith("img"):
                 out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+                os.makedirs(out_dir, exist_ok=True)
                 wandb.save(best_run["scores_file"], out_dir) # saves the scores for the best run
         wandb.log(best_run) # logs all best metrics and images for easy analysis
 
