@@ -89,12 +89,21 @@ def main(cfg, project, exp, **kwargs):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    def run_task(task: str, cfg):
+    def run_task(task: str, cfg, method=None, iteration=None):
         start = time.time()
         return_value = None
         
+        # We add the iteration index to subtask to have a unique folder per iteration
+        if method == "deep_ensemble" and subtask_concat_value is not None:
+            subtask_concat_value = {
+                "subtask": cfg.experiment.uncertainty.deep_ensemble.restart_from,
+                "concat_value": str(iteration)
+            }
+        else:
+            subtask_concat_value = None
+            
         # This updates all task paths
-        should_restart = update_task_paths_to_restart(cfg)
+        should_restart = update_task_paths_to_restart(cfg, subtask_concat_value=subtask_concat_value)
         
         task_to_module = get_task_to_module(cfg)
         module = task_to_module[task]["module"]
@@ -106,9 +115,9 @@ def main(cfg, project, exp, **kwargs):
         
         return {"time": time.time() - start, "return": return_value}
     
-    def run_pipeline(cfg):
+    def run_pipeline(cfg, method=None, iteration=None):
         tasks = get_task_to_module(cfg).keys()
-        task_results = {task: run_task(task, cfg) for task in tasks}
+        task_results = {task: run_task(task, cfg, method, iteration) for task in tasks}
         
         metrics = task_results["evaluation"]["return"] or {}
         metrics = {
@@ -150,7 +159,7 @@ def main(cfg, project, exp, **kwargs):
                         for i in range(iterations):
                             log(f"[@iteration {i}]", pre_return_line=True)
                             cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=hyper)
-                            metrics, times = run_pipeline(cfg)
+                            metrics, times = run_pipeline(cfg, method=method, iteration=i)
                             hyper_to_metrics[hyper].append({**metrics, **times})
                             
                     metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
@@ -164,7 +173,7 @@ def main(cfg, project, exp, **kwargs):
                     for i in range(iterations):
                         log(f"[@iteration {i}]", pre_return_line=True)
                         cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
-                        metrics, times = run_pipeline(cfg)
+                        metrics, times = run_pipeline(cfg, method=method, iteration=i)
                         method_to_metrics[method].append({**metrics, **times})
                         
                         # We force restart in some methods so we avoid forced restart for other methods
