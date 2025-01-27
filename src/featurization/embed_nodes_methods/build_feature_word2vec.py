@@ -12,6 +12,7 @@ from featurization.featurization_utils import *
 
 def train_feature_word2vec(corpus, cfg, model_save_path):
     emb_dim = cfg.featurization.embed_nodes.emb_dim
+    alpha = cfg.featurization.embed_nodes.feature_word2vec.alpha
     window_size = cfg.featurization.embed_nodes.feature_word2vec.window_size
     min_count = cfg.featurization.embed_nodes.feature_word2vec.min_count
     use_skip_gram = cfg.featurization.embed_nodes.feature_word2vec.use_skip_gram
@@ -23,6 +24,7 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
     SEED = 0
 
     model = Word2Vec(corpus,
+                        alpha=alpha,
                         vector_size=emb_dim,
                         window=window_size,
                         min_count=min_count,
@@ -37,6 +39,7 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
     log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
 
     for epoch in range(epochs - 1):
+        model.running_training_loss = 0
         model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
         epoch_loss = model.get_latest_training_loss()
         log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
