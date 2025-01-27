@@ -316,9 +316,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     log(f"Saving figures to {out_dir}...")
     # plot_precision_recall(pred_scores, y_truth, pr_img_file)
     adp_score = plot_detected_attacks_vs_precision(pred_scores, nodes, node2attacks, y_truth, adp_img_file)
-    discrim_score = plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
+    discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth) # plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
+    discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, scores_img_file, cfg)
+    plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, scores_img_file, cfg)
     plot_score_seen(pred_scores, is_seen, seen_score_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
@@ -340,7 +341,11 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     stats["recall_if_all_attacks_detected"] = recall
     
     stats["adp_score"] = round(adp_score, 3)
-    stats["discrim_score"] = round(discrim_score, 5)
+    
+    for k, v in discrim_scores.items():
+        stats[k] = round(v, 4)
+        
+    stats = {**stats, **discrim_tp}
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
