@@ -94,7 +94,7 @@ def main(cfg, project, exp, **kwargs):
         return_value = None
         
         # We add the iteration index to subtask to have a unique folder per iteration
-        if method == "deep_ensemble" and subtask_concat_value is not None:
+        if method == "deep_ensemble":
             subtask_concat_value = {
                 "subtask": cfg.experiment.uncertainty.deep_ensemble.restart_from,
                 "concat_value": str(iteration)
