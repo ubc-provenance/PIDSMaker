@@ -81,6 +81,7 @@ def main(cfg):
     test_stats = None
     patience = cfg.detection.gnn_training.patience
     patience_counter = 0
+    all_test_stats = []
     
     for epoch in range(0, num_epochs):
         start = timer()
@@ -135,6 +136,7 @@ def main(cfg):
                 epoch=epoch,
                 split=split_to_run,
             )
+            all_test_stats.append(test_stats)
             val_ap = test_stats["val_ap"]
             
             if best_epoch_mode:
@@ -154,7 +156,9 @@ def main(cfg):
             wandb.log({
                 "train_epoch": epoch,
                 "train_loss": round(tot_loss, 4),
-                "val_ap": round(val_ap, 5),
+                # "val_ap": round(val_ap, 5),
+                "val_loss": round(test_stats["val_loss"], 4),
+                "test_loss": round(test_stats["test_loss"], 4),
             })
         
     # After training
@@ -172,12 +176,12 @@ def main(cfg):
 
     wandb.log({
         "train_epoch_time": round(np.mean(epoch_times), 2),
-        "val_score": round(best_val_ap, 5),
+        # "val_score": round(best_val_ap, 5),
         "peak_train_cpu_memory": round(peak_train_cpu_mem, 3),
         "peak_train_gpu_memory": round(peak_train_gpu_mem, 3),
-        "peak_inference_cpu_memory": round(test_stats["peak_inference_cpu_memory"], 3),
-        "peak_inference_gpu_memory": round(test_stats["peak_inference_gpu_memory"], 3),
-        "time_per_batch_inference": round(test_stats["time_per_batch_inference"], 3),
+        "peak_inference_cpu_memory": round(np.max([d["peak_inference_cpu_memory"] for d in all_test_stats]), 3),
+        "peak_inference_gpu_memory": round(np.max([d["peak_inference_gpu_memory"] for d in all_test_stats]), 3),
+        "time_per_batch_inference": round(np.mean([d["time_per_batch_inference"] for d in all_test_stats]), 3),
     })
     
     return best_val_ap

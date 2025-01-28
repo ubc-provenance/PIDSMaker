@@ -455,7 +455,7 @@ def get_node_to_path_and_type(cfg):
         
     return node_to_path_type
 
-def build_mlp_from_string(arch_str, in_dim, out_dim):
+def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
     def parse_layer(layer_str, in_dim):
         layers = []
         parts = layer_str.lower().split(',')
@@ -469,9 +469,7 @@ def build_mlp_from_string(arch_str, in_dim, out_dim):
                 in_dim = out_dim  # Update in_dim for the next layer
                 
             elif part.startswith('dropout'):
-                _, dropout_prob = part.split('(')
-                dropout_prob = float(dropout_prob.strip(')'))
-                layers.append(nn.Dropout(dropout_prob))
+                layers.append(nn.Dropout(dropout))
             
             elif part == 'tanh':
                 layers.append(nn.Tanh())
@@ -639,3 +637,15 @@ def generate_DAG(edges):
     DAG.add_edges_from(new_edges)
 
     return DAG, node_version
+
+def log_dataset_stats(train_data, val_data, test_data):
+    log("")
+    log("Dataset statistics")
+    for label, dataset in [("Train", train_data), ("Val", val_data), ("Test", test_data)]:
+        edges = torch.tensor([d.src.shape[0] for d in dataset])
+        nodes = torch.tensor([torch.unique(d.edge_index).shape[0] for d in dataset])
+
+        log(f"{label} num graphs: {len(dataset)}")
+        log(f"{label} edges | mean: {int(torch.mean(edges, dtype=torch.float))} | min: {int(torch.min(edges))} | max: {int(torch.max(edges))}")
+        log(f"{label} nodes | mean: {int(torch.mean(nodes, dtype=torch.float))} | min: {int(torch.min(nodes))} | max: {int(torch.max(nodes))}")
+        log("")

@@ -1,10 +1,7 @@
 import math
 import torch.nn as nn
-import matplotlib.pyplot as plt
 import numpy as np
 import wandb
-from collections import defaultdict
-from pprint import pprint
 
 from encoders import *
 
@@ -111,6 +108,7 @@ def avg_std_metrics(method_to_metrics):
         values = [entry[key] for entry in metrics]
         result[f"{key}_mean"] = np.mean(values)
         result[f"{key}_std"] = np.std(values)
+        result[f"{key}_std_rel"] = (np.std(values) / np.mean(values) + 1e-12) * 100
     
     return result
 
@@ -139,6 +137,16 @@ def min_metrics(method_to_metrics, metric='adp_score'):
             result[f"{key}_min"] = value
     
     return result
+
+def push_best_files_to_wandb(method_to_metrics, cfg):
+    if "deep_ensemble" in method_to_metrics:
+        best_adp_idx = np.argmax([e["adp_score"] for e in method_to_metrics["deep_ensemble"]])
+        best_run = method_to_metrics["deep_ensemble"][best_adp_idx]
+        for metric, value in best_run.items():
+            if metric.endswith("img"):
+                out_dir = "/".join(best_run["scores_file"].split("/")[:-1])
+                wandb.save(best_run["scores_file"], out_dir) # saves the scores for the best run
+        wandb.log(best_run) # logs all best metrics and images for easy analysis
 
 # MC Dropout
 class DropoutWrapper(nn.Module):

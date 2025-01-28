@@ -155,6 +155,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
+        elif method == "linear":
+            encoder = LinearEncoder(in_dim, node_out_dim, dropout=cfg.detection.gnn_training.encoder.dropout)
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -219,12 +221,15 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
+            dropout=cfg.detection.gnn_training.encoder.dropout,
+            src_dst_projection_coef=cfg.detection.gnn_training.decoder.predict_edge_type.edge_mlp.src_dst_projection_coef,
         )
     elif method == "node_mlp":
         return NodeMLPDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg["architecture_str"],
+            dropout=cfg.detection.gnn_training.encoder.dropout,
         )
     elif method == "nodlink":
         return NodLinkDecoder(

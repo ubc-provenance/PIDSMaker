@@ -45,6 +45,7 @@ featurization:
       compute_loss: True
       add_paths: False
     feature_word2vec:
+      alpha: 0.025
       window_size: 5
       min_count: 1
       use_skip_gram: True
@@ -97,6 +98,7 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 2
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink

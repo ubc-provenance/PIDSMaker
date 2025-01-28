@@ -67,7 +67,7 @@ def get_task_to_module(cfg):
         },
     }
 
-def main(cfg, project, **kwargs):
+def main(cfg, project, exp, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
@@ -89,12 +89,21 @@ def main(cfg, project, **kwargs):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    def run_task(task: str, cfg):
+    def run_task(task: str, cfg, method=None, iteration=None):
         start = time.time()
         return_value = None
         
+        # We add the iteration index to subtask to have a unique folder per iteration
+        if method == "deep_ensemble":
+            subtask_concat_value = {
+                "subtask": cfg.experiment.uncertainty.deep_ensemble.restart_from,
+                "concat_value": str(iteration)
+            }
+        else:
+            subtask_concat_value = None
+            
         # This updates all task paths
-        should_restart = update_task_paths_to_restart(cfg)
+        should_restart = update_task_paths_to_restart(cfg, subtask_concat_value=subtask_concat_value)
         
         task_to_module = get_task_to_module(cfg)
         module = task_to_module[task]["module"]
@@ -106,9 +115,9 @@ def main(cfg, project, **kwargs):
         
         return {"time": time.time() - start, "return": return_value}
     
-    def run_pipeline(cfg):
+    def run_pipeline(cfg, method=None, iteration=None):
         tasks = get_task_to_module(cfg).keys()
-        task_results = {task: run_task(task, cfg) for task in tasks}
+        task_results = {task: run_task(task, cfg, method, iteration) for task in tasks}
         
         metrics = task_results["evaluation"]["return"] or {}
         metrics = {
@@ -150,7 +159,7 @@ def main(cfg, project, **kwargs):
                         for i in range(iterations):
                             log(f"[@iteration {i}]", pre_return_line=True)
                             cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=hyper)
-                            metrics, times = run_pipeline(cfg)
+                            metrics, times = run_pipeline(cfg, method=method, iteration=i)
                             hyper_to_metrics[hyper].append({**metrics, **times})
                             
                     metrics = fuse_hyperparameter_metrics(hyper_to_metrics)
@@ -164,7 +173,7 @@ def main(cfg, project, **kwargs):
                     for i in range(iterations):
                         log(f"[@iteration {i}]", pre_return_line=True)
                         cfg = update_cfg_for_uncertainty_exp(method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None)
-                        metrics, times = run_pipeline(cfg)
+                        metrics, times = run_pipeline(cfg, method=method, iteration=i)
                         method_to_metrics[method].append({**metrics, **times})
                         
                         # We force restart in some methods so we avoid forced restart for other methods
@@ -186,6 +195,8 @@ def main(cfg, project, **kwargs):
             wandb.log(minimum_metrics)
             wandb.log(maximum_metrics)
             
+            push_best_files_to_wandb(method_to_metrics, cfg)
+            
         else:
             raise ValueError(f"Invalid experiment {cfg.experiment.used_method}")
     
@@ -201,7 +212,7 @@ def main(cfg, project, **kwargs):
         sweep_id = wandb.sweep(sweep_config, project=project)
         
         def run_pipeline_from_sweep(cfg):
-            with wandb.init():
+            with wandb.init(name=exp):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
 
@@ -227,7 +238,7 @@ if __name__ == '__main__':
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
-    PROJECT_PREFIX = "framework_"
+    PROJECT_PREFIX = "uncertainty_exp_"
     if args.project != "":
         project = args.project
     elif args.tuning_mode == "hyperparameters":
@@ -254,7 +265,7 @@ if __name__ == '__main__':
     cfg = get_yml_cfg(args)
     wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
 
-    main(cfg, project=project)
+    main(cfg, project=project, exp=exp_name)
     
     wandb.finish()
     

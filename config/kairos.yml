@@ -60,6 +60,7 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.25) | tanh | linear(0.25) | dropout(0.5) | tanh
+          src_dst_projection_coef: 2
 
   evaluation:
     viz_malicious_nodes: False

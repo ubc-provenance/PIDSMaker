@@ -135,7 +135,7 @@ def plot_score_seen(scores, y_truth, out_file):
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
 
-def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, out_file, cfg):
+def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, out_file, cfg):
     node_to_path = get_node_to_path_and_type(cfg)
     paths, types = [], []
     # Prints the path if it exists, else tries to print the cmd line
@@ -151,6 +151,7 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     scores = np.array(scores)
     y_truth = np.array(y_truth)
     types = np.array(types)
+    nodes = np.array(nodes)
 
     # Define marker styles for each type
     marker_styles = {
@@ -171,6 +172,15 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     
     red = (155/255, 44/255, 37/255)
     green = (62/255, 126/255, 42/255)
+    
+    attack_colors = {
+        0: 'black',
+        1: 'red',
+        2: 'blue',
+    }
+
+    node2attack = np.array([list(node2attacks.get(node))[0] for node in nodes[y_truth == 1]])
+
 
     # Plot each type with a different marker for Label 0
     for t in marker_styles.keys():
@@ -180,7 +190,7 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Plot each type with a different marker for Label 1
     for t in marker_styles.keys():
         plt.scatter(scores_1[types_1 == t], [1]*sum(types_1 == t), 
-                    marker=marker_styles[t], color=red, label=f'Label 1 - {t}')
+                    marker=marker_styles[t], color=[attack_colors.get(c) for c in node2attack[types_1 == t]], label=f'Label 1 - {t}')
 
     # Adding labels and title
     plt.xlabel('Scores')
@@ -416,6 +426,117 @@ def plot_recall_vs_precision(scores, nodes, node2attacks, labels, out_file):
     plt.grid(True)
     plt.savefig(out_file)
     return area_under_curve
+
+def plot_discrimination_metric(scores, y_truth, out_file):
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+    anomalous_scores = scores[y_truth == 1]
+    benign_scores = scores[y_truth == 0]
+
+    # Define the top K value
+    K = len(anomalous_scores)
+
+    # Get top K scores for anomalies and benign samples
+    top_anomalous_scores = np.sort(anomalous_scores)[-K:][::-1]
+    top_benign_scores = np.sort(benign_scores)[-K:][::-1]
+
+    # Calculate the boolean mask where anomalies > benign
+    mask = top_anomalous_scores > top_benign_scores
+
+    # Compute the raw separation area
+    if mask.sum() > 0:
+        # Positive overlap exists
+        raw_area = np.trapz(top_anomalous_scores[mask] - top_benign_scores[mask], dx=1)
+    else:
+        # No positive overlap; compute negative area
+        raw_area = -np.trapz(top_benign_scores - top_anomalous_scores, dx=1)
+
+    # Calculate the range of scores (y-axis normalization)
+    max_score = max(top_anomalous_scores.max(), top_benign_scores.max())
+    min_score = min(top_anomalous_scores.min(), top_benign_scores.min())
+    score_range = max_score - min_score
+
+    # Normalize the area
+    total_plot_area = score_range * K
+    area = raw_area / total_plot_area
+
+    # Visualization
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(K), top_anomalous_scores, label="Top Anomalies", color="red")
+    plt.plot(range(K), top_benign_scores, label="Top Benign", color="blue")
+
+    # Highlight the positive or negative area
+    if mask.sum() > 0:
+        # Positive overlap exists
+        plt.fill_between(range(K), top_anomalous_scores, top_benign_scores, 
+                        where=(top_anomalous_scores > top_benign_scores), 
+                        interpolate=True, color='purple', alpha=0.2, label=f"Positive Area {area:.2f}")
+    else:
+        # No positive overlap; negative area
+        plt.fill_between(range(K), top_anomalous_scores, top_benign_scores, 
+                        where=(top_anomalous_scores < top_benign_scores), 
+                        interpolate=True, color='orange', alpha=0.2, label=f"Negative Area {area:.2f}")
+
+    plt.xlabel("Rank")
+    plt.ylabel("Anomaly Score")
+    plt.title("Top K Anomalous vs Benign Scores")
+    plt.legend()
+    plt.grid(alpha=0.5)
+    plt.savefig(out_file)
+    return area
+
+def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10):
+    pred_scores = np.array(pred_scores)
+    y_truth = np.array(y_truth)
+    nodes = np.array(nodes)
+    
+    pred_scores /= pred_scores.max()
+    attack2max_score = defaultdict(float)
+
+    for node, score in zip(nodes, pred_scores):
+        if node in node2attacks:
+            for attack in node2attacks[node]:
+                attack2max_score[attack] = max(attack2max_score[attack], score)
+    attack2max_score = dict(sorted(attack2max_score.items(), key=lambda item: item[0]))
+    
+    benign_scores = pred_scores[y_truth == 0]
+    top_benign_scores = np.sort(benign_scores)[-k:][::-1]
+    mean = np.mean(top_benign_scores)
+    att2score = {}
+    
+    for att in set.union(*list(node2attacks.values())):
+        att2score[f"discrim_score_att_{att}"] = 0
+
+    for k, v in attack2max_score.items():
+        score = (v - mean)
+        att2score[f"discrim_score_att_{k}"] = score
+    att2score["discrim_score_att_mean"] = np.mean(list(att2score.values()))
+    
+    return att2score
+
+def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
+    pred_scores = np.array(pred_scores)
+    y_truth = np.array(y_truth)
+    nodes = np.array(nodes)
+    
+    pred_scores /= pred_scores.max()
+
+    benign_scores = pred_scores[y_truth == 0]
+    top_benign_scores = np.sort(benign_scores)[-k:][::-1]
+    mean = np.mean(top_benign_scores)
+    att2tp = defaultdict(int)
+    
+    for att in set.union(*list(node2attacks.values())):
+        att2tp[f"discrim_tp_att_{att}"] = 0
+
+    for node, score in zip(nodes, pred_scores):
+        if node in node2attacks:
+            for attack in node2attacks[node]:
+                if score > mean:
+                    att2tp[f"discrim_tp_att_{attack}"] += 1
+    att2tp["discrim_tp_att_sum"] = np.sum(list(att2tp.values()))
+    
+    return att2tp
 
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}
