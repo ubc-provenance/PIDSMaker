@@ -10,6 +10,7 @@ class Model(nn.Module):
     def __init__(self,
             encoder: nn.Module,
             decoders: list[nn.Module],
+            decoder_few_shot: nn.Module,
             num_nodes: int,
             in_dim: int,
             out_dim: int,
@@ -34,6 +35,7 @@ class Model(nn.Module):
             
         self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
+        self.decoder_few_shot = decoder_few_shot
         
     def embed(self, batch, full_data, inference=False, **kwargs):
         train_mode = not inference
@@ -94,6 +96,7 @@ class Model(nn.Module):
                     x=x,
                     edge_index=edge_index,
                     edge_type=batch.edge_type,
+                    y_edge=batch.y,
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
@@ -153,3 +156,21 @@ class Model(nn.Module):
             node_type = reindexed_batch.node_type
         return node_type
     
+    def to_fine_tuning(self, do: bool):
+        if do:
+            self.encoder.eval()
+            for param in self.encoder.parameters(): # freeze the encoder
+                param.requires_grad = False
+            
+            ssl_decoder = self.decoders # switch the pretext encoder and fine-tuning decoder
+            self.decoders = self.decoder_few_shot
+            self.decoder_few_shot = ssl_decoder
+        
+        else:
+            self.encoder.train()
+            for param in self.encoder.parameters():
+                param.requires_grad = True
+            
+            ssl_decoder = self.decoder_few_shot
+            self.decoder_few_shot = self.decoders
+            self.decoders = ssl_decoder

@@ -5,6 +5,7 @@ from .transformation_methods import (
     transformation_undirected,
     transformation_dag,
 )
+from .transformation_methods.attack_generation.synthetic_attack_naive import integrate_synthetic_attacks
 
 def apply_transformations(graph, methods, cfg):
     for method in methods:
@@ -32,6 +33,31 @@ def main(cfg):
     # If no transformation is used, we copy all original graphs to the transformation task path
     if len(methods) == 1 and methods[0] == "none":
         copy_directory(base_dir, dst_dir)
+        
+    elif len(methods) == 1 and methods[0] == "synthetic_attack_naive":
+        # We first flat the graphs
+        days = get_days_from_cfg(cfg)
+        sorted_paths = [get_all_files_from_folders(base_dir, [f"graph_{day}"]) for day in days]
+        sorted_paths = [file for files in sorted_paths for file in files]
+        graphs = [torch.load(path) for path in sorted_paths]
+        
+        # Add fake attacks
+        processed_graphs = integrate_synthetic_attacks(graphs)
+        
+        os.makedirs(dst_dir, exist_ok=True)
+        
+        i = 0
+        days = get_days_from_cfg(cfg)
+        for day in days:
+            sorted_paths = get_all_files_from_folders(base_dir, [f"graph_{day}"])
+            for path in sorted_paths:
+                graph = processed_graphs[i]
+                i += 1
+                
+                file_name = path.split("/")[-1]
+                dst_path = os.path.join(dst_dir, f"graph_{day}")
+                os.makedirs(dst_path, exist_ok=True)
+                torch.save(graph, os.path.join(dst_path, file_name))
 
     else:
         os.makedirs(dst_dir, exist_ok=True)

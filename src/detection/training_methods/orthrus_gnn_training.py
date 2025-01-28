@@ -121,6 +121,28 @@ def main(cfg):
             
         log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
         
+        # Few-shot learning fine tuning
+        if cfg.detection.gnn_training.decoder.use_few_shot:
+            model.to_fine_tuning(True)
+            
+            tot_loss = 0
+            for g in log_tqdm(train_data, f"Fine-tuning"):
+                g.to(device=device)
+                loss = train(
+                    data=g,
+                    full_data=full_data,  # full list of edge messages (do not store on CPU)
+                    model=model,
+                    optimizer=optimizer,
+                    cfg=cfg,
+                )
+                g.to("cpu")
+                if use_cuda:
+                    torch.cuda.empty_cache()
+                
+                tot_loss += loss
+                
+            model.to_fine_tuning(False)
+        
         # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
         # save_model(model, model_path, cfg)
         

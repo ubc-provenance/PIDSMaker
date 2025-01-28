@@ -302,7 +302,8 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                             edge['dst'],
                             event_uuid=edge['event_uuid'],
                             time=edge['time'],
-                            label=edge['label']
+                            label=edge['label'],
+                            y=0,
                         )
 
                         # For unit tests, we only want few edges

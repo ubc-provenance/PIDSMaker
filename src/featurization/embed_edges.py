@@ -19,11 +19,12 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
         graph = torch.load(path)
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
 
-        src, dst, msg, t = [], [], [], []
+        src, dst, msg, t, y = [], [], [], [], []
         for u, v, k, attr in sorted_edges:
             src.append(int(u))
             dst.append(int(v))
             t.append(int(attr["time"]))
+            y.append(int(attr["y"]))
             
             # If the graph structure has been changed in transformation, we may loose
             # the edge label
@@ -55,6 +56,7 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
             dst=torch.tensor(dst).to(torch.long),
             t=torch.tensor(t).to(torch.long),
             msg=torch.vstack(msg).to(torch.float),
+            y=torch.tensor(y).to(torch.long),
         )
 
         os.makedirs(out_dir, exist_ok=True)

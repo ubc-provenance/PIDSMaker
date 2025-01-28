@@ -27,7 +27,8 @@ def build_model(data_sample, device, cfg, max_node_num):
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     decoder = objective_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
-    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
+    decoder_few_shot = few_shot_decoder_factory(cfg)
+    model = model_factory(encoder, decoder, decoder_few_shot, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
     
     if cfg._is_running_mc_dropout:
         dropout = cfg.experiment.uncertainty.mc_dropout.dropout
@@ -35,10 +36,11 @@ def build_model(data_sample, device, cfg, max_node_num):
     
     return model
 
-def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device, max_node_num):
+def model_factory(encoder, decoders, decoder_few_shot, cfg, in_dim, graph_reindexer, device, max_node_num):
     return Model(
         encoder=encoder,
         decoders=decoders,
+        decoder_few_shot=decoder_few_shot,
         num_nodes=max_node_num,
         device=device,
         in_dim=in_dim,
@@ -389,6 +391,34 @@ def objective_factory(cfg, in_dim, device, max_node_num):
     
     return objectives
 
+def few_shot_decoder_factory(cfg):
+    if not cfg.detection.gnn_training.decoder.use_few_shot:
+        return None
+
+    node_out_dim = cfg.detection.gnn_training.node_out_dim
+    architecture_str = cfg.detection.gnn_training.decoder.few_shot.edge_mlp.architecture_str
+    src_dst_projection_coef = cfg.detection.gnn_training.decoder.few_shot.edge_mlp.src_dst_projection_coef
+    classes = 2
+    
+    decoder = EdgeMLPDecoder(
+        in_dim=node_out_dim,
+        out_dim=classes,
+        architecture=architecture_str,
+        dropout=cfg.detection.gnn_training.encoder.dropout,
+        src_dst_projection_coef=src_dst_projection_coef,
+    )
+    return nn.ModuleList(
+        [
+            ValidationContrastiveStopper(
+                objective=FewShotEdgeDetection(
+                    decoder=decoder,
+                    loss_fn=categorical_loss_fn_factory("cross_entropy"),
+                ),
+                graph_reindexer=None,
+                is_edge_type_prediction=True,
+            )
+        ])
+    
 def edge_decoder_factory(edge_decoder, in_dim):
     if edge_decoder == "MLP":
         return nn.Sequential(
