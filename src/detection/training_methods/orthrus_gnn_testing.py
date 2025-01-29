@@ -53,6 +53,9 @@ def test_edge_level(
         t_vars = batch.t.cpu().numpy()
         losses = each_edge_loss.cpu().numpy()
         
+        if 1 in batch.y:
+            log(f"Mean loss of fake malicious edges: {losses[batch.y.cpu() == 1].mean()}")
+        
         edge_df = pd.DataFrame({
             'loss': losses.astype(float),
             'srcnode': srcnodes.astype(int),

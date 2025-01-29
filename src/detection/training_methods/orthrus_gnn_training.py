@@ -90,6 +90,8 @@ def main(cfg):
         # Before each epoch, we reset the memory
         if isinstance(model.encoder, TGNEncoder):
             model.encoder.reset_state()
+            
+        model.to_fine_tuning(False)
 
         tot_loss = 0
         for g in log_tqdm(train_data, f"Training"):
@@ -128,7 +130,7 @@ def main(cfg):
             tot_loss = 0
             for g in log_tqdm(train_data, f"Fine-tuning"):
                 g.to(device=device)
-                loss = train(
+                loss = train( # NOTE: THERE IS NO MALICIOUS SAMPLES IN THE TRAIN SET ONLY TRAINED ON BENIGN NOW + WE SHOULD TRAIN SSL, THEN FEW_SHOT NOT AT THE SAME TIME
                     data=g,
                     full_data=full_data,  # full list of edge messages (do not store on CPU)
                     model=model,
@@ -140,8 +142,8 @@ def main(cfg):
                     torch.cuda.empty_cache()
                 
                 tot_loss += loss
-                
-            model.to_fine_tuning(False)
+            tot_loss /= len(train_data)
+            log(f'[@epoch{epoch:02d}] Fine-tuning finished - Mean Loss: {tot_loss:.4f}', return_line=True)
         
         # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
         # save_model(model, model_path, cfg)

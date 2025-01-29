@@ -116,6 +116,13 @@ detection:
         node_mlp:
           architecture_str: linear(0.5) | relu
         balanced_loss: False
+      
+      use_few_shot: True
+      few_shot:
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 2
 
   evaluation:
     viz_malicious_nodes: False

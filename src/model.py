@@ -19,6 +19,7 @@ class Model(nn.Module):
             graph_reindexer,
             node_level,
             is_running_mc_dropout,
+            use_few_shot,
         ):
         super(Model, self).__init__()
 
@@ -36,6 +37,8 @@ class Model(nn.Module):
         self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
         self.decoder_few_shot = decoder_few_shot
+        self.use_few_shot = use_few_shot
+        self.few_shot_mode = False
         
     def embed(self, batch, full_data, inference=False, **kwargs):
         train_mode = not inference
@@ -157,7 +160,9 @@ class Model(nn.Module):
         return node_type
     
     def to_fine_tuning(self, do: bool):
-        if do:
+        if not self.use_few_shot:
+            return
+        if do and not self.few_shot_mode:
             self.encoder.eval()
             for param in self.encoder.parameters(): # freeze the encoder
                 param.requires_grad = False
@@ -165,8 +170,9 @@ class Model(nn.Module):
             ssl_decoder = self.decoders # switch the pretext encoder and fine-tuning decoder
             self.decoders = self.decoder_few_shot
             self.decoder_few_shot = ssl_decoder
+            self.few_shot_mode = True
         
-        else:
+        if not do and self.few_shot_mode:
             self.encoder.train()
             for param in self.encoder.parameters():
                 param.requires_grad = True
@@ -174,3 +180,4 @@ class Model(nn.Module):
             ssl_decoder = self.decoder_few_shot
             self.decoder_few_shot = self.decoders
             self.decoders = ssl_decoder
+            self.few_shot_mode = False

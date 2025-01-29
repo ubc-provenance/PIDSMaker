@@ -49,6 +49,7 @@ def model_factory(encoder, decoders, decoder_few_shot, cfg, in_dim, graph_reinde
         graph_reindexer=graph_reindexer,
         node_level=cfg._is_node_level,
         is_running_mc_dropout=cfg._is_running_mc_dropout,
+        use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,
     ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):

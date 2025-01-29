@@ -1,4 +1,4 @@
-from config import *
+from config import get_runtime_required_args, get_yml_cfg, get_days_from_cfg
 from provnet_utils import *
 from .transformation_methods import (
     transformation_rcaid_pseudo_graph,
@@ -42,13 +42,13 @@ def main(cfg):
         graphs = [torch.load(path) for path in sorted_paths]
         
         # Add fake attacks
-        processed_graphs = integrate_synthetic_attacks(graphs)
+        processed_graphs = integrate_synthetic_attacks(graphs, cfg)
         
         os.makedirs(dst_dir, exist_ok=True)
         
         i = 0
         days = get_days_from_cfg(cfg)
-        for day in days:
+        for day in log_tqdm(days, desc="Saving graphs to disk"):
             sorted_paths = get_all_files_from_folders(base_dir, [f"graph_{day}"])
             for path in sorted_paths:
                 graph = processed_graphs[i]
