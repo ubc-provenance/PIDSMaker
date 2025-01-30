@@ -162,7 +162,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         elif method == "linear":
             encoder = LinearEncoder(in_dim, node_out_dim, dropout=dropout)
         elif method == "custom":
-            encoder = build_mlp_from_string(cfg.detection.gnn_training.encoder.custom.architecture_str, in_dim, node_out_dim, dropout) 
+            encoder = CustomEncoder(in_dim, node_out_dim, cfg.detection.gnn_training.encoder.custom.architecture_str, dropout)
         else:
             raise ValueError(f"Invalid encoder {method}")
     
