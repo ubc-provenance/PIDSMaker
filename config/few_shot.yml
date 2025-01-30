@@ -68,7 +68,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 1
+    num_epochs: 4
     patience: 3
     lr: 0.0001
     weight_decay: 0.00001
@@ -81,7 +81,7 @@ detection:
       neighbor_sampling: []
       edge_features: edge_type
       dropout: 0.3
-      used_methods: graph_attention # uses only a linear layer
+      used_methods: graph_attention
       custom:
         architecture_str: linear(1.0) | relu | linear(0.5)
       graph_attention:
@@ -130,7 +130,7 @@ detection:
           process_selection_method: random # TODO: try new methods
         
         include_attacks_in_ssl_training: False
-        num_epochs_few_shot: 100
+        num_epochs_few_shot: 20
         lr_few_shot: 0.001
         weight_decay_few_shot: 0.00001
         decoder:

@@ -130,7 +130,7 @@ def main(cfg):
             optimizer = optimizer_few_shot_factory(cfg, parameters=set(model.parameters()))
             
             num_epochs_few_shot = cfg.detection.gnn_training.decoder.few_shot.num_epochs_few_shot
-            for epoch in range(0, num_epochs_few_shot):
+            for tuning_epoch in range(0, num_epochs_few_shot):
                 if isinstance(model.encoder, TGNEncoder):
                     model.encoder.reset_state()
                     
@@ -151,7 +151,7 @@ def main(cfg):
                         
                         tot_loss += loss
                 tot_loss /= len(train_data)
-                log(f'[@epoch{epoch:02d}] Fine-tuning finished - Mean Loss: {tot_loss:.5f}', return_line=True)
+                log(f'[@epoch{tuning_epoch:02d}] Fine-tuning finished - Mean Loss: {tot_loss:.5f}', return_line=True)
         
         # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
         # save_model(model, model_path, cfg)
