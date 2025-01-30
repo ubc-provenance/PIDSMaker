@@ -72,8 +72,8 @@ detection:
     patience: 3
     lr: 0.0001
     weight_decay: 0.00001
-    node_hid_dim: 128
-    node_out_dim: 128
+    # node_hid_dim: 128
+    node_out_dim: 32
     inference_device: cuda
     grad_accumulation: 1
     encoder:
@@ -82,6 +82,8 @@ detection:
       edge_features: edge_type
       dropout: 0.3
       used_methods: none # uses only a linear layer
+      custom:
+        architecture_str: linear(1.0) | relu | linear(0.5) | relu
       graph_attention:
         activation: relu
         num_heads: 8
@@ -104,7 +106,8 @@ detection:
         balanced_loss: False
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear(0.5) | relu
+          # architecture_str: linear(0.5) | relu
+          architecture_str: none
           src_dst_projection_coef: 2
       reconstruct_node_features:
         loss: MSE
@@ -119,20 +122,28 @@ detection:
       
       use_few_shot: True
       few_shot:
-        include_attacks_in_ssl_training: False
-        num_epochs_few_shot: 100
-        lr_few_shot: 0.001
-        weight_decay_few_shot: 0.00001
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 2
         attack_generation_method: synthetic_attack_naive
         synthetic_attack_naive:
           num_attacks: 1
           num_malicious_process: 5
           num_unauthorized_file_access: 20
           process_selection_method: random # TODO: try new methods
+        
+        include_attacks_in_ssl_training: False
+        num_epochs_few_shot: 100
+        lr_few_shot: 0.001
+        weight_decay_few_shot: 0.00001
+        decoder:
+          used_methods: detect_edge_few_shot
+          detect_edge_few_shot:
+            decoder: node_mlp
+            node_mlp:
+              architecture_str: linear(1.0) | relu
+              
+            # decoder: edge_mlp
+            # edge_mlp:
+            #   architecture_str: linear(0.5) | relu
+            #   src_dst_projection_coef: 2
 
   evaluation:
     viz_malicious_nodes: False
