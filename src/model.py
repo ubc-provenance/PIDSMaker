@@ -36,9 +36,11 @@ class Model(nn.Module):
             
         self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
+        
         self.decoder_few_shot = decoder_few_shot
         self.use_few_shot = use_few_shot
         self.few_shot_mode = False
+        self.frozen_embeddings = None
         
     def embed(self, batch, full_data, inference=False, **kwargs):
         train_mode = not inference
@@ -60,32 +62,11 @@ class Model(nn.Module):
     def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
         x = self._reshape_x(batch)
-        edge_index = batch.edge_index
-        num_nodes = len(batch.edge_index.unique())
 
         with torch.set_grad_enabled(train_mode):
             h = self.embed(batch, full_data, inference=inference)
-            
-            if isinstance(h, tuple):
-                h_src, h_dst = h
-            else:
-                # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
-                # Here we simply transform to get a shape (E, d)
-                h_src, h_dst = (h[edge_index[0]], h[edge_index[1]]) \
-                    if isinstance(h, torch.Tensor) else h
-            
-            if self.node_level:
-                if isinstance(h, tuple):
-                    h, _, n_id = self.graph_reindexer._reindex_graph(edge_index, h[0], h[1]) # TODO: duplicate with the one in TGN encoder, remove
-                    batch.original_n_id = n_id
-                if isinstance(x, tuple):
-                    x, _, n_id = self.graph_reindexer._reindex_graph(edge_index, x[0], x[1])
-                    batch.original_n_id = n_id
-                
-            else:
-                if not isinstance(x, tuple):
-                    x = (batch.x_src[edge_index[0]], batch.x_dst[edge_index[1]])
-            
+            h_src, h_dst, h, x = self.reshape_for_task(batch, h, x)
+                    
             # Train mode: loss | Inference mode: scores
             loss_or_scores = None
             
@@ -97,7 +78,7 @@ class Model(nn.Module):
                     h_dst=h_dst, # shape (E, d)
                     h=h, # shape (N, d)
                     x=x,
-                    edge_index=edge_index,
+                    edge_index=batch.edge_index,
                     edge_type=batch.edge_type,
                     y_edge=batch.y,
                     inference=inference,
@@ -110,7 +91,7 @@ class Model(nn.Module):
                 
                 if loss_or_scores is None:
                     loss_or_scores = (torch.zeros(1) if train_mode else \
-                        torch.zeros(loss.shape[0], dtype=torch.float)).to(edge_index.device)
+                        torch.zeros(loss.shape[0], dtype=torch.float)).to(batch.edge_index.device)
                 
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})")
@@ -159,6 +140,29 @@ class Model(nn.Module):
             node_type = reindexed_batch.node_type
         return node_type
     
+    def reshape_for_task(self, batch, h, x):
+        if isinstance(h, tuple):
+            h_src, h_dst = h
+        else:
+            # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
+            # Here we simply transform to get a shape (E, d)
+            h_src, h_dst = (h[batch.edge_index[0]], h[batch.edge_index[1]]) \
+                if isinstance(h, torch.Tensor) else h
+        
+        if self.node_level:
+            if isinstance(h, tuple):
+                h, _, n_id = self.graph_reindexer._reindex_graph(batch.edge_index, h[0], h[1]) # TODO: duplicate with the one in TGN encoder, remove
+                batch.original_n_id = n_id
+            if isinstance(x, tuple):
+                x, _, n_id = self.graph_reindexer._reindex_graph(batch.edge_index, x[0], x[1])
+                batch.original_n_id = n_id
+            
+        else:
+            if not isinstance(x, tuple):
+                x = (batch.x_src[batch.edge_index[0]], batch.x_dst[batch.edge_index[1]])
+                
+        return h_src, h_dst, h, x
+    
     def to_fine_tuning(self, do: bool):
         if not self.use_few_shot:
             return
@@ -167,9 +171,10 @@ class Model(nn.Module):
             for param in self.encoder.parameters(): # freeze the encoder
                 param.requires_grad = False
             
+            # the decoder is replaced by a copy of the decoder_few_shot + the old decoder is saved for later switch
             ssl_decoder = self.decoders # switch the pretext encoder and fine-tuning decoder
-            self.decoders = self.decoder_few_shot
-            self.decoder_few_shot = ssl_decoder
+            self.decoders = copy.deepcopy(self.decoder_few_shot)
+            self.ssl_decoder = ssl_decoder
             self.few_shot_mode = True
         
         if not do and self.few_shot_mode:
@@ -177,7 +182,6 @@ class Model(nn.Module):
             for param in self.encoder.parameters():
                 param.requires_grad = True
             
-            ssl_decoder = self.decoder_few_shot
-            self.decoder_few_shot = self.decoders
-            self.decoders = ssl_decoder
+            # the ssl decoder is set back
+            self.decoders = self.ssl_decoder
             self.few_shot_mode = False

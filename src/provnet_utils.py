@@ -294,6 +294,10 @@ def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
     return paths
 
+def load_graphs_for_days(base_dir, days):
+    """Loads all graph snapshots for a given list of days."""
+    return [torch.load(path) for day in days for path in get_all_files_from_folders(base_dir, [day])]
+
 def listdir_sorted(path: str):
     files = os.listdir(path)
     files.sort(key=lambda f: int(''.join(filter(str.isdigit, f)))) # sorted by ascending number

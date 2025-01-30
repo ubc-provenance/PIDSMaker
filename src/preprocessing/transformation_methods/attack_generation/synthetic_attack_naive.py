@@ -1,26 +1,16 @@
 import random
-from datetime import timedelta
+from collections import defaultdict
 
 import networkx as nx
-import torch
 
-from provnet_utils import log, log_tqdm, get_all_files_from_folders
+from provnet_utils import log, log_tqdm
 
-
-# The number of added edges is approx `NUM_MALICIOUS_PROCESSES * num_tws_containing_malicious_processes * NUM_UNAUTHORIZED_FILE_ACCESS`
-NUM_ATTACKS = 1
-NUM_MALICIOUS_PROCESSES = 5
-NUM_UNAUTHORIZED_FILE_ACCESS = 20
 
 def get_mean_time_delta(snapshot):
-    # Extract and sort timestamps from edges
+    """Copmputes the mean, min and max time delta in seconds between two edges in a graph."""
     timestamps = sorted(
         edge_data["time"] for _, _, _, edge_data in snapshot.edges(keys=True, data=True) if "time" in edge_data
     )
-    if len(timestamps) < 2:
-        return timedelta(seconds=0)  # No meaningful delta if fewer than 2 timestamps
-
-    # Compute time deltas
     deltas = [
         (timestamps[i + 1] - timestamps[i]) / 1e9  # Convert nanoseconds to seconds
         for i in range(len(timestamps) - 1)
@@ -28,67 +18,56 @@ def get_mean_time_delta(snapshot):
     mean_delta = sum(deltas) / len(deltas)  # Mean time delta in seconds
     return mean_delta, timestamps[0], timestamps[-1]
 
-def get_days_from_cfg(cfg):
-    """Extracts the list of days associated with train, val, and test splits."""
-    return cfg.dataset["train_files"], cfg.dataset["val_files"], cfg.dataset["test_files"]
 
-def load_graphs_for_days(base_dir, days):
-    """Loads all graph snapshots for a given list of days."""
-    return [torch.load(path) for day in days for path in get_all_files_from_folders(base_dir, [day])]
-
-def get_processes_with_incoming_connections(graphs):
+def get_processes_with_incoming_connections(graphs, process_selection_method):
     """Finds processes with incoming 'EVENT_RECVFROM' edges in the given graphs."""
     processes = set()
     for graph in graphs:
         for u, v, key, data in graph.edges(keys=True, data=True):
-            if data.get("label") == "EVENT_RECVFROM" and graph.nodes[v].get("node_type") == "subject":
-                processes.add(v)
+            
+            if process_selection_method == "random":
+                if data.get("label") == "EVENT_RECVFROM" and graph.nodes[v].get("node_type") == "subject": #and graph.out_degree()[v] > 0: # we also select those we non-null out-degree or we 
+                    processes.add(v)
+                    
+            else:
+                raise ValueError(f"Invalid process selection method {process_selection_method}")
     return processes
 
-def select_processes_with_constraints(train_graphs, val_graphs, test_graphs, num_processes):
-    """
-    Selects processes that:
-    1. Have incoming network connections (EVENT_RECVFROM)
-    2. Appear in all dataset splits (train, val, test)
-    """
-    # Get sets of processes with incoming network connections per dataset split
-    train_processes = get_processes_with_incoming_connections(train_graphs)
-    val_processes = get_processes_with_incoming_connections(val_graphs) # NOTE: may be empty on some datasets
-    test_processes = get_processes_with_incoming_connections(test_graphs)
 
-    # Step 1: Compute intersection to ensure selected processes exist in all splits
-    valid_processes = train_processes & val_processes & test_processes
+def select_processes_with_constraints(train_graphs, val_graphs, num_processes, process_selection_method):
+    """Selects processes that have incoming network connections (EVENT_RECVFROM)"""
+    train_processes = get_processes_with_incoming_connections(train_graphs, process_selection_method)
+    val_processes = get_processes_with_incoming_connections(val_graphs, process_selection_method)
+
+    valid_processes = train_processes & val_processes
 
     if not valid_processes:
-        raise RuntimeError("No processes found that exist in all dataset splits.")
+        raise RuntimeError("No processes found that exist in both dataset splits.")
 
-    # Step 2: Randomly select up to NUM_MALICIOUS_PROCESSES
     selected_processes = random.sample(valid_processes, min(num_processes, len(valid_processes)))
     
-    print(f"Selected processes: {selected_processes}")
     return selected_processes
 
-def integrate_synthetic_attacks(graph_snapshots, cfg):
-    """
-    Integrates synthetic attack patterns into temporal provenance graphs.
 
-    Parameters:
-        graph_snapshots (list): List of temporal graph snapshots (MultiDiGraph objects).
-    """
+def main(train_graphs, val_graphs, cfg):
+    """Integrates synthetic attack patterns into temporal provenance graphs."""
+    num_attacks = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_attacks
+    num_malicious_process = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_malicious_process
+    num_unauthorized_file_access = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_unauthorized_file_access
+    process_selection_method = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.process_selection_method
+    
     # Combine all graph snapshots into a single graph for analysis
     combined_graph = nx.MultiDiGraph()
-    for graph in graph_snapshots:
+    for graph in [*train_graphs, *val_graphs]:
         combined_graph.add_edges_from(graph.edges(data=True))
         combined_graph.add_nodes_from(graph.nodes(data=True))
-
-    # Load graph snapshots for each dataset split
-    base_dir = cfg.preprocessing.build_graphs._graphs_dir
-    train_graphs = load_graphs_for_days(base_dir, cfg.dataset.train_files)
-    val_graphs = load_graphs_for_days(base_dir, cfg.dataset.val_files)
-    test_graphs = load_graphs_for_days(base_dir, cfg.dataset.test_files)
+        
+        # All default edges are considered benign
+        for u, v, key in graph.edges(keys=True):
+            graph.edges[u, v, key]["y"] = 0
     
     # TODO: select base on node degree or number of authrozed events
-    selected_processes = select_processes_with_constraints(train_graphs, val_graphs, test_graphs, NUM_MALICIOUS_PROCESSES)
+    selected_processes = select_processes_with_constraints(train_graphs, val_graphs, num_malicious_process, process_selection_method)
     
     selected_processes_paths = {n: combined_graph.nodes[n]["label"] for n in selected_processes}
     log(f"Selected processes for synthetic attacks:")
@@ -105,7 +84,7 @@ def integrate_synthetic_attacks(graph_snapshots, cfg):
     tot_edges = 0
     tot_snapshots = []
 
-    # Step 2: Integrate synthetic attacks
+    # Integrate synthetic attacks
     for process in log_tqdm(selected_processes, desc="Synthetizing attacks"):
         
         # Get files the application interacts with
@@ -120,14 +99,11 @@ def integrate_synthetic_attacks(graph_snapshots, cfg):
             print(f"No unauthorized files for process {process}")
             continue
 
+        split2paths = defaultdict(lambda: defaultdict(list))
         i = -1
-        for set_snapshots in [train_graphs, val_graphs, test_graphs]:
-            for snapshot in set_snapshots:
+        for snapshots, split in [(train_graphs, "train"), (val_graphs, "val")]:
+            for snapshot in snapshots:
                 i += 1
-                
-                # All default edges are considered benign
-                for u, v, key in snapshot.edges(keys=True):
-                    snapshot.edges[u, v, key]["y"] = 0
             
                 if process not in snapshot.nodes:
                     continue
@@ -142,12 +118,12 @@ def integrate_synthetic_attacks(graph_snapshots, cfg):
 
                 # Randomly select files for the attack
                 attack_files = random.sample(
-                    unauthorized_files_in_snapshot, min(NUM_UNAUTHORIZED_FILE_ACCESS, len(unauthorized_files_in_snapshot))
+                    unauthorized_files_in_snapshot, min(num_unauthorized_file_access, len(unauthorized_files_in_snapshot))
                 )
-                log(f"Selected files for malicious access:")
+                
                 selected_files_paths = {n: combined_graph.nodes[n]["label"] for n in attack_files}
-                for k, v in selected_files_paths.items():
-                    log(f"{k}: {v}")
+                for node_id, path in selected_files_paths.items():
+                    split2paths[split][i].append((f"{process}->{node_id}\t {combined_graph.nodes[process]['label']}->{path}"))
                 
                 mean_time_delta, min_time, max_time = get_mean_time_delta(snapshot)
                 current_time = random.randint(min_time, max_time)
@@ -175,11 +151,18 @@ def integrate_synthetic_attacks(graph_snapshots, cfg):
                     tot_edges += 1
                     
                 tot_snapshots.append(i)
-                if len(tot_snapshots) % NUM_ATTACKS == 0:
+                if len(tot_snapshots) % num_attacks == 0:
                     break
+                
+        for split, items in split2paths.items():
+            log(f"Split: {split}", pre_return_line=True)
+            for snapshot, l in items.items():
+                log(f"  Snapshot {snapshot}:")
+                for event in l:
+                    log(f"    {event}")
                     
 
-    log(f"Successfully added {tot_edges} synthetic edges in {len(tot_snapshots)}/{len(graph_snapshots)} snapshots.")
+    log(f"Successfully added {tot_edges} synthetic edges in {len(tot_snapshots)}/{len(train_graphs) + len(val_graphs)} snapshots.")
     log(f"Snapshots: {','.join(list(map(str, tot_snapshots)))}")
     
-    return [*train_graphs, *val_graphs, *test_graphs]
+    return [*train_graphs, *val_graphs]

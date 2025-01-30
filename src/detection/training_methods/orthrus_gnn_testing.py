@@ -52,9 +52,11 @@ def test_edge_level(
         dstnodes = edge_index[1, :].cpu().numpy()
         t_vars = batch.t.cpu().numpy()
         losses = each_edge_loss.cpu().numpy()
-        
+
+                
         if 1 in batch.y:
-            log(f"Mean loss of fake malicious edges: {losses[batch.y.cpu() == 1].mean()}")
+            log(f"Mean score of fake malicious edges: {losses[batch.y.cpu() == 1].mean():.4f}")
+            log(f"Mean score of benign malicious edges: {losses[batch.y.cpu() == 0].mean():.4f}")
         
         edge_df = pd.DataFrame({
             'loss': losses.astype(float),
@@ -296,6 +298,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
 
     for graphs, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
+
         tracemalloc.start()
         
         all_losses = []
@@ -334,7 +337,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         
         if split_name == "val":
             val_ap = model.get_val_ap()
-            log(f'[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f}', return_line=True)
+            log(f'[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f} - Val AP: {val_ap:.4f}', return_line=True)
         else:
             log(f'[@epoch{epoch:02d}] Test finished - Test Loss: {mean_loss:.4f}', return_line=True)
 

@@ -388,6 +388,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             objective,
             graph_reindexer,
             is_edge_type_prediction,
+            use_few_shot=False,
         ) for objective in objectives]
     
     return objectives
@@ -417,6 +418,7 @@ def few_shot_decoder_factory(cfg):
                 ),
                 graph_reindexer=None,
                 is_edge_type_prediction=True,
+                use_few_shot=True,
             )
         ])
     
@@ -508,7 +510,13 @@ def optimizer_factory(cfg, parameters):
     lr = cfg.detection.gnn_training.lr
     weight_decay = cfg.detection.gnn_training.weight_decay
 
-    return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay) # TODO: parametrize
+    return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
+
+def optimizer_few_shot_factory(cfg, parameters):
+    lr = cfg.detection.gnn_training.decoder.few_shot.lr_few_shot
+    weight_decay = cfg.detection.gnn_training.decoder.few_shot.weight_decay_few_shot
+
+    return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
 
 def get_dimensions_from_data_sample(data):
     edge_dim = data.edge_feats.shape[1] if hasattr(data, "edge_feats") else None

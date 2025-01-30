@@ -96,6 +96,7 @@ def main(cfg):
         tot_loss = 0
         for g in log_tqdm(train_data, f"Training"):
             g.to(device=device)
+            g = remove_attacks_if_needed(g, cfg)
             loss = train(
                 data=g,
                 full_data=full_data,  # full list of edge messages (do not store on CPU)
@@ -126,24 +127,31 @@ def main(cfg):
         # Few-shot learning fine tuning
         if cfg.detection.gnn_training.decoder.use_few_shot:
             model.to_fine_tuning(True)
+            optimizer = optimizer_few_shot_factory(cfg, parameters=set(model.parameters()))
             
-            tot_loss = 0
-            for g in log_tqdm(train_data, f"Fine-tuning"):
-                g.to(device=device)
-                loss = train( # NOTE: THERE IS NO MALICIOUS SAMPLES IN THE TRAIN SET ONLY TRAINED ON BENIGN NOW + WE SHOULD TRAIN SSL, THEN FEW_SHOT NOT AT THE SAME TIME
-                    data=g,
-                    full_data=full_data,  # full list of edge messages (do not store on CPU)
-                    model=model,
-                    optimizer=optimizer,
-                    cfg=cfg,
-                )
-                g.to("cpu")
-                if use_cuda:
-                    torch.cuda.empty_cache()
-                
-                tot_loss += loss
-            tot_loss /= len(train_data)
-            log(f'[@epoch{epoch:02d}] Fine-tuning finished - Mean Loss: {tot_loss:.4f}', return_line=True)
+            num_epochs_few_shot = cfg.detection.gnn_training.decoder.few_shot.num_epochs_few_shot
+            for epoch in range(0, num_epochs_few_shot):
+                if isinstance(model.encoder, TGNEncoder):
+                    model.encoder.reset_state()
+                    
+                tot_loss = 0
+                for g in log_tqdm(train_data, f"Fine-tuning"):
+                    if 1 in g.y:
+                        g.to(device=device)
+                        loss = train(
+                            data=g,
+                            full_data=full_data,  # full list of edge messages (do not store on CPU)
+                            model=model,
+                            optimizer=optimizer,
+                            cfg=cfg,
+                        )
+                        g.to("cpu")
+                        if use_cuda:
+                            torch.cuda.empty_cache()
+                        
+                        tot_loss += loss
+                tot_loss /= len(train_data)
+                log(f'[@epoch{epoch:02d}] Fine-tuning finished - Mean Loss: {tot_loss:.5f}', return_line=True)
         
         # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
         # save_model(model, model_path, cfg)
@@ -180,7 +188,7 @@ def main(cfg):
             wandb.log({
                 "train_epoch": epoch,
                 "train_loss": round(tot_loss, 4),
-                # "val_ap": round(val_ap, 5),
+                "val_ap": round(val_ap, 5),
                 "val_loss": round(test_stats["val_loss"], 4),
                 "test_loss": round(test_stats["test_loss"], 4),
             })
@@ -209,6 +217,11 @@ def main(cfg):
     })
     
     return best_val_ap
+
+def remove_attacks_if_needed(graph, cfg):
+    if not cfg.detection.gnn_training.decoder.few_shot.include_attacks_in_ssl_training:
+        return graph[graph.y != 1]
+    return graph
 
 
 if __name__ == "__main__":
