@@ -232,7 +232,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
             dropout=cfg.detection.gnn_training.encoder.dropout,
             src_dst_projection_coef=objective_cfg.predict_edge_type.edge_mlp.src_dst_projection_coef,
         )
-    elif method == "node_mlp":
+    elif method == "custom_mlp":
         return CustomDecoder(
             in_dim=in_dim,
             out_dim=out_dim,

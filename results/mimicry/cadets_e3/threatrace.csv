@@ -1,4 +1,4 @@
-"Name","Tags","adp_score","mcc","tp","fp","tn","fn","detection.gnn_training.decoder.predict_node_type.node_mlp.architecture_str"
+"Name","Tags","adp_score","mcc","tp","fp","tn","fn","detection.gnn_training.decoder.predict_node_type.custom_mlp.architecture_str"
 "mimicry_5000","CADETS_E3, threatrace","0.917","-0.00178","1644","280855","68","1",""
 "mimicry_4000","CADETS_E3, threatrace","0.954","0","1357","281005","0","0",""
 "mimicry_3000","CADETS_E3, threatrace","0.884","0","1089","281085","0","0",""
