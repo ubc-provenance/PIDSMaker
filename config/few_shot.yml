@@ -131,7 +131,8 @@ detection:
         
         include_attacks_in_ssl_training: False
         skip_pre_training: False
-        num_epochs_few_shot: 20
+        num_epochs_few_shot: 50
+        patience_few_shot: 5
         lr_few_shot: 0.001
         weight_decay_few_shot: 0.00001
         decoder:

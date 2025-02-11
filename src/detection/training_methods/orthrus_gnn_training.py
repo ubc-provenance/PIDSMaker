@@ -135,6 +135,8 @@ def main(cfg):
             optimizer = optimizer_few_shot_factory(cfg, parameters=set(model.parameters()))
             
             num_epochs_few_shot = cfg.detection.gnn_training.decoder.few_shot.num_epochs_few_shot
+            patience_few_shot = cfg.detection.gnn_training.decoder.few_shot.patience_few_shot
+
             for tuning_epoch in range(0, num_epochs_few_shot):
                 if isinstance(model.encoder, TGNEncoder):
                     model.encoder.reset_state()
@@ -156,27 +158,19 @@ def main(cfg):
                         
                         tot_loss += loss
                 tot_loss /= len(train_data)
-                log(f'[@epoch{tuning_epoch:02d}] Fine-tuning finished - Mean Loss: {tot_loss:.5f}', return_line=True)
-        
-        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-        # save_model(model, model_path, cfg)
-        
-        # Validation
-        if (epoch+1) % 2 == 0 or epoch == 0:
-            split_to_run = "val" if best_epoch_mode else "all"
-            test_stats = orthrus_gnn_testing.main(
-                cfg=cfg,
-                model=model,
-                val_data=val_data,
-                test_data=test_data,
-                full_data=full_data,
-                epoch=epoch,
-                split=split_to_run,
-            )
-            all_test_stats.append(test_stats)
-            val_ap = test_stats["val_ap"]
-            
-            if best_epoch_mode:
+                
+                # Validation
+                val_stats = orthrus_gnn_testing.main(
+                    cfg=cfg,
+                    model=model,
+                    val_data=val_data,
+                    test_data=test_data,
+                    full_data=full_data,
+                    epoch=epoch,
+                    split="val",
+                )
+                val_ap = val_stats["val_loss"]
+                
                 if val_ap > best_val_ap:
                     best_val_ap = val_ap
                     best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
@@ -184,19 +178,39 @@ def main(cfg):
                     patience_counter = 0
                 else:
                     patience_counter += 1
+                    
+                log(f'[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_ap:.4f}', return_line=True)
+            
+                if patience_counter >= patience_few_shot:
+                    log(f"Early stopping: best few-shot loss is {best_val_ap:.4f}")
+                    break
+        
+            model.load_state_dict(best_model)
             model.to_device(device)
-            
-            # if patience_counter >= patience:
-            #     log(f"Early stopping: best score is {best_val_ap:.4f}")
-            #     break
-            
-            wandb.log({
-                "train_epoch": epoch,
-                "train_loss": round(tot_loss, 4),
-                "val_ap": round(val_ap, 5),
-                "val_loss": round(test_stats["val_loss"], 4),
-                "test_loss": round(test_stats["test_loss"], 4),
-            })
+        
+        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+        # save_model(model, model_path, cfg)
+        
+        # Test
+        test_stats = orthrus_gnn_testing.main(
+            cfg=cfg,
+            model=model,
+            val_data=val_data,
+            test_data=test_data,
+            full_data=full_data,
+            epoch=epoch,
+            split="all",
+        )
+        all_test_stats.append(test_stats)
+        val_ap = test_stats["val_ap"]
+        
+        wandb.log({
+            "train_epoch": epoch,
+            "train_loss": round(tot_loss, 4),
+            "val_ap": round(val_ap, 5),
+            "val_loss": round(test_stats["val_loss"], 4),
+            "test_loss": round(test_stats["test_loss"], 4),
+        })
         
     # After training
     if best_epoch_mode:
