@@ -83,46 +83,51 @@ def main(cfg):
     patience_counter = 0
     all_test_stats = []
     
+    skip_pre_training = cfg.detection.gnn_training.decoder.few_shot.skip_pre_training
+    if skip_pre_training:
+        num_epochs = 1
+    
     for epoch in range(0, num_epochs):
-        start = timer()
-        tracemalloc.start()
+        if not skip_pre_training:
+            start = timer()
+            tracemalloc.start()
 
-        # Before each epoch, we reset the memory
-        if isinstance(model.encoder, TGNEncoder):
-            model.encoder.reset_state()
+            # Before each epoch, we reset the memory
+            if isinstance(model.encoder, TGNEncoder):
+                model.encoder.reset_state()
+                
+            model.to_fine_tuning(False)
+
+            tot_loss = 0
+            for g in log_tqdm(train_data, f"Training"):
+                g.to(device=device)
+                g = remove_attacks_if_needed(g, cfg)
+                loss = train(
+                    data=g,
+                    full_data=full_data,  # full list of edge messages (do not store on CPU)
+                    model=model,
+                    optimizer=optimizer,
+                    cfg=cfg,
+                )
+                g.to("cpu")
+                if use_cuda:
+                    torch.cuda.empty_cache()
+                
+                tot_loss += loss
+
+            tot_loss /= len(train_data)
+            epoch_times.append(timer() - start)
             
-        model.to_fine_tuning(False)
-
-        tot_loss = 0
-        for g in log_tqdm(train_data, f"Training"):
-            g.to(device=device)
-            g = remove_attacks_if_needed(g, cfg)
-            loss = train(
-                data=g,
-                full_data=full_data,  # full list of edge messages (do not store on CPU)
-                model=model,
-                optimizer=optimizer,
-                cfg=cfg,
-            )
-            g.to("cpu")
+            _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
+            peak_train_cpu_mem = max(peak_train_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
+            tracemalloc.stop()
+            
             if use_cuda:
-                torch.cuda.empty_cache()
-            
-            tot_loss += loss
-
-        tot_loss /= len(train_data)
-        epoch_times.append(timer() - start)
-        
-        _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
-        peak_train_cpu_mem = max(peak_train_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
-        tracemalloc.stop()
-        
-        if use_cuda:
-            peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
-            peak_train_gpu_mem = max(peak_train_gpu_mem, peak_inference_gpu_memory)
-            torch.cuda.reset_peak_memory_stats(device=device)
-            
-        log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
+                peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
+                peak_train_gpu_mem = max(peak_train_gpu_mem, peak_inference_gpu_memory)
+                torch.cuda.reset_peak_memory_stats(device=device)
+                
+            log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
         
         # Few-shot learning fine tuning
         if cfg.detection.gnn_training.decoder.use_few_shot:

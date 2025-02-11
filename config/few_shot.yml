@@ -130,6 +130,7 @@ detection:
           process_selection_method: random # TODO: try new methods
         
         include_attacks_in_ssl_training: False
+        skip_pre_training: False
         num_epochs_few_shot: 20
         lr_few_shot: 0.001
         weight_decay_few_shot: 0.00001
