@@ -100,7 +100,7 @@ class Model(nn.Module):
             return results
     
     def _reshape_x(self, batch):
-        if self.node_level and hasattr(batch, "x"):
+        if hasattr(batch, "x"):
             x = batch.x
         else:
             x = (batch.x_src, batch.x_dst)
