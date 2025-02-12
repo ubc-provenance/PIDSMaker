@@ -95,11 +95,6 @@ detection:
         activation: relu
     decoder:
       used_methods: predict_edge_type
-      predict_edge_type:
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 2
       reconstruct_node_features:
         loss: MSE
         decoder: none

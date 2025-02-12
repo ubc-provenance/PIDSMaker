@@ -9,18 +9,18 @@ parameters:
   featurization.embed_nodes.used_method:
     values: [feature_word2vec, only_type]
   preprocessing.build_graphs.time_window_size:
-    values: [1.0, 15.0]
+    values: [1.0]
   detection.gnn_training.lr:
-    values: [0.0001]
+    values: [0.0001, 0.00001]
   detection.gnn_training.node_hid_dim:
     values: [128]
   detection.gnn_training.node_out_dim:
     values: [-1]
   detection.gnn_training.encoder.dropout:
     values: [0.3]
-  detection.gnn_training.decoder.few_shot.skip_pre_training:
-    values: [False, True]
   detection.gnn_training.decoder.few_shot.lr_few_shot:
-    values: [0.001, 0.0001]
-  detection.gnn_training.decoder.few_shot.num_epochs_few_shot:
-    values: [20, 10]
+    values: [0.001, 0.0001, 0.00001]
+  detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_attacks:
+    values: [1, 5]
+  detection.gnn_training.decoder.few_shot.freeze_encoder:
+    values: [True, False]
