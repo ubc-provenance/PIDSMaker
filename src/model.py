@@ -157,10 +157,6 @@ class Model(nn.Module):
                 x, _, n_id = self.graph_reindexer._reindex_graph(batch.edge_index, x[0], x[1])
                 batch.original_n_id = n_id
             
-        else:
-            if not isinstance(x, tuple):
-                x = (batch.x_src[batch.edge_index[0]], batch.x_dst[batch.edge_index[1]])
-                
         return h_src, h_dst, h, x
     
     def to_fine_tuning(self, do: bool):

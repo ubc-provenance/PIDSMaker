@@ -1,6 +1,3 @@
-from tqdm import tqdm
-
-from encoders import TGNEncoder
 from provnet_utils import *
 from data_utils import *
 from config import *
@@ -53,10 +50,9 @@ def test_edge_level(
         t_vars = batch.t.cpu().numpy()
         losses = each_edge_loss.cpu().numpy()
 
-                
-        if 1 in batch.y:
-            log(f"Mean score of fake malicious edges: {losses[batch.y.cpu() == 1].mean():.4f}")
-            log(f"Mean score of benign malicious edges: {losses[batch.y.cpu() == 0].mean():.4f}")
+        # if 1 in batch.y:
+        #     log(f"Mean score of fake malicious edges: {losses[batch.y.cpu() == 1].mean():.4f}")
+        #     log(f"Mean score of benign malicious edges: {losses[batch.y.cpu() == 0].mean():.4f}")
         
         edge_df = pd.DataFrame({
             'loss': losses.astype(float),
@@ -345,8 +341,8 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     
     stats = {
         "val_ap": val_ap,
-        "val_loss": split2loss["val"],
-        "test_loss": split2loss["test"],
+        "val_loss": split2loss.get("val", None),
+        "test_loss": split2loss.get("test", None),
         "peak_inference_cpu_memory": peak_inference_cpu_mem,
         "peak_inference_gpu_memory": peak_inference_gpu_mem,
         "time_per_batch_inference": np.mean(tpb),
