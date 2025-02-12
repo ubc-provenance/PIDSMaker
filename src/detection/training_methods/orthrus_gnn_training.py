@@ -75,20 +75,21 @@ def main(cfg):
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
-    best_val_loss, best_model, best_epoch = float("inf"), None, None
     peak_train_cpu_mem = 0
     peak_train_gpu_mem = 0
     test_stats = None
     patience = cfg.detection.gnn_training.patience
     patience_counter = 0
     all_test_stats = []
+    use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
     
-    skip_pre_training = cfg.detection.gnn_training.decoder.few_shot.skip_pre_training
-    if skip_pre_training:
-        num_epochs = 1
+    if use_few_shot:
+        num_epochs += 1 # in few-shot, the first epoch is without ssl training
     
     for epoch in range(0, num_epochs):
-        if not skip_pre_training:
+        best_val_score, best_model, best_epoch = -float("inf"), None, None
+        
+        if not use_few_shot or (use_few_shot and epoch > 0):
             start = timer()
             tracemalloc.start()
 
@@ -130,7 +131,7 @@ def main(cfg):
             log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
         
         # Few-shot learning fine tuning
-        if cfg.detection.gnn_training.decoder.use_few_shot:
+        if use_few_shot:
             model.to_fine_tuning(True)
             optimizer = optimizer_few_shot_factory(cfg, parameters=set(model.parameters()))
             
@@ -142,7 +143,7 @@ def main(cfg):
                     model.encoder.reset_state()
                     
                 tot_loss = 0
-                for g in log_tqdm(train_data, f"Fine-tuning"):
+                for g in log_tqdm(train_data, "Fine-tuning"):
                     if 1 in g.y:
                         g.to(device=device)
                         loss = train(
@@ -168,21 +169,23 @@ def main(cfg):
                     full_data=full_data,
                     epoch=epoch,
                     split="val",
+                    logging=False,
                 )
                 val_loss = val_stats["val_loss"]
+                val_score = val_stats["val_score"]
                 
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
+                if val_score > best_val_score:
+                    best_val_score = val_score
                     best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
                     best_epoch = epoch
                     patience_counter = 0
                 else:
                     patience_counter += 1
                     
-                log(f'[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_loss:.4f}', return_line=True)
+                log(f'[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_loss:.4f} | Val Score: {val_score:.4f}', return_line=True)
             
                 if patience_counter >= patience_few_shot:
-                    log(f"Early stopping: best few-shot loss is {best_val_loss:.4f}")
+                    log(f"Early stopping: best few-shot loss is {best_val_score:.4f}")
                     break
         
             model.load_state_dict(best_model)
@@ -206,6 +209,7 @@ def main(cfg):
         wandb.log({
             "train_epoch": epoch,
             "train_loss": round(tot_loss, 4),
+            "val_score": round(test_stats["val_score"], 4),
             "val_loss": round(test_stats["val_loss"], 4),
             "test_loss": round(test_stats["test_loss"], 4),
         })
@@ -224,8 +228,9 @@ def main(cfg):
         )
 
     wandb.log({
+        "best_epoch": best_epoch,
         "train_epoch_time": round(np.mean(epoch_times), 2),
-        # "val_score": round(best_val_loss, 5),
+        "val_score": round(best_val_score, 5),
         "peak_train_cpu_memory": round(peak_train_cpu_mem, 3),
         "peak_train_gpu_memory": round(peak_train_gpu_mem, 3),
         "peak_inference_cpu_memory": round(np.max([d["peak_inference_cpu_memory"] for d in all_test_stats]), 3),
@@ -233,7 +238,7 @@ def main(cfg):
         "time_per_batch_inference": round(np.mean([d["time_per_batch_inference"] for d in all_test_stats]), 3),
     })
     
-    return best_val_loss
+    return best_val_score
 
 def remove_attacks_if_needed(graph, cfg):
     if not cfg.detection.gnn_training.decoder.few_shot.include_attacks_in_ssl_training:

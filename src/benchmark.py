@@ -122,7 +122,7 @@ def main(cfg, project, exp, **kwargs):
         metrics = task_results["evaluation"]["return"] or {}
         metrics = {
             **metrics,
-            "val_ap": task_results["gnn_training"]["return"],
+            "val_score": task_results["gnn_training"]["return"],
         }
         
         times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}

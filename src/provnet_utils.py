@@ -407,10 +407,10 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
     if return_line:
         print("")
 
-def log_tqdm(iterator, desc="", **kwargs):
+def log_tqdm(iterator, desc="", logging=True, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    if DISABLE_TQDM:
+    if DISABLE_TQDM and logging:
         log(f"{desc}...")
     return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
 

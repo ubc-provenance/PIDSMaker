@@ -264,7 +264,7 @@ def test_node_level(
     # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
-def main(cfg, model, val_data, test_data, full_data, epoch, split):
+def main(cfg, model, val_data, test_data, full_data, epoch, split, logging=True):
     if split == "all":
         splits = [(val_data, "val"), (test_data, "test")]
     elif split == "val":
@@ -286,7 +286,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
 
-    val_ap = None
+    val_score = None
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
     tpb = []
@@ -298,7 +298,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         tracemalloc.start()
         
         all_losses = []
-        for g in log_tqdm(graphs, desc=desc):
+        for g in log_tqdm(graphs, desc=desc, logging=logging):
             g.to(device=device)
             
             s = time.time()
@@ -332,15 +332,17 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         split2loss[split_name] = mean_loss
         
         if split_name == "val":
-            val_ap = model.get_val_ap()
-            log(f'[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f} - Val AP: {val_ap:.4f}', return_line=True)
+            val_score = model.get_val_ap()
+            if logging:
+                log(f'[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f} - Val Score: {val_score:.4f}', return_line=True)
         else:
-            log(f'[@epoch{epoch:02d}] Test finished - Test Loss: {mean_loss:.4f}', return_line=True)
+            if logging:
+                log(f'[@epoch{epoch:02d}] Test finished - Test Loss: {mean_loss:.4f}', return_line=True)
 
     del model
     
     stats = {
-        "val_ap": val_ap,
+        "val_score": val_score,
         "val_loss": split2loss.get("val", None),
         "test_loss": split2loss.get("test", None),
         "peak_inference_cpu_memory": peak_inference_cpu_mem,

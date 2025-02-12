@@ -50,6 +50,7 @@ def model_factory(encoder, decoders, decoder_few_shot, cfg, in_dim, graph_reinde
         node_level=cfg._is_node_level,
         is_running_mc_dropout=cfg._is_running_mc_dropout,
         use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,
+        freeze_encoder=cfg.detection.gnn_training.decoder.few_shot.freeze_encoder,
     ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):
@@ -228,16 +229,17 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
         return EdgeMLPDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
-            architecture=decoder_cfg["architecture_str"],
+            architecture=decoder_cfg.architecture_str,
             dropout=cfg.detection.gnn_training.encoder.dropout,
-            src_dst_projection_coef=objective_cfg.predict_edge_type.edge_mlp.src_dst_projection_coef,
+            src_dst_projection_coef=decoder_cfg.src_dst_projection_coef,
         )
     elif method == "custom_mlp":
         return CustomDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
-            architecture=decoder_cfg["architecture_str"],
+            architecture=decoder_cfg.architecture_str,
             dropout=cfg.detection.gnn_training.encoder.dropout,
+            is_node_level=cfg._is_node_level,
         )
     elif method == "nodlink":
         return NodLinkDecoder(
@@ -353,7 +355,7 @@ def objective_factory(cfg, in_dim, device, max_node_num, objective_cfg=None):
             
         elif objective == "detect_edge_few_shot":
             classes = 2
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim * 2, out_dim=classes, objective_cfg=objective_cfg)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=classes, objective_cfg=objective_cfg)
             
             objectives.append(
                 FewShotEdgeDetection(

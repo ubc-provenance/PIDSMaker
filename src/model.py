@@ -20,6 +20,7 @@ class Model(nn.Module):
             node_level,
             is_running_mc_dropout,
             use_few_shot,
+            freeze_encoder,
         ):
         super(Model, self).__init__()
 
@@ -40,7 +41,7 @@ class Model(nn.Module):
         self.decoder_few_shot = decoder_few_shot
         self.use_few_shot = use_few_shot
         self.few_shot_mode = False
-        self.frozen_embeddings = None
+        self.freeze_encoder = freeze_encoder
         
     def embed(self, batch, full_data, inference=False, **kwargs):
         train_mode = not inference
@@ -163,12 +164,14 @@ class Model(nn.Module):
         if not self.use_few_shot:
             return
         if do and not self.few_shot_mode:
-            self.encoder.eval()
-            for param in self.encoder.parameters(): # freeze the encoder
-                param.requires_grad = False
+            
+            if self.freeze_encoder:
+                self.encoder.eval()
+                for param in self.encoder.parameters(): # freeze the encoder
+                    param.requires_grad = False
             
             # the decoder is replaced by a copy of the decoder_few_shot + the old decoder is saved for later switch
-            ssl_decoder = self.decoders # switch the pretext encoder and fine-tuning decoder
+            ssl_decoder = self.decoders # switch the pretext decoder and fine-tuning decoder
             self.decoders = copy.deepcopy(self.decoder_few_shot)
             self.ssl_decoder = ssl_decoder
             self.few_shot_mode = True
