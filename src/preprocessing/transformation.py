@@ -1,4 +1,4 @@
-from config import get_runtime_required_args, get_yml_cfg, get_days_from_cfg
+from config import get_runtime_required_args, get_yml_cfg, SYNTHETIC_ATTACKS
 from provnet_utils import *
 from .transformation_methods import (
     transformation_rcaid_pseudo_graph,
@@ -39,7 +39,6 @@ def add_synthetic_attacks(base_dir, dst_dir, cfg, method):
             torch.save(graph, os.path.join(dst_path, file_name))
 
 
-AVAILABLE_SYNTHETIC_ATTACKS = ["synthetic_attack_naive"]
 def apply_synthetic_attacks(train_graphs, val_graphs, cfg, method):
     if method == "synthetic_attack_naive":
         return synthetic_attack_naive.main(train_graphs, val_graphs, cfg)
@@ -93,7 +92,7 @@ def main(cfg):
     if len(methods) == 1 and methods[0] == "none":
         no_transformation(base_dir, dst_dir)
         
-    elif len(methods) == 1 and methods[0] in AVAILABLE_SYNTHETIC_ATTACKS:
+    elif len(methods) == 1 and methods[0] in SYNTHETIC_ATTACKS.keys():
         add_synthetic_attacks(base_dir, dst_dir, cfg, methods[0])
 
     else:

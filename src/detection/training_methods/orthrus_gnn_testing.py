@@ -288,7 +288,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split, logging=True)
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
 
-    val_score = None
+    val_score = 0.0
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
     tpb = []

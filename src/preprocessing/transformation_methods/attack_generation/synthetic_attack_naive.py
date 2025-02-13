@@ -51,10 +51,10 @@ def select_processes_with_constraints(train_graphs, val_graphs, num_processes, p
 
 def main(train_graphs, val_graphs, cfg):
     """Integrates synthetic attack patterns into temporal provenance graphs."""
-    num_attacks = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_attacks
-    num_malicious_process = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_malicious_process
-    num_unauthorized_file_access = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.num_unauthorized_file_access
-    process_selection_method = cfg.detection.gnn_training.decoder.few_shot.synthetic_attack_naive.process_selection_method
+    num_attacks = cfg.preprocessing.transformation.synthetic_attack_naive.num_attacks
+    num_malicious_process = cfg.preprocessing.transformation.synthetic_attack_naive.num_malicious_process
+    num_unauthorized_file_access = cfg.preprocessing.transformation.synthetic_attack_naive.num_unauthorized_file_access
+    process_selection_method = cfg.preprocessing.transformation.synthetic_attack_naive.process_selection_method
     
     # Combine all graph snapshots into a single graph for analysis
     combined_graph = nx.MultiDiGraph()

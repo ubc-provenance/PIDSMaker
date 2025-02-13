@@ -12,6 +12,11 @@ preprocessing:
       netflow: type, remote_ip, remote_port
   transformation:
     used_methods: none
+    synthetic_attack_naive:
+      num_attacks: 1
+      num_malicious_process: 5
+      num_unauthorized_file_access: 20
+      process_selection_method: random # TODO: try new methods
 
 featurization:
   embed_nodes:
@@ -42,7 +47,7 @@ featurization:
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
-      num_workers: 15
+      num_workers: 1
       compute_loss: True
       add_paths: False
     feature_word2vec:
@@ -68,7 +73,7 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 3
+    num_epochs: 6
     patience: 3
     lr: 0.0001
     weight_decay: 0.00001
@@ -121,14 +126,7 @@ detection:
         balanced_loss: False
       
       use_few_shot: True
-      few_shot:
-        attack_generation_method: synthetic_attack_naive
-        synthetic_attack_naive:
-          num_attacks: 1
-          num_malicious_process: 5
-          num_unauthorized_file_access: 20
-          process_selection_method: random # TODO: try new methods
-        
+      few_shot:        
         include_attacks_in_ssl_training: False
         freeze_encoder: True
         num_epochs_few_shot: 50

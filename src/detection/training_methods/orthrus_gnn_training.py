@@ -1,7 +1,5 @@
-import logging
 from time import perf_counter as timer
 
-import torch.nn as nn
 import tracemalloc
 import wandb
 
@@ -84,14 +82,14 @@ def main(cfg):
     patience = cfg.detection.gnn_training.patience
     patience_counter = 0
     all_test_stats = []
-    global_best_val_score = -float("inf")
+    global_best_val_score = float("-inf")
     use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
     
     if use_few_shot:
         num_epochs += 1 # in few-shot, the first epoch is without ssl training
     
     for epoch in range(0, num_epochs):
-        best_val_score, best_model, best_epoch = -float("inf"), None, None
+        best_val_score, best_model, best_epoch = float("-inf"), None, None
         
         if not use_few_shot or (use_few_shot and epoch > 0):
             start = timer()
