@@ -1,4 +1,5 @@
 from config import *
+from provnet_utils import set_seed
 from . import build_random_walks
 from .embed_nodes_methods import (
     embed_nodes_word2vec,
@@ -13,6 +14,8 @@ from .embed_nodes_methods import (
 
 
 def main(cfg):
+    set_seed(cfg)
+    
     method = cfg.featurization.embed_nodes.used_method.strip()
     if method == "word2vec":
         build_random_walks.main(cfg)

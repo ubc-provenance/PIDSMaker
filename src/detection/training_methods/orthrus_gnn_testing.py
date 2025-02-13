@@ -265,6 +265,8 @@ def test_node_level(
 
 
 def main(cfg, model, val_data, test_data, full_data, epoch, split, logging=True):
+    set_seed(cfg)
+    
     if split == "all":
         splits = [(val_data, "val"), (test_data, "test")]
     elif split == "val":

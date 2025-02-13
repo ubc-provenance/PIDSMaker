@@ -10,6 +10,7 @@ from config import *
 from data_utils import *
 from factory import *
 from . import orthrus_gnn_testing
+from provnet_utils import set_seed
 
 
 def train(
@@ -54,6 +55,8 @@ def train(
 
 
 def main(cfg):
+    set_seed(cfg)
+    
     log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
@@ -81,6 +84,7 @@ def main(cfg):
     patience = cfg.detection.gnn_training.patience
     patience_counter = 0
     all_test_stats = []
+    global_best_val_score = -float("inf")
     use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
     
     if use_few_shot:
@@ -177,10 +181,13 @@ def main(cfg):
                 if val_score > best_val_score:
                     best_val_score = val_score
                     best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
-                    best_epoch = epoch
                     patience_counter = 0
                 else:
                     patience_counter += 1
+                    
+                if val_score > global_best_val_score:
+                    global_best_val_score = val_score
+                    best_epoch = epoch
                     
                 log(f'[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_loss:.4f} | Val Score: {val_score:.4f}', return_line=True)
             

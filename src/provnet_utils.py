@@ -4,7 +4,6 @@ from datetime import datetime
 import time
 import psycopg2
 from psycopg2 import extras as ex
-import os.path as osp
 import os
 import copy
 import logging
@@ -656,3 +655,14 @@ def log_dataset_stats(train_data, val_data, test_data):
         log(f"{label} edges | mean: {int(torch.mean(edges, dtype=torch.float))} | min: {int(torch.min(edges))} | max: {int(torch.max(edges))}")
         log(f"{label} nodes | mean: {int(torch.mean(nodes, dtype=torch.float))} | min: {int(torch.min(nodes))} | max: {int(torch.max(nodes))}")
         log("")
+
+def set_seed(cfg):
+    if cfg.detection.gnn_training.use_seed:
+        seed = 0
+        random.seed(seed)
+        np.random.seed(seed)
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False

@@ -82,6 +82,7 @@ def apply_graph_transformations(graph, methods, cfg):
 
 
 def main(cfg):
+    set_seed(cfg)
     log_start(__file__)
     methods = cfg.preprocessing.transformation.used_methods
     methods = list(map(lambda x: x.strip(), methods.split(",")))

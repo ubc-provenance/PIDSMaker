@@ -511,7 +511,7 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
     for k, v in attack2max_score.items():
         score = (v - mean)
         att2score[f"discrim_score_att_{k}"] = score
-    att2score["discrim_score_att_mean"] = np.mean(list(att2score.values()))
+    att2score["discrimination"] = np.mean(list(att2score.values()))
     
     return att2score
 
