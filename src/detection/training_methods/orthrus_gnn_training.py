@@ -3,7 +3,6 @@ from time import perf_counter as timer
 import tracemalloc
 import wandb
 
-from encoders import TGNEncoder
 from config import *
 from data_utils import *
 from factory import *
@@ -96,8 +95,7 @@ def main(cfg):
             tracemalloc.start()
 
             # Before each epoch, we reset the memory
-            if isinstance(model.encoder, TGNEncoder):
-                model.encoder.reset_state()
+            model.reset_state()
                 
             model.to_fine_tuning(False)
 
@@ -141,8 +139,7 @@ def main(cfg):
             patience_few_shot = cfg.detection.gnn_training.decoder.few_shot.patience_few_shot
 
             for tuning_epoch in range(0, num_epochs_few_shot):
-                if isinstance(model.encoder, TGNEncoder):
-                    model.encoder.reset_state()
+                model.reset_state()
                     
                 tot_loss = 0
                 for g in log_tqdm(train_data, "Fine-tuning"):

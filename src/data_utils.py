@@ -12,7 +12,7 @@ from torch_geometric.data.data import size_repr
 from torch_scatter import scatter
 
 from encoders import TGNEncoder
-from provnet_utils import log_dataset_stats
+from provnet_utils import log_dataset_stats, log_tqdm
 
 class CollatableTemporalData(TemporalData):
     """
@@ -98,7 +98,7 @@ def load_all_datasets(cfg, device, only_keep=None):
     log_dataset_stats(train_data, val_data, test_data)
     
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    compute_x_node_features([train_data, val_data, test_data], max_node, device)
+    reindex_graphs([train_data, val_data, test_data], max_node, device)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -434,13 +434,13 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def compute_x_node_features(datasets, max_node_num, device):
+def reindex_graphs(datasets, max_node_num, device):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
     )
     
-    for data_list in datasets:
+    for data_list in log_tqdm(datasets, desc="Reindexing graphs"):
         for batch in data_list:
             batch.to(device)
             batch = graph_reindexer.reindex_graph(batch)
