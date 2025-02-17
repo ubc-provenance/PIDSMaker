@@ -69,7 +69,6 @@ def get_GP_of_each_attack(cfg):
             log(f"{num_mimicry_GPs} mimicry ground truth nodes loaded")
     return attack_to_nids
 
-
 def get_uuid2nids(cur):
     queries = {
         "file": "SELECT index_id, node_uuid FROM file_node_table;",
@@ -153,3 +152,47 @@ def get_t2malicious_node(cfg) -> dict[list]:
                 t_to_node[int(t)].append(nid2uuid[int(dst_id)])
 
     return t_to_node
+
+def get_attack_to_mal_edges(cfg) -> dict[list]:
+    cur, connect = init_database_connection(cfg)
+    uuid2nids, nid2uuid = get_uuid2nids(cur)
+
+    attack_to_euuids = {}
+
+    for i, (path, attack_to_time_window) in enumerate(zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)):
+        attack_to_euuids[i] = {}
+        attack_to_euuids[i]["euuids"] = set()
+
+        start_time = datetime_to_ns_time_US(attack_to_time_window[1])
+        end_time = datetime_to_ns_time_US(attack_to_time_window[2])
+        attack_to_euuids[i]["time_range"] =[start_time, end_time]
+        
+        ground_truth_nids = []
+        with open(os.path.join(cfg._ground_truth_dir, path), 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                node_uuid, node_labels, _ = row[0], row[1], row[2]
+                node_id = uuid2nids[node_uuid]
+                ground_truth_nids.append(str(node_id))
+
+        rows = get_events(cur, start_time, end_time)
+        for row in rows:
+            src_idx_id = row[1]
+            ope = row[2]
+            dst_idx_id = row[4]
+            event_uuid = row[5]
+            timestamp_rec = row[6]
+
+            if src_idx_id in ground_truth_nids and dst_idx_id in ground_truth_nids:
+                attack_to_euuids[i]["euuids"].add(event_uuid)
+    
+    return attack_to_euuids
+
+def get_ground_truth_edges(cfg) -> set:
+    attack_to_euuids = get_attack_to_mal_edges(cfg)
+
+    malicious_edge_uuids = set()
+    for attack, data in attack_to_euuids.items():
+        malicious_edge_uuids |= data['euuids']
+
+    return malicious_edge_uuids
