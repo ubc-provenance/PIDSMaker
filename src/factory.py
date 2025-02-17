@@ -26,8 +26,9 @@ def build_model(data_sample, device, cfg, max_node_num):
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
-    decoder = objective_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
-    model = model_factory(encoder, decoder, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
+    decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer)
+    decoder_few_shot = few_shot_decoder_factory(cfg, graph_reindexer=graph_reindexer)
+    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device, max_node_num=max_node_num)
     
     if cfg._is_running_mc_dropout:
         dropout = cfg.experiment.uncertainty.mc_dropout.dropout
@@ -35,18 +36,18 @@ def build_model(data_sample, device, cfg, max_node_num):
     
     return model
 
-def model_factory(encoder, decoders, cfg, in_dim, graph_reindexer, device, max_node_num):
+def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num):
     return Model(
         encoder=encoder,
         decoders=decoders,
+        decoder_few_shot=decoder_few_shot,
         num_nodes=max_node_num,
         device=device,
-        in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
-        graph_reindexer=graph_reindexer,
-        node_level=cfg._is_node_level,
         is_running_mc_dropout=cfg._is_running_mc_dropout,
+        use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,
+        freeze_encoder=cfg.detection.gnn_training.decoder.few_shot.freeze_encoder,
     ).to(device)
 
 def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):
@@ -54,6 +55,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    dropout = cfg.detection.gnn_training.encoder.dropout
     
     # If edge features are used, we set them here
     edge_dim = 0
@@ -155,8 +157,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
-        elif method == "linear":
-            encoder = LinearEncoder(in_dim, node_out_dim, dropout=cfg.detection.gnn_training.encoder.dropout)
+        elif method == "node_mlp":
+            encoder = CustomNodeMLP(
+                in_dim=in_dim,
+                out_dim=node_out_dim,
+                architecture=cfg.detection.gnn_training.encoder.node_mlp.architecture_str,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
+            )
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -213,22 +220,24 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
 
     return encoder
 
-def decoder_factory(method, objective, cfg, in_dim, out_dim):
-    decoder_cfg = getattr(getattr(cfg.detection.gnn_training.decoder, objective), method, None)
+def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None):
+    if objective_cfg is None:
+        objective_cfg = cfg.detection.gnn_training.decoder
+    decoder_cfg = getattr(getattr(objective_cfg, objective), method, None)
     
     if method == "edge_mlp":
-        return EdgeMLPDecoder(
+        return CustomEdgeMLP(
             in_dim=in_dim,
             out_dim=out_dim,
-            architecture=decoder_cfg["architecture_str"],
+            architecture=decoder_cfg.architecture_str,
             dropout=cfg.detection.gnn_training.encoder.dropout,
-            src_dst_projection_coef=cfg.detection.gnn_training.decoder.predict_edge_type.edge_mlp.src_dst_projection_coef,
+            src_dst_projection_coef=decoder_cfg.src_dst_projection_coef,
         )
     elif method == "node_mlp":
-        return NodeMLPDecoder(
+        return CustomNodeMLP(
             in_dim=in_dim,
             out_dim=out_dim,
-            architecture=decoder_cfg["architecture_str"],
+            architecture=decoder_cfg.architecture_str,
             dropout=cfg.detection.gnn_training.encoder.dropout,
         )
     elif method == "nodlink":
@@ -260,27 +269,29 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim):
         raise ValueError(f"Invalid decoder {method}")
         
 
-def objective_factory(cfg, in_dim, device, max_node_num):
+def objective_factory(cfg, in_dim, graph_reindexer, objective_cfg=None):
+    if objective_cfg is None:
+        objective_cfg = cfg.detection.gnn_training.decoder
     node_out_dim = cfg.detection.gnn_training.node_out_dim
 
     objectives = []
-    for objective in map(lambda x: x.strip(), cfg.detection.gnn_training.decoder.used_methods.split(",")):
-        method = getattr(getattr(cfg.detection.gnn_training.decoder, objective.strip()), "decoder")
+    for objective in map(lambda x: x.strip(), objective_cfg.used_methods.split(",")):
+        method = getattr(getattr(objective_cfg, objective.strip()), "decoder")
 
         if objective == "reconstruct_node_features":
-            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_features.loss)
+            loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_node_features.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
             objectives.append(NodeFeatReconstruction(decoder=decoder, loss_fn=loss_fn))
             
         elif objective == "reconstruct_node_embeddings":
-            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_node_embeddings.loss)
+            loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_node_embeddings.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
             objectives.append(NodeEmbDecoder(decoder=decoder, loss_fn=loss_fn))
         
         elif objective == "reconstruct_edge_embeddings":
-            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_edge_embeddings.loss)
+            loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_edge_embeddings.loss)
             in_dim_edge = node_out_dim * 2  # concatenation of 2 nodes
             
             decoder = decoder_factory(method, objective, cfg, in_dim=in_dim_edge, out_dim=in_dim_edge)
@@ -292,7 +303,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             
         elif objective == "predict_edge_type":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
-            balanced_loss = cfg.detection.gnn_training.decoder.predict_edge_type.balanced_loss
+            balanced_loss = objective_cfg.predict_edge_type.balanced_loss
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=cfg.dataset.num_edge_types)
             objectives.append(
@@ -305,7 +316,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             
         elif objective == "predict_node_type":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
-            balanced_loss = cfg.detection.gnn_training.decoder.predict_node_type.balanced_loss
+            balanced_loss = objective_cfg.predict_node_type.balanced_loss
             
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
             objectives.append(
@@ -317,9 +328,9 @@ def objective_factory(cfg, in_dim, device, max_node_num):
                 ))
             
         elif objective == "reconstruct_masked_features":
-            mask_rate = cfg.detection.gnn_training.decoder.reconstruct_masked_features.mask_rate
+            mask_rate = objective_cfg.reconstruct_masked_features.mask_rate
 
-            loss_fn = recon_loss_fn_factory(cfg.detection.gnn_training.decoder.reconstruct_masked_features.loss)
+            loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_masked_features.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
             objectives.append(
@@ -331,7 +342,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             )
         
         elif objective == "predict_masked_struct":
-            loss_fn = categorical_loss_fn_factory(cfg.detection.gnn_training.decoder.predict_masked_struct.loss)
+            loss_fn = categorical_loss_fn_factory(objective_cfg.predict_masked_struct.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim * 2, out_dim=1)
             objectives.append(
@@ -340,17 +351,28 @@ def objective_factory(cfg, in_dim, device, max_node_num):
                     loss_fn=loss_fn,
                 )
             )
+            
+        elif objective == "detect_edge_few_shot":
+            classes = 2
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=classes, objective_cfg=objective_cfg)
+            
+            objectives.append(
+                FewShotEdgeDetection(
+                    decoder=decoder,
+                    loss_fn=categorical_loss_fn_factory("cross_entropy"),
+                )
+            )
         
         # elif objective == "predict_edge_contrastive":
-        #     predict_edge_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.used_method.strip()
+        #     predict_edge_method = objective_cfg.predict_edge_contrastive.used_method.strip()
         #     if predict_edge_method == "linear":
         #         edge_decoder = EdgeLinearDecoder(
         #             in_dim=node_out_dim,
-        #             dropout=cfg.detection.gnn_training.decoder.predict_edge_contrastive.linear.dropout,
+        #             dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
         #         )
         #     elif predict_edge_method == "inner_product":
         #         edge_decoder = EdgeInnerProductDecoder(
-        #             dropout=cfg.detection.gnn_training.decoder.predict_edge_contrastive.inner_product.dropout,
+        #             dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
         #         )
         #     else:
         #         raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
@@ -360,7 +382,7 @@ def objective_factory(cfg, in_dim, device, max_node_num):
         #         device=device,
         #     )
         #     loss_fn = bce_contrastive
-        #     neg_sampling_method = cfg.detection.gnn_training.decoder.predict_edge_contrastive.neg_sampling_method.strip()
+        #     neg_sampling_method = objective_cfg.predict_edge_contrastive.neg_sampling_method.strip()
         #     if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
         #         raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
             
@@ -375,20 +397,27 @@ def objective_factory(cfg, in_dim, device, max_node_num):
             raise ValueError(f"Invalid objective {objective}")
         
     # We wrap objectives into this class to calculate some metrics on validation set easily
-    graph_reindexer = GraphReindexer(
-        num_nodes=max_node_num,
-        device=device,
-    )
-    is_edge_type_prediction = cfg.detection.gnn_training.decoder.used_methods.strip() == "predict_edge_type"
+    is_edge_type_prediction = objective_cfg.used_methods.strip() == "predict_edge_type"
     objectives = [
         ValidationContrastiveStopper(
             objective,
             graph_reindexer,
             is_edge_type_prediction,
+            use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,
         ) for objective in objectives]
     
     return objectives
 
+def few_shot_decoder_factory(cfg, graph_reindexer, objective_cfg=None):
+    if not cfg.detection.gnn_training.decoder.use_few_shot:
+        return None
+
+    node_out_dim = cfg.detection.gnn_training.node_out_dim
+    objective_cfg = cfg.detection.gnn_training.decoder.few_shot.decoder
+    
+    objective = objective_factory(cfg, in_dim=node_out_dim, graph_reindexer=graph_reindexer, objective_cfg=objective_cfg)
+    return nn.ModuleList(objective)
+    
 def edge_decoder_factory(edge_decoder, in_dim):
     if edge_decoder == "MLP":
         return nn.Sequential(
@@ -401,7 +430,7 @@ def edge_decoder_factory(edge_decoder, in_dim):
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
 
-def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
+def batch_loader_factory(cfg, data, test_mode=False):
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
     
@@ -420,8 +449,6 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 
-        if graph_reindexer is not None:
-            data = graph_reindexer.reindex_graph(data)
         data = temporal_data_to_data(data)
         return NeighborLoader(
             data,
@@ -435,9 +462,6 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
             else cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
         return custom_temporal_data_loader(data, batch_size=batch_size)
     
-    # Don't use any batching
-    if graph_reindexer is not None:
-        data = graph_reindexer.reindex_graph(data)
     return [data]
 
 def recon_loss_fn_factory(loss: str):
@@ -477,7 +501,13 @@ def optimizer_factory(cfg, parameters):
     lr = cfg.detection.gnn_training.lr
     weight_decay = cfg.detection.gnn_training.weight_decay
 
-    return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay) # TODO: parametrize
+    return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
+
+def optimizer_few_shot_factory(cfg, parameters):
+    lr = cfg.detection.gnn_training.decoder.few_shot.lr_few_shot
+    weight_decay = cfg.detection.gnn_training.decoder.few_shot.weight_decay_few_shot
+
+    return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
 
 def get_dimensions_from_data_sample(data):
     edge_dim = data.edge_feats.shape[1] if hasattr(data, "edge_feats") else None

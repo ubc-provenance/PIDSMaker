@@ -40,7 +40,7 @@ featurization:
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
-      num_workers: 15
+      num_workers: 1
       compute_loss: True
       add_paths: False
     feature_word2vec:
@@ -95,11 +95,6 @@ detection:
         activation: relu
     decoder:
       used_methods: predict_edge_type
-      predict_edge_type:
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 2
       reconstruct_node_features:
         loss: MSE
         decoder: none

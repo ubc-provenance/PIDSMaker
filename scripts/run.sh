@@ -15,4 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-nohup python ../src/benchmark.py $args --wandb &
+nohup PYTHONHASHSEED=0 python ../src/benchmark.py $args --wandb &

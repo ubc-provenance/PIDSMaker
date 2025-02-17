@@ -1,6 +1,3 @@
-from tqdm import tqdm
-
-from encoders import TGNEncoder
 from provnet_utils import *
 from data_utils import *
 from config import *
@@ -30,7 +27,7 @@ def test_edge_level(
     all_losses = []
 
     # NOTE: warning, this may reindex the data is TGN is not used
-    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer, test_mode=True)
+    batch_loader = batch_loader_factory(cfg, data, test_mode=True)
     
     validation = split == "val"
 
@@ -52,6 +49,10 @@ def test_edge_level(
         dstnodes = edge_index[1, :].cpu().numpy()
         t_vars = batch.t.cpu().numpy()
         losses = each_edge_loss.cpu().numpy()
+
+        # if 1 in batch.y:
+        #     log(f"Mean score of fake malicious edges: {losses[batch.y.cpu() == 1].mean():.4f}")
+        #     log(f"Mean score of benign malicious edges: {losses[batch.y.cpu() == 0].mean():.4f}")
         
         edge_df = pd.DataFrame({
             'loss': losses.astype(float),
@@ -95,7 +96,7 @@ def test_node_level(
     losses = []
     start = time.perf_counter()
 
-    loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+    loader = batch_loader_factory(cfg, data)
     
     validation = split == "val"
 
@@ -263,7 +264,9 @@ def test_node_level(
     # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
-def main(cfg, model, val_data, test_data, full_data, epoch, split):
+def main(cfg, model, val_data, test_data, full_data, epoch, split, logging=True):
+    set_seed(cfg)
+    
     if split == "all":
         splits = [(val_data, "val"), (test_data, "test")]
     elif split == "val":
@@ -285,7 +288,7 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
 
-    val_ap = None
+    val_score = 0.0
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
     tpb = []
@@ -293,10 +296,11 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
 
     for graphs, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
+
         tracemalloc.start()
         
         all_losses = []
-        for g in log_tqdm(graphs, desc=desc):
+        for g in log_tqdm(graphs, desc=desc, logging=logging):
             g.to(device=device)
             
             s = time.time()
@@ -330,17 +334,19 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         split2loss[split_name] = mean_loss
         
         if split_name == "val":
-            val_ap = model.get_val_ap()
-            log(f'[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f}', return_line=True)
+            val_score = model.get_val_ap()
+            if logging:
+                log(f'[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f} - Val Score: {val_score:.4f}', return_line=True)
         else:
-            log(f'[@epoch{epoch:02d}] Test finished - Test Loss: {mean_loss:.4f}', return_line=True)
+            if logging:
+                log(f'[@epoch{epoch:02d}] Test finished - Test Loss: {mean_loss:.4f}', return_line=True)
 
     del model
     
     stats = {
-        "val_ap": val_ap,
-        "val_loss": split2loss["val"],
-        "test_loss": split2loss["test"],
+        "val_score": val_score,
+        "val_loss": split2loss.get("val", None),
+        "test_loss": split2loss.get("test", None),
         "peak_inference_cpu_memory": peak_inference_cpu_mem,
         "peak_inference_gpu_memory": peak_inference_gpu_mem,
         "time_per_batch_inference": np.mean(tpb),

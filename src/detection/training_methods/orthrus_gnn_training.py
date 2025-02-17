@@ -1,7 +1,5 @@
-import logging
 from time import perf_counter as timer
 
-import torch.nn as nn
 import tracemalloc
 import wandb
 
@@ -10,6 +8,7 @@ from config import *
 from data_utils import *
 from factory import *
 from . import orthrus_gnn_testing
+from provnet_utils import set_seed
 
 
 def train(
@@ -22,7 +21,7 @@ def train(
     model.train()
 
     losses = []
-    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+    batch_loader = batch_loader_factory(cfg, data)
 
     grad_acc = cfg.detection.gnn_training.grad_accumulation
     loss_acc = None
@@ -54,6 +53,8 @@ def train(
 
 
 def main(cfg):
+    set_seed(cfg)
+    
     log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
@@ -63,7 +64,7 @@ def main(cfg):
         torch.cuda.reset_peak_memory_stats(device=device)
     tracemalloc.start()
 
-    train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
+    train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg, device)
 
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
@@ -75,91 +76,148 @@ def main(cfg):
     num_epochs = cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
-    best_val_ap, best_model, best_epoch = -1.0, None, None
     peak_train_cpu_mem = 0
     peak_train_gpu_mem = 0
     test_stats = None
     patience = cfg.detection.gnn_training.patience
     patience_counter = 0
     all_test_stats = []
+    global_best_val_score = float("-inf")
+    use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
+    
+    if use_few_shot:
+        num_epochs += 1 # in few-shot, the first epoch is without ssl training
     
     for epoch in range(0, num_epochs):
-        start = timer()
-        tracemalloc.start()
+        best_val_score, best_model, best_epoch = float("-inf"), None, None
+        
+        if not use_few_shot or (use_few_shot and epoch > 0):
+            start = timer()
+            tracemalloc.start()
 
-        # Before each epoch, we reset the memory
-        if isinstance(model.encoder, TGNEncoder):
-            model.encoder.reset_state()
+            # Before each epoch, we reset the memory
+            if isinstance(model.encoder, TGNEncoder):
+                model.encoder.reset_state()
+                
+            model.to_fine_tuning(False)
 
-        tot_loss = 0
-        for g in log_tqdm(train_data, f"Training"):
-            g.to(device=device)
-            loss = train(
-                data=g,
-                full_data=full_data,  # full list of edge messages (do not store on CPU)
-                model=model,
-                optimizer=optimizer,
-                cfg=cfg,
-            )
-            g.to("cpu")
+            tot_loss = 0
+            for g in log_tqdm(train_data, f"Training"):
+                g.to(device=device)
+                g = remove_attacks_if_needed(g, cfg)
+                loss = train(
+                    data=g,
+                    full_data=full_data,  # full list of edge messages (do not store on CPU)
+                    model=model,
+                    optimizer=optimizer,
+                    cfg=cfg,
+                )
+                g.to("cpu")
+                if use_cuda:
+                    torch.cuda.empty_cache()
+                
+                tot_loss += loss
+
+            tot_loss /= len(train_data)
+            epoch_times.append(timer() - start)
+            
+            _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
+            peak_train_cpu_mem = max(peak_train_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
+            tracemalloc.stop()
+            
             if use_cuda:
-                torch.cuda.empty_cache()
+                peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
+                peak_train_gpu_mem = max(peak_train_gpu_mem, peak_inference_gpu_memory)
+                torch.cuda.reset_peak_memory_stats(device=device)
+                
+            log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
+        
+        # Few-shot learning fine tuning
+        if use_few_shot:
+            model.to_fine_tuning(True)
+            optimizer = optimizer_few_shot_factory(cfg, parameters=set(model.parameters()))
             
-            tot_loss += loss
+            num_epochs_few_shot = cfg.detection.gnn_training.decoder.few_shot.num_epochs_few_shot
+            patience_few_shot = cfg.detection.gnn_training.decoder.few_shot.patience_few_shot
 
-        tot_loss /= len(train_data)
-        epoch_times.append(timer() - start)
-        
-        _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
-        peak_train_cpu_mem = max(peak_train_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))
-        tracemalloc.stop()
-        
-        if use_cuda:
-            peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024 ** 3)
-            peak_train_gpu_mem = max(peak_train_gpu_mem, peak_inference_gpu_memory)
-            torch.cuda.reset_peak_memory_stats(device=device)
+            for tuning_epoch in range(0, num_epochs_few_shot):
+                if isinstance(model.encoder, TGNEncoder):
+                    model.encoder.reset_state()
+                    
+                tot_loss = 0
+                for g in log_tqdm(train_data, "Fine-tuning"):
+                    if 1 in g.y:
+                        g.to(device=device)
+                        loss = train(
+                            data=g,
+                            full_data=full_data,  # full list of edge messages (do not store on CPU)
+                            model=model,
+                            optimizer=optimizer,
+                            cfg=cfg,
+                        )
+                        g.to("cpu")
+                        if use_cuda:
+                            torch.cuda.empty_cache()
+                        
+                        tot_loss += loss
+                tot_loss /= len(train_data)
+                
+                # Validation
+                val_stats = orthrus_gnn_testing.main(
+                    cfg=cfg,
+                    model=model,
+                    val_data=val_data,
+                    test_data=test_data,
+                    full_data=full_data,
+                    epoch=epoch,
+                    split="val",
+                    logging=False,
+                )
+                val_loss = val_stats["val_loss"]
+                val_score = val_stats["val_score"]
+                
+                if val_score > best_val_score:
+                    best_val_score = val_score
+                    best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+                    
+                if val_score > global_best_val_score:
+                    global_best_val_score = val_score
+                    best_epoch = epoch
+                    
+                log(f'[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_loss:.4f} | Val Score: {val_score:.4f}', return_line=True)
             
-        log(f'[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}', return_line=True)
+                if patience_counter >= patience_few_shot:
+                    log(f"Early stopping: best few-shot loss is {best_val_score:.4f}")
+                    break
+        
+            model.load_state_dict(best_model)
+            model.to_device(device)
         
         # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
         # save_model(model, model_path, cfg)
         
-        # Validation
-        if (epoch+1) % 2 == 0 or epoch == 0:
-            split_to_run = "val" if best_epoch_mode else "all"
-            test_stats = orthrus_gnn_testing.main(
-                cfg=cfg,
-                model=model,
-                val_data=val_data,
-                test_data=test_data,
-                full_data=full_data,
-                epoch=epoch,
-                split=split_to_run,
-            )
-            all_test_stats.append(test_stats)
-            val_ap = test_stats["val_ap"]
-            
-            if best_epoch_mode:
-                if val_ap > best_val_ap:
-                    best_val_ap = val_ap
-                    best_model = copy.deepcopy({k: v.cpu() for k, v in model.state_dict().items()})
-                    best_epoch = epoch
-                    patience_counter = 0
-                else:
-                    patience_counter += 1
-            model.to_device(device)
-            
-            # if patience_counter >= patience:
-            #     log(f"Early stopping: best score is {best_val_ap:.4f}")
-            #     break
-            
-            wandb.log({
-                "train_epoch": epoch,
-                "train_loss": round(tot_loss, 4),
-                # "val_ap": round(val_ap, 5),
-                "val_loss": round(test_stats["val_loss"], 4),
-                "test_loss": round(test_stats["test_loss"], 4),
-            })
+        # Test
+        test_stats = orthrus_gnn_testing.main(
+            cfg=cfg,
+            model=model,
+            val_data=val_data,
+            test_data=test_data,
+            full_data=full_data,
+            epoch=epoch,
+            split="all",
+        )
+        all_test_stats.append(test_stats)
+        
+        wandb.log({
+            "train_epoch": epoch,
+            "train_loss": round(tot_loss, 4),
+            "val_score": round(test_stats["val_score"], 4),
+            "val_loss": round(test_stats["val_loss"], 4),
+            "test_loss": round(test_stats["test_loss"], 4),
+        })
         
     # After training
     if best_epoch_mode:
@@ -175,8 +233,9 @@ def main(cfg):
         )
 
     wandb.log({
+        "best_epoch": best_epoch,
         "train_epoch_time": round(np.mean(epoch_times), 2),
-        # "val_score": round(best_val_ap, 5),
+        "val_score": round(best_val_score, 5),
         "peak_train_cpu_memory": round(peak_train_cpu_mem, 3),
         "peak_train_gpu_memory": round(peak_train_gpu_mem, 3),
         "peak_inference_cpu_memory": round(np.max([d["peak_inference_cpu_memory"] for d in all_test_stats]), 3),
@@ -184,7 +243,13 @@ def main(cfg):
         "time_per_batch_inference": round(np.mean([d["time_per_batch_inference"] for d in all_test_stats]), 3),
     })
     
-    return best_val_ap
+    return best_val_score
+
+def remove_attacks_if_needed(graph, cfg):
+    if not cfg.detection.gnn_training.decoder.few_shot.include_attacks_in_ssl_training:
+        if 1 in graph.y:
+            return graph.clone()[graph.y != 1]
+    return graph
 
 
 if __name__ == "__main__":

@@ -263,7 +263,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
-    pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
+    # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png") # average detection precision
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
@@ -316,7 +316,8 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     log(f"Saving figures to {out_dir}...")
     # plot_precision_recall(pred_scores, y_truth, pr_img_file)
     adp_score = plot_detected_attacks_vs_precision(pred_scores, nodes, node2attacks, y_truth, adp_img_file)
-    discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth) # plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
+    discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
+    plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, scores_img_file, cfg)

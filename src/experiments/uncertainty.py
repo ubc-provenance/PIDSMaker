@@ -108,7 +108,7 @@ def avg_std_metrics(method_to_metrics):
         values = [entry[key] for entry in metrics]
         result[f"{key}_mean"] = np.mean(values)
         result[f"{key}_std"] = np.std(values)
-        result[f"{key}_std_rel"] = (np.std(values) / np.mean(values) + 1e-12) * 100
+        result[f"{key}_std_rel"] = np.std(values) / (np.mean(values) + 1e-12) * 100
     
     return result
 

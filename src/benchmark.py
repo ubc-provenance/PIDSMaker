@@ -1,12 +1,10 @@
 import argparse
 import copy
-import random
 from collections import defaultdict
 
 import torch
 import wandb
-import numpy as np
-from provnet_utils import remove_underscore_keys, log
+from provnet_utils import remove_underscore_keys, log, set_seed
 from config import set_task_to_done, update_task_paths_to_restart
 from experiments.uncertainty import *
 from experiments.tuning import get_tuning_sweep_cfg, fuse_cfg_with_sweep_cfg
@@ -79,15 +77,7 @@ def main(cfg, project, exp, **kwargs):
     log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
     log(("*" * 100) + "\n")
     
-    if cfg.detection.gnn_training.use_seed:
-        seed = 0
-        random.seed(seed)
-        np.random.seed(seed)
-
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+    set_seed(cfg)
 
     def run_task(task: str, cfg, method=None, iteration=None):
         start = time.time()
@@ -122,7 +112,7 @@ def main(cfg, project, exp, **kwargs):
         metrics = task_results["evaluation"]["return"] or {}
         metrics = {
             **metrics,
-            "val_ap": task_results["gnn_training"]["return"],
+            "val_score": task_results["gnn_training"]["return"],
         }
         
         times = {f"time_{task}": round(results["time"], 2) for task, results in task_results.items()}

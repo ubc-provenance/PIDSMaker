@@ -169,10 +169,10 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     paths_1 = [path for path, label in zip(paths, y_truth) if label == 1]
 
     plt.figure(figsize=(12, 6))
-    
+
     red = (155/255, 44/255, 37/255)
     green = (62/255, 126/255, 42/255)
-    
+
     attack_colors = {
         0: 'black',
         1: 'red',
@@ -210,20 +210,21 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     top_0 = [item for item in combined_scores_sorted if item[2] == 0][:keep_only]
     top_1 = [item for item in combined_scores_sorted if item[2] == 1][:keep_only]
 
+    x_axis = max(scores) + max(scores) * 0.05
     # Annotate the top scores for label 0
     for i, (score, path, _, max_tw_idx) in enumerate(top_0):
         y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
-        plt.text(max(scores) + 1, y_position, f"{str(path)[-30:]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
+        plt.text(x_axis, y_position, f"{str(path)[:30]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
 
     # Annotate the top scores for label 1
     for i, (score, path, _, max_tw_idx) in enumerate(top_1):
         y_position = 1 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
-        plt.text(max(scores) + 1, y_position, f"{str(path)[-30:]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
+        plt.text(x_axis, y_position, f"{str(path)[:30]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
         
-    plt.text(max(scores) // 3, 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
-    plt.text(max(scores) // 3, 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
+    plt.text(min(scores), 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
+    plt.text(min(scores), 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
 
-    plt.xlim([min(scores), max(scores) + 7])  # Adjust xlim to make space for text
+    plt.xlim([min(scores), max(scores) *1.5])  # Adjust xlim to make space for text
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
 
@@ -510,7 +511,7 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
     for k, v in attack2max_score.items():
         score = (v - mean)
         att2score[f"discrim_score_att_{k}"] = score
-    att2score["discrim_score_att_mean"] = np.mean(list(att2score.values()))
+    att2score["discrimination"] = np.mean(list(att2score.values()))
     
     return att2score
 

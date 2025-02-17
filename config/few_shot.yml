@@ -1,8 +1,9 @@
+# Simply the same config as amalgame_orthrus + encoder set to none
+
 preprocessing:
   build_graphs:
     used_method: orthrus
     use_all_files: True
-    mimicry_edge_num: 0
     time_window_size: 15.0
     use_hashed_label: False
     node_label_features:
@@ -11,12 +12,17 @@ preprocessing:
       netflow: type, remote_ip, remote_port
   transformation:
     used_methods: none
+    synthetic_attack_naive:
+      num_attacks: 1
+      num_malicious_process: 5
+      num_unauthorized_file_access: 20
+      process_selection_method: random # TODO: try new methods
 
 featurization:
   embed_nodes:
     emb_dim: 128
     epochs: 50
-    training_split: all
+    training_split: train
     used_method: feature_word2vec
     use_seed: True
     temporal_rw:
@@ -53,6 +59,13 @@ featurization:
       compute_loss: True
       negative: 5
       decline_rate: 30
+    fasttext:
+      min_count: 2
+      alpha: 0.01
+      window_size: 3
+      negative: 3
+      num_workers: 15
+      use_pretrained_fb_model: False
   embed_edges:
     to_remove: True
 
@@ -60,22 +73,26 @@ detection:
   gnn_training:
     used_method: orthrus
     use_seed: True
-    num_epochs: 15
+    num_epochs: 6
     patience: 3
-    lr: 0.00001
+    lr: 0.0001
     weight_decay: 0.00001
     node_hid_dim: 128
-    node_out_dim: 64
+    node_out_dim: 128
     inference_device: cuda
+    grad_accumulation: 1
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
       edge_features: edge_type
-      dropout: 0.5
-      used_methods: tgn,graph_attention
+      dropout: 0.3
+      used_methods: graph_attention
+      custom:
+        architecture_str: linear(1.0) | relu | linear(0.5)
       graph_attention:
         activation: relu
         num_heads: 8
+        concat: True
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 1024
@@ -95,14 +112,36 @@ detection:
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5) | relu
+          # architecture_str: none
           src_dst_projection_coef: 2
-      # predict_edge_contrastive:
-      #   neg_sampling_method: previously_seen_nodes
-      #   used_method: linear
-      #   inner_product:
-      #     dropout: 0.0
-      #   linear:
-      #     dropout: 0.0
+      reconstruct_node_features:
+        loss: MSE
+        decoder: nodlink
+        node_mlp:
+          architecture_str: linear(0.5) | relu
+      predict_node_type:
+        decoder: node_mlp
+        node_mlp:
+          architecture_str: linear(0.5) | relu
+        balanced_loss: False
+      
+      use_few_shot: True
+      few_shot:        
+        include_attacks_in_ssl_training: False
+        freeze_encoder: True
+        num_epochs_few_shot: 50
+        patience_few_shot: 5
+        lr_few_shot: 0.001
+        weight_decay_few_shot: 0.00001
+        decoder:
+          used_methods: detect_edge_few_shot
+          detect_edge_few_shot:
+            decoder: edge_mlp # node_mlp
+            node_mlp:
+              architecture_str: linear(1.0) | relu
+            edge_mlp:
+              architecture_str: linear(0.5) | relu
+              src_dst_projection_coef: 1
 
   evaluation:
     viz_malicious_nodes: False
@@ -111,24 +150,4 @@ detection:
     node_evaluation:
       threshold_method: max_val_loss
       use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 30
-    node_tw_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 3
-    queue_evaluation:
-      queue_threshold: 20
-      used_method: kairos_idf_queue
-      kairos_idf_queue:
-        include_test_set_in_IDF: True
-
-triage :
-  tracing:
-    used_method: depimpact
-    depimpact:
-      used_method: component
-      score_method: degree
-      workers: 8
-      visualize: False
+      use_kmeans: False

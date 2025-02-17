@@ -11,6 +11,11 @@ preprocessing:
       netflow: type, remote_ip, remote_port
   transformation:
     used_methods: none
+    synthetic_attack_naive:
+      num_attacks: 1
+      num_malicious_process: 5
+      num_unauthorized_file_access: 20
+      process_selection_method: random # TODO: try new methods
 
 featurization:
   embed_nodes:
@@ -41,7 +46,7 @@ featurization:
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
-      num_workers: 15
+      num_workers: 1
       compute_loss: True
       add_paths: False
     feature_word2vec:
@@ -102,13 +107,24 @@ detection:
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink
-      # predict_edge_contrastive:
-      #   neg_sampling_method: previously_seen_nodes
-      #   used_method: linear
-      #   inner_product:
-      #     dropout: 0.0
-      #   linear:
-      #     dropout: 0.0
+      
+      use_few_shot: False
+      few_shot:
+        include_attacks_in_ssl_training: False
+        freeze_encoder: True
+        num_epochs_few_shot: 50
+        patience_few_shot: 5
+        lr_few_shot: 0.001
+        weight_decay_few_shot: 0.00001
+        decoder:
+          used_methods: detect_edge_few_shot
+          detect_edge_few_shot:
+            decoder: edge_mlp # node_mlp
+            node_mlp:
+              architecture_str: linear(1.0) | relu
+            edge_mlp:
+              architecture_str: linear(0.5) | relu
+              src_dst_projection_coef: 1
 
   evaluation:
     viz_malicious_nodes: False

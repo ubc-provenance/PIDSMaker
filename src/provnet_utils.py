@@ -4,7 +4,6 @@ from datetime import datetime
 import time
 import psycopg2
 from psycopg2 import extras as ex
-import os.path as osp
 import os
 import copy
 import logging
@@ -294,6 +293,10 @@ def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
     return paths
 
+def load_graphs_for_days(base_dir, days):
+    """Loads all graph snapshots for a given list of days."""
+    return [torch.load(path) for day in days for path in get_all_files_from_folders(base_dir, [day])]
+
 def listdir_sorted(path: str):
     files = os.listdir(path)
     files.sort(key=lambda f: int(''.join(filter(str.isdigit, f)))) # sorted by ascending number
@@ -403,10 +406,10 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
     if return_line:
         print("")
 
-def log_tqdm(iterator, desc="", **kwargs):
+def log_tqdm(iterator, desc="", logging=True, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    if DISABLE_TQDM:
+    if DISABLE_TQDM and logging:
         log(f"{desc}...")
     return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
 
@@ -479,6 +482,9 @@ def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
                 
             elif part == "leaky_relu":
                 layers.append(nn.LeakyReLU())
+                
+            elif part == "none":
+                pass
                 
             else:
                 raise ValueError(f"Invalid layer {part}")
@@ -649,3 +655,14 @@ def log_dataset_stats(train_data, val_data, test_data):
         log(f"{label} edges | mean: {int(torch.mean(edges, dtype=torch.float))} | min: {int(torch.min(edges))} | max: {int(torch.max(edges))}")
         log(f"{label} nodes | mean: {int(torch.mean(nodes, dtype=torch.float))} | min: {int(torch.min(nodes))} | max: {int(torch.max(nodes))}")
         log("")
+
+def set_seed(cfg):
+    if cfg.detection.gnn_training.use_seed:
+        seed = 0
+        random.seed(seed)
+        np.random.seed(seed)
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
