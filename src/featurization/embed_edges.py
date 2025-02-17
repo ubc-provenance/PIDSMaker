@@ -24,7 +24,7 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
             src.append(int(u))
             dst.append(int(v))
             t.append(int(attr["time"]))
-            y.append(int(attr["y"]))
+            y.append(int(attr.get("y", 0)))
             
             # If the graph structure has been changed in transformation, we may loose
             # the edge label
