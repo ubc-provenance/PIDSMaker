@@ -27,7 +27,7 @@ def test_edge_level(
     all_losses = []
 
     # NOTE: warning, this may reindex the data is TGN is not used
-    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer, test_mode=True)
+    batch_loader = batch_loader_factory(cfg, data, test_mode=True)
     
     validation = split == "val"
 
@@ -96,7 +96,7 @@ def test_node_level(
     losses = []
     start = time.perf_counter()
 
-    loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+    loader = batch_loader_factory(cfg, data)
     
     validation = split == "val"
 

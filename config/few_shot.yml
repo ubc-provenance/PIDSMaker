@@ -117,11 +117,11 @@ detection:
       reconstruct_node_features:
         loss: MSE
         decoder: nodlink
-        custom_mlp:
+        node_mlp:
           architecture_str: linear(0.5) | relu
       predict_node_type:
-        decoder: custom_mlp
-        custom_mlp:
+        decoder: node_mlp
+        node_mlp:
           architecture_str: linear(0.5) | relu
         balanced_loss: False
       
@@ -136,8 +136,8 @@ detection:
         decoder:
           used_methods: detect_edge_few_shot
           detect_edge_few_shot:
-            decoder: edge_mlp # custom_mlp
-            custom_mlp:
+            decoder: edge_mlp # node_mlp
+            node_mlp:
               architecture_str: linear(1.0) | relu
             edge_mlp:
               architecture_str: linear(0.5) | relu

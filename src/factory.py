@@ -26,9 +26,9 @@ def build_model(data_sample, device, cfg, max_node_num):
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
-    decoder = objective_factory(cfg, in_dim=in_dim, device=device, max_node_num=max_node_num)
-    decoder_few_shot = few_shot_decoder_factory(cfg, device=device, max_node_num=max_node_num)
-    model = model_factory(encoder, decoder, decoder_few_shot, cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
+    decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer)
+    decoder_few_shot = few_shot_decoder_factory(cfg, graph_reindexer=graph_reindexer)
+    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device, max_node_num=max_node_num)
     
     if cfg._is_running_mc_dropout:
         dropout = cfg.experiment.uncertainty.mc_dropout.dropout
@@ -36,18 +36,15 @@ def build_model(data_sample, device, cfg, max_node_num):
     
     return model
 
-def model_factory(encoder, decoders, decoder_few_shot, cfg, in_dim, graph_reindexer, device, max_node_num):
+def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num):
     return Model(
         encoder=encoder,
         decoders=decoders,
         decoder_few_shot=decoder_few_shot,
         num_nodes=max_node_num,
         device=device,
-        in_dim=in_dim,
         out_dim=cfg.detection.gnn_training.node_out_dim,
         use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
-        graph_reindexer=graph_reindexer,
-        node_level=cfg._is_node_level,
         is_running_mc_dropout=cfg._is_running_mc_dropout,
         use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,
         freeze_encoder=cfg.detection.gnn_training.decoder.few_shot.freeze_encoder,
@@ -160,10 +157,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
-        elif method == "linear":
-            encoder = LinearEncoder(in_dim, node_out_dim, dropout=dropout)
-        elif method == "custom":
-            encoder = CustomEncoder(in_dim, node_out_dim, cfg.detection.gnn_training.encoder.custom.architecture_str, dropout)
+        elif method == "node_mlp":
+            encoder = CustomNodeMLP(
+                in_dim=in_dim,
+                out_dim=node_out_dim,
+                architecture=cfg.detection.gnn_training.encoder.node_mlp.architecture_str,
+                dropout=cfg.detection.gnn_training.encoder.dropout,
+            )
         else:
             raise ValueError(f"Invalid encoder {method}")
     
@@ -226,20 +226,19 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
     decoder_cfg = getattr(getattr(objective_cfg, objective), method, None)
     
     if method == "edge_mlp":
-        return EdgeMLPDecoder(
+        return CustomEdgeMLP(
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg.architecture_str,
             dropout=cfg.detection.gnn_training.encoder.dropout,
             src_dst_projection_coef=decoder_cfg.src_dst_projection_coef,
         )
-    elif method == "custom_mlp":
-        return CustomDecoder(
+    elif method == "node_mlp":
+        return CustomNodeMLP(
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg.architecture_str,
             dropout=cfg.detection.gnn_training.encoder.dropout,
-            is_node_level=cfg._is_node_level,
         )
     elif method == "nodlink":
         return NodLinkDecoder(
@@ -270,7 +269,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
         raise ValueError(f"Invalid decoder {method}")
         
 
-def objective_factory(cfg, in_dim, device, max_node_num, objective_cfg=None):
+def objective_factory(cfg, in_dim, graph_reindexer, objective_cfg=None):
     if objective_cfg is None:
         objective_cfg = cfg.detection.gnn_training.decoder
     node_out_dim = cfg.detection.gnn_training.node_out_dim
@@ -398,10 +397,6 @@ def objective_factory(cfg, in_dim, device, max_node_num, objective_cfg=None):
             raise ValueError(f"Invalid objective {objective}")
         
     # We wrap objectives into this class to calculate some metrics on validation set easily
-    graph_reindexer = GraphReindexer(
-        num_nodes=max_node_num,
-        device=device,
-    )
     is_edge_type_prediction = objective_cfg.used_methods.strip() == "predict_edge_type"
     objectives = [
         ValidationContrastiveStopper(
@@ -413,14 +408,14 @@ def objective_factory(cfg, in_dim, device, max_node_num, objective_cfg=None):
     
     return objectives
 
-def few_shot_decoder_factory(cfg, device, max_node_num, objective_cfg=None):
+def few_shot_decoder_factory(cfg, graph_reindexer, objective_cfg=None):
     if not cfg.detection.gnn_training.decoder.use_few_shot:
         return None
 
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     objective_cfg = cfg.detection.gnn_training.decoder.few_shot.decoder
     
-    objective = objective_factory(cfg, in_dim=node_out_dim, device=device, max_node_num=max_node_num, objective_cfg=objective_cfg)
+    objective = objective_factory(cfg, in_dim=node_out_dim, graph_reindexer=graph_reindexer, objective_cfg=objective_cfg)
     return nn.ModuleList(objective)
     
 def edge_decoder_factory(edge_decoder, in_dim):
@@ -435,7 +430,7 @@ def edge_decoder_factory(edge_decoder, in_dim):
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
 
-def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
+def batch_loader_factory(cfg, data, test_mode=False):
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
     
@@ -454,8 +449,6 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
         if use_tgn:
             raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
 
-        if graph_reindexer is not None:
-            data = graph_reindexer.reindex_graph(data)
         data = temporal_data_to_data(data)
         return NeighborLoader(
             data,
@@ -469,9 +462,6 @@ def batch_loader_factory(cfg, data, graph_reindexer, test_mode=False):
             else cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
         return custom_temporal_data_loader(data, batch_size=batch_size)
     
-    # Don't use any batching
-    if graph_reindexer is not None:
-        data = graph_reindexer.reindex_graph(data)
     return [data]
 
 def recon_loss_fn_factory(loss: str):

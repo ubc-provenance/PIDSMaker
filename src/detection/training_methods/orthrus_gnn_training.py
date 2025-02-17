@@ -21,7 +21,7 @@ def train(
     model.train()
 
     losses = []
-    batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer)
+    batch_loader = batch_loader_factory(cfg, data)
 
     grad_acc = cfg.detection.gnn_training.grad_accumulation
     loss_acc = None
@@ -64,7 +64,7 @@ def main(cfg):
         torch.cuda.reset_peak_memory_stats(device=device)
     tracemalloc.start()
 
-    train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
+    train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg, device)
 
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
@@ -247,7 +247,8 @@ def main(cfg):
 
 def remove_attacks_if_needed(graph, cfg):
     if not cfg.detection.gnn_training.decoder.few_shot.include_attacks_in_ssl_training:
-        return graph[graph.y != 1]
+        if 1 in graph.y:
+            return graph.clone()[graph.y != 1]
     return graph
 
 

@@ -1,9 +1,11 @@
+import copy
 import math
 import os
 
 import pickle
 import torch
 from torch_geometric.data import Data, TemporalData
+from torch_geometric.data.temporal import prepare_idx
 from torch_geometric.loader import TemporalDataLoader
 from torch_geometric.data.collate import collate
 from torch_geometric.data.data import size_repr
@@ -39,8 +41,19 @@ class CollatableTemporalData(TemporalData):
         info = ', '.join([size_repr(k, v) for k, v in self._store.items()])
         info += ", " + size_repr("edge_index", self.edge_index)
         return f'{cls}({info})'
+    
+    def index_select(self, idx):
+        """"Indexing to handle (2, E) index attributes"""
+        idx = prepare_idx(idx)
+        data = copy.copy(self)
+        for key, value in data._store.items():
+            if value.size(0) == self.num_events:
+                data[key] = value[idx]
+            elif value.ndim == 2 and value.size(1) == self.num_events and "index" in key:
+                data[key] = value[:, idx]
+        return data
 
-def load_all_datasets(cfg, only_keep=None):
+def load_all_datasets(cfg, device, only_keep=None):
     train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
     val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
     test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
@@ -83,6 +96,9 @@ def load_all_datasets(cfg, only_keep=None):
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
         
     log_dataset_stats(train_data, val_data, test_data)
+    
+    # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
+    compute_x_node_features([train_data, val_data, test_data], max_node, device)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -191,9 +207,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
         # g.edge_index = ...
         
-        if cfg._is_node_level:
-            g.node_type_src = fields["src_type"]
-            g.node_type_dst = fields["dst_type"]
+        g.node_type_src = fields["src_type"]
+        g.node_type_dst = fields["dst_type"]
     
     return data_set
 
@@ -348,19 +363,17 @@ class GraphReindexer:
         Reindexes edge_index from 0 + reshapes node features.
         The original edge_index and node IDs are also kept.
         """
-        data = data.clone()
         data.original_edge_index = data.edge_index
-        x, data.edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
+        x, edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
+        data.src, data.dst = edge_index[0], edge_index[1]
+        data.original_n_id = n_id
+        
         if x_is_tuple:
             data.x_src, data.x_dst = x
         else:
             data.x = x
         
-        data.original_n_id = n_id
-        
-        # When it's node-level detection, we also need to reshape the node types if we do node type pred. (e.g. ThreaTrace)
-        if hasattr(data, "node_type_src"):
-            data.node_type, *_ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst, x_is_tuple=False)
+        data.node_type, *_ = self._reindex_graph(data.edge_index, data.node_type_src, data.node_type_dst, x_is_tuple=False)
         
         return data
     
@@ -420,3 +433,16 @@ def load_model(model, path: str, cfg, map_location=None):
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 
     return model
+
+def compute_x_node_features(datasets, max_node_num, device):
+    graph_reindexer = GraphReindexer(
+        num_nodes=max_node_num,
+        device=device,
+    )
+    
+    for data_list in datasets:
+        for batch in data_list:
+            batch.to(device)
+            batch = graph_reindexer.reindex_graph(batch)
+            batch.to("cpu")
+    

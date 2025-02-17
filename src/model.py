@@ -3,7 +3,6 @@ from config import *
 import torch.nn as nn
 from encoders import TGNEncoder
 from experiments.uncertainty import activate_dropout_inference
-from decoders import NodeTypePrediction
 
 
 class Model(nn.Module):
@@ -12,12 +11,9 @@ class Model(nn.Module):
             decoders: list[nn.Module],
             decoder_few_shot: nn.Module,
             num_nodes: int,
-            in_dim: int,
             out_dim: int,
             use_contrastive_learning: bool,
             device,
-            graph_reindexer,
-            node_level,
             is_running_mc_dropout,
             use_few_shot,
             freeze_encoder,
@@ -27,7 +23,6 @@ class Model(nn.Module):
         self.encoder = encoder
         self.decoders = nn.ModuleList(decoders)
         self.use_contrastive_learning = use_contrastive_learning
-        self.graph_reindexer = graph_reindexer
         self.device = device
         
         self.last_h_storage, self.last_h_non_empty_nodes = None, None
@@ -35,7 +30,6 @@ class Model(nn.Module):
             self.last_h_storage = torch.empty((num_nodes, out_dim), device=device)
             self.last_h_non_empty_nodes = torch.tensor([], dtype=torch.long, device=device)
             
-        self.node_level = node_level
         self.is_running_mc_dropout = is_running_mc_dropout
         
         self.decoder_few_shot = decoder_few_shot
@@ -45,47 +39,46 @@ class Model(nn.Module):
         
     def embed(self, batch, full_data, inference=False, **kwargs):
         train_mode = not inference
-        x = self._reshape_x(batch)
         edge_index = batch.edge_index
         with torch.set_grad_enabled(train_mode):
-            h = self.encoder(
+            res = self.encoder(
                 edge_index=edge_index,
                 t=batch.t,
-                x=x,
+                x=batch.x,
+                x_src=batch.x_src,
+                x_dst=batch.x_dst,
+                original_n_id=batch.original_n_id,
                 msg=batch.msg,
                 edge_feats=getattr(batch, "edge_feats", None),
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
                 edge_types= batch.edge_type
             )
-        return h
+        h, h_src, h_dst = self.gather_h(batch, res)
+        return h, h_src, h_dst
         
     def forward(self, batch, full_data, inference=False, validation=False):
         train_mode = not inference
-        x = self._reshape_x(batch)
 
         with torch.set_grad_enabled(train_mode):
-            h = self.embed(batch, full_data, inference=inference)
-            h_src, h_dst, h, x = self.reshape_for_task(batch, h, x)
-                    
+            h, h_src, h_dst = self.embed(batch, full_data, inference=inference)
+            
             # Train mode: loss | Inference mode: scores
             loss_or_scores = None
             
-            for objective in self.decoders:
-                node_type = self.get_node_type_if_needed(batch, objective)
-                    
+            for objective in self.decoders:                    
                 results = objective(
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
                     h=h, # shape (N, d)
-                    x=x,
+                    x=batch.x,
                     edge_index=batch.edge_index,
                     edge_type=batch.edge_type,
                     y_edge=batch.y,
                     inference=inference,
                     last_h_storage=self.last_h_storage,
                     last_h_non_empty_nodes=self.last_h_non_empty_nodes,
-                    node_type=node_type,
+                    node_type=batch.node_type,
                     validation=validation,
                 )
                 loss = results["loss"]
@@ -99,13 +92,6 @@ class Model(nn.Module):
                 loss_or_scores = loss_or_scores + loss
 
             return results
-    
-    def _reshape_x(self, batch):
-        if hasattr(batch, "x"):
-            x = batch.x
-        else:
-            x = (batch.x_src, batch.x_dst)
-        return x
         
     def get_val_ap(self):
         # If multiple decoders are used, we take the average of the val scores
@@ -122,7 +108,6 @@ class Model(nn.Module):
             self.encoder.to_device(device)
             
         self.device = device
-        self.graph_reindexer.to(device)
         return self.to(device)
 
     # override
@@ -132,33 +117,16 @@ class Model(nn.Module):
         if self.is_running_mc_dropout:
             activate_dropout_inference(self)
 
-    def get_node_type_if_needed(self, batch, objective):
-        node_type = getattr(batch, "node_type", None)
-        # Special case when TGN is used with node type pred, the batch is not already reindexed so we reindex
-        # only to get node types as shape (N, d)
-        if isinstance(objective.objective, NodeTypePrediction) and node_type is None:
-            reindexed_batch = self.graph_reindexer.reindex_graph(batch)
-            node_type = reindexed_batch.node_type
-        return node_type
-    
-    def reshape_for_task(self, batch, h, x):
-        if isinstance(h, tuple):
-            h_src, h_dst = h
-        else:
-            # TGN encoder returns a pair h_src, h_dst whereas other encoders return simply h as shape (N, d)
-            # Here we simply transform to get a shape (E, d)
+    def gather_h(self, batch, res):
+        h = res["h"]
+        h_src = res.get("h_src", None)
+        h_dst = res.get("h_dst", None)
+        
+        if None in [h_src, h_dst]:
             h_src, h_dst = (h[batch.edge_index[0]], h[batch.edge_index[1]]) \
                 if isinstance(h, torch.Tensor) else h
         
-        if self.node_level:
-            if isinstance(h, tuple):
-                h, _, n_id = self.graph_reindexer._reindex_graph(batch.edge_index, h[0], h[1]) # TODO: duplicate with the one in TGN encoder, remove
-                batch.original_n_id = n_id
-            if isinstance(x, tuple):
-                x, _, n_id = self.graph_reindexer._reindex_graph(batch.edge_index, x[0], x[1])
-                batch.original_n_id = n_id
-            
-        return h_src, h_dst, h, x
+        return h, h_src, h_dst
     
     def to_fine_tuning(self, do: bool):
         if not self.use_few_shot:

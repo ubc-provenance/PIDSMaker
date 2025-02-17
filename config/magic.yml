@@ -56,8 +56,8 @@ detection:
           negative_slope: 0.2
       predict_masked_struct:
         loss: BCE
-        decoder: custom_mlp
-        custom_mlp:
+        decoder: node_mlp
+        node_mlp:
           architecture_str: linear(4) | leaky_relu
         balanced_loss: False
 
