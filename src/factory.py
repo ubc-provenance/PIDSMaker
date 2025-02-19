@@ -41,10 +41,7 @@ def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num
         encoder=encoder,
         decoders=decoders,
         decoder_few_shot=decoder_few_shot,
-        num_nodes=max_node_num,
         device=device,
-        out_dim=cfg.detection.gnn_training.node_out_dim,
-        use_contrastive_learning="predict_edge_contrastive" in cfg.detection.gnn_training.decoder.used_methods,
         is_running_mc_dropout=cfg._is_running_mc_dropout,
         use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,
         freeze_encoder=cfg.detection.gnn_training.decoder.few_shot.freeze_encoder,
@@ -55,6 +52,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    use_ancestor_encoding = "ancestor_encoding" in cfg.detection.gnn_training.encoder.used_methods
     dropout = cfg.detection.gnn_training.encoder.dropout
     
     # If edge features are used, we set them here
@@ -74,13 +72,12 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         else:
             raise ValueError(f"Invalid edge feature {edge_feat}")
 
+    original_in_dim = in_dim
     if use_tgn:
-        # Only for TGN, in_dim becomes memory dim
-        original_in_dim = in_dim
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(",")):
-        if method == "tgn":
+        if method in ["tgn", "ancestor_encoding"]:
             pass
         elif method == "graph_attention":
             encoder = GraphAttentionEmbedding(
@@ -216,6 +213,16 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             use_time_order_encoding=use_time_order_encoding,
             tgn_neighbor_n_hop=tgn_neighbor_n_hop,
             use_buggy_orthrus_TGN=use_buggy_orthrus_TGN,
+        )
+        
+    if use_ancestor_encoding:
+        encoder = AncestorEncoder(
+            in_dim=original_in_dim,
+            out_dim=original_in_dim, # try in_dim*2 ou out_dim
+            edge_dim=edge_dim,
+            encoder=encoder,
+            num_nodes=max_node_num,
+            device=device,
         )
 
     return encoder

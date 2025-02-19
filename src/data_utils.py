@@ -12,7 +12,8 @@ from torch_geometric.data.data import size_repr
 from torch_scatter import scatter
 
 from encoders import TGNEncoder
-from provnet_utils import log_dataset_stats
+from provnet_utils import log_dataset_stats, log_tqdm, get_multi_datasets
+from config import update_cfg_for_multi_dataset
 
 class CollatableTemporalData(TemporalData):
     """
@@ -54,9 +55,10 @@ class CollatableTemporalData(TemporalData):
         return data
 
 def load_all_datasets(cfg, device, only_keep=None):
-    train_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="train")
-    val_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="val")
-    test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    multi_dataset = cfg.detection.gnn_training.multi_dataset_training
+    train_data = load_data_set(cfg, split="train", multi_dataset=multi_dataset)
+    val_data = load_data_set(cfg, split="val", multi_dataset=multi_dataset)
+    test_data = load_data_set(cfg, split="test", multi_dataset=False)
     
     if only_keep is not None:
         train_data = train_data[:only_keep]
@@ -65,14 +67,16 @@ def load_all_datasets(cfg, device, only_keep=None):
     
     all_msg, all_t, all_edge_types = [], [], []
     max_node = 0
-    for dataset in [train_data, val_data, test_data]:
-        for data in dataset:
-            all_msg.append(data.msg)
-            all_t.append(data.t)
-            all_edge_types.append(data.edge_type)
-            max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
+    for datasets in [train_data, val_data, test_data]:
+        for dataset in datasets:
+            for data in dataset:
+                all_msg.append(data.msg)
+                all_t.append(data.t)
+                all_edge_types.append(data.edge_type)
+                max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
-    if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    if use_tgn:
         all_msg = torch.cat(all_msg)
         all_t = torch.cat(all_t)
         all_edge_types = torch.cat(all_edge_types)
@@ -88,9 +92,9 @@ def load_all_datasets(cfg, device, only_keep=None):
     batch_size = cfg.detection.gnn_training.edge_batch_size
     batch_size_inference = cfg.detection.gnn_training.edge_batch_size_inference
     if batch_size not in [None, 0]:
-        train_data = batch_temporal_data(collate_temporal_data(train_data), batch_size, batch_mode, cfg)
-        val_data = batch_temporal_data(collate_temporal_data(val_data), batch_size, batch_mode, cfg)
-        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size, batch_mode, cfg)
+        train_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg) for graphs in train_data]
+        val_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg) for graphs in val_data]
+        test_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg) for graphs in test_data]
     
     elif batch_size_inference not in [None, 0]:
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
@@ -98,23 +102,36 @@ def load_all_datasets(cfg, device, only_keep=None):
     log_dataset_stats(train_data, val_data, test_data)
     
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    compute_x_node_features([train_data, val_data, test_data], max_node, device)
+    reindex_graphs([train_data, val_data, test_data], max_node, device, use_tgn=use_tgn)
     
     return train_data, val_data, test_data, full_data, max_node
 
-def load_data_set(cfg, path: str, split: str) -> list[CollatableTemporalData]:
+def load_data_set(cfg, split: str, multi_dataset=False) -> list[CollatableTemporalData]:
     """
     Returns a list of time window graphs for a given `split` (train/val/test set).
     """
+    def load_data_list(path):
+        data_list = []
+        for f in sorted(os.listdir(os.path.join(path, split))):
+            filepath = os.path.join(path, split, f)
+            data = torch.load(filepath).to("cpu")
+            data_list.append(data)
 
-    data_list = []
-    for f in sorted(os.listdir(os.path.join(path, split))):
-        filepath = os.path.join(path, split, f)
-        data = torch.load(filepath).to("cpu")
-        data_list.append(data)
-
-    data_list = extract_msg_from_data(data_list, cfg)
-    return data_list
+        data_list = extract_msg_from_data(data_list, cfg)
+        return data_list
+    
+    if multi_dataset:
+        multi_datasets = get_multi_datasets(cfg)
+        all_data_lists = []
+        for dataset in multi_datasets:
+            updated_cfg, _ = update_cfg_for_multi_dataset(cfg, dataset)
+            path = updated_cfg.featurization.embed_edges._edge_embeds_dir
+            all_data_lists.append(load_data_list(path))
+        return all_data_lists
+    
+    else:
+        path = cfg.featurization.embed_edges._edge_embeds_dir
+        return [load_data_list(path)]
 
 def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[CollatableTemporalData]:
     """
@@ -358,15 +375,18 @@ class GraphReindexer:
             scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
             return output[:max_num_node]
     
-    def reindex_graph(self, data, x_is_tuple=False):
+    def reindex_graph(self, data, x_is_tuple=False, use_tgn=False):
         """
         Reindexes edge_index from 0 + reshapes node features.
         The original edge_index and node IDs are also kept.
         """
         data.original_edge_index = data.edge_index
         x, edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
-        data.src, data.dst = edge_index[0], edge_index[1]
         data.original_n_id = n_id
+        
+        # TGN requires to do reindexing directly in the encoder as it uses a 1024-edges batch loader
+        if not use_tgn:
+            data.src, data.dst = edge_index[0], edge_index[1]
         
         if x_is_tuple:
             data.x_src, data.x_dst = x
@@ -434,15 +454,15 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def compute_x_node_features(datasets, max_node_num, device):
+def reindex_graphs(datasets, max_node_num, device, use_tgn=False):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
     )
     
-    for data_list in datasets:
-        for batch in data_list:
-            batch.to(device)
-            batch = graph_reindexer.reindex_graph(batch)
-            batch.to("cpu")
-    
+    for dataset in datasets:
+        for data_list in log_tqdm(dataset, desc="Reindexing graphs"):
+            for batch in data_list:
+                batch.to(device)
+                graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
+                batch.to("cpu")

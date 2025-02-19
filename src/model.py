@@ -1,7 +1,7 @@
 from provnet_utils import *
 from config import *
 import torch.nn as nn
-from encoders import TGNEncoder
+from encoders import TGNEncoder, AncestorEncoder
 from experiments.uncertainty import activate_dropout_inference
 
 
@@ -10,9 +10,6 @@ class Model(nn.Module):
             encoder: nn.Module,
             decoders: list[nn.Module],
             decoder_few_shot: nn.Module,
-            num_nodes: int,
-            out_dim: int,
-            use_contrastive_learning: bool,
             device,
             is_running_mc_dropout,
             use_few_shot,
@@ -22,14 +19,7 @@ class Model(nn.Module):
 
         self.encoder = encoder
         self.decoders = nn.ModuleList(decoders)
-        self.use_contrastive_learning = use_contrastive_learning
         self.device = device
-        
-        self.last_h_storage, self.last_h_non_empty_nodes = None, None
-        if self.use_contrastive_learning:
-            self.last_h_storage = torch.empty((num_nodes, out_dim), device=device)
-            self.last_h_non_empty_nodes = torch.tensor([], dtype=torch.long, device=device)
-            
         self.is_running_mc_dropout = is_running_mc_dropout
         
         self.decoder_few_shot = decoder_few_shot
@@ -76,8 +66,6 @@ class Model(nn.Module):
                     edge_type=batch.edge_type,
                     y_edge=batch.y,
                     inference=inference,
-                    last_h_storage=self.last_h_storage,
-                    last_h_non_empty_nodes=self.last_h_non_empty_nodes,
                     node_type=batch.node_type,
                     validation=validation,
                 )
@@ -152,3 +140,8 @@ class Model(nn.Module):
             # the ssl decoder is set back
             self.decoders = self.ssl_decoder
             self.few_shot_mode = False
+
+    def reset_state(self):
+        if isinstance(self.encoder, (TGNEncoder, AncestorEncoder)):
+            self.encoder.reset_state()
+            

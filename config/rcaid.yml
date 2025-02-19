@@ -8,6 +8,7 @@ preprocessing:
       subject: path, cmd_line
       file: path
       netflow: remote_ip
+    multi_dataset: none
   transformation:
     used_methods: rcaid_pseudo_graph
     rcaid_pseudo_graph:

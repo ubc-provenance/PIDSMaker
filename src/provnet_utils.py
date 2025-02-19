@@ -25,6 +25,7 @@ import xxhash
 import gc
 import random
 import csv
+from collections import defaultdict
 from sklearn.metrics import (
     confusion_matrix,
     roc_auc_score,
@@ -533,15 +534,58 @@ def gen_relation_onehot(rel2id):
             rel2vec[relvec[rel2id[i]-1]]=i
     return rel2vec
 
-def get_indexid2msg(cfg):
-    indexid2msg_file = os.path.join(cfg.preprocessing.build_graphs._dicts_dir, "indexid2msg.pkl")
-    indexid2msg = torch.load(indexid2msg_file)
-    return indexid2msg
+def get_indexid2msg(cfg, gather_multi_dataset=False):
+    def load_file(cfg):
+        indexid2msg_file = os.path.join(cfg.preprocessing.build_graphs._dicts_dir, "indexid2msg.pkl")
+        indexid2msg = torch.load(indexid2msg_file)
+        return indexid2msg
+    
+    if gather_multi_dataset:
+        log(f"Multi-dataset order: {multi_datasets}")
+        
+        all_indexid2msg = {}
+        cumsum = 0
+        for dataset in multi_datasets:
+            cfg, _ = update_cfg_for_multi_dataset(cfg, dataset)
+            
+            indexid2msg = load_file(cfg)
+            max_node = max(map(int, list(indexid2msg.keys())))
+            indexid2msg = {str(int(k) + cumsum): v for k, v in indexid2msg.items()}
+            cumsum += max_node
+            
+            # Merge the cumsumed indices and original values from all datasets
+            all_indexid2msg = {**all_indexid2msg, **indexid2msg}
+        return all_indexid2msg
+    
+    return load_file(cfg)
+    
 
-def get_split2nodes(cfg):
-    path = os.path.join(cfg.preprocessing.build_graphs._dicts_dir, "split2nodes.pkl")
-    split2nodes = torch.load(path)
-    return split2nodes
+def get_split2nodes(cfg, gather_multi_dataset=False):
+    def load_file(cfg):
+        path = os.path.join(cfg.preprocessing.build_graphs._dicts_dir, "split2nodes.pkl")
+        split2nodes = torch.load(path)
+        return split2nodes
+
+    multi_datasets = get_multi_datasets(cfg)
+    use_multi_dataset = "none" not in cfg.preprocessing.build_graphs.multi_dataset
+    
+    if gather_multi_dataset and use_multi_dataset:
+        all_split2nodes = defaultdict(set)
+        cumsum = 0
+        for dataset in multi_datasets:
+            cfg, _ = update_cfg_for_multi_dataset(cfg, dataset)
+            
+            split2nodes = load_file(cfg)
+            indexid2msg = get_indexid2msg(cfg)
+            max_node = max(map(int, list(indexid2msg.keys())))
+            split2nodes = {k: {str(int(e) + cumsum) for e in v} for k, v in split2nodes.items()}
+            cumsum += max_node
+            
+            for k, v in split2nodes.items():
+                all_split2nodes[k] |= v
+        return all_split2nodes
+    
+    return load_file(cfg)
 
 def compute_class_weights(labels, num_classes):
     """
@@ -645,9 +689,7 @@ def generate_DAG(edges):
     return DAG, node_version
 
 def log_dataset_stats(train_data, val_data, test_data):
-    log("")
-    log("Dataset statistics")
-    for label, dataset in [("Train", train_data), ("Val", val_data), ("Test", test_data)]:
+    def log_helper(label, dataset):
         edges = torch.tensor([d.src.shape[0] for d in dataset])
         nodes = torch.tensor([torch.unique(d.edge_index).shape[0] for d in dataset])
 
@@ -655,6 +697,16 @@ def log_dataset_stats(train_data, val_data, test_data):
         log(f"{label} edges | mean: {int(torch.mean(edges, dtype=torch.float))} | min: {int(torch.min(edges))} | max: {int(torch.max(edges))}")
         log(f"{label} nodes | mean: {int(torch.mean(nodes, dtype=torch.float))} | min: {int(torch.min(nodes))} | max: {int(torch.max(nodes))}")
         log("")
+    
+    log("")
+    log("Dataset statistics")
+    for train_graphs, val_graphs in zip(train_data, val_data):
+        for label, dataset in [("Train", train_graphs), ("Val", val_graphs)]:
+            log_helper(label, dataset)
+            
+    for test_graphs in test_data:
+        for label, dataset in [("Test", test_graphs)]:
+            log_helper(label, dataset)
 
 def set_seed(cfg):
     if cfg.detection.gnn_training.use_seed:
@@ -666,3 +718,8 @@ def set_seed(cfg):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+
+def get_multi_datasets(cfg):
+    # The main dataset should be always the first one
+    multi_datasets = list(map(lambda x: x.strip(), cfg.preprocessing.build_graphs.multi_dataset.split(",")))
+    return [cfg.dataset.name] + [d for d in multi_datasets if d != cfg.dataset.name]

@@ -3,7 +3,6 @@ from time import perf_counter as timer
 import tracemalloc
 import wandb
 
-from encoders import TGNEncoder
 from config import *
 from data_utils import *
 from factory import *
@@ -66,7 +65,7 @@ def main(cfg):
 
     train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg, device)
 
-    model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
+    model = build_model(data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
     run_evaluation = cfg.training_loop.run_evaluation
@@ -96,29 +95,29 @@ def main(cfg):
             tracemalloc.start()
 
             # Before each epoch, we reset the memory
-            if isinstance(model.encoder, TGNEncoder):
-                model.encoder.reset_state()
+            model.reset_state()
                 
             model.to_fine_tuning(False)
 
             tot_loss = 0
-            for g in log_tqdm(train_data, f"Training"):
-                g.to(device=device)
-                g = remove_attacks_if_needed(g, cfg)
-                loss = train(
-                    data=g,
-                    full_data=full_data,  # full list of edge messages (do not store on CPU)
-                    model=model,
-                    optimizer=optimizer,
-                    cfg=cfg,
-                )
-                g.to("cpu")
-                if use_cuda:
-                    torch.cuda.empty_cache()
-                
-                tot_loss += loss
+            for dataset in train_data:
+                for g in log_tqdm(dataset, f"Training"):
+                    g.to(device=device)
+                    g = remove_attacks_if_needed(g, cfg)
+                    loss = train(
+                        data=g,
+                        full_data=full_data,  # full list of edge messages (do not store on CPU)
+                        model=model,
+                        optimizer=optimizer,
+                        cfg=cfg,
+                    )
+                    g.to("cpu")
+                    if use_cuda:
+                        torch.cuda.empty_cache()
+                    
+                    tot_loss += loss
 
-            tot_loss /= len(train_data)
+            tot_loss /= sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)
             
             _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
@@ -141,26 +140,26 @@ def main(cfg):
             patience_few_shot = cfg.detection.gnn_training.decoder.few_shot.patience_few_shot
 
             for tuning_epoch in range(0, num_epochs_few_shot):
-                if isinstance(model.encoder, TGNEncoder):
-                    model.encoder.reset_state()
+                model.reset_state()
                     
                 tot_loss = 0
-                for g in log_tqdm(train_data, "Fine-tuning"):
-                    if 1 in g.y:
-                        g.to(device=device)
-                        loss = train(
-                            data=g,
-                            full_data=full_data,  # full list of edge messages (do not store on CPU)
-                            model=model,
-                            optimizer=optimizer,
-                            cfg=cfg,
-                        )
-                        g.to("cpu")
-                        if use_cuda:
-                            torch.cuda.empty_cache()
-                        
-                        tot_loss += loss
-                tot_loss /= len(train_data)
+                for dataset in train_data:
+                    for g in log_tqdm(dataset, "Fine-tuning"):
+                        if 1 in g.y:
+                            g.to(device=device)
+                            loss = train(
+                                data=g,
+                                full_data=full_data,  # full list of edge messages (do not store on CPU)
+                                model=model,
+                                optimizer=optimizer,
+                                cfg=cfg,
+                            )
+                            g.to("cpu")
+                            if use_cuda:
+                                torch.cuda.empty_cache()
+                            
+                            tot_loss += loss
+                tot_loss /= sum(len(dataset) for dataset in train_data)
                 
                 # Validation
                 val_stats = orthrus_gnn_testing.main(
@@ -200,24 +199,25 @@ def main(cfg):
         # save_model(model, model_path, cfg)
         
         # Test
-        test_stats = orthrus_gnn_testing.main(
-            cfg=cfg,
-            model=model,
-            val_data=val_data,
-            test_data=test_data,
-            full_data=full_data,
-            epoch=epoch,
-            split="all",
-        )
-        all_test_stats.append(test_stats)
-        
-        wandb.log({
-            "train_epoch": epoch,
-            "train_loss": round(tot_loss, 4),
-            "val_score": round(test_stats["val_score"], 4),
-            "val_loss": round(test_stats["val_loss"], 4),
-            "test_loss": round(test_stats["test_loss"], 4),
-        })
+        if (epoch+1) % 2 == 0 or epoch == 0:
+            test_stats = orthrus_gnn_testing.main(
+                cfg=cfg,
+                model=model,
+                val_data=val_data,
+                test_data=test_data,
+                full_data=full_data,
+                epoch=epoch,
+                split="all",
+            )
+            all_test_stats.append(test_stats)
+            
+            wandb.log({
+                "train_epoch": epoch,
+                "train_loss": round(tot_loss, 4),
+                "val_score": round(test_stats["val_score"], 4),
+                "val_loss": round(test_stats["val_loss"], 4),
+                "test_loss": round(test_stats["test_loss"], 4),
+            })
         
     # After training
     if best_epoch_mode:

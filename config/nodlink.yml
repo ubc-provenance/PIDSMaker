@@ -9,6 +9,7 @@ preprocessing:
       subject: cmd_line
       file: path
       netflow: remote_ip, remote_port
+    multi_dataset: none
   transformation:
     used_methods: undirected
 

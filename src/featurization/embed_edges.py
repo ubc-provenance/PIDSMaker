@@ -24,7 +24,7 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
             src.append(int(u))
             dst.append(int(v))
             t.append(int(attr["time"]))
-            y.append(int(attr["y"]))
+            y.append(int(attr.get("y", 0)))
             
             # If the graph structure has been changed in transformation, we may loose
             # the edge label
@@ -86,13 +86,7 @@ def get_indexid2vec(cfg):
     
     raise ValueError(f"Invalid node embedding method {method}")
 
-def main(cfg):
-    method = cfg.featurization.embed_nodes.used_method.strip()
-    # Specific methods here
-    if method == "provd":
-        embed_edges_provd.main(cfg)
-        return
-        
+def main_from_config(cfg):
     rel2id = get_rel2id(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
@@ -113,6 +107,28 @@ def main(cfg):
             out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, f"{split}/"),
             cfg=cfg
         )
+
+def main(cfg):
+    method = cfg.featurization.embed_nodes.used_method.strip()
+    # Specific methods here
+    if method == "provd":
+        embed_edges_provd.main(cfg)
+        return
+    
+    multi_dataset_training = cfg.detection.gnn_training.multi_dataset_training
+    if not multi_dataset_training:
+        main_from_config(cfg)
+    
+    # Multi-dataset mode
+    else:
+        trained_model_dir = cfg.featurization.embed_nodes._model_dir
+        multi_datasets = get_multi_datasets(cfg)
+        for dataset in multi_datasets:
+            updated_cfg, should_restart = update_cfg_for_multi_dataset(cfg, dataset)
+            updated_cfg.featurization.embed_nodes._model_dir = trained_model_dir
+            
+            if should_restart["embed_edges"]:
+                main_from_config(updated_cfg)
 
 
 if __name__ == '__main__':

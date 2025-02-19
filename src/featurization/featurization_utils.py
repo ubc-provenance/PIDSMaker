@@ -18,18 +18,19 @@ def get_splits_to_train_featurization(cfg):
     
     raise ValueError(f"Invalid training split {training_split}")
 
-def get_corpus(cfg, doc2vec_format=False):
+def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False):
     """
     Returns the tokenized labels of all nodes within a specific split.
     For training, the train split can be used to get only the corpus of train set.
     """
     splits = get_splits_to_train_featurization(cfg)
-    split2nodes = get_split2nodes(cfg)
+    split2nodes = get_split2nodes(cfg, gather_multi_dataset=gather_multi_dataset)
     nodes_to_include = set().union(*(split2nodes[split] for split in splits))
-            
+    
     words, tags = [], []
     node_labels = set()
-    indexid2msg = get_indexid2msg(cfg)
+    indexid2msg = get_indexid2msg(cfg, gather_multi_dataset=gather_multi_dataset)
+    
     for node, msg in indexid2msg.items():
         node_type, node_label = msg
         
