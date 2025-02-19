@@ -75,7 +75,8 @@ def load_all_datasets(cfg, device, only_keep=None):
                 all_edge_types.append(data.edge_type)
                 max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
-    if "tgn" in cfg.detection.gnn_training.encoder.used_methods:
+    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    if use_tgn:
         all_msg = torch.cat(all_msg)
         all_t = torch.cat(all_t)
         all_edge_types = torch.cat(all_edge_types)
@@ -101,7 +102,7 @@ def load_all_datasets(cfg, device, only_keep=None):
     log_dataset_stats(train_data, val_data, test_data)
     
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    reindex_graphs([train_data, val_data, test_data], max_node, device)
+    reindex_graphs([train_data, val_data, test_data], max_node, device, use_tgn=use_tgn)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -374,15 +375,18 @@ class GraphReindexer:
             scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
             return output[:max_num_node]
     
-    def reindex_graph(self, data, x_is_tuple=False):
+    def reindex_graph(self, data, x_is_tuple=False, use_tgn=False):
         """
         Reindexes edge_index from 0 + reshapes node features.
         The original edge_index and node IDs are also kept.
         """
         data.original_edge_index = data.edge_index
         x, edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
-        data.src, data.dst = edge_index[0], edge_index[1]
         data.original_n_id = n_id
+        
+        # TGN requires to do reindexing directly in the encoder as it uses a 1024-edges batch loader
+        if not use_tgn:
+            data.src, data.dst = edge_index[0], edge_index[1]
         
         if x_is_tuple:
             data.x_src, data.x_dst = x
@@ -450,7 +454,7 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def reindex_graphs(datasets, max_node_num, device):
+def reindex_graphs(datasets, max_node_num, device, use_tgn=False):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
@@ -460,6 +464,5 @@ def reindex_graphs(datasets, max_node_num, device):
         for data_list in log_tqdm(dataset, desc="Reindexing graphs"):
             for batch in data_list:
                 batch.to(device)
-                graph_reindexer.reindex_graph(batch)
+                graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
                 batch.to("cpu")
-    
