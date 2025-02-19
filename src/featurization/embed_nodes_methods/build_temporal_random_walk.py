@@ -1,11 +1,8 @@
 import os
 from provnet_utils import *
 from config import *
-from tqdm import tqdm
 from trw import TRW
 import torch
-import numpy as np
-import random
 
 def run_temporal_random_walk(split_files, out_dir, cfg):
     base_dir = cfg.preprocessing.transformation._graphs_dir

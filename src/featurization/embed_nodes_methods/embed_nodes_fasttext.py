@@ -54,8 +54,7 @@ def train_fasttext(corpus, cfg):
 def main(cfg):
     log_start(__file__)
 
-    indexid2msg = get_indexid2msg(cfg)
-    corpus = get_corpus(cfg)
+    corpus = get_corpus(cfg, gather_multi_dataset=True)
 
     log("Training FastText model...")
     model = train_fasttext(

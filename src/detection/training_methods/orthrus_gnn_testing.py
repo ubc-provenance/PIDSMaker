@@ -294,32 +294,33 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split, logging=True)
     tpb = []
     split2loss = {}
 
-    for graphs, split_name in splits:
+    for dataset, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
 
         tracemalloc.start()
         
         all_losses = []
-        for g in log_tqdm(graphs, desc=desc, logging=logging):
-            g.to(device=device)
-            
-            s = time.time()
-            test_fn = test_node_level if cfg._is_node_level else test_edge_level
-            losses = test_fn(
-                data=g,
-                full_data=full_data,
-                model=model,
-                split=split_name,
-                model_epoch_file=model_epoch_file,
-                cfg=cfg,
-                device=device,
-            )
-            all_losses.extend(losses)
-            tpb.append(time.time() - s)
-            
-            g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
-            if use_cuda:
-                torch.cuda.empty_cache()
+        for graphs in dataset:
+            for g in log_tqdm(graphs, desc=desc, logging=logging):
+                g.to(device=device)
+                
+                s = time.time()
+                test_fn = test_node_level if cfg._is_node_level else test_edge_level
+                losses = test_fn(
+                    data=g,
+                    full_data=full_data,
+                    model=model,
+                    split=split_name,
+                    model_epoch_file=model_epoch_file,
+                    cfg=cfg,
+                    device=device,
+                )
+                all_losses.extend(losses)
+                tpb.append(time.time() - s)
+                
+                g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
+                if use_cuda:
+                    torch.cuda.empty_cache()
             
         _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
         peak_inference_cpu_mem = max(peak_inference_cpu_mem, peak_inference_cpu_memory / (1024 ** 3))

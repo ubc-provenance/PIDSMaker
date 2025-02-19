@@ -57,7 +57,9 @@ def main(cfg):
     os.makedirs(model_save_path, exist_ok=True)
 
     log("Loading and tokenizing corpus from database...")
-    corpus = get_corpus(cfg)
+    multi_dataset_training = cfg.featurization.embed_nodes.multi_dataset_training
+    
+    corpus = get_corpus(cfg, gather_multi_dataset=multi_dataset_training)
 
     log(f"Building feature word2vec model and save model to {model_save_path}")
     train_feature_word2vec(corpus=corpus,

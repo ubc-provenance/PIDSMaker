@@ -1,4 +1,4 @@
-from config import get_runtime_required_args, get_yml_cfg, SYNTHETIC_ATTACKS
+from config import get_runtime_required_args, get_yml_cfg, SYNTHETIC_ATTACKS, update_cfg_for_multi_dataset
 from provnet_utils import *
 from .transformation_methods import (
     transformation_rcaid_pseudo_graph,
@@ -79,10 +79,7 @@ def apply_graph_transformations(graph, methods, cfg):
 
     return graph
 
-
-def main(cfg):
-    set_seed(cfg)
-    log_start(__file__)
+def main_from_config(cfg):
     methods = cfg.preprocessing.transformation.used_methods
     methods = list(map(lambda x: x.strip(), methods.split(",")))
     
@@ -97,7 +94,23 @@ def main(cfg):
 
     else:
         add_graph_transformation(base_dir, dst_dir, cfg, methods)
-                
+
+def main(cfg):
+    set_seed(cfg)
+    log_start(__file__)
+    
+    multi_datasets = get_multi_datasets(cfg)
+    if "none" in multi_datasets:
+        main_from_config(cfg)
+    
+    # Multi-dataset mode
+    else:
+        for dataset in multi_datasets:
+            updated_cfg, should_restart = update_cfg_for_multi_dataset(cfg, dataset)
+            
+            if should_restart["transformation"]:
+                main_from_config(updated_cfg)
+  
 
 if __name__ == "__main__":
     args = get_runtime_required_args()
