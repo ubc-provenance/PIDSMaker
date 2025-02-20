@@ -1,0 +1,18 @@
+method: grid
+metric:
+  name: val_score
+  goal: maximize
+
+parameters:
+  detection.gnn_training.lr:
+    values: [0.001, 0.0001, 0.00001]
+  detection.gnn_training.node_hid_dim:
+    values: [128, 256]
+  detection.gnn_training.node_out_dim:
+    values: [-1]
+  featurization.embed_nodes.used_method:
+    values: [only_type, feature_word2vec]
+  detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN:
+    values: [False]
+  detection.gnn_training.num_epochs:
+    values: [16]
