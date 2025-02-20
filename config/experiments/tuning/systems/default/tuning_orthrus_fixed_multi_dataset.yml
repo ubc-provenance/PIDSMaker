@@ -15,6 +15,6 @@ parameters:
   detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN:
     values: [False]
   detection.gnn_training.num_epochs:
-    values: [16]
+    values: [12]
   detection.gnn_training.grad_accumulation:
     values: [1, 5]
