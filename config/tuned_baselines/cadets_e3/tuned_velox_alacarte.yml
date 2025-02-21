@@ -1,0 +1,10 @@
+# ADP@1.00=> https://wandb.ai/tristan_research/framework_tuning_velox/sweeps/hk93gj79?nw=nwusertristanbilot
+
+featurization:
+  embed_nodes:
+    emb_dim: 128
+
+detection:
+  gnn_training:
+    lr: 0.0001
+    node_out_dim: 256

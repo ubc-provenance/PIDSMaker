@@ -1,4 +1,4 @@
-# Simply the same config as amalgame_orthrus + encoder set to none
+# Simply the same config as orthrus_non_snooped + encoder set to none
 
 preprocessing:
   build_graphs:
