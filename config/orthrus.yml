@@ -59,6 +59,13 @@ featurization:
       compute_loss: True
       negative: 5
       decline_rate: 30
+    fasttext:
+      min_count: 2
+      alpha: 0.01
+      window_size: 3
+      negative: 3
+      num_workers: 15
+      use_pretrained_fb_model: False
   embed_edges:
     to_remove: True
 
