@@ -185,12 +185,12 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     # Plot each type with a different marker for Label 0
     for t in marker_styles.keys():
         plt.scatter(scores_0[types_0 == t], [0]*sum(types_0 == t), 
-                    marker=marker_styles[t], color=green, label=f'Label 0 - {t}')
+                    marker=marker_styles[t], color=green, label=t)
 
     # Plot each type with a different marker for Label 1
     for t in marker_styles.keys():
         plt.scatter(scores_1[types_1 == t], [1]*sum(types_1 == t), 
-                    marker=marker_styles[t], color=[attack_colors.get(c) for c in node2attack[types_1 == t]], label=f'Label 1 - {t}')
+                    marker=marker_styles[t], color=[attack_colors.get(c) for c in node2attack[types_1 == t]])
 
     # Adding labels and title
     plt.xlabel('Scores')
@@ -200,26 +200,26 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     plt.legend()
 
     # Combine scores and paths for easy handling
-    combined_scores = list(zip(scores, paths, y_truth, max_val_loss_tw))
+    combined_scores = list(zip(scores, paths, y_truth, max_val_loss_tw, nodes))
 
     # Sort combined list by scores in descending order
     combined_scores_sorted = sorted(combined_scores, key=lambda x: x[0], reverse=True)
 
     # Separate the top scores by their labels
-    keep_only = 10
+    keep_only = 14
     top_0 = [item for item in combined_scores_sorted if item[2] == 0][:keep_only]
     top_1 = [item for item in combined_scores_sorted if item[2] == 1][:keep_only]
 
     x_axis = max(scores) + max(scores) * 0.05
     # Annotate the top scores for label 0
-    for i, (score, path, _, max_tw_idx) in enumerate(top_0):
+    for i, (score, path, _, max_tw_idx, node) in enumerate(top_0):
         y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
-        plt.text(x_axis, y_position, f"{str(path)[:30]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=green)
+        plt.text(x_axis, y_position, f"{str(path)[:30]} ({score:.2f}): TW {max_tw_idx}, Node: {node}", fontsize=8, va='center', ha='left', color=green)
 
     # Annotate the top scores for label 1
-    for i, (score, path, _, max_tw_idx) in enumerate(top_1):
-        y_position = 1 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
-        plt.text(x_axis, y_position, f"{str(path)[:30]} ({score:.2f}): TW {max_tw_idx}", fontsize=8, va='center', ha='left', color=red)
+    for i, (score, path, _, max_tw_idx, node) in enumerate(top_1):
+        y_position = 1.4 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
+        plt.text(x_axis, y_position, f"{str(path)[:30]} ({score:.2f}): TW {max_tw_idx}, Node: {node}", fontsize=8, va='center', ha='left', color=red)
         
     plt.text(min(scores), 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
     plt.text(min(scores), 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')

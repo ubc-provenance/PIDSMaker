@@ -541,6 +541,7 @@ def get_indexid2msg(cfg, gather_multi_dataset=False):
         return indexid2msg
     
     if gather_multi_dataset:
+        multi_datasets = get_multi_datasets(cfg)
         log(f"Multi-dataset order: {multi_datasets}")
         
         all_indexid2msg = {}
@@ -721,5 +722,6 @@ def set_seed(cfg):
 
 def get_multi_datasets(cfg):
     # The main dataset should be always the first one
-    multi_datasets = list(map(lambda x: x.strip(), cfg.preprocessing.build_graphs.multi_dataset.split(",")))
+    multi_dataset = cfg.preprocessing.build_graphs.multi_dataset
+    multi_datasets = list(map(lambda x: x.strip(), multi_dataset.split("," if "," in multi_dataset else "-")))
     return [cfg.dataset.name] + [d for d in multi_datasets if d != cfg.dataset.name]
