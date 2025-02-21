@@ -1,8 +1,5 @@
 import os
 import wandb
-import numpy as np
-from collections import defaultdict
-from pprint import pprint
 
 from .evaluation_methods import (
     node_evaluation,
@@ -21,7 +18,11 @@ def standard_evaluation(cfg, evaluation_fn):
     
     tw_to_malicious_nodes = compute_tw_labels(cfg)
     
-    best_adp, best_stats = -1e6, {}
+    best_metrics = {
+        "adp_score": float("-inf"),
+        "discrimination": float("-inf"),
+        "best_stats": None,
+    }
     
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
     out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
@@ -66,16 +67,22 @@ def standard_evaluation(cfg, evaluation_fn):
         
         wandb.log(stats)
         
-        if stats["adp_score"] > best_adp:
-            best_adp = stats["adp_score"]
-            best_stats = stats
+        best_metrics = best_metric_pick_best_epoch(stats, best_metrics)
         
     if save_files_to_wandb:
         # We only store the scores for the best run
-        wandb.save(best_stats["scores_file"], out_dir)
+        wandb.save(best_metrics["stats"]["scores_file"], out_dir)
     
-    return best_stats
+    return best_metrics["stats"]
 
+def best_metric_pick_best_epoch(stats, best_metrics):
+    if (stats["adp_score"] > best_metrics["adp_score"]) or \
+        (stats["adp_score"] == best_metrics["adp_score"] and stats["discrimination"] > best_metrics["discrimination"]):
+        best_metrics["adp_score"] = stats["adp_score"]
+        best_metrics["discrimination"] = stats["discrimination"]
+        best_metrics["stats"] = stats
+    return best_metrics
+    
 
 def main(cfg):
     method = cfg.detection.evaluation.used_method.strip()
