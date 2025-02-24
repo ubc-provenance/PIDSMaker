@@ -31,6 +31,7 @@ detection:
     node_out_dim: 3
     inference_device: cuda
     grad_accumulation: 1
+    fix_buggy_graph_reindexer: False
     # edge_batch_size: 1024
     encoder:
       node_features: node_type,edges_distribution

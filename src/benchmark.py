@@ -65,7 +65,7 @@ def get_task_to_module(cfg):
         },
     }
 
-def main(cfg, project, exp, **kwargs):
+def main(cfg, project, exp, sweep_id, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
@@ -199,7 +199,7 @@ def main(cfg, project, exp, **kwargs):
     else:
         log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
-        sweep_id = wandb.sweep(sweep_config, project=project)
+        sweep_id = sweep_id or wandb.sweep(sweep_config, project=project)
         
         def run_pipeline_from_sweep(cfg):
             with wandb.init(name=exp):
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     cfg = get_yml_cfg(args)
     wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
 
-    main(cfg, project=project, exp=exp_name)
+    main(cfg, project=project, exp=exp_name, sweep_id=args.sweep_id)
     
     wandb.finish()
     

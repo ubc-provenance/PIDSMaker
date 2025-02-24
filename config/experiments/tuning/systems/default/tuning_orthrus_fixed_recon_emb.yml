@@ -5,20 +5,20 @@ metric:
 
 parameters:
   detection.gnn_training.lr:
-    values: [0.0001, 0.00001]
+    values: [0.0001, 0.001]
   detection.gnn_training.node_hid_dim:
-    values: [128, 256, 384]
+    values: [64, 128, 256]
   detection.gnn_training.node_out_dim:
     values: [-1]
   featurization.embed_nodes.used_method:
-    values: [only_type]
+    values: [only_type, hierarchical_hashing, feature_word2vec]
   detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN:
     values: [False]
   detection.gnn_training.num_epochs:
-    values: [4]
-  detection.gnn_training.grad_accumulation:
-    values: [1, 5]
+    values: [20]
   detection.gnn_training.encoder.tgn.tgn_memory_dim:
     values: [-1]
   detection.gnn_training.encoder.tgn.tgn_time_dim:
     values: [-1]
+  detection.gnn_training.decoder.used_methods:
+    values: [reconstruct_node_embeddings]

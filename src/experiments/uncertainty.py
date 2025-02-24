@@ -140,13 +140,23 @@ def min_metrics(method_to_metrics, metric='adp_score'):
 
 def push_best_files_to_wandb(method_to_metrics, cfg):
     if "deep_ensemble" in method_to_metrics:
-        best_adp_idx = np.argmax([e["adp_score"] for e in method_to_metrics["deep_ensemble"]])
-        best_run = method_to_metrics["deep_ensemble"][best_adp_idx]
+        best_run = best_metric_pick_best_run(method_to_metrics)
         for metric, value in best_run.items():
             if metric.endswith("img"):
                 out_dir = "/".join(best_run["scores_file"].split("/")[:-1])
                 wandb.save(best_run["scores_file"], out_dir) # saves the scores for the best run
         wandb.log(best_run) # logs all best metrics and images for easy analysis
+
+def best_metric_pick_best_run(method_to_metrics):
+    metrics = method_to_metrics["deep_ensemble"]
+    adp_scores = np.array([e["adp_score"] for e in metrics])
+    max_adp_mask = adp_scores == adp_scores.max()
+    
+    # Filter only the elements with max adp_score and get the one with the highest discrimination
+    filtered_metrics = [metrics[i] for i in range(len(metrics)) if max_adp_mask[i]]
+    best_run = max(filtered_metrics, key=lambda e: e["discrimination"])
+    
+    return best_run
 
 # MC Dropout
 class DropoutWrapper(nn.Module):

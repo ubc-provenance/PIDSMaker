@@ -78,6 +78,11 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
     elif cfg.detection.gnn_training.node_out_dim == -2:
         cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim // 2
         
+    if cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim == -1:
+        cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim = cfg.detection.gnn_training.node_hid_dim
+    if cfg.detection.gnn_training.encoder.tgn.tgn_time_dim == -1:
+        cfg.detection.gnn_training.encoder.tgn.tgn_time_dim = cfg.detection.gnn_training.node_hid_dim
+        
     # We modified the cfg so we have to update the task paths accordingly
     update_task_paths_to_restart(cfg)
     

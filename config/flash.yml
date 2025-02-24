@@ -38,6 +38,7 @@ detection:
     node_out_dim: 3
     inference_device: cuda
     grad_accumulation: 1
+    fix_buggy_graph_reindexer: False
     encoder:
       node_features: node_emb
       neighbor_sampling: [-1, -1]

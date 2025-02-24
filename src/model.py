@@ -42,7 +42,9 @@ class Model(nn.Module):
                 edge_feats=getattr(batch, "edge_feats", None),
                 full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
                 inference=inference,
-                edge_types= batch.edge_type
+                edge_types= batch.edge_type,
+                node_type=batch.node_type,
+                batch=batch,
             )
         h, h_src, h_dst = self.gather_h(batch, res)
         return h, h_src, h_dst

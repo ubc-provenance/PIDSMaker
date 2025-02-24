@@ -106,6 +106,7 @@ def test_node_level(
         results = model(batch, full_data, inference=True, validation=validation)
         loss = results["loss"]
         losses.extend(loss.cpu().numpy().tolist())
+        n_id = getattr(batch, "original_n_id_tgn", getattr(batch, "original_n_id"))
 
         # ThreaTrace code
         if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
@@ -126,7 +127,7 @@ def test_node_level(
                 score = torch.log(score + 1e-12) # we do that or the score is much too high
                 score = max(score.item(), 0)
             
-                node = batch.original_n_id[i].item()
+                node = n_id[i].item()
                 correct_pred = int((node_type_num[i] == pred[i]).item())
 
                 temp_dic = {
@@ -150,7 +151,7 @@ def test_node_level(
             for i in range(len(out)):
                 score = max(conf[i].item(), 0)
 
-                node = batch.original_n_id[i].item()
+                node = n_id[i].item()
                 correct_pred = int((node_type_num[i] == pred[i]).item())
 
                 temp_dic = {
@@ -200,7 +201,7 @@ def test_node_level(
                 with open(train_distance_file, "a") as f:
                     f.write(f"{mean_distance_train}\n")
 
-                for i, node in enumerate(batch.original_n_id):
+                for i, node in enumerate(n_id):
                     temp_dic = {
                         'node': node.item(),
                         'loss': float(loss[i].item()),
@@ -233,7 +234,7 @@ def test_node_level(
                 score = distances / mean_distance_train
                 score = score.tolist()
 
-                for i, node in enumerate(batch.original_n_id):
+                for i, node in enumerate(n_id):
                     temp_dic = {
                         'node': node.item(),
                         'magic_score': float(score[i]),
@@ -242,7 +243,7 @@ def test_node_level(
                     node_list.append(temp_dic)
         
         else:
-            for i, node in enumerate(batch.original_n_id):
+            for i, node in enumerate(n_id):
                 temp_dic = {
                     'node': node.item(),
                     'loss': float(loss[i].item()),
