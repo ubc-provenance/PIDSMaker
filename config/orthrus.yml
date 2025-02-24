@@ -115,6 +115,11 @@ detection:
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink
+      reconstruct_node_embeddings:
+        loss: MSE
+        decoder: node_mlp
+        node_mlp:
+          architecture_str: linear(0.5) | relu | linear(0.5) | linear(2) | relu
       
       use_few_shot: False
       few_shot:

@@ -295,7 +295,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, objective_cfg=None):
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_node_embeddings.loss)
 
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
-            objectives.append(NodeEmbDecoder(decoder=decoder, loss_fn=loss_fn))
+            objectives.append(NodeEmbReconstruction(decoder=decoder, loss_fn=loss_fn))
         
         elif objective == "reconstruct_edge_embeddings":
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_edge_embeddings.loss)
