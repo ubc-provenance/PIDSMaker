@@ -171,6 +171,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             in_dim=in_dim,
             out_dim=in_dim,
             encoder=encoder,
+            activation=True,
         )
     
     if use_ancestor_encoding:
