@@ -102,7 +102,7 @@ def load_all_datasets(cfg, device, only_keep=None):
     log_dataset_stats(train_data, val_data, test_data)
     
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    reindex_graphs([train_data, val_data, test_data], max_node, device, use_tgn=use_tgn)
+    reindex_graphs([train_data, val_data, test_data], max_node, device, use_tgn=use_tgn, fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -332,9 +332,10 @@ class GraphReindexer:
     (max_num_node + 1, d).
     This reindexing is essential for the graph to be computed by a standard GNN model with PyG.
     """
-    def __init__(self, num_nodes, device):
+    def __init__(self, num_nodes, device, fix_buggy_graph_reindexer):
         self.num_nodes = num_nodes
         self.device = device
+        self.fix_buggy_graph_reindexer = fix_buggy_graph_reindexer
         
         self.assoc = None
         self.cache = {}
@@ -371,8 +372,14 @@ class GraphReindexer:
             x_dst_result = output.clone()
             return x_src_result[:max_num_node], x_dst_result[:max_num_node]
         else:
-            scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
-            scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
+            if self.fix_buggy_graph_reindexer:
+                scatter(torch.cat([x_src, x_dst]), torch.cat([edge_index[0], edge_index[1]]), out=output, dim=0, reduce='mean')
+            else:
+                # NOTE: this one, used in orthrus and velox is buggy because id does the mean and then the mean which can double
+                # the value of features if duplicates exist
+                scatter(x_src, edge_index[0], out=output, dim=0, reduce='mean')
+                scatter(x_dst, edge_index[1], out=output, dim=0, reduce='mean')
+            
             return output[:max_num_node]
     
     def reindex_graph(self, data, x_is_tuple=False, use_tgn=False):
@@ -454,10 +461,11 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def reindex_graphs(datasets, max_node_num, device, use_tgn=False):
+def reindex_graphs(datasets, max_node_num, device, fix_buggy_graph_reindexer, use_tgn=False):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
+        fix_buggy_graph_reindexer=fix_buggy_graph_reindexer,
     )
     
     for dataset in datasets:

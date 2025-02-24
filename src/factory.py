@@ -23,6 +23,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
+        fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
@@ -53,6 +54,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     use_ancestor_encoding = "ancestor_encoding" in cfg.detection.gnn_training.encoder.used_methods
+    use_entity_type_encoding = "entity_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
     dropout = cfg.detection.gnn_training.encoder.dropout
     
     # If edge features are used, we set them here
@@ -77,7 +79,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
 
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(",")):
-        if method in ["tgn", "ancestor_encoding"]:
+        if method in ["tgn", "ancestor_encoding", "entity_type_encoding"]:
             pass
         elif method == "graph_attention":
             encoder = GraphAttentionEmbedding(
@@ -173,6 +175,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
         tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
         use_buggy_orthrus_TGN = cfg.detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN
+        project_src_dst = cfg.detection.gnn_training.encoder.tgn.project_src_dst
 
         if use_memory:
             memory = TGNMemory(
@@ -213,6 +216,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             use_time_order_encoding=use_time_order_encoding,
             tgn_neighbor_n_hop=tgn_neighbor_n_hop,
             use_buggy_orthrus_TGN=use_buggy_orthrus_TGN,
+            project_src_dst=project_src_dst,
         )
         
     if use_ancestor_encoding:
@@ -223,6 +227,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             encoder=encoder,
             num_nodes=max_node_num,
             device=device,
+        )
+        
+    if use_entity_type_encoding:
+        encoder = EntityLinearEncoder(
+            in_dim=original_in_dim,
+            out_dim=original_in_dim,
+            encoder=encoder,
         )
 
     return encoder

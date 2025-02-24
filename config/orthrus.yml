@@ -81,6 +81,7 @@ detection:
     node_out_dim: 64
     inference_device: cuda
     grad_accumulation: 1
+    fix_buggy_graph_reindexer: False
     encoder:
       node_features: node_emb,node_type
       neighbor_sampling: []
@@ -102,6 +103,7 @@ detection:
         use_memory: False
         use_time_order_encoding: False
         use_buggy_orthrus_TGN: True
+        project_src_dst: True
       sage:
         activation: relu
     decoder:
