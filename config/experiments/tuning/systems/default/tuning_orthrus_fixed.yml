@@ -12,8 +12,8 @@ parameters:
     values: [-1]
   featurization.embed_nodes.used_method:
     values: [only_type, hierarchical_hashing, feature_word2vec]
-  detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN:
-    values: [False]
+  detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN:
+    values: [True]
   detection.gnn_training.encoder.tgn.tgn_memory_dim:
     values: [-1]
   detection.gnn_training.encoder.tgn.tgn_time_dim:
