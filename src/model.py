@@ -144,6 +144,6 @@ class Model(nn.Module):
             self.few_shot_mode = False
 
     def reset_state(self):
-        if isinstance(self.encoder, (TGNEncoder, AncestorEncoder)):
+        if hasattr(self.encoder, "reset_state"):
             self.encoder.reset_state()
             
