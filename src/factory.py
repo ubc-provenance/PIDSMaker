@@ -165,7 +165,25 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         else:
             raise ValueError(f"Invalid encoder {method}")
+            
+    if use_entity_type_encoding:
+        encoder = EntityLinearEncoder(
+            in_dim=in_dim,
+            out_dim=in_dim,
+            encoder=encoder,
+            activation=True,
+        )
     
+    if use_ancestor_encoding:
+        encoder = AncestorEncoder(
+            in_dim=in_dim,
+            out_dim=in_dim, # try in_dim*2 ou out_dim
+            edge_dim=edge_dim,
+            encoder=encoder,
+            num_nodes=max_node_num,
+            device=device,
+        )
+        
     if use_tgn:
         time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
         neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
@@ -174,7 +192,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
         use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
         tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
-        use_buggy_orthrus_TGN = cfg.detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN
+        fix_buggy_orthrus_TGN = cfg.detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN
         project_src_dst = cfg.detection.gnn_training.encoder.tgn.project_src_dst
 
         if use_memory:
@@ -213,27 +231,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             num_nodes=max_node_num,
             use_time_enc=use_time_enc,
             edge_dim=edge_dim,
+            node_type_dim = cfg.dataset.num_node_types,
             use_time_order_encoding=use_time_order_encoding,
             tgn_neighbor_n_hop=tgn_neighbor_n_hop,
-            use_buggy_orthrus_TGN=use_buggy_orthrus_TGN,
+            fix_buggy_orthrus_TGN=fix_buggy_orthrus_TGN,
             project_src_dst=project_src_dst,
-        )
-        
-    if use_ancestor_encoding:
-        encoder = AncestorEncoder(
-            in_dim=original_in_dim,
-            out_dim=original_in_dim, # try in_dim*2 ou out_dim
-            edge_dim=edge_dim,
-            encoder=encoder,
-            num_nodes=max_node_num,
-            device=device,
-        )
-        
-    if use_entity_type_encoding:
-        encoder = EntityLinearEncoder(
-            in_dim=original_in_dim,
-            out_dim=original_in_dim,
-            encoder=encoder,
         )
 
     return encoder

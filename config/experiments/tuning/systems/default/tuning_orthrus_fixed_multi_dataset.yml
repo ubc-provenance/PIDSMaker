@@ -12,8 +12,8 @@ parameters:
     values: [-1]
   featurization.embed_nodes.used_method:
     values: [only_type]
-  detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN:
-    values: [False]
+  detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN:
+    values: [True]
   detection.gnn_training.num_epochs:
     values: [4]
   detection.gnn_training.grad_accumulation:

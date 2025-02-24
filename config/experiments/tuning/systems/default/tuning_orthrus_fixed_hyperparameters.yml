@@ -12,8 +12,8 @@ parameters:
     values: [-1]
   featurization.embed_nodes.used_method:
     values: [only_type, feature_word2vec]
-  detection.gnn_training.encoder.tgn.use_buggy_orthrus_TGN:
-    values: [False]
+  detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN:
+    values: [True]
   detection.gnn_training.encoder.tgn.tgn_batch_size:
     values: [1024, 4096, -1]
   detection.gnn_training.encoder.tgn.tgn_neighbor_size:
