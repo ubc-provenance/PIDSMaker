@@ -106,32 +106,32 @@ def load_all_datasets(cfg, device, only_keep=None):
     
     return train_data, val_data, test_data, full_data, max_node
 
+def load_data_list(path, split, cfg):
+    data_list = []
+    for f in sorted(os.listdir(os.path.join(path, split))):
+        filepath = os.path.join(path, split, f)
+        data = torch.load(filepath).to("cpu")
+        data_list.append(data)
+
+    data_list = extract_msg_from_data(data_list, cfg)
+    return data_list
+
 def load_data_set(cfg, split: str, multi_dataset=False) -> list[CollatableTemporalData]:
     """
     Returns a list of time window graphs for a given `split` (train/val/test set).
-    """
-    def load_data_list(path):
-        data_list = []
-        for f in sorted(os.listdir(os.path.join(path, split))):
-            filepath = os.path.join(path, split, f)
-            data = torch.load(filepath).to("cpu")
-            data_list.append(data)
-
-        data_list = extract_msg_from_data(data_list, cfg)
-        return data_list
-    
+    """    
     if multi_dataset:
         multi_datasets = get_multi_datasets(cfg)
         all_data_lists = []
         for dataset in multi_datasets:
             updated_cfg, _ = update_cfg_for_multi_dataset(cfg, dataset)
             path = updated_cfg.featurization.embed_edges._edge_embeds_dir
-            all_data_lists.append(load_data_list(path))
+            all_data_lists.append(load_data_list(path, split, cfg))
         return all_data_lists
     
     else:
         path = cfg.featurization.embed_edges._edge_embeds_dir
-        return [load_data_list(path)]
+        return [load_data_list(path, split, cfg)]
 
 def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[CollatableTemporalData]:
     """

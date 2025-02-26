@@ -4,6 +4,7 @@ from torch_geometric.loader import NeighborLoader
 
 from provnet_utils import *
 from config import *
+from config import possible_events, ntype2id, get_rel2id
 from model import *
 from losses import *
 from encoders import *
@@ -27,8 +28,8 @@ def build_model(data_sample, device, cfg, max_node_num):
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
-    decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer)
-    decoder_few_shot = few_shot_decoder_factory(cfg, graph_reindexer=graph_reindexer)
+    decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
+    decoder_few_shot = few_shot_decoder_factory(cfg, device=device, graph_reindexer=graph_reindexer)
     model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device, max_node_num=max_node_num)
     
     if cfg._is_running_mc_dropout:
@@ -102,8 +103,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         elif method == "LSTM":
             encoder = LSTM(
-                 in_features = in_dim,
-                 out_features = node_out_dim,
+                 in_features=in_dim,
+                 out_features=node_out_dim,
                  cell_clip=None,
                  type_specific_decoding=False,
                  exclude_file=True,
@@ -289,7 +290,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
         raise ValueError(f"Invalid decoder {method}")
         
 
-def objective_factory(cfg, in_dim, graph_reindexer, objective_cfg=None):
+def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
     if objective_cfg is None:
         objective_cfg = cfg.detection.gnn_training.decoder
     node_out_dim = cfg.detection.gnn_training.node_out_dim
@@ -332,6 +333,21 @@ def objective_factory(cfg, in_dim, graph_reindexer, objective_cfg=None):
                     loss_fn=loss_fn,
                     balanced_loss=balanced_loss,
                     edge_type_dim=cfg.dataset.num_edge_types,
+                ))
+            
+        elif objective == "predict_edge_type_hetero":
+            loss_fn = categorical_loss_fn_factory("cross_entropy")
+            
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
+            objectives.append(
+                EdgeTypePredictionHetero(
+                    decoder=decoder,
+                    loss_fn=loss_fn,
+                    in_dim=node_out_dim,
+                    device=device,
+                    possible_events=possible_events,
+                    entity_map=ntype2id,
+                    event_map=get_rel2id(cfg),
                 ))
             
         elif objective == "predict_node_type":
@@ -428,14 +444,14 @@ def objective_factory(cfg, in_dim, graph_reindexer, objective_cfg=None):
     
     return objectives
 
-def few_shot_decoder_factory(cfg, graph_reindexer, objective_cfg=None):
+def few_shot_decoder_factory(cfg, graph_reindexer, device, objective_cfg=None):
     if not cfg.detection.gnn_training.decoder.use_few_shot:
         return None
 
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     objective_cfg = cfg.detection.gnn_training.decoder.few_shot.decoder
     
-    objective = objective_factory(cfg, in_dim=node_out_dim, graph_reindexer=graph_reindexer, objective_cfg=objective_cfg)
+    objective = objective_factory(cfg, in_dim=node_out_dim, graph_reindexer=graph_reindexer, device=device, objective_cfg=objective_cfg)
     return nn.ModuleList(objective)
     
 def edge_decoder_factory(edge_decoder, in_dim):
