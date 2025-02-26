@@ -459,6 +459,16 @@ def get_node_to_path_and_type(cfg):
         
     return node_to_path_type
 
+class CustomModel(nn.Module):
+    def __init__(self, in_dim, out_dim, mlp):
+        super().__init__()
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.mlp = mlp
+        
+    def forward(self, *args, **kwargs):
+        return self.mlp(*args, **kwargs)
+
 def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
     def parse_layer(layer_str, in_dim):
         layers = []
@@ -492,6 +502,7 @@ def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
 
         return layers, in_dim
 
+    original_in_dim = in_dim
     arch_str = arch_str.strip().lower().replace(" ", "")
     layer_groups = arch_str.split('|')
     
@@ -501,7 +512,8 @@ def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
         layers.extend(group_layers)
     layers.append(nn.Linear(in_dim, out_dim))
     
-    return nn.Sequential(*layers)
+    model = CustomModel(in_dim=original_in_dim, out_dim=out_dim, sequential=nn.Sequential(*layers))
+    return model
 
 def copy_directory(src_path, dest_path):
     if not os.path.isdir(src_path):
