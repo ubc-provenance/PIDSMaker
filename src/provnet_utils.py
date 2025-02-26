@@ -512,7 +512,7 @@ def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
         layers.extend(group_layers)
     layers.append(nn.Linear(in_dim, out_dim))
     
-    model = CustomModel(in_dim=original_in_dim, out_dim=out_dim, sequential=nn.Sequential(*layers))
+    model = CustomModel(in_dim=original_in_dim, out_dim=out_dim, mlp=nn.Sequential(*layers))
     return model
 
 def copy_directory(src_path, dest_path):
