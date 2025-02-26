@@ -54,11 +54,11 @@ class Model(nn.Module):
 
         with torch.set_grad_enabled(train_mode):
             h, h_src, h_dst = self.embed(batch, full_data, inference=inference)
-            
+
             # Train mode: loss | Inference mode: scores
             loss_or_scores = None
             
-            for objective in self.decoders:                    
+            for objective in self.decoders:
                 results = objective(
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
@@ -69,6 +69,8 @@ class Model(nn.Module):
                     y_edge=batch.y,
                     inference=inference,
                     node_type=batch.node_type,
+                    node_type_src=batch.node_type_src,
+                    node_type_dst=batch.node_type_dst,
                     validation=validation,
                 )
                 loss = results["loss"]
