@@ -199,7 +199,9 @@ def main(cfg, project, exp, sweep_id, **kwargs):
     else:
         log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
-        sweep_id = sweep_id or wandb.sweep(sweep_config, project=project)
+        if not sweep_id:
+            sweep_id = wandb.sweep(sweep_config, project=project)
+            print(f"Sweep ID: tristan_research/{project}/{sweep_id}")
         
         def run_pipeline_from_sweep(cfg):
             with wandb.init(name=exp):
