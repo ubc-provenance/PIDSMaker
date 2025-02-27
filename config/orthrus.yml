@@ -117,8 +117,11 @@ detection:
         balanced_loss: False
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear(0.5) | relu
+          architecture_str: relu
           src_dst_projection_coef: 2
+        decoder_hetero_head: node_mlp
+        node_mlp:
+          architecture_str: relu | dropout | linear(0.5) | relu
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink

@@ -337,17 +337,38 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             
         elif objective == "predict_edge_type_hetero":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
-            
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
+            
+            decoder_hetero_head_method = getattr(getattr(objective_cfg, objective.strip()), "decoder_hetero_head")
+            
+            entity_map = ntype2id
+            event_map = get_rel2id(cfg)
+            
+            edge_type_predictors = nn.ModuleDict()
+        
+            ntype2edgemap = {}
+            for (src_type, dst_type), events in possible_events.items():
+                src_idx = entity_map[src_type] - 1
+                dst_idx = entity_map[dst_type] - 1
+                events = torch.tensor([event_map[e] - 1 for e in events])
+                max_event = len(event_map) // 2 # event maps contain num=>label and label=>num entries so we /2
+                
+                reindexed_events = torch.zeros((max_event,), dtype=torch.long, device=device)
+                reindexed_events[events] = torch.arange(events.size(0), device=device)
+                ntype2edgemap[(src_idx, dst_idx)] = reindexed_events
+                
+                layer_name = f"{src_idx}_{dst_idx}"
+                num_events = len(events)  # Output dimension is the number of possible events
+                
+                decoder_hetero_head = decoder_factory(decoder_hetero_head_method, objective, cfg, in_dim=node_out_dim, out_dim=num_events)
+                edge_type_predictors[layer_name] = decoder_hetero_head
+            
             objectives.append(
                 EdgeTypePredictionHetero(
                     decoder=decoder,
                     loss_fn=loss_fn,
-                    in_dim=node_out_dim,
-                    device=device,
-                    possible_events=possible_events,
-                    entity_map=ntype2id,
-                    event_map=get_rel2id(cfg),
+                    edge_type_predictors=edge_type_predictors,
+                    ntype2edgemap=ntype2edgemap,
                 ))
             
         elif objective == "predict_node_type":
