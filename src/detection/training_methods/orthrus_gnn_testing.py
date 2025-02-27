@@ -49,6 +49,7 @@ def test_edge_level(
         dstnodes = edge_index[1, :].cpu().numpy()
         t_vars = batch.t.cpu().numpy()
         losses = each_edge_loss.cpu().numpy()
+        edge_types = (batch.edge_type.max(dim=1).indices + 1).cpu().numpy()
 
         # if 1 in batch.y:
         #     log(f"Mean score of fake malicious edges: {losses[batch.y.cpu() == 1].mean():.4f}")
@@ -58,7 +59,8 @@ def test_edge_level(
             'loss': losses.astype(float),
             'srcnode': srcnodes.astype(int),
             'dstnode': dstnodes.astype(int),
-            'time': t_vars.astype(int)
+            'time': t_vars.astype(int),
+            'edge_type': edge_types.astype(int),
         })
         if edge_list is None:
             edge_list = edge_df

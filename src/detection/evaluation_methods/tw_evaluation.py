@@ -38,7 +38,7 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     results = get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
 
-    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    out_dir = cfg.detection.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")

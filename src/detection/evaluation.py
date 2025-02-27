@@ -6,6 +6,7 @@ from .evaluation_methods import (
     queue_evaluation,
     tw_evaluation,
     node_tw_evaluation,
+    edge_evaluation,
 )
 from data_utils import *
 from provnet_utils import log
@@ -25,7 +26,7 @@ def standard_evaluation(cfg, evaluation_fn):
     }
     
     sorted_files = listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
-    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    out_dir = cfg.detection.evaluation._precision_recall_dir
     
     save_files_to_wandb = cfg._experiment != "uncertainty"
         
@@ -94,6 +95,8 @@ def main(cfg):
         return standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
     elif method == "queue_evaluation":
         return queue_evaluation.main(cfg)
+    elif method == "edge_evaluation":
+        return standard_evaluation(cfg, evaluation_fn=edge_evaluation.main)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
 

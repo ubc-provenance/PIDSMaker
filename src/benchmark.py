@@ -171,7 +171,7 @@ def main(cfg, project, exp, sweep_id, **kwargs):
                         cfg._is_running_mc_dropout = False
                         
             # Save metrics to disk for future analysis and plots
-            out_dir = cfg.detection.evaluation.node_evaluation._uncertainty_exp_dir
+            out_dir = cfg.detection.evaluation._uncertainty_exp_dir
             os.makedirs(out_dir, exist_ok=True)
             method_to_metrics_path = os.path.join(out_dir, "method_to_metrics.pkl")
             torch.save(method_to_metrics, method_to_metrics_path)
