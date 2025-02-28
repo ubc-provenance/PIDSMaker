@@ -135,7 +135,7 @@ def plot_score_seen(scores, y_truth, out_file):
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
 
-def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, out_file, cfg):
+def plot_scores_with_paths_node_level(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, out_file, cfg):
     node_to_path = get_node_to_path_and_type(cfg)
     paths, types = [], []
     # Prints the path if it exists, else tries to print the cmd line
@@ -228,6 +228,101 @@ def plot_scores_with_paths(scores, y_truth, nodes, max_val_loss_tw, tw_to_malici
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
 
+def plot_scores_with_paths_edge_level(scores, y_truth, edges, tw_to_malicious_nodes, node2attacks, out_file, cfg):
+    node_to_path = get_node_to_path_and_type(cfg)
+    paths, types = [], []
+    # Prints the path if it exists, else tries to print the cmd line
+    for src, dst, *_ in edges:
+        src = int(src)
+        dst = int(dst)
+        src_type = node_to_path[src]["type"]
+        dst_type = node_to_path[dst]["type"]
+        types.append(src_type)
+        
+        path_src = node_to_path[src]["path"] + ", " + node_to_path[src]["cmd"] if src_type == "subject" else node_to_path[src]["path"]
+        path_dst = node_to_path[dst]["path"] + ", " + node_to_path[dst]["cmd"] if dst_type == "subject" else node_to_path[dst]["path"]
+        paths.append((path_src, path_dst))
+            
+    # Convert data to numpy arrays for easy manipulation
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+    types = np.array(types)
+
+    # Define marker styles for each type
+    marker_styles = {
+        'subject': 's',   # Square
+        'file': 'o',      # Circle
+        'netflow': 'D'    # Diamond
+    }
+
+    # Separate the scores based on labels
+    scores_0 = scores[y_truth == 0]
+    scores_1 = scores[y_truth == 1]
+    types_0 = types[y_truth == 0]
+    types_1 = types[y_truth == 1]
+
+    plt.figure(figsize=(14, 6))
+
+    red = (155/255, 44/255, 37/255)
+    green = (62/255, 126/255, 42/255)
+
+    attack_colors = {
+        0: 'black',
+        1: 'red',
+        2: 'blue',
+    }
+
+    malicious_elements = [n for y_true, n in zip(y_truth, edges) if y_true == 1]
+    node2attack = np.array([list(node2attacks.get(node))[0] for node in malicious_elements])
+
+
+    # Plot each type with a different marker for Label 0
+    for t in marker_styles.keys():
+        plt.scatter(scores_0[types_0 == t], [0]*sum(types_0 == t), 
+                    marker=marker_styles[t], color=green, label=t)
+
+    # Plot each type with a different marker for Label 1
+    for t in marker_styles.keys():
+        plt.scatter(scores_1[types_1 == t], [1]*sum(types_1 == t), 
+                    marker=marker_styles[t], color=[attack_colors.get(c) for c in node2attack[types_1 == t]])
+
+    # Adding labels and title
+    plt.xlabel('Scores')
+    plt.ylabel('Labels')
+    plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
+    plt.title('Scatter Plot of Scores by Label')
+    plt.legend()
+
+    # Combine scores and paths for easy handling
+    combined_scores = list(zip(scores, paths, y_truth, edges))
+
+    # Sort combined list by scores in descending order
+    combined_scores_sorted = sorted(combined_scores, key=lambda x: x[0], reverse=True)
+
+    # Separate the top scores by their labels
+    keep_only = 14
+    top_0 = [item for item in combined_scores_sorted if item[2] == 0][:keep_only]
+    top_1 = [item for item in combined_scores_sorted if item[2] == 1][:keep_only]
+
+    x_axis = max(scores) + max(scores) * 0.02
+    # Annotate the top scores for label 0
+    for i, (score, path, _, (src, dst, _, edge_type)) in enumerate(top_0):
+        y_position = 0 - (i * 0.1)  # Adjust y-position for each label to avoid overlap
+        edge_type = edge_type.replace("EVENT_", "")
+        plt.text(x_axis, y_position, f"({src}, {dst} | {node_to_path[int(src)]['type']}, {edge_type}, {node_to_path[int(dst)]['type']}): {str(path[0])[:28]} => {str(path[1])[:28]} ({score:.2f})", fontsize=6, va='center', ha='left', color=green)
+
+    # Annotate the top scores for label 1
+    for i, (score, path, _, (src, dst, _, edge_type)) in enumerate(top_1):
+        y_position = 1.4 - (i * 0.1)  # Adjust y-position for each label to avoid overlap and add space between groups
+        edge_type = edge_type.replace("EVENT_", "")
+        plt.text(x_axis, y_position, f"({src}, {dst} | {node_to_path[int(src)]['type']}, {edge_type}, {node_to_path[int(dst)]['type']}): {str(path[0])[:28]} => {str(path[1])[:28]} ({score:.2f})", fontsize=6, va='center', ha='left', color=red)
+    plt.text(min(scores), 1.6, f"Dataset: {cfg.dataset.name}", fontsize=8, va='center', ha='left', color='black')
+    plt.text(min(scores), 1.5, f"Malicious TW: {str(list(tw_to_malicious_nodes.keys()))}", fontsize=8, va='center', ha='left', color='black')
+
+    plt.xlim([min(scores), max(scores) *1.5])  # Adjust xlim to make space for text
+    plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
+    plt.savefig(out_file)
+
 def plot_false_positives(y_true, y_pred, out_file):
     plt.figure(figsize=(10, 6))
     
@@ -296,7 +391,6 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
     This function calculates the precision on the x-axis and the cumulative percentage of 
     detected attacks on the y-axis, handles duplicate x-values by averaging, and then plots 
     it with a filled area under the curve.
-    Ensures that the plot starts at (0, 0).
     """
     # Sort nodes by descending anomaly scores
     sorted_indices = np.argsort(scores)[::-1]
@@ -489,7 +583,6 @@ def plot_discrimination_metric(scores, y_truth, out_file):
 def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10):
     pred_scores = np.array(pred_scores)
     y_truth = np.array(y_truth)
-    nodes = np.array(nodes)
     
     pred_scores /= pred_scores.max()
     attack2max_score = defaultdict(float)
@@ -518,7 +611,6 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
 def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
     pred_scores = np.array(pred_scores)
     y_truth = np.array(y_truth)
-    nodes = np.array(nodes)
     
     pred_scores /= pred_scores.max()
 
@@ -836,3 +928,36 @@ def compute_kmeans_labels(results, topk_K):
         results[node_id]["y_hat"] = 1
         
     return results
+
+def transform_attack2nodes_to_node2attacks(attack2nodes):
+    node2attacks = defaultdict(set)
+    for attack, nodes in attack2nodes.items():
+        for node in nodes:
+            node2attacks[node].add(attack)
+    return dict(node2attacks)
+
+def get_metrics_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
+    nodes_per_attack = [v["nids"] if isinstance(v, dict) else v for k, v in attack_to_GPs.items()]
+    reverse_scores, reverse_nodes = zip(*sorted(zip(pred_scores, nodes), reverse=True))
+    fps = 0
+    detected_attacks = {}
+    tps, fps = 0, 0
+    total_attack_nodes = sum(len(nodes_set) for nodes_set in nodes_per_attack)
+    
+    for score, node in zip(reverse_scores, reverse_nodes):
+        detected = False
+        for i, nodes_set in enumerate(nodes_per_attack):
+            if node in nodes_set:
+                detected_attacks[i] = 1
+                detected = True
+        if len(detected_attacks) == len(nodes_per_attack):
+            break
+        if detected:
+            tps += 1
+        else:
+            fps += 1
+            
+    precision = tps / (tps+fps+1e-12)
+    recall = tps / (total_attack_nodes + 1e-12)
+    
+    return fps, tps, precision, recall

@@ -168,6 +168,9 @@ detection:
       used_method: kairos_idf_queue
       kairos_idf_queue:
         include_test_set_in_IDF: True
+    edge_evaluation:
+      malicious_edge_selection: both_nodes
+      threshold_method: max_val_loss
 
 # triage :
 #   tracing:

@@ -217,32 +217,6 @@ def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, node
     fp_in_malicious_tw_ratio = num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     return fp_in_malicious_tw_ratio
 
-def get_metrics_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
-    nodes_per_attack = [v["nids"] for k, v in attack_to_GPs.items()]
-    reverse_scores, reverse_nodes = zip(*sorted(zip(pred_scores, nodes), reverse=True))
-    fps = 0
-    detected_attacks = {}
-    tps, fps = 0, 0
-    total_attack_nodes = sum(len(nodes_set) for nodes_set in nodes_per_attack)
-    
-    for score, node in zip(reverse_scores, reverse_nodes):
-        detected = False
-        for i, nodes_set in enumerate(nodes_per_attack):
-            if node in nodes_set:
-                detected_attacks[i] = 1
-                detected = True
-        if len(detected_attacks) == len(nodes_per_attack):
-            break
-        if detected:
-            tps += 1
-        else:
-            fps += 1
-            
-    precision = tps / (tps+fps+1e-12)
-    recall = tps / (total_attack_nodes + 1e-12)
-    
-    return fps, tps, precision, recall
-
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     if cfg.detection.gnn_training.used_method == "provd": 
         get_preds_fn = get_node_predictions_provd
@@ -261,7 +235,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     
     node_to_path = get_node_to_path_and_type(cfg)
 
-    out_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    out_dir = cfg.detection.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png") # average detection precision
@@ -293,23 +267,8 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                 for att, d in attack_to_GPs.items():
                     if nid in d["nids"]:
                         attack_to_TPs[att] += 1
-                    # if "time_range" in result and result["time_range"]:
-                    #     start_att, end_att = d["time_range"]
-                    #     start_node, end_node = result["time_range"]
-                    #     if nid in d["nids"] and (start_node <= start_att <= end_node or start_node <= end_att <= end_node):
-                    #         attack_to_TPs[att] += 1
-
     
-    def transform_attack2nodes_to_node2attacks(attack2nodes):
-        node2attacks = {}
-        for attack, nodes in enumerate(attack2nodes):
-            for node in nodes:
-                if node not in node2attacks:
-                    node2attacks[node] = set()
-                node2attacks[node].add(attack)
-        return node2attacks
-    
-    attack2nodes = [v["nids"] for k, v in attack_to_GPs.items()]
+    attack2nodes = {k: v["nids"] for k, v in attack_to_GPs.items()}
     node2attacks = transform_attack2nodes_to_node2attacks(attack2nodes)
     
     # Plots the PR curve and scores for mean node loss
@@ -320,7 +279,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, scores_img_file, cfg)
+    plot_scores_with_paths_node_level(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, scores_img_file, cfg)
     plot_score_seen(pred_scores, is_seen, seen_score_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     

@@ -78,7 +78,7 @@ def main(cfg):
     if cfg.triage.tracing.used_method is None:
         return
     
-    in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    in_dir = cfg.detection.evaluation._precision_recall_dir
     test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}

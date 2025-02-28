@@ -157,15 +157,13 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
     cur, connect = init_database_connection(cfg)
     uuid2nids, nid2uuid = get_uuid2nids(cur)
 
-    attack_to_euuids = {}
-
+    malicious_edge_selection = cfg.detection.evaluation.edge_evaluation.malicious_edge_selection
+    
+    attack_to_mal_edges = defaultdict(set)
     for i, (path, attack_to_time_window) in enumerate(zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)):
-        attack_to_euuids[i] = {}
-        attack_to_euuids[i]["euuids"] = set()
 
         start_time = datetime_to_ns_time_US(attack_to_time_window[1])
         end_time = datetime_to_ns_time_US(attack_to_time_window[2])
-        attack_to_euuids[i]["time_range"] =[start_time, end_time]
         
         ground_truth_nids = []
         with open(os.path.join(cfg._ground_truth_dir, path), 'r') as f:
@@ -174,6 +172,7 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
                 node_id = uuid2nids[node_uuid]
                 ground_truth_nids.append(str(node_id))
+        ground_truth_nids = set(ground_truth_nids)
 
         rows = get_events(cur, start_time, end_time)
         for row in rows:
@@ -183,16 +182,26 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
             event_uuid = row[5]
             timestamp_rec = row[6]
 
-            if src_idx_id in ground_truth_nids and dst_idx_id in ground_truth_nids:
-                attack_to_euuids[i]["euuids"].add(event_uuid)
+            condition = None
+            if malicious_edge_selection == "src_node":
+                condition = src_idx_id in ground_truth_nids
+            elif malicious_edge_selection == "dst_node":
+                condition = dst_idx_id in ground_truth_nids
+            elif malicious_edge_selection == "both_nodes":
+                condition = src_idx_id in ground_truth_nids and dst_idx_id in ground_truth_nids
+            else:
+                raise ValueError("`malicious_edge_selection` must be one of 'src_node', 'dst_node', 'both_nodes'")
+            
+            if condition:
+                attack_to_mal_edges[i].add((src_idx_id, dst_idx_id, timestamp_rec, ope))
     
-    return attack_to_euuids
+    return attack_to_mal_edges
 
 def get_ground_truth_edges(cfg) -> set:
-    attack_to_euuids = get_attack_to_mal_edges(cfg)
+    attack_to_mal_edges = get_attack_to_mal_edges(cfg)
 
-    malicious_edge_uuids = set()
-    for attack, data in attack_to_euuids.items():
-        malicious_edge_uuids |= data['euuids']
+    malicious_edges = set()
+    for attack, edges_set in attack_to_mal_edges.items():
+        malicious_edges |= edges_set
 
-    return malicious_edge_uuids
+    return malicious_edges

@@ -165,7 +165,7 @@ def get_node_infos(cur):
 def main(cfg):
     cur, connect = init_database_connection(cfg)
 
-    in_dir = cfg.detection.evaluation.node_evaluation._precision_recall_dir
+    in_dir = cfg.detection.evaluation._precision_recall_dir
     test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}
