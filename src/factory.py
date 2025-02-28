@@ -186,15 +186,19 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         )
         
     if use_tgn:
-        time_dim = cfg.detection.gnn_training.encoder.tgn.tgn_time_dim
-        neighbor_size = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_size
-        use_node_feats_in_gnn = cfg.detection.gnn_training.encoder.tgn.use_node_feats_in_gnn
-        use_memory = cfg.detection.gnn_training.encoder.tgn.use_memory
+        tgn_cfg = cfg.detection.gnn_training.encoder.tgn
+        time_dim = tgn_cfg.tgn_time_dim
+        neighbor_size = tgn_cfg.tgn_neighbor_size
+        use_node_feats_in_gnn = tgn_cfg.use_node_feats_in_gnn
+        use_memory = tgn_cfg.use_memory
+        use_time_order_encoding = tgn_cfg.use_time_order_encoding
+        tgn_neighbor_n_hop = tgn_cfg.tgn_neighbor_n_hop
+        fix_buggy_orthrus_TGN = tgn_cfg.fix_buggy_orthrus_TGN
+        project_src_dst = tgn_cfg.project_src_dst
+        directed = tgn_cfg.directed
+        insert_neighbors_before = tgn_cfg.insert_neighbors_before
+        
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
-        use_time_order_encoding = cfg.detection.gnn_training.encoder.tgn.use_time_order_encoding
-        tgn_neighbor_n_hop = cfg.detection.gnn_training.encoder.tgn.tgn_neighbor_n_hop
-        fix_buggy_orthrus_TGN = cfg.detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN
-        project_src_dst = cfg.detection.gnn_training.encoder.tgn.project_src_dst
 
         if use_memory:
             memory = TGNMemory(
@@ -215,7 +219,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         else:
             memory = None
 
-        neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
+        neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, directed=directed, device=device)
 
         encoder = TGNEncoder(
             encoder=encoder,
@@ -237,6 +241,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             tgn_neighbor_n_hop=tgn_neighbor_n_hop,
             fix_buggy_orthrus_TGN=fix_buggy_orthrus_TGN,
             project_src_dst=project_src_dst,
+            insert_neighbors_before=insert_neighbors_before,
         )
 
     return encoder

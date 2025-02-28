@@ -65,6 +65,8 @@ detection:
         use_time_order_encoding: False
         fix_buggy_orthrus_TGN: False
         project_src_dst: True
+        directed: False
+        insert_neighbors_before: False
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:
