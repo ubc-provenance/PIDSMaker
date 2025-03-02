@@ -66,7 +66,7 @@ def standard_evaluation(cfg, evaluation_fn):
             if os.path.exists(discrim):
                 stats["discrim_img"] = wandb.Image(discrim)
         
-        wandb.log(stats)
+        wandb.log(stats, step=stats["epoch"])
         
         best_metrics = best_metric_pick_best_epoch(stats, best_metrics)
         

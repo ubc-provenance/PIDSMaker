@@ -65,6 +65,9 @@ def get_task_to_module(cfg):
         },
     }
 
+def clean_cfg_for_log(cfg):
+    return remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path", "_exp", "_tuning_file_path"])
+
 def main(cfg, project, exp, sweep_id, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
@@ -209,9 +212,9 @@ def main(cfg, project, exp, sweep_id, **kwargs):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
 
-                run_name = f"{cfg.dataset.name}_{cfg.featurization.embed_nodes.training_split}_{cfg.featurization.embed_nodes.used_method}"
-                wandb.run.name = run_name
+                wandb.run.name = exp
                 wandb.run.save()
+                wandb.log({"dataset": cfg.dataset.name, "exp": exp}, commit=False)
 
                 run_pipeline_with_experiments(cfg)
         
@@ -256,7 +259,7 @@ if __name__ == '__main__':
         raise argparse.ArgumentTypeError(f"Unknown args {unknown_args}")
 
     cfg = get_yml_cfg(args)
-    wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
+    wandb.config.update(clean_cfg_for_log(cfg))
 
     main(cfg, project=project, exp=exp_name, sweep_id=args.sweep_id)
     
