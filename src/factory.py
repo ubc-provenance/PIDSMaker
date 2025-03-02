@@ -197,6 +197,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         project_src_dst = tgn_cfg.project_src_dst
         directed = tgn_cfg.directed
         insert_neighbors_before = tgn_cfg.insert_neighbors_before
+        use_last_neighbor_loader = tgn_cfg.use_last_neighbor_loader
         
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
 
@@ -242,6 +243,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             fix_buggy_orthrus_TGN=fix_buggy_orthrus_TGN,
             project_src_dst=project_src_dst,
             insert_neighbors_before=insert_neighbors_before,
+            use_last_neighbor_loader=use_last_neighbor_loader,
         )
 
     return encoder

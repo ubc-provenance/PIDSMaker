@@ -67,6 +67,7 @@ detection:
         project_src_dst: True
         directed: False
         insert_neighbors_before: False
+        use_last_neighbor_loader: True
     decoder:
       used_methods: reconstruct_node_features
       reconstruct_node_features:
