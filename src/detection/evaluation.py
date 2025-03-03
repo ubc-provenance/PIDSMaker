@@ -44,7 +44,7 @@ def standard_evaluation(cfg, evaluation_fn):
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
         
         if save_files_to_wandb:
-            stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
+            # stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
             
             scores = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
             if os.path.exists(scores):
