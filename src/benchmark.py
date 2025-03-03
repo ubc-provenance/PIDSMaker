@@ -214,7 +214,7 @@ def main(cfg, project, exp, sweep_id, **kwargs):
 
                 wandb.run.name = exp
                 wandb.run.save()
-                wandb.log({"dataset": cfg.dataset.name, "exp": exp}, commit=False)
+                wandb.log({"dataset": cfg.dataset.name, "exp": exp})
 
                 run_pipeline_with_experiments(cfg)
         

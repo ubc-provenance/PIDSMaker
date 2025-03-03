@@ -212,12 +212,13 @@ def main(cfg):
             all_test_stats.append(test_stats)
             
             wandb.log({
+                "epoch": epoch,
                 "train_epoch": epoch,
                 "train_loss": round(tot_loss, 4),
                 "val_score": round(test_stats["val_score"], 4),
                 "val_loss": round(test_stats["val_loss"], 4),
                 "test_loss": round(test_stats["test_loss"], 4),
-            }, step=epoch, commit=False)
+            })
         
     # After training
     if best_epoch_mode:
@@ -241,7 +242,7 @@ def main(cfg):
         "peak_inference_cpu_memory": round(np.max([d["peak_inference_cpu_memory"] for d in all_test_stats]), 3),
         "peak_inference_gpu_memory": round(np.max([d["peak_inference_gpu_memory"] for d in all_test_stats]), 3),
         "time_per_batch_inference": round(np.mean([d["time_per_batch_inference"] for d in all_test_stats]), 3),
-    }, commit=False)
+    })
     
     return best_val_score
 
