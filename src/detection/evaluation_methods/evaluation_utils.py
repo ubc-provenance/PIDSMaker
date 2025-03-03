@@ -135,7 +135,7 @@ def plot_score_seen(scores, y_truth, out_file):
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
 
-def plot_scores_with_paths_node_level(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, out_file, cfg):
+def plot_scores_with_paths_node_level(scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, out_file, cfg, threshold=None):
     node_to_path = get_node_to_path_and_type(cfg)
     paths, types = [], []
     # Prints the path if it exists, else tries to print the cmd line
@@ -198,6 +198,11 @@ def plot_scores_with_paths_node_level(scores, y_truth, nodes, max_val_loss_tw, t
     plt.yticks([0, 1], ['0', '1'])  # Set y-ticks to show label categories
     plt.title('Scatter Plot of Scores by Label')
     plt.legend()
+    
+    # Add vertical line at threshold if provided
+    if threshold is not None:
+        plt.axvline(x=threshold, color='purple', linestyle='--', label='Threshold')
+        plt.legend()
 
     # Combine scores and paths for easy handling
     combined_scores = list(zip(scores, paths, y_truth, max_val_loss_tw, nodes))
@@ -228,7 +233,7 @@ def plot_scores_with_paths_node_level(scores, y_truth, nodes, max_val_loss_tw, t
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
 
-def plot_scores_with_paths_edge_level(scores, y_truth, edges, tw_to_malicious_nodes, node2attacks, out_file, cfg):
+def plot_scores_with_paths_edge_level(scores, y_truth, edges, tw_to_malicious_nodes, node2attacks, out_file, cfg, threshold=None):
     node_to_path = get_node_to_path_and_type(cfg)
     paths, types = [], []
     # Prints the path if it exists, else tries to print the cmd line
@@ -293,6 +298,11 @@ def plot_scores_with_paths_edge_level(scores, y_truth, edges, tw_to_malicious_no
     plt.title('Scatter Plot of Scores by Label')
     plt.legend()
 
+    # Add vertical line at threshold if provided
+    if threshold is not None:
+        plt.axvline(x=threshold, color='purple', linestyle='--', label='Threshold')
+        plt.legend()
+
     # Combine scores and paths for easy handling
     combined_scores = list(zip(scores, paths, y_truth, edges))
 
@@ -322,6 +332,46 @@ def plot_scores_with_paths_edge_level(scores, y_truth, edges, tw_to_malicious_no
     plt.xlim([min(scores), max(scores) *1.5])  # Adjust xlim to make space for text
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
+
+def plot_scores_neat(scores, y_truth, nodes, node2attacks, out_file, threshold=None):
+    # Separate scores based on labels
+    scores_0 = [score for i, (score, label) in enumerate(zip(scores, y_truth)) if label == 0 and (score > 0.9 or (score <= 0.9 and i % 500 == 1))]
+    scores_1 = [(score, node) for score, label, node in zip(scores, y_truth, nodes) if label == 1]
+    
+    # Assign different colors for each attack type
+    attack_colors = {
+        0: 'black',
+        1: 'red',
+        2: 'blue',
+    }
+
+    center_coef = 0.2  # to center the lines/dots
+
+    # Positions on the y-axis for the scatter plot
+    y_zeros = [center_coef] * len(scores_0)  # All zeros at y=0
+    y_ones = [1 - center_coef] * len(scores_1)  # All ones at y=1
+
+    plt.figure(figsize=(6, 1.5))  # Width, height in inches
+    plt.scatter(scores_0, y_zeros, color='green', label='Benign',rasterized=True)
+
+    # Plot each malicious node with its corresponding color based on its attack type
+    labels, colors, scores = [], [], []
+    for (score, node) in scores_1:
+        scores.append(score)
+        attack_type = list(node2attacks.get(node))[0]
+        labels.append(f'Attack {attack_type}')
+        colors.append(attack_colors.get(attack_type, 'black'))
+    plt.scatter(scores, y_ones, color=colors, label=labels, rasterized=True)
+
+    if threshold is not None:
+        plt.axvline(x=threshold, color='black', linestyle='-', linewidth=2, label=f"Threshold: {threshold}")
+
+    plt.xlabel('Node anomaly scores')
+    plt.yticks([center_coef, 1 - center_coef], ['Benign', 'Malicious'])
+    plt.ylim(-0.1, 1.1)  # Adjust if necessary to bring them even closer
+
+    plt.tight_layout()  # Ensures everything fits within the figure area
+    plt.savefig(out_file, dpi=300)
 
 def plot_false_positives(y_true, y_pred, out_file):
     plt.figure(figsize=(10, 6))
@@ -630,6 +680,60 @@ def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
     att2tp["discrim_tp_att_sum"] = np.sum(list(att2tp.values()))
     
     return att2tp
+
+def get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg):
+    """
+    Maps each attack to edges that are true positives based on scores.
+    
+    Args:
+        scores (np.ndarray or list): Confidence scores for each edge.
+        src_dst_t_type (list of tuples): List of (src, dst, t, type) tuples representing edges.
+        edge2attack (dict): Dictionary mapping edge indices to attack identifiers.
+        y_truth (np.ndarray or list): Ground truth labels (1 for true, 0 for false).
+    
+    Returns:
+        dict: Dictionary mapping attack identifiers to lists of detected true positive edges (as tuples).
+    """
+    # Ensure inputs are numpy arrays for easier manipulation
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+
+    # Create an array of indices to sort by scores
+    indices = np.argsort(scores)[::-1]  # Sort in descending order
+
+    # Sort scores, edges, and labels based on descending scores
+    sorted_scores = scores[indices]
+    sorted_edges = [src_dst_t_type[i] for i in indices]
+    sorted_labels = y_truth[indices]
+
+    # Find the cutoff k where no false positives (label 0) are included
+    k = 0
+    for i, label in enumerate(sorted_labels):
+        if label == 0:  # Stop at the first false positive
+            k = i
+            break
+        k = i + 1  # Include all true positives up to this point
+
+    # Select the top k edges (true positives)
+    true_positive_edges = sorted_edges[:k]
+    true_positive_indices = indices[:k]
+
+    node_to_path = get_node_to_path_and_type(cfg)
+
+    get_label = lambda data: f'{data.get("path")}-{data.get("cmd")}'.replace("None-", "") if data["type"] == "subject" else data.get("path")
+
+    # Map true positive edges to their attacks
+    attack_to_detected_edges = defaultdict(list)
+    for edge in true_positive_edges:
+        attack = list(edge2attack.get(edge))[0]
+        if attack is not None:  # Only include edges with a valid attack mapping
+            src_node = node_to_path[int(edge[0])]
+            dst_node = node_to_path[int(edge[1])]
+            edge = (get_label(src_node), get_label(dst_node), src_node["type"], dst_node["type"]) + edge
+            attack_to_detected_edges[attack].append(edge)
+
+    return dict(attack_to_detected_edges)
+    
 
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}

@@ -72,7 +72,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         
     if use_kmeans:
         results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)        
-    return results
+    return results, thr
 
 def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
@@ -185,7 +185,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         
     if use_kmeans:
         results = compute_kmeans_labels(results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K)
-    return results
+    return results, thr
 
 def get_node_predictions_provd(cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
@@ -203,7 +203,7 @@ def get_node_predictions_provd(cfg, **kwargs):
         results[node_id]["time_range"] = None
         results[node_id]["y_hat"] = y_hat
 
-    return results
+    return results, None
 
 def analyze_false_positives(y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes):
     fp_indices = [i for i, (true, pred) in enumerate(zip(y_truth, y_preds)) if pred and not true]
@@ -225,7 +225,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     else:
         get_preds_fn = get_node_predictions
     
-    results = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
+    results, thr = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
     
     #save results for future checking
     os.makedirs(cfg.detection.evaluation._results_dir, exist_ok=True)
@@ -240,7 +240,8 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png") # average detection precision
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
-    simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
+    # simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
+    neat_scores_img_file = os.path.join(out_dir, f"neat_scores_{model_epoch_dir}.svg")
     seen_score_img_file = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
     discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
     
@@ -278,8 +279,9 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
     plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
-    plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths_node_level(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, scores_img_file, cfg)
+    # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
+    plot_scores_with_paths_node_level(pred_scores, y_truth, nodes, max_val_loss_tw, tw_to_malicious_nodes, node2attacks, scores_img_file, cfg, thr)
+    plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
     plot_score_seen(pred_scores, is_seen, seen_score_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     
@@ -305,6 +307,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     for k, v in discrim_scores.items():
         stats[k] = round(v, 4)
         
+    attack2tps = get_detected_tps(pred_scores, nodes, node2attacks, y_truth, cfg)
+    for attack, detected_tps in attack2tps.items():
+        stats[f"tps_{attack}"] = str(detected_tps)
+        
     stats = {**stats, **discrim_tp}
     
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
@@ -323,5 +329,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     }, scores_file)
     
     stats["scores_file"] = scores_file
+    stats["neat_scores_img_file"] = neat_scores_img_file
     
     return stats
