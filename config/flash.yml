@@ -56,6 +56,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
+    best_model_selection: best_adp
     used_method: node_evaluation
     node_evaluation:
       threshold_method: flash

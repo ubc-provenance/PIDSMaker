@@ -68,7 +68,7 @@ def standard_evaluation(cfg, evaluation_fn):
         
         wandb.log(stats)
         
-        best_metrics = best_metric_pick_best_epoch(stats, best_metrics)
+        best_metrics = best_metric_pick_best_epoch(stats, best_metrics, cfg)
         
     if save_files_to_wandb:
         # We only store the scores for the best run
@@ -78,9 +78,20 @@ def standard_evaluation(cfg, evaluation_fn):
     
     return best_metrics["stats"]
 
-def best_metric_pick_best_epoch(stats, best_metrics):
-    if (stats["adp_score"] > best_metrics["adp_score"]) or \
-        (stats["adp_score"] == best_metrics["adp_score"] and stats["discrimination"] > best_metrics["discrimination"]):
+def best_metric_pick_best_epoch(stats, best_metrics, cfg):
+    best_model_selection = cfg.detection.evaluation.best_model_selection
+    
+    if best_model_selection == "best_adp":
+        condition =  (stats["adp_score"] > best_metrics["adp_score"]) or \
+            (stats["adp_score"] == best_metrics["adp_score"] and stats["discrimination"] > best_metrics["discrimination"])
+    
+    elif best_model_selection == "best_discrimination":
+        condition =  (stats["discrimination"] > best_metrics["discrimination"])
+    
+    else:
+        raise ValueError(f"Invalid best model selection {best_model_selection}")
+    
+    if condition:
         best_metrics["adp_score"] = stats["adp_score"]
         best_metrics["discrimination"] = stats["discrimination"]
         best_metrics["stats"] = stats
