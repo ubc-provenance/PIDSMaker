@@ -1,5 +1,9 @@
 _include_yml: orthrus_non_snooped
 
+featurization:
+  embed_nodes:
+    used_method: only_type
+
 detection:
   gnn_training:
     fix_buggy_graph_reindexer: True

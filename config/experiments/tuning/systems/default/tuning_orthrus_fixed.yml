@@ -12,8 +12,6 @@ parameters:
     values: [-1]
   detection.gnn_training.num_epochs:
     values: [20]
-  featurization.embed_nodes.used_method:
-    values: [only_type]
   detection.gnn_training.encoder.tgn.tgn_memory_dim:
     values: [-1]
   detection.gnn_training.encoder.tgn.tgn_time_dim:
