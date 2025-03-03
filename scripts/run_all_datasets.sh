@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Hard-coded dataset names
-DATASETS=("CLEARSCOPE_E3" "CADETS_E3" "THEIA_E3" "CLEARSCOPE_E5" "THEIA_E5" "CADETS_E5")
+DATASETS=("CLEARSCOPE_E3" "CADETS_E3" "THEIA_E3")
 
 # Check if the minimum required arguments are provided
 if [ "$#" -lt 2 ]; then
