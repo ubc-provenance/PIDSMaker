@@ -22,8 +22,8 @@ def main(cfg):
         embed_nodes_word2vec.main(cfg)
     elif method == "doc2vec":
         embed_nodes_doc2vec.main(cfg)
-    elif method == "hierarchical_hashing" or method == "only_type" or method == "magic":
-        # hierarchical feature hashing doesn't need to build or train any model
+    elif method in ["hierarchical_hashing", "only_type", "magic", "only_ones"]:
+        # these methods don't need to build or train any model
         # so we do nothing here and generate vectorized graphs directly in embed_edges.py
         pass
     elif method == "feature_word2vec":

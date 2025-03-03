@@ -234,7 +234,6 @@ if __name__ == '__main__':
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
-    PROJECT_PREFIX = "uncertainty_exp_"
     if args.project != "":
         project = args.project
     elif args.tuning_mode == "hyperparameters":
@@ -245,8 +244,6 @@ if __name__ == '__main__':
         project = f"component_ablation_study_{args.model}"
     else:
         project = "project_name"
-        
-    project = PROJECT_PREFIX + project
     
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
