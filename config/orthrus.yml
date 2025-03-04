@@ -92,6 +92,10 @@ detection:
         activation: relu
         num_heads: 8
         concat: True
+      graph_attention_hetero:
+        activation: relu
+        num_heads: 4
+        num_layers: 1
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 1024

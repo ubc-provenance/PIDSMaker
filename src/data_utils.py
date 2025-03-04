@@ -1,6 +1,7 @@
 import copy
 import math
 import os
+from functools import cached_property
 
 import pickle
 import torch
@@ -13,7 +14,8 @@ from torch_scatter import scatter
 
 from encoders import TGNEncoder
 from provnet_utils import log_dataset_stats, log_tqdm, get_multi_datasets
-from config import update_cfg_for_multi_dataset
+from config import update_cfg_for_multi_dataset, get_rel2id, get_node_map
+from hetero import compute_hetero_features
 
 class CollatableTemporalData(TemporalData):
     """
@@ -53,6 +55,19 @@ class CollatableTemporalData(TemporalData):
             elif value.ndim == 2 and value.size(1) == self.num_events and "index" in key:
                 data[key] = value[:, idx]
         return data
+    
+    @cached_property
+    def node_type_argmax(self):
+        return self.node_type.max(dim=1).indices
+    @cached_property
+    def node_type_src_argmax(self):
+        return self.node_type_src.max(dim=1).indices
+    @cached_property
+    def edge_type_argmax(self):
+        return self.edge_type.max(dim=1).indices
+    @cached_property
+    def node_type_dst_argmax(self):
+        return self.node_type_dst.max(dim=1).indices
 
 def load_all_datasets(cfg, device, only_keep=None):
     multi_dataset = cfg.detection.gnn_training.multi_dataset_training
@@ -101,8 +116,17 @@ def load_all_datasets(cfg, device, only_keep=None):
         
     log_dataset_stats(train_data, val_data, test_data)
     
+    # Reindexing
+    graph_reindexer = GraphReindexer(
+        num_nodes=max_node,
+        device=device,
+        fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
+    )
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    reindex_graphs([train_data, val_data, test_data], max_node, device, use_tgn=use_tgn, fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer)
+    reindex_graphs([train_data, val_data, test_data], graph_reindexer, device, use_tgn=use_tgn)
+    
+    if cfg._is_hetero and not use_tgn:
+        compute_hetero_graphs([train_data, val_data, test_data], device, cfg)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -222,17 +246,16 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         
         g.x_src = x_src
         g.x_dst = x_dst
-        g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
+        g.edge_type = fields["edge_type"]
+        g.node_type_src = fields["src_type"]
+        g.node_type_dst = fields["dst_type"]
         
         if "tgn" in cfg.detection.gnn_training.encoder.used_methods and cfg.detection.gnn_training.encoder.tgn.use_memory:
             g.msg = msg
         
         # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
         # g.edge_index = ...
-        
-        g.node_type_src = fields["src_type"]
-        g.node_type_dst = fields["dst_type"]
     
     return data_set
 
@@ -471,16 +494,23 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def reindex_graphs(datasets, max_node_num, device, fix_buggy_graph_reindexer, use_tgn=False):
-    graph_reindexer = GraphReindexer(
-        num_nodes=max_node_num,
-        device=device,
-        fix_buggy_graph_reindexer=fix_buggy_graph_reindexer,
-    )
-    
+def reindex_graphs(datasets, graph_reindexer, device, use_tgn=False):
     for dataset in datasets:
         for data_list in log_tqdm(dataset, desc="Reindexing graphs"):
             for batch in data_list:
                 batch.to(device)
                 graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
                 batch.to("cpu")
+
+def compute_hetero_graphs(datasets, device, cfg):
+    node_map = get_node_map(from_zero=True)
+    edge_map = get_rel2id(cfg, from_zero=True)
+    
+    for dataset in datasets:
+        for data_list in log_tqdm(dataset, desc="Computing heterogeneous graphs"):
+            for g in data_list:
+                g.to(device)
+                x_dict, edge_index_dict = compute_hetero_features(g, node_map=node_map, edge_map=edge_map)
+                g.x_dict = x_dict
+                g.edge_index_dict = edge_index_dict
+                g.to("cpu")

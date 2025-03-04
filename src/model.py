@@ -1,5 +1,6 @@
 from provnet_utils import *
 from config import *
+from config import get_node_map
 import torch.nn as nn
 from encoders import TGNEncoder, AncestorEncoder
 from experiments.uncertainty import activate_dropout_inference
@@ -45,6 +46,9 @@ class Model(nn.Module):
                 edge_types= batch.edge_type,
                 node_type=batch.node_type,
                 batch=batch,
+                edge_index_dict=batch.edge_index_dict,
+                x_dict=batch.x_dict,
+                node_type_argmax=batch.node_type_argmax,
             )
         h, h_src, h_dst = self.gather_h(batch, res)
         return h, h_src, h_dst

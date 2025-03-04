@@ -4,7 +4,7 @@ from torch_geometric.loader import NeighborLoader
 
 from provnet_utils import *
 from config import *
-from config import possible_events, ntype2id, get_rel2id
+from config import possible_events, ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events
 from model import *
 from losses import *
 from encoders import *
@@ -12,6 +12,7 @@ from decoders import *
 from data_utils import *
 from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
 from experiments.uncertainty import add_dropout_to_model, IdentityWrapper
+from hetero import get_metadata
 
 
 def build_model(data_sample, device, cfg, max_node_num):
@@ -93,6 +94,23 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
                 concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
             )
+        elif method == "graph_attention_hetero":
+            if cfg.dataset.name in OPTC_DATASETS:
+                raise NotImplementedError(f"Hetero OPTC not implemented (need to compute possible_events)")
+            
+            node_map = get_node_map(from_zero=True)
+            metadata = get_metadata(possible_events, node_map)
+            
+            encoder = GraphAttentionHetero(
+                in_dim=in_dim,
+                out_dim=node_out_dim,
+                num_heads=cfg.detection.gnn_training.encoder.graph_attention_hetero.num_heads,
+                num_layers=cfg.detection.gnn_training.encoder.graph_attention_hetero.num_layers,
+                metadata=metadata,
+                num_nodes=max_node_num,
+                device=device,
+                node_map=node_map,
+            )
         elif method == "sage":
             encoder = SAGE(
                 in_dim=in_dim,
@@ -157,7 +175,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
-        elif method == "node_mlp":
+        elif method == "node_mlp":# TODO: rename to custom_mlp
             encoder = CustomNodeMLP(
                 in_dim=in_dim,
                 out_dim=node_out_dim,
@@ -348,16 +366,16 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             
             decoder_hetero_head_method = getattr(getattr(objective_cfg, objective.strip()), "decoder_hetero_head")
             
-            entity_map = ntype2id
-            event_map = get_rel2id(cfg)
+            entity_map = get_node_map(from_zero=True)
+            event_map = get_rel2id(cfg, from_zero=True)
             
             edge_type_predictors = nn.ModuleDict()
         
             ntype2edgemap = {}
             for (src_type, dst_type), events in possible_events.items():
-                src_idx = entity_map[src_type] - 1
-                dst_idx = entity_map[dst_type] - 1
-                events = torch.tensor([event_map[e] - 1 for e in events])
+                src_idx = entity_map[src_type]
+                dst_idx = entity_map[dst_type]
+                events = torch.tensor([event_map[e] for e in events])
                 max_event = len(event_map) // 2 # event maps contain num=>label and label=>num entries so we /2
                 
                 reindexed_events = torch.zeros((max_event,), dtype=torch.long, device=device)
