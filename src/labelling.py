@@ -189,8 +189,10 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
                 condition = dst_idx_id in ground_truth_nids
             elif malicious_edge_selection == "both_nodes":
                 condition = src_idx_id in ground_truth_nids and dst_idx_id in ground_truth_nids
+            elif malicious_edge_selection == "either_node":
+                condition = src_idx_id in ground_truth_nids or dst_idx_id in ground_truth_nids
             else:
-                raise ValueError("`malicious_edge_selection` must be one of 'src_node', 'dst_node', 'both_nodes'")
+                raise ValueError("`malicious_edge_selection` must be one of 'src_node', 'dst_node', 'both_nodes', 'either_node")
             
             if condition:
                 attack_to_mal_edges[i].add((src_idx_id, dst_idx_id, timestamp_rec, ope))

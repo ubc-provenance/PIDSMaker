@@ -65,6 +65,9 @@ def get_task_to_module(cfg):
         },
     }
 
+def clean_cfg_for_log(cfg):
+    return remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path", "_exp", "_tuning_file_path"])
+
 def main(cfg, project, exp, sweep_id, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
@@ -200,6 +203,7 @@ def main(cfg, project, exp, sweep_id, **kwargs):
         log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
         if not sweep_id:
+            sweep_config["name"] = exp
             sweep_id = wandb.sweep(sweep_config, project=project)
             print(f"Sweep ID: tristan_research/{project}/{sweep_id}")
         
@@ -208,9 +212,9 @@ def main(cfg, project, exp, sweep_id, **kwargs):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
 
-                run_name = f"{cfg.dataset.name}_{cfg.featurization.embed_nodes.training_split}_{cfg.featurization.embed_nodes.used_method}"
-                wandb.run.name = run_name
+                wandb.run.name = exp
                 wandb.run.save()
+                wandb.log({"dataset": cfg.dataset.name, "exp": exp})
 
                 run_pipeline_with_experiments(cfg)
         
@@ -230,7 +234,6 @@ if __name__ == '__main__':
         # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
     
-    PROJECT_PREFIX = "uncertainty_exp_"
     if args.project != "":
         project = args.project
     elif args.tuning_mode == "hyperparameters":
@@ -241,8 +244,6 @@ if __name__ == '__main__':
         project = f"component_ablation_study_{args.model}"
     else:
         project = "project_name"
-        
-    project = PROJECT_PREFIX + project
     
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
@@ -255,7 +256,7 @@ if __name__ == '__main__':
         raise argparse.ArgumentTypeError(f"Unknown args {unknown_args}")
 
     cfg = get_yml_cfg(args)
-    wandb.config.update(remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path"]))
+    wandb.config.update(clean_cfg_for_log(cfg))
 
     main(cfg, project=project, exp=exp_name, sweep_id=args.sweep_id)
     

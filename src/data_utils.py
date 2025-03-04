@@ -140,7 +140,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     """
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     only_type = cfg.featurization.embed_nodes.used_method.strip() == "only_type"
-    if only_type or emb_dim is None:
+    only_ones = cfg.featurization.embed_nodes.used_method.strip() == "only_ones"
+    if only_type or only_ones or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
@@ -165,6 +166,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         
     if only_type:
         selected_node_feats = ["node_type"]
+    elif only_ones:
+        selected_node_feats = ["only_ones"]
     else:
         selected_node_feats = list(map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(",")))
     
@@ -198,6 +201,10 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
                 x_dst.append(x_distrib[g.dst])
                 
                 x_distrib.fill_(0)
+                
+            elif feat == "only_ones":
+                x_src.append(fields["src_type"].clone().fill_(1))
+                x_dst.append(fields["dst_type"].clone().fill_(1))
                 
             else:
                 raise ValueError(f"Node feature {feat} is invalid.")

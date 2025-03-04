@@ -31,11 +31,11 @@ def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
             y_hat.append(int(loss > thr))
             src_dst_t_type.append(edge)
             
-    return scores, y_true, y_hat, src_dst_t_type
+    return scores, y_true, y_hat, src_dst_t_type, thr
 
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    scores, y_truth, y_preds, src_dst_t_type = get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs)
+    scores, y_truth, y_preds, src_dst_t_type, thr = get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs)
     attack_to_mal_edges = get_attack_to_mal_edges(cfg)
     
     log(f"Found {sum(y_truth)} / {sum(len(edges) for edges in attack_to_mal_edges.values())} malicious edges")
@@ -46,7 +46,8 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     os.makedirs(out_dir, exist_ok=True)
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
-    simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
+    # simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
+    neat_scores_img_file = os.path.join(out_dir, f"neat_scores_{model_epoch_dir}.svg")
     discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
     
     log(f"Saving figures to {out_dir}...")
@@ -54,8 +55,9 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     discrim_scores = compute_discrimination_score(scores, src_dst_t_type, edge2attack, y_truth)
     plot_discrimination_metric(scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(scores, src_dst_t_type, edge2attack, y_truth)
-    plot_simple_scores(scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths_edge_level(scores, y_truth, src_dst_t_type, tw_to_malicious_nodes, edge2attack, scores_img_file, cfg)
+    # plot_simple_scores(scores, y_truth, simple_scores_img_file)
+    plot_scores_with_paths_edge_level(scores, y_truth, src_dst_t_type, tw_to_malicious_nodes, edge2attack, scores_img_file, cfg, thr)
+    plot_scores_neat(scores, y_truth, src_dst_t_type, edge2attack, neat_scores_img_file, thr)
     stats = classifier_evaluation(y_truth, y_preds, scores)
     
     fps, tps, precision, recall = get_metrics_if_all_attacks_detected(scores, src_dst_t_type, attack_to_mal_edges)
@@ -69,6 +71,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     for k, v in discrim_scores.items():
         stats[k] = round(v, 4)
         
+    attack2tps = get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg)
+    for attack, detected_tps in attack2tps.items():
+        stats[f"tps_{attack}"] = str(detected_tps)
+    
     stats = {**stats, **discrim_tp}
     
     scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
@@ -81,6 +87,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     }, scores_file)
     
     stats["scores_file"] = scores_file
+    stats["neat_scores_img_file"] = neat_scores_img_file
     
     return stats
     

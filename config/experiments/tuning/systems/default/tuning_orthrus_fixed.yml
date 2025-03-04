@@ -10,15 +10,9 @@ parameters:
     values: [64, 128, 256]
   detection.gnn_training.node_out_dim:
     values: [-1]
-  featurization.embed_nodes.used_method:
-    values: [only_type, hierarchical_hashing, feature_word2vec]
-  detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN:
-    values: [True]
+  detection.gnn_training.num_epochs:
+    values: [20]
   detection.gnn_training.encoder.tgn.tgn_memory_dim:
     values: [-1]
   detection.gnn_training.encoder.tgn.tgn_time_dim:
     values: [-1]
-  detection.gnn_training.encoder.used_methods:
-    values: [tgn-graph_attention, entity_type_encoding-tgn-graph_attention]
-  detection.gnn_training.fix_buggy_graph_reindexer:
-    values: [True]

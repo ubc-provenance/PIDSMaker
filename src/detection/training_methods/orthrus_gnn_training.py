@@ -212,6 +212,7 @@ def main(cfg):
             all_test_stats.append(test_stats)
             
             wandb.log({
+                "epoch": epoch,
                 "train_epoch": epoch,
                 "train_loss": round(tot_loss, 4),
                 "val_score": round(test_stats["val_score"], 4),

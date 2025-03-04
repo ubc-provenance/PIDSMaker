@@ -1,0 +1,16 @@
+_include_yml: orthrus_non_snooped
+
+featurization:
+  embed_nodes:
+    used_method: only_type
+
+detection:
+  gnn_training:
+    fix_buggy_graph_reindexer: True
+    encoder:
+      tgn:
+        fix_buggy_orthrus_TGN: True
+
+  evaluation:
+    used_method: edge_evaluation
+    best_model_selection: best_discrimination

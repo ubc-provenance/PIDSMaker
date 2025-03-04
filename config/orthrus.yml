@@ -105,6 +105,9 @@ detection:
         use_time_order_encoding: False
         fix_buggy_orthrus_TGN: False
         project_src_dst: True
+        directed: False
+        insert_neighbors_before: False
+        use_last_neighbor_loader: True
       sage:
         activation: relu
     decoder:
@@ -153,6 +156,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
+    best_model_selection: best_adp
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
@@ -170,7 +174,7 @@ detection:
       kairos_idf_queue:
         include_test_set_in_IDF: True
     edge_evaluation:
-      malicious_edge_selection: both_nodes
+      malicious_edge_selection: src_node
       threshold_method: max_val_loss
 
 # triage :

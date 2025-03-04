@@ -44,7 +44,7 @@ def standard_evaluation(cfg, evaluation_fn):
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
         
         if save_files_to_wandb:
-            stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
+            # stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
             
             scores = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
             if os.path.exists(scores):
@@ -68,17 +68,30 @@ def standard_evaluation(cfg, evaluation_fn):
         
         wandb.log(stats)
         
-        best_metrics = best_metric_pick_best_epoch(stats, best_metrics)
+        best_metrics = best_metric_pick_best_epoch(stats, best_metrics, cfg)
         
     if save_files_to_wandb:
         # We only store the scores for the best run
-        wandb.save(best_metrics["stats"]["scores_file"], out_dir)
+        # wandb.save(best_metrics["stats"]["scores_file"], out_dir)
+        wandb.save(best_metrics["stats"]["neat_scores_img_file"], out_dir)
+        
     
     return best_metrics["stats"]
 
-def best_metric_pick_best_epoch(stats, best_metrics):
-    if (stats["adp_score"] > best_metrics["adp_score"]) or \
-        (stats["adp_score"] == best_metrics["adp_score"] and stats["discrimination"] > best_metrics["discrimination"]):
+def best_metric_pick_best_epoch(stats, best_metrics, cfg):
+    best_model_selection = cfg.detection.evaluation.best_model_selection
+    
+    if best_model_selection == "best_adp":
+        condition =  (stats["adp_score"] > best_metrics["adp_score"]) or \
+            (stats["adp_score"] == best_metrics["adp_score"] and stats["discrimination"] > best_metrics["discrimination"])
+    
+    elif best_model_selection == "best_discrimination":
+        condition =  (stats["discrimination"] > best_metrics["discrimination"])
+    
+    else:
+        raise ValueError(f"Invalid best model selection {best_model_selection}")
+    
+    if condition:
         best_metrics["adp_score"] = stats["adp_score"]
         best_metrics["discrimination"] = stats["discrimination"]
         best_metrics["stats"] = stats

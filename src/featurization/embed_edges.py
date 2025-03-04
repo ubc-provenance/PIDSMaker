@@ -73,7 +73,7 @@ def get_indexid2vec(cfg):
         return embed_edges_HFH.main(cfg)
     if method == "feature_word2vec":
         return embed_edges_feature_word2vec.main(cfg)
-    if method == "only_type":
+    if method in ["only_type", "only_ones"]:
         return None
     if method == "temporal_rw":
         return embed_edges_TRW.main(cfg)

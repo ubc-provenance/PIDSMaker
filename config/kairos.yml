@@ -57,6 +57,9 @@ detection:
         use_time_order_encoding: False
         fix_buggy_orthrus_TGN: False
         project_src_dst: True
+        directed: False
+        insert_neighbors_before: False
+        use_last_neighbor_loader: True
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
@@ -69,6 +72,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
+    best_model_selection: best_adp
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss

@@ -328,8 +328,9 @@ class TimeEncoder(torch.nn.Module):
 
 
 class LastNeighborLoader:
-    def __init__(self, num_nodes: int, size: int, device=None):
+    def __init__(self, num_nodes: int, size: int, directed=False, device=None):
         self.size = size
+        self.directed = directed
 
         self.neighbors = torch.empty((num_nodes, size), dtype=torch.long,
                                      device=device)
@@ -362,14 +363,20 @@ class LastNeighborLoader:
         return n_id, torch.stack([neighbors, nodes]), e_id
 
     def insert(self, src: Tensor, dst: Tensor):
-        # Inserts newly encountered interactions into an ever-growing
-        # (undirected) temporal graph.
+        # Inserts newly encountered interactions into an ever-growing temporal graph.
 
         # Collect central nodes, their neighbors and the current event ids.
-        neighbors = torch.cat([src, dst], dim=0)
-        nodes = torch.cat([dst, src], dim=0)
-        e_id = torch.arange(self.cur_e_id, self.cur_e_id + src.size(0),
-                            device=src.device).repeat(2)
+        if self.directed:
+            # New version: the graph is directed
+            nodes = src
+            neighbors = dst
+            e_id = torch.arange(self.cur_e_id, self.cur_e_id + src.size(0), device=src.device)
+        else:
+            # Default version: the graph is undirected
+            nodes = torch.cat([src, dst], dim=0)
+            neighbors = torch.cat([dst, src], dim=0)
+            e_id = torch.arange(self.cur_e_id, self.cur_e_id + src.size(0), device=src.device).repeat(2)
+        
         self.cur_e_id += src.numel()
 
         # Convert newly encountered interaction ids so that they point to
