@@ -411,7 +411,7 @@ class GraphReindexer:
         
         return data
     
-    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False, max_num_node=None):
+    def _reindex_graph(self, edge_index, x_src=None, x_dst=None, x_is_tuple=False, max_num_node=None):
         """
         Reindexes edge_index with indices starting from 0.
         Also reshapes the node features.
@@ -423,8 +423,11 @@ class GraphReindexer:
         self.assoc[n_id] = torch.arange(n_id.size(0), device=self.assoc.device)
         edge_index = self.assoc[edge_index]
         
-        # Associates each feature vector to each reindexed node ID
-        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple, max_num_node=max_num_node)
+        if None not in [x_src, x_dst]:
+            # Associates each feature vector to each reindexed node ID
+            x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple, max_num_node=max_num_node)
+        else:
+            x = None
         
         return x, edge_index, n_id
     
