@@ -31,7 +31,6 @@ detection:
     weight_decay: 0.01
     node_hid_dim: 100
     node_out_dim: 100
-    inference_device: cuda
     grad_accumulation: 1
     fix_buggy_graph_reindexer: False
     encoder:

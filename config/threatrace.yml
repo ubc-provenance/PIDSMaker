@@ -29,7 +29,6 @@ detection:
     weight_decay: 0.0005
     node_hid_dim: 32
     node_out_dim: 3
-    inference_device: cuda
     grad_accumulation: 1
     fix_buggy_graph_reindexer: False
     # edge_batch_size: 1024

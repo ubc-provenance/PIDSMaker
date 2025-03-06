@@ -279,11 +279,13 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split, logging=True)
     else:
         raise ValueError(f"Invalid split {split}")
     
-    device = cfg.detection.gnn_training.inference_device.strip()
-    if device not in ["cpu", "cuda"]:
-        raise ValueError(f"Invalid inference device {device}")
-
-    device = torch.device(device)
+    inference_device = cfg.detection.gnn_training.inference_device
+    if inference_device is not None:
+        if device not in ["cpu", "cuda"]:
+            raise ValueError(f"Invalid inference device {device}")
+        device = torch.device(device)
+    else:
+        device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
     model.to_device(device)
 
