@@ -93,6 +93,7 @@ detection:
         use_memory: False
         use_time_order_encoding: False
         fix_buggy_orthrus_TGN: False
+        fix_tgn_neighbor_loader: False
         project_src_dst: True
         directed: False
         insert_neighbors_before: False

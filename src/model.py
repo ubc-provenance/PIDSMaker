@@ -40,14 +40,16 @@ class Model(nn.Module):
                 x_dst=batch.x_dst,
                 original_n_id=batch.original_n_id,
                 msg=batch.msg,
-                edge_feats=getattr(batch, "edge_feats", None),
-                full_data=full_data, # NOTE: warning, this object contains the full graph without TGN sampling
+                edge_feats=batch.edge_feats,
+                full_data=full_data,
                 inference=inference,
                 edge_types= batch.edge_type,
                 node_type=batch.node_type,
+                node_type_src=batch.node_type_src,
+                node_type_dst=batch.node_type_dst,
                 batch=batch,
-                edge_index_dict=batch.edge_index_dict,
-                x_dict=batch.x_dict,
+                edge_index_dict=getattr(batch, "edge_index_dict", None),
+                x_dict=getattr(batch, "x_dict", None),
                 node_type_argmax=batch.node_type_argmax,
             )
         h, h_src, h_dst = self.gather_h(batch, res)

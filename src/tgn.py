@@ -368,13 +368,13 @@ class LastNeighborLoader:
         # Collect central nodes, their neighbors and the current event ids.
         if self.directed:
             # New version: the graph is directed
-            nodes = src
-            neighbors = dst
+            nodes = dst
+            neighbors = src
             e_id = torch.arange(self.cur_e_id, self.cur_e_id + src.size(0), device=src.device)
         else:
             # Default version: the graph is undirected
-            nodes = torch.cat([src, dst], dim=0)
-            neighbors = torch.cat([dst, src], dim=0)
+            neighbors = torch.cat([src, dst], dim=0)
+            nodes = torch.cat([dst, src], dim=0)
             e_id = torch.arange(self.cur_e_id, self.cur_e_id + src.size(0), device=src.device).repeat(2)
         
         self.cur_e_id += src.numel()

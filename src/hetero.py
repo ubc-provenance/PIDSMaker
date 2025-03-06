@@ -2,9 +2,13 @@ import torch
 
 
 def compute_hetero_features(g, node_map, edge_map):
+    return _compute_hetero_features(g.edge_index, g.x, g.node_type_argmax, g.edge_type_argmax, node_map, edge_map)
+
+def _compute_hetero_features(edge_index, x, node_type_argmax, edge_type_argmax, node_map, edge_map):
+    """Computes x_dict and edge_index_dict, required by most PyG hetero GNNs"""
     x_dict, edge_index_dict = {}, {}
-    node_types = g.node_type_argmax
-    edge_types = g.edge_type_argmax
+    node_types = node_type_argmax
+    edge_types = edge_type_argmax
     
     # 1: Map node types to indices
     unique_node_types = torch.unique(node_types)
@@ -16,11 +20,11 @@ def compute_hetero_features(g, node_map, edge_map):
         
         n_type_str = node_map[n_type.item()]
         node_type_to_indices[n_type_str] = indices
-        x_dict[n_type_str] = g.x[mask]
+        x_dict[n_type_str] = x[mask]
     
     # 2: Handle edge types
-    src_types = g.node_type_src_argmax
-    dst_types = g.node_type_dst_argmax
+    src_types = node_type_argmax[edge_index[0]]
+    dst_types = node_type_argmax[edge_index[1]]
     
     triplets = torch.stack([src_types, edge_types, dst_types], dim=1)
     unique_triplets = torch.unique(triplets, dim=0)
@@ -32,7 +36,7 @@ def compute_hetero_features(g, node_map, edge_map):
         # Mask for edges matching this triplet
         mask = (src_types == src_t) & (edge_types == e_t) & (dst_types == dst_t)
         edge_indices = torch.where(mask)[0]  # Indices of matching edges
-        hetero_edge_index = g.edge_index[:, edge_indices]
+        hetero_edge_index = edge_index[:, edge_indices]
         
         # Remap node indices to local indices within their type groups
         src_local_indices = torch.searchsorted(node_type_to_indices[src_t_str], hetero_edge_index[0])

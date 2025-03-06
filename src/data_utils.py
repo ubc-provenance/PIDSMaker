@@ -80,7 +80,7 @@ def load_all_datasets(cfg, device, only_keep=None):
         val_data = val_data[:only_keep]
         test_data = test_data[:only_keep]
     
-    all_msg, all_t, all_edge_types = [], [], []
+    all_msg, all_t, all_edge_types, all_node_types_src, all_node_types_dst, all_src, all_dst = [], [], [], [], [], [], []
     max_node = 0
     for datasets in [train_data, val_data, test_data]:
         for dataset in datasets:
@@ -88,6 +88,10 @@ def load_all_datasets(cfg, device, only_keep=None):
                 all_msg.append(data.msg)
                 all_t.append(data.t)
                 all_edge_types.append(data.edge_type)
+                all_node_types_src.append(data.node_type_src)
+                all_node_types_dst.append(data.node_type_dst)
+                all_src.append(data.src)
+                all_dst.append(data.dst)
                 max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
@@ -95,7 +99,11 @@ def load_all_datasets(cfg, device, only_keep=None):
         all_msg = torch.cat(all_msg)
         all_t = torch.cat(all_t)
         all_edge_types = torch.cat(all_edge_types)
-        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+        all_node_types_src = torch.cat(all_node_types_src)
+        all_node_types_dst = torch.cat(all_node_types_dst)
+        all_src = torch.cat(all_src)
+        all_dst = torch.cat(all_dst)
+        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types, node_type_src=all_node_types_src, node_type_dst=all_node_types_dst, src=all_src, dst=all_dst)
     else:
         full_data = None
     max_node = max_node + 1
@@ -125,7 +133,7 @@ def load_all_datasets(cfg, device, only_keep=None):
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
     reindex_graphs([train_data, val_data, test_data], graph_reindexer, device, use_tgn=use_tgn)
     
-    if cfg._is_hetero and not use_tgn:
+    if cfg._is_hetero and not use_tgn: # If TGN, we compute hetero feats in the encoder
         compute_hetero_graphs([train_data, val_data, test_data], device, cfg)
     
     return train_data, val_data, test_data, full_data, max_node

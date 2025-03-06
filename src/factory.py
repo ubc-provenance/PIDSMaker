@@ -94,20 +94,21 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
                 concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
             )
-        elif method == "graph_attention_hetero":
+        elif method == "hetero_graph_transformer":
             if cfg.dataset.name in OPTC_DATASETS:
                 raise NotImplementedError(f"Hetero OPTC not implemented (need to compute possible_events)")
+            if not cfg.detection.gnn_training.encoder.tgn.fix_tgn_neighbor_loader:
+                raise ValueError(f"Need to fix tgn neighbor loader for hetero encoding")
             
             node_map = get_node_map(from_zero=True)
             metadata = get_metadata(possible_events, node_map)
             
-            encoder = GraphAttentionHetero(
+            encoder = HeteroGraphTransformer(
                 in_dim=in_dim,
                 out_dim=node_out_dim,
-                num_heads=cfg.detection.gnn_training.encoder.graph_attention_hetero.num_heads,
-                num_layers=cfg.detection.gnn_training.encoder.graph_attention_hetero.num_layers,
+                num_heads=cfg.detection.gnn_training.encoder.hetero_graph_transformer.num_heads,
+                num_layers=cfg.detection.gnn_training.encoder.hetero_graph_transformer.num_layers,
                 metadata=metadata,
-                num_nodes=max_node_num,
                 device=device,
                 node_map=node_map,
             )
@@ -216,6 +217,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         directed = tgn_cfg.directed
         insert_neighbors_before = tgn_cfg.insert_neighbors_before
         use_last_neighbor_loader = tgn_cfg.use_last_neighbor_loader
+        fix_tgn_neighbor_loader = tgn_cfg.fix_tgn_neighbor_loader
         
         use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
 
@@ -239,6 +241,9 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             memory = None
 
         neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, directed=directed, device=device)
+        
+        node_map = get_node_map(from_zero=True)
+        edge_map = get_rel2id(cfg, from_zero=True)
 
         encoder = TGNEncoder(
             encoder=encoder,
@@ -262,6 +267,10 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             project_src_dst=project_src_dst,
             insert_neighbors_before=insert_neighbors_before,
             use_last_neighbor_loader=use_last_neighbor_loader,
+            is_hetero=cfg._is_hetero,
+            node_map=node_map,
+            edge_map=edge_map,
+            fix_tgn_neighbor_loader=fix_tgn_neighbor_loader,
         )
 
     return encoder

@@ -10,6 +10,7 @@ detection:
     encoder:
       tgn:
         fix_buggy_orthrus_TGN: True
+        fix_tgn_neighbor_loader: False
 
   evaluation:
     used_method: edge_evaluation
