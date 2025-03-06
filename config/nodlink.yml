@@ -41,7 +41,6 @@ detection:
     weight_decay: 0.00001
     node_hid_dim: 256
     node_out_dim: 256
-    inference_device: cuda
     grad_accumulation: 1
     fix_buggy_graph_reindexer: False
     encoder:
@@ -65,6 +64,7 @@ detection:
         use_memory: False
         use_time_order_encoding: False
         fix_buggy_orthrus_TGN: False
+        fix_tgn_neighbor_loader: False
         project_src_dst: True
         directed: False
         insert_neighbors_before: False

@@ -106,7 +106,7 @@ def main(cfg):
                     g = remove_attacks_if_needed(g, cfg)
                     loss = train(
                         data=g,
-                        full_data=full_data,  # full list of edge messages (do not store on CPU)
+                        full_data=full_data,  # full list of edge messages (do not store on GPU)
                         model=model,
                         optimizer=optimizer,
                         cfg=cfg,

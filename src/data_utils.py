@@ -1,6 +1,7 @@
 import copy
 import math
 import os
+from functools import cached_property
 
 import pickle
 import torch
@@ -13,7 +14,8 @@ from torch_scatter import scatter
 
 from encoders import TGNEncoder
 from provnet_utils import log_dataset_stats, log_tqdm, get_multi_datasets
-from config import update_cfg_for_multi_dataset
+from config import update_cfg_for_multi_dataset, get_rel2id, get_node_map
+from hetero import compute_hetero_features
 
 class CollatableTemporalData(TemporalData):
     """
@@ -53,6 +55,19 @@ class CollatableTemporalData(TemporalData):
             elif value.ndim == 2 and value.size(1) == self.num_events and "index" in key:
                 data[key] = value[:, idx]
         return data
+    
+    @cached_property
+    def node_type_argmax(self):
+        return self.node_type.max(dim=1).indices
+    @cached_property
+    def node_type_src_argmax(self):
+        return self.node_type_src.max(dim=1).indices
+    @cached_property
+    def edge_type_argmax(self):
+        return self.edge_type.max(dim=1).indices
+    @cached_property
+    def node_type_dst_argmax(self):
+        return self.node_type_dst.max(dim=1).indices
 
 def load_all_datasets(cfg, device, only_keep=None):
     multi_dataset = cfg.detection.gnn_training.multi_dataset_training
@@ -65,7 +80,7 @@ def load_all_datasets(cfg, device, only_keep=None):
         val_data = val_data[:only_keep]
         test_data = test_data[:only_keep]
     
-    all_msg, all_t, all_edge_types = [], [], []
+    all_msg, all_t, all_edge_types, all_node_types_src, all_node_types_dst, all_src, all_dst = [], [], [], [], [], [], []
     max_node = 0
     for datasets in [train_data, val_data, test_data]:
         for dataset in datasets:
@@ -73,6 +88,10 @@ def load_all_datasets(cfg, device, only_keep=None):
                 all_msg.append(data.msg)
                 all_t.append(data.t)
                 all_edge_types.append(data.edge_type)
+                all_node_types_src.append(data.node_type_src)
+                all_node_types_dst.append(data.node_type_dst)
+                all_src.append(data.src)
+                all_dst.append(data.dst)
                 max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
 
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
@@ -80,7 +99,11 @@ def load_all_datasets(cfg, device, only_keep=None):
         all_msg = torch.cat(all_msg)
         all_t = torch.cat(all_t)
         all_edge_types = torch.cat(all_edge_types)
-        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types)
+        all_node_types_src = torch.cat(all_node_types_src)
+        all_node_types_dst = torch.cat(all_node_types_dst)
+        all_src = torch.cat(all_src)
+        all_dst = torch.cat(all_dst)
+        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types, node_type_src=all_node_types_src, node_type_dst=all_node_types_dst, src=all_src, dst=all_dst)
     else:
         full_data = None
     max_node = max_node + 1
@@ -101,8 +124,17 @@ def load_all_datasets(cfg, device, only_keep=None):
         
     log_dataset_stats(train_data, val_data, test_data)
     
+    # Reindexing
+    graph_reindexer = GraphReindexer(
+        num_nodes=max_node,
+        device=device,
+        fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
+    )
     # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    reindex_graphs([train_data, val_data, test_data], max_node, device, use_tgn=use_tgn, fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer)
+    reindex_graphs([train_data, val_data, test_data], graph_reindexer, device, use_tgn=use_tgn)
+    
+    if cfg._is_hetero and not use_tgn: # If TGN, we compute hetero feats in the encoder
+        compute_hetero_graphs([train_data, val_data, test_data], device, cfg)
     
     return train_data, val_data, test_data, full_data, max_node
 
@@ -222,17 +254,16 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         
         g.x_src = x_src
         g.x_dst = x_dst
-        g.edge_type = fields["edge_type"]
         g.edge_feats = edge_feats
+        g.edge_type = fields["edge_type"]
+        g.node_type_src = fields["src_type"]
+        g.node_type_dst = fields["dst_type"]
         
         if "tgn" in cfg.detection.gnn_training.encoder.used_methods and cfg.detection.gnn_training.encoder.tgn.use_memory:
             g.msg = msg
         
         # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
         # g.edge_index = ...
-        
-        g.node_type_src = fields["src_type"]
-        g.node_type_dst = fields["dst_type"]
     
     return data_set
 
@@ -380,6 +411,7 @@ class GraphReindexer:
             return x_src_result[:max_num_node], x_dst_result[:max_num_node]
         else:
             if self.fix_buggy_graph_reindexer:
+                output = output.clone()
                 scatter(torch.cat([x_src, x_dst]), torch.cat([edge_index[0], edge_index[1]]), out=output, dim=0, reduce='mean')
             else:
                 # NOTE: this one, used in orthrus and velox is buggy because id does the mean and then the mean which can double
@@ -411,7 +443,7 @@ class GraphReindexer:
         
         return data
     
-    def _reindex_graph(self, edge_index, x_src, x_dst, x_is_tuple=False, max_num_node=None):
+    def _reindex_graph(self, edge_index, x_src=None, x_dst=None, x_is_tuple=False, max_num_node=None):
         """
         Reindexes edge_index with indices starting from 0.
         Also reshapes the node features.
@@ -423,8 +455,11 @@ class GraphReindexer:
         self.assoc[n_id] = torch.arange(n_id.size(0), device=self.assoc.device)
         edge_index = self.assoc[edge_index]
         
-        # Associates each feature vector to each reindexed node ID
-        x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple, max_num_node=max_num_node)
+        if None not in [x_src, x_dst]:
+            # Associates each feature vector to each reindexed node ID
+            x = self.node_features_reshape(edge_index, x_src, x_dst, x_is_tuple=x_is_tuple, max_num_node=max_num_node)
+        else:
+            x = None
         
         return x, edge_index, n_id
     
@@ -468,16 +503,23 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def reindex_graphs(datasets, max_node_num, device, fix_buggy_graph_reindexer, use_tgn=False):
-    graph_reindexer = GraphReindexer(
-        num_nodes=max_node_num,
-        device=device,
-        fix_buggy_graph_reindexer=fix_buggy_graph_reindexer,
-    )
-    
+def reindex_graphs(datasets, graph_reindexer, device, use_tgn=False):
     for dataset in datasets:
         for data_list in log_tqdm(dataset, desc="Reindexing graphs"):
             for batch in data_list:
                 batch.to(device)
                 graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
                 batch.to("cpu")
+
+def compute_hetero_graphs(datasets, device, cfg):
+    node_map = get_node_map(from_zero=True)
+    edge_map = get_rel2id(cfg, from_zero=True)
+    
+    for dataset in datasets:
+        for data_list in log_tqdm(dataset, desc="Computing heterogeneous graphs"):
+            for g in data_list:
+                g.to(device)
+                x_dict, edge_index_dict = compute_hetero_features(g, node_map=node_map, edge_map=edge_map)
+                g.x_dict = x_dict
+                g.edge_index_dict = edge_index_dict
+                g.to("cpu")
