@@ -411,6 +411,7 @@ class GraphReindexer:
             return x_src_result[:max_num_node], x_dst_result[:max_num_node]
         else:
             if self.fix_buggy_graph_reindexer:
+                output = output.clone()
                 scatter(torch.cat([x_src, x_dst]), torch.cat([edge_index[0], edge_index[1]]), out=output, dim=0, reduce='mean')
             else:
                 # NOTE: this one, used in orthrus and velox is buggy because id does the mean and then the mean which can double
