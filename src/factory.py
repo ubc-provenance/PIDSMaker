@@ -97,8 +97,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         elif method == "hetero_graph_transformer":
             if cfg.dataset.name in OPTC_DATASETS:
                 raise NotImplementedError(f"Hetero OPTC not implemented (need to compute possible_events)")
-            if not cfg.detection.gnn_training.encoder.tgn.fix_tgn_neighbor_loader:
-                raise ValueError(f"Need to fix tgn neighbor loader for hetero encoding")
+            if not (cfg.detection.gnn_training.encoder.tgn.fix_tgn_neighbor_loader and cfg.detection.gnn_training.encoder.tgn.directed):
+                raise ValueError(f"Need fix_tgn_neighbor_loader and directed for hetero encoding")
             
             node_map = get_node_map(from_zero=True)
             metadata = get_metadata(possible_events, node_map)
