@@ -2,6 +2,7 @@ import copy
 import math
 import os
 from functools import cached_property
+from collections import defaultdict
 
 import pickle
 import torch
@@ -114,24 +115,27 @@ def load_all_datasets(cfg, device, only_keep=None):
     batch_mode = cfg.detection.gnn_training.batch_mode
     batch_size = cfg.detection.gnn_training.edge_batch_size
     batch_size_inference = cfg.detection.gnn_training.edge_batch_size_inference
-    if batch_size not in [None, 0]:
-        train_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg) for graphs in train_data]
-        val_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg) for graphs in val_data]
-        test_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg) for graphs in test_data]
+    if (batch_size not in [None, 0]) or batch_mode == "unique_edge_types":
+        train_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg, device) for graphs in train_data]
+        val_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg, device) for graphs in val_data]
+        test_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg, device) for graphs in test_data]
     
     elif batch_size_inference not in [None, 0]:
         test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
         
-    log_dataset_stats(train_data, val_data, test_data)
+    should_reindex_graphs = batch_mode != "unique_edge_types"
     
-    # Reindexing
-    graph_reindexer = GraphReindexer(
-        num_nodes=max_node,
-        device=device,
-        fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
-    )
-    # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-    reindex_graphs([train_data, val_data, test_data], graph_reindexer, device, use_tgn=use_tgn)
+    if should_reindex_graphs:
+        log_dataset_stats(train_data, val_data, test_data)
+    
+    if should_reindex_graphs:
+        graph_reindexer = GraphReindexer(
+            num_nodes=max_node,
+            device=device,
+            fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
+        )
+        # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
+        reindex_graphs([train_data, val_data, test_data], graph_reindexer, device, use_tgn=use_tgn)
     
     if cfg._is_hetero and not use_tgn: # If TGN, we compute hetero feats in the encoder
         compute_hetero_graphs([train_data, val_data, test_data], device, cfg)
@@ -309,7 +313,7 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
 
     return data
 
-def batch_temporal_data(data: CollatableTemporalData, batch_size: float, batch_mode: str, cfg) -> list[CollatableTemporalData]:
+def batch_temporal_data(data: CollatableTemporalData, batch_size: float, batch_mode: str, cfg, device) -> list[CollatableTemporalData]:
     if batch_mode == "edges":
         num_batches = math.ceil(len(data.src) / batch_size)  # NOTE: the last batch won't have the same number of edges as the batch
         
@@ -345,6 +349,36 @@ def batch_temporal_data(data: CollatableTemporalData, batch_size: float, batch_m
             windows.append(collate_temporal_data(data_in_window))
         
         return windows
+    
+    elif batch_mode == "unique_edge_types":
+        partitions = []
+        seen_edges = defaultdict(set)
+        data.to(device)
+        
+        partitions = []
+        src_list = data.src.tolist()
+        dst_list = data.dst.tolist()
+        type_list = data.edge_type.max(dim=1).indices.tolist()
+        start, end = 0, 0
+
+        for i, (src, dst, edge_type) in log_tqdm(enumerate(zip(src_list, dst_list, type_list)), desc="Generating unique edge type batches"):
+            if (src, dst) in seen_edges:
+                # Conflict: (src, dst) already exists with a different edge_type
+                partitions.append(data[start: end])
+                start = end
+                end += 1
+                seen_edges = defaultdict(set)
+            else:
+                end += 1
+
+            seen_edges[(src, dst)].add(edge_type)
+
+        # Add the last partition if not empty
+        if end > start:
+            partitions.append(data[start: end])
+        
+        data.to("cpu")
+        return partitions
     
     raise ValueError(f"Invalid or missing batch mode {batch_mode}")
 

@@ -549,7 +549,8 @@ def batch_loader_factory(cfg, data, test_mode=False):
         )
     # Use TGN batch loader
     tgn_batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
-    if use_tgn and tgn_batch_size != -1:
+    batch_mode = cfg.detection.gnn_training.batch_mode
+    if use_tgn and tgn_batch_size != -1 and batch_mode != "unique_edge_types":
         batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_inference if test_mode else tgn_batch_size
         return custom_temporal_data_loader(data, batch_size=batch_size)
     

@@ -35,22 +35,24 @@ class Model(nn.Module):
             res = self.encoder(
                 edge_index=edge_index,
                 t=batch.t,
-                x=batch.x,
                 x_src=batch.x_src,
                 x_dst=batch.x_dst,
-                original_n_id=batch.original_n_id,
                 msg=batch.msg,
                 edge_feats=batch.edge_feats,
                 full_data=full_data,
                 inference=inference,
                 edge_types= batch.edge_type,
-                node_type=batch.node_type,
                 node_type_src=batch.node_type_src,
                 node_type_dst=batch.node_type_dst,
                 batch=batch,
+                # Reindexing attr
+                x=getattr(batch, "x", None),
+                original_n_id=getattr(batch, "original_n_id", None),
+                node_type=getattr(batch, "node_type", None),
+                node_type_argmax=getattr(batch, "node_type_argmax", None),
+                # Hetero attr
                 edge_index_dict=getattr(batch, "edge_index_dict", None),
                 x_dict=getattr(batch, "x_dict", None),
-                node_type_argmax=batch.node_type_argmax,
             )
         h, h_src, h_dst = self.gather_h(batch, res)
         return h, h_src, h_dst
@@ -69,12 +71,12 @@ class Model(nn.Module):
                     h_src=h_src, # shape (E, d)
                     h_dst=h_dst, # shape (E, d)
                     h=h, # shape (N, d)
-                    x=batch.x,
                     edge_index=batch.edge_index,
                     edge_type=batch.edge_type,
                     y_edge=batch.y,
                     inference=inference,
-                    node_type=batch.node_type,
+                    x=getattr(batch, "x", None),
+                    node_type=getattr(batch, "node_type", None),
                     node_type_src=batch.node_type_src,
                     node_type_dst=batch.node_type_dst,
                     validation=validation,
