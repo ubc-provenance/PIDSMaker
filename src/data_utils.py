@@ -11,12 +11,15 @@ from torch_geometric.data.temporal import prepare_idx
 from torch_geometric.loader import TemporalDataLoader
 from torch_geometric.data.collate import collate
 from torch_geometric.data.data import size_repr
+from torch_geometric.loader import NeighborLoader
 from torch_scatter import scatter
 
 from encoders import TGNEncoder
 from provnet_utils import log_dataset_stats, log_tqdm, get_multi_datasets
 from config import update_cfg_for_multi_dataset, get_rel2id, get_node_map
 from hetero import compute_hetero_features
+from tgn import LastNeighborLoader
+from debug_tests import debug_test_batching
 
 class CollatableTemporalData(TemporalData):
     """
@@ -33,12 +36,19 @@ class CollatableTemporalData(TemporalData):
         **kwargs,
     ):
         super().__init__(src=src, dst=dst, t=t, msg=msg, **kwargs)
-        
+        self.tgn_mode = False
+    
     def __inc__(self, key: str, value, *args, **kwargs):
+        if key == "original_edge_index":  # used to retrieve original node IDs during evaluation
+            return 0
+        if any(k in key for k in ("edge_index", "n_id") or key in ["src", "dst"]):
+            if self.tgn_mode:
+                return torch.unique(self.n_id_tgn).numel()
+            return self.num_nodes
         return 0
 
     def __cat_dim__(self, key: str, value, *args, **kwargs):
-        return 1 if "index" in key else 0
+        return 1 if "edge_index" in key else 0
     
     def __repr__(self) -> str:
         cls = self.__class__.__name__
@@ -51,11 +61,19 @@ class CollatableTemporalData(TemporalData):
         idx = prepare_idx(idx)
         data = copy.copy(self)
         for key, value in data._store.items():
+            if not isinstance(value, torch.Tensor):
+                continue
             if value.size(0) == self.num_events:
                 data[key] = value[idx]
             elif value.ndim == 2 and value.size(1) == self.num_events and "index" in key:
                 data[key] = value[:, idx]
         return data
+    
+    @property
+    def num_nodes(self):
+        if  "original_n_id" in self:
+            return self.original_n_id.numel()
+        return self.edge_index.unique().numel()
     
     @cached_property
     def node_type_argmax(self):
@@ -71,7 +89,7 @@ class CollatableTemporalData(TemporalData):
         return self.node_type_dst.max(dim=1).indices
 
 def load_all_datasets(cfg, device, only_keep=None):
-    multi_dataset = cfg.detection.gnn_training.multi_dataset_training
+    multi_dataset = cfg.detection.graph_preprocessing.multi_dataset_training
     train_data = load_data_set(cfg, split="train", multi_dataset=multi_dataset)
     val_data = load_data_set(cfg, split="val", multi_dataset=multi_dataset)
     test_data = load_data_set(cfg, split="test", multi_dataset=False)
@@ -81,66 +99,31 @@ def load_all_datasets(cfg, device, only_keep=None):
         val_data = val_data[:only_keep]
         test_data = test_data[:only_keep]
     
-    all_msg, all_t, all_edge_types, all_node_types_src, all_node_types_dst, all_src, all_dst = [], [], [], [], [], [], []
-    max_node = 0
-    for datasets in [train_data, val_data, test_data]:
-        for dataset in datasets:
-            for data in dataset:
-                all_msg.append(data.msg)
-                all_t.append(data.t)
-                all_edge_types.append(data.edge_type)
-                all_node_types_src.append(data.node_type_src)
-                all_node_types_dst.append(data.node_type_dst)
-                all_src.append(data.src)
-                all_dst.append(data.dst)
-                max_node = max(max_node, torch.cat([data.src, data.dst]).max().item())
+    full_data = get_full_data([train_data, val_data, test_data], cfg)
 
-    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
-    if use_tgn:
-        all_msg = torch.cat(all_msg)
-        all_t = torch.cat(all_t)
-        all_edge_types = torch.cat(all_edge_types)
-        all_node_types_src = torch.cat(all_node_types_src)
-        all_node_types_dst = torch.cat(all_node_types_dst)
-        all_src = torch.cat(all_src)
-        all_dst = torch.cat(all_dst)
-        full_data = Data(msg=all_msg, t=all_t, edge_type=all_edge_types, node_type_src=all_node_types_src, node_type_dst=all_node_types_dst, src=all_src, dst=all_dst)
-    else:
-        full_data = None
-    max_node = max_node + 1
+    max_node = torch.cat([full_data.src, full_data.dst]).max().item() + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
     
-    # Concatenates all data into a single data so that iterating over batches
-    # of edges is more consistent with TGN
-    batch_mode = cfg.detection.gnn_training.batch_mode
-    batch_size = cfg.detection.gnn_training.edge_batch_size
-    batch_size_inference = cfg.detection.gnn_training.edge_batch_size_inference
-    if (batch_size not in [None, 0]) or batch_mode == "unique_edge_types":
-        train_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg, device) for graphs in train_data]
-        val_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg, device) for graphs in val_data]
-        test_data = [batch_temporal_data(collate_temporal_data(graphs), batch_size, batch_mode, cfg, device) for graphs in test_data]
+    graph_reindexer = GraphReindexer(
+        num_nodes=max_node,
+        device=device,
+        fix_buggy_graph_reindexer=cfg.detection.graph_preprocessing.fix_buggy_graph_reindexer,
+    )
     
-    elif batch_size_inference not in [None, 0]:
-        test_data = batch_temporal_data(collate_temporal_data(test_data), batch_size_inference, batch_mode, cfg)
-        
-    should_reindex_graphs = batch_mode != "unique_edge_types"
+    # Global batching (unique edge type batches, fixed-size edge length)
+    datasets = run_global_batching(train_data, val_data, test_data, cfg, device)
     
-    if should_reindex_graphs:
-        log_dataset_stats(train_data, val_data, test_data)
+    # Intra graph batching (TGN 1024 batches, last neighbor loader)
+    datasets = run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_reindexer)
     
-    if should_reindex_graphs:
-        graph_reindexer = GraphReindexer(
-            num_nodes=max_node,
-            device=device,
-            fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
-        )
-        # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-        reindex_graphs([train_data, val_data, test_data], graph_reindexer, device, use_tgn=use_tgn)
+    # Reindexing stuff (create node-level attributes, hetero features)
+    datasets = run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg)
     
-    if cfg._is_hetero and not use_tgn: # If TGN, we compute hetero feats in the encoder
-        compute_hetero_graphs([train_data, val_data, test_data], device, cfg)
+    # Inter graph batching (actual mini-batching of very small graphs)
+    datasets = run_inter_graph_batching(datasets, cfg)
     
-    return train_data, val_data, test_data, full_data, max_node
+    train_data, val_data, test_data = datasets
+    return train_data, val_data, test_data, max_node
 
 def load_data_list(path, split, cfg):
     data_list = []
@@ -181,7 +164,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
-    selected_node_feats = cfg.detection.gnn_training.encoder.node_features
+    selected_node_feats = cfg.detection.graph_preprocessing.node_features
     
     msg_len = data_set[0].msg.shape[1]
     expected_msg_len = (emb_dim*2) + (node_type_dim*2) + edge_type_dim
@@ -272,7 +255,7 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     return data_set
 
 def build_edge_feats(fields, msg, cfg):
-    edge_features = list(map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.edge_features.split(",")))
+    edge_features = list(map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(",")))
     edge_feats = []
     if "edge_type" in edge_features:
         edge_feats.append(fields["edge_type"])
@@ -280,6 +263,20 @@ def build_edge_feats(fields, msg, cfg):
         edge_feats.append(msg)
     edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
     return edge_feats
+
+def get_full_data(datasets, cfg):
+    if "tgn_last_neighbor" not in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods:
+        return None
+    
+    all_data = {k: [] for k in ["msg", "t", "edge_type", "node_type_src", "node_type_dst", "src", "dst"]}
+    for dataset_group in datasets:
+        for dataset in dataset_group:
+            for data in dataset:
+                for k in all_data:
+                    all_data[k].append(getattr(data, k))
+
+    full_data = Data(**{k: torch.cat(v) for k, v in all_data.items()})
+    return full_data
 
 def custom_temporal_data_loader(data: CollatableTemporalData, batch_size: int, *args, **kwargs):
     """
@@ -307,7 +304,7 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
     """
     assert all([not isinstance(data, Data) for data in data_list]), "Concatenating Data objects result in batching."
     
-    data = collate(CollatableTemporalData, data_list)[0]
+    data = collate(CollatableTemporalData, data_list, increment=False)[0]
     del data.ptr
     del data.batch
 
@@ -382,6 +379,192 @@ def batch_temporal_data(data: CollatableTemporalData, batch_size: float, batch_m
     
     raise ValueError(f"Invalid or missing batch mode {batch_mode}")
 
+def run_global_batching(train_data, val_data, test_data, cfg, device):
+    # Concatenates all data into a single data so that iterating over batches
+    # of edges is more consistent with TGN
+    global_batching_cfg = cfg.detection.graph_preprocessing.global_batching
+    batch_mode = global_batching_cfg.used_method
+    bs = global_batching_cfg.global_batching_batch_size
+    bs_inference = global_batching_cfg.global_batching_batch_size_inference
+    if batch_mode != "none":
+        if (bs not in [None, 0]) or batch_mode == "unique_edge_types":
+            train_data = [batch_temporal_data(collate_temporal_data(graphs), bs, batch_mode, cfg, device) for graphs in train_data]
+            val_data = [batch_temporal_data(collate_temporal_data(graphs), bs, batch_mode, cfg, device) for graphs in val_data]
+            test_data = [batch_temporal_data(collate_temporal_data(graphs), bs, batch_mode, cfg, device) for graphs in test_data]
+        
+        elif bs_inference not in [None, 0]:
+            test_data = [batch_temporal_data(collate_temporal_data(graphs), bs_inference, batch_mode, cfg, device) for graphs in test_data]
+        
+    return train_data, val_data, test_data
+
+def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
+    use_unique_edge_types = "unique_edge_types" in cfg.detection.graph_preprocessing.global_batching.used_method
+    if not use_unique_edge_types:
+        log_dataset_stats(datasets)
+        # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
+        reindex_graphs(datasets, graph_reindexer, device)
+    
+    use_tgn_loader = "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods
+    if cfg._is_hetero and not use_tgn_loader: # If TGN, we compute hetero feats in the encoder
+        compute_hetero_graphs(datasets, device, cfg)
+        
+    return datasets
+
+def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_reindexer):    
+    def standard_intra_batching(dataset, method):
+        result = []
+        for data_list in dataset:
+            result.append([])
+            for batch in log_tqdm(data_list, desc="Creating TGN batches"):
+                # Use temporal batch loader used in TGN
+                batch_size = cfg.detection.graph_preprocessing.intra_graph_batching.intra_graph_batch_size
+                if method == "edges":
+                    batch_loader = custom_temporal_data_loader(batch, batch_size=batch_size)
+                elif method == "neighbor_sampling":
+                    raise NotImplementedError
+                else:
+                    raise ValueError(f"Invalid sampling method {method}")
+                
+                for small_batch in batch_loader:
+                    result[-1].append(small_batch)
+        return result
+    
+    methods = map(lambda x: x.strip(), cfg.detection.graph_preprocessing.intra_graph_batching.used_methods.split(","))
+    for method in methods:
+        if method == "none":
+            continue
+        
+        elif method in ["edges", "neighbor_sampling"]:
+            datasets = [standard_intra_batching(dataset, method) for dataset in datasets]
+        
+        elif method == "tgn_last_neighbor":
+            tgn_loader_cfg = cfg.detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor
+            sample = datasets[0][0][0]
+            datasets = compute_tgn_graphs(
+                datasets=datasets,
+                full_data=full_data,
+                graph_reindexer=graph_reindexer,
+                device=device,
+                max_node=max_node,
+                tgn_loader_cfg=tgn_loader_cfg,
+                node_feat_dim=sample.x_src.shape[1],
+                node_type_dim=sample.node_type_src.shape[1],
+            )
+            
+        else:
+            raise ValueError(f"Invalid sampling method {method}")
+
+    return datasets
+
+def compute_tgn_graphs(datasets, full_data, graph_reindexer, device, max_node, tgn_loader_cfg, node_feat_dim, node_type_dim):
+    tgn_neighbor_n_hop = tgn_loader_cfg.tgn_neighbor_n_hop
+    fix_tgn_neighbor_loader = tgn_loader_cfg.fix_tgn_neighbor_loader
+    fix_buggy_orthrus_TGN = tgn_loader_cfg.fix_buggy_orthrus_TGN
+    insert_neighbors_before = tgn_loader_cfg.insert_neighbors_before
+    neighbor_size = tgn_loader_cfg.tgn_neighbor_size
+    directed = tgn_loader_cfg.directed
+    
+    neighbor_loader = LastNeighborLoader(max_node, size=neighbor_size, directed=directed, device=device)
+    
+    node_feat_cache = torch.zeros((max_node, node_feat_dim), device=device)
+    node_type_cache = torch.zeros((max_node, node_type_dim), device=device)
+    assoc = torch.empty(max_node, dtype=torch.long, device=device)
+    
+    for dataset in datasets:
+        for data_list in dataset:
+            for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
+                batch = batch.to(device)
+                batch_edge_index = batch.edge_index.clone()
+                src, dst = batch_edge_index
+                
+                if insert_neighbors_before:
+                    neighbor_loader.insert(src, dst)
+                
+                n_id = batch_edge_index.unique()
+                for _ in range(tgn_neighbor_n_hop):
+                    n_id, edge_index, e_id = neighbor_loader(n_id)
+                    
+                if fix_tgn_neighbor_loader:
+                    # NOTE: TGN's loader wrongly index edges (less than 1% in the returned e_id and edge_index)
+                    # https://github.com/pyg-team/pytorch_geometric/issues/10100
+                    # Should be replaced by an actual fix when available
+                    real_src = full_data.src[e_id.cpu()].to(device)
+                    real_dst = full_data.dst[e_id.cpu()].to(device)
+
+                    loader_src = n_id[edge_index[0]]
+                    loader_dst = n_id[edge_index[1]]
+
+                    match_dir1 = (real_src.eq(loader_src) & real_dst.eq(loader_dst))
+                    match_dir2 = (real_src.eq(loader_dst) & real_dst.eq(loader_src))
+
+                    valid_edges = match_dir1 | match_dir2
+                    edge_index = edge_index[:, valid_edges]
+                    e_id = e_id[valid_edges]
+
+                assoc[n_id] = torch.arange(n_id.size(0), device=device)
+                node_feat_cache[torch.cat([src, dst])] = torch.cat([batch.x_src, batch.x_dst])
+                node_type_cache[torch.cat([src, dst])] = torch.cat([batch.node_type_src, batch.node_type_dst])
+                
+                if fix_buggy_orthrus_TGN:
+                    x_src = torch.zeros((n_id.size(0), node_feat_dim), device=device)
+                    x_dst = x_src.clone()
+                    src_id, dst_id = edge_index[0].unique(), edge_index[1].unique()
+                    x_src[src_id] = node_feat_cache[n_id[src_id]]
+                    x_dst[dst_id] = node_feat_cache[n_id[dst_id]]
+                    new_x = node_feat_cache[n_id]
+                    batch.x_src_tgn = x_src
+                    batch.x_dst_tgn = x_dst
+                    batch.x_tgn = new_x
+                    
+                else:
+                    (x_src, x_dst), *_ = graph_reindexer._reindex_graph(batch_edge_index, batch.x_src, batch.x_dst, max_num_node=n_id.size(0), x_is_tuple=True)
+                    batch.x_src_tgn = x_src
+                    batch.x_dst_tgn = x_dst
+                    batch.x_tgn = x_src
+                    
+                batch.tgn_mode = True
+                batch.original_edge_index = batch_edge_index
+                batch.original_n_id = batch_edge_index.unique()
+                batch.reindexed_original_n_id_tgn = assoc[batch.original_n_id]
+                batch.n_id_tgn = n_id
+                batch.edge_index_tgn = edge_index
+                batch.reindexed_edge_index_tgn = assoc[batch.edge_index]
+                batch.msg_tgn = full_data.msg[e_id.cpu()]
+                batch.t_tgn = full_data.t[e_id.cpu()]
+                batch.node_type_tgn = node_type_cache[n_id]
+                batch.edge_type_tgn = full_data.edge_type[e_id.cpu()]
+                
+                batch = batch.to("cpu")
+                
+                if not insert_neighbors_before:
+                    neighbor_loader.insert(src, dst)
+                    
+    return datasets
+
+def run_inter_graph_batching(datasets, cfg):
+    def inter_batching(dataset, method):
+        if method == "none":
+            return dataset
+        
+        elif method == "graph_batching":
+            bs = cfg.detection.graph_preprocessing.inter_graph_batching.inter_graph_batch_size
+            result = []
+            for data_list in dataset:
+                result.append([])
+                for i in log_tqdm(range(0, len(data_list), bs), total=math.ceil(len(data_list) / bs), desc=f"Mini-batching"):
+                    batch = data_list[i:i+bs]
+                    data = collate(CollatableTemporalData, data_list=batch)[0]
+                    if cfg._debug:
+                        debug_test_batching(batch, data)
+                    result[-1].append(data)
+            return result
+
+        raise ValueError(f"Invalid inter-graph batching method {method}")
+    
+    method = cfg.detection.graph_preprocessing.inter_graph_batching.used_method
+    datasets = [inter_batching(dataset, method) for dataset in datasets]
+    return datasets
+
 class _Cache:
     def __init__(self, shape, device):
         self._cache = torch.zeros(shape, device=device)
@@ -455,7 +638,7 @@ class GraphReindexer:
             
             return output[:max_num_node]
     
-    def reindex_graph(self, data, x_is_tuple=False, use_tgn=False):
+    def reindex_graph(self, data, x_is_tuple=False):
         """
         Reindexes edge_index from 0 + reshapes node features.
         The original edge_index and node IDs are also kept.
@@ -464,9 +647,8 @@ class GraphReindexer:
         x, edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
         data.original_n_id = n_id
         
-        # TGN requires to do reindexing directly in the encoder as it uses a 1024-edges batch loader
-        if not use_tgn:
-            data.src, data.dst = edge_index[0], edge_index[1]
+        # NOTE: beware, do not use with TGN as we already reindex in the last neighbor loader
+        data.src, data.dst = edge_index[0], edge_index[1]
         
         if x_is_tuple:
             data.x_src, data.x_dst = x
@@ -520,7 +702,7 @@ def save_model(model, path: str, cfg):
     
     if isinstance(model.encoder, TGNEncoder):
         torch.save(model.encoder.neighbor_loader, os.path.join(path, "neighbor_loader.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
-        if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.gnn_training.encoder.edge_features:
+        if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.graph_preprocessing.edge_features:
             torch.save(model.encoder.memory, os.path.join(path, "memory.pkl"), pickle_protocol=pickle.HIGHEST_PROTOCOL)
 
 def load_model(model, path: str, cfg, map_location=None):
@@ -532,17 +714,17 @@ def load_model(model, path: str, cfg, map_location=None):
     
     if isinstance(model.encoder, TGNEncoder):
         model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"))
-        if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.gnn_training.encoder.edge_features:
+        if cfg.detection.gnn_training.encoder.tgn.use_memory or "time_encoding" in cfg.detection.graph_preprocessing.edge_features:
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 
     return model
 
-def reindex_graphs(datasets, graph_reindexer, device, use_tgn=False):
+def reindex_graphs(datasets, graph_reindexer, device):
     for dataset in datasets:
-        for data_list in log_tqdm(dataset, desc="Reindexing graphs"):
-            for batch in data_list:
+        for data_list in dataset:
+            for batch in log_tqdm(data_list, desc="Reindexing graphs"):
                 batch.to(device)
-                graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
+                graph_reindexer.reindex_graph(batch)
                 batch.to("cpu")
 
 def compute_hetero_graphs(datasets, device, cfg):
@@ -553,7 +735,7 @@ def compute_hetero_graphs(datasets, device, cfg):
         for data_list in log_tqdm(dataset, desc="Computing heterogeneous graphs"):
             for g in data_list:
                 g.to(device)
-                x_dict, edge_index_dict = compute_hetero_features(g, node_map=node_map, edge_map=edge_map)
+                x_dict, edge_index_dict = compute_hetero_features(g, node_map=node_map, edge_map=edge_map, cfg=cfg)
                 g.x_dict = x_dict
                 g.edge_index_dict = edge_index_dict
                 g.to("cpu")

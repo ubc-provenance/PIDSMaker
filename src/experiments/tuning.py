@@ -59,8 +59,8 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
                 cfg.featurization.embed_nodes.training_split = split
                 
                 # If a model doesn't use embedding in features, we add them to benchmark
-                if "node_emb" not in cfg.detection.gnn_training.encoder.node_features:
-                    cfg.detection.gnn_training.encoder.node_features += ",node_emb"
+                if "node_emb" not in cfg.detection.graph_preprocessing.node_features:
+                    cfg.detection.graph_preprocessing.node_features += ",node_emb"
         
         elif key == "orthrus_node_label_features":
             if value == True:

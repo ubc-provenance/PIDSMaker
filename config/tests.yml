@@ -96,7 +96,6 @@ detection:
         project_src_dst: True
         directed: False
         insert_neighbors_before: False
-        use_last_neighbor_loader: True
       sage:
         activation: relu
     decoder:

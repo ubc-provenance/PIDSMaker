@@ -115,7 +115,7 @@ def main(cfg):
         embed_edges_provd.main(cfg)
         return
     
-    multi_dataset_training = cfg.detection.gnn_training.multi_dataset_training
+    multi_dataset_training = cfg.detection.graph_preprocessing.multi_dataset_training
     if not multi_dataset_training:
         main_from_config(cfg)
     

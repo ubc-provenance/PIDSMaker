@@ -20,6 +20,16 @@ featurization:
     to_remove: True
 
 detection:
+  graph_preprocessing:
+    node_features: node_type,edges_distribution
+    edge_features: none
+    fix_buggy_graph_reindexer: False
+    global_batching:
+      used_method: none
+    intra_graph_batching:
+      used_methods: none
+    inter_graph_batching:
+      used_method: none
   gnn_training:
     used_method: orthrus
     use_seed: True
@@ -30,12 +40,7 @@ detection:
     node_hid_dim: 32
     node_out_dim: 3
     grad_accumulation: 1
-    fix_buggy_graph_reindexer: False
-    # edge_batch_size: 1024
     encoder:
-      node_features: node_type,edges_distribution
-      neighbor_sampling: [-1, -1]
-      edge_features: none
       dropout: 0.5
       used_methods: sage
       sage:

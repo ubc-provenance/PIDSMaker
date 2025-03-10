@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch_geometric.loader import NeighborLoader
 
 from provnet_utils import *
 from config import *
@@ -25,7 +24,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
-        fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
+        fix_buggy_graph_reindexer=cfg.detection.graph_preprocessing.fix_buggy_graph_reindexer,
     )
     
     encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
@@ -61,7 +60,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     
     # If edge features are used, we set them here
     edge_dim = 0
-    edge_features = list(map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.edge_features.split(",")))
+    edge_features = list(map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(",")))
     for edge_feat in edge_features:
         if edge_feat == "edge_type":
             edge_dim += cfg.dataset.num_edge_types
@@ -207,19 +206,12 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     if use_tgn:
         tgn_cfg = cfg.detection.gnn_training.encoder.tgn
         time_dim = tgn_cfg.tgn_time_dim
-        neighbor_size = tgn_cfg.tgn_neighbor_size
         use_node_feats_in_gnn = tgn_cfg.use_node_feats_in_gnn
         use_memory = tgn_cfg.use_memory
         use_time_order_encoding = tgn_cfg.use_time_order_encoding
-        tgn_neighbor_n_hop = tgn_cfg.tgn_neighbor_n_hop
-        fix_buggy_orthrus_TGN = tgn_cfg.fix_buggy_orthrus_TGN
         project_src_dst = tgn_cfg.project_src_dst
-        directed = tgn_cfg.directed
-        insert_neighbors_before = tgn_cfg.insert_neighbors_before
-        use_last_neighbor_loader = tgn_cfg.use_last_neighbor_loader
-        fix_tgn_neighbor_loader = tgn_cfg.fix_tgn_neighbor_loader
         
-        use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
+        use_time_enc = "time_encoding" in cfg.detection.graph_preprocessing.edge_features
 
         if use_memory:
             memory = TGNMemory(
@@ -239,8 +231,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             )
         else:
             memory = None
-
-        neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, directed=directed, device=device)
         
         node_map = get_node_map(from_zero=True)
         edge_map = get_rel2id(cfg, from_zero=True)
@@ -248,7 +238,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         encoder = TGNEncoder(
             encoder=encoder,
             memory=memory,
-            neighbor_loader=neighbor_loader,
             time_encoder=memory.time_enc if memory else None,
             in_dim=original_in_dim,
             memory_dim=tgn_memory_dim,
@@ -257,20 +246,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             edge_features=edge_features,
             device=device,
             use_memory=use_memory,
-            num_nodes=max_node_num,
             use_time_enc=use_time_enc,
             edge_dim=edge_dim,
-            node_type_dim = cfg.dataset.num_node_types,
             use_time_order_encoding=use_time_order_encoding,
-            tgn_neighbor_n_hop=tgn_neighbor_n_hop,
-            fix_buggy_orthrus_TGN=fix_buggy_orthrus_TGN,
             project_src_dst=project_src_dst,
-            insert_neighbors_before=insert_neighbors_before,
-            use_last_neighbor_loader=use_last_neighbor_loader,
             is_hetero=cfg._is_hetero,
             node_map=node_map,
             edge_map=edge_map,
-            fix_tgn_neighbor_loader=fix_tgn_neighbor_loader,
         )
 
     return encoder
@@ -520,41 +502,6 @@ def edge_decoder_factory(edge_decoder, in_dim):
         return None
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
-
-def batch_loader_factory(cfg, data, test_mode=False):
-    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
-    neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
-    
-    try:
-        if len(neigh_sampling) > 0 and isinstance(neigh_sampling[0], str):
-            neigh_sampling = eval("".join(neigh_sampling))
-        use_neigh_sampling = all([isinstance(num_hop, int) for num_hop in neigh_sampling])
-        error = False
-    except:
-        error = True
-    if error or not use_neigh_sampling:
-        raise ValueError(f"Invalid neighbor sampling {neigh_sampling}. Expected 'None' or a list of integers.")
-    
-    # Use neigh sampling batch loader
-    if use_neigh_sampling and len(neigh_sampling) > 0 and not all([n == -1 for n in neigh_sampling]):
-        if use_tgn:
-            raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
-
-        data = temporal_data_to_data(data)
-        return NeighborLoader(
-            data,
-            num_neighbors=neigh_sampling,
-            batch_size=10_000_000, # no need for batching as a time window is already small
-            shuffle=False,
-        )
-    # Use TGN batch loader
-    tgn_batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
-    batch_mode = cfg.detection.gnn_training.batch_mode
-    if use_tgn and tgn_batch_size != -1 and batch_mode != "unique_edge_types":
-        batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_inference if test_mode else tgn_batch_size
-        return custom_temporal_data_loader(data, batch_size=batch_size)
-    
-    return [data]
 
 def recon_loss_fn_factory(loss: str):
     if loss == "SCE":

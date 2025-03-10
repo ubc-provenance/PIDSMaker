@@ -5,12 +5,18 @@ featurization:
     used_method: only_type
 
 detection:
-  gnn_training:
+  graph_preprocessing:
     fix_buggy_graph_reindexer: True
-    encoder:
-      tgn:
-        fix_buggy_orthrus_TGN: True
+    global_batching:
+      used_method: unique_edge_types
+    intra_graph_batching:
+      used_methods: tgn_last_neighbor
+      tgn_last_neighbor:
         fix_tgn_neighbor_loader: False
+        fix_buggy_orthrus_TGN: True
+
+  gnn_training:
+    lr: 0.001
 
   evaluation:
     used_method: edge_evaluation
