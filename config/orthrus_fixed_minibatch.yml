@@ -20,6 +20,8 @@ detection:
 
   gnn_training:
     lr: 0.001
+    encoder:
+      dropout: 0.3
 
   evaluation:
     used_method: edge_evaluation
