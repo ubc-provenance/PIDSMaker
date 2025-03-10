@@ -99,7 +99,10 @@ def load_all_datasets(cfg, device, only_keep=None):
         val_data = val_data[:only_keep]
         test_data = test_data[:only_keep]
     
-    full_data = get_full_data([train_data, val_data, test_data], cfg)
+    if "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods:
+        full_data = get_full_data([train_data, val_data, test_data])
+    else:
+        full_data = None
 
     max_node = torch.cat([full_data.src, full_data.dst]).max().item() + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
@@ -264,10 +267,7 @@ def build_edge_feats(fields, msg, cfg):
     edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
     return edge_feats
 
-def get_full_data(datasets, cfg):
-    if "tgn_last_neighbor" not in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods:
-        return None
-    
+def get_full_data(datasets):
     all_data = {k: [] for k in ["msg", "t", "edge_type", "node_type_src", "node_type_dst", "src", "dst"]}
     for dataset_group in datasets:
         for dataset in dataset_group:
@@ -402,7 +402,8 @@ def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
     if not use_unique_edge_types:
         log_dataset_stats(datasets)
         # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-        reindex_graphs(datasets, graph_reindexer, device)
+        use_tgn = "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods
+        reindex_graphs(datasets, graph_reindexer, device, use_tgn)
     
     use_tgn_loader = "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods
     if cfg._is_hetero and not use_tgn_loader: # If TGN, we compute hetero feats in the encoder
@@ -639,7 +640,7 @@ class GraphReindexer:
             
             return output[:max_num_node]
     
-    def reindex_graph(self, data, x_is_tuple=False):
+    def reindex_graph(self, data, x_is_tuple=False, use_tgn=False):
         """
         Reindexes edge_index from 0 + reshapes node features.
         The original edge_index and node IDs are also kept.
@@ -648,8 +649,8 @@ class GraphReindexer:
         x, edge_index, n_id = self._reindex_graph(data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple)
         data.original_n_id = n_id
         
-        # NOTE: beware, do not use with TGN as we already reindex in the last neighbor loader
-        data.src, data.dst = edge_index[0], edge_index[1]
+        if not use_tgn:
+            data.src, data.dst = edge_index[0], edge_index[1]
         
         if x_is_tuple:
             data.x_src, data.x_dst = x
@@ -720,12 +721,12 @@ def load_model(model, path: str, cfg, map_location=None):
 
     return model
 
-def reindex_graphs(datasets, graph_reindexer, device):
+def reindex_graphs(datasets, graph_reindexer, device, use_tgn):
     for dataset in datasets:
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Reindexing graphs"):
                 batch.to(device)
-                graph_reindexer.reindex_graph(batch)
+                graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
                 batch.to("cpu")
 
 def compute_hetero_graphs(datasets, device, cfg):
