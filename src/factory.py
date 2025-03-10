@@ -27,10 +27,10 @@ def build_model(data_sample, device, cfg, max_node_num):
         fix_buggy_graph_reindexer=cfg.detection.graph_preprocessing.fix_buggy_graph_reindexer,
     )
     
-    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
+    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, device=device, max_node_num=max_node_num)
     decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
     decoder_few_shot = few_shot_decoder_factory(cfg, device=device, graph_reindexer=graph_reindexer)
-    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device, max_node_num=max_node_num)
+    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device)
     
     if cfg._is_running_mc_dropout:
         dropout = cfg.experiment.uncertainty.mc_dropout.dropout
@@ -38,7 +38,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     
     return model
 
-def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num):
+def model_factory(encoder, decoders, decoder_few_shot, cfg, device):
     return Model(
         encoder=encoder,
         decoders=decoders,
@@ -49,7 +49,7 @@ def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num
         freeze_encoder=cfg.detection.gnn_training.decoder.few_shot.freeze_encoder,
     ).to(device)
 
-def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):
+def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
@@ -242,7 +242,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             in_dim=original_in_dim,
             memory_dim=tgn_memory_dim,
             use_node_feats_in_gnn=use_node_feats_in_gnn,
-            graph_reindexer=graph_reindexer,
             edge_features=edge_features,
             device=device,
             use_memory=use_memory,

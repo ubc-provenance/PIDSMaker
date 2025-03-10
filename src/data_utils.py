@@ -41,7 +41,7 @@ class CollatableTemporalData(TemporalData):
     def __inc__(self, key: str, value, *args, **kwargs):
         if key == "original_edge_index":  # used to retrieve original node IDs during evaluation
             return 0
-        if any(k in key for k in ("edge_index", "n_id") or key in ["src", "dst"]):
+        if "edge_index" in key or key in ["src", "dst", "reindexed_original_n_id_tgn"]:
             if self.tgn_mode:
                 return torch.unique(self.n_id_tgn).numel()
             return self.num_nodes
@@ -417,8 +417,8 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
             result.append([])
             for batch in log_tqdm(data_list, desc="Creating TGN batches"):
                 # Use temporal batch loader used in TGN
-                batch_size = cfg.detection.graph_preprocessing.intra_graph_batching.intra_graph_batch_size
                 if method == "edges":
+                    batch_size = cfg.detection.graph_preprocessing.intra_graph_batching.edges.intra_graph_batch_size
                     batch_loader = custom_temporal_data_loader(batch, batch_size=batch_size)
                 elif method == "neighbor_sampling":
                     raise NotImplementedError
@@ -501,25 +501,26 @@ def compute_tgn_graphs(datasets, full_data, graph_reindexer, device, max_node, t
                     edge_index = edge_index[:, valid_edges]
                     e_id = e_id[valid_edges]
 
-                assoc[n_id] = torch.arange(n_id.size(0), device=device)
+                num_nodes = n_id.size(0)  # Important, this one is used as __inc__ when batching graphs
+                assoc[n_id] = torch.arange(num_nodes, device=device)
                 node_feat_cache[torch.cat([src, dst])] = torch.cat([batch.x_src, batch.x_dst])
                 node_type_cache[torch.cat([src, dst])] = torch.cat([batch.node_type_src, batch.node_type_dst])
                 
                 if fix_buggy_orthrus_TGN:
-                    x_src = torch.zeros((n_id.size(0), node_feat_dim), device=device)
+                    x_src = torch.zeros((num_nodes, node_feat_dim), device=device)
                     x_dst = x_src.clone()
                     src_id, dst_id = edge_index[0].unique(), edge_index[1].unique()
                     x_src[src_id] = node_feat_cache[n_id[src_id]]
                     x_dst[dst_id] = node_feat_cache[n_id[dst_id]]
                     new_x = node_feat_cache[n_id]
-                    batch.x_src_tgn = x_src
-                    batch.x_dst_tgn = x_dst
-                    batch.x_tgn = new_x
+                    batch.x_from_tgn = x_src  # (N, d)
+                    batch.x_to_tgn = x_dst  # (N, d)
+                    batch.x_tgn = new_x  # (N, d)
                     
                 else:
-                    (x_src, x_dst), *_ = graph_reindexer._reindex_graph(batch_edge_index, batch.x_src, batch.x_dst, max_num_node=n_id.size(0), x_is_tuple=True)
-                    batch.x_src_tgn = x_src
-                    batch.x_dst_tgn = x_dst
+                    (x_src, x_dst), *_ = graph_reindexer._reindex_graph(batch_edge_index, batch.x_src, batch.x_dst, max_num_node=num_nodes, x_is_tuple=True)
+                    batch.x_from_tgn = x_src
+                    batch.x_to_tgn = x_dst
                     batch.x_tgn = x_src
                     
                 batch.tgn_mode = True
