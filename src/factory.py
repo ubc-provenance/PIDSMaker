@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from provnet_utils import *
 from config import *
-from config import possible_events, ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events
+from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events
 from model import *
 from losses import *
 from encoders import *
@@ -56,7 +56,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     use_ancestor_encoding = "ancestor_encoding" in cfg.detection.gnn_training.encoder.used_methods
     use_entity_type_encoding = "entity_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
+    use_event_type_encoding = "event_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
     dropout = cfg.detection.gnn_training.encoder.dropout
+    
+    node_map = get_node_map(from_zero=True)
+    edge_map = get_rel2id(cfg, from_zero=True)
     
     # If edge features are used, we set them here
     edge_dim = 0
@@ -78,9 +82,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     original_in_dim = in_dim
     if use_tgn:
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
+        
+    original_edge_dim = edge_dim
+    if use_event_type_encoding:
+        edge_dim = in_dim
 
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(",")):
-        if method in ["tgn", "ancestor_encoding", "entity_type_encoding"]:
+        if method in ["tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]:
             pass
         elif method == "graph_attention":
             encoder = GraphAttentionEmbedding(
@@ -96,8 +104,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
         elif method == "hetero_graph_transformer":
             if cfg.dataset.name in OPTC_DATASETS:
                 raise NotImplementedError(f"Hetero OPTC not implemented (need to compute possible_events)")
-            if not (cfg.detection.gnn_training.encoder.tgn.fix_tgn_neighbor_loader and cfg.detection.gnn_training.encoder.tgn.directed):
-                raise ValueError(f"Need fix_tgn_neighbor_loader and directed for hetero encoding")
             
             node_map = get_node_map(from_zero=True)
             metadata = get_metadata(possible_events, node_map)
@@ -192,6 +198,17 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
             encoder=encoder,
             activation=True,
         )
+        
+    if use_event_type_encoding:
+        encoder = EventLinearEncoder(
+            in_dim=original_edge_dim,
+            out_dim=in_dim,
+            possible_events=possible_events,
+            node_map=node_map,
+            edge_map=edge_map,
+            encoder=encoder,
+            activation=True,
+        )
     
     if use_ancestor_encoding:
         encoder = AncestorEncoder(
@@ -231,9 +248,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
             )
         else:
             memory = None
-        
-        node_map = get_node_map(from_zero=True)
-        edge_map = get_rel2id(cfg, from_zero=True)
 
         encoder = TGNEncoder(
             encoder=encoder,
@@ -373,7 +387,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 ntype2edgemap[(src_idx, dst_idx)] = reindexed_events
                 
                 layer_name = f"{src_idx}_{dst_idx}"
-                num_events = len(events)  # Output dimension is the number of possible events
+                num_events = torch.unique(events).numel()
                 
                 decoder_hetero_head = decoder_factory(decoder_hetero_head_method, objective, cfg, in_dim=node_out_dim, out_dim=num_events)
                 edge_type_predictors[layer_name] = decoder_hetero_head

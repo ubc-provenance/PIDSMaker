@@ -79,6 +79,7 @@ class Model(nn.Module):
                     node_type_src=batch.node_type_src,
                     node_type_dst=batch.node_type_dst,
                     validation=validation,
+                    batch=batch,
                 )
                 loss = results["loss"]
                 
