@@ -106,6 +106,7 @@ detection:
         activation: relu
         num_heads: 8
         concat: True
+        flow: source_to_target
       hetero_graph_transformer:
         activation: relu
         num_heads: 4
@@ -123,6 +124,7 @@ detection:
       used_methods: predict_edge_type
       predict_edge_type:
         decoder: edge_mlp
+        use_triplet_types: False
         edge_mlp:
           architecture_str: linear(0.5) | relu
           src_dst_projection_coef: 2

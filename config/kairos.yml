@@ -58,6 +58,7 @@ detection:
         activation: relu
         num_heads: 4
         concat: True
+        flow: source_to_target
       tgn:
         tgn_memory_dim: 100
         tgn_time_dim: 100
@@ -69,6 +70,7 @@ detection:
       used_methods: predict_edge_type
       predict_edge_type:
         balanced_loss: False
+        use_triplet_types: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.25) | tanh | linear(0.25) | dropout(0.5) | tanh
