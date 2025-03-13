@@ -452,35 +452,27 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 )
             )
         
-        # elif objective == "predict_edge_contrastive":
-        #     predict_edge_method = objective_cfg.predict_edge_contrastive.used_method.strip()
-        #     if predict_edge_method == "linear":
-        #         edge_decoder = EdgeLinearDecoder(
-        #             in_dim=node_out_dim,
-        #             dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
-        #         )
-        #     elif predict_edge_method == "inner_product":
-        #         edge_decoder = EdgeInnerProductDecoder(
-        #             dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
-        #         )
-        #     else:
-        #         raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
+        elif objective == "predict_edge_contrastive":
+            predict_edge_method = objective_cfg.predict_edge_contrastive.decoder.strip()
+            if predict_edge_method == "linear":
+                edge_decoder = EdgeLinearDecoder(
+                    in_dim=node_out_dim,
+                    dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
+                )
+            elif predict_edge_method == "inner_product":
+                edge_decoder = EdgeInnerProductDecoder(
+                    dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
+                )
+            else:
+                raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
             
-        #     contrastive_graph_reindexer = GraphReindexer(
-        #         num_nodes=max_node_num,
-        #         device=device,
-        #     )
-        #     loss_fn = bce_contrastive
-        #     neg_sampling_method = objective_cfg.predict_edge_contrastive.neg_sampling_method.strip()
-        #     if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
-        #         raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
+            loss_fn = bce_contrastive
             
-        #     objectives.append(EdgeContrastiveDecoder(
-        #         decoder=edge_decoder,
-        #         loss_fn=loss_fn,
-        #         graph_reindexer=contrastive_graph_reindexer,
-        #         neg_sampling_method=neg_sampling_method,
-        #     ))
+            objectives.append(EdgeContrastiveDecoder(
+                decoder=edge_decoder,
+                loss_fn=loss_fn,
+                graph_reindexer=graph_reindexer,
+            ))
         
         else:
             raise ValueError(f"Invalid objective {objective}")

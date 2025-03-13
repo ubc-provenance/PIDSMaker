@@ -26,12 +26,12 @@ def mse_loss_sum(x, y, **kwargs):
 def mae_loss(x, y, **kwargs):
     return mse_loss(x, y, is_mae=True, **kwargs)
 
-def bce_contrastive(positive, negative, inference=False, **kwargs):
+def bce_contrastive(positive, negative, inference=False, weight=None, **kwargs):
     reduction = "none" if inference else "mean"
     pos_loss = F.binary_cross_entropy_with_logits(positive, torch.ones_like(positive), reduction=reduction)
     
     if not inference:
-        neg_loss = F.binary_cross_entropy_with_logits(negative, torch.zeros_like(negative), reduction=reduction)
+        neg_loss = F.binary_cross_entropy_with_logits(negative, torch.zeros_like(negative), reduction=reduction, weight=weight)
         return (pos_loss + neg_loss) * 0.5
 
     return pos_loss

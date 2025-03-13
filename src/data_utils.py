@@ -100,10 +100,7 @@ def load_all_datasets(cfg, device, only_keep=None):
         val_data = val_data[:only_keep]
         test_data = test_data[:only_keep]
     
-    if "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods:
-        full_data = get_full_data([train_data, val_data, test_data])
-    else:
-        full_data = None
+    full_data = get_full_data([train_data, val_data, test_data])
 
     max_node = torch.cat([full_data.src, full_data.dst]).max().item() + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
