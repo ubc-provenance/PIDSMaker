@@ -235,55 +235,77 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                     # log(f"Start create edge fused time window graph for {time_interval}")
 
                     node_info = {}
-                    edge_info = {}
-                    for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in temp_list:
-                        if src_index_id not in node_info:
-                            node_type, label = indexid2msg[src_index_id]
-                            node_info[src_index_id] = {
-                                'label': label,
-                                'node_type': node_type,
-                            }
-                        if dst_index_id not in node_info:
-                            node_type, label = indexid2msg[dst_index_id]
-                            node_info[dst_index_id] = {
-                                'label': label,
-                                'node_type': node_type,
-                            }
-
-                        if (src_index_id, dst_index_id) not in edge_info:
-                            edge_info[(src_index_id, dst_index_id)] = []
-
-                        edge_info[(src_index_id, dst_index_id)].append((timestamp_rec, operation, event_uuid))
-
                     edge_list = []
+                    if cfg.preprocessing.build_graphs.fuse_edge:
+                        edge_info = {}
+                        for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in temp_list:
+                            if src_index_id not in node_info:
+                                node_type, label = indexid2msg[src_index_id]
+                                node_info[src_index_id] = {
+                                    'label': label,
+                                    'node_type': node_type,
+                                }
+                            if dst_index_id not in node_info:
+                                node_type, label = indexid2msg[dst_index_id]
+                                node_info[dst_index_id] = {
+                                    'label': label,
+                                    'node_type': node_type,
+                                }
 
-                    for (src, dst), data in edge_info.items():
-                        sorted_data = sorted(data, key=lambda x: x[0])
-                        operation_list = [entry[1] for entry in sorted_data]
+                            if (src_index_id, dst_index_id) not in edge_info:
+                                edge_info[(src_index_id, dst_index_id)] = []
 
-                        indices = []
-                        current_type = None
-                        current_start_index = None
+                            edge_info[(src_index_id, dst_index_id)].append((timestamp_rec, operation, event_uuid))
 
-                        for idx, item in enumerate(operation_list):
-                            if item == current_type:
-                                continue
-                            else:
-                                if current_type is not None and current_start_index is not None:
-                                    indices.append(current_start_index)
-                                current_type = item
-                                current_start_index = idx
+                        for (src, dst), data in edge_info.items():
+                            sorted_data = sorted(data, key=lambda x: x[0])
+                            operation_list = [entry[1] for entry in sorted_data]
 
-                        if current_type is not None and current_start_index is not None:
-                            indices.append(current_start_index)
+                            indices = []
+                            current_type = None
+                            current_start_index = None
 
-                        for k in indices:
+                            for idx, item in enumerate(operation_list):
+                                if item == current_type:
+                                    continue
+                                else:
+                                    if current_type is not None and current_start_index is not None:
+                                        indices.append(current_start_index)
+                                    current_type = item
+                                    current_start_index = idx
+
+                            if current_type is not None and current_start_index is not None:
+                                indices.append(current_start_index)
+
+                            for k in indices:
+                                edge_list.append({
+                                    'src': src,
+                                    'dst': dst,
+                                    'time': sorted_data[k][0],
+                                    'label': sorted_data[k][1],
+                                    'event_uuid': sorted_data[k][2]
+                                })
+                    else:
+                        for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in temp_list:
+                            if src_index_id not in node_info:
+                                node_type, label = indexid2msg[src_index_id]
+                                node_info[src_index_id] = {
+                                    'label': label,
+                                    'node_type': node_type,
+                                }
+                            if dst_index_id not in node_info:
+                                node_type, label = indexid2msg[dst_index_id]
+                                node_info[dst_index_id] = {
+                                    'label': label,
+                                    'node_type': node_type,
+                                }
+                        
                             edge_list.append({
-                                'src': src,
-                                'dst': dst,
-                                'time': sorted_data[k][0],
-                                'label': sorted_data[k][1],
-                                'event_uuid': sorted_data[k][2]
+                                'src': src_index_id,
+                                'dst': dst_index_id,
+                                'time': timestamp_rec,
+                                'label': operation,
+                                'event_uuid': event_uuid,
                             })
 
                     # log(f"Start creating graph for {time_interval}")

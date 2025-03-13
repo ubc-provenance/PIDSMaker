@@ -4,6 +4,7 @@ preprocessing:
     use_all_files: True
     time_window_size: 15.0
     use_hashed_label: False
+    fuse_edge: True
     node_label_features:
       subject: type, path, cmd_line
       file: type, path
@@ -81,6 +82,7 @@ detection:
         activation: relu
         num_heads: 8
         concat: True
+        flow: source_to_target
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 1024
@@ -111,6 +113,7 @@ detection:
         decoder: none
       predict_edge_type:
         balanced_loss: False
+        use_triplet_types: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5)

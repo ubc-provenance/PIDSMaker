@@ -1,4 +1,4 @@
-from config import get_rel2id
+from config import get_rel2id, get_rel2id_considering_triplets
 from .evaluation_utils import *
 from labelling import get_ground_truth_edges, get_attack_to_mal_edges
 
@@ -12,7 +12,7 @@ def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     log(f"Threshold: {thr:.3f}")
 
     scores, y_true, y_hat, src_dst_t_type = [], [], [], []
-    edge_type_map = get_rel2id(cfg)
+    edge_type_map = get_rel2id_considering_triplets(cfg)
     filelist = listdir_sorted(test_tw_path)
     for file in log_tqdm(sorted(filelist), desc="Compute edge labels"):
         file = os.path.join(test_tw_path, file)

@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from provnet_utils import *
 from config import *
-from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events
+from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events, get_num_edge_type
 from model import *
 from losses import *
 from encoders import *
@@ -66,8 +66,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     edge_dim = 0
     edge_features = list(map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(",")))
     for edge_feat in edge_features:
-        if edge_feat == "edge_type":
-            edge_dim += cfg.dataset.num_edge_types
+        if edge_feat in ["edge_type", "edge_type_triplet"]:
+            edge_dim += get_num_edge_type(cfg)
         elif edge_feat == "msg":
             edge_dim += msg_dim
         elif edge_feat == "time_encoding":
@@ -100,11 +100,12 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
                 concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
+                flow=cfg.detection.gnn_training.encoder.graph_attention.flow,
             )
         elif method == "hetero_graph_transformer":
             if cfg.dataset.name in OPTC_DATASETS:
                 raise NotImplementedError(f"Hetero OPTC not implemented (need to compute possible_events)")
-            
+
             node_map = get_node_map(from_zero=True)
             metadata = get_metadata(possible_events, node_map)
             
@@ -323,6 +324,9 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
     if objective_cfg is None:
         objective_cfg = cfg.detection.gnn_training.decoder
     node_out_dim = cfg.detection.gnn_training.node_out_dim
+    
+    entity_map = get_node_map(from_zero=True)
+    event_map = get_rel2id(cfg, from_zero=True)
 
     objectives = []
     for objective in map(lambda x: x.strip(), objective_cfg.used_methods.split(",")):
@@ -355,13 +359,15 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             loss_fn = categorical_loss_fn_factory("cross_entropy")
             balanced_loss = objective_cfg.predict_edge_type.balanced_loss
             
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=cfg.dataset.num_edge_types)
+            num_edge_types = get_num_edge_type(cfg)
+            
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=num_edge_types)
             objectives.append(
                 EdgeTypePrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
                     balanced_loss=balanced_loss,
-                    edge_type_dim=cfg.dataset.num_edge_types,
+                    edge_type_dim=num_edge_types,
                 ))
             
         elif objective == "predict_edge_type_hetero":
@@ -369,9 +375,6 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
             
             decoder_hetero_head_method = getattr(getattr(objective_cfg, objective.strip()), "decoder_hetero_head")
-            
-            entity_map = get_node_map(from_zero=True)
-            event_map = get_rel2id(cfg, from_zero=True)
             
             edge_type_predictors = nn.ModuleDict()
         
@@ -449,35 +452,27 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 )
             )
         
-        # elif objective == "predict_edge_contrastive":
-        #     predict_edge_method = objective_cfg.predict_edge_contrastive.used_method.strip()
-        #     if predict_edge_method == "linear":
-        #         edge_decoder = EdgeLinearDecoder(
-        #             in_dim=node_out_dim,
-        #             dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
-        #         )
-        #     elif predict_edge_method == "inner_product":
-        #         edge_decoder = EdgeInnerProductDecoder(
-        #             dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
-        #         )
-        #     else:
-        #         raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
+        elif objective == "predict_edge_contrastive":
+            predict_edge_method = objective_cfg.predict_edge_contrastive.decoder.strip()
+            if predict_edge_method == "linear":
+                edge_decoder = EdgeLinearDecoder(
+                    in_dim=node_out_dim,
+                    dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
+                )
+            elif predict_edge_method == "inner_product":
+                edge_decoder = EdgeInnerProductDecoder(
+                    dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
+                )
+            else:
+                raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
             
-        #     contrastive_graph_reindexer = GraphReindexer(
-        #         num_nodes=max_node_num,
-        #         device=device,
-        #     )
-        #     loss_fn = bce_contrastive
-        #     neg_sampling_method = objective_cfg.predict_edge_contrastive.neg_sampling_method.strip()
-        #     if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
-        #         raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
+            loss_fn = bce_contrastive
             
-        #     objectives.append(EdgeContrastiveDecoder(
-        #         decoder=edge_decoder,
-        #         loss_fn=loss_fn,
-        #         graph_reindexer=contrastive_graph_reindexer,
-        #         neg_sampling_method=neg_sampling_method,
-        #     ))
+            objectives.append(EdgeContrastiveDecoder(
+                decoder=edge_decoder,
+                loss_fn=loss_fn,
+                graph_reindexer=graph_reindexer,
+            ))
         
         else:
             raise ValueError(f"Invalid objective {objective}")

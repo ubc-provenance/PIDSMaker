@@ -5,6 +5,7 @@ preprocessing:
     mimicry_edge_num: 0
     time_window_size: 15.0
     use_hashed_label: False
+    fuse_edge: True
     node_label_features:
       subject: type, path, cmd_line
       file: type, path
@@ -106,6 +107,7 @@ detection:
         activation: relu
         num_heads: 8
         concat: True
+        flow: source_to_target
       hetero_graph_transformer:
         activation: relu
         num_heads: 4
@@ -123,6 +125,7 @@ detection:
       used_methods: predict_edge_type
       predict_edge_type:
         decoder: edge_mlp
+        use_triplet_types: False
         edge_mlp:
           architecture_str: linear(0.5) | relu
           src_dst_projection_coef: 2
@@ -134,7 +137,8 @@ detection:
           src_dst_projection_coef: 2
         decoder_hetero_head: node_mlp
         node_mlp:
-          architecture_str: relu | dropout | linear(0.5) | relu
+          architecture_str: none
+          # architecture_str: relu | dropout | linear(0.5) | relu
       reconstruct_node_features:
         loss: MSE # MSE_sum originally but too large loss
         decoder: nodlink

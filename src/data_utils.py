@@ -6,6 +6,7 @@ from collections import defaultdict
 
 import pickle
 import torch
+import torch.nn.functional as F
 from torch_geometric.data import Data, TemporalData
 from torch_geometric.data.temporal import prepare_idx
 from torch_geometric.loader import TemporalDataLoader
@@ -16,7 +17,7 @@ from torch_scatter import scatter
 
 from encoders import TGNEncoder
 from provnet_utils import log_dataset_stats, log_tqdm, get_multi_datasets
-from config import update_cfg_for_multi_dataset, get_rel2id, get_node_map
+from config import update_cfg_for_multi_dataset, get_rel2id, get_node_map, possible_events, get_num_edge_type
 from hetero import compute_hetero_features
 from tgn import LastNeighborLoader
 from debug_tests import debug_test_batching
@@ -99,10 +100,7 @@ def load_all_datasets(cfg, device, only_keep=None):
         val_data = val_data[:only_keep]
         test_data = test_data[:only_keep]
     
-    if "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods:
-        full_data = get_full_data([train_data, val_data, test_data])
-    else:
-        full_data = None
+    full_data = get_full_data([train_data, val_data, test_data])
 
     max_node = torch.cat([full_data.src, full_data.dst]).max().item() + 1
     print(f"Max node in {cfg.dataset.name}: {max_node}")
@@ -193,6 +191,8 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     else:
         selected_node_feats = list(map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(",")))
     
+    possible_triplets = get_possible_triplets(cfg)
+    
     for g in data_set:
         fields = {}
         idx = 0
@@ -240,12 +240,17 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
         
-        edge_feats = build_edge_feats(fields, msg, cfg)
+        edge_features = list(map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(",")))
+        num_edge_types = get_num_edge_type(cfg)
+        edge_feats = build_edge_feats(fields, msg, edge_features, possible_triplets, num_edge_types)
+        
+        edge_type = get_triplet_edge_types(fields["src_type"], fields["dst_type"], fields["edge_type"], possible_triplets, num_edge_types) \
+            if "edge_type_triplet" in edge_features else fields["edge_type"]
         
         g.x_src = x_src
         g.x_dst = x_dst
         g.edge_feats = edge_feats
-        g.edge_type = fields["edge_type"]
+        g.edge_type = edge_type
         g.node_type_src = fields["src_type"]
         g.node_type_dst = fields["dst_type"]
         
@@ -257,11 +262,26 @@ def extract_msg_from_data(data_set: list[CollatableTemporalData], cfg) -> list[C
     
     return data_set
 
-def build_edge_feats(fields, msg, cfg):
-    edge_features = list(map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(",")))
+def get_possible_triplets(cfg):
+    entity_map = get_node_map(from_zero=True)
+    event_map = get_rel2id(cfg, from_zero=True)
+    
+    possible_triplets = [[entity_map[src_type], entity_map[dst_type], event_map[event]] \
+        for (src_type, dst_type), events in possible_events.items() for event in events]
+    return torch.tensor(possible_triplets, dtype=torch.long)
+
+def get_triplet_edge_types(src_type, dst_type, edge_type, possible_triplets, num_edge_types):
+    triplets = torch.stack((src_type.max(dim=1).indices, dst_type.max(dim=1).indices, edge_type.max(dim=1).indices), dim=1)
+    matches = (triplets.unsqueeze(1) == possible_triplets.unsqueeze(0)).all(dim=2)
+    return F.one_hot(matches.long().argmax(dim=1), num_classes=num_edge_types).to(torch.float)
+
+def build_edge_feats(fields, msg, edge_features, possible_triplets, num_edge_types):
     edge_feats = []
     if "edge_type" in edge_features:
         edge_feats.append(fields["edge_type"])
+    if "edge_type_triplet" in edge_features:
+        triplets = get_triplet_edge_types(fields["src_type"], fields["dst_type"], fields["edge_type"], possible_triplets, num_edge_types)
+        edge_feats.append(triplets)
     if "msg" in edge_features:
         edge_feats.append(msg)
     edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
