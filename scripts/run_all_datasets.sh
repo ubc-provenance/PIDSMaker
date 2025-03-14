@@ -20,7 +20,7 @@ NOHUP_CMD=""
 
 for DATASET in "${DATASETS[@]}"; do
   if [ "$DATASET" != "${DATASETS[-1]}" ]; then
-    NOHUP_CMD+="./run_serial.sh $COMMAND $DATASET $ADDITIONAL_ARGS || "
+    NOHUP_CMD+="./run_serial.sh $COMMAND $DATASET $ADDITIONAL_ARGS ; "
   else
     NOHUP_CMD+="./run_serial.sh $COMMAND $DATASET $ADDITIONAL_ARGS"
   fi
