@@ -307,7 +307,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     for k, v in discrim_scores.items():
         stats[k] = round(v, 4)
         
-    attack2tps = get_detected_tps(pred_scores, nodes, node2attacks, y_truth, cfg)
+    attack2tps = get_detected_tps_node_level(pred_scores, nodes, node2attacks, y_truth, cfg)
     for attack, detected_tps in attack2tps.items():
         stats[f"tps_{attack}"] = str(detected_tps)
         

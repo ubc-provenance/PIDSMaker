@@ -735,6 +735,58 @@ def get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg):
     return dict(attack_to_detected_edges)
     
 
+def get_detected_tps_node_level(scores, nodes, node2attack, y_truth, cfg):
+    """
+    Maps each attack to nodes that are true positives based on scores.
+    
+    Args:
+        scores (np.ndarray or list): Confidence scores for each node.
+        nodes (list of tuples): List of nodes.
+        node2attack (dict): Dictionary mapping node indices to attack identifiers.
+        y_truth (np.ndarray or list): Ground truth labels (1 for true, 0 for false).
+    
+    Returns:
+        dict: Dictionary mapping attack identifiers to lists of detected true positive nodes (as tuples).
+    """
+    # Ensure inputs are numpy arrays for easier manipulation
+    scores = np.array(scores)
+    y_truth = np.array(y_truth)
+
+    # Create an array of indices to sort by scores
+    indices = np.argsort(scores)[::-1]  # Sort in descending order
+
+    # Sort scores, edges, and labels based on descending scores
+    sorted_scores = scores[indices]
+    sorted_nodes = [nodes[i] for i in indices]
+    sorted_labels = y_truth[indices]
+
+    # Find the cutoff k where no false positives (label 0) are included
+    k = 0
+    for i, label in enumerate(sorted_labels):
+        if label == 0:  # Stop at the first false positive
+            k = i
+            break
+        k = i + 1  # Include all true positives up to this point
+
+    # Select the top k nodes (true positives)
+    true_positive_nodes = sorted_nodes[:k]
+    true_positive_indices = indices[:k]
+
+    node_to_path = get_node_to_path_and_type(cfg)
+
+    get_label = lambda data: f'{data.get("path")}-{data.get("cmd")}'.replace("None-", "") if data["type"] == "subject" else data.get("path")
+
+    # Map true positive nodes to their attacks
+    attack_to_detected_nodes = defaultdict(list)
+    for node in true_positive_nodes:
+        attack = list(node2attack.get(node))[0]
+        if attack is not None:  # Only include nodes with a valid attack mapping
+            node_msg = get_label(node_to_path[int(node)]) + str(node)
+            attack_to_detected_nodes[attack].append(node_msg)
+
+    return dict(attack_to_detected_nodes)
+    
+
 def get_ground_truth_nids(cfg):
     # ground_truth_nids, ground_truth_paths = [], {}
     # for file in cfg.dataset.ground_truth_relative_path:
