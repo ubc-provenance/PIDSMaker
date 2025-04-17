@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres15
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+    ports:
+      - "8888:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-create-databases.sh:/docker-entrypoint-initdb.d/init-create-databases.sh # executed when container created
+      - ./settings/scripts:/scripts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pids:
+    build: ./image
+    container_name: pids
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=8888
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    volumes:
+      - ./:/home
+      - /path/of/data/folder:/data # should replace /path/of/data/folder as path to the data folder
+      # - ./artifacts:/home/artifacts # modify ./artifacts to the path where output files should be stored
+    entrypoint: bash
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  postgres_data:
