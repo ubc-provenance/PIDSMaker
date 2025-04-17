@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-create-empty-databases.sh:/docker-entrypoint-initdb.d/init-create-empty-databases.sh # executed when container created
       - ./settings/scripts:/scripts
-      - /data1/tbilot:/data # should replace /path/of/data/folder as path to the data folder
+      - ${INPUT_DIR}:/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -31,7 +31,7 @@ services:
       - DB_PASSWORD=postgres
     volumes:
       - ./:/home
-      - ./artifacts:/home/artifacts # modify ./artifacts to the path where output files should be stored
+      - ${ARTIFACTS_DIR}:/home/artifacts
     entrypoint: bash
     stdin_open: true
     tty: true
