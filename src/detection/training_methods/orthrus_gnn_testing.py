@@ -7,9 +7,9 @@ from config import *
 from model import *
 from factory import *
 import torch
-import cudf
+# import cudf # TODO: find an alternative as too heavy
 import tracemalloc
-from cuml.neighbors import NearestNeighbors
+# from cuml.neighbors import NearestNeighbors  # TODO: find an alternative as too heavy
 
 
 @torch.no_grad()
