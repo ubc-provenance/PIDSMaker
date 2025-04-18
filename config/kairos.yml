@@ -23,6 +23,25 @@ featurization:
     to_remove: True
 
 detection:
+  graph_preprocessing:
+    node_features: node_emb,node_type
+    edge_features: msg,time_encoding
+    fix_buggy_graph_reindexer: False
+    global_batching:
+      used_method: none
+    intra_graph_batching:
+      used_methods: edges, tgn_last_neighbor
+      edges:
+        intra_graph_batch_size: 1024
+      tgn_last_neighbor:
+        tgn_neighbor_size: 20
+        tgn_neighbor_n_hop: 1
+        fix_buggy_orthrus_TGN: False
+        fix_tgn_neighbor_loader: False
+        directed: False
+        insert_neighbors_before: False
+    inter_graph_batching:
+      used_method: none
   gnn_training:
     used_method: orthrus
     use_seed: True
@@ -33,37 +52,26 @@ detection:
     node_hid_dim: 100
     node_out_dim: 100
     grad_accumulation: 1
-    fix_buggy_graph_reindexer: False
     encoder:
-      node_features: node_emb,node_type
-      neighbor_sampling: []
-      edge_features: msg,time_encoding
       dropout: 0.0
       used_methods: graph_attention,tgn
       graph_attention:
         activation: relu
         num_heads: 4
         concat: True
+        flow: source_to_target
       tgn:
-        tgn_batch_size: 1024
-        tgn_batch_size_inference: 1024
         tgn_memory_dim: 100
         tgn_time_dim: 100
-        tgn_neighbor_size: 20
-        tgn_neighbor_n_hop: 1
         use_node_feats_in_gnn: False
         use_memory: True
         use_time_order_encoding: False
-        fix_buggy_orthrus_TGN: False
-        fix_tgn_neighbor_loader: False
         project_src_dst: True
-        directed: False
-        insert_neighbors_before: False
-        use_last_neighbor_loader: True
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
         balanced_loss: False
+        use_triplet_types: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.25) | tanh | linear(0.25) | dropout(0.5) | tanh

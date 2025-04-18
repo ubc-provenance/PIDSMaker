@@ -18,6 +18,7 @@ from featurization import (
     embed_nodes,
 )
 from detection import (
+    graph_preprocessing,
     gnn_training,
     evaluation,
 )
@@ -50,6 +51,10 @@ def get_task_to_module(cfg):
         "embed_edges": {
             "module": embed_edges,
             "task_path": cfg.featurization.embed_edges._task_path,
+        },
+        "graph_preprocessing": {
+            "module": graph_preprocessing,
+            "task_path": cfg.detection.graph_preprocessing._task_path,
         },
         "gnn_training": {
             "module": gnn_training,

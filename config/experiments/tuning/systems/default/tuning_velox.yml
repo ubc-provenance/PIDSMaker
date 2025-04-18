@@ -18,6 +18,6 @@ parameters:
     values: [feature_word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_edge_type]
-  detection.gnn_training.encoder.node_features:
+  detection.graph_preprocessing.node_features:
     values: [node_emb-node_type]
   

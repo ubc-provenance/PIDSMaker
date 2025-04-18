@@ -82,6 +82,7 @@ detection:
         activation: relu
         num_heads: 8
         concat: True
+        flow: source_to_target
       tgn:
         tgn_batch_size: 1024
         tgn_batch_size_inference: 1024
@@ -97,7 +98,6 @@ detection:
         project_src_dst: True
         directed: False
         insert_neighbors_before: False
-        use_last_neighbor_loader: True
       sage:
         activation: relu
     decoder:
@@ -113,6 +113,7 @@ detection:
         decoder: none
       predict_edge_type:
         balanced_loss: False
+        use_triplet_types: False
         decoder: edge_mlp
         edge_mlp:
           architecture_str: linear(0.5)

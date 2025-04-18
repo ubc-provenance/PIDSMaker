@@ -14,7 +14,7 @@ parameters:
     values: [20]
   featurization.embed_nodes.used_method:
     values: [only_type, feature_word2vec]
-  detection.gnn_training.encoder.tgn.fix_buggy_orthrus_TGN:
+  detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN:
     values: [True]
   detection.gnn_training.encoder.tgn.tgn_memory_dim:
     values: [-1]
@@ -22,7 +22,7 @@ parameters:
     values: [-1]
   detection.gnn_training.encoder.used_methods:
     values: [tgn-graph_attention, entity_type_encoding-tgn-graph_attention]
-  detection.gnn_training.fix_buggy_graph_reindexer:
+  detection.graph_preprocessing.fix_buggy_graph_reindexer:
     values: [True]
 
   detection.gnn_training.decoder.predict_edge_type_hetero.node_mlp.architecture_str:

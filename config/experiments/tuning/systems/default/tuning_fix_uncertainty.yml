@@ -12,13 +12,13 @@ parameters:
     values: [2, 1]
   detection.gnn_training.num_epochs:
     values: [16]
-  detection.gnn_training.batch_mode:
+  detection.graph_preprocessing.batch_mode:
     values: [edges]
   detection.gnn_training.lr:
     values: [0.001, 0.0001]
   detection.gnn_training.node_out_dim:
     values: [128, 256]
-  detection.gnn_training.edge_batch_size:
+  detection.graph_preprocessing.edge_batch_size:
     values: [512.0, 1024.0]
   # featurization.embed_nodes.emb_dim:
   #   values: [128, 64]
@@ -27,6 +27,6 @@ parameters:
     values: [feature_word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_edge_type]
-  detection.gnn_training.encoder.node_features:
+  detection.graph_preprocessing.node_features:
     values: [node_emb-node_type]
   

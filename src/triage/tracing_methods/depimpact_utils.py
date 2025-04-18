@@ -58,7 +58,8 @@ class DEPIMPACT():
 
         subgraph_nodes = set()
 
-        if self.dag.in_degree(backward_poi) > 0:
+        in_deg = self.dag.in_degree(backward_poi)
+        if isinstance(in_deg, int) and in_deg > 0:
             if self.used_method == "shortest_path":
                 entry2path = dag_backward_tracing_shortest_path(backward_poi, self.dag)
             elif self.used_method == "component":
@@ -100,7 +101,8 @@ class DEPIMPACT():
         else:
             print(f"POI {backward_poi} is an entry node, skip backward tracing.")
 
-        if self.dag.out_degree(forward_poi) > 0:
+        out_deg = self.dag.out_degree(forward_poi)
+        if isinstance(out_deg, int) and out_deg > 0:
             if self.used_method == "shortest_path":
                 exit2path = dag_forward_tracing_shortest_path(forward_poi, self.dag)
             elif self.used_method == "component":
@@ -482,5 +484,3 @@ def visualize_dependency_graph(dependency_graph,
     plt.close(fig)
 
     log(f"Figure saved to {svg}")
-
-

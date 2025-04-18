@@ -1,10 +1,9 @@
 import torch
 import torch.nn as nn
-from torch_geometric.loader import NeighborLoader
 
 from provnet_utils import *
 from config import *
-from config import possible_events, ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events
+from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events, get_num_edge_type
 from model import *
 from losses import *
 from encoders import *
@@ -25,13 +24,13 @@ def build_model(data_sample, device, cfg, max_node_num):
     graph_reindexer = GraphReindexer(
         num_nodes=max_node_num,
         device=device,
-        fix_buggy_graph_reindexer=cfg.detection.gnn_training.fix_buggy_graph_reindexer,
+        fix_buggy_graph_reindexer=cfg.detection.graph_preprocessing.fix_buggy_graph_reindexer,
     )
     
-    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, graph_reindexer=graph_reindexer, device=device, max_node_num=max_node_num)
+    encoder = encoder_factory(cfg, msg_dim=msg_dim, in_dim=in_dim, edge_dim=edge_dim, device=device, max_node_num=max_node_num)
     decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
     decoder_few_shot = few_shot_decoder_factory(cfg, device=device, graph_reindexer=graph_reindexer)
-    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device, max_node_num=max_node_num)
+    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device)
     
     if cfg._is_running_mc_dropout:
         dropout = cfg.experiment.uncertainty.mc_dropout.dropout
@@ -39,7 +38,7 @@ def build_model(data_sample, device, cfg, max_node_num):
     
     return model
 
-def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num):
+def model_factory(encoder, decoders, decoder_few_shot, cfg, device):
     return Model(
         encoder=encoder,
         decoders=decoders,
@@ -50,21 +49,25 @@ def model_factory(encoder, decoders, decoder_few_shot, cfg, device, max_node_num
         freeze_encoder=cfg.detection.gnn_training.decoder.few_shot.freeze_encoder,
     ).to(device)
 
-def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max_node_num):
+def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     use_ancestor_encoding = "ancestor_encoding" in cfg.detection.gnn_training.encoder.used_methods
     use_entity_type_encoding = "entity_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
+    use_event_type_encoding = "event_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
     dropout = cfg.detection.gnn_training.encoder.dropout
+    
+    node_map = get_node_map(from_zero=True)
+    edge_map = get_rel2id(cfg, from_zero=True)
     
     # If edge features are used, we set them here
     edge_dim = 0
-    edge_features = list(map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.edge_features.split(",")))
+    edge_features = list(map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(",")))
     for edge_feat in edge_features:
-        if edge_feat == "edge_type":
-            edge_dim += cfg.dataset.num_edge_types
+        if edge_feat in ["edge_type", "edge_type_triplet"]:
+            edge_dim += get_num_edge_type(cfg)
         elif edge_feat == "msg":
             edge_dim += msg_dim
         elif edge_feat == "time_encoding":
@@ -79,9 +82,13 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     original_in_dim = in_dim
     if use_tgn:
         in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
+        
+    original_edge_dim = edge_dim
+    if use_event_type_encoding:
+        edge_dim = in_dim
 
     for method in map(lambda x: x.strip(), cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(",")):
-        if method in ["tgn", "ancestor_encoding", "entity_type_encoding"]:
+        if method in ["tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]:
             pass
         elif method == "graph_attention":
             encoder = GraphAttentionEmbedding(
@@ -93,13 +100,12 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
                 dropout=cfg.detection.gnn_training.encoder.dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
                 concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
+                flow=cfg.detection.gnn_training.encoder.graph_attention.flow,
             )
         elif method == "hetero_graph_transformer":
             if cfg.dataset.name in OPTC_DATASETS:
                 raise NotImplementedError(f"Hetero OPTC not implemented (need to compute possible_events)")
-            if not (cfg.detection.gnn_training.encoder.tgn.fix_tgn_neighbor_loader and cfg.detection.gnn_training.encoder.tgn.directed):
-                raise ValueError(f"Need fix_tgn_neighbor_loader and directed for hetero encoding")
-            
+
             node_map = get_node_map(from_zero=True)
             metadata = get_metadata(possible_events, node_map)
             
@@ -193,6 +199,17 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
             encoder=encoder,
             activation=True,
         )
+        
+    if use_event_type_encoding:
+        encoder = EventLinearEncoder(
+            in_dim=original_edge_dim,
+            out_dim=in_dim,
+            possible_events=possible_events,
+            node_map=node_map,
+            edge_map=edge_map,
+            encoder=encoder,
+            activation=True,
+        )
     
     if use_ancestor_encoding:
         encoder = AncestorEncoder(
@@ -207,19 +224,12 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
     if use_tgn:
         tgn_cfg = cfg.detection.gnn_training.encoder.tgn
         time_dim = tgn_cfg.tgn_time_dim
-        neighbor_size = tgn_cfg.tgn_neighbor_size
         use_node_feats_in_gnn = tgn_cfg.use_node_feats_in_gnn
         use_memory = tgn_cfg.use_memory
         use_time_order_encoding = tgn_cfg.use_time_order_encoding
-        tgn_neighbor_n_hop = tgn_cfg.tgn_neighbor_n_hop
-        fix_buggy_orthrus_TGN = tgn_cfg.fix_buggy_orthrus_TGN
         project_src_dst = tgn_cfg.project_src_dst
-        directed = tgn_cfg.directed
-        insert_neighbors_before = tgn_cfg.insert_neighbors_before
-        use_last_neighbor_loader = tgn_cfg.use_last_neighbor_loader
-        fix_tgn_neighbor_loader = tgn_cfg.fix_tgn_neighbor_loader
         
-        use_time_enc = "time_encoding" in cfg.detection.gnn_training.encoder.edge_features
+        use_time_enc = "time_encoding" in cfg.detection.graph_preprocessing.edge_features
 
         if use_memory:
             memory = TGNMemory(
@@ -240,37 +250,23 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, graph_reindexer, device, max
         else:
             memory = None
 
-        neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, directed=directed, device=device)
-        
-        node_map = get_node_map(from_zero=True)
-        edge_map = get_rel2id(cfg, from_zero=True)
-
         encoder = TGNEncoder(
             encoder=encoder,
             memory=memory,
-            neighbor_loader=neighbor_loader,
             time_encoder=memory.time_enc if memory else None,
             in_dim=original_in_dim,
             memory_dim=tgn_memory_dim,
             use_node_feats_in_gnn=use_node_feats_in_gnn,
-            graph_reindexer=graph_reindexer,
             edge_features=edge_features,
             device=device,
             use_memory=use_memory,
-            num_nodes=max_node_num,
             use_time_enc=use_time_enc,
             edge_dim=edge_dim,
-            node_type_dim = cfg.dataset.num_node_types,
             use_time_order_encoding=use_time_order_encoding,
-            tgn_neighbor_n_hop=tgn_neighbor_n_hop,
-            fix_buggy_orthrus_TGN=fix_buggy_orthrus_TGN,
             project_src_dst=project_src_dst,
-            insert_neighbors_before=insert_neighbors_before,
-            use_last_neighbor_loader=use_last_neighbor_loader,
             is_hetero=cfg._is_hetero,
             node_map=node_map,
             edge_map=edge_map,
-            fix_tgn_neighbor_loader=fix_tgn_neighbor_loader,
         )
 
     return encoder
@@ -328,6 +324,9 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
     if objective_cfg is None:
         objective_cfg = cfg.detection.gnn_training.decoder
     node_out_dim = cfg.detection.gnn_training.node_out_dim
+    
+    entity_map = get_node_map(from_zero=True)
+    event_map = get_rel2id(cfg, from_zero=True)
 
     objectives = []
     for objective in map(lambda x: x.strip(), objective_cfg.used_methods.split(",")):
@@ -360,13 +359,15 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             loss_fn = categorical_loss_fn_factory("cross_entropy")
             balanced_loss = objective_cfg.predict_edge_type.balanced_loss
             
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=cfg.dataset.num_edge_types)
+            num_edge_types = get_num_edge_type(cfg)
+            
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=num_edge_types)
             objectives.append(
                 EdgeTypePrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
                     balanced_loss=balanced_loss,
-                    edge_type_dim=cfg.dataset.num_edge_types,
+                    edge_type_dim=num_edge_types,
                 ))
             
         elif objective == "predict_edge_type_hetero":
@@ -374,9 +375,6 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
             
             decoder_hetero_head_method = getattr(getattr(objective_cfg, objective.strip()), "decoder_hetero_head")
-            
-            entity_map = get_node_map(from_zero=True)
-            event_map = get_rel2id(cfg, from_zero=True)
             
             edge_type_predictors = nn.ModuleDict()
         
@@ -392,7 +390,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 ntype2edgemap[(src_idx, dst_idx)] = reindexed_events
                 
                 layer_name = f"{src_idx}_{dst_idx}"
-                num_events = len(events)  # Output dimension is the number of possible events
+                num_events = torch.unique(events).numel()
                 
                 decoder_hetero_head = decoder_factory(decoder_hetero_head_method, objective, cfg, in_dim=node_out_dim, out_dim=num_events)
                 edge_type_predictors[layer_name] = decoder_hetero_head
@@ -454,35 +452,27 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 )
             )
         
-        # elif objective == "predict_edge_contrastive":
-        #     predict_edge_method = objective_cfg.predict_edge_contrastive.used_method.strip()
-        #     if predict_edge_method == "linear":
-        #         edge_decoder = EdgeLinearDecoder(
-        #             in_dim=node_out_dim,
-        #             dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
-        #         )
-        #     elif predict_edge_method == "inner_product":
-        #         edge_decoder = EdgeInnerProductDecoder(
-        #             dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
-        #         )
-        #     else:
-        #         raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
+        elif objective == "predict_edge_contrastive":
+            predict_edge_method = objective_cfg.predict_edge_contrastive.decoder.strip()
+            if predict_edge_method == "linear":
+                edge_decoder = EdgeLinearDecoder(
+                    in_dim=node_out_dim,
+                    dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
+                )
+            elif predict_edge_method == "inner_product":
+                edge_decoder = EdgeInnerProductDecoder(
+                    dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
+                )
+            else:
+                raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
             
-        #     contrastive_graph_reindexer = GraphReindexer(
-        #         num_nodes=max_node_num,
-        #         device=device,
-        #     )
-        #     loss_fn = bce_contrastive
-        #     neg_sampling_method = objective_cfg.predict_edge_contrastive.neg_sampling_method.strip()
-        #     if neg_sampling_method not in ["nodes_in_current_batch", "previously_seen_nodes"]:
-        #         raise ValueError(f"Invalid negative sampling method {neg_sampling_method}")
+            loss_fn = bce_contrastive
             
-        #     objectives.append(EdgeContrastiveDecoder(
-        #         decoder=edge_decoder,
-        #         loss_fn=loss_fn,
-        #         graph_reindexer=contrastive_graph_reindexer,
-        #         neg_sampling_method=neg_sampling_method,
-        #     ))
+            objectives.append(EdgeContrastiveDecoder(
+                decoder=edge_decoder,
+                loss_fn=loss_fn,
+                graph_reindexer=graph_reindexer,
+            ))
         
         else:
             raise ValueError(f"Invalid objective {objective}")
@@ -520,40 +510,6 @@ def edge_decoder_factory(edge_decoder, in_dim):
         return None
 
     raise ValueError(f"Invalid edge decoder {edge_decoder}")
-
-def batch_loader_factory(cfg, data, test_mode=False):
-    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
-    neigh_sampling = cfg.detection.gnn_training.encoder.neighbor_sampling
-    
-    try:
-        if len(neigh_sampling) > 0 and isinstance(neigh_sampling[0], str):
-            neigh_sampling = eval("".join(neigh_sampling))
-        use_neigh_sampling = all([isinstance(num_hop, int) for num_hop in neigh_sampling])
-        error = False
-    except:
-        error = True
-    if error or not use_neigh_sampling:
-        raise ValueError(f"Invalid neighbor sampling {neigh_sampling}. Expected 'None' or a list of integers.")
-    
-    # Use neigh sampling batch loader
-    if use_neigh_sampling and len(neigh_sampling) > 0 and not all([n == -1 for n in neigh_sampling]):
-        if use_tgn:
-            raise ValueError(f"Cannot use both TGN and traditional neighbor sampling.")
-
-        data = temporal_data_to_data(data)
-        return NeighborLoader(
-            data,
-            num_neighbors=neigh_sampling,
-            batch_size=10_000_000, # no need for batching as a time window is already small
-            shuffle=False,
-        )
-    # Use TGN batch loader
-    tgn_batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size
-    if use_tgn and tgn_batch_size != -1:
-        batch_size = cfg.detection.gnn_training.encoder.tgn.tgn_batch_size_inference if test_mode else tgn_batch_size
-        return custom_temporal_data_loader(data, batch_size=batch_size)
-    
-    return [data]
 
 def recon_loss_fn_factory(loss: str):
     if loss == "SCE":

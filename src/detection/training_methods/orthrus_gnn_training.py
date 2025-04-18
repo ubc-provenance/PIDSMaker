@@ -8,47 +8,7 @@ from data_utils import *
 from factory import *
 from . import orthrus_gnn_testing
 from provnet_utils import set_seed
-
-
-def train(
-    data,
-    full_data,
-    model,
-    optimizer,
-    cfg,
-):
-    model.train()
-
-    losses = []
-    batch_loader = batch_loader_factory(cfg, data)
-
-    grad_acc = cfg.detection.gnn_training.grad_accumulation
-    loss_acc = None
-    
-    for i, batch in enumerate(batch_loader):
-        optimizer.zero_grad()
-
-        results = model(batch, full_data)
-        loss = results["loss"]
-
-        if loss_acc is None:
-            loss_acc = loss
-        else:
-            loss_acc += loss
-        
-        if (i+1) % grad_acc == 0:
-            loss_acc.backward()
-            optimizer.step()
-            loss_acc = None
-        
-        losses.append(loss.item())
-    
-    # Last batch
-    if loss_acc is not None:
-        loss_acc.backward()
-        optimizer.step()
-    
-    return np.mean(losses)
+from detection.graph_preprocessing import get_preprocessed_graphs
 
 
 def main(cfg):
@@ -63,7 +23,7 @@ def main(cfg):
         torch.cuda.reset_peak_memory_stats(device=device)
     tracemalloc.start()
 
-    train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg, device)
+    train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
 
     model = build_model(data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num)
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
@@ -83,6 +43,7 @@ def main(cfg):
     all_test_stats = []
     global_best_val_score = float("-inf")
     use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
+    grad_acc = cfg.detection.gnn_training.grad_accumulation
     
     if use_few_shot:
         num_epochs += 1 # in few-shot, the first epoch is without ssl training
@@ -96,26 +57,35 @@ def main(cfg):
 
             # Before each epoch, we reset the memory
             model.reset_state()
-                
             model.to_fine_tuning(False)
-
+            
+            loss_acc = torch.zeros(1, device=device)
             tot_loss = 0
             for dataset in train_data:
-                for g in log_tqdm(dataset, f"Training"):
+                for i, g in enumerate(log_tqdm(dataset, f"Training")):
                     g.to(device=device)
                     g = remove_attacks_if_needed(g, cfg)
-                    loss = train(
-                        data=g,
-                        full_data=full_data,  # full list of edge messages (do not store on GPU)
-                        model=model,
-                        optimizer=optimizer,
-                        cfg=cfg,
-                    )
+                    model.train()
+                    optimizer.zero_grad()
+
+                    results = model(g)
+                    loss = results["loss"]
+                    loss_acc += loss
+                    tot_loss += loss.item()
+                    
+                    if (i+1) % grad_acc == 0:
+                        loss_acc.backward()
+                        optimizer.step()
+                        loss_acc = torch.zeros(1, device=device)
+                    
                     g.to("cpu")
                     if use_cuda:
                         torch.cuda.empty_cache()
-                    
-                    tot_loss += loss
+                
+                # Last batch
+                if loss_acc > 0:
+                    loss_acc.backward()
+                    optimizer.step()
 
             tot_loss /= sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)
@@ -142,23 +112,34 @@ def main(cfg):
             for tuning_epoch in range(0, num_epochs_few_shot):
                 model.reset_state()
                     
+                loss_acc = torch.zeros(1, device=device)
                 tot_loss = 0
                 for dataset in train_data:
                     for g in log_tqdm(dataset, "Fine-tuning"):
                         if 1 in g.y:
                             g.to(device=device)
-                            loss = train(
-                                data=g,
-                                full_data=full_data,  # full list of edge messages (do not store on CPU)
-                                model=model,
-                                optimizer=optimizer,
-                                cfg=cfg,
-                            )
+                            model.train()
+                            optimizer.zero_grad()
+
+                            results = model(g)
+                            loss = results["loss"]
+                            loss_acc += loss
+                            tot_loss += loss.item()
+                            
+                            if (i+1) % grad_acc == 0:
+                                loss_acc.backward()
+                                optimizer.step()
+                                loss_acc = torch.zeros(1, device=device)
+                            
                             g.to("cpu")
                             if use_cuda:
                                 torch.cuda.empty_cache()
-                            
-                            tot_loss += loss
+                        
+                    # Last batch
+                    if loss_acc > 0:
+                        loss_acc.backward()
+                        optimizer.step()
+                
                 tot_loss /= sum(len(dataset) for dataset in train_data)
                 
                 # Validation
@@ -167,7 +148,6 @@ def main(cfg):
                     model=model,
                     val_data=val_data,
                     test_data=test_data,
-                    full_data=full_data,
                     epoch=epoch,
                     split="val",
                     logging=False,
@@ -205,7 +185,6 @@ def main(cfg):
                 model=model,
                 val_data=val_data,
                 test_data=test_data,
-                full_data=full_data,
                 epoch=epoch,
                 split="all",
             )
@@ -228,7 +207,6 @@ def main(cfg):
             model=model,
             val_data=val_data,
             test_data=test_data,
-            full_data=full_data,
             epoch=best_epoch,
             split="test",
         )
