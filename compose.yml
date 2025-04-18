@@ -6,7 +6,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
     ports:
-      - "8888:5432"
+      - "${DOCKER_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-create-empty-databases.sh:/docker-entrypoint-initdb.d/init-create-empty-databases.sh # executed when container created
@@ -26,7 +26,7 @@ services:
         condition: service_healthy
     environment:
       - DB_HOST=postgres
-      - DB_PORT=8888
+      - DOCKER_PORT=${DOCKER_PORT}
       - DB_USER=postgres
       - DB_PASSWORD=postgres
     volumes:
