@@ -40,7 +40,7 @@ Alternatively, here are the [guidelines](settings/create-db-from-scratch.md) to 
 
 ## Docker Install
 
-1. If not installed, install Docker following the [steps from the official site](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
+1. If not installed, install Docker following the [steps from the official site](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) and [avoid using sudo](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 
 2. Then, install dependencies for CUDA support with Docker:
 
@@ -72,11 +72,11 @@ We create two containers: one that runs the postgres database, the other runs th
 
 2. Build  and start the container up:
     ```
-    sudo docker compose up -d --build
+    docker compose up -d --build
     ```
 3. In a terminal, get a shell into the `experiment container`, where the python env is installed and where experiments will be conducted:
     ```
-    sudo docker compose exec postgres bash
+    docker compose exec postgres bash
     ```
 4. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
     ```
@@ -91,13 +91,16 @@ We create two containers: one that runs the postgres database, the other runs th
     exit
     ```
 
-## Get into the pipeline container
+## Get into the PIDSMaker container
 
-All experiments are conducted in this container. You just have to open a shell and play with it!
+It is within the `pids` container that coding and experiments take place.
 
-```
-sudo docker compose exec pids bash
-```
+1. For VSCode users, we recommend using the [dev container](https://code.visualstudio.com/docs/devcontainers/create-dev-container) extension to directly open VSCode in the container. To do so, simply install the extension, then ctrl+shift+P and <i>Dev Containers: Open Folder in Container</i>.
+
+2. The other alternative is to open a shell directly in your terminal.
+    ```
+    docker compose exec pids bash
+    ```
 
 ## Weights & Biases interface
 

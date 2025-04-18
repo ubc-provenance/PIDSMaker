@@ -1,0 +1,20 @@
+{
+  "name": "PIDSMaker Dev Container",
+  "dockerComposeFile": ["../compose.yml"],
+  "service": "pids",
+  "workspaceFolder": "/home",
+  "forwardPorts": ["${env:DOCKER_PORT}"],
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode-remote.remote-containers",
+        "nvidia.nsight-vscode-edition" // For CUDA/GPU debugging
+      ]
+    }
+  },
+  "mounts": [],
+  // Keep containers running after VS Code closes
+  "shutdownAction": "none"
+}
