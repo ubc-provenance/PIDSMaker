@@ -422,7 +422,7 @@ def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
     if not use_unique_edge_types:
         log_dataset_stats(datasets)
         # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-        use_tgn = "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods
+        use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
         reindex_graphs(datasets, graph_reindexer, device, use_tgn)
     
     use_tgn_loader = "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods

@@ -73,7 +73,7 @@ def get_task_to_module(cfg):
 def clean_cfg_for_log(cfg):
     return remove_underscore_keys(dict(cfg), keys_to_keep=["_task_path", "_exp", "_tuning_file_path"])
 
-def main(cfg, project, exp, sweep_id, **kwargs):
+def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
     should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
     
