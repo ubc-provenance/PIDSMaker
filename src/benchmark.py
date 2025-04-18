@@ -224,22 +224,9 @@ if __name__ == '__main__':
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     
     exp_name = args.exp.replace("dataset", args.dataset) if args.exp != "" else f"{args.dataset}_{args.model}"
-        # "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
     tags = args.tags.split(",") if args.tags != "" else [args.model]
-    
-    PROJECT_PREFIX = "framework_"
-    if args.project != "":
-        project = args.project
-    elif args.tuning_mode == "hyperparameters":
-        project = f"tuning_{args.model}"
-    elif args.experiment == "uncertainty":
-        project = "uncertainty"
-    elif args.experiment == "run_n_times":
-        project = f"component_ablation_study_{args.model}"
-    else:
-        project = "project_name"
-        
-    project = PROJECT_PREFIX + project
+            
+    project = "velox_paper" # can be modified
     
     wandb.init(
         mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",

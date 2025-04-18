@@ -208,7 +208,6 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                     src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id)
                     events_list.append(event_tuple)
 
-            log(f"{len(mimicry_events)} mimicry events inserted")
             for (src_node, src_index_id, operation, dst_node, dst_index_id, event_uuid, timestamp_rec, _id) in mimicry_events:
                 if operation in include_edge_type:
                     event_tuple = (
