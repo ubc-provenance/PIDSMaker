@@ -4,9 +4,9 @@ from config import *
 from model import *
 from factory import *
 import torch
-import cudf
+# import cudf
 import tracemalloc
-from cuml.neighbors import NearestNeighbors
+# from cuml.neighbors import NearestNeighbors
 
 
 @torch.no_grad()
