@@ -1,3 +1,5 @@
+_include_yml: default
+
 preprocessing:
   build_graphs:
     used_method: orthrus
@@ -13,44 +15,14 @@ preprocessing:
     multi_dataset: none
   transformation:
     used_methods: none
-    synthetic_attack_naive:
-      num_attacks: 1
-      num_malicious_process: 5
-      num_unauthorized_file_access: 20
-      process_selection_method: random # TODO: try new methods
 
 featurization:
   embed_nodes:
     emb_dim: 128
     epochs: 50
     training_split: all
-    used_method: feature_word2vec
     use_seed: True
-    temporal_rw:
-      walk_length: 30
-      num_walks: 10
-      trw_workers: 8
-      time_weight: uniform
-      half_life: 1
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      wv_workers: 6
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
-    doc2vec:
-      include_neighbors: False
-      alpha: 0.025
-    word2vec:
-      walk_length: 30
-      num_walks: 10
-      context_window_size: 5
-      min_count: 0
-      use_skip_gram: True
-      num_workers: 1
-      compute_loss: True
-      add_paths: False
+    used_method: feature_word2vec
     feature_word2vec:
       alpha: 0.025
       window_size: 5
@@ -60,13 +32,6 @@ featurization:
       compute_loss: True
       negative: 5
       decline_rate: 30
-    fasttext:
-      min_count: 2
-      alpha: 0.01
-      window_size: 3
-      negative: 3
-      num_workers: 15
-      use_pretrained_fb_model: False
   embed_edges:
     to_remove: True
 
@@ -108,10 +73,6 @@ detection:
         num_heads: 8
         concat: True
         flow: source_to_target
-      hetero_graph_transformer:
-        activation: relu
-        num_heads: 4
-        num_layers: 1
       tgn:
         tgn_memory_dim: 100
         tgn_time_dim: 100
@@ -119,8 +80,6 @@ detection:
         use_memory: False
         use_time_order_encoding: False
         project_src_dst: True
-      sage:
-        activation: relu
     decoder:
       used_methods: predict_edge_type
       predict_edge_type:
@@ -129,42 +88,8 @@ detection:
         edge_mlp:
           architecture_str: linear(0.5) | relu
           src_dst_projection_coef: 2
-      predict_edge_type_hetero:
-        balanced_loss: False
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: relu
-          src_dst_projection_coef: 2
-        decoder_hetero_head: node_mlp
-        node_mlp:
-          architecture_str: none
-          # architecture_str: relu | dropout | linear(0.5) | relu
-      reconstruct_node_features:
-        loss: MSE # MSE_sum originally but too large loss
-        decoder: nodlink
-      reconstruct_node_embeddings:
-        loss: MSE
-        decoder: node_mlp
-        node_mlp:
-          architecture_str: linear(0.5) | relu | linear(0.5) | linear(2) | relu
       
       use_few_shot: False
-      few_shot:
-        include_attacks_in_ssl_training: False
-        freeze_encoder: True
-        num_epochs_few_shot: 50
-        patience_few_shot: 5
-        lr_few_shot: 0.001
-        weight_decay_few_shot: 0.00001
-        decoder:
-          used_methods: detect_edge_few_shot
-          detect_edge_few_shot:
-            decoder: edge_mlp # node_mlp
-            node_mlp:
-              architecture_str: linear(1.0) | relu
-            edge_mlp:
-              architecture_str: linear(0.5) | relu
-              src_dst_projection_coef: 1
 
   evaluation:
     viz_malicious_nodes: False
@@ -176,19 +101,6 @@ detection:
       use_dst_node_loss: True
       use_kmeans: True
       kmeans_top_K: 30
-    node_tw_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 3
-    queue_evaluation:
-      queue_threshold: 20
-      used_method: kairos_idf_queue
-      kairos_idf_queue:
-        include_test_set_in_IDF: True
-    edge_evaluation:
-      malicious_edge_selection: src_node
-      threshold_method: max_val_loss
 
 # triage :
 #   tracing:

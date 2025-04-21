@@ -65,6 +65,8 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
 def get_indexid2vec(cfg):
     method = cfg.featurization.embed_nodes.used_method.strip()
+    if method in ["only_type", "only_ones"]:
+        return None
     if method == "word2vec":
         return embed_edges_word2vec.main(cfg)
     if method == "doc2vec":
@@ -73,16 +75,12 @@ def get_indexid2vec(cfg):
         return embed_edges_HFH.main(cfg)
     if method == "feature_word2vec":
         return embed_edges_feature_word2vec.main(cfg)
-    if method in ["only_type", "only_ones"]:
-        return None
     if method == "temporal_rw":
         return embed_edges_TRW.main(cfg)
     if method == 'flash':
         return embed_edges_flash.main(cfg)
     if method == 'fasttext':
         return embed_edges_fasttext.main(cfg)
-    if method == 'magic':
-        raise EnvironmentError("TODO (see with Baoxiang)")
     
     raise ValueError(f"Invalid node embedding method {method}")
 

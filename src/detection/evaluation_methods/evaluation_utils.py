@@ -580,6 +580,8 @@ def plot_discrimination_metric(scores, y_truth, out_file):
 
     # Define the top K value
     K = len(anomalous_scores)
+    if K == 0:
+        return 0.0
 
     # Get top K scores for anomalies and benign samples
     top_anomalous_scores = np.sort(anomalous_scores)[-K:][::-1]

@@ -57,7 +57,6 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     use_ancestor_encoding = "ancestor_encoding" in cfg.detection.gnn_training.encoder.used_methods
     use_entity_type_encoding = "entity_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
     use_event_type_encoding = "event_type_encoding" in cfg.detection.gnn_training.encoder.used_methods
-    dropout = cfg.detection.gnn_training.encoder.dropout
     
     node_map = get_node_map(from_zero=True)
     edge_map = get_rel2id(cfg, from_zero=True)
@@ -157,12 +156,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
             n_layers = cfg.detection.gnn_training.encoder.magic_gat.num_layers
             n_heads = cfg.detection.gnn_training.encoder.magic_gat.num_heads
             negative_slope = cfg.detection.gnn_training.encoder.magic_gat.negative_slope
-            hid_dim = cfg.detection.gnn_training.encoder.magic_gat.hid_dim
-            assert hid_dim % n_heads == 0, "Invalid shape dim for number of heads"
+            assert node_hid_dim % n_heads == 0, "Invalid shape dim for number of heads"
 
-            return MagicGAT(
-                n_dim=in_dim,
-                hidden_dim=hid_dim,
+            encoder = MagicGAT(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
                 n_layers=n_layers,
                 n_heads=n_heads,
@@ -182,11 +180,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
             )
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
-        elif method == "node_mlp":# TODO: rename to custom_mlp
-            encoder = CustomNodeMLP(
+        elif method == "custom_mlp":
+            encoder = CustomMLPEncoder(
                 in_dim=in_dim,
                 out_dim=node_out_dim,
-                architecture=cfg.detection.gnn_training.encoder.node_mlp.architecture_str,
+                architecture=cfg.detection.gnn_training.encoder.custom_mlp.architecture_str,
                 dropout=cfg.detection.gnn_training.encoder.dropout,
             )
         else:
@@ -271,7 +269,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
 
     return encoder
 
-def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None):
+def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_cfg=None):
     if objective_cfg is None:
         objective_cfg = cfg.detection.gnn_training.decoder
     decoder_cfg = getattr(getattr(objective_cfg, objective), method, None)
@@ -285,7 +283,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
             src_dst_projection_coef=decoder_cfg.src_dst_projection_coef,
         )
     elif method == "node_mlp":
-        return CustomNodeMLP(
+        return CustomMLPDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
             architecture=decoder_cfg.architecture_str,
@@ -295,6 +293,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, objective_cfg=None)
         return NodLinkDecoder(
             in_dim=in_dim,
             out_dim=out_dim,
+            device=device,
         )
     elif method == "magic_gat":
         n_layers = decoder_cfg.num_layers
@@ -335,20 +334,20 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
         if objective == "reconstruct_node_features":
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_node_features.loss)
 
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim, device=device)
             objectives.append(NodeFeatReconstruction(decoder=decoder, loss_fn=loss_fn))
             
         elif objective == "reconstruct_node_embeddings":
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_node_embeddings.loss)
 
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim, device=device)
             objectives.append(NodeEmbReconstruction(decoder=decoder, loss_fn=loss_fn))
         
         elif objective == "reconstruct_edge_embeddings":
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_edge_embeddings.loss)
             in_dim_edge = node_out_dim * 2  # concatenation of 2 nodes
             
-            decoder = decoder_factory(method, objective, cfg, in_dim=in_dim_edge, out_dim=in_dim_edge)
+            decoder = decoder_factory(method, objective, cfg, in_dim=in_dim_edge, out_dim=in_dim_edge, device=device)
             objectives.append(
                 EdgeEmbReconstruction(
                     decoder=decoder,
@@ -361,7 +360,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             
             num_edge_types = get_num_edge_type(cfg)
             
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=num_edge_types)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=num_edge_types, device=device)
             objectives.append(
                 EdgeTypePrediction(
                     decoder=decoder,
@@ -372,7 +371,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             
         elif objective == "predict_edge_type_hetero":
             loss_fn = categorical_loss_fn_factory("cross_entropy")
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim, device=device)
             
             decoder_hetero_head_method = getattr(getattr(objective_cfg, objective.strip()), "decoder_hetero_head")
             
@@ -392,7 +391,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 layer_name = f"{src_idx}_{dst_idx}"
                 num_events = torch.unique(events).numel()
                 
-                decoder_hetero_head = decoder_factory(decoder_hetero_head_method, objective, cfg, in_dim=node_out_dim, out_dim=num_events)
+                decoder_hetero_head = decoder_factory(decoder_hetero_head_method, objective, cfg, in_dim=node_out_dim, out_dim=num_events, device=device)
                 edge_type_predictors[layer_name] = decoder_hetero_head
             
             objectives.append(
@@ -407,7 +406,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             loss_fn = categorical_loss_fn_factory("cross_entropy")
             balanced_loss = objective_cfg.predict_node_type.balanced_loss
             
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim, device=device)
             objectives.append(
                 NodeTypePrediction(
                     decoder=decoder,
@@ -421,7 +420,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
 
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_masked_features.loss)
 
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim, device=device)
             objectives.append(
                 GMAEFeatReconstruction(
                     decoder=decoder,
@@ -433,7 +432,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
         elif objective == "predict_masked_struct":
             loss_fn = categorical_loss_fn_factory(objective_cfg.predict_masked_struct.loss)
 
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim * 2, out_dim=1)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim * 2, out_dim=1, device=device)
             objectives.append(
                 GMAEStructPrediction(
                     decoder=decoder,
@@ -443,7 +442,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             
         elif objective == "detect_edge_few_shot":
             classes = 2
-            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=classes, objective_cfg=objective_cfg)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=classes, device=device, objective_cfg=objective_cfg)
             
             objectives.append(
                 FewShotEdgeDetection(

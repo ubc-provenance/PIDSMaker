@@ -45,7 +45,6 @@ detection:
       dropout: 0.0
       used_methods: magic_gat
       magic_gat:
-        hid_dim: 64
         num_layers: 3
         num_heads: 4
         negative_slope: 0.2
@@ -58,7 +57,6 @@ detection:
         mask_rate: 0.5
         decoder: magic_gat
         magic_gat:
-          hid_dim: 64
           num_layers: 3
           num_heads: 4
           negative_slope: 0.2
