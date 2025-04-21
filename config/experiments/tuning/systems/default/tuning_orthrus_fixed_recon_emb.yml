@@ -11,7 +11,7 @@ parameters:
   detection.gnn_training.node_out_dim:
     values: [-1]
   featurization.feat_training.used_method:
-    values: [only_type, hierarchical_hashing, feature_word2vec]
+    values: [only_type, hierarchical_hashing, word2vec]
   detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN:
     values: [True]
   detection.gnn_training.num_epochs:

@@ -25,7 +25,7 @@ featurization:
     doc2vec:
       include_neighbors: False
       alpha: 0.025
-    word2vec:
+    alacarte:
       walk_length: 30
       num_walks: 10
       context_window_size: 5
@@ -34,7 +34,7 @@ featurization:
       num_workers: 1
       compute_loss: True
       add_paths: False
-    feature_word2vec:
+    word2vec:
       alpha: 0.025
       window_size: 5
       min_count: 1

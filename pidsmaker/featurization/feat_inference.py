@@ -13,9 +13,9 @@ from pidsmaker.utils.utils import (
 )
 
 from .feat_inference_methods import (
+    feat_inference_alacarte,
     feat_inference_doc2vec,
     feat_inference_fasttext,
-    feat_inference_feature_word2vec,
     feat_inference_flash,
     feat_inference_HFH,
     feat_inference_provd,
@@ -86,14 +86,14 @@ def get_indexid2vec(cfg):
     method = cfg.featurization.feat_training.used_method.strip()
     if method in ["only_type", "only_ones"]:
         return None
-    if method == "word2vec":
-        return feat_inference_word2vec.main(cfg)
+    if method == "alacarte":
+        return feat_inference_alacarte.main(cfg)
     if method == "doc2vec":
         return feat_inference_doc2vec.main(cfg)
     if method == "hierarchical_hashing":
         return feat_inference_HFH.main(cfg)
-    if method == "feature_word2vec":
-        return feat_inference_feature_word2vec.main(cfg)
+    if method == "word2vec":
+        return feat_inference_word2vec.main(cfg)
     if method == "temporal_rw":
         return feat_inference_TRW.main(cfg)
     if method == "flash":

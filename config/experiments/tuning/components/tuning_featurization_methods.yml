@@ -9,11 +9,11 @@ parameters:
       tuned_word2vec_train,
       tuned_word2vec_all,
 
-      tuned_word2vec_alacarte_train,
-      tuned_word2vec_alacarte_all,
+      tuned_alacarte_train,
+      tuned_alacarte_all,
       
-      tuned_word2vec_flash_train,
-      tuned_word2vec_flash_all,
+      tuned_flash_train,
+      tuned_flash_all,
       
       tuned_doc2vec_train,
       tuned_doc2vec_all,

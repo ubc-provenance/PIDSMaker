@@ -15,6 +15,6 @@ parameters:
   preprocessing.transformation.synthetic_attack_naive.num_attacks:
     values: [1, 5]
   featurization.feat_training.used_method:
-    values: [feature_word2vec, only_type]
+    values: [word2vec, only_type]
   detection.gnn_training.decoder.few_shot.freeze_encoder:
     values: [False, True]

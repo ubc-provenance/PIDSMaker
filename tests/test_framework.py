@@ -91,14 +91,14 @@ class TestTransformation:
 
 class TestFeaturization:
     featurizations = [
-        "feature_word2vec",
+        "word2vec",
         "doc2vec",
         "hierarchical_hashing",
         "only_type",
         "only_ones",
         "fasttext",
         "flash",
-        "word2vec",
+        "alacarte",
         "temporal_rw",
     ]
 

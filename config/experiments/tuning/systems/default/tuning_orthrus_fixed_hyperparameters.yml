@@ -11,7 +11,7 @@ parameters:
   detection.gnn_training.node_out_dim:
     values: [-1]
   featurization.feat_training.used_method:
-    values: [only_type, feature_word2vec]
+    values: [only_type, word2vec]
   detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN:
     values: [True]
   detection.graph_preprocessing.batch_size:

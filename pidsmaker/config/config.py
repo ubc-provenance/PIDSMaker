@@ -196,7 +196,7 @@ TASK_ARGS = {
             "use_seed": bool,
             "training_split": str,  # ["train" | "all"]
             "multi_dataset_training": bool,
-            "used_method": str,  # [ "temporal_rw" | "word2vec" | "doc2vec" | "feature_word2vec" | "hierarchical_hashing" | "only_type" | "flash" | "provd" | "fasttext"]
+            "used_method": str,  # [ "temporal_rw" | "alacarte" | "doc2vec" | "word2vec" | "hierarchical_hashing" | "only_type" | "flash" | "provd" | "fasttext"]
             "flash": {
                 "min_count": int,
                 "workers": int,
@@ -216,7 +216,7 @@ TASK_ARGS = {
                 "negative": int,
                 "decline_rate": int,
             },
-            "word2vec": {
+            "alacarte": {
                 "walk_length": int,
                 "num_walks": int,
                 "epochs": int,
@@ -232,7 +232,7 @@ TASK_ARGS = {
                 "epochs": int,
                 "alpha": float,
             },
-            "feature_word2vec": {
+            "word2vec": {
                 "alpha": float,
                 "window_size": int,
                 "min_count": int,

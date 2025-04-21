@@ -15,7 +15,7 @@ parameters:
     values: [128, 256, 64]
 
   featurization.feat_training.used_method:
-    values: [feature_word2vec]
+    values: [word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_edge_type]
   detection.graph_preprocessing.node_features:

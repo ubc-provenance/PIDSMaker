@@ -4,8 +4,8 @@ featurization:
     emb_dim: 128
     use_seed: True
     training_split: train
-    used_method: word2vec
-    word2vec:
+    used_method: alacarte
+    alacarte:
       walk_length: 10
       num_walks: 10
       context_window_size: 5

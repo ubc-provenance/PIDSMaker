@@ -319,13 +319,13 @@ def set_task_paths(cfg, subtask_concat_value=None):
     cfg.featurization.feat_training.temporal_rw._random_walk_corpus_dir = os.path.join(
         cfg.featurization.feat_training.temporal_rw._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.featurization.feat_training.word2vec._random_walk_dir = os.path.join(
+    cfg.featurization.feat_training.alacarte._random_walk_dir = os.path.join(
         cfg.featurization.feat_training._task_path, "random_walks/"
     )
-    cfg.featurization.feat_training.word2vec._random_walk_corpus_dir = os.path.join(
-        cfg.featurization.feat_training.word2vec._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.feat_training.alacarte._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.feat_training.alacarte._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.featurization.feat_training.word2vec._vec_graphs_dir = os.path.join(
+    cfg.featurization.feat_training.alacarte._vec_graphs_dir = os.path.join(
         cfg.featurization.feat_training._task_path, "vectorized/"
     )
 
@@ -557,7 +557,7 @@ def check_edge_cases(cfg):
     use_multi_dataset = "none" not in cfg.preprocessing.build_graphs.multi_dataset
     if cfg.featurization.feat_training.multi_dataset_training and use_multi_dataset:
         method = cfg.featurization.feat_training.used_method.strip()
-        if method not in ["feature_word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
+        if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
     if (
         cfg.featurization.feat_training.multi_dataset_training
