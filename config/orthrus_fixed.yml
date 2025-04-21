@@ -1,7 +1,7 @@
 _include_yml: orthrus_non_snooped
 
 featurization:
-  embed_nodes:
+  feat_training:
     used_method: only_type
 
 detection:

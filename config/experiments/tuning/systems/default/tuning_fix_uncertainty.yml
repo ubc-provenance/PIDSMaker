@@ -20,10 +20,10 @@ parameters:
     values: [128, 256]
   detection.graph_preprocessing.edge_batch_size:
     values: [512.0, 1024.0]
-  # featurization.embed_nodes.emb_dim:
+  # featurization.feat_training.emb_dim:
   #   values: [128, 64]
 
-  featurization.embed_nodes.used_method:
+  featurization.feat_training.used_method:
     values: [feature_word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_edge_type]

@@ -8,7 +8,7 @@ preprocessing:
       process_selection_method: random # TODO: try new methods
 
 featurization:
-  embed_nodes:
+  feat_training:
     temporal_rw:
       walk_length: 30
       num_walks: 10
@@ -53,7 +53,7 @@ featurization:
     flash:
       min_count: 1
       workers: 15
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

@@ -14,7 +14,7 @@ preprocessing:
     used_methods: dag
 
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 100
     epochs: 100
     training_split: train
@@ -27,7 +27,7 @@ featurization:
       n_time_windows: 100
       n_neighbors: 20
       contamination: 0.04
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

@@ -27,5 +27,5 @@ parameters:
       no_featurization,
     ]
 
-  featurization.embed_nodes.emb_dim:
+  featurization.feat_training.emb_dim:
     values: [32, 128, 256]

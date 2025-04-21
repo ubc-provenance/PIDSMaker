@@ -16,7 +16,7 @@ preprocessing:
       use_pruning: True
 
 featurization:
-  embed_nodes:
+  feat_training:
     epochs: 5
     emb_dim: 128
     use_seed: True
@@ -25,7 +25,7 @@ featurization:
     doc2vec:
       include_neighbors: True
       alpha: 0.025
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

@@ -17,7 +17,7 @@ preprocessing:
     used_methods: none
 
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 128
     epochs: 50
     training_split: all
@@ -32,7 +32,7 @@ featurization:
       compute_loss: True
       negative: 5
       decline_rate: 30
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

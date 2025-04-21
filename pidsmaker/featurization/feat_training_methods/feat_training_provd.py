@@ -17,7 +17,7 @@ from pidsmaker.utils.utils import (
     tokenize_arbitrary_label,
 )
 
-from .embed_nodes_doc2vec import doc2vec
+from .feat_training_doc2vec import doc2vec
 
 
 def get_edge_key(u, v, graph):
@@ -222,9 +222,9 @@ def weight_edge_list(glist, n, event_mapping):
 
 
 def get_node2corpus(splits, cfg, model=None):
-    n_time_windows = cfg.featurization.embed_nodes.provd.n_time_windows
-    k = cfg.featurization.embed_nodes.provd.k
-    mpl = cfg.featurization.embed_nodes.provd.mpl
+    n_time_windows = cfg.featurization.feat_training.provd.n_time_windows
+    k = cfg.featurization.feat_training.provd.k
+    mpl = cfg.featurization.feat_training.provd.mpl
 
     days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
     sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, days)
@@ -256,7 +256,7 @@ def get_node2corpus(splits, cfg, model=None):
 
 
 def main(cfg):
-    model_save_dir = cfg.featurization.embed_nodes._model_dir
+    model_save_dir = cfg.featurization.feat_training._model_dir
 
     splits = get_splits_to_train_featurization(cfg)
     node2corpus = get_node2corpus(splits, cfg)
@@ -264,9 +264,9 @@ def main(cfg):
 
     train_data = [TaggedDocument(text, tags=[corpus.index(text)]) for text in corpus]
 
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
-    epochs = cfg.featurization.embed_nodes.epochs
-    alpha = cfg.featurization.embed_nodes.provd.alpha
+    emb_dim = cfg.featurization.feat_training.emb_dim
+    epochs = cfg.featurization.feat_training.epochs
+    alpha = cfg.featurization.feat_training.provd.alpha
 
     model = doc2vec(
         tagged_data=train_data,
@@ -287,8 +287,8 @@ def main(cfg):
 
     training_vectors = np.array(list(path2vec.values()))
 
-    n_neighbors = cfg.featurization.embed_nodes.provd.n_neighbors
-    contamination = cfg.featurization.embed_nodes.provd.contamination
+    n_neighbors = cfg.featurization.feat_training.provd.n_neighbors
+    contamination = cfg.featurization.feat_training.provd.contamination
 
     log("Training LOF model")
     clf = LocalOutlierFactor(novelty=True, n_neighbors=n_neighbors, contamination=contamination)

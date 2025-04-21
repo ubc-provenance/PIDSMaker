@@ -1,7 +1,7 @@
 _include_yml: orthrus
 
 featurization:
-  embed_nodes:
+  feat_training:
     epochs: 1
     emb_dim: 16
     

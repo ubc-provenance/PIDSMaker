@@ -158,12 +158,12 @@ def load_data_set(cfg, split: str, multi_dataset=False) -> list[CollatableTempor
         all_data_lists = []
         for dataset in multi_datasets:
             updated_cfg, _ = update_cfg_for_multi_dataset(cfg, dataset)
-            path = updated_cfg.featurization.embed_edges._edge_embeds_dir
+            path = updated_cfg.featurization.feat_inference._edge_embeds_dir
             all_data_lists.append(load_data_list(path, split, cfg))
         return all_data_lists
 
     else:
-        path = cfg.featurization.embed_edges._edge_embeds_dir
+        path = cfg.featurization.feat_inference._edge_embeds_dir
         return [load_data_list(path, split, cfg)]
 
 
@@ -174,9 +174,9 @@ def extract_msg_from_data(
     Initializes the attributes of a `Data` object based on the `msg`
     computed in previous tasks.
     """
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
-    only_type = cfg.featurization.embed_nodes.used_method.strip() == "only_type"
-    only_ones = cfg.featurization.embed_nodes.used_method.strip() == "only_ones"
+    emb_dim = cfg.featurization.feat_training.emb_dim
+    only_type = cfg.featurization.feat_training.used_method.strip() == "only_type"
+    only_ones = cfg.featurization.feat_training.used_method.strip() == "only_ones"
     if only_type or only_ones or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types

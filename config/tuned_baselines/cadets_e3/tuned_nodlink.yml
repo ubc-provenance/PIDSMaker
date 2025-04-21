@@ -7,7 +7,7 @@ preprocessing:
     used_methods: none
 
 featurization:
-  embed_nodes:
+  feat_training:
     epochs: 20
 
 detection:

@@ -30,8 +30,8 @@ from pidsmaker.experiments.uncertainty import (
     update_cfg_for_uncertainty_exp,
 )
 from pidsmaker.featurization import (
-    embed_edges,
-    embed_nodes,
+    feat_inference,
+    feat_training,
 )
 from pidsmaker.preprocessing import (
     build_graphs,
@@ -53,13 +53,13 @@ def get_task_to_module(cfg):
             "module": transformation,
             "task_path": cfg.preprocessing.transformation._task_path,
         },
-        "embed_nodes": {
-            "module": embed_nodes,
-            "task_path": cfg.featurization.embed_nodes._task_path,
+        "feat_training": {
+            "module": feat_training,
+            "task_path": cfg.featurization.feat_training._task_path,
         },
-        "embed_edges": {
-            "module": embed_edges,
-            "task_path": cfg.featurization.embed_edges._task_path,
+        "feat_inference": {
+            "module": feat_inference,
+            "task_path": cfg.featurization.feat_inference._task_path,
         },
         "graph_preprocessing": {
             "module": graph_preprocessing,

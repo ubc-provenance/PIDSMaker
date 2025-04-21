@@ -92,16 +92,16 @@ def main(cfg):
     training_files = get_splits_to_train_featurization(cfg)
     all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files).values())
 
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
-    epochs = cfg.featurization.embed_nodes.epochs
-    min_count = cfg.featurization.embed_nodes.flash.min_count
-    workers = cfg.featurization.embed_nodes.flash.workers
+    emb_dim = cfg.featurization.feat_training.emb_dim
+    epochs = cfg.featurization.feat_training.epochs
+    min_count = cfg.featurization.feat_training.flash.min_count
+    workers = cfg.featurization.feat_training.flash.workers
 
     log("Training word2vec model...")
     model = Word2Vec(vector_size=emb_dim, min_count=min_count, workers=workers, epochs=epochs)
     model.build_vocab(RepeatableIterator(all_phrases), progress_per=10000)
     model.train(RepeatableIterator(all_phrases), total_examples=model.corpus_count, epochs=epochs)
 
-    model_save_dir = cfg.featurization.embed_nodes._model_dir
+    model_save_dir = cfg.featurization.feat_training._model_dir
     os.makedirs(model_save_dir, exist_ok=True)
     model.save(os.path.join(model_save_dir, "word2vec_model_final.model"))

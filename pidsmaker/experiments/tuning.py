@@ -69,7 +69,7 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
                 merge_cfg_and_check_syntax(cfg, yml_file)
 
                 # Train or Train+Test embedding method training
-                cfg.featurization.embed_nodes.training_split = split
+                cfg.featurization.feat_training.training_split = split
 
                 # If a model doesn't use embedding in features, we add them to benchmark
                 if "node_emb" not in cfg.detection.graph_preprocessing.node_features:

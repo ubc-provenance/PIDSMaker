@@ -1,5 +1,5 @@
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 30
     epochs: 10
     training_split: train

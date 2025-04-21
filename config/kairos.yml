@@ -15,11 +15,11 @@ preprocessing:
     used_methods: none
 
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 16
     training_split: all
     used_method: hierarchical_hashing
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

@@ -229,7 +229,9 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
 def get_node_predictions_provd(cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
-    node_list = torch.load(os.path.join(cfg.featurization.embed_edges._model_dir, "node_list.pkl"))
+    node_list = torch.load(
+        os.path.join(cfg.featurization.feat_inference._model_dir, "node_list.pkl")
+    )
 
     results = defaultdict(dict)
     for d in node_list:

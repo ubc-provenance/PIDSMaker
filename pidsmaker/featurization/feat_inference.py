@@ -12,19 +12,19 @@ from pidsmaker.utils.utils import (
     log_tqdm,
 )
 
-from .embed_edges_methods import (
-    embed_edges_doc2vec,
-    embed_edges_fasttext,
-    embed_edges_feature_word2vec,
-    embed_edges_flash,
-    embed_edges_HFH,
-    embed_edges_provd,
-    embed_edges_TRW,
-    embed_edges_word2vec,
+from .feat_inference_methods import (
+    feat_inference_doc2vec,
+    feat_inference_fasttext,
+    feat_inference_feature_word2vec,
+    feat_inference_flash,
+    feat_inference_HFH,
+    feat_inference_provd,
+    feat_inference_TRW,
+    feat_inference_word2vec,
 )
 
 
-def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
+def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
     for path in log_tqdm(sorted_paths, desc="Computing edge embeddings"):
         graph = torch.load(path)
         sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
@@ -83,23 +83,23 @@ def embed_edges(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
 
 def get_indexid2vec(cfg):
-    method = cfg.featurization.embed_nodes.used_method.strip()
+    method = cfg.featurization.feat_training.used_method.strip()
     if method in ["only_type", "only_ones"]:
         return None
     if method == "word2vec":
-        return embed_edges_word2vec.main(cfg)
+        return feat_inference_word2vec.main(cfg)
     if method == "doc2vec":
-        return embed_edges_doc2vec.main(cfg)
+        return feat_inference_doc2vec.main(cfg)
     if method == "hierarchical_hashing":
-        return embed_edges_HFH.main(cfg)
+        return feat_inference_HFH.main(cfg)
     if method == "feature_word2vec":
-        return embed_edges_feature_word2vec.main(cfg)
+        return feat_inference_feature_word2vec.main(cfg)
     if method == "temporal_rw":
-        return embed_edges_TRW.main(cfg)
+        return feat_inference_TRW.main(cfg)
     if method == "flash":
-        return embed_edges_flash.main(cfg)
+        return feat_inference_flash.main(cfg)
     if method == "fasttext":
-        return embed_edges_fasttext.main(cfg)
+        return feat_inference_fasttext.main(cfg)
 
     raise ValueError(f"Invalid node embedding method {method}")
 
@@ -118,21 +118,21 @@ def main_from_config(cfg):
 
     # Create edges for Train, Val, Test sets
     for split, sorted_paths in split_to_files.items():
-        embed_edges(
+        feat_inference(
             indexid2vec=indexid2vec,
             etype2oh=etype2onehot,
             ntype2oh=ntype2onehot,
             sorted_paths=sorted_paths,
-            out_dir=os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, f"{split}/"),
+            out_dir=os.path.join(cfg.featurization.feat_inference._edge_embeds_dir, f"{split}/"),
             cfg=cfg,
         )
 
 
 def main(cfg):
-    method = cfg.featurization.embed_nodes.used_method.strip()
+    method = cfg.featurization.feat_training.used_method.strip()
     # Specific methods here
     if method == "provd":
-        embed_edges_provd.main(cfg)
+        feat_inference_provd.main(cfg)
         return
 
     multi_dataset_training = cfg.detection.graph_preprocessing.multi_dataset_training
@@ -141,11 +141,11 @@ def main(cfg):
 
     # Multi-dataset mode
     else:
-        trained_model_dir = cfg.featurization.embed_nodes._model_dir
+        trained_model_dir = cfg.featurization.feat_training._model_dir
         multi_datasets = get_multi_datasets(cfg)
         for dataset in multi_datasets:
             updated_cfg, should_restart = update_cfg_for_multi_dataset(cfg, dataset)
-            updated_cfg.featurization.embed_nodes._model_dir = trained_model_dir
+            updated_cfg.featurization.feat_training._model_dir = trained_model_dir
 
-            if should_restart["embed_edges"]:
+            if should_restart["feat_inference"]:
                 main_from_config(updated_cfg)

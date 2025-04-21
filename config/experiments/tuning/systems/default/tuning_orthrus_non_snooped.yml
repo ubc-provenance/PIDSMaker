@@ -9,7 +9,7 @@ parameters:
   detection.gnn_training.encoder.dropout:
     values: [0.3]
 
-  featurization.embed_nodes.used_method:
+  featurization.feat_training.used_method:
     values: [hierarchical_hashing, fasttext, feature_word2vec, only_type]
   detection.gnn_training.decoder.used_methods:
     values: [predict_node_type, reconstruct_node_features, predict_edge_type]

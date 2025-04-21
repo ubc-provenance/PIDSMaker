@@ -15,7 +15,7 @@ preprocessing:
     used_methods: none
 
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 30
     epochs: 10 # 300
     training_split: train
@@ -24,7 +24,7 @@ featurization:
     flash:
       min_count: 1
       workers: 15
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

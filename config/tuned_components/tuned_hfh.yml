@@ -1,5 +1,5 @@
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 16
     training_split: train
     used_method: hierarchical_hashing

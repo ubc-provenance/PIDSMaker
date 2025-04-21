@@ -1,5 +1,5 @@
 featurization:
-  embed_nodes:
+  feat_training:
     used_method: only_type
 
 detection:

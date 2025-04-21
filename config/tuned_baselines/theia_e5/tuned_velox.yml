@@ -1,7 +1,7 @@
 # ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_velox/sweeps/k50e6vkx/table?nw=nwusertristanbilot
 
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 64
 
 detection:

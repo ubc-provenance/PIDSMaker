@@ -28,7 +28,7 @@ def prepare_cfg(
     if transformation:
         args.__dict__["preprocessing.transformation.used_methods"] = transformation
     if featurization:
-        args.__dict__["featurization.embed_nodes.used_method"] = featurization
+        args.__dict__["featurization.feat_training.used_method"] = featurization
     if encoder:
         args.__dict__["detection.gnn_training.encoder.used_methods"] = encoder
     if objective:

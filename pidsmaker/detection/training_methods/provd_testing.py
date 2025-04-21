@@ -8,9 +8,9 @@ from pidsmaker.utils.utils import get_all_files_from_folders, log
 
 
 def main(cfg):
-    clf = torch.load(os.path.join(cfg.featurization.embed_nodes._model_dir, "lof.pkl"))
+    clf = torch.load(os.path.join(cfg.featurization.feat_training._model_dir, "lof.pkl"))
     path_emb2nodes = torch.load(
-        os.path.join(cfg.featurization.embed_edges._model_dir, "path_emb2nodes.pkl")
+        os.path.join(cfg.featurization.feat_inference._model_dir, "path_emb2nodes.pkl")
     )
 
     nodes, vectors = [], []
@@ -49,5 +49,5 @@ def main(cfg):
             }
         )
 
-    out_dir = os.path.join(cfg.featurization.embed_edges._model_dir, "node_list.pkl")
+    out_dir = os.path.join(cfg.featurization.feat_inference._model_dir, "node_list.pkl")
     torch.save(node_list, out_dir)

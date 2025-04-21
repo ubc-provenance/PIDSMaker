@@ -1068,7 +1068,7 @@ def compute_tw_labels(cfg):
     os.makedirs(out_path, exist_ok=True)
 
     t_to_node = labelling.get_t2malicious_node(cfg)
-    # test_data = load_data_set(cfg, path=cfg.featurization.embed_edges._edge_embeds_dir, split="test")
+    # test_data = load_data_set(cfg, path=cfg.featurization.feat_inference._edge_embeds_dir, split="test")
 
     graph_dir = cfg.preprocessing.transformation._graphs_dir
     test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)

@@ -11,10 +11,10 @@ parameters:
     values: [0.0001, 0.001]
   detection.gnn_training.node_out_dim:
     values: [128, 64, 256]
-  featurization.embed_nodes.emb_dim:
+  featurization.feat_training.emb_dim:
     values: [128, 256, 64]
 
-  featurization.embed_nodes.used_method:
+  featurization.feat_training.used_method:
     values: [feature_word2vec]
   detection.gnn_training.decoder.used_methods:
     values: [predict_edge_type]

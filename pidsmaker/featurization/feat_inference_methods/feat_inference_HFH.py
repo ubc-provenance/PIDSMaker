@@ -37,7 +37,7 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
+    emb_dim = cfg.featurization.feat_training.emb_dim
     FH_string = FeatureHasher(n_features=emb_dim, input_type="string")
 
     indexid2vec = {}

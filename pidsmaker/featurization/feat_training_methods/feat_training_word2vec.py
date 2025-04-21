@@ -416,7 +416,7 @@ def obtain_targets_from_file(input_path, w2v):
     return ret
 
 
-def embed_nodes_for_one_split(
+def feat_training_for_one_split(
     split: str,
     use_corpus: bool,
     use_matrix_input: bool,
@@ -424,27 +424,27 @@ def embed_nodes_for_one_split(
     cfg,
     verbose=True,
 ):
-    out_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
+    out_dir = cfg.featurization.feat_training.word2vec._vec_graphs_dir
     adjacency_dir = os.path.join(
-        cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj"
+        cfg.featurization.feat_training.word2vec._random_walk_dir, f"{split}-adj"
     )
     dataset = os.path.join(
-        cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv"
+        cfg.featurization.feat_training.word2vec._random_walk_dir, f"{split}_set_corpus.csv"
     )
-    corpus_dir = cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir
+    corpus_dir = cfg.featurization.feat_training.word2vec._random_walk_corpus_dir
     corpus = dataset if use_corpus else None
     matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None
     model_input = os.path.join(out_dir, "model.bin") if use_pretrained_model else None
 
-    epochs = cfg.featurization.embed_nodes.epochs
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
-    window_size = cfg.featurization.embed_nodes.word2vec.context_window_size
-    min_count = cfg.featurization.embed_nodes.word2vec.min_count
-    use_skip_gram = cfg.featurization.embed_nodes.word2vec.use_skip_gram
-    num_workers = cfg.featurization.embed_nodes.word2vec.num_workers
-    compute_loss = cfg.featurization.embed_nodes.word2vec.compute_loss
-    add_paths = cfg.featurization.embed_nodes.word2vec.add_paths
-    use_seed = cfg.featurization.embed_nodes.use_seed
+    epochs = cfg.featurization.feat_training.epochs
+    emb_dim = cfg.featurization.feat_training.emb_dim
+    window_size = cfg.featurization.feat_training.word2vec.context_window_size
+    min_count = cfg.featurization.feat_training.word2vec.min_count
+    use_skip_gram = cfg.featurization.feat_training.word2vec.use_skip_gram
+    num_workers = cfg.featurization.feat_training.word2vec.num_workers
+    compute_loss = cfg.featurization.feat_training.word2vec.compute_loss
+    add_paths = cfg.featurization.feat_training.word2vec.add_paths
+    use_seed = cfg.featurization.feat_training.use_seed
     SEED = 0
 
     log_dir = out_dir
@@ -748,20 +748,20 @@ def embed_nodes_for_one_split(
 def main(cfg):
     log_start(__file__)
 
-    os.makedirs(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, exist_ok=True)
+    os.makedirs(cfg.featurization.feat_training.word2vec._vec_graphs_dir, exist_ok=True)
 
     # In test mode, we only have access to
     if cfg._test_mode:
-        embed_nodes_for_one_split(
+        feat_training_for_one_split(
             "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
         )
     else:
-        embed_nodes_for_one_split(
+        feat_training_for_one_split(
             "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
         )
-        embed_nodes_for_one_split(
+        feat_training_for_one_split(
             "val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
         )
-        embed_nodes_for_one_split(
+        feat_training_for_one_split(
             "test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
         )

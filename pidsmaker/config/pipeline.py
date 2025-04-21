@@ -310,30 +310,30 @@ def set_task_paths(cfg, subtask_concat_value=None):
     )
 
     # Featurization paths
-    cfg.featurization.embed_nodes._model_dir = os.path.join(
-        cfg.featurization.embed_nodes._task_path, "stored_models/"
+    cfg.featurization.feat_training._model_dir = os.path.join(
+        cfg.featurization.feat_training._task_path, "stored_models/"
     )
-    cfg.featurization.embed_nodes.temporal_rw._random_walk_dir = os.path.join(
-        cfg.featurization.embed_nodes._task_path, "random_walks/"
+    cfg.featurization.feat_training.temporal_rw._random_walk_dir = os.path.join(
+        cfg.featurization.feat_training._task_path, "random_walks/"
     )
-    cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir = os.path.join(
-        cfg.featurization.embed_nodes.temporal_rw._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.feat_training.temporal_rw._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.feat_training.temporal_rw._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.featurization.embed_nodes.word2vec._random_walk_dir = os.path.join(
-        cfg.featurization.embed_nodes._task_path, "random_walks/"
+    cfg.featurization.feat_training.word2vec._random_walk_dir = os.path.join(
+        cfg.featurization.feat_training._task_path, "random_walks/"
     )
-    cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir = os.path.join(
-        cfg.featurization.embed_nodes.word2vec._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.feat_training.word2vec._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.feat_training.word2vec._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.featurization.embed_nodes.word2vec._vec_graphs_dir = os.path.join(
-        cfg.featurization.embed_nodes._task_path, "vectorized/"
+    cfg.featurization.feat_training.word2vec._vec_graphs_dir = os.path.join(
+        cfg.featurization.feat_training._task_path, "vectorized/"
     )
 
-    cfg.featurization.embed_edges._edge_embeds_dir = os.path.join(
-        cfg.featurization.embed_edges._task_path, "edge_embeds/"
+    cfg.featurization.feat_inference._edge_embeds_dir = os.path.join(
+        cfg.featurization.feat_inference._task_path, "edge_embeds/"
     )
-    cfg.featurization.embed_edges._model_dir = os.path.join(
-        cfg.featurization.embed_edges._task_path, "stored_models/"
+    cfg.featurization.feat_inference._model_dir = os.path.join(
+        cfg.featurization.feat_inference._task_path, "stored_models/"
     )
 
     # Detection paths
@@ -536,9 +536,9 @@ def check_edge_cases(cfg):
                 "Cannot predict edge type as it is removed in the pseudo graph transformation"
             )
 
-    if cfg.featurization.embed_nodes.used_method == "fasttext":
-        if cfg.featurization.embed_nodes.fasttext.use_pretrained_fb_model:
-            emb_dim = cfg.featurization.embed_nodes.emb_dim
+    if cfg.featurization.feat_training.used_method == "fasttext":
+        if cfg.featurization.feat_training.fasttext.use_pretrained_fb_model:
+            emb_dim = cfg.featurization.feat_training.emb_dim
             if emb_dim != 300:
                 raise ValueError(
                     f"Invalid `emb_dim={emb_dim}`, should be set to 300 if `use_pretrained_fb_model=True`."
@@ -555,12 +555,12 @@ def check_edge_cases(cfg):
             )
 
     use_multi_dataset = "none" not in cfg.preprocessing.build_graphs.multi_dataset
-    if cfg.featurization.embed_nodes.multi_dataset_training and use_multi_dataset:
-        method = cfg.featurization.embed_nodes.used_method.strip()
+    if cfg.featurization.feat_training.multi_dataset_training and use_multi_dataset:
+        method = cfg.featurization.feat_training.used_method.strip()
         if method not in ["feature_word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
     if (
-        cfg.featurization.embed_nodes.multi_dataset_training
+        cfg.featurization.feat_training.multi_dataset_training
         or cfg.detection.graph_preprocessing.multi_dataset_training
     ):
         if not use_multi_dataset:

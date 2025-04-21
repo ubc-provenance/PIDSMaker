@@ -26,10 +26,10 @@ def update_cfg_for_uncertainty_exp(
             delta = 0
 
         if hyperparameter == "text_h_dim":
-            clear_files_from_embed_nodes(cfg)
-            if cfg.featurization.embed_nodes.emb_dim is not None:
-                cfg.featurization.embed_nodes.emb_dim += int(
-                    delta * cfg.featurization.embed_nodes.emb_dim
+            clear_files_from_feat_training(cfg)
+            if cfg.featurization.feat_training.emb_dim is not None:
+                cfg.featurization.feat_training.emb_dim += int(
+                    delta * cfg.featurization.feat_training.emb_dim
                 )
         else:
             clear_files_from_gnn_training(cfg)
@@ -52,8 +52,8 @@ def update_cfg_for_uncertainty_exp(
 
     elif method == "deep_ensemble":
         restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
-        if restart_from == "embed_nodes":
-            clear_files_from_embed_nodes(cfg)
+        if restart_from == "feat_training":
+            clear_files_from_feat_training(cfg)
         elif restart_from == "gnn_training":
             clear_files_from_gnn_training(cfg)
         else:
@@ -80,8 +80,11 @@ def clear_files_from_gnn_training(cfg):
         os.makedirs(path)
 
 
-def clear_files_from_embed_nodes(cfg):
-    paths = [cfg.featurization.embed_nodes._task_path, cfg.featurization.embed_edges._task_path]
+def clear_files_from_feat_training(cfg):
+    paths = [
+        cfg.featurization.feat_training._task_path,
+        cfg.featurization.feat_inference._task_path,
+    ]
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)

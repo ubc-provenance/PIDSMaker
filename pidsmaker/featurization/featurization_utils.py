@@ -16,7 +16,7 @@ def get_splits_to_train_featurization(cfg):
     """
     Returns the splits on which train the embedding method.
     """
-    training_split = cfg.featurization.embed_nodes.training_split.strip()
+    training_split = cfg.featurization.feat_training.training_split.strip()
     if training_split == "all":
         return ["train", "val", "test"]
 

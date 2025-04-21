@@ -2,9 +2,9 @@
 TASK_DEPENDENCIES = {
     "build_graphs": [],
     "transformation": ["build_graphs"],
-    "embed_nodes": ["transformation"],
-    "embed_edges": ["embed_nodes"],
-    "graph_preprocessing": ["embed_edges"],
+    "feat_training": ["transformation"],
+    "feat_inference": ["feat_training"],
+    "graph_preprocessing": ["feat_inference"],
     "gnn_training": ["graph_preprocessing"],
     "evaluation": ["gnn_training"],
     "tracing": ["evaluation"],
@@ -190,7 +190,7 @@ TASK_ARGS = {
         },
     },
     "featurization": {
-        "embed_nodes": {
+        "feat_training": {
             "emb_dim": int,
             "epochs": int,
             "use_seed": bool,
@@ -260,7 +260,7 @@ TASK_ARGS = {
                 "use_pretrained_fb_model": bool,
             },
         },
-        "embed_edges": {
+        "feat_inference": {
             "to_remove": bool,  # TODO: remove
         },
     },

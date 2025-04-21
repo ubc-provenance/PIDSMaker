@@ -8,4 +8,4 @@ experiment:
   uncertainty:
     deep_ensemble:
       iterations: 5
-      restart_from: embed_nodes
+      restart_from: feat_training

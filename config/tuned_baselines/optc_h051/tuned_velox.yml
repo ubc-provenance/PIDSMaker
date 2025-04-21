@@ -5,7 +5,7 @@ preprocessing:
     time_window_size: 0.5
 
 featurization:
-  embed_nodes:
+  feat_training:
     emb_dim: 128
 
 detection:

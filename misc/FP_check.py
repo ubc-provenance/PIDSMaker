@@ -184,7 +184,7 @@ def main(cfg):
     results = torch.load(results_file)
 
     sorted_tw_paths = sorted(
-        os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "train"))
+        os.listdir(os.path.join(cfg.featurization.feat_inference._edge_embeds_dir, "train"))
     )
     base_dir = cfg.preprocessing.transformation._graphs_dir
     tw_to_graphdir = {}
@@ -209,7 +209,7 @@ def main(cfg):
         print(f"FP node {fp} appears in testing time windows: {list(tw_set)}")
 
     test_sorted_tw_paths = sorted(
-        os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test"))
+        os.listdir(os.path.join(cfg.featurization.feat_inference._edge_embeds_dir, "test"))
     )
     tw_to_graphdir_test = {}
     for tw, tw_file in enumerate(test_sorted_tw_paths):

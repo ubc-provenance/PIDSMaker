@@ -17,17 +17,17 @@ def download_facebook_weights(out_dir):
 
 
 def train_fasttext(corpus, cfg):
-    emb_dim = cfg.featurization.embed_nodes.emb_dim
-    epochs = cfg.featurization.embed_nodes.epochs
-    window_size = cfg.featurization.embed_nodes.fasttext.window_size
-    alpha = cfg.featurization.embed_nodes.fasttext.alpha
-    min_count = cfg.featurization.embed_nodes.fasttext.min_count
-    num_workers = cfg.featurization.embed_nodes.fasttext.num_workers
-    negative = cfg.featurization.embed_nodes.fasttext.negative
-    use_seed = cfg.featurization.embed_nodes.use_seed
+    emb_dim = cfg.featurization.feat_training.emb_dim
+    epochs = cfg.featurization.feat_training.epochs
+    window_size = cfg.featurization.feat_training.fasttext.window_size
+    alpha = cfg.featurization.feat_training.fasttext.alpha
+    min_count = cfg.featurization.feat_training.fasttext.min_count
+    num_workers = cfg.featurization.feat_training.fasttext.num_workers
+    negative = cfg.featurization.feat_training.fasttext.negative
+    use_seed = cfg.featurization.feat_training.use_seed
     SEED = 0
 
-    use_pretrained_fb_model = cfg.featurization.embed_nodes.fasttext.use_pretrained_fb_model
+    use_pretrained_fb_model = cfg.featurization.feat_training.fasttext.use_pretrained_fb_model
 
     if use_pretrained_fb_model:
         out_dir = os.path.join(ROOT_ARTIFACT_DIR, "fasttext_facebook_cc.en.300.bin.gz")
@@ -57,7 +57,7 @@ def train_fasttext(corpus, cfg):
 def main(cfg):
     log_start(__file__)
 
-    multi_dataset_training = cfg.featurization.embed_nodes.multi_dataset_training
+    multi_dataset_training = cfg.featurization.feat_training.multi_dataset_training
     corpus = get_corpus(cfg, gather_multi_dataset=multi_dataset_training)
 
     log("Training FastText model...")
@@ -66,6 +66,6 @@ def main(cfg):
         cfg=cfg,
     )
 
-    model_save_path = cfg.featurization.embed_nodes._model_dir
+    model_save_path = cfg.featurization.feat_training._model_dir
     os.makedirs(model_save_path, exist_ok=True)
     model.save(os.path.join(model_save_path, "fasttext.pkl"))

@@ -23,7 +23,7 @@ def get_nid2scores(cfg):
 
 def get_nid2oov_component(cfg):
     feature_word2vec_model_path = (
-        cfg.featurization.embed_nodes._model_dir + "feature_word2vec.model"
+        cfg.featurization.feat_training._model_dir + "feature_word2vec.model"
     )
     model = Word2Vec.load(feature_word2vec_model_path)
 

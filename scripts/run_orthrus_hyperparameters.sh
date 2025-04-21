@@ -10,9 +10,9 @@ nohup sh -c "\
 nohup sh -c "\
 ./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_h_128 --detection.gnn_training.node_out_dim=128 && \
 
-./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_word2vec_h_32 --featurization.embed_nodes.emb_dim=32 && \
-./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_word2vec_h_64 --featurization.embed_nodes.emb_dim=64 && \
-./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_word2vec_h_256 --featurization.embed_nodes.emb_dim=256 && \
+./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_word2vec_h_32 --featurization.feat_training.emb_dim=32 && \
+./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_word2vec_h_64 --featurization.feat_training.emb_dim=64 && \
+./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_word2vec_h_256 --featurization.feat_training.emb_dim=256 && \
 
 ./run_serial.sh orthrus CADETS_E3 --detection.gnn_training.num_epochs=20 --detection.gnn_training.encoder.graph_attention.dropout=0.1 --exp=CADETS_E3_lr_0.0001 --detection.gnn_training.lr=0.0001" &
 nohup sh -c "\

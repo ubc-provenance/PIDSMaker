@@ -3,7 +3,7 @@ import os
 import torch
 from gensim.models.doc2vec import Doc2Vec
 
-from pidsmaker.featurization.embed_nodes_methods.embed_paths_provd import get_node2corpus
+from pidsmaker.featurization.feat_training_methods.feat_training_provd import get_node2corpus
 from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
 
 
@@ -16,7 +16,7 @@ def main(cfg):
     )  # no GNN encoding so we only need test set
 
     doc2vec_model_path = os.path.join(
-        cfg.featurization.embed_nodes._model_dir, "doc2vec_model.model"
+        cfg.featurization.feat_training._model_dir, "doc2vec_model.model"
     )
     model = Doc2Vec.load(doc2vec_model_path)
 
@@ -39,6 +39,6 @@ def main(cfg):
 
             path_emb2nodes[path_str]["nodes"].add(indexid)
 
-    model_save_dir = cfg.featurization.embed_edges._model_dir
+    model_save_dir = cfg.featurization.feat_inference._model_dir
     os.makedirs(model_save_dir, exist_ok=True)
     torch.save(dict(path_emb2nodes), os.path.join(model_save_dir, "path_emb2nodes.pkl"))

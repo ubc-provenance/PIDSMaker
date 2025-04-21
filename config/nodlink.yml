@@ -15,7 +15,7 @@ preprocessing:
     used_methods: undirected
 
 featurization:
-  embed_nodes:
+  feat_training:
     epochs: 100
     emb_dim: 256
     use_seed: True
@@ -28,7 +28,7 @@ featurization:
       negative: 3
       num_workers: 15
       use_pretrained_fb_model: False
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:

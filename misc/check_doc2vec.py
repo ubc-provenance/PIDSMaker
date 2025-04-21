@@ -231,13 +231,13 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    doc2vec_model_path = cfg.featurization.embed_nodes._model_dir + "doc2vec_model.model"
+    doc2vec_model_path = cfg.featurization.feat_training._model_dir + "doc2vec_model.model"
     msg2vec = get_msg2vec(indexid2msg, doc2vec_model_path)
 
-    # get_vec_csv(msg2vec, cfg.featurization.embed_nodes._task_path)
+    # get_vec_csv(msg2vec, cfg.featurization.feat_training._task_path)
 
     fig_name = "tsne_different_files.png"
-    fig_path = os.path.join(cfg.featurization.embed_nodes._task_path, fig_name)
+    fig_path = os.path.join(cfg.featurization.feat_training._task_path, fig_name)
 
     # embeddings = get_attrs_each_type(msg2vec, num_each_type=1000)
     # embeddings = get_attrs_one_type(msg2vec, num_each_type=1500, sampled_type=2)

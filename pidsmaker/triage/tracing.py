@@ -96,7 +96,7 @@ def main(cfg):
             best_model_epoch = model_epoch_dir
 
     sorted_tw_paths = sorted(
-        os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test"))
+        os.listdir(os.path.join(cfg.featurization.feat_inference._edge_embeds_dir, "test"))
     )
     tw_to_time = {}
     for tw, tw_file in enumerate(sorted_tw_paths):

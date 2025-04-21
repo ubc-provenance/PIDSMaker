@@ -15,9 +15,9 @@ preprocessing:
     used_methods: none
 
 featurization:
-  embed_nodes:
+  feat_training:
     used_method: only_type
-  embed_edges:
+  feat_inference:
     to_remove: True
 
 detection:
