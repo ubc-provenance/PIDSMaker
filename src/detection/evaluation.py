@@ -112,10 +112,3 @@ def main(cfg):
         return standard_evaluation(cfg, evaluation_fn=edge_evaluation.main)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

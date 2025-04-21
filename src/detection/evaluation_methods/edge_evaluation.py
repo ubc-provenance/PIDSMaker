@@ -1,6 +1,6 @@
-from config import get_rel2id, get_rel2id_considering_triplets
 from .evaluation_utils import *
 from labelling import get_ground_truth_edges, get_attack_to_mal_edges
+from dataset_utils import get_rel2id_considering_triplets
 
 def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_edges = get_ground_truth_edges(cfg)

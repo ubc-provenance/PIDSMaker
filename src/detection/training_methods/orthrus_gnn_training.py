@@ -229,10 +229,3 @@ def remove_attacks_if_needed(graph, cfg):
         if 1 in graph.y:
             return graph.clone()[graph.y != 1]
     return graph
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

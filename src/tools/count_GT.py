@@ -14,6 +14,7 @@ from preprocessing import (
 from tqdm import tqdm
 from labelling import get_ground_truth, get_uuid2nids, datetime_to_ns_time_US
 from detection.evaluation_methods.evaluation_utils import compute_tw_labels
+from dataset_utils import get_rel2id
 
 def compute_node_number(split_files, cfg):
     all_nids = set()

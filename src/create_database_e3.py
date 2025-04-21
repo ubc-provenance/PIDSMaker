@@ -1,11 +1,10 @@
-import os
 import re
-import torch
 from tqdm import tqdm
 import hashlib
 from config import *
 from provnet_utils import *
 import filelist
+from dataset_utils import exclude_edge_type, edge_reversed
 
 
 def stringtomd5(originstr):

@@ -17,7 +17,8 @@ from torch_scatter import scatter
 
 from encoders import TGNEncoder
 from provnet_utils import log_dataset_stats, log_tqdm, get_multi_datasets
-from config import update_cfg_for_multi_dataset, get_rel2id, get_node_map, possible_events, get_num_edge_type
+from config import update_cfg_for_multi_dataset
+from dataset_utils import possible_events, get_rel2id, get_node_map, get_num_edge_type
 from hetero import compute_hetero_features
 from tgn import LastNeighborLoader
 from debug_tests import debug_test_batching

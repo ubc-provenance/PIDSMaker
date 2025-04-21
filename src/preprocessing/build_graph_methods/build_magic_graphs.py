@@ -3,9 +3,10 @@ import os
 from datetime import datetime, timedelta
 import networkx as nx
 import torch
-from config import *
+from config import get_darpa_tc_node_feats_from_cfg
 from provnet_utils import *
 import json
+from dataset_utils import get_rel2id, get_node_map
 
 def get_node_list(cur, cfg):
     use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
@@ -126,6 +127,7 @@ def generate_timestamps(start_time, end_time, interval_minutes):
 
 def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
     rel2id = get_rel2id(cfg)
+    ntype2id = get_node_map()
     include_edge_type = rel2id
     node_type_dict = ntype2id
 
@@ -244,9 +246,3 @@ def main(cfg):
                     cfg=cfg)
 
     del uuid2idx, uuid2type, uuid2name, hash2uuid
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

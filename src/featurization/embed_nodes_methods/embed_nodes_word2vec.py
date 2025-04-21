@@ -685,10 +685,3 @@ def main(cfg):
         embed_nodes_for_one_split("train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
         embed_nodes_for_one_split("val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
         embed_nodes_for_one_split("test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

@@ -3,7 +3,8 @@ import torch.nn as nn
 
 from provnet_utils import *
 from config import *
-from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events, get_num_edge_type, decoder_matches_objective
+from config import decoder_matches_objective
+from dataset_utils import possible_events, get_rel2id, get_node_map, get_num_edge_type, OPTC_DATASETS
 from model import *
 from losses import *
 from encoders import *

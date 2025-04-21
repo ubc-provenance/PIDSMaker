@@ -58,10 +58,3 @@ def main(cfg):
     preprocess_split(split="train", split_files=cfg.dataset.train_files, cfg=cfg)
     preprocess_split(split="val", split_files=cfg.dataset.val_files, cfg=cfg)
     preprocess_split(split="test", split_files=cfg.dataset.test_files, cfg=cfg)
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

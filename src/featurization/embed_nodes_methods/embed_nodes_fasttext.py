@@ -66,9 +66,3 @@ def main(cfg):
     model_save_path = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_path, exist_ok=True)
     model.save(os.path.join(model_save_path, 'fasttext.pkl'))
-
-if __name__ == '__main__':
-    args =get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

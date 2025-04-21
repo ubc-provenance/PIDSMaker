@@ -56,11 +56,3 @@ def main(cfg):
                              out_dir=os.path.join(cfg.featurization.embed_nodes.temporal_rw._random_walk_corpus_dir,
                                                   "unused/"),
                              cfg=cfg)
-
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

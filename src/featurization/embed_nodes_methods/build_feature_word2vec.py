@@ -65,9 +65,3 @@ def main(cfg):
     train_feature_word2vec(corpus=corpus,
                            cfg=cfg,
                            model_save_path=model_save_path)
-
-if __name__ == '__main__':
-    args =get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

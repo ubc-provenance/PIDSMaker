@@ -88,10 +88,3 @@ def main(cfg):
     model_save_dir = cfg.featurization.embed_nodes._model_dir
     os.makedirs(model_save_dir, exist_ok=True)
     model.save(os.path.join(model_save_dir, "word2vec_model_final.model"))
-
-
-if __name__ == '__main__':
-    args =get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

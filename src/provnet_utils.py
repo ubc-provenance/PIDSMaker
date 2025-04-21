@@ -407,6 +407,7 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
     if return_line:
         print("")
 
+DISABLE_TQDM = True
 def log_tqdm(iterator, desc="", logging=True, **kwargs):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")

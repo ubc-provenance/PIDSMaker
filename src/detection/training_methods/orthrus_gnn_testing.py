@@ -345,10 +345,3 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True):
         "time_per_batch_inference": np.mean(tpb),
     }
     return stats
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

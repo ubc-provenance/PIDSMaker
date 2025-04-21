@@ -8,6 +8,7 @@ import csv
 
 from config import *
 from provnet_utils import *
+from dataset_utils import get_rel2id
 
 import networkx as nx
 

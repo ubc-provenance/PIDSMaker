@@ -481,10 +481,3 @@ def main(cfg):
         predict_queues(cfg)
     else:
         raise ValueError(f"Invalid queue evaluation method `{method}`")
-    
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-    
-    main(cfg)

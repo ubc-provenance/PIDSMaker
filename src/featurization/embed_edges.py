@@ -1,6 +1,7 @@
-from config import *
+from config import update_cfg_for_multi_dataset
 from provnet_utils import *
 from data_utils import CollatableTemporalData
+from dataset_utils import get_rel2id, get_node_map
 
 from .embed_edges_methods import (
     embed_edges_word2vec,
@@ -86,6 +87,7 @@ def get_indexid2vec(cfg):
 
 def main_from_config(cfg):
     rel2id = get_rel2id(cfg)
+    ntype2id = get_node_map()
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
     
@@ -127,10 +129,3 @@ def main(cfg):
             
             if should_restart["embed_edges"]:
                 main_from_config(updated_cfg)
-
-
-if __name__ == '__main__':
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

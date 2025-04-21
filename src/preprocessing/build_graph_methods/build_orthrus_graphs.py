@@ -7,6 +7,7 @@ from config import *
 from provnet_utils import *
 
 import mimicry
+from dataset_utils import get_rel2id
 
 
 def compute_indexid2msg(cfg):
@@ -360,10 +361,3 @@ def main(cfg):
     
     split2nodes = compute_and_save_split2nodes(cfg)
     save_indexid2msg(indexid2msg, split2nodes, cfg)
-
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

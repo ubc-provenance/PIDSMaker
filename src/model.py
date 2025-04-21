@@ -1,8 +1,7 @@
 from provnet_utils import *
 from config import *
-from config import get_node_map
 import torch.nn as nn
-from encoders import TGNEncoder, AncestorEncoder
+from encoders import TGNEncoder
 from experiments.uncertainty import activate_dropout_inference
 
 

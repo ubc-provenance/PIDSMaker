@@ -111,9 +111,3 @@ def main(cfg):
             if should_restart["transformation"]:
                 main_from_config(updated_cfg)
   
-
-if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)
