@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pidsmaker"
+version = "4.0.0"
+description = "Intrusion detection framework based on deep learning"
+authors = [{name="mlx-graphs contributors"}]
+readme = "README.md"
+requires-python = ">= 3.9"
+
+[tool.setuptools]
+packages = ["pidsmaker"]
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+lint.select = ["W", "I001"]
+exclude = [
+    ".svg",
+    ".ipynb",
+    ".json",
+    ".csv"
+]
+lint.isort.known-first-party = ["pidsmaker"]
+lint.isort.known-third-party = ["wandb", "torch", "numpy"]
+lint.isort.section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
