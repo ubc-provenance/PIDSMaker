@@ -1,23 +1,26 @@
-import csv
 import argparse
-import sys
-import os 
+import csv
+import os
 
 import torch
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-from config import get_yml_cfg
-from provnet_utils import get_all_files_from_folders, get_runtime_required_args, remove_underscore_keys, init_database_connection, log, datetime_to_ns_time_US
 import wandb
 from tqdm import tqdm
 
-from preprocessing import (
+import pidsmaker.labelling as labelling
+from pidsmaker.config import get_yml_cfg
+from pidsmaker.preprocessing import (
     build_graphs,
     transformation,
 )
-import labelling
+from pidsmaker.provnet_utils import (
+    datetime_to_ns_time_US,
+    get_all_files_from_folders,
+    get_runtime_required_args,
+    init_database_connection,
+    log,
+    remove_underscore_keys,
+)
+
 
 def stats_of_split(paths, split):
     nid_set = set()
@@ -27,7 +30,7 @@ def stats_of_split(paths, split):
     in_degree_number = 0
     out_degree_number = 0
 
-    for graph_path in tqdm(paths, desc=f'Processing split {split} set...'):
+    for graph_path in tqdm(paths, desc=f"Processing split {split} set..."):
         graph = torch.load(graph_path)
         nid_set |= set(graph.nodes())
         node_number += len(graph.nodes())
@@ -38,7 +41,15 @@ def stats_of_split(paths, split):
         for node, out_deg in graph.out_degree():
             out_degree_number += out_deg
 
-    return nid_set, node_number, edge_number_list, node_number_list, in_degree_number, out_degree_number
+    return (
+        nid_set,
+        node_number,
+        edge_number_list,
+        node_number_list,
+        in_degree_number,
+        out_degree_number,
+    )
+
 
 def get_stats(cfg):
     graph_dir = cfg.preprocessing.transformation._graphs_dir
@@ -47,10 +58,28 @@ def get_stats(cfg):
     test_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
     unused_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.unused_files)
 
-    train_nodes, train_overlap_n_num, train_e_num_list, train_n_num_list, train_in_deg, train_out_deg = stats_of_split(train_set_paths, "train")
-    val_nodes, val_overlap_n_num, val_e_num_list, val_n_num_list, val_in_deg, val_out_deg = stats_of_split(val_set_paths, "val")
-    test_nodes, test_overlap_n_num, test_e_num_list, test_n_num_list, test_in_deg, test_out_deg = stats_of_split(test_set_paths, "test")
-    unused_nodes, unused_overlap_n_num, unused_e_num_list, unused_n_num_list, unused_in_deg, unused_out_deg = stats_of_split(unused_set_paths, "unused")
+    (
+        train_nodes,
+        train_overlap_n_num,
+        train_e_num_list,
+        train_n_num_list,
+        train_in_deg,
+        train_out_deg,
+    ) = stats_of_split(train_set_paths, "train")
+    val_nodes, val_overlap_n_num, val_e_num_list, val_n_num_list, val_in_deg, val_out_deg = (
+        stats_of_split(val_set_paths, "val")
+    )
+    test_nodes, test_overlap_n_num, test_e_num_list, test_n_num_list, test_in_deg, test_out_deg = (
+        stats_of_split(test_set_paths, "test")
+    )
+    (
+        unused_nodes,
+        unused_overlap_n_num,
+        unused_e_num_list,
+        unused_n_num_list,
+        unused_in_deg,
+        unused_out_deg,
+    ) = stats_of_split(unused_set_paths, "unused")
 
     results = {}
 
@@ -77,9 +106,12 @@ def get_stats(cfg):
 
     node_num_list = train_n_num_list + val_n_num_list + test_n_num_list + unused_n_num_list
     results["avg_tw_node_number"] = sum(node_num_list) / len(node_num_list)
-    results["max_edges_per_tw"] = max([*train_e_num_list, *val_e_num_list, *test_e_num_list, *unused_e_num_list])
+    results["max_edges_per_tw"] = max(
+        [*train_e_num_list, *val_e_num_list, *test_e_num_list, *unused_e_num_list]
+    )
 
     return results
+
 
 def count_mal_edges(cfg):
     cur, connect = init_database_connection(cfg)
@@ -96,7 +128,7 @@ def count_mal_edges(cfg):
         end_time = datetime_to_ns_time_US(attack_tuple[2])
 
         ground_truth_nids = []
-        with open(os.path.join(cfg._ground_truth_dir, attack), 'r') as f:
+        with open(os.path.join(cfg._ground_truth_dir, attack), "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -113,10 +145,10 @@ def count_mal_edges(cfg):
 
         results[attack_index] = mal_edge_number
         attack_index += 1
-    
+
     return results
 
-        
+
 def malicious_stats(cfg):
     results = {}
 
@@ -126,10 +158,10 @@ def malicious_stats(cfg):
     attack_to_nids = labelling.get_GP_of_each_attack(cfg)
     results["num_of_att"] = len(attack_to_nids.keys())
     for i in attack_to_nids.keys():
-        results[f"att_{str(i)}_mal_nodes"] = len(attack_to_nids[i]['nids'])
-    
+        results[f"att_{str(i)}_mal_nodes"] = len(attack_to_nids[i]["nids"])
+
     attack_to_edge_number = count_mal_edges(cfg)
-    total_mal_edges = 0 
+    total_mal_edges = 0
     for k, v in attack_to_edge_number.items():
         results[f"att_{str(k)}_mal_edges"] = v
         total_mal_edges += v
@@ -140,7 +172,9 @@ def malicious_stats(cfg):
 
 def main(cfg):
     modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
-    should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
+    should_restart = {
+        subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps
+    }
 
     log("\n" + ("*" * 100))
     log("Tasks modified since last runs:")
@@ -152,7 +186,7 @@ def main(cfg):
 
     if should_restart["build_graphs"]:
         build_graphs.main(cfg)
-    
+
     if should_restart["transformation"]:
         transformation.main(cfg)
 
@@ -160,7 +194,7 @@ def main(cfg):
     stats = get_stats(cfg)
     for key, value in stats.items():
         results[key] = value
-    
+
     results["train_set_days"] = cfg.dataset.train_files
     results["val_set_days"] = cfg.dataset.val_files
     results["test_set_days"] = cfg.dataset.test_files
@@ -172,16 +206,25 @@ def main(cfg):
 
     print(f"Dataset stats of {cfg.dataset.name}")
     print("==" * 30)
-    
+
     for k, v in results.items():
         print(f"{k}: {v}")
-    
+
 
 if __name__ == "__main__":
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
 
-    exp_name = args.exp if args.exp != "" else \
-        "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
+    exp_name = (
+        args.exp
+        if args.exp != ""
+        else "|".join(
+            [
+                f"{k.split('.')[-1]}={v}"
+                for k, v in args.__dict__.items()
+                if "." in k and v is not None
+            ]
+        )
+    )
     tags = args.tags.split(",") if args.tags != "" else [args.model]
 
     wandb.init(

@@ -1,20 +1,21 @@
-from provnet_utils import set_seed
+from pidsmaker.provnet_utils import set_seed
+
 from . import build_random_walks
 from .embed_nodes_methods import (
-    embed_nodes_word2vec,
-    embed_nodes_doc2vec,
     build_feature_word2vec,
     build_temporal_random_walk,
-    embed_nodes_trw,
-    embed_nodes_flash,
+    embed_nodes_doc2vec,
     embed_nodes_fasttext,
+    embed_nodes_flash,
+    embed_nodes_trw,
+    embed_nodes_word2vec,
     embed_paths_provd,
 )
 
 
 def main(cfg):
     set_seed(cfg)
-    
+
     method = cfg.featurization.embed_nodes.used_method.strip()
     if method == "word2vec":
         build_random_walks.main(cfg)

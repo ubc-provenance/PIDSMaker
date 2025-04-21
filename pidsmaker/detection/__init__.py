@@ -1,2 +1,1 @@
-from . import gnn_training
-from . import evaluation
+from . import evaluation, gnn_training

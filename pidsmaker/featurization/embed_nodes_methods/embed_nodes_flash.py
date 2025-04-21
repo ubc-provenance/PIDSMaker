@@ -1,11 +1,20 @@
 import os
-import torch
 from collections import defaultdict
 from itertools import chain
-from provnet_utils import get_indexid2msg, get_all_files_from_folders, log_tqdm, log, log_start, tokenize_arbitrary_label
-from featurization.featurization_utils import get_splits_to_train_featurization
 
+import torch
 from gensim.models import Word2Vec
+
+from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
+from pidsmaker.provnet_utils import (
+    get_all_files_from_folders,
+    get_indexid2msg,
+    log,
+    log_start,
+    log_tqdm,
+    tokenize_arbitrary_label,
+)
+
 
 def get_node2corpus(cfg, splits):
     indexid2msg = get_indexid2msg(cfg)
@@ -18,15 +27,20 @@ def get_node2corpus(cfg, splits):
     for file_path in log_tqdm(sorted_paths, desc=f"Loading training data for {str(splits)}"):
         graph = torch.load(file_path)
 
-        sorted_edges = sorted([(u, v, attr['label'], int(attr['time'])) \
-            for u, v, key, attr in graph.edges(data=True, keys=True)], key=lambda x: x[3])
+        sorted_edges = sorted(
+            [
+                (u, v, attr["label"], int(attr["time"]))
+                for u, v, key, attr in graph.edges(data=True, keys=True)
+            ],
+            key=lambda x: x[3],
+        )
 
         nodes, node_types, edges = defaultdict(list), {}, []
         for e in sorted_edges:
             src, dst, operation, t = e
             src_type, src_msg = indexid2msg[src]
             dst_type, dst_msg = indexid2msg[dst]
-            
+
             properties = [src_msg, operation, dst_msg]
 
             if len(nodes[src]) < 300:
@@ -46,7 +60,7 @@ def get_node2corpus(cfg, splits):
             index_map[node_id] = len(features) - 1
 
         data_of_graphs.append((features, types, list(index_map.keys())))
-        
+
     token_cache = {}
     node2corpus = defaultdict(list)
     for graphs in log_tqdm(data_of_graphs, desc="Tokenizing corpus"):
@@ -55,11 +69,12 @@ def get_node2corpus(cfg, splits):
                 if sentence not in token_cache:
                     tokens = tokenize_arbitrary_label(sentence)
                     token_cache[sentence] = tokens
-                
+
                 tokens = token_cache[sentence]
                 node2corpus[node_id].extend(tokens)
 
     return node2corpus
+
 
 class RepeatableIterator:
     def __init__(self, data):
@@ -70,9 +85,10 @@ class RepeatableIterator:
             for sentence in phrases:
                 yield sentence
 
+
 def main(cfg):
     log_start(__file__)
-    
+
     training_files = get_splits_to_train_featurization(cfg)
     all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files).values())
 
@@ -81,7 +97,7 @@ def main(cfg):
     min_count = cfg.featurization.embed_nodes.flash.min_count
     workers = cfg.featurization.embed_nodes.flash.workers
 
-    log(f"Training word2vec model...")
+    log("Training word2vec model...")
     model = Word2Vec(vector_size=emb_dim, min_count=min_count, workers=workers, epochs=epochs)
     model.build_vocab(RepeatableIterator(all_phrases), progress_per=10000)
     model.train(RepeatableIterator(all_phrases), total_examples=model.corpus_count, epochs=epochs)

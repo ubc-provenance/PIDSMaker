@@ -1,8 +1,16 @@
 import csv
-from typing import Literal
-from provnet_utils import log, log_start, get_all_files_from_folders, gen_darpa_adj_files, gen_darpa_rw_file
 import os
+from typing import Literal
+
 import torch
+
+from pidsmaker.provnet_utils import (
+    gen_darpa_adj_files,
+    gen_darpa_rw_file,
+    get_all_files_from_folders,
+    log,
+    log_start,
+)
 
 
 def preprocess_split(split: Literal["train", "val", "test"], split_files: list[str], cfg):
@@ -11,17 +19,25 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     num_walks = cfg.featurization.embed_nodes.word2vec.num_walks
 
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
-    
-    g = []
-    graph_info = open(f"{cfg.featurization.embed_nodes.word2vec._random_walk_dir}/graph_info.csv", "w")
-    writer = csv.writer(graph_info)
-    random_walks_file = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir, f"{split}.csv")
-    random_walks_file_fd = open(random_walks_file, 'w')
-    adjacency_path = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj")
 
-    corpus_file = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv")
-    corpus_file_fd = open(corpus_file, 'w')
-    
+    g = []
+    graph_info = open(
+        f"{cfg.featurization.embed_nodes.word2vec._random_walk_dir}/graph_info.csv", "w"
+    )
+    writer = csv.writer(graph_info)
+    random_walks_file = os.path.join(
+        cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir, f"{split}.csv"
+    )
+    random_walks_file_fd = open(random_walks_file, "w")
+    adjacency_path = os.path.join(
+        cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj"
+    )
+
+    corpus_file = os.path.join(
+        cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv"
+    )
+    corpus_file_fd = open(corpus_file, "w")
+
     for path in sorted_paths:
         file = path.split("/")[-1]
         adjacency_file = os.path.join(adjacency_path, f"{split}-{file}.csv")
@@ -31,10 +47,7 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
         graph = torch.load(path)
         gen_darpa_adj_files(graph, adjacency_file)
         g.append(graph)
-        writer.writerow([
-            adjacency_file,
-            len(graph.nodes)
-        ])
+        writer.writerow([adjacency_file, len(graph.nodes)])
 
         gen_darpa_rw_file(
             walk_len=cfg.featurization.embed_nodes.word2vec.walk_length,
@@ -46,6 +59,7 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     graph_info.close()
     random_walks_file_fd.close()
     corpus_file_fd.close()
+
 
 def main(cfg):
     log_start(__file__)

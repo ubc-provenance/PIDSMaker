@@ -1,5 +1,6 @@
 import networkx as nx
 
+
 def main(G: nx.Graph) -> nx.Graph:
     """
     Iterate through each edge in the graph and add the reverse edge if it doesn't exist.
@@ -11,6 +12,6 @@ def main(G: nx.Graph) -> nx.Graph:
     for u, v, data in G.edges(data=True):
         if not G.has_edge(v, u):
             edges_to_add.append((v, u, data))
-    
+
     G.add_edges_from(edges_to_add)
     return G

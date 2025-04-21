@@ -1,5 +1,6 @@
 import networkx as nx
 
+
 def main(G: nx.Graph) -> nx.Graph:
     """
     Removes edges that make cycles in the graph, including self-loops.
@@ -11,9 +12,9 @@ def main(G: nx.Graph) -> nx.Graph:
     while True:
         try:
             cycles = nx.find_cycle(G)
-            for cycle in cycles: # fast approximation, the optimal would be to remove 1 by 1
+            for cycle in cycles:  # fast approximation, the optimal would be to remove 1 by 1
                 G.remove_edge(*cycle)
-            
+
         except nx.NetworkXNoCycle:
             break
     G = nx.MultiDiGraph(G)

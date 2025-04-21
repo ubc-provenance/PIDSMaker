@@ -1,15 +1,15 @@
+import csv
+import multiprocessing
 import os
+import time
 
-from provnet_utils import log
 import torch
 
-from .depimpact_utils import DEPIMPACT, visualize_dependency_graph, log_with_pid
+import pidsmaker.labelling as labelling
+from pidsmaker.provnet_utils import log
 
-import multiprocessing
-import labelling
+from .depimpact_utils import DEPIMPACT, log_with_pid, visualize_dependency_graph
 
-import time
-import csv
 
 def get_tasks(evaluation_results):
     tw_to_poi = {}
@@ -26,6 +26,7 @@ def get_tasks(evaluation_results):
 
     return tw_to_poi, tw_to_node_score
 
+
 def split_list(lst, n):
     avg = len(lst) // n
     remainder = len(lst) % n
@@ -39,6 +40,7 @@ def split_list(lst, n):
 
     return result
 
+
 def worker_func(task_list, worker_num):
     pid = os.getpid()
     log(f"Start worker {str(worker_num)} with pid {pid}")
@@ -46,7 +48,14 @@ def worker_func(task_list, worker_num):
     result = []
 
     for task in task_list:
-        tw, graph_dir, poi, node_to_score, used_method, score_method  = task[0], task[1], task[2], task[3], task[4], task[5]
+        tw, graph_dir, poi, node_to_score, used_method, score_method = (
+            task[0],
+            task[1],
+            task[2],
+            task[3],
+            task[4],
+            task[5],
+        )
 
         # load graph
         graph = torch.load(graph_dir)
@@ -69,33 +78,29 @@ def worker_func(task_list, worker_num):
 
     return result
 
-def run(tasks,
-        workers):
+
+def run(tasks, workers):
     workload_list = split_list(tasks, workers)
 
     arg_list = []
     for i in range(len(workload_list)):
-        args = (
-            workload_list[i],
-            i
-        )
+        args = (workload_list[i], i)
         arg_list.append(args)
 
     with multiprocessing.Pool(processes=workers) as pool:
         results = pool.starmap(worker_func, arg_list)
 
-    log(f"Finish tracing work")
+    log("Finish tracing work")
     all_results = []
     for result in results:
         all_results.extend(result)
 
     return all_results
 
-def main(evaluation_results,
-         tw_to_timestr,
-         cfg):
+
+def main(evaluation_results, tw_to_timestr, cfg):
     base_dir = cfg.preprocessing.transformation._graphs_dir
-    ground_truth_nids, _, _ = labelling.get_ground_truth(cfg) # int
+    ground_truth_nids, _, _ = labelling.get_ground_truth(cfg)  # int
 
     used_method = cfg.triage.tracing.depimpact.used_method
     score_method = cfg.triage.tracing.depimpact.score_method
@@ -104,7 +109,7 @@ def main(evaluation_results,
     tasks = []
     for tw, pois in tw_to_poi.items():
         timestr = tw_to_timestr[tw]
-        day = timestr[8:10].lstrip('0')
+        day = timestr[8:10].lstrip("0")
         graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
 
         for poi in pois:
@@ -119,16 +124,22 @@ def main(evaluation_results,
     tw_to_info = {}
     detailed_info = []
     for result in all_results:
-        tw, graph_dir, subgraph_nodes, poi, time_taken = result[0], result[1], result[2], result[3], result[4]
+        tw, graph_dir, subgraph_nodes, poi, time_taken = (
+            result[0],
+            result[1],
+            result[2],
+            result[3],
+            result[4],
+        )
 
-        #check tracing result of each poi
-        log('--' * 20)
+        # check tracing result of each poi
+        log("--" * 20)
         if int(poi) in ground_truth_nids:
             log(f"POI {str(poi)} in time window {str(tw)} is a TP POI")
-            tp_or_fp = 'TP'
+            tp_or_fp = "TP"
         else:
             log(f"POI {str(poi)} in time window {str(tw)} is a FP POI")
-            tp_or_fp = 'FP'
+            tp_or_fp = "FP"
         log(f"Tracing poi {str(poi)} in time window {str(tw)} leads to:")
         tps = 0
         fps = 0
@@ -141,19 +152,19 @@ def main(evaluation_results,
         detailed_info.append((int(poi), tw, tp_or_fp, tps, fps, time_taken_str))
         log(f"TPS: {tps}, FPS: {fps}")
         log(f"{time_taken:.2f} seconds is taken")
-        log('--' * 20)
+        log("--" * 20)
 
         if int(tw) not in tw_to_info:
             tw_to_info[int(tw)] = {}
-            tw_to_info[int(tw)]['graph_dir'] = graph_dir
-            tw_to_info[int(tw)]['subgraph_nodes'] = set()
-        tw_to_info[int(tw)]['subgraph_nodes'] |= set(subgraph_nodes)
+            tw_to_info[int(tw)]["graph_dir"] = graph_dir
+            tw_to_info[int(tw)]["subgraph_nodes"] = set()
+        tw_to_info[int(tw)]["subgraph_nodes"] |= set(subgraph_nodes)
     log("==" * 20)
 
     out_dir = cfg.triage.tracing._tracing_graph_dir
     os.makedirs(out_dir, exist_ok=True)
 
-    detailed_info_filename = used_method + '_' + score_method + "_detailed.csv"
+    detailed_info_filename = used_method + "_" + score_method + "_detailed.csv"
     detailed_info_dir = os.path.join(out_dir, detailed_info_filename)
     save_detailed_infos(detailed_info, detailed_info_dir)
 
@@ -170,14 +181,17 @@ def main(evaluation_results,
 
         if cfg.triage.tracing.depimpact.visualize:
             log(f"Visualize graph for tw {str(tw)}")
-            visualize_dependency_graph(dependency_graph=subgraph,
-                                       ground_truth_nids=ground_truth_nids,
-                                       poi=set(tw_to_poi[tw]),
-                                       tw=str(tw),
-                                       out_dir=out_dir,
-                                       cfg=cfg)
+            visualize_dependency_graph(
+                dependency_graph=subgraph,
+                ground_truth_nids=ground_truth_nids,
+                poi=set(tw_to_poi[tw]),
+                tw=str(tw),
+                out_dir=out_dir,
+                cfg=cfg,
+            )
 
     return tw_to_info, all_traced_nodes
+
 
 def save_detailed_infos(infos, out_dir):
     poi, tw, tp_or_fp, tps, fps, time_taken_str = [], [], [], [], [], []
@@ -197,4 +211,3 @@ def save_detailed_infos(infos, out_dir):
         writer.writerow(tps)
         writer.writerow(fps)
         writer.writerow(time_taken_str)
-

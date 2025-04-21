@@ -1,32 +1,41 @@
 import math
 import os
-import torch
-import numpy as np
-import networkx as nx
 from collections import defaultdict
 from itertools import chain
-from provnet_utils import log, tokenize_arbitrary_label, get_all_files_from_folders, log_tqdm
-from featurization.featurization_utils import get_splits_to_train_featurization
+
+import networkx as nx
+import numpy as np
+import torch
+from gensim.models.doc2vec import TaggedDocument
+from sklearn.neighbors import LocalOutlierFactor
+
+from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
+from pidsmaker.provnet_utils import (
+    get_all_files_from_folders,
+    log,
+    log_tqdm,
+    tokenize_arbitrary_label,
+)
+
 from .embed_nodes_doc2vec import doc2vec
 
-from sklearn.neighbors import LocalOutlierFactor
-from gensim.models.doc2vec import TaggedDocument
 
 def get_edge_key(u, v, graph):
     edge_number_between_nodes = graph.new_edge_key(u, v) - 1
     edge_key = 0
     lowest_weight = 0
     for k in range(edge_number_between_nodes):
-        if graph.edges[u, v, k]['weight'] <= lowest_weight:
-            lowest_weight = graph.edges[u, v, k]['weight']
+        if graph.edges[u, v, k]["weight"] <= lowest_weight:
+            lowest_weight = graph.edges[u, v, k]["weight"]
             edge_key = k
     return edge_key
+
 
 def get_node2paths(G, k, max_path_length):
     def shortest_path(graph: nx.MultiDiGraph, src, max_path_length):
         if graph.out_degree(src) == 0:
             return None
-        dist = dict.fromkeys(graph.nodes, float('inf'))
+        dist = dict.fromkeys(graph.nodes, float("inf"))
         dist[src] = 0
         path = dict.fromkeys(graph.nodes, None)
         topo_order = nx.topological_sort(graph)
@@ -35,12 +44,12 @@ def get_node2paths(G, k, max_path_length):
                 # We are running the algorithm on -G.
                 # So we should always select the edge with the lowest weight
                 edge_key = get_edge_key(n, s, graph)
-                if dist[s] > dist[n] + graph.edges[n, s, edge_key]['weight']:
-                    dist[s] = dist[n] + graph.edges[n, s, edge_key]['weight']
+                if dist[s] > dist[n] + graph.edges[n, s, edge_key]["weight"]:
+                    dist[s] = dist[n] + graph.edges[n, s, edge_key]["weight"]
                     path[s] = n
 
         # although we run the shortest path algorithm, the output is the longest path.
-        dist[src] = float('inf')
+        dist[src] = float("inf")
         min_path_weight = min(dist.values())
         dst_nodes = [node for node in dist if dist[node] == min_path_weight]
         longest_paths = []
@@ -61,33 +70,35 @@ def get_node2paths(G, k, max_path_length):
 
     # reference: https://en.wikipedia.org/wiki/Longest_path_problem#Acyclic_graphs
     # According to the wiki, finding the longest path on a dag G is equal to find the shortest path on -G
-    for (u, v, key) in G.edges(keys=True):
+    for u, v, key in G.edges(keys=True):
         G.edges[u, v, key]["weight"] = 0 - G.edges[u, v, key]["weight"]
-    
+
     topo_order = nx.topological_sort(G)
     top_uncommon_node2paths = defaultdict(list)
-    node2paths_cache = defaultdict(set) # we don't want duplicate paths for a node
+    node2paths_cache = defaultdict(set)  # we don't want duplicate paths for a node
     token_cache = {}
+
     def get_token(w):
         if w not in token_cache:
             token_cache[w] = tokenize_arbitrary_label(w)
         return token_cache[w]
-    
+
     for src_node in topo_order:
         paths = shortest_path(G, src_node, max_path_length)
         if paths:
             for path in paths:
-                path, score = path # todo: consider score + keep k
+                path, score = path  # todo: consider score + keep k
                 path_str = str(path)
                 if path_str not in node2paths_cache[src_node]:
                     node2paths_cache[src_node].add(path_str)
-                    
+
                     text_path = text_extraction(path, G)
                     tokenized_path = list(chain(*[get_token(w) for w in text_path]))
-                    
+
                     top_uncommon_node2paths[src_node].append([tokenized_path, score])
 
     return top_uncommon_node2paths
+
 
 def text_extraction(path, G):
     text = []
@@ -95,12 +106,12 @@ def text_extraction(path, G):
         src = edge[0]
         dst = edge[1]
 
-        src_text = G.nodes[src]['label']
-        dst_text = G.nodes[dst]['label']
+        src_text = G.nodes[src]["label"]
+        dst_text = G.nodes[dst]["label"]
 
         # As in top-k path extraction algorithm, we always select the edge with the lowest weight.
         edge_key = get_edge_key(src, dst, G)
-        edge_text = G.edges[src, dst, edge_key]['label']
+        edge_text = G.edges[src, dst, edge_key]["label"]
 
         if not text:
             text.append(src_text)
@@ -112,12 +123,19 @@ def text_extraction(path, G):
 
     return text
 
-def build_event_map(graph_list:list):
+
+def build_event_map(graph_list: list):
     event_mapping = {}
     num_of_host = len(graph_list)
     for graph in graph_list:
-        for (u, v, k) in graph.edges:
-            event = graph.nodes[u]["label"] + "->" + graph.edges[u, v, k]["label"] + "->" + graph.nodes[v]["label"]
+        for u, v, k in graph.edges:
+            event = (
+                graph.nodes[u]["label"]
+                + "->"
+                + graph.edges[u, v, k]["label"]
+                + "->"
+                + graph.nodes[v]["label"]
+            )
             # Here, we assume each of 50 hosts has several graphs
             host_id = graph_list.index(graph) % num_of_host
             if event not in event_mapping:
@@ -131,21 +149,24 @@ def build_event_map(graph_list:list):
         event_mapping[event] = count
     return event_mapping
 
+
 def weight_edge_list(glist, n, event_mapping):
     i = 0
-    H = len(glist)  # the number of the logs represent the number of the host in the enterprise environment
+    H = len(
+        glist
+    )  # the number of the logs represent the number of the host in the enterprise environment
 
     for G in glist:
-        sorted_edges = sorted(G.edges(data=True, keys=True), key=lambda t: t[3].get('time'))
+        sorted_edges = sorted(G.edges(data=True, keys=True), key=lambda t: t[3].get("time"))
 
-        min_time = sorted_edges[0][3]['time']
-        max_time = sorted_edges[-1][3]['time']
+        min_time = sorted_edges[0][3]["time"]
+        max_time = sorted_edges[-1][3]["time"]
         interval = (max_time - min_time) / n
         res_dic = {}
 
         for edge in sorted_edges:
-            num_window = int((edge[3]['time'] - min_time) // interval)
-            if edge[3]['time'] == max_time:
+            num_window = int((edge[3]["time"] - min_time) // interval)
+            if edge[3]["time"] == max_time:
                 num_window = n - 1
             if res_dic.get(edge[0]) is None:
                 res_dic[edge[0]] = [[], []]  # [out], [in]
@@ -156,7 +177,7 @@ def weight_edge_list(glist, n, event_mapping):
             if num_window not in res_dic[edge[1]][1]:  # in & dst node
                 res_dic[edge[1]][1].append(num_window)
 
-        for edge in log_tqdm(G.edges.data(keys=True), desc='weight edges of graph {}'.format(i)):
+        for edge in log_tqdm(G.edges.data(keys=True), desc="weight edges of graph {}".format(i)):
             # According to the paper, the weight of all pseudo_link is 1
             if G.edges[edge[0], edge[1], edge[2]]["label"] == "pseudo_link":
                 G.edges[edge[0], edge[1], edge[2]]["Rareness"] = 0.5
@@ -182,9 +203,12 @@ def weight_edge_list(glist, n, event_mapping):
                 G.edges[edge[0], edge[1], edge[2]]["Rareness"] = r
                 G.edges[edge[0], edge[1], edge[2]]["weight"] = 0 - math.log(r, 2)
             else:
-                with open('./weighted_error.txt', 'a+') as f:
-                    f.write("Graph number [{}]: src: {}, dst: {}, in_val:{}, out_val:{}\n".format(
-                        i, src, dst, in_val, out_avl))
+                with open("./weighted_error.txt", "a+") as f:
+                    f.write(
+                        "Graph number [{}]: src: {}, dst: {}, in_val:{}, out_val:{}\n".format(
+                            i, src, dst, in_val, out_avl
+                        )
+                    )
                     f.close()
                 if out_avl == 0:
                     out_avl = 1e-9
@@ -196,6 +220,7 @@ def weight_edge_list(glist, n, event_mapping):
         i += 1
     return glist
 
+
 def get_node2corpus(splits, cfg, model=None):
     n_time_windows = cfg.featurization.embed_nodes.provd.n_time_windows
     k = cfg.featurization.embed_nodes.provd.k
@@ -204,7 +229,7 @@ def get_node2corpus(splits, cfg, model=None):
     days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
     sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, days)
     train_g = [torch.load(path) for path in sorted_paths]
-    
+
     # Weight graphs
     event_mapping = build_event_map(train_g)
     train_g = weight_edge_list(train_g, n_time_windows, event_mapping)
@@ -213,32 +238,32 @@ def get_node2corpus(splits, cfg, model=None):
     train_files = sorted_paths
     corpus = []
     all_node2paths = defaultdict(list)
-    for graph in log_tqdm(train_g, desc=f'Extracting the paths for {splits}'):
+    for graph in log_tqdm(train_g, desc=f"Extracting the paths for {splits}"):
         cycles = list(nx.simple_cycles(graph))
         if cycles:
             raise RuntimeError("The graph contains cycles, use transformation 'dag'.")
 
         node2paths = get_node2paths(graph, k, mpl)
-        
+
         for node, paths in node2paths.items():
             all_node2paths[node].extend(paths)
-            
+
     # For each node, we keep its k most uncommon paths
     for node, paths in all_node2paths.items():
         all_node2paths[node] = [path[0] for path in sorted(paths, key=(lambda x: x[1]))[:k]]
-        
+
     return all_node2paths
 
 
-def main(cfg):    
+def main(cfg):
     model_save_dir = cfg.featurization.embed_nodes._model_dir
 
     splits = get_splits_to_train_featurization(cfg)
     node2corpus = get_node2corpus(splits, cfg)
     corpus = [list(chain(*v)) for k, v in node2corpus.items()]
-    
+
     train_data = [TaggedDocument(text, tags=[corpus.index(text)]) for text in corpus]
-    
+
     emb_dim = cfg.featurization.embed_nodes.emb_dim
     epochs = cfg.featurization.embed_nodes.epochs
     alpha = cfg.featurization.embed_nodes.provd.alpha
@@ -251,7 +276,7 @@ def main(cfg):
         alpha=alpha,
         cfg=cfg,
     )
-    
+
     # Train classifier on training benign path embeddings
     path2vec = {}
     for _, corpus in node2corpus.items():
@@ -259,12 +284,12 @@ def main(cfg):
             if str(path) not in path2vec:
                 vector = model.infer_vector(path)
                 path2vec[str(path)] = vector
-    
+
     training_vectors = np.array(list(path2vec.values()))
-    
+
     n_neighbors = cfg.featurization.embed_nodes.provd.n_neighbors
     contamination = cfg.featurization.embed_nodes.provd.contamination
-    
+
     log("Training LOF model")
     clf = LocalOutlierFactor(novelty=True, n_neighbors=n_neighbors, contamination=contamination)
     clf.fit(training_vectors)

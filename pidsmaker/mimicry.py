@@ -1,39 +1,76 @@
-from collections import defaultdict
-
-from fontTools.merge.util import current_time
-from provnet_utils import datetime_to_ns_time_US
-import random
-import os
 import csv
-
-from config import *
-from provnet_utils import *
-from dataset_utils import get_rel2id
+import os
+import random
+from collections import defaultdict
 
 import networkx as nx
 
+from pidsmaker.config import *
+from pidsmaker.dataset_utils import get_rel2id
+from pidsmaker.provnet_utils import *
+from pidsmaker.provnet_utils import datetime_to_ns_time_US
+
 possible_structure = [
-    ['EVENT_OPEN', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_WRITE'],
-    ['EVENT_OPEN', 'EVENT_READ', 'EVENT_WRITE'],
-    ['EVENT_OPEN', 'EVENT_WRITE', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_READ', 'EVENT_WRITE'],
-    ['EVENT_OPEN', 'EVENT_WRITE', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_WRITE', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_WRITE'],
-    ['EVENT_OPEN', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_WRITE',],
-    ['EVENT_OPEN', 'EVENT_WRITE', 'EVENT_READ', 'EVENT_READ', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_READ', 'EVENT_READ', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_READ', 'EVENT_WRITE', 'EVENT_WRITE'],
-    ['EVENT_OPEN', 'EVENT_READ', 'EVENT_READ', 'EVENT_READ', 'EVENT_READ'],
-    ['EVENT_OPEN', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_WRITE', 'EVENT_WRITE',],
+    ["EVENT_OPEN", "EVENT_READ"],
+    ["EVENT_OPEN", "EVENT_WRITE"],
+    ["EVENT_OPEN", "EVENT_READ", "EVENT_WRITE"],
+    ["EVENT_OPEN", "EVENT_WRITE", "EVENT_READ"],
+    ["EVENT_OPEN", "EVENT_READ", "EVENT_WRITE", "EVENT_READ", "EVENT_WRITE"],
+    ["EVENT_OPEN", "EVENT_WRITE", "EVENT_READ", "EVENT_WRITE", "EVENT_READ"],
+    ["EVENT_OPEN", "EVENT_READ", "EVENT_WRITE", "EVENT_WRITE", "EVENT_READ"],
+    ["EVENT_OPEN", "EVENT_WRITE", "EVENT_READ", "EVENT_WRITE", "EVENT_WRITE"],
+    [
+        "EVENT_OPEN",
+        "EVENT_READ",
+        "EVENT_WRITE",
+        "EVENT_READ",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+    ],
+    [
+        "EVENT_OPEN",
+        "EVENT_WRITE",
+        "EVENT_READ",
+        "EVENT_READ",
+        "EVENT_READ",
+        "EVENT_WRITE",
+        "EVENT_READ",
+    ],
+    [
+        "EVENT_OPEN",
+        "EVENT_READ",
+        "EVENT_READ",
+        "EVENT_READ",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+        "EVENT_READ",
+    ],
+    [
+        "EVENT_OPEN",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+        "EVENT_READ",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+    ],
+    ["EVENT_OPEN", "EVENT_READ", "EVENT_READ", "EVENT_READ", "EVENT_READ"],
+    [
+        "EVENT_OPEN",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+        "EVENT_WRITE",
+    ],
 ]
+
 
 def get_uuid2nids2type(cur):
     queries = {
         "file": "SELECT index_id, node_uuid FROM file_node_table;",
         "netflow": "SELECT index_id, node_uuid FROM netflow_node_table;",
-        "subject": "SELECT index_id, node_uuid FROM subject_node_table;"
+        "subject": "SELECT index_id, node_uuid FROM subject_node_table;",
     }
     uuid2nids = {}
     nid2uuid = {}
@@ -47,6 +84,7 @@ def get_uuid2nids2type(cur):
             nid2type[row[0]] = node_type
     return uuid2nids, nid2uuid, nid2type
 
+
 def obtain_all_files(cur):
     sql = "SELECT index_id, node_uuid FROM file_node_table;"
     cur.execute(sql)
@@ -57,20 +95,23 @@ def obtain_all_files(cur):
         file_set.add(row[0])
     return file_set
 
+
 def divide_integer(a, b):
     base_size = a // b
     remainder = a % b
     result = [base_size + 1 if i < remainder else base_size for i in range(b)]
     return result
 
+
 def random_timestamp(start_ns, end_ns):
     if start_ns > end_ns:
         start_ns, end_ns = end_ns, start_ns
     return random.randint(start_ns, end_ns)
 
+
 def save_mimicry_nodes(cfg, cur, nodes, attack):
     os.makedirs(cfg.preprocessing.build_graphs._mimicry_dir, exist_ok=True)
-    save_dir = os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, attack.split('/')[-1])
+    save_dir = os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, attack.split("/")[-1])
 
     data = []
     sql1 = "SELECT node_uuid, index_id, path FROM file_node_table;"
@@ -81,26 +122,27 @@ def save_mimicry_nodes(cfg, cur, nodes, attack):
     for row in rows:
         node_uuid = row[0]
         index_id = int(row[1])
-        path = row[2] if row[2] is not None else 'None'
+        path = row[2] if row[2] is not None else "None"
         if index_id in nodes:
-            data.append((node_uuid, {'file': path}, index_id))
+            data.append((node_uuid, {"file": path}, index_id))
 
     cur.execute(sql2)
     rows = cur.fetchall()
     for row in rows:
         node_uuid = row[0]
         index_id = int(row[1])
-        path = row[2] if row[2] is not None else 'None'
-        cmd = row[3] if row[3] is not None else 'None'
+        path = row[2] if row[2] is not None else "None"
+        cmd = row[3] if row[3] is not None else "None"
         if index_id in nodes:
-            data.append((node_uuid, {'subject': path+' '+cmd}, index_id))
+            data.append((node_uuid, {"subject": path + " " + cmd}, index_id))
 
-    with open(save_dir, 'w') as f:
+    with open(save_dir, "w") as f:
         csv_writer = csv.writer(f)
         for line in data:
             csv_writer.writerow(line)
 
     log(f"{len(data)} mimicry nodes saved into {save_dir}.")
+
 
 def gen_mimicry_edges(cfg):
     cur, connect = init_database_connection(cfg)
@@ -125,7 +167,7 @@ def gen_mimicry_edges(cfg):
 
         # Find attack root and descendant process
         ground_truth_nids = []
-        with open(os.path.join(cfg._ground_truth_dir, attack), 'r') as f:
+        with open(os.path.join(cfg._ground_truth_dir, attack), "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -147,7 +189,9 @@ def gen_mimicry_edges(cfg):
                 edges.append((str(src_id), str(dst_id), int(t)))
 
         dag_between_GPs, _ = generate_DAG(edges)
-        root_nodes = set([node for node, in_degree in dag_between_GPs.in_degree() if in_degree == 0])
+        root_nodes = set(
+            [node for node, in_degree in dag_between_GPs.in_degree() if in_degree == 0]
+        )
 
         # create graph and obtain all descendants
         rows = get_events_between_time_range(cur, start_time, end_time)
@@ -161,9 +205,9 @@ def gen_mimicry_edges(cfg):
             if operation in rel2id:
                 edges.append((str(src_id), str(dst_id), int(t)))
 
-            if nid2type[int(src_id)] == 'subject':
+            if nid2type[int(src_id)] == "subject":
                 process2times[src_id].append(t)
-            if nid2type[int(dst_id)] == 'subject':
+            if nid2type[int(dst_id)] == "subject":
                 process2times[dst_id].append(t)
 
         dag_of_attack, node_version = generate_DAG(edges)
@@ -171,13 +215,13 @@ def gen_mimicry_edges(cfg):
         all_descendants = set()
         for root in root_nodes:
             descendants = nx.descendants(dag_of_attack, root)
-            desc = set([v.split('-')[0] for v in descendants])
+            desc = set([v.split("-")[0] for v in descendants])
             all_descendants |= desc
-        all_descendants |= set([v.split('-')[0] for v in root_nodes])
+        all_descendants |= set([v.split("-")[0] for v in root_nodes])
 
         possible_process = set()
         for nid in all_descendants:
-            if nid2type[int(nid)] == 'subject':
+            if nid2type[int(nid)] == "subject":
                 possible_process.add(nid)
 
         possible_file = obtain_all_files(cur)
@@ -204,12 +248,28 @@ def gen_mimicry_edges(cfg):
                 event_time = current_time + time_bias
                 current_time = event_time
                 event_uuid = stringtomd5(str(random_subject) + str(random_file) + str(current_time))
-                if ope == 'EVENT_OPEN' or ope == 'EVENT_WRITE':
-                    event = (nid2uuid[int(random_subject)], str(random_subject), ope, nid2uuid[int(random_file)], str(random_file), event_uuid, event_time, 0)
-                elif ope == 'EVENT_READ':
+                if ope == "EVENT_OPEN" or ope == "EVENT_WRITE":
                     event = (
-                    nid2uuid[int(random_file)], str(random_file), ope, nid2uuid[int(random_subject)], str(random_subject), event_uuid,
-                    event_time, 0)
+                        nid2uuid[int(random_subject)],
+                        str(random_subject),
+                        ope,
+                        nid2uuid[int(random_file)],
+                        str(random_file),
+                        event_uuid,
+                        event_time,
+                        0,
+                    )
+                elif ope == "EVENT_READ":
+                    event = (
+                        nid2uuid[int(random_file)],
+                        str(random_file),
+                        ope,
+                        nid2uuid[int(random_subject)],
+                        str(random_subject),
+                        event_uuid,
+                        event_time,
+                        0,
+                    )
                 else:
                     log(f"Undefined event type {ope}")
 

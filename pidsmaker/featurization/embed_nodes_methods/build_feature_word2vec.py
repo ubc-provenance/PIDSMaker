@@ -1,8 +1,9 @@
 import os
-from provnet_utils import log_start, log
+
 from gensim.models import Word2Vec
 
-from featurization.featurization_utils import get_corpus
+from pidsmaker.featurization.featurization_utils import get_corpus
+from pidsmaker.provnet_utils import log, log_start
 
 
 def train_feature_word2vec(corpus, cfg, model_save_path):
@@ -18,17 +19,19 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
     use_seed = cfg.featurization.embed_nodes.use_seed
     SEED = 0
 
-    model = Word2Vec(corpus,
-                        alpha=alpha,
-                        vector_size=emb_dim,
-                        window=window_size,
-                        min_count=min_count,
-                        sg=use_skip_gram,
-                        workers=num_workers,
-                        epochs=1,
-                        compute_loss=compute_loss,
-                        negative=negative,
-                        seed=SEED)
+    model = Word2Vec(
+        corpus,
+        alpha=alpha,
+        vector_size=emb_dim,
+        window=window_size,
+        min_count=min_count,
+        sg=use_skip_gram,
+        workers=num_workers,
+        epochs=1,
+        compute_loss=compute_loss,
+        negative=negative,
+        seed=SEED,
+    )
 
     epoch_loss = model.get_latest_training_loss()
     log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
@@ -37,14 +40,15 @@ def train_feature_word2vec(corpus, cfg, model_save_path):
         model.running_training_loss = 0
         model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
         epoch_loss = model.get_latest_training_loss()
-        log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
+        log(f"Epoch: {epoch + 1}/{epochs}; loss: {epoch_loss}")
 
     loss = model.get_latest_training_loss()
     log(f"Epoch: {epochs}; loss: {loss}")
 
     model.init_sims(replace=True)
-    model.save(os.path.join(model_save_path, 'feature_word2vec.model'))
+    model.save(os.path.join(model_save_path, "feature_word2vec.model"))
     log(f"Save word2vec to {os.path.join(model_save_path, 'feature_word2vec.model')}")
+
 
 def main(cfg):
     log_start(__file__)
@@ -53,10 +57,8 @@ def main(cfg):
 
     log("Loading and tokenizing corpus from database...")
     multi_dataset_training = cfg.featurization.embed_nodes.multi_dataset_training
-    
+
     corpus = get_corpus(cfg, gather_multi_dataset=multi_dataset_training)
 
     log(f"Building feature word2vec model and save model to {model_save_path}")
-    train_feature_word2vec(corpus=corpus,
-                           cfg=cfg,
-                           model_save_path=model_save_path)
+    train_feature_word2vec(corpus=corpus, cfg=cfg, model_save_path=model_save_path)

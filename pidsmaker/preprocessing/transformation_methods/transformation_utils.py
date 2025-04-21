@@ -1,5 +1,6 @@
-import numpy as np
 import networkx as nx
+import numpy as np
+
 
 def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> nx.Graph:
     """

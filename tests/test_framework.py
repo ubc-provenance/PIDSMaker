@@ -1,27 +1,30 @@
 import os
-import sys
-import pathlib
-import pytest
 import shutil
 from itertools import product
 
+import pytest
 import wandb
 
-parent = pathlib.Path(__file__).parent.parent.resolve()
-sys.path.append(os.path.join(parent, "src"))
-
-import benchmark
-import config
-from config import (
+import pidsmaker.config as config
+from pidsmaker import benchmark
+from pidsmaker.config import (
     get_runtime_required_args,
     get_yml_cfg,
 )
 
 
-def prepare_cfg(model, dataset, transformation=None, featurization=None, encoder=None, objective=None, decoder=None):
+def prepare_cfg(
+    model,
+    dataset,
+    transformation=None,
+    featurization=None,
+    encoder=None,
+    objective=None,
+    decoder=None,
+):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
-    
+
     if transformation:
         args.__dict__["preprocessing.transformation.used_methods"] = transformation
     if featurization:
@@ -32,14 +35,15 @@ def prepare_cfg(model, dataset, transformation=None, featurization=None, encoder
         args.__dict__["detection.gnn_training.decoder.used_methods"] = objective
     if decoder and objective:
         args.__dict__[f"detection.gnn_training.decoder.{objective}.decoder"] = decoder
-        
+
     if encoder and "tgn" not in encoder:
         args.__dict__["detection.graph_preprocessing.intra_graph_batching.used_methods"] = "edges"
-    
+
     cfg = get_yml_cfg(args)
     cfg._test_mode = True
-    
+
     return cfg
+
 
 @pytest.fixture(scope="session", autouse=True)
 def framework_setup_teardown():
@@ -50,6 +54,7 @@ def framework_setup_teardown():
     yield
     # Runs after tests
     shutil.rmtree(config.ROOT_ARTIFACT_DIR)
+
 
 @pytest.fixture(scope="class")
 def dataset():
@@ -66,6 +71,7 @@ class TestTransformation:
     failing_with_tgn = [
         "rcaid_pseudo_graph",
     ]
+
     @pytest.mark.parametrize("transformation", transformations)
     def test_transformations_tgn(self, dataset, transformation):
         if transformation in self.failing_with_tgn:
@@ -75,7 +81,7 @@ class TestTransformation:
         else:
             cfg = prepare_cfg("tests", dataset, transformation=transformation)
             benchmark.main(cfg)
-            
+
     @pytest.mark.parametrize("transformation", transformations)
     def test_transformations(self, dataset, transformation):
         cfg = prepare_cfg("nodlink", dataset, transformation=transformation)
@@ -94,6 +100,7 @@ class TestFeaturization:
         "word2vec",
         "temporal_rw",
     ]
+
     @pytest.mark.parametrize("featurization", featurizations)
     def test_featurizations(self, dataset, featurization):
         cfg = prepare_cfg("tests", dataset, featurization=featurization)
@@ -118,6 +125,7 @@ class TestEncoderObjective:
         "reconstruct_edge_embeddings",
         "predict_edge_contrastive",
     ]
+
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
     def test_encoder_objective_pairs(self, dataset, encoder, objective):
         cfg = prepare_cfg("tests", dataset, encoder=encoder, objective=objective)
@@ -147,23 +155,32 @@ class TestDecoderObjective:
         "reconstruct_edge_embeddings",
         "predict_edge_contrastive",
     ]
-    @pytest.mark.parametrize("decoder,objective", list(product(node_decoders, node_level_objectives)))
+
+    @pytest.mark.parametrize(
+        "decoder,objective", list(product(node_decoders, node_level_objectives))
+    )
     def test_decoder_objective_pairs_node_level_success(self, dataset, decoder, objective):
         cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
         benchmark.main(cfg)
 
-    @pytest.mark.parametrize("decoder,objective", list(product(edge_decoders, edge_level_objectives)))
+    @pytest.mark.parametrize(
+        "decoder,objective", list(product(edge_decoders, edge_level_objectives))
+    )
     def test_decoder_objective_pairs_edge_level_success(self, dataset, decoder, objective):
         cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
         benchmark.main(cfg)
-        
-    @pytest.mark.parametrize("decoder,objective", list(product(node_decoders, edge_level_objectives)))
+
+    @pytest.mark.parametrize(
+        "decoder,objective", list(product(node_decoders, edge_level_objectives))
+    )
     def test_decoder_objective_pairs_node_level_fail(self, dataset, decoder, objective):
         with pytest.raises(ValueError):
             cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
             benchmark.main(cfg)
-            
-    @pytest.mark.parametrize("decoder,objective", list(product(edge_decoders, node_level_objectives)))
+
+    @pytest.mark.parametrize(
+        "decoder,objective", list(product(edge_decoders, node_level_objectives))
+    )
     def test_decoder_objective_pairs_edge_level_fail(self, dataset, decoder, objective):
         with pytest.raises(ValueError):
             cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)

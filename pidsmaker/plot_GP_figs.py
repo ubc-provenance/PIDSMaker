@@ -1,44 +1,34 @@
-import argparse
-import torch
-from tqdm import tqdm
-import wandb
-from config import *
-from provnet_utils import *
+import csv
 import os
 
-import numpy as np
-import igraph as ig
-
-from labelling import get_uuid2nids
-from provnet_utils import datetime_to_ns_time_US
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
-import threatrace_ground_truth as neigh
 import decendant_of_attack_root as source
+import igraph as ig
+import matplotlib.pyplot as plt
+import numpy as np
+import threatrace_ground_truth as neigh
+import torch
+from tqdm import tqdm
 
-import csv
+from pidsmaker.config import *
+from pidsmaker.labelling import get_uuid2nids
+from pidsmaker.provnet_utils import *
+from pidsmaker.provnet_utils import datetime_to_ns_time_US
 
 dataset_to_mtw = {
-    'THEIA_E3': [
-        [91,92,93,94],
-        [6,7,8],
+    "THEIA_E3": [
+        [91, 92, 93, 94],
+        [6, 7, 8],
     ],
 }
 
-def gen_GP_graph(cfg,
-                     start_time,
-                     end_time,
-                     nids,
-                     node_dir,
-                     edge_dir):
-    malicious_nodes = list(nids) #list(int)
+
+def gen_GP_graph(cfg, start_time, end_time, nids, node_dir, edge_dir):
+    malicious_nodes = list(nids)  # list(int)
     cur, connect = init_database_connection(cfg)
 
     node_to_path_type = get_node_to_path_and_type(cfg)  # key type is int
 
-    log(f"Get edges between GPs")
+    log("Get edges between GPs")
     rows = source.get_events_between_GPs(cur, start_time, end_time, malicious_nodes)
     edge_set = set()
     for row in tqdm(rows):
@@ -54,15 +44,17 @@ def gen_GP_graph(cfg,
     edge_index = np.array([(int(u), int(v)) for u, v, _ in edge_list])
     unique_nodes, new_edge_index = np.unique(edge_index.flatten(), return_inverse=True)
     new_edge_index = new_edge_index.reshape(edge_index.shape)
-    unique_paths = [node_to_path_type[int(n)]['path'] for n in unique_nodes]
+    unique_paths = [node_to_path_type[int(n)]["path"] for n in unique_nodes]
     unique_types = [node_to_path_type[int(n)]["type"] for n in unique_nodes]
 
     G = ig.Graph(edges=[tuple(e) for e in new_edge_index], directed=True)
     G.vs["original_id"] = unique_nodes
     G.vs["path"] = unique_paths
     G.vs["type"] = unique_types
-    G.vs["shape"] = ["rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle" for typ in
-                     unique_types]
+    G.vs["shape"] = [
+        "rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle"
+        for typ in unique_types
+    ]
 
     node_list = unique_nodes.tolist()
     new_node_list = list(range(len(node_list)))
@@ -70,15 +62,15 @@ def gen_GP_graph(cfg,
     edge_list = new_edge_index.tolist()
     log(f"There are {len(unique_nodes)} nodes")
 
-    with open(node_dir, mode='w', newline='') as f:
+    with open(node_dir, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(['Id', 'Label'])
+        writer.writerow(["Id", "Label"])
         writer.writerows(zip(new_node_list, node_label))
     log(f"node list is saved to {node_dir}")
 
-    with open(edge_dir, mode='w', newline='') as f:
+    with open(edge_dir, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(['Source', 'Target'])
+        writer.writerow(["Source", "Target"])
         writer.writerows(edge_list)
     log(f"edge list is saved to {edge_dir}")
 
@@ -89,35 +81,42 @@ def main(cfg, attack_num, gt_type, plot_gt):
     cur, connect = init_database_connection(cfg)
     log(f"Start processing attack {attack_num} of dataset {cfg.dataset.name}")
 
-    base_dir = os.path.join(ROOT_ARTIFACT_DIR, 'ground_truth_figs/')
+    base_dir = os.path.join(ROOT_ARTIFACT_DIR, "ground_truth_figs/")
     os.makedirs(base_dir, exist_ok=True)
 
-    out_dir = os.path.join(base_dir, f'{cfg.dataset.name}_attack_{attack_num}/')
+    out_dir = os.path.join(base_dir, f"{cfg.dataset.name}_attack_{attack_num}/")
     os.makedirs(out_dir, exist_ok=True)
 
-    log(f"get orthrus GPs")
-    orthrus_nids = get_GP_of_one_attack(cfg, attack_num) #set(int)
+    log("get orthrus GPs")
+    orthrus_nids = get_GP_of_one_attack(cfg, attack_num)  # set(int)
 
-    log(f"generate nx graph for GPs")
+    log("generate nx graph for GPs")
     _, start_time, end_time = cfg.dataset.attack_to_time_window[attack_num]
 
-    if gt_type == 'orthrus':
-        node_save_path = os.path.join(out_dir, 'orthrus_nodes.csv')
-        edge_save_path = os.path.join(out_dir, 'orthrus_edges.csv')
+    if gt_type == "orthrus":
+        node_save_path = os.path.join(out_dir, "orthrus_nodes.csv")
+        edge_save_path = os.path.join(out_dir, "orthrus_edges.csv")
         start_timestamp = datetime_to_ns_time_US(start_time)
         end_timestamp = datetime_to_ns_time_US(end_time)
 
-        ig_graph = gen_GP_graph(cfg, start_timestamp, end_timestamp, orthrus_nids, node_dir=node_save_path, edge_dir=edge_save_path)
+        ig_graph = gen_GP_graph(
+            cfg,
+            start_timestamp,
+            end_timestamp,
+            orthrus_nids,
+            node_dir=node_save_path,
+            edge_dir=edge_save_path,
+        )
 
         log("start visualization")
-        out_path = os.path.join(out_dir, 'orthrus_ground_truth.svg')
+        out_path = os.path.join(out_dir, "orthrus_ground_truth.svg")
 
         if plot_gt:
             visualize_ig_graph(G=ig_graph, out_path=out_path)
 
-    elif gt_type == 'neigh':
-        node_save_path = os.path.join(out_dir, 'neigh_nodes.csv')
-        edge_save_path = os.path.join(out_dir, 'neigh_edges.csv')
+    elif gt_type == "neigh":
+        node_save_path = os.path.join(out_dir, "neigh_nodes.csv")
+        edge_save_path = os.path.join(out_dir, "neigh_edges.csv")
 
         # start_dt = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
         # end_dt = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
@@ -128,7 +127,9 @@ def main(cfg, attack_num, gt_type, plot_gt):
         # start_of_day_str = start_of_day.strftime('%Y-%m-%d %H:%M:%S')
         # end_of_day_str = end_of_day.strftime('%Y-%m-%d %H:%M:%S')
 
-        day_graph = neigh.gen_graph(datetime_to_ns_time_US(start_time), datetime_to_ns_time_US(end_time), cfg)
+        day_graph = neigh.gen_graph(
+            datetime_to_ns_time_US(start_time), datetime_to_ns_time_US(end_time), cfg
+        )
         n = 2
         log(f"Get {n}-hop neighbors of GPs")
         GPs = [str(nid) for nid in orthrus_nids]
@@ -142,33 +143,48 @@ def main(cfg, attack_num, gt_type, plot_gt):
         start_timestamp = datetime_to_ns_time_US(start_time)
         end_timestamp = datetime_to_ns_time_US(end_time)
 
-        ig_graph = gen_GP_graph(cfg, start_timestamp, end_timestamp, neigh_nids, node_dir=node_save_path, edge_dir=edge_save_path)
+        ig_graph = gen_GP_graph(
+            cfg,
+            start_timestamp,
+            end_timestamp,
+            neigh_nids,
+            node_dir=node_save_path,
+            edge_dir=edge_save_path,
+        )
 
         log("start visualization")
-        out_path = os.path.join(out_dir, 'neigh_ground_truth.svg')
+        out_path = os.path.join(out_dir, "neigh_ground_truth.svg")
 
         if plot_gt:
             visualize_ig_graph(G=ig_graph, out_path=out_path)
 
-    elif gt_type == 'batch':
-        node_save_path = os.path.join(out_dir, 'batch_nodes.csv')
-        edge_save_path = os.path.join(out_dir, 'batch_edges.csv')
+    elif gt_type == "batch":
+        node_save_path = os.path.join(out_dir, "batch_nodes.csv")
+        edge_save_path = os.path.join(out_dir, "batch_edges.csv")
 
-        ig_graph = batch_type_graph(cfg, orthrus_nids, attack_num=attack_num, node_dir=node_save_path,edge_dir=edge_save_path)
+        ig_graph = batch_type_graph(
+            cfg,
+            orthrus_nids,
+            attack_num=attack_num,
+            node_dir=node_save_path,
+            edge_dir=edge_save_path,
+        )
 
         log("start visualization")
-        out_path = os.path.join(out_dir, 'batch_ground_truth.svg')
+        out_path = os.path.join(out_dir, "batch_ground_truth.svg")
         if plot_gt:
             visualize_ig_graph(G=ig_graph, out_path=out_path)
 
-    elif gt_type == 'source':
-        node_save_path = os.path.join(out_dir, 'source_nodes.csv')
-        edge_save_path = os.path.join(out_dir, 'source_edges.csv')
+    elif gt_type == "source":
+        node_save_path = os.path.join(out_dir, "source_nodes.csv")
+        edge_save_path = os.path.join(out_dir, "source_edges.csv")
         start_timestamp = datetime_to_ns_time_US(start_time)
         end_timestamp = datetime_to_ns_time_US(end_time)
 
         log("Get events between GPs")
-        rows = source.get_events_between_GPs(cur, start_timestamp, end_timestamp, list(orthrus_nids))
+        rows = source.get_events_between_GPs(
+            cur, start_timestamp, end_timestamp, list(orthrus_nids)
+        )
 
         edges = []
         for row in rows:
@@ -181,7 +197,9 @@ def main(cfg, attack_num, gt_type, plot_gt):
 
         dag_between_GPs, _ = source.generate_DAG(edges)
         log("Get root nodes")
-        root_nodes = set([node for node, in_degree in dag_between_GPs.in_degree() if in_degree == 0])
+        root_nodes = set(
+            [node for node, in_degree in dag_between_GPs.in_degree() if in_degree == 0]
+        )
         log(f"Root nodes are: {root_nodes}")
 
         log("Get events in attack time range")
@@ -200,16 +218,23 @@ def main(cfg, attack_num, gt_type, plot_gt):
         all_descendants = set()
         for root in root_nodes:
             descendants = nx.descendants(dag_of_attack, root)
-            desc = set([v.split('-')[0] for v in descendants])
+            desc = set([v.split("-")[0] for v in descendants])
             all_descendants |= desc
 
         log(f"{len(all_descendants)} descedants of root nodes in the attack")
 
         source_gps = [int(n) for n in all_descendants]
-        ig_graph = gen_GP_graph(cfg, start_timestamp, end_timestamp, set(source_gps), node_dir=node_save_path, edge_dir=edge_save_path)
+        ig_graph = gen_GP_graph(
+            cfg,
+            start_timestamp,
+            end_timestamp,
+            set(source_gps),
+            node_dir=node_save_path,
+            edge_dir=edge_save_path,
+        )
 
         log("start visualization")
-        out_path = os.path.join(out_dir, 'source_ground_truth.svg')
+        out_path = os.path.join(out_dir, "source_ground_truth.svg")
 
         if plot_gt:
             visualize_ig_graph(G=ig_graph, out_path=out_path)
@@ -225,7 +250,7 @@ def batch_type_graph(cfg, GPs, attack_num, node_dir, edge_dir):
 
     edge_set = set()
     for tw in dataset_to_mtw[dataset_name][attack_num]:
-        log(f'processing tw {tw}')
+        log(f"processing tw {tw}")
         nx_graph = torch.load(sorted_paths[tw])
         for u, v, k, data in nx_graph.edges(data=True, keys=True):
             edge_set.add((int(u), int(v)))
@@ -235,15 +260,17 @@ def batch_type_graph(cfg, GPs, attack_num, node_dir, edge_dir):
     edge_index = np.array([(int(u), int(v)) for u, v in edge_list])
     unique_nodes, new_edge_index = np.unique(edge_index.flatten(), return_inverse=True)
     new_edge_index = new_edge_index.reshape(edge_index.shape)
-    unique_paths = [node_to_path_type[int(n)]['path'] for n in unique_nodes]
+    unique_paths = [node_to_path_type[int(n)]["path"] for n in unique_nodes]
     unique_types = [node_to_path_type[int(n)]["type"] for n in unique_nodes]
 
     G = ig.Graph(edges=[tuple(e) for e in new_edge_index], directed=True)
     G.vs["original_id"] = unique_nodes
     G.vs["path"] = unique_paths
     G.vs["type"] = unique_types
-    G.vs["shape"] = ["rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle" for typ in
-                     unique_types]
+    G.vs["shape"] = [
+        "rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle"
+        for typ in unique_types
+    ]
 
     node_list = unique_nodes.tolist()
     new_node_list = list(range(len(node_list)))
@@ -251,24 +278,22 @@ def batch_type_graph(cfg, GPs, attack_num, node_dir, edge_dir):
     edge_list = new_edge_index.tolist()
     log(f"There are {len(unique_nodes)} nodes")
 
-    with open(node_dir, mode='w', newline='') as f:
+    with open(node_dir, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(['Id', 'Label'])
+        writer.writerow(["Id", "Label"])
         writer.writerows(zip(new_node_list, node_label))
     log(f"node list is saved to {node_dir}")
 
-    with open(edge_dir, mode='w', newline='') as f:
+    with open(edge_dir, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(['Source', 'Target'])
+        writer.writerow(["Source", "Target"])
         writer.writerows(edge_list)
     log(f"edge list is saved to {edge_dir}")
 
     return G
 
 
-def visualize_ig_graph(G,
-                       out_path,
-                       show_text=False):
+def visualize_ig_graph(G, out_path, show_text=False):
     node_num = G.vcount()
 
     BENIGN = "#44BC"
@@ -294,7 +319,9 @@ def visualize_ig_graph(G,
 
     visual_style["edge_curved"] = 0.1
     visual_style["edge_width"] = 1  # [3 if label else 1 for label in y_hat]
-    visual_style["edge_color"] = "gray"  # ["red" if label else "gray" for label in subgraph.es["y"]]
+    visual_style["edge_color"] = (
+        "gray"  # ["red" if label else "gray" for label in subgraph.es["y"]]
+    )
     visual_style["edge_arrow_size"] = 8
     visual_style["edge_arrow_width"] = 8
 
@@ -306,21 +333,47 @@ def visualize_ig_graph(G,
 
     # Create legend handles
     legend_handles = [
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=10, label='Subject',
-                   markeredgewidth=1),
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='k', markersize=10, label='File',
-                   markeredgewidth=1),
-        plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=10, label='IP', markeredgewidth=1),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="k",
+            markersize=10,
+            label="Subject",
+            markeredgewidth=1,
+        ),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="s",
+            color="w",
+            markerfacecolor="k",
+            markersize=10,
+            label="File",
+            markeredgewidth=1,
+        ),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="^",
+            color="w",
+            markerfacecolor="k",
+            markersize=10,
+            label="IP",
+            markeredgewidth=1,
+        ),
     ]
 
     # Add legend to the plot
-    ax.legend(handles=legend_handles, loc='upper right', fontsize='medium')
+    ax.legend(handles=legend_handles, loc="upper right", fontsize="medium")
 
     # Save the plot with legend
     plt.savefig(out_path)
     plt.close(fig)
 
     log(f"Figure saved to {out_path}")
+
 
 def get_GP_of_one_attack(cfg, attack_num):
     cur, connect = init_database_connection(cfg)
@@ -329,7 +382,7 @@ def get_GP_of_one_attack(cfg, attack_num):
     gt_file_dir = cfg.dataset.ground_truth_relative_path[attack_num]
 
     nids = set()
-    with open(os.path.join(cfg._ground_truth_dir, gt_file_dir), 'r') as f:
+    with open(os.path.join(cfg._ground_truth_dir, gt_file_dir), "r") as f:
         reader = csv.reader(f)
         for row in reader:
             node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -337,7 +390,8 @@ def get_GP_of_one_attack(cfg, attack_num):
             nids.add(int(node_id))
     return nids
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
     attack_num = args.show_attack
     gt_type = args.gt_type

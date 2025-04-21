@@ -1,11 +1,12 @@
-from .training_methods import (
+from pidsmaker.detection.training_methods import (
     orthrus_gnn_training,
     provd_testing,
 )
 
+
 def main(cfg):
     method = cfg.detection.gnn_training.used_method.strip()
-    if method == 'orthrus':
+    if method == "orthrus":
         return orthrus_gnn_training.main(cfg)
     elif method == "provd":
         return provd_testing.main(cfg)

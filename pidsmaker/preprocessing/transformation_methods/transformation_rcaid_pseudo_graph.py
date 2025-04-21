@@ -11,12 +11,14 @@ def identify_root_nodes(G):
         in_edges = list(G.in_edges(node, data=True))
 
         # out edge
-        earliest_out_time = min(edge[2]['time'] for edge in out_edges) if out_edges else None
+        earliest_out_time = min(edge[2]["time"] for edge in out_edges) if out_edges else None
         # in
-        earliest_in_time = min(edge[2]['time'] for edge in in_edges) if in_edges else None
+        earliest_in_time = min(edge[2]["time"] for edge in in_edges) if in_edges else None
 
         # if root
-        if earliest_out_time is not None and (earliest_in_time is None or earliest_out_time < earliest_in_time):
+        if earliest_out_time is not None and (
+            earliest_in_time is None or earliest_out_time < earliest_in_time
+        ):
             root_nodes.add(node)
 
     return root_nodes

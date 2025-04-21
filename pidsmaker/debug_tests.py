@@ -11,18 +11,18 @@ def debug_test_batching(original_data_list, batched_data):
         num_nodes = orig_n_id.size(0)
 
         # Check if features match
-        batched_x_slice = batched_data.x_tgn[node_offset:node_offset + num_nodes]
+        batched_x_slice = batched_data.x_tgn[node_offset : node_offset + num_nodes]
         assert torch.allclose(batched_x_slice, orig_x), f"Feature mismatch in graph {i}"
-        
+
         # Check if edge indices are correctly offset
         for attr in ["edge_index_tgn", "edge_type_tgn"]:
             orig = getattr(original_data, attr)
             batched = getattr(batched_data, attr)
             if "edge_index" in attr:
-                batched_slice = batched[:, edge_offset:edge_offset + orig.size(1)]
+                batched_slice = batched[:, edge_offset : edge_offset + orig.size(1)]
                 orig = orig + node_offset
             else:
-                batched_slice = batched[edge_offset:edge_offset + orig.size(0)]
+                batched_slice = batched[edge_offset : edge_offset + orig.size(0)]
 
             assert torch.all(batched_slice == orig), f"Edge index mismatch in graph {i}"
 

@@ -1,19 +1,20 @@
 import os
-import numpy as np
-from provnet_utils import log_start, log_tqdm, get_indexid2msg, tokenize_label
 
+import numpy as np
 from gensim.models import FastText
+
+from pidsmaker.provnet_utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
 
 
 def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    model_path = os.path.join(cfg.featurization.embed_nodes._model_dir, 'fasttext.pkl')
+    model_path = os.path.join(cfg.featurization.embed_nodes._model_dir, "fasttext.pkl")
     model = FastText.load(model_path)
 
     indexid2vec = {}
-    for indexid, msg in log_tqdm(indexid2msg.items(), desc='Embeding all nodes in the dataset'):
+    for indexid, msg in log_tqdm(indexid2msg.items(), desc="Embeding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
         tokens = tokenize_label(node_label, node_type)
 

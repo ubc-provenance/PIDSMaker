@@ -4,18 +4,18 @@
 ##########################################################################################
 
 import os
-import numpy as np
-from collections import OrderedDict
-from collections import Counter
-from collections import defaultdict
-from gensim.models import Word2Vec
+from collections import Counter, OrderedDict, defaultdict
 from unicodedata import category
+
+import numpy as np
 import torch
-from provnet_utils import log, log_start
+from gensim.models import Word2Vec
+
+from pidsmaker.provnet_utils import log, log_start
 
 FLOAT = np.float32
 INT = np.uint64
-CATEGORIES = {'M', 'P', 'S'}
+CATEGORIES = {"M", "P", "S"}
 MAXTOKLEN = 1000
 
 
@@ -26,13 +26,14 @@ def load_data(fname):
     :return: List object that contains all walk paths
     """
     paths = []
-    with open(fname, 'r') as f:
+    with open(fname, "r") as f:
         path = f.readline()
         while path:
             paths.append(path.replace("\n", "").split(","))
             path = f.readline()
 
     return paths
+
 
 def load_vectors(wv):
     """loads word embeddings from word2vec model.wv
@@ -47,6 +48,7 @@ def load_vectors(wv):
             words.add(w)
             yield w, np.array(wv[w], dtype=FLOAT)
 
+
 def ranksize(comm=None):
     """returns rank and size of MPI Communicator
     Args:
@@ -59,26 +61,29 @@ def ranksize(comm=None):
         return 0, 1
     return comm.rank, comm.size
 
+
 def checkpoint(comm=None):
     """waits until all processes have reached this point
     Args:
         comm: MPI Communicator
     """
 
-    if not comm is None:
+    if comm is not None:
         comm.allgather(0)
 
+
 def is_punctuation(char):
-    """checks if unicode character is punctuation
-    """
+    """checks if unicode character is punctuation"""
 
     return category(char)[0] in CATEGORIES
 
-class ALaCarteReader:
-    """reads documents and updates context vectors
-    """
 
-    def __init__(self, w2v, targets, wnd=10, checkpoint=None, interval=[0, float('inf')], comm=None):
+class ALaCarteReader:
+    """reads documents and updates context vectors"""
+
+    def __init__(
+        self, w2v, targets, wnd=10, checkpoint=None, interval=[0, float("inf")], comm=None
+    ):
         """initializes context vector dict as self.c2v and counts as self.target_counts
         Args:
             w2v: {word: vector} dict of source word embeddings
@@ -92,12 +97,14 @@ class ALaCarteReader:
         self.w2v = w2v
         self.combined_vocab = self.w2v
 
-        gramlens = {len(target.split(',')) for target in targets if target}
+        gramlens = {len(target.split(",")) for target in targets if target}
         self.max_n = max(gramlens)
         if self.max_n > 1:
             self.targets = [tuple(target.split()) for target in targets]
             self.target_vocab = set(self.targets)
-            self.combined_vocab = {word for target in targets for word in target.split()}.union(self.combined_vocab)
+            self.combined_vocab = {word for target in targets for word in target.split()}.union(
+                self.combined_vocab
+            )
         else:
             self.targets = targets
             self.target_vocab = set(targets)
@@ -126,28 +133,30 @@ class ALaCarteReader:
             self.count_array = np.zeros(len(self.targets), dtype=INT)
 
         else:
-
             import h5py
 
-            f = h5py.File(checkpoint, 'r')
-            position = f.attrs['position']
-            assert interval[0] <= position < interval[1], "checkpoint position must be inside corpus interval"
-            self.vector_array = np.array(f['vectors'])
-            self.count_array = np.array(f['counts'])
+            f = h5py.File(checkpoint, "r")
+            position = f.attrs["position"]
+            assert interval[0] <= position < interval[1], (
+                "checkpoint position must be inside corpus interval"
+            )
+            self.vector_array = np.array(f["vectors"])
+            self.count_array = np.array(f["counts"])
 
         self.position = comm.bcast(position, root=0) if self.size > 1 else position
         self.stop = interval[1]
 
     def reduce(self):
-        """reduces data to arrays at the root process
-        """
+        """reduces data to arrays at the root process"""
 
         comm, rank, size = self.comm, self.rank, self.size
         targets = self.targets
 
         c2v = self.c2v
         dimension = self.dimension
-        vector_array = np.vstack([c2v.pop(target, np.zeros(dimension, dtype=FLOAT)) for target in targets])
+        vector_array = np.vstack(
+            [c2v.pop(target, np.zeros(dimension, dtype=FLOAT)) for target in targets]
+        )
 
         target_counts = self.target_counts
         count_array = np.array([target_counts.pop(target, 0) for target in targets], dtype=INT)
@@ -171,21 +180,20 @@ class ALaCarteReader:
         """
 
         datafile = self.datafile
-        assert not datafile is None, "no checkpoint file specified"
+        assert datafile is not None, "no checkpoint file specified"
         self.reduce()
 
         if not self.rank:
-
             import h5py
 
-            f = h5py.File(datafile + '~tmp', 'w')
-            f.attrs['position'] = position
-            f.create_dataset('vectors', data=self.vector_array, dtype=FLOAT)
-            f.create_dataset('counts', data=self.count_array, dtype=INT)
+            f = h5py.File(datafile + "~tmp", "w")
+            f.attrs["position"] = position
+            f.create_dataset("vectors", data=self.vector_array, dtype=FLOAT)
+            f.create_dataset("counts", data=self.count_array, dtype=INT)
             f.close()
             if os.path.isfile(datafile):
                 os.remove(datafile)
-            os.rename(datafile + '~tmp', datafile)
+            os.rename(datafile + "~tmp", datafile)
         self.position = position
 
     def target_coverage(self):
@@ -197,8 +205,8 @@ class ALaCarteReader:
         """
 
         if self.rank:
-            return ''
-        return str(sum(self.count_array > 0)) + '/' + str(len(self.targets))
+            return ""
+        return str(sum(self.count_array > 0)) + "/" + str(len(self.targets))
 
     def read_ngrams(self, tokens):
         """reads tokens and updates context vectors
@@ -215,25 +223,29 @@ class ALaCarteReader:
         max_n = self.max_n
         ngrams = dict()
         for n in range(1, max_n + 1):
-            ngrams[n] = list(filter(lambda entry: entry[1] in target_vocab, enumerate(nltk.ngrams(tokens, n))))
+            ngrams[n] = list(
+                filter(lambda entry: entry[1] in target_vocab, enumerate(nltk.ngrams(tokens, n)))
+            )
 
         for n in range(1, max_n + 1):
             if ngrams[n]:
-
                 # gets word embedding for each token
                 w2v = self.w2v
                 zero_vector = self.zero_vector
                 wnd = self.wnd
                 start = max(0, ngrams[n][0][0] - wnd)
-                vectors = [None] * start + [w2v.get(token, zero_vector) if token else zero_vector for token in
-                                            tokens[start:ngrams[n][-1][0] + n + wnd]]
+                vectors = [None] * start + [
+                    w2v.get(token, zero_vector) if token else zero_vector
+                    for token in tokens[start : ngrams[n][-1][0] + n + wnd]
+                ]
                 c2v = self.c2v
                 target_counts = self.target_counts
 
                 # computes context vector around each target n-gram
                 for i, ngram in ngrams[n]:
-                    c2v[ngram] += sum(vectors[max(0, i - wnd):i], zero_vector) + sum(vectors[i + n:i + n + wnd],
-                                                                                     zero_vector)
+                    c2v[ngram] += sum(vectors[max(0, i - wnd) : i], zero_vector) + sum(
+                        vectors[i + n : i + n + wnd], zero_vector
+                    )
                     target_counts[ngram] += 1
 
     def read_document(self, document):
@@ -245,7 +257,7 @@ class ALaCarteReader:
         """
 
         # tokenizes document
-        tokens = [token for token in document.split(',')]
+        tokens = [token for token in document.split(",")]
         if self.max_n > 1:
             return self.read_ngrams(tokens)
 
@@ -262,7 +274,11 @@ class ALaCarteReader:
             start = max(0, next(i for i, token in enumerate(tokens) if check(token)) - wnd)
         except StopIteration:
             return None
-        stop = next(i for i, token in zip(reversed(range(T)), reversed(tokens)) if check(token)) + 1 + wnd
+        stop = (
+            next(i for i, token in zip(reversed(range(T)), reversed(tokens)) if check(token))
+            + 1
+            + wnd
+        )
         tokens = tokens[start:stop]
         T = len(tokens)
 
@@ -270,7 +286,7 @@ class ALaCarteReader:
         w2v = self.w2v
         zero_vector = self.zero_vector
         vectors = [w2v.get(token, zero_vector) if token else zero_vector for token in tokens]
-        context_vector = sum(vectors[:wnd + 1])
+        context_vector = sum(vectors[: wnd + 1])
         c2v = self.c2v
         target_counts = self.target_counts
 
@@ -287,18 +303,17 @@ class ALaCarteReader:
                 if left_index > -1 and tokens[left_index]:
                     context_vector -= vectors[left_index]
 
+
 def is_english(document):
-    """checks if document is in English
-    """
+    """checks if document is in English"""
 
     return True
 
+
 def process_documents(func):
-    """wraps document generator function to handle English-checking and lower-casing and to return data arrays
-    """
+    """wraps document generator function to handle English-checking and lower-casing and to return data arrays"""
 
     def wrapper(string, reader, verbose=False, comm=None, english=False, lower=False):
-
         generator = (document for document in func(string, reader, verbose=verbose, comm=comm))
         # TODO: English-checking is not supported
         if english:
@@ -333,17 +348,15 @@ def corpus_documents(corpusfile, reader, verbose=False, comm=None):
     # TODO: MPI is not supported
     rank, size = ranksize(comm)
 
-    with open(corpusfile, 'r') as f:
-
+    with open(corpusfile, "r") as f:
         f.seek(position)
         line = f.readline()
         i = 0
         while line:
-
             if i and not i % 1000000:
                 reader.reduce()
                 # TODO: checkpoint is not supported
-                if not reader.datafile is None:
+                if reader.datafile is not None:
                     reader.checkpoint(f.tell())
             if i >= reader.stop:
                 break
@@ -355,6 +368,7 @@ def corpus_documents(corpusfile, reader, verbose=False, comm=None):
             line = f.readline()
             i += 1
 
+
 def dump_vectors(generator, vectorfile):
     """Saves embeddings to .txt
     Args:
@@ -364,10 +378,11 @@ def dump_vectors(generator, vectorfile):
         None
     """
 
-    with open(vectorfile, 'w') as f:
+    with open(vectorfile, "w") as f:
         for gram, vector in generator:
-            numstr = ' '.join(map(str, vector.tolist())) if vector.shape else str(vector)
-            f.write(gram + ' ' + numstr + '\n')
+            numstr = " ".join(map(str, vector.tolist())) if vector.shape else str(vector)
+            f.write(gram + " " + numstr + "\n")
+
 
 def obtain_targets_from_file(input_path, w2v):
     """Get targets (unknown OOVs, not in w2v) from a file
@@ -379,19 +394,19 @@ def obtain_targets_from_file(input_path, w2v):
     """
     ret = set()
     # csv_graph = pd.read_csv(input_path, header=None)
-    f = open(input_path, 'r')
+    f = open(input_path, "r")
     for line in f:
-        edge = [''] + line.strip().split(",")
+        edge = [""] + line.strip().split(",")
 
         # src_name = edge[3]
         src_name = str(edge[1])
         if src_name not in w2v:
-                ret.add(src_name)
+            ret.add(src_name)
 
         # dst_name = edge[4]
         dst_name = str(edge[2])
         if dst_name not in w2v:
-                ret.add(dst_name)
+            ret.add(dst_name)
 
         # edge_name does not get segmented
         edge_name = edge[5]
@@ -400,10 +415,22 @@ def obtain_targets_from_file(input_path, w2v):
 
     return ret
 
-def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bool, use_pretrained_model: bool, cfg, verbose=True):
+
+def embed_nodes_for_one_split(
+    split: str,
+    use_corpus: bool,
+    use_matrix_input: bool,
+    use_pretrained_model: bool,
+    cfg,
+    verbose=True,
+):
     out_dir = cfg.featurization.embed_nodes.word2vec._vec_graphs_dir
-    adjacency_dir = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj")
-    dataset = os.path.join(cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv")
+    adjacency_dir = os.path.join(
+        cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}-adj"
+    )
+    dataset = os.path.join(
+        cfg.featurization.embed_nodes.word2vec._random_walk_dir, f"{split}_set_corpus.csv"
+    )
     corpus_dir = cfg.featurization.embed_nodes.word2vec._random_walk_corpus_dir
     corpus = dataset if use_corpus else None
     matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None
@@ -422,7 +449,9 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
 
     log_dir = out_dir
 
-    log("=== PARAMETER SUMMARY ----------------------------------------------------------------------")
+    log(
+        "=== PARAMETER SUMMARY ----------------------------------------------------------------------"
+    )
     log("Training data: {}".format(dataset))
     log("Total number of epochs: {}".format(epochs))
     if model_input is None:
@@ -440,7 +469,9 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     # adjust A La Carte context window size for segmentation
     log("A La Carte context window size: {}".format(window_size))
     log("Model is used to fulfill adjacency lists in directory: {}".format(adjacency_dir))
-    log("=== ----------------------------------------------------------------------------------------")
+    log(
+        "=== ----------------------------------------------------------------------------------------"
+    )
 
     # ===-----------------------------------------------------------------------===
     # Importing data (only if Word2Vec model needs to be trained or modified)
@@ -455,11 +486,28 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     # ===-----------------------------------------------------------------------===
     if model_input is None:
         if use_seed:
-            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
-                             workers=num_workers, epochs=epochs, compute_loss=compute_loss,seed=SEED)
+            model = Word2Vec(
+                paths,
+                vector_size=emb_dim,
+                window=window_size,
+                min_count=min_count,
+                sg=use_skip_gram,
+                workers=num_workers,
+                epochs=epochs,
+                compute_loss=compute_loss,
+                seed=SEED,
+            )
         else:
-            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
-                             workers=num_workers, epochs=epochs, compute_loss=compute_loss)
+            model = Word2Vec(
+                paths,
+                vector_size=emb_dim,
+                window=window_size,
+                min_count=min_count,
+                sg=use_skip_gram,
+                workers=num_workers,
+                epochs=epochs,
+                compute_loss=compute_loss,
+            )
     else:
         log("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)
@@ -491,8 +539,9 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     if matrix_input is not None:
         M = np.fromfile(matrix_input, dtype=FLOAT)
         d = int(np.sqrt(M.shape[0]))
-        assert d == next(iter(w2v.values())).shape[0], \
+        assert d == next(iter(w2v.values())).shape[0], (
             "induction matrix dimension and word embedding dimension must be the same"
+        )
         M = M.reshape(d, d)
     else:
         matrix_file = os.path.join(log_dir, "matrix.bin")
@@ -507,7 +556,9 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
             context_vectors = FLOAT(0.0)
             target_counts = INT(0)
             log("Source corpus: {}".format(corpus))
-            context_vectors, target_counts = corpus_documents(corpus, alc, verbose=verbose, comm=None, english=None, lower=None)
+            context_vectors, target_counts = corpus_documents(
+                corpus, alc, verbose=verbose, comm=None, english=None, lower=None
+            )
         else:
             log("At least one corpus file is required by A La Carte model to learn")
             exit(1)
@@ -522,12 +573,15 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
         X = np.true_divide(context_vectors[nz], target_counts[nz, None], dtype=FLOAT)
         Y = np.vstack([vector for vector, count in zip(w2v.values(), target_counts) if count])
         M = LR(fit_intercept=False).fit(X, Y).coef_.astype(FLOAT)
-        log("Finished learning transform; Average cosine similarity: {}".format(
-            np.mean(np.sum(normalize(X.dot(M.T)) * normalize(Y), axis=1))))
+        log(
+            "Finished learning transform; Average cosine similarity: {}".format(
+                np.mean(np.sum(normalize(X.dot(M.T)) * normalize(Y), axis=1))
+            )
+        )
 
         log("Saving induction transform to {}".format(matrix_file))
-        dump_vectors(zip(targets, target_counts), log_dir + '/source_vocab_counts.txt')
-        context_vectors.tofile(log_dir + '/source_context_vectors.bin')
+        dump_vectors(zip(targets, target_counts), log_dir + "/source_vocab_counts.txt")
+        context_vectors.tofile(log_dir + "/source_context_vectors.bin")
         M.tofile(matrix_file)
 
     log("Loading adjacency lists from: {}".format(adjacency_dir))
@@ -543,7 +597,6 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
             edgelabel2vec = torch.load(f"{out_dir}/edgelabel2vec")
         except:
             edgelabel2vec = {}
-
 
         for filename in sorted(os.listdir(adjacency_dir)):
             if filename:
@@ -561,21 +614,27 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                     log("No uncovered targets found")
                 else:
                     # reloading ALC reader for new targets
-                    alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None,
-                                         comm=None)
+                    alc = ALaCarteReader(w2v, targets, wnd=window_size, checkpoint=None, comm=None)
                     log("Rebuilding A La Carte context vectors for {}".format(filename))
                     corpus_file = os.path.join(adjacency_dir, filename)
                     test_context_vectors = FLOAT(0.0)
                     test_target_counts = INT(0)
                     log("Source corpus for {}: {}".format(filename, corpus_file))
-                    test_context_vectors, test_target_counts = corpus_documents(corpus_file, alc, verbose=verbose,
-                                                                                comm=None, english=None, lower=None)
+                    test_context_vectors, test_target_counts = corpus_documents(
+                        corpus_file, alc, verbose=verbose, comm=None, english=None, lower=None
+                    )
                     test_nz = test_target_counts > 0
 
-                    dump_vectors(zip(targets, test_target_counts), log_dir + '/' + filename + '_target_vocab_counts.txt')
+                    dump_vectors(
+                        zip(targets, test_target_counts),
+                        log_dir + "/" + filename + "_target_vocab_counts.txt",
+                    )
                     # Generate feature vectors for targets
-                    test_context_vectors[test_nz] = np.true_divide(test_context_vectors[test_nz],
-                                                                   test_target_counts[test_nz, None], dtype=FLOAT)
+                    test_context_vectors[test_nz] = np.true_divide(
+                        test_context_vectors[test_nz],
+                        test_target_counts[test_nz, None],
+                        dtype=FLOAT,
+                    )
                     target_vecs = test_context_vectors.dot(M.T)
                     for gram, vector in zip(targets, target_vecs):
                         if np.count_nonzero(vector) == 0:
@@ -585,9 +644,9 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                             vector = vector / np.linalg.norm(vector)
                         target_dict[gram] = vector
 
-                csv_graph = open(input_path, 'r')
+                csv_graph = open(input_path, "r")
                 for line in csv_graph:
-                    edge = [''] + line.strip().split(',')
+                    edge = [""] + line.strip().split(",")
 
                     srcid = str(edge[1])
                     dstid = str(edge[2])
@@ -601,13 +660,19 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                     # Source Node
                     if src_name in wv:
                         src_feature = wv[src_name]
-                        assert len(src_feature) == emb_dim, "src feature dimension from wv is {}, not {}"\
-                            .format(len(src_feature), emb_dim)
+                        assert len(src_feature) == emb_dim, (
+                            "src feature dimension from wv is {}, not {}".format(
+                                len(src_feature), emb_dim
+                            )
+                        )
                     # Note: if we manually expand wv, we should not take this branch
                     elif src_name in target_dict:
                         src_feature = target_dict[src_name]
-                        assert len(src_feature) == emb_dim, "src feature dimension from alc is {}, not {}" \
-                            .format(len(src_feature), emb_dim)
+                        assert len(src_feature) == emb_dim, (
+                            "src feature dimension from alc is {}, not {}".format(
+                                len(src_feature), emb_dim
+                            )
+                        )
                     else:
                         log(f"Unknown node name for source node {srcid}: {src_name}")
 
@@ -617,28 +682,39 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
                     # Destination Node
                     if dst_name in wv:
                         dst_feature = wv[dst_name]
-                        assert len(dst_feature) == emb_dim, "dst feature dimension from wv is {}, not {}" \
-                            .format(len(dst_feature), emb_dim)
+                        assert len(dst_feature) == emb_dim, (
+                            "dst feature dimension from wv is {}, not {}".format(
+                                len(dst_feature), emb_dim
+                            )
+                        )
                     elif dst_name in target_dict:
                         dst_feature = target_dict[dst_name]
-                        assert len(dst_feature) == emb_dim, "dst feature dimension from alc is {}, not {}" \
-                            .format(len(dst_feature), emb_dim)
+                        assert len(dst_feature) == emb_dim, (
+                            "dst feature dimension from alc is {}, not {}".format(
+                                len(dst_feature), emb_dim
+                            )
+                        )
                     else:
                         log(f"Unknown node name for destination node {dstid}: {dst_name}")
 
                     if dstid not in indexid2vec:
                         indexid2vec[dstid] = dst_feature
 
-
                     # Edge type
                     if edge_name in wv:
                         edge_feature = wv[edge_name]
-                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), emb_dim)
+                        assert len(edge_feature) == emb_dim, (
+                            "edge feature dimension from wv is {}, not {}".format(
+                                len(edge_feature), emb_dim
+                            )
+                        )
                     elif edge_name in target_dict:
                         edge_feature = target_dict[edge_name]
-                        assert len(edge_feature) == emb_dim, "edge feature dimension from wv is {}, not {}" \
-                            .format(len(edge_feature), emb_dim)
+                        assert len(edge_feature) == emb_dim, (
+                            "edge feature dimension from wv is {}, not {}".format(
+                                len(edge_feature), emb_dim
+                            )
+                        )
                     else:
                         log("Unknown edge name: {}".format(edge_name))
 
@@ -650,7 +726,6 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
         torch.save(indexid2vec, f"{out_dir}/indexid2vec")
         torch.save(edgelabel2vec, f"{out_dir}/edgelabel2vec")
 
-
     # ===-----------------------------------------------------------------------===
     # Saving embeddings (for reuse or checking embedding quality)
     # ===-----------------------------------------------------------------------===
@@ -660,20 +735,33 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     # ===-----------------------------------------------------------------------===
     # Output some stats and results
     # ===-----------------------------------------------------------------------===
-    log("=== RESULTS REPORT -------------------------------------------------------------------------")
+    log(
+        "=== RESULTS REPORT -------------------------------------------------------------------------"
+    )
     w2v_loss = model.get_latest_training_loss()
     log("word2vec Training loss: {}".format(w2v_loss))
-    log("=== ----------------------------------------------------------------------------------------")
+    log(
+        "=== ----------------------------------------------------------------------------------------"
+    )
+
 
 def main(cfg):
     log_start(__file__)
 
     os.makedirs(cfg.featurization.embed_nodes.word2vec._vec_graphs_dir, exist_ok=True)
-    
-    # In test mode, we only have access to 
+
+    # In test mode, we only have access to
     if cfg._test_mode:
-        embed_nodes_for_one_split("train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
+        embed_nodes_for_one_split(
+            "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
+        )
     else:
-        embed_nodes_for_one_split("train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg)
-        embed_nodes_for_one_split("val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
-        embed_nodes_for_one_split("test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg)
+        embed_nodes_for_one_split(
+            "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
+        )
+        embed_nodes_for_one_split(
+            "val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
+        )
+        embed_nodes_for_one_split(
+            "test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
+        )

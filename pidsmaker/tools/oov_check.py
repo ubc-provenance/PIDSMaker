@@ -1,32 +1,30 @@
-import sys
-import os 
+import os
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-from config import *
-from provnet_utils import *
+import matplotlib.pyplot as plt
 import wandb
 from gensim.models import Word2Vec
-from tqdm import tqdm
-import matplotlib.pyplot as plt
+
+from pidsmaker.config import *
+from pidsmaker.provnet_utils import *
 
 
 def get_nid2scores(cfg):
     nid2scores = {}
-    
+
     # load results dict
     results_dir = os.path.join(cfg.detection.evaluation._results_dir, "results.pth")
     results = torch.load(results_dir)
 
     for nid, data in results.items():
-        nid2scores[int(nid)] = data['score']
-    
+        nid2scores[int(nid)] = data["score"]
+
     return nid2scores
 
+
 def get_nid2oov_component(cfg):
-    feature_word2vec_model_path = cfg.featurization.embed_nodes._model_dir + 'feature_word2vec.model'
+    feature_word2vec_model_path = (
+        cfg.featurization.embed_nodes._model_dir + "feature_word2vec.model"
+    )
     model = Word2Vec.load(feature_word2vec_model_path)
 
     indexid2msg = get_indexid2msg(cfg)
@@ -46,23 +44,24 @@ def get_nid2oov_component(cfg):
 
     return nid2oov_component
 
+
 def plot_oov_comp2scores(cfg):
     out_dir = os.path.join("../../results/featurization/", cfg.dataset.name)
     os.makedirs(out_dir, exist_ok=True)
 
     nid2scores = get_nid2scores(cfg)
     nid2comps = get_nid2oov_component(cfg)
-    
+
     scores, oov_num, oov_percentage = [], [], []
-    
+
     for nid, score in nid2scores.items():
         scores.append(score)
         oov_num.append(nid2comps[nid][1])
-        oov_percentage.append((nid2comps[nid][1]/(nid2comps[nid][0]+nid2comps[nid][1])) * 100)
+        oov_percentage.append((nid2comps[nid][1] / (nid2comps[nid][0] + nid2comps[nid][1])) * 100)
 
     # plotting score-OOV word number
     plt.figure(figsize=(8, 8))
-    plt.scatter(oov_num, scores, color='blue')
+    plt.scatter(oov_num, scores, color="blue")
     plt.xlabel("No. OOV words")
     plt.ylabel("Score")
     plt.show()
@@ -72,7 +71,7 @@ def plot_oov_comp2scores(cfg):
 
     # plotting score-OOV word percentage
     plt.figure(figsize=(8, 8))
-    plt.scatter(oov_percentage, scores, color='blue')
+    plt.scatter(oov_percentage, scores, color="blue")
     plt.xlabel("OOV word percentage")
     plt.ylabel("Score")
     plt.show()
@@ -85,13 +84,20 @@ def main(cfg):
     plot_oov_comp2scores(cfg)
 
 
-
-
 if __name__ == "__main__":
     args, unknown_args = get_runtime_required_args(return_unknown_args=True)
 
-    exp_name = args.exp if args.exp != "" else \
-        "|".join([f"{k.split('.')[-1]}={v}" for k, v in args.__dict__.items() if "." in k and v is not None])
+    exp_name = (
+        args.exp
+        if args.exp != ""
+        else "|".join(
+            [
+                f"{k.split('.')[-1]}={v}"
+                for k, v in args.__dict__.items()
+                if "." in k and v is not None
+            ]
+        )
+    )
     tags = args.tags.split(",") if args.tags != "" else [args.model]
 
     wandb.init(

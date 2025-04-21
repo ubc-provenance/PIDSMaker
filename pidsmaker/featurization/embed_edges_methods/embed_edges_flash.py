@@ -1,17 +1,18 @@
 import math
-import torch
 import os
-import numpy as np
-from provnet_utils import log_start, log_tqdm
-from featurization.embed_nodes_methods.embed_nodes_flash import get_node2corpus
 
+import numpy as np
+import torch
 from gensim.models import Word2Vec
+
+from pidsmaker.featurization.embed_nodes_methods.embed_nodes_flash import get_node2corpus
+from pidsmaker.provnet_utils import log_start, log_tqdm
 
 
 def infer(document, w2vmodel, encoder):
     """
     Each node is associated to a `document` which is the list of (msg => edge type => msg)
-    involving this node. 
+    involving this node.
     We get the embedding of each word inside this document and we do the mean of all embeddings.
     OOV words are simply ignored.
     """
@@ -31,6 +32,7 @@ def infer(document, w2vmodel, encoder):
     output_embedding = output_embedding.detach().cpu().numpy()
     return np.mean(output_embedding, axis=0)
 
+
 class PositionalEncoder:
     def __init__(self, d_model, max_len=100000):
         position = torch.arange(max_len).unsqueeze(1)
@@ -40,18 +42,19 @@ class PositionalEncoder:
         self.pe[:, 1::2] = torch.cos(position * div_term)
 
     def embed(self, x):
-        return x + self.pe[:x.size(0)]
+        return x + self.pe[: x.size(0)]
+
 
 def main(cfg):
     log_start(__file__)
-    
+
     trained_w2v_dir = cfg.featurization.embed_nodes._model_dir
     w2vmodel = Word2Vec.load(os.path.join(trained_w2v_dir, "word2vec_model_final.model"))
     w2v_vector_size = cfg.featurization.embed_nodes.emb_dim
 
     node2corpus = get_node2corpus(cfg, splits=["train", "val", "test"])
     indexid2vec = {}
-    for indexid, corpus in log_tqdm(node2corpus.items(), desc='Embeding all nodes in the dataset'):
+    for indexid, corpus in log_tqdm(node2corpus.items(), desc="Embeding all nodes in the dataset"):
         indexid2vec[indexid] = infer(corpus, w2vmodel, PositionalEncoder(w2v_vector_size))
 
     return indexid2vec

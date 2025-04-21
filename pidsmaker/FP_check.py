@@ -1,13 +1,13 @@
-from config import *
-from provnet_utils import *
 from tqdm import tqdm
+
+from pidsmaker.config import *
+from pidsmaker.provnet_utils import *
 
 
 def get_tasks(evaluation_results):
     tw_to_poi = {}
 
     for tw, nid_to_result in evaluation_results.items():
-
         for nid, result in nid_to_result.items():
             score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
 
@@ -18,10 +18,11 @@ def get_tasks(evaluation_results):
 
     return tw_to_poi
 
-def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg):
+
+def check_if_in_trainset(fps, tw_to_graphdir, tw_to_graphdir_test, cur, cfg):
     indexid2msg = get_node_infos(cfg)
     fp_to_samename = {}
-    for fp in tqdm(list(fps),desc='get same-name nodes of FPs'):
+    for fp in tqdm(list(fps), desc="get same-name nodes of FPs"):
         if fp not in fp_to_samename:
             fp_to_samename[fp] = set()
         msg = indexid2msg[fp]
@@ -32,7 +33,9 @@ def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg):
     fp_to_tw = {}
     sn_to_tw = {}
 
-    for tw, graphdir in tqdm(tw_to_graphdir.items(),desc="check if fp or same-name node is in train sets"):
+    for tw, graphdir in tqdm(
+        tw_to_graphdir.items(), desc="check if fp or same-name node is in train sets"
+    ):
         graph = torch.load(graphdir)
 
         for fp in fps:
@@ -57,22 +60,23 @@ def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg):
         if len(fp_to_tw[fp]) == 0:
             print("It does not appear in any training graph")
         else:
-            print(f"It appear in training time windows:")
+            print("It appear in training time windows:")
             print(list(fp_to_tw[fp]))
 
         if len(sn_to_tw[fp]) == 0:
             print("Its same-name nodes do not appear in any training graph")
         else:
-            print(f"Its same-name nodes appear in time windows:")
+            print("Its same-name nodes appear in time windows:")
             print(list(sn_to_tw[fp]))
 
         print("==" * 20)
 
-
     fp_to_tw_test = {}
     sn_to_tw_test = {}
 
-    for tw, graphdir in tqdm(tw_to_graphdir_test.items(),desc="check if fp or same-name node is in testing sets"):
+    for tw, graphdir in tqdm(
+        tw_to_graphdir_test.items(), desc="check if fp or same-name node is in testing sets"
+    ):
         graph = torch.load(graphdir)
 
         for fp in fps:
@@ -97,17 +101,16 @@ def check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg):
         if len(fp_to_tw_test[fp]) == 0:
             print("It does not appear in any testing graph")
         else:
-            print(f"It appear in testing time windows:")
+            print("It appear in testing time windows:")
             print(list(fp_to_tw_test[fp]))
 
         if len(sn_to_tw_test[fp]) == 0:
             print("Its same-name nodes do not appear in any testing graph")
         else:
-            print(f"Its same-name nodes appear in testing time windows:")
+            print("Its same-name nodes appear in testing time windows:")
             print(list(sn_to_tw_test[fp]))
 
         print("==" * 20)
-
 
 
 def get_node_infos(cur):
@@ -125,8 +128,8 @@ def get_node_infos(cur):
     for i in records:
         remote_ip = str(i[4])
         remote_port = str(i[5])
-        index_id = str(i[-1]) # int
-        msg = 'netflow' + ' ' + remote_ip + ':' + remote_port
+        index_id = str(i[-1])  # int
+        msg = "netflow" + " " + remote_ip + ":" + remote_port
         indexid2msg[index_id] = msg
 
     # subject
@@ -142,7 +145,7 @@ def get_node_infos(cur):
         path = str(i[2])
         cmd = str(i[3])
         index_id = str(i[-1])
-        msg = 'subject' + ' ' + path + ' ' +cmd
+        msg = "subject" + " " + path + " " + cmd
         indexid2msg[index_id] = msg
 
     # file
@@ -157,10 +160,11 @@ def get_node_infos(cur):
     for i in records:
         path = str(i[2])
         index_id = str(i[-1])
-        msg = 'file' + ' ' + path
+        msg = "file" + " " + path
         indexid2msg[index_id] = msg
 
     return indexid2msg
+
 
 def main(cfg):
     cur, connect = init_database_connection(cfg)
@@ -171,7 +175,6 @@ def main(cfg):
     best_mcc, best_stats = -1e6, {}
     best_model_epoch = listdir_sorted(test_losses_dir)[-1]
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-
         stats_file = os.path.join(in_dir, f"stats_{model_epoch_dir}.pth")
         stats = torch.load(stats_file)
         if stats["mcc"] > best_mcc:
@@ -180,12 +183,14 @@ def main(cfg):
     results_file = os.path.join(in_dir, f"result_{best_model_epoch}.pth")
     results = torch.load(results_file)
 
-    sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'train')))
+    sorted_tw_paths = sorted(
+        os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "train"))
+    )
     base_dir = cfg.preprocessing.transformation._graphs_dir
     tw_to_graphdir = {}
     for tw, tw_file in enumerate(sorted_tw_paths):
         timestr = tw_file[:-20]
-        day = timestr[8:10].lstrip('0')
+        day = timestr[8:10].lstrip("0")
         graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
 
         tw_to_graphdir[tw] = graph_dir
@@ -203,17 +208,20 @@ def main(cfg):
     for fp, tw_set in fp_to_tw.items():
         print(f"FP node {fp} appears in testing time windows: {list(tw_set)}")
 
-    test_sorted_tw_paths = sorted(os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, 'test')))
+    test_sorted_tw_paths = sorted(
+        os.listdir(os.path.join(cfg.featurization.embed_edges._edge_embeds_dir, "test"))
+    )
     tw_to_graphdir_test = {}
     for tw, tw_file in enumerate(test_sorted_tw_paths):
         timestr = tw_file[:-20]
-        day = timestr[8:10].lstrip('0')
+        day = timestr[8:10].lstrip("0")
         graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
 
         tw_to_graphdir_test[tw] = graph_dir
 
-    check_if_in_trainset(fps,tw_to_graphdir,tw_to_graphdir_test,cur, cfg)
+    check_if_in_trainset(fps, tw_to_graphdir, tw_to_graphdir_test, cur, cfg)
     print("Finish checking!")
+
 
 if __name__ == "__main__":
     args = get_runtime_required_args()

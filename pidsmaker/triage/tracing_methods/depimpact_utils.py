@@ -1,20 +1,25 @@
-import networkx as nx
-import igraph as ig
-from provnet_utils import log_tqdm, get_node_to_path_and_type, log
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import os
-import numpy as np
 from datetime import datetime
 
-class DEPIMPACT():
+import igraph as ig
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+
+from pidsmaker.provnet_utils import get_node_to_path_and_type, log, log_tqdm
+
+
+class DEPIMPACT:
     def __init__(self, graph, poi, node_to_score, used_method, score_method):
         self.graph = graph
         self.poi = poi
         self.used_method = used_method
         self.score_method = score_method
 
-        log_with_pid(f"Start trace with args used method: {used_method} and score method: {score_method}")
+        log_with_pid(
+            f"Start trace with args used method: {used_method} and score method: {score_method}"
+        )
 
         if self.score_method == "degree":
             self.node_scores = self._cal_degree_score()
@@ -28,7 +33,11 @@ class DEPIMPACT():
     def run(self):
         if self.used_method == "component" or self.used_method == "shortest_path":
             subgraph_nodes = self.gen_dependency_graph()
-        elif self.used_method == "1-hop" or self.used_method == "2-hop" or self.used_method == "3-hop":
+        elif (
+            self.used_method == "1-hop"
+            or self.used_method == "2-hop"
+            or self.used_method == "3-hop"
+        ):
             subgraph_nodes = self.n_hop_subgraph_nodes()
 
         return subgraph_nodes
@@ -43,17 +52,16 @@ class DEPIMPACT():
         return subgraph_nodes
 
     def gen_dependency_graph(self):
-
         poi_in_graph = self.poi
 
         if self.used_method == "shortest_path":
             self.dag, self.backward_poi = self._convert_DAG()
             backward_poi = self.backward_poi
-            forward_poi = str(self.poi) + '-' + str(0)
+            forward_poi = str(self.poi) + "-" + str(0)
         elif self.used_method == "component":
             self.dag, self.backward_poi = self._convert_DAG()
             backward_poi = self.backward_poi
-            forward_poi = str(self.poi) + '-' + str(0)
+            forward_poi = str(self.poi) + "-" + str(0)
 
         subgraph_nodes = set()
 
@@ -65,7 +73,7 @@ class DEPIMPACT():
                 entry2path = dag_backward_tracing_component(backward_poi, self.dag)
             entry2nodes = {}
             for entry, paths in entry2path.items():
-                entry_in_graph = entry.split('-')[0]
+                entry_in_graph = entry.split("-")[0]
                 if entry_in_graph not in entry2nodes:
                     entry2nodes[entry_in_graph] = set()
 
@@ -74,7 +82,7 @@ class DEPIMPACT():
                     nodes_in_dag |= set(path)
 
                 for node_in_dag in list(nodes_in_dag):
-                    node_in_graph = node_in_dag.split('-')[0]
+                    node_in_graph = node_in_dag.split("-")[0]
                     entry2nodes[entry_in_graph].add(node_in_graph)
 
             entry2score = {}
@@ -108,7 +116,7 @@ class DEPIMPACT():
                 exit2path = dag_forward_tracing_component(forward_poi, self.dag)
             exit2nodes = {}
             for exit, paths in exit2path.items():
-                exit_in_graph = exit.split('-')[0]
+                exit_in_graph = exit.split("-")[0]
                 if exit_in_graph not in exit2nodes:
                     exit2nodes[exit_in_graph] = set()
 
@@ -117,7 +125,7 @@ class DEPIMPACT():
                     nodes_in_dag |= set(path)
 
                 for node_in_dag in list(nodes_in_dag):
-                    node_in_graph = node_in_dag.split('-')[0]
+                    node_in_graph = node_in_dag.split("-")[0]
                     exit2nodes[exit_in_graph].add(node_in_graph)
 
             exit2score = {}
@@ -172,7 +180,7 @@ class DEPIMPACT():
         edges = []
         node_version = {}
         for u, v, k, data in graph.edges(keys=True, data=True):
-            edges.append((u, v, int(data['time'])))
+            edges.append((u, v, int(data["time"])))
             if u not in node_version:
                 node_version[u] = 0
             if v not in node_version:
@@ -184,37 +192,36 @@ class DEPIMPACT():
         new_edges = []
         visited = set()
         for u, v, t in sorted_edges:
-
             # if u == v:
             #     continue
 
-            src = str(u) + '-' + str(node_version[u])
+            src = str(u) + "-" + str(node_version[u])
             visited.add(u)
             new_nodes.add(src)
 
             if v not in visited:
-                dst = str(v) + '-' + str(node_version[v])
+                dst = str(v) + "-" + str(node_version[v])
                 visited.add(v)
                 new_nodes.add(dst)
-                new_edges.append((src, dst, {'time': int(t)}))
+                new_edges.append((src, dst, {"time": int(t)}))
             else:
-                dst_current = str(v) + '-' + str(node_version[v])
-                dst_new = str(v) + '-' + str(node_version[v] + 1)
+                dst_current = str(v) + "-" + str(node_version[v])
+                dst_new = str(v) + "-" + str(node_version[v] + 1)
                 node_version[v] += 1
                 new_nodes.add(dst_new)
-                new_edges.append((src, dst_new, {'time': int(t)}))
-                new_edges.append((dst_current, dst_new, {'time': int(t)}))
+                new_edges.append((src, dst_new, {"time": int(t)}))
+                new_edges.append((dst_current, dst_new, {"time": int(t)}))
 
         DAG = nx.DiGraph()
         DAG.add_nodes_from(list(new_nodes))
         DAG.add_edges_from(new_edges)
 
         old_poi = self.poi
-        new_poi = str(old_poi) + '-' + str(node_version[old_poi])
+        new_poi = str(old_poi) + "-" + str(node_version[old_poi])
 
         return DAG, new_poi
 
-    def _cal_degree_recon_score(self,degree_scores, recon_scores):
+    def _cal_degree_recon_score(self, degree_scores, recon_scores):
         nid_list = []
         degree_score_list = []
         recon_score_list = []
@@ -228,13 +235,15 @@ class DEPIMPACT():
 
         node_scores = {}
         for i in range(len(nid_list)):
-            node_scores[nid_list[i]] = normalized_degree_score_list[i] + normalized_recon_score_list[i]
+            node_scores[nid_list[i]] = (
+                normalized_degree_score_list[i] + normalized_recon_score_list[i]
+            )
 
         return node_scores
 
 
 def backward_tracing(poi: str, backward_adj: dict):
-    queue = [(poi, float('inf'),[])]
+    queue = [(poi, float("inf"), [])]
     entry2path = {}
     # visited = set()
 
@@ -260,8 +269,9 @@ def backward_tracing(poi: str, backward_adj: dict):
 
     return entry2path
 
+
 def forward_tracing(poi: str, forward_adj: dict):
-    queue = [(poi, -float('inf'),[])]
+    queue = [(poi, -float("inf"), [])]
     exit2path = {}
 
     while queue:
@@ -282,6 +292,7 @@ def forward_tracing(poi: str, forward_adj: dict):
 
     return exit2path
 
+
 def dag_backward_tracing_shortest_path(poi: str, dag: nx.DiGraph):
     entries = [n for n in dag.nodes() if dag.in_degree(n) == 0]
     entry2path = {}
@@ -295,6 +306,7 @@ def dag_backward_tracing_shortest_path(poi: str, dag: nx.DiGraph):
         entry2path[e] = all_paths
     return entry2path
 
+
 def dag_forward_tracing_shortest_path(poi: str, dag: nx.DiGraph):
     exits = [n for n in dag.nodes() if dag.out_degree(n) == 0]
     exit2path = {}
@@ -307,6 +319,7 @@ def dag_forward_tracing_shortest_path(poi: str, dag: nx.DiGraph):
             all_paths = [[]]
         exit2path[e] = all_paths
     return exit2path
+
 
 def dag_backward_tracing_component(poi: str, dag: nx.DiGraph):
     # extract backward dependency graph
@@ -322,6 +335,7 @@ def dag_backward_tracing_component(poi: str, dag: nx.DiGraph):
         entry2path[e] = [list(common_nodes)]
     return entry2path
 
+
 def dag_forward_tracing_component(poi: str, dag: nx.DiGraph):
     # extract forward dependency graph
     descendants_of_poi = find_descendants(dag, poi)
@@ -336,29 +350,32 @@ def dag_forward_tracing_component(poi: str, dag: nx.DiGraph):
         exit2path[e] = [list(common_nodes)]
     return exit2path
 
+
 def find_ancestors(graph, node):
     ancestors = set()  # 用于记录已经访问过的节点
-    stack = [node]     # 初始化栈，开始深度优先搜索
+    stack = [node]  # 初始化栈，开始深度优先搜索
     while stack:
         current = stack.pop()  # 弹出栈顶节点
         for parent in graph.predecessors(current):  # 遍历所有前驱节点
             if parent not in ancestors:  # 如果前驱节点尚未访问
-                ancestors.add(parent)    # 将其添加到已访问集合
-                stack.append(parent)     # 并将其压入栈中以继续搜索
+                ancestors.add(parent)  # 将其添加到已访问集合
+                stack.append(parent)  # 并将其压入栈中以继续搜索
     ancestors.add(node)
     return ancestors  # 返回所有祖先节点
 
+
 def find_descendants(graph, node):
     descendants = set()  # 用于记录已经访问过的节点
-    stack = [node]       # 初始化栈，开始深度优先搜索
+    stack = [node]  # 初始化栈，开始深度优先搜索
     while stack:
         current = stack.pop()  # 弹出栈顶节点
         for child in graph.successors(current):  # 遍历所有后继节点
             if child not in descendants:  # 如果后继节点尚未访问
-                descendants.add(child)    # 将其添加到已访问集合
-                stack.append(child)       # 并将其压入栈中以继续搜索
+                descendants.add(child)  # 将其添加到已访问集合
+                stack.append(child)  # 并将其压入栈中以继续搜索
     descendants.add(node)
     return descendants  # 返回所有后代节点
+
 
 def min_max_normalize(lst):
     min_val = min(lst)
@@ -366,6 +383,7 @@ def min_max_normalize(lst):
     if min_val == max_val:
         return [0.0 for _ in lst]
     return [(x - min_val) / (max_val - min_val) for x in lst]
+
 
 def find_min_larger_than(sequence, value):
     min_larger = None
@@ -375,6 +393,7 @@ def find_min_larger_than(sequence, value):
                 min_larger = num
     return min_larger
 
+
 def find_max_smaller_than(sequence, value):
     max_smaller = None
     for num in sequence:
@@ -383,14 +402,15 @@ def find_max_smaller_than(sequence, value):
                 max_smaller = num
     return max_smaller
 
+
 def log_with_pid(msg: str, *args):
     pid = os.getpid()
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     print(f"{timestamp} - (pid: {pid}) - {msg}", *args)
 
-def get_n_hop_neighbors(graph, node, n):
 
+def get_n_hop_neighbors(graph, node, n):
     neighbors = set()
     current_level = {node}
 
@@ -406,18 +426,16 @@ def get_n_hop_neighbors(graph, node, n):
 
     return neighbors
 
-def visualize_dependency_graph(dependency_graph,
-                               ground_truth_nids,
-                               poi,
-                               tw,
-                               out_dir,
-                               cfg):
-    node_to_path_type = get_node_to_path_and_type(cfg) #key type is int
 
-    edge_index = np.array([(int(u), int(v)) for u, v, k, attrs in dependency_graph.edges(data=True, keys=True)])
+def visualize_dependency_graph(dependency_graph, ground_truth_nids, poi, tw, out_dir, cfg):
+    node_to_path_type = get_node_to_path_and_type(cfg)  # key type is int
+
+    edge_index = np.array(
+        [(int(u), int(v)) for u, v, k, attrs in dependency_graph.edges(data=True, keys=True)]
+    )
     unique_nodes, new_edge_index = np.unique(edge_index.flatten(), return_inverse=True)
     new_edge_index = new_edge_index.reshape(edge_index.shape)
-    unique_paths = [f'{str(n)}:'+node_to_path_type[int(n)]['path'] for n in unique_nodes]
+    unique_paths = [f"{str(n)}:" + node_to_path_type[int(n)]["path"] for n in unique_nodes]
     unique_types = [node_to_path_type[int(n)]["type"] for n in unique_nodes]
     unique_labels = [int(n) in ground_truth_nids for n in unique_nodes]
 
@@ -425,8 +443,10 @@ def visualize_dependency_graph(dependency_graph,
     G.vs["original_id"] = unique_nodes
     G.vs["path"] = unique_paths
     G.vs["type"] = unique_types
-    G.vs["shape"] = ["rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle" for typ in
-                     unique_types]
+    G.vs["shape"] = [
+        "rectangle" if typ == "file" else "circle" if typ == "subject" else "triangle"
+        for typ in unique_types
+    ]
 
     G.vs["label"] = unique_labels
 
@@ -451,8 +471,10 @@ def visualize_dependency_graph(dependency_graph,
     visual_style["vertex_frame_color"] = [POI if int(n) in poi else TRACED for n in unique_nodes]
 
     visual_style["edge_curved"] = 0.1
-    visual_style["edge_width"] = 1 #[3 if label else 1 for label in y_hat]
-    visual_style["edge_color"] = "gray" # ["red" if label else "gray" for label in subgraph.es["y"]]
+    visual_style["edge_width"] = 1  # [3 if label else 1 for label in y_hat]
+    visual_style["edge_color"] = (
+        "gray"  # ["red" if label else "gray" for label in subgraph.es["y"]]
+    )
     visual_style["edge_arrow_size"] = 8
     visual_style["edge_arrow_width"] = 8
 
@@ -464,17 +486,44 @@ def visualize_dependency_graph(dependency_graph,
 
     # Create legend handles
     legend_handles = [
-        mpatches.Patch(color=BENIGN, label='Benign/FP'),
-        mpatches.Patch(color=ATTACK, label='Attack/TP'),
-        plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=10, label='Subject', markeredgewidth=1),
-        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='k', markersize=10, label='File', markeredgewidth=1),
-        plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='k', markersize=10, label='IP', markeredgewidth=1),
-        mpatches.Patch(edgecolor=TRACED, label='traced node', facecolor='none'),
-        mpatches.Patch(edgecolor=POI, label='POI node', facecolor='none')
+        mpatches.Patch(color=BENIGN, label="Benign/FP"),
+        mpatches.Patch(color=ATTACK, label="Attack/TP"),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="k",
+            markersize=10,
+            label="Subject",
+            markeredgewidth=1,
+        ),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="s",
+            color="w",
+            markerfacecolor="k",
+            markersize=10,
+            label="File",
+            markeredgewidth=1,
+        ),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="^",
+            color="w",
+            markerfacecolor="k",
+            markersize=10,
+            label="IP",
+            markeredgewidth=1,
+        ),
+        mpatches.Patch(edgecolor=TRACED, label="traced node", facecolor="none"),
+        mpatches.Patch(edgecolor=POI, label="POI node", facecolor="none"),
     ]
 
     # Add legend to the plot
-    ax.legend(handles=legend_handles, loc='upper right', fontsize='medium')
+    ax.legend(handles=legend_handles, loc="upper right", fontsize="medium")
 
     # Save the plot with legend
     out_file = f"attack_graph_in_tw_{tw}"

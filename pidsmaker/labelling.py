@@ -2,7 +2,8 @@ import csv
 import os.path
 from collections import defaultdict
 
-from provnet_utils import init_database_connection, log, datetime_to_ns_time_US
+from pidsmaker.provnet_utils import datetime_to_ns_time_US, init_database_connection, log
+
 
 def get_ground_truth(cfg):
     cur, connect = init_database_connection(cfg)
@@ -11,7 +12,7 @@ def get_ground_truth(cfg):
     ground_truth_nids, ground_truth_paths = [], {}
     uuid_to_node_id = {}
     for file in cfg.dataset.ground_truth_relative_path:
-        with open(os.path.join(cfg._ground_truth_dir, file), 'r') as f:
+        with open(os.path.join(cfg._ground_truth_dir, file), "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -22,10 +23,12 @@ def get_ground_truth(cfg):
 
     mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
     if mimicry_edge_num is not None and mimicry_edge_num > 0:
-        num_GPs= len(ground_truth_nids)
+        num_GPs = len(ground_truth_nids)
         for file in cfg.dataset.ground_truth_relative_path:
-            file_name = file.split('/')[-1]
-            with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, file_name), 'r') as f:
+            file_name = file.split("/")[-1]
+            with open(
+                os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, file_name), "r"
+            ) as f:
                 reader = csv.reader(f)
                 for row in reader:
                     node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -38,18 +41,24 @@ def get_ground_truth(cfg):
 
     return set(ground_truth_nids), ground_truth_paths, uuid_to_node_id
 
+
 def get_GP_of_each_attack(cfg):
     cur, connect = init_database_connection(cfg)
     uuid2nids, _ = get_uuid2nids(cur)
 
     attack_to_nids = {}
 
-    for i, (path, attack_to_time_window) in enumerate(zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)):
+    for i, (path, attack_to_time_window) in enumerate(
+        zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)
+    ):
         attack_to_nids[i] = {}
         attack_to_nids[i]["nids"] = set()
-        attack_to_nids[i]["time_range"] =[datetime_to_ns_time_US(tw) for tw in [attack_to_time_window[1], attack_to_time_window[2]]]
-        
-        with open(os.path.join(cfg._ground_truth_dir, path), 'r') as f:
+        attack_to_nids[i]["time_range"] = [
+            datetime_to_ns_time_US(tw)
+            for tw in [attack_to_time_window[1], attack_to_time_window[2]]
+        ]
+
+        with open(os.path.join(cfg._ground_truth_dir, path), "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -59,7 +68,9 @@ def get_GP_of_each_attack(cfg):
         mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
         if mimicry_edge_num is not None and mimicry_edge_num > 0:
             num_mimicry_GPs = 0
-            with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, path.split('/')[-1]), 'r') as f:
+            with open(
+                os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, path.split("/")[-1]), "r"
+            ) as f:
                 reader = csv.reader(f)
                 for row in reader:
                     num_mimicry_GPs += 1
@@ -69,11 +80,12 @@ def get_GP_of_each_attack(cfg):
             log(f"{num_mimicry_GPs} mimicry ground truth nodes loaded")
     return attack_to_nids
 
+
 def get_uuid2nids(cur):
     queries = {
         "file": "SELECT index_id, node_uuid FROM file_node_table;",
         "netflow": "SELECT index_id, node_uuid FROM netflow_node_table;",
-        "subject": "SELECT index_id, node_uuid FROM subject_node_table;"
+        "subject": "SELECT index_id, node_uuid FROM subject_node_table;",
     }
     uuid2nids = {}
     nid2uuid = {}
@@ -86,9 +98,12 @@ def get_uuid2nids(cur):
 
     return uuid2nids, nid2uuid
 
-def get_events(cur,
-               start_time,
-               end_time,):
+
+def get_events(
+    cur,
+    start_time,
+    end_time,
+):
     # malicious_nodes_str = ', '.join(f"'{node}'" for node in malicious_nodes)
     # sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' AND src_index_id IN ({malicious_nodes_str});"
     sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}';"
@@ -96,6 +111,7 @@ def get_events(cur,
     cur.execute(sql)
     rows = cur.fetchall()
     return rows
+
 
 def get_t2malicious_node(cfg) -> dict[list]:
     cur, connect = init_database_connection(cfg)
@@ -109,7 +125,7 @@ def get_t2malicious_node(cfg) -> dict[list]:
         end_time = datetime_to_ns_time_US(attack_tuple[2])
 
         ground_truth_nids = set()
-        with open(os.path.join(cfg._ground_truth_dir, attack), 'r') as f:
+        with open(os.path.join(cfg._ground_truth_dir, attack), "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -118,8 +134,11 @@ def get_t2malicious_node(cfg) -> dict[list]:
 
         mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
         if mimicry_edge_num is not None and mimicry_edge_num > 0:
-            num_GPs= len(ground_truth_nids)
-            with open(os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, attack.split('/')[-1]), 'r') as f:
+            num_GPs = len(ground_truth_nids)
+            with open(
+                os.path.join(cfg.preprocessing.build_graphs._mimicry_dir, attack.split("/")[-1]),
+                "r",
+            ) as f:
                 reader = csv.reader(f)
                 for row in reader:
                     node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -140,20 +159,22 @@ def get_t2malicious_node(cfg) -> dict[list]:
 
     return t_to_node
 
+
 def get_attack_to_mal_edges(cfg) -> dict[list]:
     cur, connect = init_database_connection(cfg)
     uuid2nids, nid2uuid = get_uuid2nids(cur)
 
     malicious_edge_selection = cfg.detection.evaluation.edge_evaluation.malicious_edge_selection
-    
-    attack_to_mal_edges = defaultdict(set)
-    for i, (path, attack_to_time_window) in enumerate(zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)):
 
+    attack_to_mal_edges = defaultdict(set)
+    for i, (path, attack_to_time_window) in enumerate(
+        zip(cfg.dataset.ground_truth_relative_path, cfg.dataset.attack_to_time_window)
+    ):
         start_time = datetime_to_ns_time_US(attack_to_time_window[1])
         end_time = datetime_to_ns_time_US(attack_to_time_window[2])
-        
+
         ground_truth_nids = []
-        with open(os.path.join(cfg._ground_truth_dir, path), 'r') as f:
+        with open(os.path.join(cfg._ground_truth_dir, path), "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -179,12 +200,15 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
             elif malicious_edge_selection == "either_node":
                 condition = src_idx_id in ground_truth_nids or dst_idx_id in ground_truth_nids
             else:
-                raise ValueError("`malicious_edge_selection` must be one of 'src_node', 'dst_node', 'both_nodes', 'either_node")
-            
+                raise ValueError(
+                    "`malicious_edge_selection` must be one of 'src_node', 'dst_node', 'both_nodes', 'either_node"
+                )
+
             if condition:
                 attack_to_mal_edges[i].add((src_idx_id, dst_idx_id, timestamp_rec, ope))
-    
+
     return attack_to_mal_edges
+
 
 def get_ground_truth_edges(cfg) -> set:
     attack_to_mal_edges = get_attack_to_mal_edges(cfg)
