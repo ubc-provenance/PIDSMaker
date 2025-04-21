@@ -1,19 +1,13 @@
 import sys
 import os 
+import csv
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from config import *
-from provnet_utils import *
-import wandb
-from tqdm import tqdm
-
-from preprocessing import (
-    build_graphs,
-    transformation,
-)
+from config import get_runtime_required_args, get_yml_cfg
+from provnet_utils import datetime_to_ns_time_US, init_database_connection
 import labelling
 
 def gen_mal_edges(cfg):
@@ -23,8 +17,8 @@ def gen_mal_edges(cfg):
     for attack_tuple in cfg.dataset.attack_to_time_window:
 
         mal_node_file = attack_tuple[0]
-        start_time = labelling.datetime_to_ns_time_US(attack_tuple[1])
-        end_time = labelling.datetime_to_ns_time_US(attack_tuple[2])
+        start_time = datetime_to_ns_time_US(attack_tuple[1])
+        end_time = datetime_to_ns_time_US(attack_tuple[2])
 
         mal_edge_file = mal_node_file.split("/")[0] + "/edge_" + mal_node_file.split("/")[1][5:]
         result_edges = []

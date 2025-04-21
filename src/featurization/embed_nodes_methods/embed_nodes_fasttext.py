@@ -1,11 +1,11 @@
-from provnet_utils import *
-from config import *
+import os
+from provnet_utils import log, log_start
+from config import ROOT_ARTIFACT_DIR
 from featurization.featurization_utils import get_corpus
 
 import wget
 from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
-from gensim.test.utils import datapath
 
 def download_facebook_weights(out_dir):
     url = 'https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.bin.gz'

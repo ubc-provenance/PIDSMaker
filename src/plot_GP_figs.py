@@ -9,7 +9,8 @@ import os
 import numpy as np
 import igraph as ig
 
-from labelling import get_uuid2nids, datetime_to_ns_time_US
+from labelling import get_uuid2nids
+from provnet_utils import datetime_to_ns_time_US
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches

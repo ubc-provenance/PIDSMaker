@@ -1,7 +1,6 @@
-from tqdm import tqdm
 import networkx as nx
 import igraph as ig
-from provnet_utils import *
+from provnet_utils import log_tqdm, get_node_to_path_and_type, log
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os

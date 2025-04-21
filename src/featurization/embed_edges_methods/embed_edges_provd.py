@@ -1,6 +1,6 @@
-from collections import defaultdict
-from provnet_utils import *
-from config import *
+import torch
+import os
+from provnet_utils import log_start, log_tqdm, get_indexid2msg
 from featurization.embed_nodes_methods.embed_paths_provd import get_node2corpus
 
 from gensim.models.doc2vec import Doc2Vec

@@ -1,5 +1,5 @@
-from provnet_utils import *
-from config import *
+import numpy as np
+from provnet_utils import log_start, log_tqdm, get_indexid2msg, tokenize_label
 
 from gensim.models import Word2Vec
 

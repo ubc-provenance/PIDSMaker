@@ -1,12 +1,29 @@
+import os
 from collections import defaultdict
 
+import pandas as pd
 import torch
 
-from provnet_utils import *
-from config import *
-from .evaluation_utils import *
+from provnet_utils import log, listdir_sorted, log_tqdm, get_all_files_from_folders, get_node_to_path_and_type
+from .evaluation_utils import (
+    get_threshold,
+    transform_attack2nodes_to_node2attacks,
+    plot_detected_attacks_vs_precision,
+    compute_discrimination_score,
+    plot_discrimination_metric,
+    compute_discrimination_tp,
+    plot_scores_neat,
+    get_metrics_if_all_attacks_detected,
+    get_ground_truth_nids,
+    reduce_losses_to_score,
+    compute_kmeans_labels,
+    plot_scores_with_paths_node_level,
+    plot_score_seen,
+    get_detected_tps_node_level,
+    classifier_evaluation,
+    datetime_to_ns_time_US_handle_nano,
+)
 from labelling import get_GP_of_each_attack
-
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
@@ -169,7 +186,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         # We need the detected TW range to check if the detected node spans in an attack TW
         detected_tw = detected_tw or node_to_max_loss_tw.get(node_id, None)
         if detected_tw is not None:
-            results[node_id]["time_range"] = [datetime_to_ns_time_US(tw) for tw in filelist[detected_tw].split("~")]
+            results[node_id]["time_range"] = [datetime_to_ns_time_US_handle_nano(tw) for tw in filelist[detected_tw].split("~")]
         else:
             results[node_id]["time_range"] = None
         

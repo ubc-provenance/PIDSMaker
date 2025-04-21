@@ -1,13 +1,8 @@
 import os
-from provnet_utils import *
-from config import *
-from tqdm import tqdm
+from provnet_utils import log_start, log
 from gensim.models import Word2Vec
-import numpy as np
-import random
-import torch
 
-from featurization.featurization_utils import *
+from featurization.featurization_utils import get_corpus
 
 
 def train_feature_word2vec(corpus, cfg, model_save_path):

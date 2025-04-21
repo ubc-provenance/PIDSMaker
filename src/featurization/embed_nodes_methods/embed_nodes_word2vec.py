@@ -3,23 +3,15 @@
 # https://github.com/NLPrinceton/ALaCarte/blob/master/alacarte.py
 ##########################################################################################
 
-import json
-import argparse
-import logging
 import os
-import csv
-import pandas as pd
 import numpy as np
 from collections import OrderedDict
 from collections import Counter
 from collections import defaultdict
 from gensim.models import Word2Vec
 from unicodedata import category
-import re
 import torch
-from config import *
-from provnet_utils import *
-import random
+from provnet_utils import log, log_start
 
 FLOAT = np.float32
 INT = np.uint64

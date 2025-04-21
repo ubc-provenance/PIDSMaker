@@ -1,5 +1,7 @@
+import os
+import torch
 from config import update_cfg_for_multi_dataset
-from provnet_utils import *
+from provnet_utils import log_tqdm, gen_relation_onehot, get_split_to_files, get_multi_datasets
 from data_utils import CollatableTemporalData
 from dataset_utils import get_rel2id, get_node_map
 

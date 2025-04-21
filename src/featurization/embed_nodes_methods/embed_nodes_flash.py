@@ -1,7 +1,8 @@
+import os
+import torch
 from collections import defaultdict
 from itertools import chain
-from provnet_utils import *
-from config import *
+from provnet_utils import get_indexid2msg, get_all_files_from_folders, log_tqdm, log, log_start, tokenize_arbitrary_label
 from featurization.featurization_utils import get_splits_to_train_featurization
 
 from gensim.models import Word2Vec

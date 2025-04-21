@@ -3,45 +3,23 @@ from time import mktime
 from datetime import datetime
 import time
 import psycopg2
-from psycopg2 import extras as ex
 import os
-import copy
-import logging
 import shutil
 import torch
-from torch.nn import Linear
-from torch_geometric.nn import TransformerConv
-import torch.nn as nn
-import torch.nn.functional as F
-import pandas as pd
-from torch_geometric import *
 from tqdm import tqdm
 import networkx as nx
 import numpy as np
-import math
-import copy
-import time
-import xxhash
-import gc
 import random
 import csv
 from collections import defaultdict
-from sklearn.metrics import (
-    confusion_matrix,
-    roc_auc_score,
-    roc_curve,
-    precision_recall_curve,
-    average_precision_score as ap_score,
-    balanced_accuracy_score,
-)
-
 import re
 
-from config import *
 import hashlib
 from nltk.tokenize import word_tokenize
 import nltk
-nltk.download('punkt')
+nltk.download('punkt', quiet=True)
+
+from config import update_cfg_for_multi_dataset
 
 def stringtomd5(originstr):
     originstr = originstr.encode("utf-8")
@@ -311,65 +289,6 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
             data[key] = dict(data[key])
             remove_underscore_keys(data[key], keys_to_keep, keys_to_rm)
     return data
-
-def compute_mcc(tp, fp, tn, fn):
-    numerator = (tp * tn) - (fp * fn)
-    denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
-    
-    if denominator == 0:
-        return 0
-    
-    mcc = numerator / denominator
-    return mcc
-
-def classifier_evaluation(y_test, y_test_pred, scores):
-    labels_exist = sum(y_test) > 0
-    if labels_exist:
-        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
-    else:
-        tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
-
-    eps = 1e-12
-    fpr = fp/(fp+tn+eps)
-    precision=tp/(tp+fp+eps)
-    recall=tp/(tp+fn+eps)
-    accuracy=(tp+tn)/(tp+tn+fp+fn+eps)
-    fscore=2*(precision*recall)/(precision+recall+eps)
-
-    try:
-        auc_val=roc_auc_score(y_test, scores)
-    except: auc_val=float("nan")
-    try:
-        ap=ap_score(y_test, scores)
-    except: ap=float("nan")
-    try:
-        balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
-    except: balanced_acc=float("nan")
-    
-    sensitivity = tp / (tp + fn+eps)
-    specificity = tn / (tn + fp+eps)
-    lr_plus = sensitivity / (1 - specificity + eps)
-    dor = (tp * tn) / (fp * fn+eps)
-    mcc = compute_mcc(tp, fp, tn, fn)
-
-    stats = {
-        "precision": round(precision, 5),
-        "recall": round(recall, 5),
-        "fpr": round(fpr, 7),
-        "fscore": round(fscore, 5),
-        "ap": round(ap, 5),
-        "accuracy": round(accuracy, 5),
-        "balanced_acc": round(balanced_acc, 5),
-        "auc": round(auc_val, 5),
-        "lr(+)": round(lr_plus, 5),
-        "dor": round(dor, 5),
-        "mcc": round(mcc, 5),
-        "tp": tp,
-        "fp": fp,
-        "tn": tn,
-        "fn": fn,
-    }
-    return stats
 
 def tokenize_subject(sentence: str):
     new_sentence = re.sub(r'\\+', '/', sentence)

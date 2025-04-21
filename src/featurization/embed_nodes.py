@@ -1,4 +1,3 @@
-from config import *
 from provnet_utils import set_seed
 from . import build_random_walks
 from .embed_nodes_methods import (

@@ -1,5 +1,4 @@
-from config import *
-from provnet_utils import *
+import networkx as nx
 
 from .transformation_utils import add_arbitrary_timestamps_to_graph
 

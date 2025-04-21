@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from fontTools.merge.util import current_time
-from labelling import get_ground_truth, datetime_to_ns_time_US
+from provnet_utils import datetime_to_ns_time_US
 import random
 import os
 import csv

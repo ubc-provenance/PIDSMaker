@@ -1,8 +1,8 @@
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+import torch
+from gensim.models.doc2vec import TaggedDocument
 from itertools import chain
 
-from provnet_utils import *
-from config import *
+from provnet_utils import get_split2nodes, get_indexid2msg, tokenize_label, get_all_files_from_folders, log_tqdm
 
 
 def get_splits_to_train_featurization(cfg):

@@ -1,14 +1,8 @@
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.models.doc2vec import Doc2Vec
 import os
-from nltk.tokenize import word_tokenize
 
-from provnet_utils import *
-from config import *
-import torch
-import numpy as np
-import random
-
-from featurization.featurization_utils import *
+from provnet_utils import log, log_start
+from featurization.featurization_utils import get_corpus_using_neighbors_features, get_corpus
 
 
 def doc2vec(cfg,

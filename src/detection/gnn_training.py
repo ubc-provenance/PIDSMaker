@@ -1,4 +1,3 @@
-from config import *
 from .training_methods import (
     orthrus_gnn_training,
     provd_testing,

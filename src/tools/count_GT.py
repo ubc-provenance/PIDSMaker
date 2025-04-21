@@ -12,7 +12,7 @@ from preprocessing import (
     build_graphs,
 )
 from tqdm import tqdm
-from labelling import get_ground_truth, get_uuid2nids, datetime_to_ns_time_US
+from labelling import get_ground_truth, get_uuid2nids
 from detection.evaluation_methods.evaluation_utils import compute_tw_labels
 from dataset_utils import get_rel2id
 

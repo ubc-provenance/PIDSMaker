@@ -1,7 +1,6 @@
 import os
 
-from config import *
-from provnet_utils import *
+from provnet_utils import log
 import torch
 
 from .depimpact_utils import DEPIMPACT, visualize_dependency_graph, log_with_pid

@@ -1,4 +1,4 @@
-from config import *
+from config import update_cfg_for_multi_dataset
 from provnet_utils import get_multi_datasets
 from .build_graph_methods import (
     build_orthrus_graphs,

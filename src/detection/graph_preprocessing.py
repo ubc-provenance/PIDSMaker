@@ -1,7 +1,6 @@
 import os
 import torch
 
-from config import *
 from provnet_utils import get_device, set_seed, log_start, log
 from data_utils import load_all_datasets
 

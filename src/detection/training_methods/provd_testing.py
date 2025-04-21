@@ -1,6 +1,9 @@
+import os
+import torch
+import numpy as np
 from collections import defaultdict
-from provnet_utils import *
-from config import *
+from provnet_utils import get_all_files_from_folders, log
+
 
 def main(cfg):
     clf = torch.load(os.path.join(cfg.featurization.embed_nodes._model_dir, "lof.pkl"))

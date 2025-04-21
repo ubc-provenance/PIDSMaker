@@ -1,6 +1,5 @@
 import os
-from provnet_utils import *
-from config import *
+from provnet_utils import get_all_files_from_folders, log_tqdm, log_start
 from trw import TRW
 import torch
 

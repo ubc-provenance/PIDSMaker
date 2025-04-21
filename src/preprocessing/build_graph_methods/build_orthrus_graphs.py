@@ -3,8 +3,8 @@ import os
 from datetime import datetime, timedelta
 import networkx as nx
 import torch
-from config import *
-from provnet_utils import *
+from config import get_darpa_tc_node_feats_from_cfg, get_days_from_cfg
+from provnet_utils import init_database_connection, stringtomd5, log, log_start, get_split_to_files, log_tqdm, datetime_to_ns_time_US, ns_time_to_datetime_US
 
 import mimicry
 from dataset_utils import get_rel2id

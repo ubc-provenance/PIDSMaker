@@ -8,9 +8,8 @@ from .evaluation_methods import (
     node_tw_evaluation,
     edge_evaluation,
 )
-from data_utils import *
 from provnet_utils import log
-from .evaluation_methods.evaluation_utils import *
+from .evaluation_methods.evaluation_utils import compute_tw_labels, listdir_sorted
 
 
 def standard_evaluation(cfg, evaluation_fn):

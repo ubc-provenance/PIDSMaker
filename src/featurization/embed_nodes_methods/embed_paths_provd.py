@@ -1,12 +1,16 @@
+import math
+import os
+import torch
+import numpy as np
+import networkx as nx
 from collections import defaultdict
 from itertools import chain
-from provnet_utils import *
-from config import *
+from provnet_utils import log, tokenize_arbitrary_label, get_all_files_from_folders, log_tqdm
 from featurization.featurization_utils import get_splits_to_train_featurization
 from .embed_nodes_doc2vec import doc2vec
 
 from sklearn.neighbors import LocalOutlierFactor
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.models.doc2vec import TaggedDocument
 
 def get_edge_key(u, v, graph):
     edge_number_between_nodes = graph.new_edge_key(u, v) - 1
@@ -265,10 +269,3 @@ def main(cfg):
     clf = LocalOutlierFactor(novelty=True, n_neighbors=n_neighbors, contamination=contamination)
     clf.fit(training_vectors)
     torch.save(clf, os.path.join(model_save_dir, "lof.pkl"))
-
-
-if __name__ == '__main__':
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    main(cfg)

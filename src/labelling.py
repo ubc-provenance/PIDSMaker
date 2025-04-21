@@ -1,8 +1,8 @@
+import csv
 import os.path
 from collections import defaultdict
 
-from config import *
-from provnet_utils import *
+from provnet_utils import init_database_connection, log, datetime_to_ns_time_US
 
 def get_ground_truth(cfg):
     cur, connect = init_database_connection(cfg)
@@ -85,19 +85,6 @@ def get_uuid2nids(cur):
             nid2uuid[row[0]] = row[1]
 
     return uuid2nids, nid2uuid
-
-def datetime_to_ns_time_US(date):
-    """
-    :param date: str   format: %Y-%m-%d %H:%M:%S   e.g. 2013-10-10 23:40:00
-    :return: nano timestamp
-    """
-    tz = pytz.timezone('US/Eastern')
-    timeArray = time.strptime(date, "%Y-%m-%d %H:%M:%S")
-    dt = datetime.fromtimestamp(mktime(timeArray))
-    timestamp = tz.localize(dt)
-    timestamp = timestamp.timestamp()
-    timeStamp = timestamp * 1000000000
-    return int(timeStamp)
 
 def get_events(cur,
                start_time,

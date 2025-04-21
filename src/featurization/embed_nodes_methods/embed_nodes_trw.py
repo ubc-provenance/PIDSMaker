@@ -1,11 +1,6 @@
 import os
-from provnet_utils import *
-from config import *
-from tqdm import tqdm
+from provnet_utils import tokenize_subject, tokenize_file, tokenize_netflow, log, log_start, get_indexid2msg, get_all_files_from_folders, log_tqdm
 from gensim.models import Word2Vec
-import torch
-import numpy as np
-import random
 
 def tokenize_corpus(corpus, indexid2msg):
     tokenized_corpus = []

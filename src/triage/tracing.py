@@ -1,9 +1,9 @@
-from config import *
-from provnet_utils import *
+from provnet_utils import listdir_sorted, log
 from collections import defaultdict
 import wandb
 import os
 import torch
+from detection.evaluation_methods.evaluation_utils import classifier_evaluation
 
 from .tracing_methods import (
     depimpact,

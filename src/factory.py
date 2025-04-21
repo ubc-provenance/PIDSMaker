@@ -1,17 +1,15 @@
 import torch
 import torch.nn as nn
 
-from provnet_utils import *
-from config import *
 from config import decoder_matches_objective
 from dataset_utils import possible_events, get_rel2id, get_node_map, get_num_edge_type, OPTC_DATASETS
-from model import *
+from model import Model
 from losses import *
 from encoders import *
 from decoders import *
-from data_utils import *
-from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, LastNeighborLoader, IdentityMessage
-from experiments.uncertainty import add_dropout_to_model, IdentityWrapper
+from data_utils import GraphReindexer
+from tgn import TGNMemory, TimeEncodingMemory, LastAggregator, IdentityMessage
+from experiments.uncertainty import add_dropout_to_model
 from hetero import get_metadata
 
 

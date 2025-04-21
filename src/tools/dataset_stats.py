@@ -1,12 +1,15 @@
+import csv
+import argparse
 import sys
 import os 
 
+import torch
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from config import *
-from provnet_utils import *
+from config import get_yml_cfg
+from provnet_utils import get_all_files_from_folders, get_runtime_required_args, remove_underscore_keys, init_database_connection, log, datetime_to_ns_time_US
 import wandb
 from tqdm import tqdm
 
@@ -89,8 +92,8 @@ def count_mal_edges(cfg):
         mal_edge_number = 0
 
         attack = attack_tuple[0]
-        start_time = labelling.datetime_to_ns_time_US(attack_tuple[1])
-        end_time = labelling.datetime_to_ns_time_US(attack_tuple[2])
+        start_time = datetime_to_ns_time_US(attack_tuple[1])
+        end_time = datetime_to_ns_time_US(attack_tuple[2])
 
         ground_truth_nids = []
         with open(os.path.join(cfg._ground_truth_dir, attack), 'r') as f:

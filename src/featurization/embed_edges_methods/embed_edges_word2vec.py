@@ -1,7 +1,6 @@
+import torch
 import os
-
-from config import *
-from provnet_utils import *
+from provnet_utils import log_start
 
 
 def main(cfg):

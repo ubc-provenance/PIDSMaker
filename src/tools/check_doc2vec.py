@@ -1,6 +1,8 @@
+import tqdm
+import os
 from gensim.models.doc2vec import Doc2Vec
-from config import *
-from provnet_utils import *
+from config import get_runtime_required_args, get_yml_cfg
+from provnet_utils import log, tokenize_subject, tokenize_file, tokenize_netflow, log_start, get_indexid2msg
 import pandas
 
 import numpy as np

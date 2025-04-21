@@ -1,24 +1,89 @@
+import os
+import pytz
+from time import mktime
+import time
+from datetime import datetime
 from collections import defaultdict
 
+import numpy as np
+import pandas as pd
+from provnet_utils import log, listdir_sorted, percentile_90, std, mean, get_node_to_path_and_type, get_all_files_from_folders
 from sklearn.metrics import (
-    auc,
-    roc_curve,
+    precision_recall_curve,
+    confusion_matrix,
+    roc_auc_score,
+    average_precision_score as ap_score,
+    balanced_accuracy_score,
 )
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import re
 import wandb
 
-from provnet_utils import *
-from data_utils import *
-from config import *
 import igraph as ig
-import csv
 from sklearn.cluster import KMeans
 
 import labelling
 import torch
 
+def classifier_evaluation(y_test, y_test_pred, scores):
+    labels_exist = sum(y_test) > 0
+    if labels_exist:
+        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
+    else:
+        tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
+
+    eps = 1e-12
+    fpr = fp/(fp+tn+eps)
+    precision=tp/(tp+fp+eps)
+    recall=tp/(tp+fn+eps)
+    accuracy=(tp+tn)/(tp+tn+fp+fn+eps)
+    fscore=2*(precision*recall)/(precision+recall+eps)
+
+    try:
+        auc_val=roc_auc_score(y_test, scores)
+    except: auc_val=float("nan")
+    try:
+        ap=ap_score(y_test, scores)
+    except: ap=float("nan")
+    try:
+        balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
+    except: balanced_acc=float("nan")
+    
+    sensitivity = tp / (tp + fn+eps)
+    specificity = tn / (tn + fp+eps)
+    lr_plus = sensitivity / (1 - specificity + eps)
+    dor = (tp * tn) / (fp * fn+eps)
+    mcc = compute_mcc(tp, fp, tn, fn)
+
+    stats = {
+        "precision": round(precision, 5),
+        "recall": round(recall, 5),
+        "fpr": round(fpr, 7),
+        "fscore": round(fscore, 5),
+        "ap": round(ap, 5),
+        "accuracy": round(accuracy, 5),
+        "balanced_acc": round(balanced_acc, 5),
+        "auc": round(auc_val, 5),
+        "lr(+)": round(lr_plus, 5),
+        "dor": round(dor, 5),
+        "mcc": round(mcc, 5),
+        "tp": tp,
+        "fp": fp,
+        "tn": tn,
+        "fn": fn,
+    }
+    return stats
+
+def compute_mcc(tp, fp, tn, fn):
+    numerator = (tp * tn) - (fp * fn)
+    denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    
+    if denominator == 0:
+        return 0
+    
+    mcc = numerator / denominator
+    return mcc
 
 def get_threshold(val_tw_path, threshold_method: str):
     threshold_method = threshold_method.strip()
@@ -67,20 +132,6 @@ def calculate_threshold(val_tw_dir, threshold_method):
     log(f"Thresholds: MEAN={thr['mean']:.3f}, STD={std(loss_list):.3f}, MAX={thr['max']:.3f}, 90 Percentile={thr['percentile_90']:.3f}")
 
     return thr
-
-def calculate_supervised_best_threshold(losses, labels):
-    fpr, tpr, thresholds = roc_curve(labels, losses)
-    roc_auc = auc(fpr, tpr)
-
-    valid_indices = np.where(tpr >= 0.16)[0]
-    fpr_valid = fpr[valid_indices]
-    thresholds_valid = thresholds[valid_indices]
-
-    # Find the threshold corresponding to the lowest FPR among valid points
-    optimal_idx = np.argmin(fpr_valid)
-    optimal_threshold = thresholds_valid[optimal_idx]
-
-    return optimal_threshold
 
 def plot_precision_recall(scores, y_truth, out_file):
     precision, recall, thresholds = precision_recall_curve(y_truth, scores)
@@ -831,11 +882,9 @@ def compute_tw_labels(cfg):
 
     num_found_event_labels = 0
     tw_to_malicious_nodes = defaultdict(list)
-    for i, tw in enumerate(test_graphs):
-        graph = torch.load(tw)
-        
+    for i, tw in enumerate(test_graphs):        
         date = tw.split("/")[-1]
-        start, end = datetime_to_ns_time_US(date.split("~")[0]), datetime_to_ns_time_US(date.split("~")[1])
+        start, end = datetime_to_ns_time_US_handle_nano(date.split("~")[0]), datetime_to_ns_time_US_handle_nano(date.split("~")[1])
         
         for t, node_ids in t_to_node.items():
             if start < t < end:
@@ -863,7 +912,7 @@ def compute_tw_labels(cfg):
 
     return tw_to_malicious_nodes
 
-def datetime_to_ns_time_US(nano_date_str):
+def datetime_to_ns_time_US_handle_nano(nano_date_str):
     date = nano_date_str.split('.')[0]
     nanos = nano_date_str.split('.')[1]
 
