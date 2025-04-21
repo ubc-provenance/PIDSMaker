@@ -102,11 +102,15 @@ detection:
         node_mlp:
           architecture_str: none
       predict_node_type:
-        decoder: none
+        decoder: node_mlp
         balanced_loss: False
+        node_mlp:
+          architecture_str: none
       reconstruct_node_features:
         loss: MSE
-        decoder: nodlink
+        decoder: node_mlp
+        node_mlp:
+          architecture_str: none
       reconstruct_node_embeddings:
         loss: MSE
         decoder: node_mlp
@@ -114,13 +118,17 @@ detection:
           architecture_str: none
       reconstruct_edge_embeddings:
         loss: MSE
-        decoder: node_mlp
-        node_mlp:
-          architecture_str: none
+        decoder: edge_mlp
+        edge_mlp:
+          architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 1
       predict_edge_contrastive:
         decoder: inner_product
         inner_product:
           dropout: 0.0
+        edge_mlp:
+          architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 1
       
       few_shot:
         include_attacks_in_ssl_training: False

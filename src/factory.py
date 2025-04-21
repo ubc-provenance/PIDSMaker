@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from provnet_utils import *
 from config import *
-from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events, get_num_edge_type
+from config import ntype2id, get_rel2id, get_node_map, OPTC_DATASETS, possible_events, get_num_edge_type, decoder_matches_objective
 from model import *
 from losses import *
 from encoders import *
@@ -330,6 +330,9 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
     objectives = []
     for objective in map(lambda x: x.strip(), objective_cfg.used_methods.split(",")):
         method = getattr(getattr(objective_cfg, objective.strip()), "decoder")
+        
+        if not decoder_matches_objective(decoder=method, objective=objective):
+            raise ValueError(f"Decoder {method} doesn't match with objective {objective}")
 
         if objective == "reconstruct_node_features":
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_node_features.loss)
@@ -345,9 +348,8 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
         
         elif objective == "reconstruct_edge_embeddings":
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_edge_embeddings.loss)
-            in_dim_edge = node_out_dim * 2  # concatenation of 2 nodes
             
-            decoder = decoder_factory(method, objective, cfg, in_dim=in_dim_edge, out_dim=in_dim_edge, device=device)
+            decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim * 2, device=device)
             objectives.append(
                 EdgeEmbReconstruction(
                     decoder=decoder,
@@ -453,17 +455,14 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
         
         elif objective == "predict_edge_contrastive":
             predict_edge_method = objective_cfg.predict_edge_contrastive.decoder.strip()
-            if predict_edge_method == "linear":
-                edge_decoder = EdgeLinearDecoder(
-                    in_dim=node_out_dim,
-                    dropout=objective_cfg.predict_edge_contrastive.linear.dropout,
-                )
-            elif predict_edge_method == "inner_product":
+            
+            if predict_edge_method == "inner_product":
                 edge_decoder = EdgeInnerProductDecoder(
                     dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
                 )
+            
             else:
-                raise ValueError(f"Invalid edge decoding method {predict_edge_method}")
+                edge_decoder = decoder_factory(method, objective, cfg, in_dim=node_out_dim, out_dim=1, device=device, objective_cfg=objective_cfg)
             
             loss_fn = bce_contrastive
             

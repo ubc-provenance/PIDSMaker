@@ -12,21 +12,26 @@ sys.path.append(os.path.join(parent, "src"))
 
 import benchmark
 import config
-from config import get_runtime_required_args, get_yml_cfg
+from config import (
+    get_runtime_required_args,
+    get_yml_cfg,
+)
 
 
-def prepare_cfg(model, dataset, featurization=None, encoder=None, objective=None, transformation=None):
+def prepare_cfg(model, dataset, transformation=None, featurization=None, encoder=None, objective=None, decoder=None):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
     
+    if transformation:
+        args.__dict__["preprocessing.transformation.used_methods"] = transformation
     if featurization:
         args.__dict__["featurization.embed_nodes.used_method"] = featurization
     if encoder:
         args.__dict__["detection.gnn_training.encoder.used_methods"] = encoder
     if objective:
-        args.__dict__["detection.gnn_training.objective.used_methods"] = objective
-    if transformation:
-        args.__dict__["preprocessing.transformation.used_methods"] = transformation
+        args.__dict__["detection.gnn_training.decoder.used_methods"] = objective
+    if decoder and objective:
+        args.__dict__[f"detection.gnn_training.decoder.{objective}.decoder"] = decoder
         
     if encoder and "tgn" not in encoder:
         args.__dict__["detection.graph_preprocessing.intra_graph_batching.used_methods"] = "edges"
@@ -95,7 +100,7 @@ class TestFeaturization:
         benchmark.main(cfg)
 
 
-class TestEncoderDecoder:
+class TestEncoderObjective:
     encoders = [
         "graph_attention",
         "sage",
@@ -123,3 +128,43 @@ class TestEncoderDecoder:
         encoder_combined = f"{encoder},tgn"
         cfg = prepare_cfg("tests", dataset, encoder=encoder_combined, objective=objective)
         benchmark.main(cfg)
+
+
+class TestDecoderObjective:
+    node_decoders = [
+        "node_mlp",
+    ]
+    edge_decoders = [
+        "edge_mlp",
+    ]
+    node_level_objectives = [
+        "predict_node_type",
+        "reconstruct_node_embeddings",
+        "reconstruct_node_features",
+    ]
+    edge_level_objectives = [
+        "predict_edge_type",
+        "reconstruct_edge_embeddings",
+        "predict_edge_contrastive",
+    ]
+    @pytest.mark.parametrize("decoder,objective", list(product(node_decoders, node_level_objectives)))
+    def test_decoder_objective_pairs_node_level_success(self, dataset, decoder, objective):
+        cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+        benchmark.main(cfg)
+
+    @pytest.mark.parametrize("decoder,objective", list(product(edge_decoders, edge_level_objectives)))
+    def test_decoder_objective_pairs_edge_level_success(self, dataset, decoder, objective):
+        cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+        benchmark.main(cfg)
+        
+    @pytest.mark.parametrize("decoder,objective", list(product(node_decoders, edge_level_objectives)))
+    def test_decoder_objective_pairs_node_level_fail(self, dataset, decoder, objective):
+        with pytest.raises(ValueError):
+            cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+            benchmark.main(cfg)
+            
+    @pytest.mark.parametrize("decoder,objective", list(product(edge_decoders, node_level_objectives)))
+    def test_decoder_objective_pairs_edge_level_fail(self, dataset, decoder, objective):
+        with pytest.raises(ValueError):
+            cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+            benchmark.main(cfg)
