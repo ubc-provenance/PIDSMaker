@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from pidsmaker.trw import TRW
+from pidsmaker.featurization.utils.trw import TRW
 from pidsmaker.utils import get_all_files_from_folders, log_start, log_tqdm
 
 

@@ -1,6 +1,5 @@
 from pidsmaker.utils import set_seed
 
-from . import build_random_walks
 from .embed_nodes_methods import (
     build_feature_word2vec,
     build_temporal_random_walk,
@@ -11,6 +10,7 @@ from .embed_nodes_methods import (
     embed_nodes_word2vec,
     embed_paths_provd,
 )
+from .utils import build_random_walks
 
 
 def main(cfg):
