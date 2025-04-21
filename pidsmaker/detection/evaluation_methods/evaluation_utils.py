@@ -24,7 +24,7 @@ from sklearn.metrics import (
 )
 
 import pidsmaker.labelling as labelling
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     get_all_files_from_folders,
     get_node_to_path_and_type,
     listdir_sorted,

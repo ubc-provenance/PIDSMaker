@@ -1,5 +1,5 @@
 from pidsmaker.config import *
-from pidsmaker.provnet_utils import *
+from pidsmaker.utils import *
 
 
 def get_node_attrs(cur):

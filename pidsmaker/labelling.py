@@ -2,7 +2,7 @@ import csv
 import os.path
 from collections import defaultdict
 
-from pidsmaker.provnet_utils import datetime_to_ns_time_US, init_database_connection, log
+from pidsmaker.utils import datetime_to_ns_time_US, init_database_connection, log
 
 
 def get_ground_truth(cfg):

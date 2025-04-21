@@ -10,7 +10,7 @@ from gensim.models.doc2vec import TaggedDocument
 from sklearn.neighbors import LocalOutlierFactor
 
 from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     get_all_files_from_folders,
     log,
     log_tqdm,

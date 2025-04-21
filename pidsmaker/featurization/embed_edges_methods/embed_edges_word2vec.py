@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from pidsmaker.provnet_utils import log_start
+from pidsmaker.utils import log_start
 
 
 def main(cfg):

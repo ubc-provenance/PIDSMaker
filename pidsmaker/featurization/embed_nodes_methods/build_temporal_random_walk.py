@@ -2,8 +2,8 @@ import os
 
 import torch
 
-from pidsmaker.provnet_utils import get_all_files_from_folders, log_start, log_tqdm
 from pidsmaker.trw import TRW
+from pidsmaker.utils import get_all_files_from_folders, log_start, log_tqdm
 
 
 def run_temporal_random_walk(split_files, out_dir, cfg):

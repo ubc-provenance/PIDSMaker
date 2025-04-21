@@ -3,7 +3,7 @@ import os
 from gensim.models import Word2Vec
 
 from pidsmaker.featurization.featurization_utils import get_corpus
-from pidsmaker.provnet_utils import log, log_start
+from pidsmaker.utils import log, log_start
 
 
 def train_feature_word2vec(corpus, cfg, model_save_path):

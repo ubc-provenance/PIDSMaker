@@ -5,10 +5,10 @@ import torch
 import wandb
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import classifier_evaluation
-from pidsmaker.provnet_utils import listdir_sorted, log
 from pidsmaker.triage.tracing_methods import (
     depimpact,
 )
+from pidsmaker.utils import listdir_sorted, log
 
 
 def get_new_stats(tw_to_info, evaluation_results, cfg):

@@ -12,7 +12,7 @@ from pidsmaker.factory import (
     optimizer_factory,
     optimizer_few_shot_factory,
 )
-from pidsmaker.provnet_utils import get_device, log, log_start, log_tqdm, set_seed
+from pidsmaker.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import orthrus_gnn_testing
 

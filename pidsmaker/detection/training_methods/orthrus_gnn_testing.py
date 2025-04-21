@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 
 # from cuml.neighbors import NearestNeighbors
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     calculate_average_from_file,
     get_device,
     log,

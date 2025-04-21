@@ -37,10 +37,10 @@ from pidsmaker.preprocessing import (
     build_graphs,
     transformation,
 )
-from pidsmaker.provnet_utils import log, remove_underscore_keys, set_seed
 from pidsmaker.triage import (
     tracing,
 )
+from pidsmaker.utils import log, remove_underscore_keys, set_seed
 
 
 def get_task_to_module(cfg):

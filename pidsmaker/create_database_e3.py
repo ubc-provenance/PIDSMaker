@@ -7,7 +7,7 @@ from tqdm import tqdm
 import pidsmaker.filelist as filelist
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.dataset_utils import edge_reversed, exclude_edge_type
-from pidsmaker.provnet_utils import init_database_connection, log
+from pidsmaker.utils import init_database_connection, log
 
 
 def stringtomd5(originstr):

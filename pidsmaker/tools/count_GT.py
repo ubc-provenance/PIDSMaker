@@ -15,7 +15,7 @@ from pidsmaker.labelling import get_ground_truth, get_uuid2nids
 from pidsmaker.preprocessing import (
     build_graphs,
 )
-from pidsmaker.provnet_utils import *
+from pidsmaker.utils import *
 
 
 def compute_node_number(split_files, cfg):

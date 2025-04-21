@@ -9,7 +9,7 @@ from pidsmaker.preprocessing import (
     build_graphs,
     transformation,
 )
-from pidsmaker.provnet_utils import *
+from pidsmaker.utils import *
 
 
 def node_distribution(cfg):

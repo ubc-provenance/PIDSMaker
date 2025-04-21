@@ -23,7 +23,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     transform_attack2nodes_to_node2attacks,
 )
 from pidsmaker.labelling import get_GP_of_each_attack
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     get_all_files_from_folders,
     get_node_to_path_and_type,
     listdir_sorted,

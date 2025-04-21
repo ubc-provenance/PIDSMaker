@@ -13,7 +13,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     compute_tw_labels,
     listdir_sorted,
 )
-from pidsmaker.provnet_utils import log
+from pidsmaker.utils import log
 
 
 def standard_evaluation(cfg, evaluation_fn):

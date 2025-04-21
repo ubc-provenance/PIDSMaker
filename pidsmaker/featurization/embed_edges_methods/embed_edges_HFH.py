@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.feature_extraction import FeatureHasher
 
-from pidsmaker.provnet_utils import get_indexid2msg, log_start, log_tqdm
+from pidsmaker.utils import get_indexid2msg, log_start, log_tqdm
 
 
 def path2higlist(p):

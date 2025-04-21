@@ -18,7 +18,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     transform_attack2nodes_to_node2attacks,
 )
 from pidsmaker.labelling import get_attack_to_mal_edges, get_ground_truth_edges
-from pidsmaker.provnet_utils import listdir_sorted, log, log_tqdm
+from pidsmaker.utils import listdir_sorted, log, log_tqdm
 
 
 def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):

@@ -4,7 +4,7 @@ from typing import Literal
 
 import torch
 
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     gen_darpa_adj_files,
     gen_darpa_rw_file,
     get_all_files_from_folders,

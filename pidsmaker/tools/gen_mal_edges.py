@@ -3,7 +3,7 @@ import os
 
 import pidsmaker.labelling as labelling
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
-from pidsmaker.provnet_utils import datetime_to_ns_time_US, init_database_connection
+from pidsmaker.utils import datetime_to_ns_time_US, init_database_connection
 
 
 def gen_mal_edges(cfg):

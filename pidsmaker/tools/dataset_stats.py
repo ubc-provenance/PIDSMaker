@@ -12,7 +12,7 @@ from pidsmaker.preprocessing import (
     build_graphs,
     transformation,
 )
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     datetime_to_ns_time_US,
     get_all_files_from_folders,
     get_runtime_required_args,

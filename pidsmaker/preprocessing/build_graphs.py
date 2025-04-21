@@ -3,7 +3,7 @@ from pidsmaker.preprocessing.build_graph_methods import (
     build_magic_graphs,
     build_orthrus_graphs,
 )
-from pidsmaker.provnet_utils import get_multi_datasets
+from pidsmaker.utils import get_multi_datasets
 
 
 def main_from_config(cfg):

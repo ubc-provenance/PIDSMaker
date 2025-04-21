@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 from pidsmaker.config import *
 from pidsmaker.labelling import get_uuid2nids
-from pidsmaker.provnet_utils import *
-from pidsmaker.provnet_utils import datetime_to_ns_time_US
+from pidsmaker.utils import *
+from pidsmaker.utils import datetime_to_ns_time_US
 
 dataset_to_mtw = {
     "THEIA_E3": [

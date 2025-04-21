@@ -55,6 +55,8 @@ RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
 RUN pip install gdown==5.2.0
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0
 
+RUN pip install -e .
+
 # Create a user and set the working directory
 # RUN useradd -m velox
 # USER velox

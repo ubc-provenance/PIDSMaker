@@ -6,7 +6,7 @@ import time
 import torch
 
 import pidsmaker.labelling as labelling
-from pidsmaker.provnet_utils import log
+from pidsmaker.utils import log
 
 from .depimpact_utils import DEPIMPACT, log_with_pid, visualize_dependency_graph
 

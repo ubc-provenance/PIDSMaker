@@ -3,7 +3,7 @@ import os
 import numpy as np
 from gensim.models.doc2vec import Doc2Vec
 
-from pidsmaker.provnet_utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
+from pidsmaker.utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
 
 
 def main(cfg):

@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from pidsmaker.provnet_utils import get_all_files_from_folders, log
+from pidsmaker.utils import get_all_files_from_folders, log
 
 
 def main(cfg):

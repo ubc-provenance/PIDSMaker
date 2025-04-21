@@ -9,7 +9,7 @@ from gensim.models.doc2vec import Doc2Vec
 from sklearn.manifold import TSNE
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     get_indexid2msg,
     log,
     log_start,

@@ -2,7 +2,7 @@ import os
 
 from gensim.models import Word2Vec
 
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     get_all_files_from_folders,
     get_indexid2msg,
     log,

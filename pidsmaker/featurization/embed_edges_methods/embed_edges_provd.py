@@ -4,7 +4,7 @@ import torch
 from gensim.models.doc2vec import Doc2Vec
 
 from pidsmaker.featurization.embed_nodes_methods.embed_paths_provd import get_node2corpus
-from pidsmaker.provnet_utils import get_indexid2msg, log_start, log_tqdm
+from pidsmaker.utils import get_indexid2msg, log_start, log_tqdm
 
 
 def main(cfg):

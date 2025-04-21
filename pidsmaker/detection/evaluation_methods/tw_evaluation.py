@@ -10,7 +10,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     plot_simple_scores,
     reduce_losses_to_score,
 )
-from pidsmaker.provnet_utils import listdir_sorted, log, log_tqdm
+from pidsmaker.utils import listdir_sorted, log, log_tqdm
 
 
 def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):

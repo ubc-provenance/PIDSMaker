@@ -7,7 +7,7 @@ import torch
 
 from pidsmaker.config import get_darpa_tc_node_feats_from_cfg
 from pidsmaker.dataset_utils import get_node_map, get_rel2id
-from pidsmaker.provnet_utils import (
+from pidsmaker.utils import (
     datetime_to_ns_time_US,
     init_database_connection,
     log,
