@@ -49,6 +49,7 @@ def prepare_cfg(
 def framework_setup_teardown():
     # Runs before tests
     config.ROOT_ARTIFACT_DIR = os.path.join(config.ROOT_ARTIFACT_DIR, "tests/")
+    shutil.rmtree(config.ROOT_ARTIFACT_DIR, ignore_errors=True)
     wandb.init(mode="disabled")
 
     yield
