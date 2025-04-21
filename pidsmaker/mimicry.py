@@ -6,9 +6,9 @@ from collections import defaultdict
 import networkx as nx
 
 from pidsmaker.config import *
-from pidsmaker.dataset_utils import get_rel2id
-from pidsmaker.utils import *
-from pidsmaker.utils import datetime_to_ns_time_US
+from pidsmaker.utils.dataset_utils import get_rel2id
+from pidsmaker.utils.utils import *
+from pidsmaker.utils.utils import datetime_to_ns_time_US
 
 possible_structure = [
     ["EVENT_OPEN", "EVENT_READ"],

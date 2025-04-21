@@ -9,7 +9,7 @@ from pidsmaker.preprocessing.transformation_methods import (
     transformation_rcaid_pseudo_graph,
     transformation_undirected,
 )
-from pidsmaker.utils import (
+from pidsmaker.utils.utils import (
     copy_directory,
     get_all_files_from_folders,
     get_multi_datasets,

@@ -23,8 +23,8 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-import pidsmaker.labelling as labelling
-from pidsmaker.utils import (
+import pidsmaker.utils.labelling as labelling
+from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_node_to_path_and_type,
     listdir_sorted,

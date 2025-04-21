@@ -13,8 +13,8 @@ from torch_geometric.nn import (
 from torch_geometric.nn.dense import HeteroDictLinear
 
 from pidsmaker.custom_mlp import CustomMLPAsbtract
-from pidsmaker.dataset_utils import rel2id_darpa_tc
 from pidsmaker.hetero import _compute_hetero_features, hetero_to_homo_features
+from pidsmaker.utils.dataset_utils import rel2id_darpa_tc
 
 
 class CustomMLPEncoder(CustomMLPAsbtract):

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch_geometric.utils import negative_sampling
 
 from pidsmaker.custom_mlp import CustomMLPAsbtract
-from pidsmaker.utils import compute_class_weights, log
+from pidsmaker.utils.utils import compute_class_weights, log
 
 
 # Basic blocks

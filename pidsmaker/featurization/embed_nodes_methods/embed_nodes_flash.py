@@ -6,7 +6,7 @@ import torch
 from gensim.models import Word2Vec
 
 from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
-from pidsmaker.utils import (
+from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_indexid2msg,
     log,

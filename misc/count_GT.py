@@ -9,13 +9,13 @@ import wandb
 from tqdm import tqdm
 
 from pidsmaker.config import *
-from pidsmaker.dataset_utils import get_rel2id
 from pidsmaker.detection.evaluation_methods.evaluation_utils import compute_tw_labels
-from pidsmaker.labelling import get_ground_truth, get_uuid2nids
 from pidsmaker.preprocessing import (
     build_graphs,
 )
-from pidsmaker.utils import *
+from pidsmaker.utils.dataset_utils import get_rel2id
+from pidsmaker.utils.labelling import get_ground_truth, get_uuid2nids
+from pidsmaker.utils.utils import *
 
 
 def compute_node_number(split_files, cfg):

@@ -5,8 +5,8 @@ import time
 
 import torch
 
-import pidsmaker.labelling as labelling
-from pidsmaker.utils import log
+import pidsmaker.utils.labelling as labelling
+from pidsmaker.utils.utils import log
 
 from .depimpact_utils import DEPIMPACT, log_with_pid, visualize_dependency_graph
 

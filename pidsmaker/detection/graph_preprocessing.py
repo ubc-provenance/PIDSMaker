@@ -2,8 +2,8 @@ import os
 
 import torch
 
-from pidsmaker.data_utils import load_all_datasets
-from pidsmaker.utils import get_device, log, log_start, set_seed
+from pidsmaker.utils.data_utils import load_all_datasets
+from pidsmaker.utils.utils import get_device, log, log_start, set_seed
 
 
 def get_preprocessed_graphs(cfg):

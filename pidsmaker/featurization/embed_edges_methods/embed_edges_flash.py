@@ -6,7 +6,7 @@ import torch
 from gensim.models import Word2Vec
 
 from pidsmaker.featurization.embed_nodes_methods.embed_nodes_flash import get_node2corpus
-from pidsmaker.utils import log_start, log_tqdm
+from pidsmaker.utils.utils import log_start, log_tqdm
 
 
 def infer(document, w2vmodel, encoder):

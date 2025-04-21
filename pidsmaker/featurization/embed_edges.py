@@ -3,9 +3,9 @@ import os
 import torch
 
 from pidsmaker.config import update_cfg_for_multi_dataset
-from pidsmaker.data_utils import CollatableTemporalData
-from pidsmaker.dataset_utils import get_node_map, get_rel2id
-from pidsmaker.utils import (
+from pidsmaker.utils.data_utils import CollatableTemporalData
+from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.utils.utils import (
     gen_relation_onehot,
     get_multi_datasets,
     get_split_to_files,

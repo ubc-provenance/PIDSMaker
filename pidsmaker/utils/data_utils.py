@@ -15,12 +15,17 @@ from torch_geometric.loader import TemporalDataLoader
 from torch_scatter import scatter
 
 from pidsmaker.config import update_cfg_for_multi_dataset
-from pidsmaker.dataset_utils import get_node_map, get_num_edge_type, get_rel2id, possible_events
 from pidsmaker.debug_tests import debug_test_batching
 from pidsmaker.encoders import TGNEncoder
 from pidsmaker.hetero import compute_hetero_features
 from pidsmaker.tgn import LastNeighborLoader
-from pidsmaker.utils import get_multi_datasets, log_dataset_stats, log_tqdm
+from pidsmaker.utils.dataset_utils import (
+    get_node_map,
+    get_num_edge_type,
+    get_rel2id,
+    possible_events,
+)
+from pidsmaker.utils.utils import get_multi_datasets, log_dataset_stats, log_tqdm
 
 
 class CollatableTemporalData(TemporalData):

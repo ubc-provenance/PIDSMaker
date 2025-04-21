@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import torch
 
-from pidsmaker.dataset_utils import get_rel2id_considering_triplets
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_discrimination_score,
@@ -17,8 +16,9 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     plot_scores_with_paths_edge_level,
     transform_attack2nodes_to_node2attacks,
 )
-from pidsmaker.labelling import get_attack_to_mal_edges, get_ground_truth_edges
-from pidsmaker.utils import listdir_sorted, log, log_tqdm
+from pidsmaker.utils.dataset_utils import get_rel2id_considering_triplets
+from pidsmaker.utils.labelling import get_attack_to_mal_edges, get_ground_truth_edges
+from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 
 
 def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):

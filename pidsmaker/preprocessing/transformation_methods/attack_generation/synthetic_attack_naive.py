@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import networkx as nx
 
-from pidsmaker.utils import log, log_tqdm
+from pidsmaker.utils.utils import log, log_tqdm
 
 
 def get_mean_time_delta(snapshot):

@@ -40,7 +40,7 @@ from pidsmaker.preprocessing import (
 from pidsmaker.triage import (
     tracing,
 )
-from pidsmaker.utils import log, remove_underscore_keys, set_seed
+from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
 
 
 def get_task_to_module(cfg):

@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from gensim.models import Word2Vec
 
-from pidsmaker.utils import log, log_start
+from pidsmaker.utils.utils import log, log_start
 
 FLOAT = np.float32
 INT = np.uint64

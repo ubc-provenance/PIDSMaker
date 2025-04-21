@@ -22,8 +22,8 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     reduce_losses_to_score,
     transform_attack2nodes_to_node2attacks,
 )
-from pidsmaker.labelling import get_GP_of_each_attack
-from pidsmaker.utils import (
+from pidsmaker.utils.labelling import get_GP_of_each_attack
+from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_node_to_path_and_type,
     listdir_sorted,

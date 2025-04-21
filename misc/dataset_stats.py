@@ -6,13 +6,13 @@ import torch
 import wandb
 from tqdm import tqdm
 
-import pidsmaker.labelling as labelling
+import pidsmaker.utils.labelling as labelling
 from pidsmaker.config import get_yml_cfg
 from pidsmaker.preprocessing import (
     build_graphs,
     transformation,
 )
-from pidsmaker.utils import (
+from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
     get_all_files_from_folders,
     get_runtime_required_args,

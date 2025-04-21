@@ -4,8 +4,8 @@ import networkx as nx
 import pytz
 import tqdm
 
-from pidsmaker.labelling import get_ground_truth
-from pidsmaker.utils import (
+from pidsmaker.utils.labelling import get_ground_truth
+from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
     get_runtime_required_args,
     get_yml_cfg,

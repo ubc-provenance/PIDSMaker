@@ -3,7 +3,7 @@ from itertools import chain
 import torch
 from gensim.models.doc2vec import TaggedDocument
 
-from pidsmaker.utils import (
+from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_indexid2msg,
     get_split2nodes,

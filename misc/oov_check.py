@@ -5,7 +5,7 @@ import wandb
 from gensim.models import Word2Vec
 
 from pidsmaker.config import *
-from pidsmaker.utils import *
+from pidsmaker.utils.utils import *
 
 
 def get_nid2scores(cfg):

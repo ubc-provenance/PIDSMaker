@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from gensim.models import Word2Vec
 
-from pidsmaker.utils import (
+from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_indexid2msg,
     log_start,

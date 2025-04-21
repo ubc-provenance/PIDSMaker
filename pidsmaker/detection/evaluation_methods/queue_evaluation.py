@@ -13,7 +13,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_tw_labels,
 )
-from pidsmaker.utils import (
+from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     listdir_sorted,
     log,

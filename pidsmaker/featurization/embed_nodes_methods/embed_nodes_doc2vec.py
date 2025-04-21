@@ -6,7 +6,7 @@ from pidsmaker.featurization.featurization_utils import (
     get_corpus,
     get_corpus_using_neighbors_features,
 )
-from pidsmaker.utils import log, log_start
+from pidsmaker.utils.utils import log, log_start
 
 
 def doc2vec(

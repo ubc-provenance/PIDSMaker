@@ -2,14 +2,6 @@ import torch
 import torch.nn as nn
 
 from pidsmaker.config import decoder_matches_objective
-from pidsmaker.data_utils import GraphReindexer
-from pidsmaker.dataset_utils import (
-    OPTC_DATASETS,
-    get_node_map,
-    get_num_edge_type,
-    get_rel2id,
-    possible_events,
-)
 from pidsmaker.decoders import *
 from pidsmaker.encoders import *
 from pidsmaker.experiments.uncertainty import add_dropout_to_model
@@ -17,6 +9,14 @@ from pidsmaker.hetero import get_metadata
 from pidsmaker.losses import *
 from pidsmaker.model import Model
 from pidsmaker.tgn import IdentityMessage, LastAggregator, TGNMemory, TimeEncodingMemory
+from pidsmaker.utils.data_utils import GraphReindexer
+from pidsmaker.utils.dataset_utils import (
+    OPTC_DATASETS,
+    get_node_map,
+    get_num_edge_type,
+    get_rel2id,
+    possible_events,
+)
 
 
 def build_model(data_sample, device, cfg, max_node_num):

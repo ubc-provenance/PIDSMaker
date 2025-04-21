@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from pidsmaker.utils import get_node_to_path_and_type, log, log_tqdm
+from pidsmaker.utils.utils import get_node_to_path_and_type, log, log_tqdm
 
 
 class DEPIMPACT:

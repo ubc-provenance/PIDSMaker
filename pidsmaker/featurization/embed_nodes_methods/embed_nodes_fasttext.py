@@ -6,7 +6,7 @@ from gensim.models.fasttext import load_facebook_model
 
 from pidsmaker.config import ROOT_ARTIFACT_DIR
 from pidsmaker.featurization.featurization_utils import get_corpus
-from pidsmaker.utils import log, log_start
+from pidsmaker.utils.utils import log, log_start
 
 
 def download_facebook_weights(out_dir):

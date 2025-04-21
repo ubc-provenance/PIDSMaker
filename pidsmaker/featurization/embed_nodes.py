@@ -1,4 +1,4 @@
-from pidsmaker.utils import set_seed
+from pidsmaker.utils.utils import set_seed
 
 from .embed_nodes_methods import (
     build_feature_word2vec,

@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 import wandb
 
 from pidsmaker.config import *
-from pidsmaker.labelling import get_GP_of_each_attack, get_ground_truth
 from pidsmaker.preprocessing import (
     build_graphs,
     transformation,
 )
-from pidsmaker.utils import *
+from pidsmaker.utils.labelling import get_GP_of_each_attack, get_ground_truth
+from pidsmaker.utils.utils import *
 
 
 def node_distribution(cfg):

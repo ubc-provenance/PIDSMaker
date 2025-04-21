@@ -18,7 +18,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     reduce_losses_to_score,
     viz_graph,
 )
-from pidsmaker.utils import listdir_sorted, log
+from pidsmaker.utils.utils import listdir_sorted, log
 
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):

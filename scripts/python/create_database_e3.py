@@ -4,10 +4,11 @@ import re
 from psycopg2 import extras as ex
 from tqdm import tqdm
 
-import pidsmaker.filelist as filelist
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
-from pidsmaker.dataset_utils import edge_reversed, exclude_edge_type
-from pidsmaker.utils import init_database_connection, log
+from pidsmaker.utils.dataset_utils import edge_reversed, exclude_edge_type
+from pidsmaker.utils.utils import init_database_connection, log
+
+from . import filelist
 
 
 def stringtomd5(originstr):

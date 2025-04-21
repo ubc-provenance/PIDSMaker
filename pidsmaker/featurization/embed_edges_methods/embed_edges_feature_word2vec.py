@@ -1,7 +1,7 @@
 import numpy as np
 from gensim.models import Word2Vec
 
-from pidsmaker.utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
+from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
 
 
 def cal_word_weight(n, percentage):

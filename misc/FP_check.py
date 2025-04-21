@@ -1,7 +1,7 @@
 from tqdm import tqdm
 
 from pidsmaker.config import *
-from pidsmaker.utils import *
+from pidsmaker.utils.utils import *
 
 
 def get_tasks(evaluation_results):
