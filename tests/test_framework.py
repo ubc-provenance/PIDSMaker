@@ -15,7 +15,7 @@ import config
 from config import get_runtime_required_args, get_yml_cfg
 
 
-def prepare_cfg(model, dataset, featurization=None, encoder=None, decoder=None):
+def prepare_cfg(model, dataset, featurization=None, encoder=None, objective=None, transformation=None):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
     
@@ -23,8 +23,10 @@ def prepare_cfg(model, dataset, featurization=None, encoder=None, decoder=None):
         args.__dict__["featurization.embed_nodes.used_method"] = featurization
     if encoder:
         args.__dict__["detection.gnn_training.encoder.used_methods"] = encoder
-    if decoder:
-        args.__dict__["detection.gnn_training.decoder.used_methods"] = decoder
+    if objective:
+        args.__dict__["detection.gnn_training.objective.used_methods"] = objective
+    if transformation:
+        args.__dict__["preprocessing.transformation.used_methods"] = transformation
         
     if encoder and "tgn" not in encoder:
         args.__dict__["detection.graph_preprocessing.intra_graph_batching.used_methods"] = "edges"
@@ -49,50 +51,75 @@ def dataset():
     return "CLEARSCOPE_E3"
 
 
-encoders = [
-    "graph_attention",
-    "sage",
-    "rcaid_gat",
-    "magic_gat",
-    "sum_aggregation",
-    "custom_mlp",
-    "none",
-]
-decoders = [
-    "predict_node_type",
-    "reconstruct_node_embeddings",
-    "reconstruct_node_features",
-    "predict_edge_type",
-    "reconstruct_edge_embeddings",
-]
-featurizations = [
-    "feature_word2vec",
-    "doc2vec",
-    "hierarchical_hashing",
-    "only_type",
-    "only_ones",
-    "fasttext",
-    "flash",
-    "word2vec",
-    "temporal_rw",
-]
+class TestTransformation:
+    transformations = [
+        "none",
+        "rcaid_pseudo_graph",
+        "undirected",
+        "dag",
+    ]
+    failing_with_tgn = [
+        "rcaid_pseudo_graph",
+    ]
+    @pytest.mark.parametrize("transformation", transformations)
+    def test_transformations_tgn(self, dataset, transformation):
+        if transformation in self.failing_with_tgn:
+            with pytest.raises(ValueError):
+                cfg = prepare_cfg("tests", dataset, transformation=transformation)
+                benchmark.main(cfg)
+        else:
+            cfg = prepare_cfg("tests", dataset, transformation=transformation)
+            benchmark.main(cfg)
+            
+    @pytest.mark.parametrize("transformation", transformations)
+    def test_transformations(self, dataset, transformation):
+        cfg = prepare_cfg("nodlink", dataset, transformation=transformation)
+        benchmark.main(cfg)
 
-class TestFramework:
-    """Test suite for the framework."""
 
+class TestFeaturization:
+    featurizations = [
+        "feature_word2vec",
+        "doc2vec",
+        "hierarchical_hashing",
+        "only_type",
+        "only_ones",
+        "fasttext",
+        "flash",
+        "word2vec",
+        "temporal_rw",
+    ]
     @pytest.mark.parametrize("featurization", featurizations)
     def test_featurizations(self, dataset, featurization):
         cfg = prepare_cfg("tests", dataset, featurization=featurization)
         benchmark.main(cfg)
 
-    @pytest.mark.parametrize("encoder,decoder", list(product(encoders, decoders)))
-    def test_encoder_decoder_pairs(self, dataset, encoder, decoder):
-        cfg = prepare_cfg("tests", dataset, encoder=encoder, decoder=decoder)
+
+class TestEncoderDecoder:
+    encoders = [
+        "graph_attention",
+        "sage",
+        "rcaid_gat",
+        "magic_gat",
+        "sum_aggregation",
+        "custom_mlp",
+        "none",
+    ]
+    objectives = [
+        "predict_node_type",
+        "reconstruct_node_embeddings",
+        "reconstruct_node_features",
+        "predict_edge_type",
+        "reconstruct_edge_embeddings",
+        "predict_edge_contrastive",
+    ]
+    @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
+    def test_encoder_objective_pairs(self, dataset, encoder, objective):
+        cfg = prepare_cfg("tests", dataset, encoder=encoder, objective=objective)
         benchmark.main(cfg)
 
-    @pytest.mark.parametrize("encoder,decoder", list(product(encoders, decoders)))
-    def test_encoder_tgn_decoder_pairs(self, dataset, encoder, decoder):
+    @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
+    def test_encoder_tgn_objective_pairs(self, dataset, encoder, objective):
         encoder_combined = f"{encoder},tgn"
-        cfg = prepare_cfg("tests", dataset, encoder=encoder_combined, decoder=decoder)
+        cfg = prepare_cfg("tests", dataset, encoder=encoder_combined, objective=objective)
         benchmark.main(cfg)
-        

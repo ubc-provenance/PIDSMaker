@@ -117,6 +117,10 @@ detection:
         decoder: node_mlp
         node_mlp:
           architecture_str: none
+      predict_edge_contrastive:
+        decoder: inner_product
+        inner_product:
+          dropout: 0.0
       
       few_shot:
         include_attacks_in_ssl_training: False
