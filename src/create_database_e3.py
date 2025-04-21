@@ -1,10 +1,11 @@
 import re
 from tqdm import tqdm
 import hashlib
-from config import *
-from provnet_utils import *
+from psycopg2 import extras as ex
 import filelist
 from dataset_utils import exclude_edge_type, edge_reversed
+from config import get_runtime_required_args, get_yml_cfg
+from provnet_utils import init_database_connection, log
 
 
 def stringtomd5(originstr):
