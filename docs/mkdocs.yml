@@ -7,6 +7,7 @@ nav:
   - Install: ten-minute-install.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
+  - Development: dev.md
   - Contribute: contribute.md
   - Release notes: release_notes.md
   
