@@ -36,7 +36,7 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
     tar -xvf darpa_e3_optc.tar
     ```
 
-Alternatively, here are the [guidelines](settings/create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
+Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
 
 ## Docker Install
 

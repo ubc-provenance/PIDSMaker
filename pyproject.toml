@@ -13,6 +13,15 @@ requires-python = ">= 3.9"
 [tool.setuptools]
 packages = ["pidsmaker"]
 
+[project.optional-dependencies]
+docs = [
+  "sphinx==7.2.6",
+  "sphinx-book-theme==1.1.0",
+  "sphinx-autodoc-typehints==1.25.2",
+  "nbsphinx==0.9.3",
+  "sphinx-gallery==0.15.0",
+]
+
 [tool.ruff]
 line-length = 100
 indent-width = 4
@@ -26,4 +35,3 @@ exclude = [
 lint.isort.known-first-party = ["pidsmaker"]
 lint.isort.known-third-party = ["wandb", "torch", "numpy"]
 lint.isort.section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
-

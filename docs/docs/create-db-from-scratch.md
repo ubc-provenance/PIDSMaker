@@ -11,7 +11,7 @@ pip install gdown
 ```
 where `{dataset}` can be either `clearscope_e3`, `cadets_e3`, `theia_e3`, `clearscope_e5`, `cadets_e5` or `theia_e5` and `{data_folder}` is the absolute path to the output folder where all raw files will be downloaded.
 
-Alternatively, you can [download the files manually](settings/download-files.md) by selecting download URLs from Google Drive.
+Alternatively, you can [download the files manually](./download-files.md) by selecting download URLs from Google Drive.
 
 ### Convert bin files to JSON
 
