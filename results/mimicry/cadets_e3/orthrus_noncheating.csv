@@ -1,7 +1,0 @@
-"Name","Tags","adp_score","mcc","tp","fp","tn","fn"
-"mimicry_5000","CADETS_E3, non_cheating, orthrus","0.997","0.15832","47","6","280892","1604"
-"mimicry_4000","CADETS_E3, non_cheating, orthrus","0.994","0.10894","19","3","280972","1355"
-"mimicry_3000","CADETS_E3, non_cheating, orthrus","0.998","0.08562","8","0","281081","1079"
-"mimicry_2000","CADETS_E3, non_cheating, orthrus","0.969","0.23921","75","49","281136","713"
-"mimicry_1000","CADETS_E3, non_cheating, orthrus","0.971","0.09822","5","1","281343","426"
-"mimicry_0","CADETS_E3, non_cheating, orthrus","0.93","0.21432","5","3","281514","63"

@@ -1,7 +1,0 @@
-"Name","Tags","adp_score","mcc","tp","fp","tn","fn","detection.gnn_training.decoder.predict_node_type.node_mlp.architecture_str"
-"mimicry_5000","CADETS_E3, velox","0.997","0.76385","1618","1090","279827","32","linear(0.5) | relu"
-"mimicry_4000","CADETS_E3, velox","0.998","0.17566","44","2","280994","1313","linear(0.5) | relu"
-"mimicry_3000","CADETS_E3, velox","0.998","0.85802","807","3","281080","284","linear(0.5) | relu"
-"mimicry_2000","CADETS_E3, velox","0.999","0.14148","18","3","281195","750","linear(0.5) | relu"
-"mimicry_1000","CADETS_E3, velox","0.999","0.23738","25","0","281335","418","linear(0.5) | relu"
-"mimicry_0","CADETS_E3, velox","0.736","0.17148","2","0","281517","66","linear(0.5) | relu"
