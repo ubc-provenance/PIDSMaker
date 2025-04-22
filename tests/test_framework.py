@@ -198,6 +198,7 @@ class TestSystems:
         "magic",
         "nodlink",
         "threatrace",
+        "rcaid",
     ]
 
     @pytest.mark.parametrize("system", systems)
