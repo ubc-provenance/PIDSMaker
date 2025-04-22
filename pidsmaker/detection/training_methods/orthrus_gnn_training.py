@@ -182,7 +182,7 @@ def main(cfg):
                     best_epoch = epoch
 
                 log(
-                    f"[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_loss:.4f} | Val Score: {val_score:.4f}",
+                    f"[@epoch{tuning_epoch:02d}] Fine-tuning - Train Loss: {tot_loss:.5f} | Val Loss: {val_loss:.4f}",
                     return_line=True,
                 )
 

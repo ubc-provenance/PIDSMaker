@@ -3,6 +3,9 @@
 _include_yml: orthrus_non_snooped
 
 detection:
+  graph_preprocessing:
+    intra_graph_batching:
+      used_methods: edges
   gnn_training:
     encoder:
       used_methods: none # uses only a linear layer

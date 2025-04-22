@@ -200,6 +200,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 activation=activation_fn_factory(
                     cfg.detection.gnn_training.encoder.magic_gat.activation
                 ),
+                is_decoder=False,
             )
         elif method == "GIN":
             encoder = GIN(
@@ -331,11 +332,10 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_c
         n_layers = decoder_cfg.num_layers
         n_heads = decoder_cfg.num_heads
         negative_slope = decoder_cfg.negative_slope
-        hid_dim = decoder_cfg.hid_dim
 
         return MagicGAT(
-            n_dim=in_dim,
-            hidden_dim=hid_dim,
+            in_dim=in_dim,
+            hid_dim=in_dim,
             out_dim=out_dim,
             n_layers=n_layers,
             n_heads=n_heads,
@@ -347,6 +347,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_c
             activation=activation_fn_factory(
                 cfg.detection.gnn_training.encoder.magic_gat.activation
             ),
+            is_decoder=True,
         )
     elif method == "none":
         return lambda x: x

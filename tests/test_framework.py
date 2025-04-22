@@ -186,3 +186,21 @@ class TestDecoderObjective:
         with pytest.raises(ValueError):
             cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
             benchmark.main(cfg)
+
+
+class TestSystems:
+    systems = [
+        "velox",
+        "orthrus",
+        "orthrus_non_snooped",
+        "flash",
+        "kairos",
+        "magic",
+        "nodlink",
+        "threatrace",
+    ]
+
+    @pytest.mark.parametrize("system", systems)
+    def test_systems(self, dataset, system):
+        cfg = prepare_cfg(system, dataset)
+        benchmark.main(cfg)

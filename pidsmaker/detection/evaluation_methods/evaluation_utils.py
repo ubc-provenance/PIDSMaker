@@ -860,10 +860,10 @@ def plot_discrimination_metric(scores, y_truth, out_file):
 
 
 def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10):
-    pred_scores = np.array(pred_scores)
+    pred_scores = np.array(pred_scores).astype(float)
     y_truth = np.array(y_truth)
 
-    pred_scores /= pred_scores.max()
+    pred_scores /= pred_scores.max() + 1e-6
     attack2max_score = defaultdict(float)
 
     for node, score in zip(nodes, pred_scores):
@@ -889,10 +889,10 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
 
 
 def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
-    pred_scores = np.array(pred_scores)
+    pred_scores = np.array(pred_scores).astype(float)
     y_truth = np.array(y_truth)
 
-    pred_scores /= pred_scores.max()
+    pred_scores /= pred_scores.max() + 1e-6
 
     benign_scores = pred_scores[y_truth == 0]
     top_benign_scores = np.sort(benign_scores)[-k:][::-1]

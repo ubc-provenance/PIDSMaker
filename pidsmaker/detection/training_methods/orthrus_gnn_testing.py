@@ -1,16 +1,14 @@
 import os
 import random
 import time
-
-# import cudf
 import tracemalloc
 
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+from sklearn.neighbors import NearestNeighbors
 
-# from cuml.neighbors import NearestNeighbors
 from pidsmaker.utils.utils import (
     calculate_average_from_file,
     get_device,
@@ -32,7 +30,6 @@ def test_edge_level(
 ):
     model.eval()
 
-    time_with_loss = {}  # key: time，  value： the losses
     edge_list = None
     start_time = data.t[0]
     all_losses = []
@@ -46,8 +43,6 @@ def test_edge_level(
     # If the data has been reindexed in the loader or batched, we retrieve original node IDs
     # to later find the labels
     edge_index = data.original_edge_index
-
-    # edge_types = torch.argmax(data.edge_type, dim=1) + 1
 
     srcnodes = edge_index[0, :].cpu().numpy()
     dstnodes = edge_index[1, :].cpu().numpy()
@@ -85,8 +80,6 @@ def test_edge_level(
     edge_list.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
     return all_losses
 
-    # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
-
 
 @torch.no_grad()
 def test_node_level(
@@ -103,7 +96,6 @@ def test_node_level(
     start_time = data.t[0]
     end_time = data.t[-1]
     losses = []
-    start = time.perf_counter()
 
     validation = split == "val"
 
@@ -172,7 +164,8 @@ def test_node_level(
     elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
         os.makedirs(cfg.detection.gnn_training._magic_dir, exist_ok=True)
         if split == "val":
-            x_train = model.embed(data, inference=True).cpu().numpy()
+            x_train, _, _ = model.embed(data, inference=True)
+            x_train = x_train.cpu().numpy()
             num_nodes = x_train.shape[0]
             sample_size = 5000 if num_nodes > 5000 else num_nodes
             sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
@@ -181,8 +174,7 @@ def test_node_level(
             x_train_std = x_train_sampled.std(axis=0)
             x_train_sampled = (x_train_sampled - x_train_mean) / x_train_std
 
-            torch.cuda.empty_cache()
-            x_train_sampled = cudf.DataFrame.from_records(x_train_sampled)
+            x_train_sampled = pd.DataFrame.from_records(x_train_sampled)
 
             n_neighbors = 10
             nbrs = NearestNeighbors(n_neighbors=n_neighbors)
@@ -190,9 +182,7 @@ def test_node_level(
             idx = list(range(x_train_sampled.shape[0]))
             random.shuffle(idx)
             try:
-                sample = x_train_sampled.iloc[
-                    idx[: min(50000, x_train_sampled.shape[0])]
-                ].to_pandas()
+                sample = x_train_sampled.iloc[idx[: min(50000, x_train_sampled.shape[0])]]
                 distances_train, _ = nbrs.kneighbors(
                     sample, n_neighbors=min(len(sample), n_neighbors)
                 )
@@ -203,7 +193,6 @@ def test_node_level(
             mean_distance_train = distances_train.mean().mean()
             if mean_distance_train == 0:
                 mean_distance_train = 1e-9
-            torch.cuda.empty_cache()
 
             train_distance_file = os.path.join(
                 cfg.detection.gnn_training._magic_dir, "train_distance.txt"
@@ -224,7 +213,8 @@ def test_node_level(
             )
             mean_distance_train = calculate_average_from_file(train_distance_file)
 
-            x_test = model.embed(data, inference=True).cpu().numpy()
+            x_test, _, _ = model.embed(data, inference=True)
+            x_test = x_test.cpu().numpy()
             num_nodes = x_test.shape[0]
             sample_size = 5000 if num_nodes > 5000 else num_nodes
             sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
@@ -234,7 +224,7 @@ def test_node_level(
             x_test_sampled = (x_test_sampled - x_test_mean) / x_test_std
 
             torch.cuda.empty_cache()
-            x_test_sampled = cudf.DataFrame.from_records(x_test_sampled)
+            x_test_sampled = pd.DataFrame.from_records(x_test_sampled)
 
             n_neighbors = 10
             nbrs = NearestNeighbors(n_neighbors=n_neighbors)
@@ -264,7 +254,6 @@ def test_node_level(
 
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)
 
-    end = time.perf_counter()
     logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
@@ -272,8 +261,6 @@ def test_node_level(
     df = pd.DataFrame(node_list)
     df.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
     return losses
-
-    # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
 def main(cfg, model, val_data, test_data, epoch, split, logging=True):
@@ -351,7 +338,7 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True):
             val_score = model.get_val_ap()
             if logging:
                 log(
-                    f"[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f} - Val Score: {val_score:.4f}",
+                    f"[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f}",
                     return_line=True,
                 )
         else:

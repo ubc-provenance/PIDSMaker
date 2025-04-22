@@ -47,8 +47,6 @@ RUN pip install torch_geometric==2.5.3 --no-cache-dir && \
 
 RUN pip install gensim==4.3.1 pytz==2024.1 pandas==2.2.2 yacs==0.1.8
 
-# RUN pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.6.* cuml-cu12==24.6.*
-
 RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
     pip uninstall -y numpy && pip install numpy==1.26.4
 
@@ -58,7 +56,4 @@ RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61
 RUN pip install -e .
 RUN pre-commit install
 
-# Create a user and set the working directory
-# RUN useradd -m velox
-# USER velox
 WORKDIR /home

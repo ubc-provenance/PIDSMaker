@@ -89,7 +89,6 @@ OBJECTIVES_EDGE_LEVEL = [
     "predict_edge_type",
     "reconstruct_edge_embeddings",
     "predict_edge_contrastive",
-    "predict_masked_struct",
 ]
 OBJECTIVES = OBJECTIVES_NODE_LEVEL + OBJECTIVES_EDGE_LEVEL
 OBJECTIVES_CFG = {

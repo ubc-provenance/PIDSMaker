@@ -99,6 +99,7 @@ class Model(nn.Module):
                     )
                 loss_or_scores = loss_or_scores + loss
 
+            results["loss"] = loss_or_scores
             return results
 
     def get_val_ap(self):

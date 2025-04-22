@@ -711,6 +711,7 @@ class MagicGAT(nn.Module):
         residual=False,
         activation=None,
         concat_out=False,
+        is_decoder=False,
     ):
         super(MagicGAT, self).__init__()
         self.out_dim = out_dim
@@ -718,6 +719,7 @@ class MagicGAT(nn.Module):
         self.n_layers = n_layers
         self.concat_out = concat_out
         self.gats = nn.ModuleList()
+        self.is_decoder = is_decoder
 
         # First layer
         self.gats.append(
@@ -781,7 +783,7 @@ class MagicGAT(nn.Module):
 
             hidden_list.append(h)
 
-        return {"h": h}
+        return h if self.is_decoder else {"h": h}
 
     def reset_classifier(self, num_classes):
         self.head = nn.Linear(self.out_dim, num_classes)
