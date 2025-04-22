@@ -19,7 +19,7 @@ services:
       retries: 5
 
   pids:
-    build: ./image
+    build: ./
     container_name: pids
     depends_on:
       postgres:

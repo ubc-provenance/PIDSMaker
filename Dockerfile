@@ -53,7 +53,7 @@ RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
 RUN pip install gdown==5.2.0
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12
 
+WORKDIR /home
+COPY . .
 RUN pip install -e .
 RUN pre-commit install
-
-WORKDIR /home
