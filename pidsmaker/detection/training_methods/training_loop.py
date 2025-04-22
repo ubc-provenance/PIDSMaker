@@ -14,7 +14,7 @@ from pidsmaker.factory import (
 )
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
-from . import orthrus_gnn_testing
+from . import inference_loop
 
 
 def main(cfg):
@@ -158,7 +158,7 @@ def main(cfg):
                 tot_loss /= sum(len(dataset) for dataset in train_data)
 
                 # Validation
-                val_stats = orthrus_gnn_testing.main(
+                val_stats = inference_loop.main(
                     cfg=cfg,
                     model=model,
                     val_data=val_data,
@@ -198,7 +198,7 @@ def main(cfg):
 
         # Test
         if (epoch + 1) % 2 == 0 or epoch == 0:
-            test_stats = orthrus_gnn_testing.main(
+            test_stats = inference_loop.main(
                 cfg=cfg,
                 model=model,
                 val_data=val_data,
@@ -222,7 +222,7 @@ def main(cfg):
     # After training
     if best_epoch_mode:
         model.load_state_dict(best_model)
-        test_stats = orthrus_gnn_testing.main(
+        test_stats = inference_loop.main(
             cfg=cfg,
             model=model,
             val_data=val_data,
