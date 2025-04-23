@@ -8,6 +8,7 @@ from pidsmaker.experiments.uncertainty import add_dropout_to_model
 from pidsmaker.hetero import get_metadata
 from pidsmaker.losses import *
 from pidsmaker.model import Model
+from pidsmaker.objectives import *
 from pidsmaker.tgn import IdentityMessage, LastAggregator, TGNMemory, TimeEncodingMemory
 from pidsmaker.utils.data_utils import GraphReindexer
 from pidsmaker.utils.dataset_utils import (
@@ -154,8 +155,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 ),
                 dropout=cfg.detection.gnn_training.encoder.dropout,
             )
-        elif method == "LSTM":
-            encoder = LSTM(
+        elif method == "GLSTM":
+            encoder = GLSTM(
                 in_features=in_dim,
                 out_features=node_out_dim,
                 cell_clip=None,
@@ -550,7 +551,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             loss_fn = bce_contrastive
 
             objectives.append(
-                EdgeContrastiveDecoder(
+                EdgeContrastivePrediction(
                     decoder=edge_decoder,
                     loss_fn=loss_fn,
                     graph_reindexer=graph_reindexer,
@@ -563,7 +564,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
     # We wrap objectives into this class to calculate some metrics on validation set easily
     is_edge_type_prediction = objective_cfg.used_methods.strip() == "predict_edge_type"
     objectives = [
-        ValidationContrastiveStopper(
+        ValidationWrapper(
             objective,
             graph_reindexer,
             is_edge_type_prediction,

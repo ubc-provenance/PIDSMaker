@@ -43,7 +43,7 @@ ENCODERS_CFG = {
     "sage": {
         "activation": str,
     },
-    "LSTM": {
+    "GLSTM": {
         "in_dim": int,
         "out_dim": int,
     },
@@ -313,7 +313,7 @@ TASK_ARGS = {
             },
             "encoder": {
                 "dropout": float,
-                "used_methods": str,  # [("graph_attention" | "sage" | "rcaid_gat" | "LSTM" | "custom_mlp" | "none"), "tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]
+                "used_methods": str,  # [("graph_attention" | "sage" | "rcaid_gat" | "GLSTM" | "custom_mlp" | "none"), "tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]
                 **ENCODERS_CFG,
             },
             "decoder": {
