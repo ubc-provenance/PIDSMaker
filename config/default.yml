@@ -64,10 +64,6 @@ detection:
         num_heads: 8
         concat: True
         flow: source_to_target
-      hetero_graph_transformer:
-        activation: relu
-        num_heads: 4
-        num_layers: 1
       tgn:
         tgn_memory_dim: 100
         tgn_time_dim: 100
@@ -92,15 +88,6 @@ detection:
         edge_mlp:
           architecture_str: linear(0.5) | relu
           src_dst_projection_coef: 2
-      predict_edge_type_hetero:
-        balanced_loss: False
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: relu
-          src_dst_projection_coef: 2
-        decoder_hetero_head: node_mlp
-        node_mlp:
-          architecture_str: none
       predict_node_type:
         decoder: node_mlp
         balanced_loss: False

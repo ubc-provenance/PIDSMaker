@@ -17,7 +17,6 @@ from torch_scatter import scatter
 from pidsmaker.config import update_cfg_for_multi_dataset
 from pidsmaker.debug_tests import debug_test_batching
 from pidsmaker.encoders import TGNEncoder
-from pidsmaker.hetero import compute_hetero_features
 from pidsmaker.tgn import LastNeighborLoader
 from pidsmaker.utils.dataset_utils import (
     get_node_map,
@@ -128,7 +127,7 @@ def load_all_datasets(cfg, device, only_keep=None):
     # Intra graph batching (TGN 1024 batches, last neighbor loader)
     datasets = run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_reindexer)
 
-    # Reindexing stuff (create node-level attributes, hetero features)
+    # Reindexing stuff (create node-level attributes)
     datasets = run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg)
 
     # Inter graph batching (actual mini-batching of very small graphs)
@@ -512,12 +511,6 @@ def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
         # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
         use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
         reindex_graphs(datasets, graph_reindexer, device, use_tgn)
-
-    use_tgn_loader = (
-        "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods
-    )
-    if cfg._is_hetero and not use_tgn_loader:  # If TGN, we compute hetero feats in the encoder
-        compute_hetero_graphs(datasets, device, cfg)
 
     return datasets
 
@@ -909,19 +902,3 @@ def reindex_graphs(datasets, graph_reindexer, device, use_tgn):
                 batch.to(device)
                 graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
                 batch.to("cpu")
-
-
-def compute_hetero_graphs(datasets, device, cfg):
-    node_map = get_node_map(from_zero=True)
-    edge_map = get_rel2id(cfg, from_zero=True)
-
-    for dataset in datasets:
-        for data_list in log_tqdm(dataset, desc="Computing heterogeneous graphs"):
-            for g in data_list:
-                g.to(device)
-                x_dict, edge_index_dict = compute_hetero_features(
-                    g, node_map=node_map, edge_map=edge_map, cfg=cfg
-                )
-                g.x_dict = x_dict
-                g.edge_index_dict = edge_index_dict
-                g.to("cpu")

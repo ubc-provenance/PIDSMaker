@@ -17,8 +17,6 @@ from .config import (
     EXPERIMENTS_CONFIG,
     OBJECTIVES_EDGE_LEVEL,
     OBJECTIVES_NODE_LEVEL,
-    REQUIRE_HETERO_FEATURES_ENCODERS,
-    REQUIRE_NON_REVERSED_EDGES_ENCODERS,
     SYNTHETIC_ATTACKS,
     TASK_ARGS,
     TASK_DEPENDENCIES,
@@ -197,34 +195,6 @@ def set_shortcut_variables(cfg):
             if method in cfg.detection.gnn_training.decoder.used_methods
         ]
     )
-
-    cfg._is_hetero = any(
-        [
-            method
-            for method in REQUIRE_HETERO_FEATURES_ENCODERS
-            if method in cfg.detection.gnn_training.encoder.used_methods
-        ]
-    )
-
-    cfg._require_non_reversed_edges = any(
-        [
-            method
-            for method in REQUIRE_NON_REVERSED_EDGES_ENCODERS
-            if method in cfg.detection.gnn_training.encoder.used_methods
-        ]
-    )
-
-
-def set_immutable_cfg(cfg):
-    # In some hetero encoders, the reversed edges created by the TGN loader must be removed, or
-    # invalid src, dst, edge triplets will exist
-    if cfg._require_non_reversed_edges:
-        tgn_loader_cfg = cfg.detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor
-        tgn_loader_cfg.fix_buggy_orthrus_TGN = True
-        tgn_loader_cfg.directed = True
-
-    if "predict_edge_type_hetero" in cfg.detection.gnn_training.decoder.used_methods:
-        cfg.detection.graph_preprocessing.edge_features = "edge_type"
 
 
 def set_task_paths(cfg, subtask_concat_value=None):
@@ -493,9 +463,6 @@ def get_yml_cfg(args):
     # Here we create some variables based on parameters for easier usage
     set_shortcut_variables(cfg)
 
-    # In some cases, we want some parameters to be fixed and unchanged
-    set_immutable_cfg(cfg)
-
     # Based on the defined restart args, computes a unique path on disk
     # to store the files of each task
     set_task_paths(cfg)
@@ -630,7 +597,6 @@ def update_task_paths_to_restart(cfg, subtask_concat_value=None):
     yml_file = get_yml_file(cfg._model)
     set_dataset_cfg(cfg, cfg.dataset.name)
     set_shortcut_variables(cfg)
-    set_immutable_cfg(cfg)
     set_task_paths(cfg, subtask_concat_value=subtask_concat_value)
     set_subtasks_to_restart(yml_file, cfg)
     should_restart = {

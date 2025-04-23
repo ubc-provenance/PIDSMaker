@@ -14,7 +14,6 @@ TASK_DEPENDENCIES = {
 ENCODERS = [
     "tgn",
     "graph_attention",
-    "hetero_graph_transformer",
     "sage",
     "magic_gat",
     "custom_mlp",
@@ -34,11 +33,6 @@ ENCODERS_CFG = {
         "num_heads": int,
         "concat": bool,
         "flow": str,
-    },
-    "hetero_graph_transformer": {
-        "activation": str,
-        "num_heads": int,
-        "num_layers": int,
     },
     "sage": {
         "activation": str,
@@ -121,12 +115,6 @@ OBJECTIVES_CFG = {
         "balanced_loss": bool,
         "use_triplet_types": bool,
     },
-    "predict_edge_type_hetero": {
-        "decoder": str,
-        **DECODERS_CFG,
-        "balanced_loss": bool,
-        "decoder_hetero_head": str,
-    },
     "predict_node_type": {
         "decoder": str,
         **DECODERS_CFG,
@@ -159,9 +147,6 @@ SYNTHETIC_ATTACKS = {
         "process_selection_method": str,
     },
 }
-
-REQUIRE_HETERO_FEATURES_ENCODERS = ["hetero_graph_transformer"]
-REQUIRE_NON_REVERSED_EDGES_ENCODERS = ["hetero_graph_transformer", "event_type_encoding"]
 
 # --- Tasks, subtasks, and argument configurations ---
 TASK_ARGS = {
@@ -313,7 +298,7 @@ TASK_ARGS = {
             },
             "encoder": {
                 "dropout": float,
-                "used_methods": str,  # [("graph_attention" | "sage" | "rcaid_gat" | "GLSTM" | "custom_mlp" | "none"), "tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]
+                "used_methods": str,  # [("graph_attention" | "sage" | "rcaid_gat" | "GLSTM" | "custom_mlp" | "none"), "tgn"]
                 **ENCODERS_CFG,
             },
             "decoder": {

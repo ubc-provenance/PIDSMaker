@@ -52,9 +52,6 @@ class Model(nn.Module):
                 original_n_id=getattr(batch, "original_n_id", None),
                 node_type=getattr(batch, "node_type", None),
                 node_type_argmax=getattr(batch, "node_type_argmax", None),
-                # Hetero attr
-                edge_index_dict=getattr(batch, "edge_index_dict", None),
-                x_dict=getattr(batch, "x_dict", None),
             )
         h, h_src, h_dst = self.gather_h(batch, res)
         return h, h_src, h_dst
