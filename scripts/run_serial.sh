@@ -15,4 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-python ../pidsmaker/benchmark.py $args --wandb --restart_from_scratch
+python ../pidsmaker/main.py $args --wandb --restart_from_scratch

@@ -7,14 +7,17 @@ nav:
   - Install: ten-minute-install.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
+  - Hyperparameter Tuning: tuning.md
   - Development: dev.md
   - Contribute: contribute.md
   - Release notes: release_notes.md
   
 # Theme
 theme:
-    feaures:
+    features:
       - tabs
+      - content.code.copy
+      - content.code.annotate
     name: material
     icon:
       logo: material/ninja

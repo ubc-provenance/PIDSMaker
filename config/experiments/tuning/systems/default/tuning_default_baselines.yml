@@ -1,7 +1,4 @@
 method: grid
-metric:
-  name: val_score
-  goal: maximize
 
 parameters:
   preprocessing.build_graphs.time_window_size:

@@ -176,7 +176,7 @@ def overwrite_cfg_with_args(cfg, args):
     given within args.
 
     To override a parameter in cfg, use a dotted style:
-    ```python benchmark.py --detection.gnn_training.seed=42```
+    ```python pidsmaker/main.py --detection.gnn_training.seed=42```
     """
     for arg, value in args.__dict__.items():
         if "." in arg and value is not None:

@@ -8,15 +8,15 @@ Sizes for each database dump are as follow: **compressed** is the size of each d
 
 | Dataset       | Compressed (GB) | Uncompressed (GB) |
 |---------------|------------------|-------------------|
-| CLEARSCOPE_E3 | 0.6              | 4.8               |
-| CADETS_E3     | 1.4              | 10.1              |
-| THEIA_E3      | 1.1              | 12                |
-| CLEARSCOPE_E5 | 6.2              | 49                |
-| CADETS_E5     | 36               | 276               |
-| THEIA_E5      | 5.8              | 36                |
-| OPTC_H051     | 1.7              | 7.7               |
-| OPTC_H_501    | 1.5              | 6.7               |
-| OPTC_H201     | 2                | 9.1               |
+| `CLEARSCOPE_E3` | 0.6              | 4.8               |
+| `CADETS_E3`     | 1.4              | 10.1              |
+| `THEIA_E3`      | 1.1              | 12                |
+| `CLEARSCOPE_E5` | 6.2              | 49                |
+| `CADETS_E5`     | 36               | 276               |
+| `THEIA_E5`      | 5.8              | 36                |
+| `OPTC_H051`     | 1.7              | 7.7               |
+| `OPTC_H_501`    | 1.5              | 6.7               |
+| `OPTC_H201`     | 2                | 9.1               |
 
 We provide two archives: `darpa_e3_optc.tar` containing all E3 and OpTC datasets, and `darpa_e5.tar` containing THEIA_E5 and CLEARSCOPE_E5.
 Given the huge size of CADETS_E5, **we do not include** this dataset in the archive.

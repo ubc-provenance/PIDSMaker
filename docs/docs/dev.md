@@ -20,4 +20,5 @@ pytest --cov=pidsmaker tests/
 ```
 cd docs
 mkdocs build
+mkdocs serve
 ```
