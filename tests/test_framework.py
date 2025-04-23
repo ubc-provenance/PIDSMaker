@@ -5,12 +5,14 @@ from itertools import product
 import pytest
 import wandb
 
-import pidsmaker.config as config
 from pidsmaker import benchmark
 from pidsmaker.config import (
+    DEFAULT_ROOT_ARTIFACT_DIR,
     get_runtime_required_args,
     get_yml_cfg,
 )
+
+TESTS_ARTIFACT_DIR = os.path.join(DEFAULT_ROOT_ARTIFACT_DIR, "tests/")
 
 
 def prepare_cfg(
@@ -24,6 +26,7 @@ def prepare_cfg(
 ):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
+    args.__dict__["artifact_dir_in_container"] = TESTS_ARTIFACT_DIR
 
     if transformation:
         args.__dict__["preprocessing.transformation.used_methods"] = transformation
@@ -48,13 +51,12 @@ def prepare_cfg(
 @pytest.fixture(scope="session", autouse=True)
 def framework_setup_teardown():
     # Runs before tests
-    config.ROOT_ARTIFACT_DIR = os.path.join(config.ROOT_ARTIFACT_DIR, "tests/")
-    shutil.rmtree(config.ROOT_ARTIFACT_DIR, ignore_errors=True)
+    shutil.rmtree(TESTS_ARTIFACT_DIR, ignore_errors=True)
     wandb.init(mode="disabled")
 
     yield
     # Runs after tests
-    shutil.rmtree(config.ROOT_ARTIFACT_DIR)
+    shutil.rmtree(TESTS_ARTIFACT_DIR)
 
 
 @pytest.fixture(scope="class")

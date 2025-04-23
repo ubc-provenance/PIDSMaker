@@ -25,7 +25,7 @@ from .config import (
     UNCERTAINTY_EXP_YML_FOLDER,
 )
 
-ROOT_ARTIFACT_DIR = "/home/artifacts/"  # Destination folder (in the container) for generated files. Will be created if doesn't exist.
+DEFAULT_ROOT_ARTIFACT_DIR = "/home/artifacts/"  # Destination folder (in the container) for generated files. Will be created if doesn't exist.
 ROOT_PROJECT_PATH = pathlib.Path(__file__).parent.parent.parent.resolve()
 ROOT_GROUND_TRUTH_DIR = os.path.join(ROOT_PROJECT_PATH, "Ground_Truth/")
 
@@ -44,7 +44,7 @@ def get_default_cfg(args):
     Inits the shared cfg object with default configurations.
     """
     cfg = CN()
-    cfg._artifact_dir = ROOT_ARTIFACT_DIR
+    cfg._artifact_dir = args.artifact_dir_in_container or DEFAULT_ROOT_ARTIFACT_DIR
 
     cfg._test_mode = False
     cfg._debug = not args.wandb
@@ -141,6 +141,9 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--tuning_file_path", default="", help="If set, use the given YML path for tuning"
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
+    parser.add_argument(
+        "--artifact_dir_in_container", default="", help="ID of a wandb sweep for multi-agent runs"
+    )
 
     # Script-specific args
     parser.add_argument("--show_attack", type=int, help="Number of attack for plotting", default=0)

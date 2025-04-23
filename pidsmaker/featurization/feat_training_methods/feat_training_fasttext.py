@@ -4,7 +4,6 @@ import wget
 from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
 
-from pidsmaker.config import ROOT_ARTIFACT_DIR
 from pidsmaker.featurization.featurization_utils import get_corpus
 from pidsmaker.utils.utils import log, log_start
 
@@ -30,7 +29,7 @@ def train_fasttext(corpus, cfg):
     use_pretrained_fb_model = cfg.featurization.feat_training.fasttext.use_pretrained_fb_model
 
     if use_pretrained_fb_model:
-        out_dir = os.path.join(ROOT_ARTIFACT_DIR, "fasttext_facebook_cc.en.300.bin.gz")
+        out_dir = os.path.join(cfg._artifact_dir, "fasttext_facebook_cc.en.300.bin.gz")
 
         log("Downloading Facebook's FastText model...")
         download_facebook_weights(out_dir)
