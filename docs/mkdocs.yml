@@ -1,5 +1,6 @@
 # Site name
 site_name: PIDSMaker Documentation
+# site_url: https:// # TODO
 
 # Navigation menu
 nav:
@@ -7,8 +8,9 @@ nav:
   - Install: ten-minute-install.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
-  - Hyperparameter Tuning: tuning.md
-  - Variability: variability.md
+  - Features:
+    - Hyperparameter Tuning: tuning.md
+    - Variability: variability.md
   - Development: dev.md
   - Contribute: contribute.md
   - Release notes: release_notes.md
@@ -19,6 +21,7 @@ theme:
       - tabs
       - content.code.copy
       - content.code.annotate
+      - navigation.instant
     name: material
     icon:
       logo: material/ninja
