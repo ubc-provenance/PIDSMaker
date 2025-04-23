@@ -8,6 +8,7 @@ nav:
   - Introduction: introduction.md
   - Pipeline: pipeline.md
   - Hyperparameter Tuning: tuning.md
+  - Variability: variability.md
   - Development: dev.md
   - Contribute: contribute.md
   - Release notes: release_notes.md
