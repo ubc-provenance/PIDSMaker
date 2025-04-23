@@ -41,9 +41,13 @@ def build_model(data_sample, device, cfg, max_node_num):
         device=device,
         max_node_num=max_node_num,
     )
-    decoder = objective_factory(cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device)
-    decoder_few_shot = few_shot_decoder_factory(cfg, device=device, graph_reindexer=graph_reindexer)
-    model = model_factory(encoder, decoder, decoder_few_shot, cfg, device=device)
+    objectives = objective_factory(
+        cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device
+    )
+    objective_few_shot = few_shot_decoder_factory(
+        cfg, device=device, graph_reindexer=graph_reindexer
+    )
+    model = model_factory(encoder, objectives, objective_few_shot, cfg, device=device)
 
     if cfg._is_running_mc_dropout:
         dropout = cfg.experiment.uncertainty.mc_dropout.dropout
@@ -52,11 +56,11 @@ def build_model(data_sample, device, cfg, max_node_num):
     return model
 
 
-def model_factory(encoder, decoders, decoder_few_shot, cfg, device):
+def model_factory(encoder, objectives, objective_few_shot, cfg, device):
     return Model(
         encoder=encoder,
-        decoders=decoders,
-        decoder_few_shot=decoder_few_shot,
+        objectives=objectives,
+        objective_few_shot=objective_few_shot,
         device=device,
         is_running_mc_dropout=cfg._is_running_mc_dropout,
         use_few_shot=cfg.detection.gnn_training.decoder.use_few_shot,

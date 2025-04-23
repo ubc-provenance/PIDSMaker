@@ -12,8 +12,8 @@ class Model(nn.Module):
     def __init__(
         self,
         encoder: nn.Module,
-        decoders: list[nn.Module],
-        decoder_few_shot: nn.Module,
+        objectives: list[nn.Module],
+        objective_few_shot: nn.Module,
         device,
         is_running_mc_dropout,
         use_few_shot,
@@ -22,11 +22,11 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.encoder = encoder
-        self.decoders = nn.ModuleList(decoders)
+        self.objectives = nn.ModuleList(objectives)
         self.device = device
         self.is_running_mc_dropout = is_running_mc_dropout
 
-        self.decoder_few_shot = decoder_few_shot
+        self.objective_few_shot = objective_few_shot
         self.use_few_shot = use_few_shot
         self.few_shot_mode = False
         self.freeze_encoder = freeze_encoder
@@ -68,7 +68,7 @@ class Model(nn.Module):
             # Train mode: loss | Inference mode: scores
             loss_or_scores = None
 
-            for objective in self.decoders:
+            for objective in self.objectives:
                 results = objective(
                     h_src=h_src,  # shape (E, d)
                     h_dst=h_dst,  # shape (E, d)
@@ -103,15 +103,15 @@ class Model(nn.Module):
             return results
 
     def get_val_ap(self):
-        # If multiple decoders are used, we take the average of the val scores
-        return np.mean([d.get_val_score() for d in self.decoders])
+        # If multiple objectives are used, we take the average of the val scores
+        return np.mean([d.get_val_score() for d in self.objectives])
 
     def to_device(self, device):
         if self.device == device:
             return self
 
-        for decoder in self.decoders:
-            decoder.graph_reindexer.to(device)
+        for objective in self.objectives:
+            objective.graph_reindexer.to(device)
 
         if isinstance(self.encoder, TGNEncoder):
             self.encoder.to_device(device)
@@ -149,10 +149,12 @@ class Model(nn.Module):
                 for param in self.encoder.parameters():  # freeze the encoder
                     param.requires_grad = False
 
-            # the decoder is replaced by a copy of the decoder_few_shot + the old decoder is saved for later switch
-            ssl_decoder = self.decoders  # switch the pretext decoder and fine-tuning decoder
-            self.decoders = copy.deepcopy(self.decoder_few_shot)
-            self.ssl_decoder = ssl_decoder
+            # the objective is replaced by a copy of the objective_few_shot + the old objective is saved for later switch
+            ssl_objective = (
+                self.objectives
+            )  # switch the pretext objective and fine-tuning objective
+            self.objectives = copy.deepcopy(self.objective_few_shot)
+            self.ssl_objective = ssl_objective
             self.few_shot_mode = True
 
         if not do and self.few_shot_mode:
@@ -160,8 +162,8 @@ class Model(nn.Module):
             for param in self.encoder.parameters():
                 param.requires_grad = True
 
-            # the ssl decoder is set back
-            self.decoders = self.ssl_decoder
+            # the ssl objective is set back
+            self.objectives = self.ssl_objective
             self.few_shot_mode = False
 
     def reset_state(self):
