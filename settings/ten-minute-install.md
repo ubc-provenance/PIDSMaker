@@ -28,7 +28,7 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
     ```
     pip install gdown
     mkdir data && cd data
-    gdown 1RoF3G6-g7mr2K7C09uqmedbLQ-Vei32j
+    gdown 11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M
     ```
 
 2. Then uncompress the archive (this shouldn't take much space)
@@ -66,6 +66,7 @@ We create two containers: one that runs the postgres database, the other runs th
 
 1. Set your paths in .env
     ```
+    cd ..
     cp .env.local .env
     ```
     Then set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs)

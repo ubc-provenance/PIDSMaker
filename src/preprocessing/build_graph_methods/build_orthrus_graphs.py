@@ -185,7 +185,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                 attack_end_time = datetime_to_ns_time_US(attack_tuple[2])
 
                 if attack_start_time >= start_ns_timestamp and attack_end_time <= end_ns_timestamp:
-                    log(f"Insert mimicry events into attack {attack_index} when building graphs from {date_start} to {date_stop}")
+                    # log(f"Insert mimicry events into attack {attack_index} when building graphs from {date_start} to {date_stop}")
                     mimicry_events.extend(attack_mimicry_events[attack_index])
                 attack_index += 1
 

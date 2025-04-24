@@ -4,9 +4,10 @@ This repo contains the official code of Velox.
 
 ## Setup
 
-### Clone the repo with submodules
+### Clone the repo
 ```
-git clone --recurse-submodules https://github.com/ubc-provenance/PIDSMaker-private.git -b velox
+git clone https://github.com/ubc-provenance/PIDSMaker.git -b velox velox
+cd velox
 ```
 
 ### 10-min install Docker and Datasets Install
