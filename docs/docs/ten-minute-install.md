@@ -28,7 +28,10 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
     ```
     pip install gdown
     mkdir data && cd data
-    gdown 11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M
+
+    # if the download stops, do ctrl+C and re-run with --continue until finished
+    gdown 11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M  # darpa_e3_optc.tar
+    gdown 1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1  # darpa_e5.tar
     ```
 
 2. Then uncompress the archive (this shouldn't take much space)
