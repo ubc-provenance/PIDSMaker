@@ -33,8 +33,7 @@ def train_word2vec(corpus, model_save_path, cfg):
     epochs = cfg.featurization.embed_nodes.epochs
     compute_loss = cfg.featurization.embed_nodes.temporal_rw.compute_loss
     negative = cfg.featurization.embed_nodes.temporal_rw.negative
-    use_seed = cfg.featurization.embed_nodes.use_seed
-    SEED = 0
+    seed = cfg.featurization.embed_nodes.seed
 
     model = Word2Vec(corpus,
                         vector_size=emb_dim,
@@ -45,7 +44,7 @@ def train_word2vec(corpus, model_save_path, cfg):
                         epochs=1,
                         compute_loss=compute_loss,
                         negative=negative,
-                        seed=SEED)
+                        seed=seed)
 
     epoch_loss = model.get_latest_training_loss()
     log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")

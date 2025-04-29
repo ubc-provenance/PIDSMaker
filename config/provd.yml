@@ -16,7 +16,7 @@ featurization:
     emb_dim: 100
     epochs: 100
     training_split: train
-    use_seed: True
+    seed: 0
     used_method: provd
     provd:
       alpha: 0.025

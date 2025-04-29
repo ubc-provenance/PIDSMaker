@@ -4,7 +4,7 @@ featurization:
     epochs: 10
     training_split: train
     used_method: flash
-    use_seed: True
+    seed: 0
     flash:
       min_count: 1
       workers: 10

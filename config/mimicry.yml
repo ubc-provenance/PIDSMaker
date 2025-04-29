@@ -18,7 +18,7 @@ featurization:
     epochs: 50
     training_split: all
     used_method: feature_word2vec
-    use_seed: True
+    seed: 0
     temporal_rw:
       walk_length: 30
       num_walks: 10

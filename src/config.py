@@ -79,7 +79,7 @@ TASK_ARGS = {
           "embed_nodes": {
                "emb_dim": int,
                "epochs": int,
-               "use_seed": bool,
+               "seed": int,
                "training_split": str,  # ["train" | "all"]
                "used_method": str,  # [ "temporal_rw" | "word2vec" | "doc2vec" | "feature_word2vec" | "hierarchical_hashing" | "only_type" | "flash" | "provd" | "fasttext"]
                "flash":{

@@ -425,8 +425,7 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     num_workers = cfg.featurization.embed_nodes.word2vec.num_workers
     compute_loss = cfg.featurization.embed_nodes.word2vec.compute_loss
     add_paths = cfg.featurization.embed_nodes.word2vec.add_paths
-    use_seed = cfg.featurization.embed_nodes.use_seed
-    SEED = 0
+    seed = cfg.featurization.embed_nodes.seed
 
     log_dir = out_dir
 
@@ -462,12 +461,8 @@ def embed_nodes_for_one_split(split: str, use_corpus: bool, use_matrix_input: bo
     # Training using Word2Vec if needed
     # ===-----------------------------------------------------------------------===
     if model_input is None:
-        if use_seed:
-            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
-                             workers=num_workers, epochs=epochs, compute_loss=compute_loss,seed=SEED)
-        else:
-            model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
-                             workers=num_workers, epochs=epochs, compute_loss=compute_loss)
+        model = Word2Vec(paths, vector_size=emb_dim, window=window_size, min_count=min_count, sg=use_skip_gram,
+                            workers=num_workers, epochs=epochs, compute_loss=compute_loss,seed=seed)
     else:
         log("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)

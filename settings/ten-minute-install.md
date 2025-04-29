@@ -37,6 +37,7 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
 2. Then uncompress the archive (this shouldn't take much space)
     ```
     tar -xvf darpa_e3_optc.tar
+    tar -xvf darpa_e5.tar
     ```
 
 Alternatively, here are the [guidelines](settings/create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
