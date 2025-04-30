@@ -20,19 +20,15 @@ Once you have a shell in the pids container, experiments can be run in multiple 
 
 1. Run in the shell, no W&B:
     ```shell
-    python src/benchmark.py velox CADETS_E3 --tuned
+    cd scripts
+    ./run.sh velox CADETS_E3 --tuned
     ```
 
 2. Run in the shell, monitored to W&B:
     ```shell
-    python src/benchmark.py velox CADETS_E3 --tuned --wandb
+    cd scripts
+    ./run.sh velox CADETS_E3 --tuned --wandb
     ```
-
-3. Run in background, monitored to W&B (ideal for multiple parallel runs):
-    ```shell
-    ./run.sh velox CADETS_E3 --tuned
-    ```
-    You can still watch the logs in your shell using `tail -f nohup.out`
 
 ## Reproduce experiments
 
@@ -46,19 +42,26 @@ Once you have a shell in the pids container, experiments can be run in multiple 
 - Replace `{dataset}` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | CADETS_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
 
 ```shell
-python src/benchmark.py {system} {dataset} --experiment=run_n_times --tuned --wandb
+./run.sh velox CLEARSCOPE_E3 --experiment=run_n_times --tuned --featurization.embed_nodes.seed=2
+./run.sh velox THEIA_E3 --experiment=run_n_times --tuned --featurization.embed_nodes.seed=2
+./run.sh velox CLEARSCOPE_E5 --experiment=run_n_times --tuned --featurization.embed_nodes.seed=2
+./run.sh velox THEIA_E5 --experiment=run_n_times --tuned --featurization.embed_nodes.seed=2
+```
+
+```shell
+./run.sh {system} {dataset} --experiment=run_n_times --tuned
 ```
 
 Note: Flash runs from gnn training as its featurization is too long to re-run.
 ```shell
-python src/benchmark.py flash {dataset} --experiment=run_n_times --tuned --experiment.uncertainty.deep_ensemble.restart_from=gnn_training --wandb
+./run.sh flash {dataset} --experiment=run_n_times --tuned --experiment.uncertainty.deep_ensemble.restart_from=gnn_training
 ```
 
 ### Untuned/tuned systems (Fig. 5)
 
 ```shell
-python src/benchmark.py {system} {dataset} --wandb # untuned
-python src/benchmark.py {system} {dataset} --wandb --tuned # tuned
+./run.sh {system} {dataset} # untuned
+./run.sh {system} {dataset} --tuned # tuned
 ```
 
 ### ADP range (Fig.6)
@@ -75,7 +78,7 @@ The config file for the featurization is found in `experiments/tuning/components
 A wandb sweep is run with a run for each combination of hyperparams/featurization method.
 
 ```shell
-python src/benchmark.py {system} CADETS_E3 --tuning_mode=featurization --tuned --restart_from_scratch
+./run.sh {system} CADETS_E3 --tuning_mode=featurization --tuned --restart_from_scratch
 ```
 
 ### Ablation heatmap (Fig. 9)
@@ -83,7 +86,7 @@ python src/benchmark.py {system} CADETS_E3 --tuning_mode=featurization --tuned -
 Here, we start from orthrus' config without snooping components (i.e., featurization trained on test data and clutering), referred to as `orthrus_non_snooped`, and we compute the ablations as in the paper's figure.
 
 ```shell
-python src/benchmark.py orthrus_non_snooped CLEARSCOPE_E3 --restart_from_scratch --experiment=run_n_times --tuned --tuning_mode=hyperparameters --tuning_file_path=systems/default/tuning_orthrus_non_snooped
+./run.sh orthrus_non_snooped CLEARSCOPE_E3 --restart_from_scratch --experiment=run_n_times --tuned --tuning_mode=hyperparameters --tuning_file_path=systems/default/tuning_orthrus_non_snooped
 ```
 
 ### Runtime and memory (Fig. 11)
