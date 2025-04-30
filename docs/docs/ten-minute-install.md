@@ -91,7 +91,7 @@ We create two containers: one that runs the postgres database, the other runs th
 
 2. Build  and start the database container up:
     ```
-    docker compose -p postgres -f compose-postgres.yml up -d
+    docker compose -p postgres -f compose-postgres.yml up -d --build
     ```
     Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
     
