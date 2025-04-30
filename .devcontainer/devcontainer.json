@@ -2,9 +2,9 @@
   "name": "PIDSMaker Dev Container",
   "dockerComposeFile": ["../compose-pidsmaker.yml"],
   "service": "pids",
-  "workspaceFolder": "/home",
+  "workspaceFolder": "/home/pids",
   "forwardPorts": ["${env:DOCKER_PORT}"],
-  "remoteUser": "root",
+  "remoteUser": "${env:USER_NAME}",
   "customizations": {
     "vscode": {
       "extensions": [

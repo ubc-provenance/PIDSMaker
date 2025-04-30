@@ -52,7 +52,19 @@ RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
 RUN pip install gdown==5.2.0
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12
 
-WORKDIR /home
+ARG USER_ID
+ARG GROUP_ID
+ARG USER_NAME
+RUN groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /bin/bash ${USER_NAME}
+
+WORKDIR /home/pids
+
 COPY . .
-RUN pip install -e .
-RUN pre-commit install
+
+# COPY is done by the docker daemon as root, so we need to chown
+RUN chown -R ${USER_NAME}:${USER_NAME} /home/pids
+USER ${USER_NAME}
+
+
+RUN [ -f pyproject.toml ] && pip install -e . || echo "No pyproject.toml found, skipping install"
+RUN [ -f .pre-commit-config.yaml ] && pre-commit install || echo "No pre-commit found, skipping install"

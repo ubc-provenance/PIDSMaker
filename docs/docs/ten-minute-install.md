@@ -79,36 +79,43 @@ sudo systemctl restart docker
 We create two containers: one that runs the postgres database, the other runs the Python env and the pipeline.
 
 1. Set your paths in .env
-    ```
+    ```sh
     cd ..
     cp .env.local .env
     ```
-    In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs).
-    Then run:
-    ```
-    source .env
-    ```
+    
+    - In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs).
+    
+    - Run the following command and set accordingly `HOST_UID`, `HOST_GID` and `USER_NAME` in `.env`.
+        ```sh
+        echo "HOST_UID=$(id -u)" && echo "HOST_GID=$(id -g)" && echo "USER_NAME=$(whoami)"
+        ```
+
+    - Then run:
+        ```sh
+        source .env
+        ```
 
 2. Build  and start the database container up:
-    ```
+    ```sh
     docker compose -p postgres -f compose-postgres.yml up -d --build
     ```
     Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
     
 3. In a terminal, get a shell into this container:
-    ```
+    ```sh
     docker compose -p postgres exec postgres bash
     ```
 4. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
-    ```
+    ```sh
     ./scripts/load_dumps.sh
     ```
     If you have limited space and want to load databases one by one, do:
-    ```
+    ```sh
     pg_restore -U postgres -h localhost -p 5432 -d {dataset} /data/{dataset}.dump
     ```
 6. Once databases are loaded, we won't need to touch this container anymore:
-    ```
+    ```sh
     exit
     ```
 
@@ -119,8 +126,8 @@ It is within the `pids` container that coding and experiments take place.
 1. For VSCode users, we recommend using the [dev container](https://code.visualstudio.com/docs/devcontainers/create-dev-container) extension to directly open VSCode in the container. To do so, simply install the extension, then ctrl+shift+P and <i>Dev Containers: Open Folder in Container</i>.
 
 2. The other alternative is to load the container manually and open a shell directly in your terminal.
-    ```
-    docker compose -f compose-pidsmaker.yml up -d
+    ```sh
+    docker compose -f compose-pidsmaker.yml up -d --build
     docker compose exec pids bash
     ```
 
@@ -130,7 +137,7 @@ It's in this container that the python env is installed and where the framework 
 
 W&B is used as the default interface to visualize and historize experiments, we **highly** encourage to use it. You can [create an account](https://wandb.ai/site/) if not already done. Log into your account from CLI by pasting your API key, obtained via your W&B dashboard:
 
-```shell
+```sh
 wandb login
 ```
 
