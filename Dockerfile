@@ -16,7 +16,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # installing sudo
-RUN apt-get update && apt-get install -y sudo
+RUN apt-get update && apt-get install -y sudo git
 
 # installing Anaconda version 23.3.1
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
@@ -46,14 +46,11 @@ RUN pip install torch_geometric==2.5.3 --no-cache-dir && \
 
 RUN pip install gensim==4.3.1 pytz==2024.1 pandas==2.2.2 yacs==0.1.8
 
-# RUN pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.6.* cuml-cu12==24.6.*
-
 RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
     pip uninstall -y numpy && pip install numpy==1.26.4
 
-RUN pip install gdown
-
-# Create a user and set the working directory
-# RUN useradd -m velox
-# USER velox
 WORKDIR /home
+COPY . .
+
+RUN [ -f pyproject.toml ] && pip install -e . || echo "No pyproject.toml found, skipping install"
+RUN [ -f .pre-commit-config.yaml ] && pre-commit install || echo "No pre-commit found, skipping install"

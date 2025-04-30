@@ -1,0 +1,30 @@
+services:
+  pids:
+    build:
+      context: .
+    container_name: ${COMPOSE_PROJECT_NAME}-pids
+    networks:
+      - shared_network
+    environment:
+      DB_HOST: postgres
+      DOCKER_PORT: ${DOCKER_PORT:-5432}
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    volumes:
+      - ./app:/home/app
+      - ${ARTIFACTS_DIR:-/artifacts}:/home/artifacts
+    entrypoint: bash
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+networks:
+  shared_network:
+    external:
+      name: shared_network
