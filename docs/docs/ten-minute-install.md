@@ -84,14 +84,10 @@ We create two containers: one that runs the postgres database, the other runs th
     cp .env.local .env
     ```
     In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs).
-    Then run:
-    ```
-    source .env
-    ```
 
 2. Build  and start the container up:
     ```
-    docker compose -p $PROJECT_NAME up -d --build
+    docker compose up -d --build
     ```
     Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
     
