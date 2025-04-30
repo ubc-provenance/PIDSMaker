@@ -24,19 +24,30 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
 **Steps:**
 
 1. First [download the archive(s)](https://drive.google.com/drive/folders/1cTSrl_CTxg_rTC_ENddaqAxJXOku8O6y) into a new `data` folder. 
-    On CLI, you can use `gdown`:
-    ```
-    pip install gdown
+    On CLI, you can use `curl` with an authorization token (as explained [here](https://stackoverflow.com/a/67550427/10183259)):
+    
+    - Go to OAuth 2.0 Playground https://developers.google.com/oauthplayground/
+    - In the `Select the Scope` box, paste `https://www.googleapis.com/auth/drive.readonly`
+    - Click `Authorize APIs` and then `Exchange authorization code for tokens`
+    - Copy the **Access token**
+    - Run in terminal
+    
+    **Note**: Each call to curl downloads only a part of each file. You should call the same command multiple times to download the archvives at 100%
+
+    ```sh
     mkdir data && cd data
+    
+    # darpa_e3_optc.tar
+    curl -H "Authorization: Bearer {ACCESS_TOKEN}" -C - https://www.googleapis.com/drive/v3/files/11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M?alt=media -o darpa_e3_optc.tar
 
-    # if the download stops, do ctrl+C and re-run with --continue until finished
-    gdown 11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M  # darpa_e3_optc.tar
-    gdown 1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1  # darpa_e5.tar
+    # darpa_e5.tar
+    curl -H "Authorization: Bearer {ACCESS_TOKEN}" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o darpa_e5.tar
     ```
 
-2. Then uncompress the archive (this shouldn't take much space)
+2. Then uncompress the archives (this shouldn't take much space)
     ```
     tar -xvf darpa_e3_optc.tar
+    tar -xvf darpa_e5.tar
     ```
 
 Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
@@ -72,12 +83,18 @@ We create two containers: one that runs the postgres database, the other runs th
     cd ..
     cp .env.local .env
     ```
-    Then set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs)
+    In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs).
+    Then run:
+    ```
+    source .env
+    ```
 
 2. Build  and start the container up:
     ```
-    docker compose up -d --build
+    docker compose -p $PROJECT_NAME up -d --build
     ```
+    Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
+    
 3. In a terminal, get a shell into the `experiment container`, where the python env is installed and where experiments will be conducted:
     ```
     docker compose exec postgres bash

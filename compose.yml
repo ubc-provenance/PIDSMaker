@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:17
-    container_name: postgres17
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
@@ -20,7 +19,6 @@ services:
 
   pids:
     build: ./
-    container_name: pids
     depends_on:
       postgres:
         condition: service_healthy
