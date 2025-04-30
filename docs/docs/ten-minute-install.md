@@ -38,10 +38,10 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
     mkdir data && cd data
     
     # darpa_e3_optc.tar
-    curl -H "Authorization: Bearer {ACCESS_TOKEN}" -C - https://www.googleapis.com/drive/v3/files/11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M?alt=media -o darpa_e3_optc.tar
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M?alt=media -o darpa_e3_optc.tar
 
     # darpa_e5.tar
-    curl -H "Authorization: Bearer {ACCESS_TOKEN}" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o darpa_e5.tar
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o darpa_e5.tar
     ```
 
 2. Then uncompress the archives (this shouldn't take much space)
