@@ -16,8 +16,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # installing sudo
-RUN apt-get update && apt-get install -y sudo
-RUN apt-get install -y git
+RUN apt-get update && apt-get install -y sudo git
 
 # installing Anaconda version 23.3.1
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
