@@ -84,18 +84,27 @@ We create two containers: one that runs the postgres database, the other runs th
     cp .env.local .env
     ```
     In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs).
+    Then run:
+    ```
+    source .env
+    ```
 
-2. Build  and start the container up:
+2. Create a volume
+    ```
+    docker volume create postgres_data
+    ```
+
+3. Build  and start the container up:
     ```
     docker compose up -d --build
     ```
     Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
     
-3. In a terminal, get a shell into the `experiment container`, where the python env is installed and where experiments will be conducted:
+4. In a terminal, get a shell into the `experiment container`, where the python env is installed and where experiments will be conducted:
     ```
     docker compose exec postgres bash
     ```
-4. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
+5. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
     ```
     ./scripts/load_dumps.sh
     ```
@@ -103,7 +112,7 @@ We create two containers: one that runs the postgres database, the other runs th
     ```
     pg_restore -U postgres -h localhost -p 5432 -d {dataset} /data/{dataset}.dump
     ```
-5. Once databases are loaded, we won't need to touch this container anymore:
+6. Once databases are loaded, we won't need to touch this container anymore:
     ```
     exit
     ```
