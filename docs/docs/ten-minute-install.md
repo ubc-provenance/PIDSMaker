@@ -89,22 +89,17 @@ We create two containers: one that runs the postgres database, the other runs th
     source .env
     ```
 
-2. Create a volume
+2. Build  and start the database container up:
     ```
-    docker volume create postgres_data
-    ```
-
-3. Build  and start the container up:
-    ```
-    docker compose up -d --build
+    docker compose -p postgres -f compose-postgres.yml up -d
     ```
     Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
     
-4. In a terminal, get a shell into the `experiment container`, where the python env is installed and where experiments will be conducted:
+3. In a terminal, get a shell into this container:
     ```
-    docker compose exec postgres bash
+    docker compose -p postgres exec postgres bash
     ```
-5. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
+4. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
     ```
     ./scripts/load_dumps.sh
     ```
@@ -123,10 +118,13 @@ It is within the `pids` container that coding and experiments take place.
 
 1. For VSCode users, we recommend using the [dev container](https://code.visualstudio.com/docs/devcontainers/create-dev-container) extension to directly open VSCode in the container. To do so, simply install the extension, then ctrl+shift+P and <i>Dev Containers: Open Folder in Container</i>.
 
-2. The other alternative is to open a shell directly in your terminal.
+2. The other alternative is to load the container manually and open a shell directly in your terminal.
     ```
+    docker compose -f compose-pidsmaker.yml up -d
     docker compose exec pids bash
     ```
+
+It's in this container that the python env is installed and where the framework will be used.
 
 ## Weights & Biases interface
 
