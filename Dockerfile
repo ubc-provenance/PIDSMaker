@@ -22,13 +22,20 @@ RUN apt-get update && apt-get install -y sudo git
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
 RUN bash Anaconda3-2023.03-1-Linux-x86_64.sh -b -p /opt/conda
 RUN rm Anaconda3-2023.03-1-Linux-x86_64.sh
-ENV PATH="/opt/conda/bin:$PATH"
 
-# installing python libraries
-RUN conda create -n velox python=3.9 && \
-    echo "source /opt/conda/bin/activate velox" >> ~/.bashrc
+ARG USER_ID
+ARG GROUP_ID
+ARG USER_NAME
+RUN groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /bin/bash ${USER_NAME}
+WORKDIR /home/pids
+
+ENV PATH="/opt/conda/bin:$PATH"
+ENV PATH="/opt/conda/envs/pids/bin:$PATH"
+RUN conda create -n pids python=3.9 && \
+    echo "source /opt/conda/etc/profile.d/conda.sh" >> /home/${USER_NAME}/.bashrc && \
+    echo "conda activate pids" >> /home/${USER_NAME}/.bashrc
 # https://pythonspeed.com/articles/activate-conda-dockerfile/
-SHELL ["conda", "run", "-n", "velox", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
 # Activate the environment and install dependencies
 RUN conda install -y psycopg2 tqdm && \
     pip install scikit-learn==1.2.0 networkx==2.8.7 xxhash==3.2.0 \
@@ -51,13 +58,6 @@ RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
 
 RUN pip install gdown==5.2.0
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12
-
-ARG USER_ID
-ARG GROUP_ID
-ARG USER_NAME
-RUN groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /bin/bash ${USER_NAME}
-
-WORKDIR /home/pids
 
 COPY . .
 
