@@ -62,7 +62,7 @@ RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61
 COPY . .
 
 # COPY is done by the docker daemon as root, so we need to chown
-RUN chown -R ${USER_NAME}:${USER_NAME} /home/pids
+RUN chown -R ${USER_NAME}:${USER_NAME} /home
 USER ${USER_NAME}
 
 
