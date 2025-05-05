@@ -1,0 +1,27 @@
+method: grid
+
+
+parameters:
+  detection.gnn_training.lr:
+    values: [0.001, 0.0001, 0.00001]
+  detection.gnn_training.node_hid_dim:
+    values: [128, 256, 64]
+  detection.gnn_training.node_out_dim:
+    values: [-1]
+  detection.gnn_training.encoder.dropout:
+    values: [0.1, 0.3]
+
+  featurization.feat_training.used_method:
+    values: [tokenization]
+  featurization.feat_training.emb_dim:
+    values: [60]
+  detection.gnn_training.encoder.used_methods:
+    values: ["entity_type_encoding,token_encoding,tgn,graph_attention"]
+  preprocessing.build_graphs.node_label_features.subject:
+    values: ["cmd_line"]
+  preprocessing.build_graphs.node_label_features.file:
+    values: ["path"]
+  preprocessing.build_graphs.node_label_features.netflow:
+    values: ["remote_ip,remote_port"]
+  detection.graph_preprocessing.node_features:
+    values: ["node_emb"]
