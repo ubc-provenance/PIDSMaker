@@ -117,7 +117,7 @@ We create two containers: one that runs the postgres database, the other runs th
     ```
     If you have limited space and want to load databases one by one, do:
     ```sh
-    pg_restore -U postgres -h localhost -p 5432 -d {dataset} /data/{dataset}.dump
+    pg_restore -U postgres -h localhost -p 5432 -d DATASET /data/DATASET.dump
     ```
 6. Once databases are loaded, we won't need to touch this container anymore:
     ```sh

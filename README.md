@@ -1,4 +1,4 @@
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://code.visualstudio.com/docs/devcontainers/create-dev-container)
+[![Support Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://code.visualstudio.com/docs/devcontainers/create-dev-container)
 [![Documentation](https://img.shields.io/badge/docs-online-pink.svg)](https://ubc-provenance.github.io/PIDSMaker/)
 
 # 🥷 PIDSMaker
@@ -30,18 +30,21 @@ We have made the installation of DARPA TC/OpTC easy and fast, simply follow [the
 
 Once you have a shell in the pids container, experiments can be run in multiple ways.
 
+- Replace `SYSTEM` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash`.
+- Replace `DATASET` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
+
 1. Run in the shell, no W&B:
     ```shell
-    python pidsmaker/main.py velox CADETS_E3 --tuned
+    python pidsmaker/main.py SYSTEM DATASET --tuned
     ```
 
 2. Run in the shell, monitored to W&B:
     ```shell
-    python pidsmaker/main.py velox CADETS_E3 --tuned --wandb
+    python pidsmaker/main.py SYSTEM DATASET --tuned --wandb
     ```
 
 3. Run in background, monitored to W&B (ideal for multiple parallel runs):
     ```shell
-    ./run.sh velox CADETS_E3 --tuned
+    ./run.sh SYSTEM DATASET --tuned
     ```
     You can still watch the logs in your shell using `tail -f nohup.out`
