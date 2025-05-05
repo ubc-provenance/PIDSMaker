@@ -96,6 +96,11 @@ We create two containers: one that runs the postgres database, the other runs th
         source .env
         ```
 
+    - Then create the output artifacts folder if it doesn't exist yet and ensure it is owned by your user.
+        ```sh
+        mkdir ${ARTIFACTS_DIR} || chown ${USER_NAME} -R ${ARTIFACTS_DIR}
+        ```
+
 2. Build  and start the database container up:
     ```sh
     docker compose -p postgres -f compose-postgres.yml up -d --build
