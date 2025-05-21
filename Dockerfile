@@ -25,10 +25,10 @@ RUN rm Anaconda3-2023.03-1-Linux-x86_64.sh
 ENV PATH="/opt/conda/bin:$PATH"
 
 # installing python libraries
-RUN conda create -n velox python=3.9 && \
-    echo "source /opt/conda/bin/activate velox" >> ~/.bashrc
+RUN conda create -n pids python=3.9 && \
+    echo "source /opt/conda/bin/activate pids" >> ~/.bashrc
 # https://pythonspeed.com/articles/activate-conda-dockerfile/
-SHELL ["conda", "run", "-n", "velox", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
 # Activate the environment and install dependencies
 RUN conda install -y psycopg2 tqdm && \
     pip install scikit-learn==1.2.0 networkx==2.8.7 xxhash==3.2.0 \
@@ -54,3 +54,4 @@ COPY . .
 
 RUN [ -f pyproject.toml ] && pip install -e . || echo "No pyproject.toml found, skipping install"
 RUN [ -f .pre-commit-config.yaml ] && pre-commit install || echo "No pre-commit found, skipping install"
+
