@@ -21,13 +21,13 @@ Once you have a shell in the pids container, experiments can be run in multiple 
 1. Run in the shell, no W&B:
     ```shell
     cd scripts
-    ./run.sh velox CADETS_E3 --tuned
+    ./run.sh velox THEIA_E3 --tuned
     ```
 
 2. Run in the shell, monitored to W&B:
     ```shell
     cd scripts
-    ./run.sh velox CADETS_E3 --tuned --wandb
+    ./run.sh velox THEIA_E3 --tuned --wandb
     ```
 
 ## Reproduce experiments
