@@ -125,6 +125,9 @@ def main(cfg, project, **kwargs):
         if cfg.experiment.used_method == "no_experiment":
             log("Running pipeline in 'Standard' mode.")
             metrics, times = run_pipeline(cfg)
+            
+            print("Best epoch stats:")
+            print(metrics)
             wandb.log(metrics)
             wandb.log(times)
             
@@ -181,6 +184,10 @@ def main(cfg, project, **kwargs):
             averaged_metrics = avg_std_metrics(method_to_metrics)
             minimum_metrics = min_metrics(method_to_metrics)
             maximum_metrics = max_metrics(method_to_metrics)
+            
+            print(averaged_metrics)
+            print(minimum_metrics)
+            print(maximum_metrics)
             
             wandb.log(averaged_metrics)
             wandb.log(minimum_metrics)
@@ -248,3 +255,4 @@ if __name__ == '__main__':
     # If it's a one-time run, we delete the files as we can't leverage them in future
     if cfg._restart_from_scratch:
         shutil.rmtree(cfg.preprocessing.build_graphs._task_path, ignore_errors=True)
+
