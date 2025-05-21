@@ -10,7 +10,7 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git -b velox velox
 cd velox
 ```
 
-### 10-min install Docker and Datasets Install
+### 10-min install of Docker and Datasets
 
 We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](settings/ten-minute-install.md).
 
