@@ -185,10 +185,13 @@ def main(cfg, project, **kwargs):
             minimum_metrics = min_metrics(method_to_metrics)
             maximum_metrics = max_metrics(method_to_metrics)
             
+            print("Average metrics:")
             print(averaged_metrics)
+            print("Min metrics:")
             print(minimum_metrics)
+            print("Max metrics:")
             print(maximum_metrics)
-            
+
             wandb.log(averaged_metrics)
             wandb.log(minimum_metrics)
             wandb.log(maximum_metrics)
