@@ -32,7 +32,7 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
     - Copy the **Access token**
     - Run in terminal
     
-    **Note**: Each call to curl downloads only a part of each file. You should call the same command multiple times to download the archvives at 100%
+    **Note**: Each call to curl downloads only a part of each file then blocks. When the loading bar stops, simply ctrl+C and run the same command until 100% is achieved.
 
     ```sh
     mkdir data && cd data

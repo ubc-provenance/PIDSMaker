@@ -1,6 +1,6 @@
 # Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems
 
-This repo contains the official code of Velox.
+This repo contains the original code of the paper. For a practical usage of the framework, we recommend using the last version of PIDSMaker, available on the [main branch](https://github.com/ubc-provenance/PIDSMaker).
 
 ## Setup
 
