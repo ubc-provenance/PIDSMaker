@@ -9,6 +9,8 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}-pids
     networks:
       - shared_network
+    ports:
+      - "8000:8000"
     environment:
       DB_HOST: postgres
       DOCKER_PORT: ${DOCKER_PORT:-5432}
