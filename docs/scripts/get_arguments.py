@@ -1,13 +1,21 @@
 import yaml
 import os
 
-from pidsmaker.config import TASK_ARGS, AND, OR
+from pidsmaker.config import (
+    TASK_ARGS,
+    AND,
+    OR,
+    FEATURIZATIONS_CFG,
+    ENCODERS_CFG,
+    DECODERS_CFG,
+    OBJECTIVES_CFG,
+)
 
-def convert_types_to_strings(obj, counter=None):
+def convert_types_to_strings(obj, counter=None, ignore=[]):
     if counter is None:
         counter = [0]
     if isinstance(obj, dict):
-        return {key: convert_types_to_strings(value, counter) for key, value in obj.items()}
+        return {key: convert_types_to_strings(value, counter, ignore) for key, value in obj.items() if key not in ignore}
     elif isinstance(obj, tuple) and len(obj) == 2 and isinstance(obj[0], type):
         type_name = obj[0].__name__
         values = obj[1]
@@ -31,7 +39,7 @@ def convert_types_to_strings(obj, counter=None):
 def dict_to_markdown_list(d, indent=0):
     lines = []
     
-    lines.append("    " * indent + "<ul>")
+    lines.append("    " * indent + ("<ul>" if len(d) > 0 else ""))
     for key, value in d.items():
         if isinstance(value, dict):
             lines.append("    " * indent + f"    <li class='bullet'><span class=\"key\">{key}</span>")
@@ -40,16 +48,16 @@ def dict_to_markdown_list(d, indent=0):
         else:
             lines.append("    " * indent + f"    <li class='no-bullet'><span class=\"key-leaf\">{key}</span>: <span class=\"value\">{value}</span></li>")
 
-    lines.append("    " * indent + "</ul>")
+    lines.append("    " * indent + ("</ul>" if len(d) > 0 else ""))
     return lines
 
-for task, d in TASK_ARGS.items():
+def write_md(d, filename, ignore=[]):
     convert_types_to_strings.annotations = []
     counter = [0]
-    task_dict = convert_types_to_strings(d, counter)
+    task_dict = convert_types_to_strings(d, counter, ignore=ignore)
     
     pwd = os.path.dirname(os.path.realpath(__file__))
-    markdown_output_path = os.path.join(pwd, f"args/args_{task}.md")
+    markdown_output_path = os.path.join(pwd, f"args/args_{filename}.md")
     os.makedirs(os.path.dirname(markdown_output_path), exist_ok=True)
     markdown_lines = dict_to_markdown_list(task_dict)
     with open(markdown_output_path, "w") as f:
@@ -61,3 +69,14 @@ for task, d in TASK_ARGS.items():
         if hasattr(convert_types_to_strings, "annotations") and convert_types_to_strings.annotations:
             for annotation_id, values_str in convert_types_to_strings.annotations:
                 f.write(f"{annotation_id}. {values_str}\n")
+
+write_md(FEATURIZATIONS_CFG, "featurizations")
+write_md(ENCODERS_CFG, "encoders")
+write_md(DECODERS_CFG, "decoders")
+write_md(OBJECTIVES_CFG, "objectives", ignore=list(DECODERS_CFG.keys()))
+
+for task, d in TASK_ARGS.items():
+    write_md(d, task, ignore=list(DECODERS_CFG.keys()) \
+        + list(ENCODERS_CFG.keys()) \
+        + list(OBJECTIVES_CFG.keys()) \
+        + list(FEATURIZATIONS_CFG.keys()))

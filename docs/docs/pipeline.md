@@ -12,17 +12,17 @@ pidsmaker/
 │   ├── config.py       # available arguments to use in YML files
 │   └── pipeline.py     # pipeline code
 ├── preprocessing/               
-│   ├── build_graphs.py         # 1. feature extraction + graph TW construction
-│   └── transformation.py       # 2. graph transformation
+│   ├── build_graphs.py        # task 1. feature extraction + graph TW construction
+│   └── transformation.py      # task 2. graph transformation
 ├── featurization/              
-│   ├── feat_training.py        # 3. featurization (word2vec, doc2vec, ...) training
-│   └── feat_inference.py       # 4. featurization inference
+│   ├── feat_training.py       # task 3. featurization (word2vec, doc2vec, ...) training
+│   └── feat_inference.py      # task 4. featurization inference
 ├── detection/                  
-│   ├── graph_preprocessing.py  # 5. batch construction, neighbor sampling, etc
-│   ├── gnn_training.py         # 6. GNN training + inference (testing) loop
-│   └── evaluation.py           # 7. metrics calculation + plots
+│   ├── graph_preprocessing.py # task 5. batch construction, neighbor sampling, etc
+│   ├── gnn_training.py        # task 6. GNN training + inference (testing) loop
+│   └── evaluation.py          # task 7. metrics calculation + plots
 ├── triage/       
-│   └── tracing.py              # 8. optional post-processing attack tracing
+│   └── tracing.py             # task 8. optional post-processing attack tracing
 ```
 
 Under the hood, PIDSMaker generates a unique hash for each task based on its set of arguments. Once a task completes, its output files are saved to disk in a folder named after this hash. This mechanism allows the system to detect whether a task has already been executed by recomputing the hash from the current arguments and checking for the existence of the corresponding folder.

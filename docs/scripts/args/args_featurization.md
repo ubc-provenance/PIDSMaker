@@ -9,82 +9,6 @@
         <li class='no-bullet'><span class="key-leaf">training_split</span>: <span class="value">str (1)</span></li>
         <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (2)</span></li>
-        <li class='bullet'><span class="key">word2vec</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
-            <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">decline_rate</span>: <span class="value">int</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">doc2vec</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">include_neighbors</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">fasttext</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
-            <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_pretrained_fb_model</span>: <span class="value">bool</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">alacarte</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">context_window_size</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">add_paths</span>: <span class="value">bool</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">temporal_rw</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">trw_workers</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">time_weight</span>: <span class="value">str</span></li>
-            <li class='no-bullet'><span class="key-leaf">half_life</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">wv_workers</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
-            <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">decline_rate</span>: <span class="value">int</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">flash</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">provd</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
-            <li class='no-bullet'><span class="key-leaf">k</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">mpl</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">n_time_windows</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">n_neighbors</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">contamination</span>: <span class="value">float</span></li>
-        </ul>
-        </li>
     </ul>
     </li>
     <li class='bullet'><span class="key">feat_inference</span>
@@ -97,4 +21,4 @@
 </div>
 
 1. <b>Available options (one selection)</b>:<br><br>train<br>all
-2. <b>Available options (one selection)</b>:<br><br>word2vec<br>doc2vec<br>fasttext<br>alacarte<br>hierarchical_hashing<br>temporal_rw<br>flash<br>magic<br>only_type<br>only_ones<br>provd
+2. <b>Available options (one selection)</b>:<br><br>word2vec<br>doc2vec<br>fasttext<br>alacarte<br>temporal_rw<br>flash<br>provd<br>hierarchical_hashing<br>magic<br>only_type<br>only_ones

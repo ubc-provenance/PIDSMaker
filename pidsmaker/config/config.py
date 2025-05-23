@@ -271,6 +271,75 @@ class AND(list):
 class OR(list):
     pass
 
+FEATURIZATIONS_CFG = {
+    "word2vec": {
+        "alpha": float,
+        "window_size": int,
+        "min_count": int,
+        "use_skip_gram": bool,
+        "num_workers": int,
+        "epochs": int,
+        "compute_loss": bool,
+        "negative": int,
+        "decline_rate": int,
+    },
+    "doc2vec": {
+        "include_neighbors": bool,
+        "epochs": int,
+        "alpha": float,
+    },
+    "fasttext": {
+        "min_count": int,
+        "alpha": float,
+        "window_size": int,
+        "negative": int,
+        "num_workers": int,
+        "use_pretrained_fb_model": bool,
+    },
+    "alacarte": {
+        "walk_length": int,
+        "num_walks": int,
+        "epochs": int,
+        "context_window_size": int,
+        "min_count": int,
+        "use_skip_gram": bool,
+        "num_workers": int,
+        "compute_loss": bool,
+        "add_paths": bool,
+    },
+    "temporal_rw": {
+        "walk_length": int,
+        "num_walks": int,
+        "trw_workers": int,
+        "time_weight": str,
+        "half_life": int,
+        "window_size": int,
+        "min_count": int,
+        "use_skip_gram": bool,
+        "wv_workers": int,
+        "epochs": int,
+        "compute_loss": bool,
+        "negative": int,
+        "decline_rate": int,
+    },
+    "flash": {
+        "min_count": int,
+        "workers": int,
+    },
+    "provd": {
+        "alpha": float,
+        "k": int,
+        "mpl": int,
+        "n_time_windows": int,
+        "n_neighbors": int,
+        "contamination": float,
+    },
+    "hierarchical_hashing": {},
+    "magic": {},
+    "only_type": {},
+    "only_ones": {},
+}
+
 ENCODERS_CFG = {
     "tgn": {
         "tgn_memory_dim": int,
@@ -346,28 +415,6 @@ OBJECTIVES_EDGE_LEVEL = [
 ]
 OBJECTIVES = OBJECTIVES_NODE_LEVEL + OBJECTIVES_EDGE_LEVEL
 OBJECTIVES_CFG = {
-    # Reconstruction-based
-    "reconstruct_node_features": {
-        "loss": (str, OR(RECON_LOSSES)),
-        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
-        **DECODERS_CFG,
-    },
-    "reconstruct_node_embeddings": {
-        "loss": (str, OR(RECON_LOSSES)),
-        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
-        **DECODERS_CFG,
-    },
-    "reconstruct_edge_embeddings": {
-        "loss": (str, OR(RECON_LOSSES)),
-        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
-        **DECODERS_CFG,
-    },
-    "reconstruct_masked_features": {
-        "loss": (str, OR(RECON_LOSSES)),
-        "mask_rate": float,
-        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
-        **DECODERS_CFG,
-    },
     # Prediction-based
     "predict_edge_type": {
         "decoder": (str, OR(list(DECODERS_CFG.keys()))),
@@ -396,6 +443,28 @@ OBJECTIVES_CFG = {
         "inner_product": {
             "dropout": float,
         },
+    },
+    # Reconstruction-based
+    "reconstruct_node_features": {
+        "loss": (str, OR(RECON_LOSSES)),
+        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
+        **DECODERS_CFG,
+    },
+    "reconstruct_node_embeddings": {
+        "loss": (str, OR(RECON_LOSSES)),
+        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
+        **DECODERS_CFG,
+    },
+    "reconstruct_edge_embeddings": {
+        "loss": (str, OR(RECON_LOSSES)),
+        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
+        **DECODERS_CFG,
+    },
+    "reconstruct_masked_features": {
+        "loss": (str, OR(RECON_LOSSES)),
+        "mask_rate": float,
+        "decoder": (str, OR(list(DECODERS_CFG.keys()))),
+        **DECODERS_CFG,
     },
 }
 
@@ -442,70 +511,8 @@ TASK_ARGS = {
             "use_seed": bool,
             "training_split": (str, OR(["train", "all"])),
             "multi_dataset_training": bool,
-            "used_method": (str, OR(["word2vec", "doc2vec", "fasttext", "alacarte", "hierarchical_hashing", "temporal_rw", \
-                "flash", "magic", "only_type", "only_ones", "provd"])),
-            "word2vec": {
-                "alpha": float,
-                "window_size": int,
-                "min_count": int,
-                "use_skip_gram": bool,
-                "num_workers": int,
-                "epochs": int,
-                "compute_loss": bool,
-                "negative": int,
-                "decline_rate": int,
-            },
-            "doc2vec": {
-                "include_neighbors": bool,
-                "epochs": int,
-                "alpha": float,
-            },
-            "fasttext": {
-                "min_count": int,
-                "alpha": float,
-                "window_size": int,
-                "negative": int,
-                "num_workers": int,
-                "use_pretrained_fb_model": bool,
-            },
-            "alacarte": {
-                "walk_length": int,
-                "num_walks": int,
-                "epochs": int,
-                "context_window_size": int,
-                "min_count": int,
-                "use_skip_gram": bool,
-                "num_workers": int,
-                "compute_loss": bool,
-                "add_paths": bool,
-            },
-            "temporal_rw": {
-                "walk_length": int,
-                "num_walks": int,
-                "trw_workers": int,
-                "time_weight": str,
-                "half_life": int,
-                "window_size": int,
-                "min_count": int,
-                "use_skip_gram": bool,
-                "wv_workers": int,
-                "epochs": int,
-                "compute_loss": bool,
-                "negative": int,
-                "decline_rate": int,
-            },
-            "flash": {
-                "min_count": int,
-                "workers": int,
-            },
-            "provd": {
-                "alpha": float,
-                "k": int,
-                "mpl": int,
-                "n_time_windows": int,
-                "n_neighbors": int,
-                "contamination": float,
-            },
+            "used_method": (str, OR(list(FEATURIZATIONS_CFG.keys()))),
+            **FEATURIZATIONS_CFG,
         },
         "feat_inference": {
             "to_remove": bool,  # TODO: remove

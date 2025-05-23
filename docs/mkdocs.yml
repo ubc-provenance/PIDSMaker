@@ -30,7 +30,7 @@ theme:
     static_templates:
       - 404.html
     palette:
-      scheme: slate
+      scheme: default
       primary: indigo
 
 # Extensions
