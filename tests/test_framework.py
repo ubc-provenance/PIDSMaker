@@ -5,7 +5,7 @@ from itertools import product
 import pytest
 import wandb
 
-from pidsmaker import benchmark
+from pidsmaker import main
 from pidsmaker.config import (
     DEFAULT_ROOT_ARTIFACT_DIR,
     get_runtime_required_args,
@@ -80,15 +80,15 @@ class TestTransformation:
         if transformation in self.failing_with_tgn:
             with pytest.raises(ValueError):
                 cfg = prepare_cfg("tests", dataset, transformation=transformation)
-                benchmark.main(cfg)
+                main.main(cfg)
         else:
             cfg = prepare_cfg("tests", dataset, transformation=transformation)
-            benchmark.main(cfg)
+            main.main(cfg)
 
     @pytest.mark.parametrize("transformation", transformations)
     def test_transformations(self, dataset, transformation):
         cfg = prepare_cfg("nodlink", dataset, transformation=transformation)
-        benchmark.main(cfg)
+        main.main(cfg)
 
 
 class TestFeaturization:
@@ -107,7 +107,7 @@ class TestFeaturization:
     @pytest.mark.parametrize("featurization", featurizations)
     def test_featurizations(self, dataset, featurization):
         cfg = prepare_cfg("tests", dataset, featurization=featurization)
-        benchmark.main(cfg)
+        main.main(cfg)
 
 
 class TestEncoderObjective:
@@ -132,13 +132,13 @@ class TestEncoderObjective:
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
     def test_encoder_objective_pairs(self, dataset, encoder, objective):
         cfg = prepare_cfg("tests", dataset, encoder=encoder, objective=objective)
-        benchmark.main(cfg)
+        main.main(cfg)
 
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
     def test_encoder_tgn_objective_pairs(self, dataset, encoder, objective):
         encoder_combined = f"{encoder},tgn"
         cfg = prepare_cfg("tests", dataset, encoder=encoder_combined, objective=objective)
-        benchmark.main(cfg)
+        main.main(cfg)
 
 
 class TestDecoderObjective:
@@ -164,14 +164,14 @@ class TestDecoderObjective:
     )
     def test_decoder_objective_pairs_node_level_success(self, dataset, decoder, objective):
         cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
-        benchmark.main(cfg)
+        main.main(cfg)
 
     @pytest.mark.parametrize(
         "decoder,objective", list(product(edge_decoders, edge_level_objectives))
     )
     def test_decoder_objective_pairs_edge_level_success(self, dataset, decoder, objective):
         cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
-        benchmark.main(cfg)
+        main.main(cfg)
 
     @pytest.mark.parametrize(
         "decoder,objective", list(product(node_decoders, edge_level_objectives))
@@ -179,7 +179,7 @@ class TestDecoderObjective:
     def test_decoder_objective_pairs_node_level_fail(self, dataset, decoder, objective):
         with pytest.raises(ValueError):
             cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
-            benchmark.main(cfg)
+            main.main(cfg)
 
     @pytest.mark.parametrize(
         "decoder,objective", list(product(edge_decoders, node_level_objectives))
@@ -187,7 +187,7 @@ class TestDecoderObjective:
     def test_decoder_objective_pairs_edge_level_fail(self, dataset, decoder, objective):
         with pytest.raises(ValueError):
             cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
-            benchmark.main(cfg)
+            main.main(cfg)
 
 
 class TestSystems:
@@ -206,4 +206,4 @@ class TestSystems:
     @pytest.mark.parametrize("system", systems)
     def test_systems(self, dataset, system):
         cfg = prepare_cfg(system, dataset)
-        benchmark.main(cfg)
+        main.main(cfg)

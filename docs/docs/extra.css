@@ -7,6 +7,26 @@
     color: #008000;
 }
 
-ul li {
+.literals {
+    color: #fff;
+    font-size: 70%;
+}
+
+.annotate ul li {
     margin-bottom: 0 !important;
 }
+
+.annotate ul {
+    list-style-type: disc;
+    margin-left: 2em;
+    margin-top: 0;
+}
+
+.annotate li.no-bullet {
+    list-style-type: none;
+}
+
+.annotate li.bullet {
+    margin-top: 0.25em;
+}
+

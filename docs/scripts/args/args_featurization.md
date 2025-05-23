@@ -1,64 +1,100 @@
-- <span class="key">**feat_training**</span>
-    - <span class="key">**emb_dim**</span>: <span class="value">int</span>
-    - <span class="key">**epochs**</span>: <span class="value">int</span>
-    - <span class="key">**use_seed**</span>: <span class="value">bool</span>
-    - <span class="key">**training_split**</span>: <span class="value">str</span>
-    - <span class="key">**multi_dataset_training**</span>: <span class="value">bool</span>
-    - <span class="key">**used_method**</span>: <span class="value">str</span>
-    - <span class="key">**flash**</span>
-        - <span class="key">**min_count**</span>: <span class="value">int</span>
-        - <span class="key">**workers**</span>: <span class="value">int</span>
-    - <span class="key">**temporal_rw**</span>
-        - <span class="key">**walk_length**</span>: <span class="value">int</span>
-        - <span class="key">**num_walks**</span>: <span class="value">int</span>
-        - <span class="key">**trw_workers**</span>: <span class="value">int</span>
-        - <span class="key">**time_weight**</span>: <span class="value">str</span>
-        - <span class="key">**half_life**</span>: <span class="value">int</span>
-        - <span class="key">**window_size**</span>: <span class="value">int</span>
-        - <span class="key">**min_count**</span>: <span class="value">int</span>
-        - <span class="key">**use_skip_gram**</span>: <span class="value">bool</span>
-        - <span class="key">**wv_workers**</span>: <span class="value">int</span>
-        - <span class="key">**epochs**</span>: <span class="value">int</span>
-        - <span class="key">**compute_loss**</span>: <span class="value">bool</span>
-        - <span class="key">**negative**</span>: <span class="value">int</span>
-        - <span class="key">**decline_rate**</span>: <span class="value">int</span>
-    - <span class="key">**alacarte**</span>
-        - <span class="key">**walk_length**</span>: <span class="value">int</span>
-        - <span class="key">**num_walks**</span>: <span class="value">int</span>
-        - <span class="key">**epochs**</span>: <span class="value">int</span>
-        - <span class="key">**context_window_size**</span>: <span class="value">int</span>
-        - <span class="key">**min_count**</span>: <span class="value">int</span>
-        - <span class="key">**use_skip_gram**</span>: <span class="value">bool</span>
-        - <span class="key">**num_workers**</span>: <span class="value">int</span>
-        - <span class="key">**compute_loss**</span>: <span class="value">bool</span>
-        - <span class="key">**add_paths**</span>: <span class="value">bool</span>
-    - <span class="key">**doc2vec**</span>
-        - <span class="key">**include_neighbors**</span>: <span class="value">bool</span>
-        - <span class="key">**epochs**</span>: <span class="value">int</span>
-        - <span class="key">**alpha**</span>: <span class="value">float</span>
-    - <span class="key">**word2vec**</span>
-        - <span class="key">**alpha**</span>: <span class="value">float</span>
-        - <span class="key">**window_size**</span>: <span class="value">int</span>
-        - <span class="key">**min_count**</span>: <span class="value">int</span>
-        - <span class="key">**use_skip_gram**</span>: <span class="value">bool</span>
-        - <span class="key">**num_workers**</span>: <span class="value">int</span>
-        - <span class="key">**epochs**</span>: <span class="value">int</span>
-        - <span class="key">**compute_loss**</span>: <span class="value">bool</span>
-        - <span class="key">**negative**</span>: <span class="value">int</span>
-        - <span class="key">**decline_rate**</span>: <span class="value">int</span>
-    - <span class="key">**provd**</span>
-        - <span class="key">**alpha**</span>: <span class="value">float</span>
-        - <span class="key">**k**</span>: <span class="value">int</span>
-        - <span class="key">**mpl**</span>: <span class="value">int</span>
-        - <span class="key">**n_time_windows**</span>: <span class="value">int</span>
-        - <span class="key">**n_neighbors**</span>: <span class="value">int</span>
-        - <span class="key">**contamination**</span>: <span class="value">float</span>
-    - <span class="key">**fasttext**</span>
-        - <span class="key">**min_count**</span>: <span class="value">int</span>
-        - <span class="key">**alpha**</span>: <span class="value">float</span>
-        - <span class="key">**window_size**</span>: <span class="value">int</span>
-        - <span class="key">**negative**</span>: <span class="value">int</span>
-        - <span class="key">**num_workers**</span>: <span class="value">int</span>
-        - <span class="key">**use_pretrained_fb_model**</span>: <span class="value">bool</span>
-- <span class="key">**feat_inference**</span>
-    - <span class="key">**to_remove**</span>: <span class="value">bool</span>
+<div class="annotate">
+
+<ul>
+    <li class='bullet'><span class="key">feat_training</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">emb_dim</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_seed</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">training_split</span>: <span class="value">str (1)</span></li>
+        <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (2)</span></li>
+        <li class='bullet'><span class="key">word2vec</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+            <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">decline_rate</span>: <span class="value">int</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">doc2vec</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">include_neighbors</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">fasttext</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+            <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_pretrained_fb_model</span>: <span class="value">bool</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">alacarte</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">context_window_size</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">add_paths</span>: <span class="value">bool</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">temporal_rw</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">trw_workers</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">time_weight</span>: <span class="value">str</span></li>
+            <li class='no-bullet'><span class="key-leaf">half_life</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">wv_workers</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">decline_rate</span>: <span class="value">int</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">flash</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">provd</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+            <li class='no-bullet'><span class="key-leaf">k</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">mpl</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">n_time_windows</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">n_neighbors</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">contamination</span>: <span class="value">float</span></li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">feat_inference</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">to_remove</span>: <span class="value">bool</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+1. <b>Available options (one selection)</b>:<br><br>train<br>all
+2. <b>Available options (one selection)</b>:<br><br>word2vec<br>doc2vec<br>fasttext<br>alacarte<br>hierarchical_hashing<br>temporal_rw<br>flash<br>magic<br>only_type<br>only_ones<br>provd

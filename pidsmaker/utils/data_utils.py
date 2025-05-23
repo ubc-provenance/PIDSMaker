@@ -391,7 +391,7 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
 
 
 def batch_temporal_data(
-    data: CollatableTemporalData, batch_size: float, batch_mode: str, cfg, device
+    data: CollatableTemporalData, batch_size: int, batch_mode: str, cfg, device
 ) -> list[CollatableTemporalData]:
     if batch_mode == "edges":
         num_batches = math.ceil(

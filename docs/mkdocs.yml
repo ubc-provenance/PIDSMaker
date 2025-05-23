@@ -37,6 +37,7 @@ theme:
 markdown_extensions:
   - markdown.extensions.admonition
   - markdown.extensions.attr_list
+  - md_in_html
   - markdown.extensions.codehilite:
       guess_lang: false
   - markdown.extensions.def_list

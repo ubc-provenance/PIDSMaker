@@ -147,7 +147,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
 
     def run_pipeline_with_experiments(cfg):
         # Standard behavior: we run the whole pipeline
-        if cfg.experiment.used_method == "no_experiment":
+        if cfg.experiment.used_method == "none":
             log("Running pipeline in 'Standard' mode.")
             metrics, times = run_pipeline(cfg)
             wandb.log(metrics)

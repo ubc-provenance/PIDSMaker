@@ -124,7 +124,7 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--cpu", action="store_true", help="Whether to run the framework on CPU rather than GPU"
     )
     parser.add_argument(
-        "--experiment", type=str, default="no_experiment", help="The experiment yml config file"
+        "--experiment", type=str, default="none", help="The experiment yml config file"
     )
     parser.add_argument(
         "--tuning_mode",
@@ -370,19 +370,26 @@ def validate_yml_file(yml_file: str, dictionary: dict):
             if key in user_config:
                 sub_config = user_config[key]
                 if isinstance(sub_tasks, dict):
-                    # Recursive check for sub-dictionaries
                     validate_config(sub_config, sub_tasks, path + [key])
                 else:
-                    # Check for None values in parameters
                     if sub_config is None:
                         raise ValueError(
                             f"Parameter '{' > '.join(path + [key])}' should not be None."
                         )
-                        # Optional: check for type correctness
-                    if not isinstance(sub_config, sub_tasks):
+                    is_literal_str =  isinstance(sub_tasks, tuple)
+                    expected_type = sub_tasks[0] if is_literal_str else sub_tasks
+                        
+                    if not isinstance(sub_config, expected_type):
                         raise TypeError(
-                            f"Parameter '{' > '.join(path + [key])}' should be of type {sub_tasks.__name__}."
+                            f"Parameter '{' > '.join(path + [key])}' should be of type {expected_type.__name__}."
                         )
+                        
+                    if is_literal_str:
+                        user_literal_str = list(map(lambda x: x.strip(), sub_config.split(",")))
+                        expected_values = sub_tasks[1]
+                        for e in user_literal_str:
+                            if e not in expected_values:
+                                raise ValueError(f"Invalid argument {key} with value {e}. Expected values: {expected_values}")
 
     validate_config(user_config, dictionary)
 
@@ -732,6 +739,7 @@ def add_cfg_args_to_parser(cfg, parser):
     separator_dict = nested_dict_to_separator_dict(cfg)
 
     for k, v in separator_dict.items():
+        v = v[0] if isinstance(v, tuple) else v
         is_bool = v == type(True)
         dtype = str2bool if is_bool else v
         parser.add_argument(f"--{k}", type=dtype)
