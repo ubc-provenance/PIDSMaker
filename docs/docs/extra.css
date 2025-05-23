@@ -1,0 +1,12 @@
+.key {
+    /* color: #0000FF; */
+    font-weight: bold;
+}
+
+.value {
+    color: #008000;
+}
+
+ul li {
+    margin-bottom: 0 !important;
+}

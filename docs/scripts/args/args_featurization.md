@@ -1,0 +1,64 @@
+- <span class="key">**feat_training**</span>
+    - <span class="key">**emb_dim**</span>: <span class="value">int</span>
+    - <span class="key">**epochs**</span>: <span class="value">int</span>
+    - <span class="key">**use_seed**</span>: <span class="value">bool</span>
+    - <span class="key">**training_split**</span>: <span class="value">str</span>
+    - <span class="key">**multi_dataset_training**</span>: <span class="value">bool</span>
+    - <span class="key">**used_method**</span>: <span class="value">str</span>
+    - <span class="key">**flash**</span>
+        - <span class="key">**min_count**</span>: <span class="value">int</span>
+        - <span class="key">**workers**</span>: <span class="value">int</span>
+    - <span class="key">**temporal_rw**</span>
+        - <span class="key">**walk_length**</span>: <span class="value">int</span>
+        - <span class="key">**num_walks**</span>: <span class="value">int</span>
+        - <span class="key">**trw_workers**</span>: <span class="value">int</span>
+        - <span class="key">**time_weight**</span>: <span class="value">str</span>
+        - <span class="key">**half_life**</span>: <span class="value">int</span>
+        - <span class="key">**window_size**</span>: <span class="value">int</span>
+        - <span class="key">**min_count**</span>: <span class="value">int</span>
+        - <span class="key">**use_skip_gram**</span>: <span class="value">bool</span>
+        - <span class="key">**wv_workers**</span>: <span class="value">int</span>
+        - <span class="key">**epochs**</span>: <span class="value">int</span>
+        - <span class="key">**compute_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**negative**</span>: <span class="value">int</span>
+        - <span class="key">**decline_rate**</span>: <span class="value">int</span>
+    - <span class="key">**alacarte**</span>
+        - <span class="key">**walk_length**</span>: <span class="value">int</span>
+        - <span class="key">**num_walks**</span>: <span class="value">int</span>
+        - <span class="key">**epochs**</span>: <span class="value">int</span>
+        - <span class="key">**context_window_size**</span>: <span class="value">int</span>
+        - <span class="key">**min_count**</span>: <span class="value">int</span>
+        - <span class="key">**use_skip_gram**</span>: <span class="value">bool</span>
+        - <span class="key">**num_workers**</span>: <span class="value">int</span>
+        - <span class="key">**compute_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**add_paths**</span>: <span class="value">bool</span>
+    - <span class="key">**doc2vec**</span>
+        - <span class="key">**include_neighbors**</span>: <span class="value">bool</span>
+        - <span class="key">**epochs**</span>: <span class="value">int</span>
+        - <span class="key">**alpha**</span>: <span class="value">float</span>
+    - <span class="key">**word2vec**</span>
+        - <span class="key">**alpha**</span>: <span class="value">float</span>
+        - <span class="key">**window_size**</span>: <span class="value">int</span>
+        - <span class="key">**min_count**</span>: <span class="value">int</span>
+        - <span class="key">**use_skip_gram**</span>: <span class="value">bool</span>
+        - <span class="key">**num_workers**</span>: <span class="value">int</span>
+        - <span class="key">**epochs**</span>: <span class="value">int</span>
+        - <span class="key">**compute_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**negative**</span>: <span class="value">int</span>
+        - <span class="key">**decline_rate**</span>: <span class="value">int</span>
+    - <span class="key">**provd**</span>
+        - <span class="key">**alpha**</span>: <span class="value">float</span>
+        - <span class="key">**k**</span>: <span class="value">int</span>
+        - <span class="key">**mpl**</span>: <span class="value">int</span>
+        - <span class="key">**n_time_windows**</span>: <span class="value">int</span>
+        - <span class="key">**n_neighbors**</span>: <span class="value">int</span>
+        - <span class="key">**contamination**</span>: <span class="value">float</span>
+    - <span class="key">**fasttext**</span>
+        - <span class="key">**min_count**</span>: <span class="value">int</span>
+        - <span class="key">**alpha**</span>: <span class="value">float</span>
+        - <span class="key">**window_size**</span>: <span class="value">int</span>
+        - <span class="key">**negative**</span>: <span class="value">int</span>
+        - <span class="key">**num_workers**</span>: <span class="value">int</span>
+        - <span class="key">**use_pretrained_fb_model**</span>: <span class="value">bool</span>
+- <span class="key">**feat_inference**</span>
+    - <span class="key">**to_remove**</span>: <span class="value">bool</span>

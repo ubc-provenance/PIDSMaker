@@ -1,0 +1,21 @@
+- <span class="key">**build_graphs**</span>
+    - <span class="key">**used_method**</span>: <span class="value">str</span>
+    - <span class="key">**use_all_files**</span>: <span class="value">bool</span>
+    - <span class="key">**mimicry_edge_num**</span>: <span class="value">int</span>
+    - <span class="key">**time_window_size**</span>: <span class="value">float</span>
+    - <span class="key">**use_hashed_label**</span>: <span class="value">bool</span>
+    - <span class="key">**fuse_edge**</span>: <span class="value">bool</span>
+    - <span class="key">**node_label_features**</span>
+        - <span class="key">**subject**</span>: <span class="value">str</span>
+        - <span class="key">**file**</span>: <span class="value">str</span>
+        - <span class="key">**netflow**</span>: <span class="value">str</span>
+    - <span class="key">**multi_dataset**</span>: <span class="value">str</span>
+- <span class="key">**transformation**</span>
+    - <span class="key">**used_methods**</span>: <span class="value">str</span>
+    - <span class="key">**rcaid_pseudo_graph**</span>
+        - <span class="key">**use_pruning**</span>: <span class="value">bool</span>
+    - <span class="key">**synthetic_attack_naive**</span>
+        - <span class="key">**num_attacks**</span>: <span class="value">int</span>
+        - <span class="key">**num_malicious_process**</span>: <span class="value">int</span>
+        - <span class="key">**num_unauthorized_file_access**</span>: <span class="value">int</span>
+        - <span class="key">**process_selection_method**</span>: <span class="value">str</span>

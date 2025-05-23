@@ -1,0 +1,365 @@
+- <span class="key">**graph_preprocessing**</span>
+    - <span class="key">**node_features**</span>: <span class="value">str</span>
+    - <span class="key">**edge_features**</span>: <span class="value">str</span>
+    - <span class="key">**multi_dataset_training**</span>: <span class="value">bool</span>
+    - <span class="key">**fix_buggy_graph_reindexer**</span>: <span class="value">bool</span>
+    - <span class="key">**global_batching**</span>
+        - <span class="key">**used_method**</span>: <span class="value">str</span>
+        - <span class="key">**global_batching_batch_size**</span>: <span class="value">int</span>
+        - <span class="key">**global_batching_batch_size_inference**</span>: <span class="value">int</span>
+    - <span class="key">**intra_graph_batching**</span>
+        - <span class="key">**used_methods**</span>: <span class="value">str</span>
+        - <span class="key">**edges**</span>
+            - <span class="key">**intra_graph_batch_size**</span>: <span class="value">int</span>
+        - <span class="key">**tgn_last_neighbor**</span>
+            - <span class="key">**tgn_neighbor_size**</span>: <span class="value">int</span>
+            - <span class="key">**tgn_neighbor_n_hop**</span>: <span class="value">int</span>
+            - <span class="key">**fix_buggy_orthrus_TGN**</span>: <span class="value">bool</span>
+            - <span class="key">**fix_tgn_neighbor_loader**</span>: <span class="value">bool</span>
+            - <span class="key">**directed**</span>: <span class="value">bool</span>
+            - <span class="key">**insert_neighbors_before**</span>: <span class="value">bool</span>
+    - <span class="key">**inter_graph_batching**</span>
+        - <span class="key">**used_method**</span>: <span class="value">str</span>
+        - <span class="key">**inter_graph_batch_size**</span>: <span class="value">int</span>
+- <span class="key">**gnn_training**</span>
+    - <span class="key">**use_seed**</span>: <span class="value">bool</span>
+    - <span class="key">**num_epochs**</span>: <span class="value">int</span>
+    - <span class="key">**patience**</span>: <span class="value">int</span>
+    - <span class="key">**lr**</span>: <span class="value">float</span>
+    - <span class="key">**weight_decay**</span>: <span class="value">float</span>
+    - <span class="key">**node_hid_dim**</span>: <span class="value">int</span>
+    - <span class="key">**node_out_dim**</span>: <span class="value">int</span>
+    - <span class="key">**grad_accumulation**</span>: <span class="value">int</span>
+    - <span class="key">**inference_device**</span>: <span class="value">str</span>
+    - <span class="key">**used_method**</span>: <span class="value">str</span>
+    - <span class="key">**flash**</span>
+        - <span class="key">**in_channel**</span>: <span class="value">int</span>
+        - <span class="key">**out_channel**</span>: <span class="value">int</span>
+        - <span class="key">**lr**</span>: <span class="value">float</span>
+        - <span class="key">**weight_decay**</span>: <span class="value">float</span>
+        - <span class="key">**epochs**</span>: <span class="value">int</span>
+    - <span class="key">**encoder**</span>
+        - <span class="key">**dropout**</span>: <span class="value">float</span>
+        - <span class="key">**used_methods**</span>: <span class="value">str</span>
+        - <span class="key">**tgn**</span>
+            - <span class="key">**tgn_memory_dim**</span>: <span class="value">int</span>
+            - <span class="key">**tgn_time_dim**</span>: <span class="value">int</span>
+            - <span class="key">**use_node_feats_in_gnn**</span>: <span class="value">bool</span>
+            - <span class="key">**use_memory**</span>: <span class="value">bool</span>
+            - <span class="key">**use_time_order_encoding**</span>: <span class="value">bool</span>
+            - <span class="key">**project_src_dst**</span>: <span class="value">bool</span>
+        - <span class="key">**graph_attention**</span>
+            - <span class="key">**activation**</span>: <span class="value">str</span>
+            - <span class="key">**num_heads**</span>: <span class="value">int</span>
+            - <span class="key">**concat**</span>: <span class="value">bool</span>
+            - <span class="key">**flow**</span>: <span class="value">str</span>
+        - <span class="key">**sage**</span>
+            - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**GLSTM**</span>
+            - <span class="key">**in_dim**</span>: <span class="value">int</span>
+            - <span class="key">**out_dim**</span>: <span class="value">int</span>
+        - <span class="key">**magic_gat**</span>
+            - <span class="key">**num_layers**</span>: <span class="value">int</span>
+            - <span class="key">**num_heads**</span>: <span class="value">int</span>
+            - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+            - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+            - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**custom_mlp**</span>
+            - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+    - <span class="key">**decoder**</span>
+        - <span class="key">**used_methods**</span>: <span class="value">str</span>
+        - <span class="key">**reconstruct_node_features**</span>
+            - <span class="key">**loss**</span>: <span class="value">str</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**reconstruct_node_embeddings**</span>
+            - <span class="key">**loss**</span>: <span class="value">str</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**reconstruct_edge_embeddings**</span>
+            - <span class="key">**loss**</span>: <span class="value">str</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**reconstruct_masked_features**</span>
+            - <span class="key">**mask_rate**</span>: <span class="value">float</span>
+            - <span class="key">**loss**</span>: <span class="value">str</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**predict_edge_type**</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+            - <span class="key">**balanced_loss**</span>: <span class="value">bool</span>
+            - <span class="key">**use_triplet_types**</span>: <span class="value">bool</span>
+        - <span class="key">**predict_node_type**</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+            - <span class="key">**balanced_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**predict_masked_struct**</span>
+            - <span class="key">**loss**</span>: <span class="value">str</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+            - <span class="key">**balanced_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**detect_edge_few_shot**</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+        - <span class="key">**predict_edge_contrastive**</span>
+            - <span class="key">**decoder**</span>: <span class="value">str</span>
+            - <span class="key">**edge_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+            - <span class="key">**node_mlp**</span>
+                - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+            - <span class="key">**magic_gat**</span>
+                - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                - <span class="key">**activation**</span>: <span class="value">str</span>
+            - <span class="key">**inner_product**</span>
+                - <span class="key">**dropout**</span>: <span class="value">float</span>
+        - <span class="key">**use_few_shot**</span>: <span class="value">bool</span>
+        - <span class="key">**few_shot**</span>
+            - <span class="key">**include_attacks_in_ssl_training**</span>: <span class="value">bool</span>
+            - <span class="key">**freeze_encoder**</span>: <span class="value">bool</span>
+            - <span class="key">**num_epochs_few_shot**</span>: <span class="value">int</span>
+            - <span class="key">**patience_few_shot**</span>: <span class="value">int</span>
+            - <span class="key">**lr_few_shot**</span>: <span class="value">float</span>
+            - <span class="key">**weight_decay_few_shot**</span>: <span class="value">float</span>
+            - <span class="key">**decoder**</span>
+                - <span class="key">**used_methods**</span>: <span class="value">str</span>
+                - <span class="key">**reconstruct_node_features**</span>
+                    - <span class="key">**loss**</span>: <span class="value">str</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                - <span class="key">**reconstruct_node_embeddings**</span>
+                    - <span class="key">**loss**</span>: <span class="value">str</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                - <span class="key">**reconstruct_edge_embeddings**</span>
+                    - <span class="key">**loss**</span>: <span class="value">str</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                - <span class="key">**reconstruct_masked_features**</span>
+                    - <span class="key">**mask_rate**</span>: <span class="value">float</span>
+                    - <span class="key">**loss**</span>: <span class="value">str</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                - <span class="key">**predict_edge_type**</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                    - <span class="key">**balanced_loss**</span>: <span class="value">bool</span>
+                    - <span class="key">**use_triplet_types**</span>: <span class="value">bool</span>
+                - <span class="key">**predict_node_type**</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                    - <span class="key">**balanced_loss**</span>: <span class="value">bool</span>
+                - <span class="key">**predict_masked_struct**</span>
+                    - <span class="key">**loss**</span>: <span class="value">str</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                    - <span class="key">**balanced_loss**</span>: <span class="value">bool</span>
+                - <span class="key">**detect_edge_few_shot**</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                - <span class="key">**predict_edge_contrastive**</span>
+                    - <span class="key">**decoder**</span>: <span class="value">str</span>
+                    - <span class="key">**edge_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                        - <span class="key">**src_dst_projection_coef**</span>: <span class="value">int</span>
+                    - <span class="key">**node_mlp**</span>
+                        - <span class="key">**architecture_str**</span>: <span class="value">str</span>
+                    - <span class="key">**magic_gat**</span>
+                        - <span class="key">**num_layers**</span>: <span class="value">int</span>
+                        - <span class="key">**num_heads**</span>: <span class="value">int</span>
+                        - <span class="key">**negative_slope**</span>: <span class="value">float</span>
+                        - <span class="key">**alpha_l**</span>: <span class="value">float</span>
+                        - <span class="key">**activation**</span>: <span class="value">str</span>
+                    - <span class="key">**inner_product**</span>
+                        - <span class="key">**dropout**</span>: <span class="value">float</span>
+- <span class="key">**evaluation**</span>
+    - <span class="key">**viz_malicious_nodes**</span>: <span class="value">bool</span>
+    - <span class="key">**ground_truth_version**</span>: <span class="value">str</span>
+    - <span class="key">**best_model_selection**</span>: <span class="value">str</span>
+    - <span class="key">**used_method**</span>: <span class="value">str</span>
+    - <span class="key">**node_evaluation**</span>
+        - <span class="key">**threshold_method**</span>: <span class="value">str</span>
+        - <span class="key">**use_dst_node_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**use_kmeans**</span>: <span class="value">bool</span>
+        - <span class="key">**kmeans_top_K**</span>: <span class="value">int</span>
+    - <span class="key">**tw_evaluation**</span>
+        - <span class="key">**threshold_method**</span>: <span class="value">str</span>
+    - <span class="key">**node_tw_evaluation**</span>
+        - <span class="key">**threshold_method**</span>: <span class="value">str</span>
+        - <span class="key">**use_dst_node_loss**</span>: <span class="value">bool</span>
+        - <span class="key">**use_kmeans**</span>: <span class="value">bool</span>
+        - <span class="key">**kmeans_top_K**</span>: <span class="value">int</span>
+    - <span class="key">**queue_evaluation**</span>
+        - <span class="key">**queue_threshold**</span>: <span class="value">int</span>
+        - <span class="key">**used_method**</span>: <span class="value">str</span>
+        - <span class="key">**kairos_idf_queue**</span>
+            - <span class="key">**include_test_set_in_IDF**</span>: <span class="value">bool</span>
+        - <span class="key">**provnet_lof_queue**</span>
+            - <span class="key">**queue_arg**</span>: <span class="value">str</span>
+    - <span class="key">**edge_evaluation**</span>
+        - <span class="key">**malicious_edge_selection**</span>: <span class="value">str</span>
+        - <span class="key">**threshold_method**</span>: <span class="value">str</span>

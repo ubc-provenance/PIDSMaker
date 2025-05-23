@@ -8,9 +8,10 @@ nav:
   - Install: ten-minute-install.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
+  - Configuration: configuration.md
   - Features:
-    - Hyperparameter Tuning: tuning.md
-    - Variability: variability.md
+    - Hyperparameter Tuning: features/tuning.md
+    - Instability: features/instability.md
   - Development: dev.md
   - Contribute: contribute.md
   - Release notes: release_notes.md
@@ -24,12 +25,13 @@ theme:
       - navigation.instant
     name: material
     icon:
-      logo: material/ninja
-    # favicon: material/ninja
+      logo: material/book-open-page-variant-outline
+    favicon: assets/logo.ico
     static_templates:
       - 404.html
     palette:
-      primary: black
+      scheme: slate
+      primary: indigo
 
 # Extensions
 markdown_extensions:
@@ -63,6 +65,7 @@ markdown_extensions:
   - pymdownx.smartsymbols
   - pymdownx.snippets:
       check_paths: true
+      base_path: .
   - pymdownx.superfences
   - pymdownx.tabbed
   - pymdownx.tasklist:
@@ -77,4 +80,7 @@ extra:
     - icon: fontawesome/brands/github-alt
       link: https://github.com/ubc-provenance/PIDSMaker
 
-copyright: Copyright &copy; 2025 Tristan Bilot
+extra_css:
+  - extra.css
+
+copyright: Copyright &copy; 2025 UBC provenance team

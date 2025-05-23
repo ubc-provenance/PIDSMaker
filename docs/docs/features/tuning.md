@@ -66,7 +66,7 @@ The path passed to `--tuning_file_path` should start from `systems/`.
 
 Once the sweep has finished, the best run can be obtained from W&B by sorting based on your desired metric.
 
-![W&B sweep](./img/sweep_sorted.png)
+![W&B sweep](../img/sweep_sorted.png)
 
 Get the hyperparameters associated with the best run and put them into a `config/tuned_baselines/{dataset}/tuned_my_system.yml`.
 

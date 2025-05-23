@@ -1,8 +1,8 @@
-# Variability
+# Instability
 
-## Measure variability across multiple iterations
+## Measure instability across multiple iterations
 
-Most systems are prone to uncertainty, with some runs reaching high performance, while others fail dramatically. To quantify this variability, we run the system multiple times using different random seeds and compute the mean and standard deviation of key performance metrics. This can be done easily by using the `--experiment=run_n_times` tag:
+Most systems are prone to instability, with some runs reaching high performance, while others fail dramatically. To quantify this instability, we run the system multiple times and compute the mean and standard deviation of key performance metrics. This can be done easily by using the `--experiment=run_n_times` tag:
 
 ```shell
 ./run.sh orthrus CADETS_E3 --tuned --experiment=run_n_times
