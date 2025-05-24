@@ -8,6 +8,7 @@ import wandb
 from pidsmaker import main
 from pidsmaker.config import (
     DEFAULT_ROOT_ARTIFACT_DIR,
+    ENCODERS_CFG,
     get_runtime_required_args,
     get_yml_cfg,
 )
@@ -111,17 +112,7 @@ class TestFeaturization:
 
 
 class TestEncoderObjective:
-    encoders = [
-        "graph_attention",
-        "sage",
-        "gat",
-        "gin",
-        "rcaid_gat",
-        "magic_gat",
-        "sum_aggregation",
-        "custom_mlp",
-        "none",
-    ]
+    encoders = [e for e in ENCODERS_CFG.keys() if e != "tgn"]
     objectives = [
         "predict_node_type",
         "reconstruct_node_embeddings",

@@ -116,8 +116,8 @@ def load_all_datasets(cfg, device, only_keep=None):
     print(f"Max node in {cfg.dataset.name}: {max_node}")
 
     graph_reindexer = GraphReindexer(
-        num_nodes=max_node,
         device=device,
+        num_nodes=max_node,
         fix_buggy_graph_reindexer=cfg.detection.graph_preprocessing.fix_buggy_graph_reindexer,
     )
 
@@ -728,7 +728,7 @@ class GraphReindexer:
     This reindexing is essential for the graph to be computed by a standard GNN model with PyG.
     """
 
-    def __init__(self, num_nodes, device, fix_buggy_graph_reindexer):
+    def __init__(self, device, num_nodes=None, fix_buggy_graph_reindexer=True):
         self.num_nodes = num_nodes
         self.device = device
         self.fix_buggy_graph_reindexer = fix_buggy_graph_reindexer
@@ -780,7 +780,7 @@ class GraphReindexer:
                     reduce="mean",
                 )
             else:
-                # NOTE: this one, used in orthrus and velox is buggy because id does the mean and then the mean which can double
+                # NOTE: this one, used in orthrus and velox is buggy because it does the mean twice, which can double
                 # the value of features if duplicates exist
                 scatter(x_src, edge_index[0], out=output, dim=0, reduce="mean")
                 scatter(x_dst, edge_index[1], out=output, dim=0, reduce="mean")
@@ -819,6 +819,9 @@ class GraphReindexer:
         Reindexes edge_index with indices starting from 0.
         Also reshapes the node features.
         """
+        if self.num_nodes is None:
+            raise ValueError(f"Graph reindexing requires `num_nodes`.")
+        
         if self.assoc is None:
             self.assoc = torch.empty((self.num_nodes,), dtype=torch.long, device=self.device)
 

@@ -25,8 +25,8 @@ def build_model(data_sample, device, cfg, max_node_num):
     msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(data_sample)
 
     graph_reindexer = GraphReindexer(
-        num_nodes=max_node_num,
         device=device,
+        num_nodes=max_node_num,
         fix_buggy_graph_reindexer=cfg.detection.graph_preprocessing.fix_buggy_graph_reindexer,
     )
 
@@ -34,7 +34,6 @@ def build_model(data_sample, device, cfg, max_node_num):
         cfg,
         msg_dim=msg_dim,
         in_dim=in_dim,
-        edge_dim=edge_dim,
         device=device,
         max_node_num=max_node_num,
     )
@@ -65,7 +64,7 @@ def model_factory(encoder, objectives, objective_few_shot, cfg, device):
     ).to(device)
 
 
-def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
+def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
@@ -75,28 +74,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     node_map = get_node_map(from_zero=True)
     edge_map = get_rel2id(cfg, from_zero=True)
 
-    # If edge features are used, we set them here
-    edge_dim = 0
-    edge_features = list(
-        map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(","))
-    )
-    for edge_feat in edge_features:
-        if edge_feat in ["edge_type", "edge_type_triplet"]:
-            edge_dim += get_num_edge_type(cfg)
-        elif edge_feat == "msg":
-            edge_dim += msg_dim
-        elif edge_feat == "time_encoding":
-            if not use_tgn:
-                raise TypeError("Edge feature `time_encoding` is only available if TGN is used.")
-            edge_dim += tgn_memory_dim
-        elif edge_feat == "none":
-            pass
-        else:
-            raise ValueError(f"Invalid edge feature {edge_feat}")
+    edge_dim = get_edge_dim(cfg, msg_dim)
 
     original_in_dim = in_dim
     if use_tgn:
-        in_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
+        in_dim = tgn_memory_dim
 
     original_edge_dim = edge_dim
 
@@ -228,6 +210,9 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
         use_memory = tgn_cfg.use_memory
         use_time_order_encoding = tgn_cfg.use_time_order_encoding
         project_src_dst = tgn_cfg.project_src_dst
+        edge_features = list(
+            map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(","))
+        )
 
         use_time_enc = "time_encoding" in cfg.detection.graph_preprocessing.edge_features
 
@@ -583,3 +568,27 @@ def get_dimensions_from_data_sample(data):
     in_dim = data.x_src.shape[1] if hasattr(data, "x_src") else data.x.shape[1]
 
     return msg_dim, edge_dim, in_dim
+
+def get_edge_dim(cfg, msg_dim):
+    edge_dim = 0
+    edge_features = list(
+        map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(","))
+    )
+    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
+    
+    for edge_feat in edge_features:
+        if edge_feat in ["edge_type", "edge_type_triplet"]:
+            edge_dim += get_num_edge_type(cfg)
+        elif edge_feat == "msg":
+            edge_dim += msg_dim
+        elif edge_feat == "time_encoding":
+            if not use_tgn:
+                raise TypeError("Edge feature `time_encoding` is only available if TGN is used.")
+            edge_dim += tgn_memory_dim
+        elif edge_feat == "none":
+            pass
+        else:
+            raise ValueError(f"Invalid edge feature {edge_feat}")
+        
+    return edge_dim

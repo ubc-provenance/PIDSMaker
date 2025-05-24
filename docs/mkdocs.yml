@@ -20,7 +20,9 @@ nav:
     - Batching and Sampling: features/batching.md
     - Instability Measurement: features/instability.md
   - Development: dev.md
-  - Contribute: contribute.md
+  - Contribute:
+    - Guidelines: contribute/guidelines.md
+    - Add a component: contribute/add-component.md
   - Release notes: release_notes.md
   
 # Theme
