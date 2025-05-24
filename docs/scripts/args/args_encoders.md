@@ -17,14 +17,37 @@
         <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int</span></li>
         <li class='no-bullet'><span class="key-leaf">concat</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">flow</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
     </ul>
     </li>
     <li class='bullet'><span class="key">sage</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">GLSTM</span>
+    <li class='bullet'><span class="key">gat</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">concat</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">flow</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">gin</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">custom_encoder</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">sum_aggregation</span>
     
     
     </li>
@@ -41,11 +64,7 @@
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">GIN</span>
-    
-    
-    </li>
-    <li class='bullet'><span class="key">sum_aggregation</span>
+    <li class='bullet'><span class="key">glstm</span>
     
     
     </li>

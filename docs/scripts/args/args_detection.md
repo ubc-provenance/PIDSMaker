@@ -3,6 +3,7 @@
 <ul>
     <li class='bullet'><span class="key">graph_preprocessing</span>
     <ul>
+        <li class='no-bullet'><span class="key-leaf">save_on_disk</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">node_features</span>: <span class="value">str (1)</span></li>
         <li class='no-bullet'><span class="key-leaf">edge_features</span>: <span class="value">str (2)</span></li>
         <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool</span></li>
@@ -144,8 +145,8 @@
 4. <b>Available options (one selection)</b>:<br><br>edges<br>tgn_last_neighbor<br>none
 5. <b>Available options (one selection)</b>:<br><br>graph_batching<br>none
 6. <b>Available options (one selection)</b>:<br><br>orthrus<br>provd
-7. <b>Available options (multi selection)</b>:<br><br>tgn<br>graph_attention<br>sage<br>GLSTM<br>rcaid_gat<br>magic_gat<br>GIN<br>sum_aggregation<br>custom_mlp<br>none
-8. <b>Available options (multi selection)</b>:<br><br>reconstruct_node_features<br>reconstruct_node_embeddings<br>reconstruct_edge_embeddings<br>reconstruct_masked_features<br>predict_edge_type<br>predict_node_type<br>predict_masked_struct<br>detect_edge_few_shot<br>predict_edge_contrastive
+7. <b>Available options (multi selection)</b>:<br><br>tgn<br>graph_attention<br>sage<br>gat<br>gin<br>custom_encoder<br>sum_aggregation<br>rcaid_gat<br>magic_gat<br>glstm<br>custom_mlp<br>none
+8. <b>Available options (multi selection)</b>:<br><br>predict_edge_type<br>predict_node_type<br>predict_masked_struct<br>detect_edge_few_shot<br>predict_edge_contrastive<br>reconstruct_node_features<br>reconstruct_node_embeddings<br>reconstruct_edge_embeddings<br>reconstruct_masked_features
 9. <b>Available options (one selection)</b>:<br><br>orthrus
 10. <b>Available options (one selection)</b>:<br><br>best_adp
 11. <b>Available options (one selection)</b>:<br><br>max_val_loss<br>mean_val_loss<br>threatrace<br>magic<br>flash<br>nodlink

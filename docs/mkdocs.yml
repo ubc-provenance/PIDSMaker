@@ -22,7 +22,6 @@ nav:
   - Development: dev.md
   - Contribute:
     - Guidelines: contribute/guidelines.md
-    - Add a component: contribute/add-component.md
   - Release notes: release_notes.md
   
 # Theme

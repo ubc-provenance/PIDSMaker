@@ -25,6 +25,10 @@
     
     
     </li>
+    <li class='bullet'><span class="key">inner_product</span>
+    
+    
+    </li>
     <li class='bullet'><span class="key">none</span>
     
     
