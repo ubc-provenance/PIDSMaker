@@ -8,10 +8,17 @@ nav:
   - Install: ten-minute-install.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
-  - Configuration: configuration.md
+  - Tutorial: tuto.md
+  - Configuration:
+    - Featurization: config/featurization.md
+    - Encoders: config/encoders.md
+    - Decoders: config/decoders.md
+    - Objectives: config/objectives.md
+    - Tasks: config/tasks.md
   - Features:
     - Hyperparameter Tuning: features/tuning.md
-    - Instability: features/instability.md
+    - Batching and Sampling: features/batching.md
+    - Instability Measurement: features/instability.md
   - Development: dev.md
   - Contribute: contribute.md
   - Release notes: release_notes.md
@@ -23,6 +30,7 @@ theme:
       - content.code.copy
       - content.code.annotate
       - navigation.instant
+      - navigation.expand
     name: material
     icon:
       logo: material/book-open-page-variant-outline
