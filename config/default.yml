@@ -64,6 +64,7 @@ detection:
         num_heads: 8
         concat: True
         flow: source_to_target
+        num_layers: 2
       tgn:
         tgn_memory_dim: 100
         tgn_time_dim: 100
@@ -73,6 +74,16 @@ detection:
         project_src_dst: True
       sage:
         activation: relu
+        num_layers: 2
+      gat:
+        activation: relu
+        num_heads: 8
+        concat: True
+        flow: source_to_target
+        num_layers: 2
+      gin:
+        activation: relu
+        num_layers: 2
       magic_gat:
         num_layers: 3
         num_heads: 4

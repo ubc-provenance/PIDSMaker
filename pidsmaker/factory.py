@@ -70,6 +70,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+    dropout = cfg.detection.gnn_training.encoder.dropout
 
     node_map = get_node_map(from_zero=True)
     edge_map = get_rel2id(cfg, from_zero=True)
@@ -105,6 +106,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     ):
         if method in ["tgn"]:
             pass
+        
+        # Basic GNN encoders
         elif method == "graph_attention":
             encoder = GraphAttentionEmbedding(
                 in_dim=in_dim,
@@ -114,10 +117,11 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 activation=activation_fn_factory(
                     cfg.detection.gnn_training.encoder.graph_attention.activation
                 ),
-                dropout=cfg.detection.gnn_training.encoder.dropout,
+                dropout=dropout,
                 num_heads=cfg.detection.gnn_training.encoder.graph_attention.num_heads,
                 concat=cfg.detection.gnn_training.encoder.graph_attention.concat,
                 flow=cfg.detection.gnn_training.encoder.graph_attention.flow,
+                num_layers=cfg.detection.gnn_training.encoder.graph_attention.num_layers,
             )
         elif method == "sage":
             encoder = SAGE(
@@ -127,9 +131,41 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 activation=activation_fn_factory(
                     cfg.detection.gnn_training.encoder.sage.activation
                 ),
-                dropout=cfg.detection.gnn_training.encoder.dropout,
+                dropout=dropout,
+                num_layers=cfg.detection.gnn_training.encoder.sage.num_layers,
             )
-        elif method == "GLSTM":
+        elif method == "gat":
+            encoder = GAT(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                activation=activation_fn_factory(
+                    cfg.detection.gnn_training.encoder.gat.activation
+                ),
+                dropout=dropout,
+                num_heads=cfg.detection.gnn_training.encoder.gat.num_heads,
+                concat=cfg.detection.gnn_training.encoder.gat.concat,
+                num_layers=cfg.detection.gnn_training.encoder.gat.num_layers,
+            )
+        elif method == "gin":
+            encoder = GIN(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                edge_dim=edge_dim or None,
+                dropout=dropout,
+                activation=activation_fn_factory(cfg.detection.gnn_training.encoder.gin.activation),
+                num_layers=cfg.detection.gnn_training.encoder.gin.num_layers,
+            )
+        elif method == "sum_aggregation":
+            encoder = SumAggregation(
+                in_dim=in_dim,
+                hid_dim=node_hid_dim,
+                out_dim=node_out_dim,
+            )
+            
+        # System-specific encoders
+        elif method == "glstm":
             encoder = GLSTM(
                 in_features=in_dim,
                 out_features=node_out_dim,
@@ -147,13 +183,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
-                dropout=cfg.detection.gnn_training.encoder.dropout,
-            )
-        elif method == "sum_aggregation":
-            encoder = SumAggregation(
-                in_dim=in_dim,
-                hid_dim=node_hid_dim,
-                out_dim=node_out_dim,
+                dropout=dropout,
             )
         elif method == "magic_gat":
             n_layers = cfg.detection.gnn_training.encoder.magic_gat.num_layers
@@ -177,14 +207,8 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 ),
                 is_decoder=False,
             )
-        elif method == "GIN":
-            encoder = GIN(
-                in_dim=in_dim,
-                hid_dim=node_hid_dim,
-                out_dim=node_out_dim,
-                edge_dim=edge_dim or None,
-                # activation=activation_fn_factory("relu"),
-            )
+            
+        # MLP encoders
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
         elif method == "custom_mlp":
@@ -192,7 +216,7 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 in_dim=in_dim,
                 out_dim=node_out_dim,
                 architecture=cfg.detection.gnn_training.encoder.custom_mlp.architecture_str,
-                dropout=cfg.detection.gnn_training.encoder.dropout,
+                dropout=dropout,
             )
         else:
             raise ValueError(f"Invalid encoder {method}")

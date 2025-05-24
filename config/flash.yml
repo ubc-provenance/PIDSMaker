@@ -54,6 +54,7 @@ detection:
       used_methods: sage
       sage:
         activation: relu
+        num_layers: 2
     decoder:
       used_methods: predict_node_type
       predict_node_type:

@@ -354,14 +354,24 @@ ENCODERS_CFG = {
         "num_heads": int,
         "concat": bool,
         "flow": str,
+        "num_layers": int,
     },
     "sage": {
         "activation": str,
+        "num_layers": int,
     },
-    "GLSTM": {
-        "in_dim": int,
-        "out_dim": int,
+    "gat": {
+        "activation": str,
+        "num_heads": int,
+        "concat": bool,
+        "flow": str,
+        "num_layers": int,
     },
+    "gin": {
+        "activation": str,
+        "num_layers": int,
+    },
+    "sum_aggregation": {},
     "rcaid_gat": {},
     "magic_gat": {
         "num_layers": int,
@@ -370,9 +380,7 @@ ENCODERS_CFG = {
         "alpha_l": float,
         "activation": str,
     },
-    "GLSTM": {},
-    "GIN": {},
-    "sum_aggregation": {},
+    "glstm": {},
     "custom_mlp": {
         "architecture_str": str,
     },

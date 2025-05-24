@@ -114,6 +114,8 @@ class TestEncoderObjective:
     encoders = [
         "graph_attention",
         "sage",
+        "gat",
+        "gin",
         "rcaid_gat",
         "magic_gat",
         "sum_aggregation",
