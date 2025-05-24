@@ -24,6 +24,7 @@ featurization:
 
 detection:
   graph_preprocessing:
+    save_on_disk: False
     node_features: node_emb,node_type
     edge_features: msg,time_encoding
     fix_buggy_graph_reindexer: False

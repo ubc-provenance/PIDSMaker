@@ -397,6 +397,7 @@ DECODERS_CFG = {
         "activation": str,
     },
     "nodlink": {},
+    "inner_product": {},
     "none": {},
 }
 
@@ -520,6 +521,7 @@ TASK_ARGS = {
     },
     "detection": {
         "graph_preprocessing": {
+            "save_on_disk": bool,
             "node_features": (str, AND(["node_type", "node_emb", "only_ones", "edges_distribution"])),
             "edge_features": (str, AND(["edge_type", "edge_type_triplet", "msg", "time_encoding", "none"])),
             "multi_dataset_training": bool,
