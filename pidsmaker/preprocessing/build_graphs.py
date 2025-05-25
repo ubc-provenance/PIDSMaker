@@ -1,17 +1,17 @@
 from pidsmaker.config import update_cfg_for_multi_dataset
 from pidsmaker.preprocessing.build_graph_methods import (
     build_magic_graphs,
-    build_orthrus_graphs,
+    build_default_graphs,
 )
 from pidsmaker.utils.utils import get_multi_datasets
 
 
 def main_from_config(cfg):
     graph_method = cfg.preprocessing.build_graphs.used_method
-    if graph_method == "orthrus":
-        build_orthrus_graphs.main(cfg)
+    if graph_method == "default":
+        build_default_graphs.main(cfg)
     elif graph_method == "magic":
-        build_orthrus_graphs.main(cfg)
+        build_default_graphs.main(cfg)
         build_magic_graphs.main(cfg)
     else:
         raise ValueError(f"Unrecognized graph method: {graph_method}")

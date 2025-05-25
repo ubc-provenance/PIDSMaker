@@ -1,6 +1,6 @@
 preprocessing:
   build_graphs:
-    used_method: orthrus
+    used_method: default
     use_all_files: True
     mimicry_edge_num: 0
     time_window_size: 15.0
@@ -33,7 +33,7 @@ detection:
     inter_graph_batching:
       used_method: none
   gnn_training:
-    used_method: orthrus
+    used_method: default
     use_seed: True
     num_epochs: 12
     patience: 3

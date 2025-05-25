@@ -502,7 +502,7 @@ THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "fl
 TASK_ARGS = {
     "preprocessing": {
         "build_graphs": {
-            "used_method": Arg(str, vals=OR(["orthrus", "magic"]), desc="The method to build time window graphs."),
+            "used_method": Arg(str, vals=OR(["default", "magic"]), desc="The method to build time window graphs."),
             "use_all_files": Arg(bool),
             "mimicry_edge_num": Arg(int),
             "time_window_size": Arg(float, desc="The size of each graph in minutes. The notation should always be float (e.g. 10.0). Supports sizes < 1.0."),
@@ -598,7 +598,7 @@ TASK_ARGS = {
             "node_out_dim": Arg(int, desc="Number of neurons in the last layer of the encoder."),
             "grad_accumulation": Arg(int, desc="Number of epochs to gather gradients before backprop."),
             "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
-            "used_method": Arg(str, vals=OR(["orthrus", "provd"]), desc="Which training pipeline use."),
+            "used_method": Arg(str, vals=OR(["default", "provd"]), desc="Which training pipeline use."),
             "encoder": {
                 "dropout": Arg(float),
                 "used_methods": Arg(str, vals=AND(list(ENCODERS_CFG.keys())),

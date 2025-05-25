@@ -111,6 +111,9 @@ from .custom_encoder import CustomEncoder
 To integrate a new system, first create a new YAML file: `config/custom_system.yml`. This file describes all the logic of our new PIDS pipeline.
 In this example, we take `orthrus` as base configuration. We only override some arguments for simplicity.
 
+!!! question
+    All available arguments for each component and task can be found in the pages under the **Configuration** section of the documentation.
+
 **Config:**
 
 ``` yaml title="config/custom_system.yml" linenums="1"

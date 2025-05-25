@@ -6,7 +6,7 @@ from pidsmaker.detection.training_methods import (
 
 def main(cfg):
     method = cfg.detection.gnn_training.used_method.strip()
-    if method == "orthrus":
+    if method == "default":
         return training_loop.main(cfg)
     elif method == "provd":
         return provd_testing.main(cfg)

@@ -41,7 +41,7 @@
 
 </div>
 
-1. The method to build time window graphs.<br><br><b>Available options (one selection)</b>:<br>`orthrus`<br>`magic`
+1. The method to build time window graphs.<br><br><b>Available options (one selection)</b>:<br>`default`<br>`magic`
 2. The size of each graph in minutes. The notation should always be float (e.g. 10.0). Supports sizes < 1.0.<br>
 3. Whether to hash the textual features.<br>
 4. Whether to fuse duplicate sequential edges into a single edge.<br>
