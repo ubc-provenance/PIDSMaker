@@ -36,6 +36,7 @@ def build_model(data_sample, device, cfg, max_node_num):
         in_dim=in_dim,
         device=device,
         max_node_num=max_node_num,
+        graph_reindexer=graph_reindexer,
     )
     objectives = objective_factory(
         cfg, in_dim=in_dim, graph_reindexer=graph_reindexer, device=device
@@ -64,7 +65,7 @@ def model_factory(encoder, objectives, objective_few_shot, cfg, device):
     ).to(device)
 
 
-def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num):
+def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer):
     node_hid_dim = cfg.detection.gnn_training.node_hid_dim
     node_out_dim = cfg.detection.gnn_training.node_out_dim
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim

@@ -60,17 +60,17 @@
 
 </div>
 
-1. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-2. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-3. <b>Available options (one selection)</b>:<br><br>cross_entropy<br>BCE
-4. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-5. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-6. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-7. <b>Available options (one selection)</b>:<br><br>SCE<br>MSE<br>MSE_sum<br>MAE<br>none
-8. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-9. <b>Available options (one selection)</b>:<br><br>SCE<br>MSE<br>MSE_sum<br>MAE<br>none
-10. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-11. <b>Available options (one selection)</b>:<br><br>SCE<br>MSE<br>MSE_sum<br>MAE<br>none
-12. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
-13. <b>Available options (one selection)</b>:<br><br>SCE<br>MSE<br>MSE_sum<br>MAE<br>none
-14. <b>Available options (one selection)</b>:<br><br>edge_mlp<br>node_mlp<br>magic_gat<br>nodlink<br>inner_product<br>none
+1. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+2. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+3. <br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
+4. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+5. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+6. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+7. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
+8. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+9. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
+10. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+11. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
+12. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+13. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
+14. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`

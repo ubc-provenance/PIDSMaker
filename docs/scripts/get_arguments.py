@@ -9,6 +9,7 @@ from pidsmaker.config import (
     ENCODERS_CFG,
     DECODERS_CFG,
     OBJECTIVES_CFG,
+    Arg,
 )
 
 def convert_types_to_strings(obj, counter=None, ignore=[]):
@@ -16,24 +17,35 @@ def convert_types_to_strings(obj, counter=None, ignore=[]):
         counter = [0]
     if isinstance(obj, dict):
         return {key: convert_types_to_strings(value, counter, ignore) for key, value in obj.items() if key not in ignore}
-    elif isinstance(obj, tuple) and len(obj) == 2 and isinstance(obj[0], type):
-        type_name = obj[0].__name__
-        values = obj[1]
+    elif isinstance(obj, Arg):
+        type_name = obj.type.__name__
+        values = obj.vals
+        desc = obj.desc
+        
+        if values is None and desc is None:
+            return type_name
+        
         counter[0] += 1
         annotation_id = counter[0]
-      
+    
         if not hasattr(convert_types_to_strings, "annotations"):
             convert_types_to_strings.annotations = []
+        
         separator = "<br>"
-        values_str = separator.join(values)
-        if isinstance(values, AND):
-            values_str = "<b>Available options (multi selection)</b>:<br><br>" + values_str
-        else:
-            values_str = "<b>Available options (one selection)</b>:<br><br>" + values_str
+        values_str = ""
+        if desc is not None:
+            values_str += desc + separator
+        
+        if values is not None:
+            if isinstance(values, AND):
+                values_str += "<br><b>Available options (multi selection)</b>:<br>"
+            else:
+                values_str += "<br><b>Available options (one selection)</b>:<br>"
+            values_str += separator.join([f"`{v}`" for v in values])
+        
         convert_types_to_strings.annotations.append((annotation_id, values_str))
         return f"{type_name} ({annotation_id})"
-    elif isinstance(obj, type):
-        return obj.__name__
+
     return obj
 
 def dict_to_markdown_list(d, indent=0):

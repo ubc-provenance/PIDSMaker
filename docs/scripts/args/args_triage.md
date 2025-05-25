@@ -18,6 +18,6 @@
 
 </div>
 
-1. <b>Available options (one selection)</b>:<br><br>depimpact
-2. <b>Available options (one selection)</b>:<br><br>component<br>shortest_path<br>1-hop<br>2-hop<br>3-hop
-3. <b>Available options (one selection)</b>:<br><br>degree<br>recon_loss<br>degree_recon
+1. Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus.<br><br><b>Available options (one selection)</b>:<br>`depimpact`
+2. <br><b>Available options (one selection)</b>:<br>`component`<br>`shortest_path`<br>`1-hop`<br>`2-hop`<br>`3-hop`
+3. <br><b>Available options (one selection)</b>:<br>`degree`<br>`recon_loss`<br>`degree_recon`

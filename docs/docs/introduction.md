@@ -44,7 +44,7 @@ The entrypoint is always `main.py` and only two arguments are mandatory:
 - `SYSTEM`: should point to an existing YML file with the same system name in `config/`. The file contains the configuration of the particular system.
 - `DATASET`: should point to an existing dataset defined within `DATASET_DEFAULT_CONFIG` in `config/config.py`. It's there that `DATASET` is mapped to the actual database name, located in the postgres container.
 
-After running the framework, the content of `config/SYSTEM.yml` is parsed and verified based on the available arguments located in `TASK_ARGS` from `config.py`. The full list of available arguments can be found [here](/configuration).
+After running the framework, the content of `config/SYSTEM.yml` is parsed and verified based on the available arguments located in `TASK_ARGS` from `config.py`.
 
 1. Run in the shell, no W&B:
     ```shell
