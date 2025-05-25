@@ -21,6 +21,7 @@ from .config import (
     TASK_ARGS,
     TASK_DEPENDENCIES,
     UNCERTAINTY_EXP_YML_FOLDER,
+    Arg,
 )
 
 DEFAULT_ROOT_ARTIFACT_DIR = "/home/artifacts/"  # Destination folder (in the container) for generated files. Will be created if doesn't exist.
@@ -376,20 +377,19 @@ def validate_yml_file(yml_file: str, dictionary: dict):
                         raise ValueError(
                             f"Parameter '{' > '.join(path + [key])}' should not be None."
                         )
-                    is_literal_str =  isinstance(sub_tasks, tuple)
-                    expected_type = sub_tasks[0] if is_literal_str else sub_tasks
-                        
+                    expected_type = sub_tasks.type
+                    
                     if not isinstance(sub_config, expected_type):
                         raise TypeError(
                             f"Parameter '{' > '.join(path + [key])}' should be of type {expected_type.__name__}."
                         )
                         
-                    if is_literal_str:
+                    expected_vals = sub_tasks.vals
+                    if expected_vals is not None:
                         user_literal_str = list(map(lambda x: x.strip(), sub_config.split(",")))
-                        expected_values = sub_tasks[1]
                         for e in user_literal_str:
-                            if e not in expected_values:
-                                raise ValueError(f"Invalid argument {key} with value {e}. Expected values: {expected_values}")
+                            if e not in expected_vals:
+                                raise ValueError(f"Invalid argument {key} with value {e}. Expected values: {expected_vals}")
 
     validate_config(user_config, dictionary)
 
@@ -739,7 +739,8 @@ def add_cfg_args_to_parser(cfg, parser):
     separator_dict = nested_dict_to_separator_dict(cfg)
 
     for k, v in separator_dict.items():
-        v = v[0] if isinstance(v, tuple) else v
+        assert isinstance(v, Arg), f"Arguments should have type `Arg`, seen {type(v)} instead."
+        v = v.type
         is_bool = v == type(True)
         dtype = str2bool if is_bool else v
         parser.add_argument(f"--{k}", type=dtype)

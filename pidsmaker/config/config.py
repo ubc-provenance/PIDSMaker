@@ -399,9 +399,10 @@ DECODERS_CFG = {
     "edge_mlp": {
         "architecture_str": Arg(str,
                                 desc="A string describing a simple neural network. Example: if the encoder's output has shape `node_out_dim=128` \
-                                setting `architecture_str=linear(2) | relu | linear(0.5)` creates this MLP: nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 128). \
-                                Precisely, in linear(x), x is the multiplier of input neurons."),
-        "src_dst_projection_coef": Arg(int, "Multiplier of input neurons to project src and dst nodes."),
+                                setting `architecture_str=linear(2) | relu | linear(0.5)` creates this MLP: nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 128), nn.Linear(128, y). \
+                                Precisely, in linear(x), x is the multiplier of input neurons. The final layer `nn.Linear(128, y)` is added automatically such that `y` is the \
+                                output size matching the downstream objective (e.g. edge type prediction involves predicting 10 edge types, so the output of the decoder should be 10)."),
+        "src_dst_projection_coef": Arg(int, desc="Multiplier of input neurons to project src and dst nodes."),
     },
     "node_mlp": {
         "architecture_str": Arg(str),
@@ -608,6 +609,19 @@ TASK_ARGS = {
                 "used_methods": Arg(str, vals=AND(list(OBJECTIVES_CFG.keys())),
                                     desc="Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)"),
                 **OBJECTIVES_CFG,
+                "use_few_shot": Arg(bool, desc="Old feature: need some work to update it."),
+                "few_shot": {
+                    "include_attacks_in_ssl_training": Arg(bool),
+                    "freeze_encoder": Arg(bool),
+                    "num_epochs_few_shot": Arg(int),
+                    "patience_few_shot": Arg(int),
+                    "lr_few_shot": Arg(float),
+                    "weight_decay_few_shot": Arg(float),
+                    "decoder": {
+                        "used_methods": Arg(str),
+                        **OBJECTIVES_CFG,
+                    },
+                },
             },
         },
         "evaluation": {
@@ -619,8 +633,8 @@ TASK_ARGS = {
             "node_evaluation": {
                 "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS), desc="Method to calculate the threshold value used to detect anomalies."),
                 "use_dst_node_loss": Arg(bool, desc="Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node)."),
-                "use_kmeans": Arg(bool, "Whether to cluster nodes after thresholding as done in Orthrus"),
-                "kmeans_top_K": Arg(int, "Number of top-score nodes selected before clustering."),
+                "use_kmeans": Arg(bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"),
+                "kmeans_top_K": Arg(int, desc="Number of top-score nodes selected before clustering."),
             },
             "tw_evaluation": {
                 "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS), desc="Time-window detection. The code is broken and needs work to be updated."),

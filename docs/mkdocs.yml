@@ -8,7 +8,7 @@ nav:
   - Install: ten-minute-install.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
-  - Tutorial: tuto.md
+  - Tutorial: tutorial.md
   - Configuration:
     - Featurization: config/featurization.md
     - Encoders: config/encoders.md

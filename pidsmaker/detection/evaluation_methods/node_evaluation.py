@@ -353,7 +353,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         thr,
     )
     plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
-    plot_score_seen(pred_scores, is_seen, seen_score_img_file)
+    # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
 
     fp_in_malicious_tw_ratio = analyze_false_positives(
