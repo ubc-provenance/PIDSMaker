@@ -19,7 +19,7 @@ Our goal is to implement a new system that satisfies the following requirements:
 - a GPU (min 5 GB memory required), or a CPU
 - RAM >20GB
 - storage >10GB
-- follow the [installation guidelines](ten-minute-install.md) and have a shell opened in the pids container
+- follow the [installation guidelines](ten-minute-install.md){ data-preview } and have a shell opened in the pids container
 
 ## Integrate a new encoder
 
@@ -144,6 +144,8 @@ featurization:
 
 detection:
   graph_preprocessing:
+    node_features: node_emb,node_type # (16)!
+    edge_features: none # (17)!
     intra_graph_batching:
       used_methods: none # (3)!
   
@@ -189,6 +191,8 @@ detection:
 13. We use here a simple thresholding, without clustering.
 20.  We describe here the features assigned to each type of entity.
 15.  We train a word2vec model and embed each node's features (`node_label_features`) into a vector of size `emb_dim`.
+16.  The features to use as node features during GNN training. Here we concatenate the word2vec embedding and one-hot encoded entity type.
+17.  Our model doesn't integrate edge features so we do not use any in this example.
 
 ## Run the pipeline
 
@@ -223,3 +227,28 @@ Once finished, we provide some figures to illustrate the ability of the model to
 
 Results show a noticeable separation between benign and some malicious nodes on all three attacks in the `E3-CADETS` dataset.
 However, the threshold (vertical line) is not adequately located in the space of anomaly scores, leading to 21 TPs and 33 FPs, whereas some nodes can be detected without any FP.
+
+System metrics such as GPU memory, RAM, and CPU utilization are automatically captured by W&B and can be visualized on the interface.
+
+![Metrics](../img/metrics.jpg)
+
+## Try variants
+
+While this first version of the model yields relatively satisfactory results, we have no guarantee it has the best performing set of arguments on this dataset. We can easily experiment with multiple variants using CLI args. Depending on your hardware, you can run multiple runs in parallel even on a single GPU (usually up to 3-4 parallel runs with simple architectures on a A100 GPU without major runtime overhead).
+
+``` sh
+# Remove node type from node features, keep only the word2vec embedding
+./run.sh custom_system CADETS_E3 --project=test_custom_system \
+    --detection.graph_preprocessing.node_features=node_emb
+
+# Increase node embedding size
+./run.sh custom_system CADETS_E3 --project=test_custom_system \
+    --detection.gnn_training.node_hid_dim=256 \
+    --detection.gnn_training.node_out_dim=256
+
+# Reduce the number of GNN layers
+./run.sh custom_system CADETS_E3 --project=test_custom_system \
+    --detection.gnn_training.encoder.custom_encoder.num_layers=2
+```
+
+For more advanced hyperparameter exploration, consider using the [hyperparameter tuning feature](features/tuning.md).

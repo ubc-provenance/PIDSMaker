@@ -167,7 +167,7 @@
 26. Old feature: need some work to update it.<br>
 27. Whether to generate images of malicious nodes' neighborhoods (not stable).<br>
 28. <br><b>Available options (one selection)</b>:<br>`orthrus`
-29. Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score.<br><br><b>Available options (one selection)</b>:<br>`best_adp`
+29. Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination`                                         selects the model that does the best separation between top-score TPs and top-score FPs.<br><br><b>Available options (one selection)</b>:<br>`best_adp`<br>`best_discrimination`
 30. Method to calculate the threshold value used to detect anomalies.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
 31. Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).<br>
 32. Whether to cluster nodes after thresholding as done in Orthrus<br>

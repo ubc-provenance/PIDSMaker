@@ -627,8 +627,9 @@ TASK_ARGS = {
         "evaluation": {
             "viz_malicious_nodes": Arg(bool, desc="Whether to generate images of malicious nodes' neighborhoods (not stable)."),
             "ground_truth_version": Arg(str, vals=OR(["orthrus"])),
-            "best_model_selection": Arg(str, vals=OR(["best_adp"]),
-                                        desc="Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score."),
+            "best_model_selection": Arg(str, vals=OR(["best_adp", "best_discrimination"]),
+                                        desc="Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination` \
+                                        selects the model that does the best separation between top-score TPs and top-score FPs."),
             "used_method": Arg(str),
             "node_evaluation": {
                 "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS), desc="Method to calculate the threshold value used to detect anomalies."),
