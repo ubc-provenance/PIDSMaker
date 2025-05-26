@@ -41,12 +41,6 @@
         <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">custom_encoder</span>
-    <ul>
-        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
-        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
-    </ul>
-    </li>
     <li class='bullet'><span class="key">sum_aggregation</span>
     
     

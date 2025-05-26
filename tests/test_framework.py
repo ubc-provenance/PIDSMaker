@@ -19,6 +19,7 @@ TESTS_ARTIFACT_DIR = os.path.join(DEFAULT_ROOT_ARTIFACT_DIR, "tests/")
 def prepare_cfg(
     model,
     dataset,
+    device="cuda",
     transformation=None,
     featurization=None,
     encoder=None,
@@ -45,6 +46,9 @@ def prepare_cfg(
 
     cfg = get_yml_cfg(args)
     cfg._test_mode = True
+    
+    if device == "cpu":
+        cfg._use_cpu = True
 
     return cfg
 
@@ -64,6 +68,10 @@ def framework_setup_teardown():
 def dataset():
     return "CLEARSCOPE_E3"
 
+
+@pytest.fixture(scope="session")
+def device(pytestconfig):
+    return pytestconfig.getoption("device")
 
 class TestTransformation:
     transformations = [
@@ -123,14 +131,14 @@ class TestEncoderObjective:
     ]
 
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
-    def test_encoder_objective_pairs(self, dataset, encoder, objective):
-        cfg = prepare_cfg("tests", dataset, encoder=encoder, objective=objective)
+    def test_encoder_objective_pairs(self, dataset, device, encoder, objective):
+        cfg = prepare_cfg("tests", dataset, device=device, encoder=encoder, objective=objective)
         main.main(cfg)
 
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
-    def test_encoder_tgn_objective_pairs(self, dataset, encoder, objective):
+    def test_encoder_tgn_objective_pairs(self, dataset, device, encoder, objective):
         encoder_combined = f"{encoder},tgn"
-        cfg = prepare_cfg("tests", dataset, encoder=encoder_combined, objective=objective)
+        cfg = prepare_cfg("tests", dataset, device=device, encoder=encoder_combined, objective=objective)
         main.main(cfg)
 
 
@@ -155,31 +163,31 @@ class TestDecoderObjective:
     @pytest.mark.parametrize(
         "decoder,objective", list(product(node_decoders, node_level_objectives))
     )
-    def test_decoder_objective_pairs_node_level_success(self, dataset, decoder, objective):
-        cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+    def test_decoder_objective_pairs_node_level_success(self, dataset, device, decoder, objective):
+        cfg = prepare_cfg("tests", dataset, device=device, decoder=decoder, objective=objective)
         main.main(cfg)
 
     @pytest.mark.parametrize(
         "decoder,objective", list(product(edge_decoders, edge_level_objectives))
     )
-    def test_decoder_objective_pairs_edge_level_success(self, dataset, decoder, objective):
-        cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+    def test_decoder_objective_pairs_edge_level_success(self, dataset, device, decoder, objective):
+        cfg = prepare_cfg("tests", dataset, device=device, decoder=decoder, objective=objective)
         main.main(cfg)
 
     @pytest.mark.parametrize(
         "decoder,objective", list(product(node_decoders, edge_level_objectives))
     )
-    def test_decoder_objective_pairs_node_level_fail(self, dataset, decoder, objective):
+    def test_decoder_objective_pairs_node_level_fail(self, dataset, device, decoder, objective):
         with pytest.raises(ValueError):
-            cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+            cfg = prepare_cfg("tests", dataset, device=device, decoder=decoder, objective=objective)
             main.main(cfg)
 
     @pytest.mark.parametrize(
         "decoder,objective", list(product(edge_decoders, node_level_objectives))
     )
-    def test_decoder_objective_pairs_edge_level_fail(self, dataset, decoder, objective):
+    def test_decoder_objective_pairs_edge_level_fail(self, dataset, device, decoder, objective):
         with pytest.raises(ValueError):
-            cfg = prepare_cfg("tests", dataset, decoder=decoder, objective=objective)
+            cfg = prepare_cfg("tests", dataset, device=device, decoder=decoder, objective=objective)
             main.main(cfg)
 
 
@@ -197,6 +205,6 @@ class TestSystems:
     ]
 
     @pytest.mark.parametrize("system", systems)
-    def test_systems(self, dataset, system):
-        cfg = prepare_cfg(system, dataset)
+    def test_systems(self, dataset, device, system):
+        cfg = prepare_cfg(system, dataset, device=device)
         main.main(cfg)

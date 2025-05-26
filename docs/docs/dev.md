@@ -15,19 +15,9 @@ pre-commit run --all-files
 ```
 
 ### Run tests
-```
-pytest -v tests/
-```
 
-### Test coverage
-```
-pytest --cov=pidsmaker tests/
-```
+See README in `tests/`.
 
 ### Build documentation
 
-```shell
-cd docs
-./build.sh
-mkdocs serve --dev-addr=0.0.0.0:8000
-```
+See README in `docs/`.
