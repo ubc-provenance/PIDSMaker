@@ -563,7 +563,7 @@ TASK_ARGS = {
                 "global_batching_batch_size_inference": Arg(int, desc="Controls the value associated with `global_batching.used_method` (inference only)."),
             },
             "intra_graph_batching": {
-                "used_methods": Arg(str, vals=OR(["edges", "tgn_last_neighbor", "none"]), desc="Breaks each previously computed graph into even smaller graphs. \
+                "used_methods": Arg(str, vals=AND(["edges", "tgn_last_neighbor", "none"]), desc="Breaks each previously computed graph into even smaller graphs. \
                                     `edges` creates contiguous graphs of size `intra_graph_batch_size` edges (if a graph has 2000 edges and `intra_graph_batch_size=1500` \
                                     creates two graphs: one with 1500 edges, the other with 500 edges), `tgn_last_neighbor` computes for each graph its associated graph \
                                     based on the TGN last neighbor loader, namely a new graph where each node is connected with its last `tgn_neighbor_size` incoming edges.\

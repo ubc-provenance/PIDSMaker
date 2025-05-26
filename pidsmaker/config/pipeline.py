@@ -45,7 +45,7 @@ def get_default_cfg(args):
     cfg = CN()
     cfg._artifact_dir = args.artifact_dir_in_container or DEFAULT_ROOT_ARTIFACT_DIR
 
-    cfg._test_mode = False
+    cfg._test_mode = args.test_mode
     cfg._debug = not args.wandb
     cfg._is_running_mc_dropout = False
 
@@ -142,6 +142,9 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(
         "--artifact_dir_in_container", default="", help="ID of a wandb sweep for multi-agent runs"
+    )
+    parser.add_argument(
+        "--test_mode", action="store_true", help="Whether to run the framework as in functional tests."
     )
 
     # Script-specific args
@@ -506,6 +509,8 @@ def check_edge_cases(cfg):
     if use_tgn:
         if not use_tgn_neigh_loader:
             raise ValueError("Couldn't use `tgn` as encoder without `tgn_last_neighbor` as loader.")
+        if cfg.detection.graph_preprocessing.inter_graph_batching.used_methods != "none":
+            raise ValueError("TGN-based encoders do not support inter graph batching yet.")
 
     if use_rcaid_pseudo_graph:
         if "predict_edge_type" in decoders:

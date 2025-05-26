@@ -25,6 +25,7 @@ def prepare_cfg(
     encoder=None,
     objective=None,
     decoder=None,
+    custom_args=None,
 ):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
@@ -43,6 +44,10 @@ def prepare_cfg(
 
     if encoder and "tgn" not in encoder:
         args.__dict__["detection.graph_preprocessing.intra_graph_batching.used_methods"] = "edges"
+        
+    if custom_args:
+        for k, v in custom_args:
+            args.__dict__[k] = v
 
     cfg = get_yml_cfg(args)
     cfg._test_mode = True
@@ -189,6 +194,72 @@ class TestDecoderObjective:
         with pytest.raises(ValueError):
             cfg = prepare_cfg("tests", dataset, device=device, decoder=decoder, objective=objective)
             main.main(cfg)
+
+
+class TestBatching:
+    global_batching_methods = [
+        "edges",
+        "minutes",
+        "unique_edge_types",
+        "none",
+    ]
+    intra_graph_batching_methods = [
+        "edges",
+        "tgn_last_neighbor",
+        "edges,tgn_last_neighbor",
+        "none",
+    ]
+    inter_graph_batching_methods = [
+        "graph_batching",
+        "none",
+    ]
+    
+    @pytest.mark.parametrize(
+        "global_batching_method", global_batching_methods
+    )
+    def test_global_batching(self, dataset, device, global_batching_method):
+        custom_args = [
+            ("detection.graph_preprocessing.global_batching.used_method", global_batching_method),
+            ("detection.graph_preprocessing.global_batching.global_batching_batch_size", 1000)
+        ]
+        bs = None
+        if global_batching_method == "edges":
+            bs = 1000
+        elif global_batching_method == "minutes":
+            bs = 10
+        if bs:
+            custom_args.append(("detection.graph_preprocessing.global_batching.global_batching_batch_size", bs))
+            
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    @pytest.mark.parametrize(
+        "intra_graph_batching_method", intra_graph_batching_methods
+    )
+    def test_intra_graph_batching(self, dataset, device, intra_graph_batching_method):
+        custom_args = [
+            ("detection.graph_preprocessing.intra_graph_batching.used_methods", intra_graph_batching_method),
+            ("detection.graph_preprocessing.intra_graph_batching.edges.intra_graph_batch_size", 200),
+        ]
+        if "tgn_last_neighbor" not in intra_graph_batching_method:
+            custom_args.append(("detection.gnn_training.encoder.used_methods", "graph_attention"))
+            
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+        
+    @pytest.mark.parametrize(
+        "inter_graph_batching_method", inter_graph_batching_methods
+    )
+    def test_inter_graph_batching(self, dataset, device, inter_graph_batching_method):
+        custom_args = [
+            ("detection.graph_preprocessing.inter_graph_batching.used_methods", inter_graph_batching_method),
+            ("detection.graph_preprocessing.inter_graph_batching.inter_graph_batch_size", 2),
+            ("detection.graph_preprocessing.intra_graph_batching.used_methods", "none"),
+            ("detection.gnn_training.encoder.used_methods", "graph_attention"),
+        ]
+        
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
 
 
 class TestSystems:
