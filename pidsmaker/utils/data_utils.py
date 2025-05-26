@@ -407,29 +407,41 @@ def batch_temporal_data(
         window_length_ns = int(cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000)
         sliding_ns = int(batch_size * 60_000_000_000)  # min to ns
 
-        t0 = data.t.min()
-        t1 = data.t.max()
+        t = data.t
+        t0 = t.min()
         t0_aligned = (t0 // sliding_ns) * sliding_ns
 
-        # Mapping from window index to list of data points
-        window_data = {}
+        # Compute window indices for all data points
+        relative_t = t - t0_aligned
+        window_indices = relative_t // sliding_ns
 
-        for p in data:
-            # Compute window indices for each data point
-            i0 = ((p.t - window_length_ns - t0_aligned) + sliding_ns - 1) // sliding_ns
-            i1 = (p.t - t0_aligned) // sliding_ns
-            i0 = max(i0, 0)  # Ensure i0 is non-negative
+        # Since data.t is sorted, find boundaries of unique window indices
+        unique_windows, counts = torch.unique(window_indices, return_counts=True)
+        cum_counts = torch.cumsum(counts, dim=0)
+        start_indices = torch.cat([torch.tensor([0], device=cum_counts.device), cum_counts[:-1]])
+        end_indices = cum_counts
 
-            for i in range(i0, i1 + 1):
-                window_data.setdefault(i, []).append(p)
-
-        # Build the list of windows
+        # Create windows by slicing data
         windows = []
-        for i in sorted(window_data.keys()):
-            s = t0_aligned + i * sliding_ns  # Window start time (ns)
-            e = s + window_length_ns  # Window end time (ns)
-            data_in_window = window_data[i]
-            windows.append(collate_temporal_data(data_in_window))
+        for start, end, window_idx in zip(start_indices, end_indices, unique_windows):
+            if end <= start:  # Skip empty windows
+                continue
+
+            # Get indices for the current window
+            indices = torch.arange(start, end, device=t.device)
+
+            # Filter points within exact window time range
+            window_start = t0_aligned + window_idx * sliding_ns
+            window_end = window_start + window_length_ns
+            mask = (t[indices] >= window_start) & (t[indices] < window_end)
+            window_indices_final = indices[mask]
+
+            if len(window_indices_final) == 0:
+                continue
+
+            # Slice the original data using the filtered indices
+            window_data = data[window_indices_final]
+            windows.append(window_data)
 
         return windows
 
