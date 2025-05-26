@@ -18,7 +18,7 @@ nav:
     - Tasks: config/tasks.md
   - Features:
     - Hyperparameter Tuning: features/tuning.md
-    - Batching and Sampling: features/batching.md
+    - Batching & Sampling: features/batching.md
     - Instability Measurement: features/instability.md
   - Development: dev.md
   - Contribute:
@@ -56,15 +56,16 @@ markdown_extensions:
   - markdown.extensions.meta
   - markdown.extensions.toc:
       permalink: true
-  - pymdownx.arithmatex
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.betterem:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.critic
   - pymdownx.details
-  # - pymdownx.emoji:
-      # emoji_index: !!python/name:materialx.emoji.twemoji
-      # emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
   # - pymdownx.highlight:
   #     linenums_style: pymdownx-inline
   - pymdownx.inlinehilite
@@ -97,3 +98,7 @@ extra_css:
   - extra.css
 
 copyright: Copyright &copy; 2025 UBC provenance team
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
