@@ -10,7 +10,7 @@ nav:
   - Introduction: introduction.md
   - Pipeline: pipeline.md
   - Tutorial: tutorial.md
-  - Configuration:
+  - Arguments:
     - Featurization: config/featurization.md
     - Encoders: config/encoders.md
     - Decoders: config/decoders.md
@@ -20,9 +20,9 @@ nav:
     - Hyperparameter Tuning: features/tuning.md
     - Batching & Sampling: features/batching.md
     - Instability Measurement: features/instability.md
-  - Development: dev.md
   - Contribute:
     - Guidelines: contribute/guidelines.md
+    - Development: dev.md
   - Release notes: release_notes.md
   
 # Theme
@@ -35,14 +35,13 @@ theme:
       # - navigation.expand
       - navigation.sections
     name: material
-    icon:
-      logo: material/book-open-page-variant-outline
-    favicon: assets/logo.ico
+    logo: assets/ninja_small.png
+    favicon: assets/ninja_small.ico
     static_templates:
       - 404.html
     palette:
       scheme: default
-      primary: indigo
+      primary: amber
 
 # Extensions
 markdown_extensions:

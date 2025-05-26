@@ -1,2 +1,3 @@
+We encourage users to contribute new components to 🥷 PIDSMaker, helping ensure that the framework stays aligned with emerging architectures from research.
 
-We invite users to integrate new components in PIDSMaker so that the framework remains updated with the new architectures published in the literature.
+TODO: Add PR policy
