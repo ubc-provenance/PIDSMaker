@@ -89,7 +89,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
     ):
         if method in ["tgn"]:
             pass
-        
+
         # Basic GNN encoders
         elif method == "graph_attention":
             encoder = GraphAttentionEmbedding(
@@ -122,9 +122,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
-                activation=activation_fn_factory(
-                    cfg.detection.gnn_training.encoder.gat.activation
-                ),
+                activation=activation_fn_factory(cfg.detection.gnn_training.encoder.gat.activation),
                 dropout=dropout,
                 num_heads=cfg.detection.gnn_training.encoder.gat.num_heads,
                 concat=cfg.detection.gnn_training.encoder.gat.concat,
@@ -146,7 +144,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
             )
-            
+
         # System-specific encoders
         elif method == "glstm":
             encoder = GLSTM(
@@ -190,7 +188,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 ),
                 is_decoder=False,
             )
-            
+
         # MLP encoders
         elif method == "none":
             encoder = LinearEncoder(in_dim, node_out_dim)
@@ -570,6 +568,7 @@ def get_dimensions_from_data_sample(data):
 
     return msg_dim, edge_dim, in_dim
 
+
 def get_edge_dim(cfg, msg_dim):
     edge_dim = 0
     edge_features = list(
@@ -577,7 +576,7 @@ def get_edge_dim(cfg, msg_dim):
     )
     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
     tgn_memory_dim = cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim
-    
+
     for edge_feat in edge_features:
         if edge_feat in ["edge_type", "edge_type_triplet"]:
             edge_dim += get_num_edge_type(cfg)
@@ -591,5 +590,5 @@ def get_edge_dim(cfg, msg_dim):
             pass
         else:
             raise ValueError(f"Invalid edge feature {edge_feat}")
-        
+
     return edge_dim

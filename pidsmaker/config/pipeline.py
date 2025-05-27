@@ -144,7 +144,9 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--artifact_dir_in_container", default="", help="ID of a wandb sweep for multi-agent runs"
     )
     parser.add_argument(
-        "--test_mode", action="store_true", help="Whether to run the framework as in functional tests."
+        "--test_mode",
+        action="store_true",
+        help="Whether to run the framework as in functional tests.",
     )
 
     # Script-specific args
@@ -381,18 +383,20 @@ def validate_yml_file(yml_file: str, dictionary: dict):
                             f"Parameter '{' > '.join(path + [key])}' should not be None."
                         )
                     expected_type = sub_tasks.type
-                    
+
                     if not isinstance(sub_config, expected_type):
                         raise TypeError(
                             f"Parameter '{' > '.join(path + [key])}' should be of type {expected_type.__name__}."
                         )
-                        
+
                     expected_vals = sub_tasks.vals
                     if expected_vals is not None:
                         user_literal_str = list(map(lambda x: x.strip(), sub_config.split(",")))
                         for e in user_literal_str:
                             if e not in expected_vals:
-                                raise ValueError(f"Invalid argument {key} with value {e}. Expected values: {expected_vals}")
+                                raise ValueError(
+                                    f"Invalid argument {key} with value {e}. Expected values: {expected_vals}"
+                                )
 
     validate_config(user_config, dictionary)
 

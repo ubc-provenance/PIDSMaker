@@ -18,15 +18,13 @@ class GIN(nn.Module):
         super().__init__()
         self.activation = activation
         self.drop = nn.Dropout(dropout)
-        
+
         self.convs = nn.ModuleList()
-        
+
         current_dim = in_dim
         for i in range(num_layers):
             nn_seq = nn.Sequential(
-                nn.Linear(current_dim, hid_dim),
-                nn.ReLU(),
-                nn.Linear(hid_dim, hid_dim)
+                nn.Linear(current_dim, hid_dim), nn.ReLU(), nn.Linear(hid_dim, hid_dim)
             )
 
             if edge_dim is None:
@@ -35,7 +33,7 @@ class GIN(nn.Module):
                 conv = GINEConv(nn_seq, edge_dim=edge_dim)
             self.convs.append(conv)
             current_dim = hid_dim
-        
+
         self.fc1 = nn.Linear(hid_dim, hid_dim)
         self.fc2 = nn.Linear(hid_dim, out_dim)
 
@@ -44,7 +42,7 @@ class GIN(nn.Module):
             x = conv(x, edge_index, edge_feats)
             x = self.activation(x)
             x = self.drop(x)
-        
+
         x = self.activation(self.fc1(x))
         x = self.fc2(x)
         return {"h": x}

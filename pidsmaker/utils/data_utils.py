@@ -833,7 +833,7 @@ class GraphReindexer:
         """
         if self.num_nodes is None:
             raise ValueError(f"Graph reindexing requires `num_nodes`.")
-        
+
         if self.assoc is None:
             self.assoc = torch.empty((self.num_nodes,), dtype=torch.long, device=self.device)
 

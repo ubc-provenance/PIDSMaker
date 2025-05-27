@@ -21,7 +21,7 @@ class GraphAttentionEmbedding(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.convs = nn.ModuleList()
-        
+
         current_dim = in_dim
         for _ in range(num_layers - 1):
             out_channels = hid_dim
@@ -54,6 +54,6 @@ class GraphAttentionEmbedding(nn.Module):
             x = conv(x, edge_index, edge_feats)
             x = self.activation(x)
             x = self.dropout(x)
-        
+
         x = self.convs[-1](x, edge_index, edge_feats)
         return {"h": x}

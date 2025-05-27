@@ -265,17 +265,21 @@ TASK_DEPENDENCIES = {
     "tracing": ["evaluation"],
 }
 
+
 class AND(list):
     pass
+
 
 class OR(list):
     pass
 
+
 class Arg:
-    def __init__(self, type, vals: list=None, desc: str=None):
+    def __init__(self, type, vals: list = None, desc: str = None):
         self.type = type
         self.vals = vals
         self.desc = desc
+
 
 FEATURIZATIONS_CFG = {
     "word2vec": {
@@ -397,12 +401,16 @@ DECODERS_NODE_LEVEL = ["node_mlp", "none", "magic_gat", "nodlink"]
 DECODERS_EDGE_LEVEL = ["edge_mlp"]
 DECODERS_CFG = {
     "edge_mlp": {
-        "architecture_str": Arg(str,
-                                desc="A string describing a simple neural network. Example: if the encoder's output has shape `node_out_dim=128` \
+        "architecture_str": Arg(
+            str,
+            desc="A string describing a simple neural network. Example: if the encoder's output has shape `node_out_dim=128` \
                                 setting `architecture_str=linear(2) | relu | linear(0.5)` creates this MLP: nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 128), nn.Linear(128, y). \
                                 Precisely, in linear(x), x is the multiplier of input neurons. The final layer `nn.Linear(128, y)` is added automatically such that `y` is the \
-                                output size matching the downstream objective (e.g. edge type prediction involves predicting 10 edge types, so the output of the decoder should be 10)."),
-        "src_dst_projection_coef": Arg(int, desc="Multiplier of input neurons to project src and dst nodes."),
+                                output size matching the downstream objective (e.g. edge type prediction involves predicting 10 edge types, so the output of the decoder should be 10).",
+        ),
+        "src_dst_projection_coef": Arg(
+            int, desc="Multiplier of input neurons to project src and dst nodes."
+        ),
     },
     "node_mlp": {
         "architecture_str": Arg(str),
@@ -436,28 +444,38 @@ OBJECTIVES = OBJECTIVES_NODE_LEVEL + OBJECTIVES_EDGE_LEVEL
 OBJECTIVES_CFG = {
     # Prediction-based
     "predict_edge_type": {
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
         "use_triplet_types": Arg(bool),
     },
     "predict_node_type": {
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
     },
     "predict_masked_struct": {
         "loss": Arg(str, vals=OR(PRED_LOSSES)),
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
     },
     "detect_edge_few_shot": {
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
     },
     "predict_edge_contrastive": {
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
         "inner_product": {
             "dropout": Arg(float),
@@ -466,23 +484,31 @@ OBJECTIVES_CFG = {
     # Reconstruction-based
     "reconstruct_node_features": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
     },
     "reconstruct_node_embeddings": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
     },
     "reconstruct_edge_embeddings": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
     },
     "reconstruct_masked_features": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
         "mask_rate": Arg(float),
-        "decoder": Arg(str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."),
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
         **DECODERS_CFG,
     },
 }
@@ -502,23 +528,55 @@ THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "fl
 TASK_ARGS = {
     "preprocessing": {
         "build_graphs": {
-            "used_method": Arg(str, vals=OR(["default", "magic"]), desc="The method to build time window graphs."),
+            "used_method": Arg(
+                str, vals=OR(["default", "magic"]), desc="The method to build time window graphs."
+            ),
             "use_all_files": Arg(bool),
             "mimicry_edge_num": Arg(int),
-            "time_window_size": Arg(float, desc="The size of each graph in minutes. The notation should always be float (e.g. 10.0). Supports sizes < 1.0."),
+            "time_window_size": Arg(
+                float,
+                desc="The size of each graph in minutes. The notation should always be float (e.g. 10.0). Supports sizes < 1.0.",
+            ),
             "use_hashed_label": Arg(bool, desc="Whether to hash the textual features."),
-            "fuse_edge": Arg(bool, desc="Whether to fuse duplicate sequential edges into a single edge."),
+            "fuse_edge": Arg(
+                bool, desc="Whether to fuse duplicate sequential edges into a single edge."
+            ),
             "node_label_features": {
-                "subject": Arg(str, vals=AND(["type", "path", "cmd_line"]), desc="Which features use for process nodes. Features will be concatenated."),
-                "file": Arg(str, vals=AND(["type", "path"], desc="Which features use for file nodes. Features will be concatenated.")),
-                "netflow": Arg(str, vals=AND(["type", "remote_ip", "remote_port"], desc="Which features use for netflow nodes. Features will be concatenated.")),
+                "subject": Arg(
+                    str,
+                    vals=AND(["type", "path", "cmd_line"]),
+                    desc="Which features use for process nodes. Features will be concatenated.",
+                ),
+                "file": Arg(
+                    str,
+                    vals=AND(
+                        ["type", "path"],
+                        desc="Which features use for file nodes. Features will be concatenated.",
+                    ),
+                ),
+                "netflow": Arg(
+                    str,
+                    vals=AND(
+                        ["type", "remote_ip", "remote_port"],
+                        desc="Which features use for netflow nodes. Features will be concatenated.",
+                    ),
+                ),
             },
-            "multi_dataset": Arg(str, vals=OR(list(DATASET_DEFAULT_CONFIG.keys()) + ["none"]), \
-                desc="A comma-separated list of datasets on which training is performed. Evaluation is done only the primary dataset run in CLI."),
+            "multi_dataset": Arg(
+                str,
+                vals=OR(list(DATASET_DEFAULT_CONFIG.keys()) + ["none"]),
+                desc="A comma-separated list of datasets on which training is performed. Evaluation is done only the primary dataset run in CLI.",
+            ),
         },
         "transformation": {
-            "used_methods": Arg(str, vals=AND(["undirected", "dag", "rcaid_pseudo_graph", "none"] + list(SYNTHETIC_ATTACKS.keys())), \
-                desc="Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`"),
+            "used_methods": Arg(
+                str,
+                vals=AND(
+                    ["undirected", "dag", "rcaid_pseudo_graph", "none"]
+                    + list(SYNTHETIC_ATTACKS.keys())
+                ),
+                desc="Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`",
+            ),
             "rcaid_pseudo_graph": {
                 "use_pruning": Arg(bool),
             },
@@ -527,12 +585,28 @@ TASK_ARGS = {
     },
     "featurization": {
         "feat_training": {
-            "emb_dim": Arg(int, desc="Size of the text embedding. Arg not used by some featurization methods that do not build embeddings."),
-            "epochs": Arg(int, desc="Epochs to train the embedding method. Arg not used by some methods."),
+            "emb_dim": Arg(
+                int,
+                desc="Size of the text embedding. Arg not used by some featurization methods that do not build embeddings.",
+            ),
+            "epochs": Arg(
+                int, desc="Epochs to train the embedding method. Arg not used by some methods."
+            ),
             "use_seed": Arg(bool),
-            "training_split": Arg(str, vals=OR(["train", "all"]), desc="The partition of data used to train the featurization method."),
-            "multi_dataset_training": Arg(bool, desc="Whether the featurization method should be trained on all datasets in `multi_dataset`."),
-            "used_method": Arg(str, vals=OR(list(FEATURIZATIONS_CFG.keys())), desc="Algorithms used to create node and edge features."),
+            "training_split": Arg(
+                str,
+                vals=OR(["train", "all"]),
+                desc="The partition of data used to train the featurization method.",
+            ),
+            "multi_dataset_training": Arg(
+                bool,
+                desc="Whether the featurization method should be trained on all datasets in `multi_dataset`.",
+            ),
+            "used_method": Arg(
+                str,
+                vals=OR(list(FEATURIZATIONS_CFG.keys())),
+                desc="Algorithms used to create node and edge features.",
+            ),
             **FEATURIZATIONS_CFG,
         },
         "feat_inference": {
@@ -541,51 +615,106 @@ TASK_ARGS = {
     },
     "detection": {
         "graph_preprocessing": {
-            "save_on_disk": Arg(bool, desc="Whether to store the graphs on disk upon building the graphs. \
-                Used to avoid re-computation of very complex batching operations that take time. Can take up to 300GB storage for CADETS_E5."),
-            "node_features": Arg(str, vals=AND(["node_type", "node_emb", "only_ones", "edges_distribution"]),
-                                 desc="Node features to use during GNN training. `node_type` is a one-hot encoded entity type vector, \
+            "save_on_disk": Arg(
+                bool,
+                desc="Whether to store the graphs on disk upon building the graphs. \
+                Used to avoid re-computation of very complex batching operations that take time. Can take up to 300GB storage for CADETS_E5.",
+            ),
+            "node_features": Arg(
+                str,
+                vals=AND(["node_type", "node_emb", "only_ones", "edges_distribution"]),
+                desc="Node features to use during GNN training. `node_type` is a one-hot encoded entity type vector, \
                                      `node_emb` refers to the embedding generated during the `featurization` task, `only_ones` is a vector of ones \
-                                      with length `node_type`, `edges_distribution` counts emitted and received edges."),
-            "edge_features": Arg(str, vals=AND(["edge_type", "edge_type_triplet", "msg", "time_encoding", "none"]),
-                                 desc="Edge features to used during GNN training. `edge_type` refers to the system call type, `edge_type_triplet` \
+                                      with length `node_type`, `edges_distribution` counts emitted and received edges.",
+            ),
+            "edge_features": Arg(
+                str,
+                vals=AND(["edge_type", "edge_type_triplet", "msg", "time_encoding", "none"]),
+                desc="Edge features to used during GNN training. `edge_type` refers to the system call type, `edge_type_triplet` \
                                     considers a same edge type as a new type if source or destination node types are different, `msg` is the message vector \
-                                    used in the TGN, `time_encoding` encodes temporal order of events with their timestamps in the TGN, `none` uses no features."),
-            "multi_dataset_training":Arg(bool, desc="Whether the GNN should be trained on all datasets in `multi_dataset`."),
-            "fix_buggy_graph_reindexer": Arg(bool, desc="A bug has been found in the first version of the framework, where reindexing graphs in shape (N, d) \
-                                                    slightly modify node features. Setting this to true fixes the bug."),
+                                    used in the TGN, `time_encoding` encodes temporal order of events with their timestamps in the TGN, `none` uses no features.",
+            ),
+            "multi_dataset_training": Arg(
+                bool, desc="Whether the GNN should be trained on all datasets in `multi_dataset`."
+            ),
+            "fix_buggy_graph_reindexer": Arg(
+                bool,
+                desc="A bug has been found in the first version of the framework, where reindexing graphs in shape (N, d) \
+                                                    slightly modify node features. Setting this to true fixes the bug.",
+            ),
             "global_batching": {
-                "used_method": Arg(str, vals=OR(["edges", "minutes", "unique_edge_types", "none"]), desc="Flattens the time window-based graphs into a single large \
+                "used_method": Arg(
+                    str,
+                    vals=OR(["edges", "minutes", "unique_edge_types", "none"]),
+                    desc="Flattens the time window-based graphs into a single large \
                                 temporal graph and recreate graphs based on the given method. `edges` creates contiguous graphs of size `global_batching_batch_size` edges, \
                                 the same applies for `minutes`, `unique_edge_types` builds graphs where each pair of connected nodes share edges with distinct edge types, \
-                                `none` uses the default time window-based batching defined in minutes with arg `time_window_size`."),
-                "global_batching_batch_size": Arg(int, desc="Controls the value associated with `global_batching.used_method` (training+inference)."),
-                "global_batching_batch_size_inference": Arg(int, desc="Controls the value associated with `global_batching.used_method` (inference only)."),
+                                `none` uses the default time window-based batching defined in minutes with arg `time_window_size`.",
+                ),
+                "global_batching_batch_size": Arg(
+                    int,
+                    desc="Controls the value associated with `global_batching.used_method` (training+inference).",
+                ),
+                "global_batching_batch_size_inference": Arg(
+                    int,
+                    desc="Controls the value associated with `global_batching.used_method` (inference only).",
+                ),
             },
             "intra_graph_batching": {
-                "used_methods": Arg(str, vals=AND(["edges", "tgn_last_neighbor", "none"]), desc="Breaks each previously computed graph into even smaller graphs. \
+                "used_methods": Arg(
+                    str,
+                    vals=AND(["edges", "tgn_last_neighbor", "none"]),
+                    desc="Breaks each previously computed graph into even smaller graphs. \
                                     `edges` creates contiguous graphs of size `intra_graph_batch_size` edges (if a graph has 2000 edges and `intra_graph_batch_size=1500` \
                                     creates two graphs: one with 1500 edges, the other with 500 edges), `tgn_last_neighbor` computes for each graph its associated graph \
                                     based on the TGN last neighbor loader, namely a new graph where each node is connected with its last `tgn_neighbor_size` incoming edges.\
-                                    `none` does not alter any graph."),
+                                    `none` does not alter any graph.",
+                ),
                 "edges": {
-                    "intra_graph_batch_size": Arg(int, desc="Controls the value associated with `global_batching.used_method`."),
+                    "intra_graph_batch_size": Arg(
+                        int,
+                        desc="Controls the value associated with `global_batching.used_method`.",
+                    ),
                 },
                 "tgn_last_neighbor": {
-                    "tgn_neighbor_size": Arg(int, desc="Number of last neighbors to store for each node."),
-                    "tgn_neighbor_n_hop": Arg(int, desc="If greater than one, will also gather the last neighbors of neighbors."),
-                    "fix_buggy_orthrus_TGN": Arg(bool, desc="A bug has been in the first version of the framework, where the features of last neighbors not appearing \
-                                                in the input graph have zero node feature vectors. Setting this arg to true includes the features of all nodes in the TGN graph."),
-                    "fix_tgn_neighbor_loader": Arg(bool, desc="We found a minor bug in the original TGN code (https://github.com/pyg-team/pytorch_geometric/issues/10100). This \
-                                                    is an unofficial fix."),
-                    "directed": Arg(bool, desc="The original TGN's loader builds graphs in an undirected way. This makes the graphs purely directed."),
-                    "insert_neighbors_before": Arg(bool, desc="Whether to insert the edges of the current graph before loading last neighbors."),
+                    "tgn_neighbor_size": Arg(
+                        int, desc="Number of last neighbors to store for each node."
+                    ),
+                    "tgn_neighbor_n_hop": Arg(
+                        int,
+                        desc="If greater than one, will also gather the last neighbors of neighbors.",
+                    ),
+                    "fix_buggy_orthrus_TGN": Arg(
+                        bool,
+                        desc="A bug has been in the first version of the framework, where the features of last neighbors not appearing \
+                                                in the input graph have zero node feature vectors. Setting this arg to true includes the features of all nodes in the TGN graph.",
+                    ),
+                    "fix_tgn_neighbor_loader": Arg(
+                        bool,
+                        desc="We found a minor bug in the original TGN code (https://github.com/pyg-team/pytorch_geometric/issues/10100). This \
+                                                    is an unofficial fix.",
+                    ),
+                    "directed": Arg(
+                        bool,
+                        desc="The original TGN's loader builds graphs in an undirected way. This makes the graphs purely directed.",
+                    ),
+                    "insert_neighbors_before": Arg(
+                        bool,
+                        desc="Whether to insert the edges of the current graph before loading last neighbors.",
+                    ),
                 },
             },
             "inter_graph_batching": {
-                "used_method": Arg(str, vals=OR(["graph_batching", "none"]), desc="Batches multiple graphs into a single large one for parallel training. \
-                                    Does not support TGN. `graph_batching` batches `inter_graph_batch_size` together, `none` doesn't batch graphs."),
-                "inter_graph_batch_size": Arg(int, desc="Controls the value associated with `inter_graph_batching.used_method`."),
+                "used_method": Arg(
+                    str,
+                    vals=OR(["graph_batching", "none"]),
+                    desc="Batches multiple graphs into a single large one for parallel training. \
+                                    Does not support TGN. `graph_batching` batches `inter_graph_batch_size` together, `none` doesn't batch graphs.",
+                ),
+                "inter_graph_batch_size": Arg(
+                    int,
+                    desc="Controls the value associated with `inter_graph_batching.used_method`.",
+                ),
             },
         },
         "gnn_training": {
@@ -596,18 +725,30 @@ TASK_ARGS = {
             "weight_decay": Arg(float),
             "node_hid_dim": Arg(int, desc="Number of neurons in the middle layers of the encoder."),
             "node_out_dim": Arg(int, desc="Number of neurons in the last layer of the encoder."),
-            "grad_accumulation": Arg(int, desc="Number of epochs to gather gradients before backprop."),
-            "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
-            "used_method": Arg(str, vals=OR(["default", "provd"]), desc="Which training pipeline use."),
+            "grad_accumulation": Arg(
+                int, desc="Number of epochs to gather gradients before backprop."
+            ),
+            "inference_device": Arg(
+                str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."
+            ),
+            "used_method": Arg(
+                str, vals=OR(["default", "provd"]), desc="Which training pipeline use."
+            ),
             "encoder": {
                 "dropout": Arg(float),
-                "used_methods": Arg(str, vals=AND(list(ENCODERS_CFG.keys())),
-                                    desc="First part of the neural network. Usually GNN encoders to capture complex patterns."),
+                "used_methods": Arg(
+                    str,
+                    vals=AND(list(ENCODERS_CFG.keys())),
+                    desc="First part of the neural network. Usually GNN encoders to capture complex patterns.",
+                ),
                 **ENCODERS_CFG,
             },
             "decoder": {
-                "used_methods": Arg(str, vals=AND(list(OBJECTIVES_CFG.keys())),
-                                    desc="Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)"),
+                "used_methods": Arg(
+                    str,
+                    vals=AND(list(OBJECTIVES_CFG.keys())),
+                    desc="Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)",
+                ),
                 **OBJECTIVES_CFG,
                 "use_few_shot": Arg(bool, desc="Old feature: need some work to update it."),
                 "few_shot": {
@@ -625,30 +766,59 @@ TASK_ARGS = {
             },
         },
         "evaluation": {
-            "viz_malicious_nodes": Arg(bool, desc="Whether to generate images of malicious nodes' neighborhoods (not stable)."),
+            "viz_malicious_nodes": Arg(
+                bool,
+                desc="Whether to generate images of malicious nodes' neighborhoods (not stable).",
+            ),
             "ground_truth_version": Arg(str, vals=OR(["orthrus"])),
-            "best_model_selection": Arg(str, vals=OR(["best_adp", "best_discrimination"]),
-                                        desc="Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination` \
-                                        selects the model that does the best separation between top-score TPs and top-score FPs."),
+            "best_model_selection": Arg(
+                str,
+                vals=OR(["best_adp", "best_discrimination"]),
+                desc="Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination` \
+                                        selects the model that does the best separation between top-score TPs and top-score FPs.",
+            ),
             "used_method": Arg(str),
             "node_evaluation": {
-                "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS), desc="Method to calculate the threshold value used to detect anomalies."),
-                "use_dst_node_loss": Arg(bool, desc="Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node)."),
-                "use_kmeans": Arg(bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"),
-                "kmeans_top_K": Arg(int, desc="Number of top-score nodes selected before clustering."),
+                "threshold_method": Arg(
+                    str,
+                    vals=OR(THRESHOLD_METHODS),
+                    desc="Method to calculate the threshold value used to detect anomalies.",
+                ),
+                "use_dst_node_loss": Arg(
+                    bool,
+                    desc="Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).",
+                ),
+                "use_kmeans": Arg(
+                    bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"
+                ),
+                "kmeans_top_K": Arg(
+                    int, desc="Number of top-score nodes selected before clustering."
+                ),
             },
             "tw_evaluation": {
-                "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS), desc="Time-window detection. The code is broken and needs work to be updated."),
+                "threshold_method": Arg(
+                    str,
+                    vals=OR(THRESHOLD_METHODS),
+                    desc="Time-window detection. The code is broken and needs work to be updated.",
+                ),
             },
             "node_tw_evaluation": {
-                "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS), desc="Node-level detection where a same node in multiple time windows is \
-                        considered as multiple unique nodes. More realistic evaluation for near real-time detection. The code is broken and needs work to be updated."),
+                "threshold_method": Arg(
+                    str,
+                    vals=OR(THRESHOLD_METHODS),
+                    desc="Node-level detection where a same node in multiple time windows is \
+                        considered as multiple unique nodes. More realistic evaluation for near real-time detection. The code is broken and needs work to be updated.",
+                ),
                 "use_dst_node_loss": Arg(bool),
                 "use_kmeans": Arg(bool),
                 "kmeans_top_K": Arg(int),
             },
             "queue_evaluation": {
-                "used_method": Arg(str, vals=OR(["kairos_idf_queue", "provnet_lof_queue"]), desc="Queue-level detection as in Kairos. The code is broken and needs work to be updated."),
+                "used_method": Arg(
+                    str,
+                    vals=OR(["kairos_idf_queue", "provnet_lof_queue"]),
+                    desc="Queue-level detection as in Kairos. The code is broken and needs work to be updated.",
+                ),
                 "queue_threshold": Arg(int),
                 "kairos_idf_queue": {
                     "include_test_set_in_IDF": Arg(bool),
@@ -658,18 +828,28 @@ TASK_ARGS = {
                 },
             },
             "edge_evaluation": {
-                "malicious_edge_selection": Arg(str, vals=OR(["src_node", "dst_node", "both_nodes"]), desc="The ground truth only contains node-level labels. \
+                "malicious_edge_selection": Arg(
+                    str,
+                    vals=OR(["src_node", "dst_node", "both_nodes"]),
+                    desc="The ground truth only contains node-level labels. \
                     This arg controls the strategy to label edges. `src_nodes` and `dst_nodes` consider an edge as malicious if only its source or only its destination \
-                    node is malicious. `both` labels an edge as malicious if both end nodes are malicious."),
+                    node is malicious. `both` labels an edge as malicious if both end nodes are malicious.",
+                ),
                 "threshold_method": Arg(str, vals=OR(THRESHOLD_METHODS)),
             },
         },
     },
     "triage": {
         "tracing": {
-            "used_method": Arg(str, vals=OR(["depimpact"]), desc="Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus."),
+            "used_method": Arg(
+                str,
+                vals=OR(["depimpact"]),
+                desc="Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus.",
+            ),
             "depimpact": {
-                "used_method": Arg(str, vals=OR(["component", "shortest_path", "1-hop", "2-hop", "3-hop"])),
+                "used_method": Arg(
+                    str, vals=OR(["component", "shortest_path", "1-hop", "2-hop", "3-hop"])
+                ),
                 "score_method": Arg(str, vals=OR(["degree", "recon_loss", "degree_recon"])),
                 "workers": Arg(int),
                 "visualize": Arg(bool),
@@ -681,7 +861,9 @@ TASK_ARGS = {
 
 EXPERIMENTS_CONFIG = {
     "training_loop": {
-        "run_evaluation": Arg(str, vals=OR(["each_epoch", "best_epoch"])), # (when to run inference on test set)
+        "run_evaluation": Arg(
+            str, vals=OR(["each_epoch", "best_epoch"])
+        ),  # (when to run inference on test set)
     },
     "experiment": {
         "used_method": Arg(str, vals=OR(["uncertainty", "none"])),
@@ -707,4 +889,3 @@ EXPERIMENTS_CONFIG = {
     },
 }
 UNCERTAINTY_EXP_YML_FOLDER = "experiments/uncertainty/"
-

@@ -1,7 +1,7 @@
 from pidsmaker.config import update_cfg_for_multi_dataset
 from pidsmaker.preprocessing.build_graph_methods import (
-    build_magic_graphs,
     build_default_graphs,
+    build_magic_graphs,
 )
 from pidsmaker.utils.utils import get_multi_datasets
 
