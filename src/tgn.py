@@ -380,16 +380,22 @@ class LastNeighborLoader:
         n_id = nodes.unique()
         self._assoc[n_id] = torch.arange(n_id.numel(), device=n_id.device)
 
-        dense_id = torch.arange(nodes.size(0), device=nodes.device) % self.size
-        dense_id += self._assoc[nodes].mul_(self.size)
+        edge_counts = torch.bincount(self._assoc[nodes], minlength=n_id.numel())
+        temp_size = edge_counts.max().item() if edge_counts.numel() > 0 else 1
 
-        dense_e_id = e_id.new_full((n_id.numel() * self.size, ), -1)
+        # Compute cumulative start indices
+        cum_edge_counts = torch.cat([torch.tensor([0], device=nodes.device), edge_counts.cumsum(0)])
+        local_slots = torch.arange(nodes.size(0), device=nodes.device) - cum_edge_counts[self._assoc[nodes]]
+        dense_id = local_slots + (self._assoc[nodes] * temp_size)
+
+        # Initialize dense tensors with temporary size
+        dense_e_id = e_id.new_full((n_id.numel() * temp_size,), -1)
         dense_e_id[dense_id] = e_id
-        dense_e_id = dense_e_id.view(-1, self.size)
+        dense_e_id = dense_e_id.view(-1, temp_size)
 
-        dense_neighbors = e_id.new_empty(n_id.numel() * self.size)
+        dense_neighbors = e_id.new_full((n_id.numel() * temp_size,), -1)
         dense_neighbors[dense_id] = neighbors
-        dense_neighbors = dense_neighbors.view(-1, self.size)
+        dense_neighbors = dense_neighbors.view(-1, temp_size)
 
         # Collect new and old interactions...
         e_id = torch.cat([self.e_id[n_id, :self.size], dense_e_id], dim=-1)

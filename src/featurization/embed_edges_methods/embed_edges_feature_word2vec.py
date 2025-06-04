@@ -16,6 +16,7 @@ def cal_word_weight(n, percentage):
 def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
+    indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
 
     feature_word2vec_model_path = cfg.featurization.embed_nodes._model_dir + 'feature_word2vec.model'
     model = Word2Vec.load(feature_word2vec_model_path)
