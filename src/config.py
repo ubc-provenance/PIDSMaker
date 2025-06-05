@@ -665,6 +665,8 @@ def get_default_cfg(args):
      cfg._tuning_mode = args.tuning_mode
      cfg._experiment = args.experiment
      cfg._tuning_file_path = args.tuning_file_path
+     cfg._from_weights = args.from_weights
+     cfg._from_weights_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "weights/")
      
      cfg._restart_from_scratch = args.restart_from_scratch
      if cfg._restart_from_scratch:
@@ -713,6 +715,7 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
      parser.add_argument('--tuning_mode', type=str, default="none", help="Name of the tuning mode to run the pipeline with wandb sweeps")
      parser.add_argument('--tuned', action="store_true", help="Whether to load the best fine-tuned hyperparameters")
      parser.add_argument('--tuning_file_path', default="", help="If set, use the given YML path for tuning")
+     parser.add_argument('--from_weights', action="store_true", help="Whether to load Orthrus from pkl weights")
 
      # Script-specific args
      parser.add_argument('--show_attack', type=int, help="Number of attack for plotting", default=0)

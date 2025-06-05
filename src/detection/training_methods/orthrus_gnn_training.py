@@ -66,6 +66,9 @@ def main(cfg):
     train_data, val_data, test_data, full_data, max_node_num = load_all_datasets(cfg)
 
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
+    if cfg._from_weights:
+        model.load_state_dict(torch.load(os.path.join(cfg._from_weights_path, f"{cfg.dataset.name}.pkl")))
+
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     
     run_evaluation = cfg.training_loop.run_evaluation

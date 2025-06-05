@@ -68,17 +68,6 @@ def get_task_to_module(cfg):
     }
 
 def main(cfg, project, **kwargs):
-    modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
-    should_restart = {subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps}
-    
-    log("\n" + ("*" * 100))
-    log("Tasks modified since last runs:")
-    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
-
-    log("\nTasks requiring re-execution:")
-    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
-    log(("*" * 100) + "\n")
-    
     if cfg.detection.gnn_training.use_seed:
         seed = 0
         random.seed(seed)
