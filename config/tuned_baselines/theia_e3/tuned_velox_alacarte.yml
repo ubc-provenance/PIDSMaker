@@ -1,5 +1,3 @@
-# ADP@0.0.785=> https://wandb.ai/tristan_research/framework_tuning_velox/sweeps/imsjkbnc/table?nw=nwusertristanbilot
-
 featurization:
   feat_training:
     emb_dim: 256

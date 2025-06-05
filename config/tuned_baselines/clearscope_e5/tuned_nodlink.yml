@@ -1,6 +1,3 @@
-# ADP@0.334 => https://wandb.ai/tristan_research/framework_tuning_nodlink/sweeps/lvtogf5e?nw=nwusertristanbilot
-# In table: https://wandb.ai/tristan_research/framework_tuning_nodlink/runs/yyy108o5?nw=nwusertristanbilot
-
 preprocessing:
   build_graphs:
     time_window_size: 1.0

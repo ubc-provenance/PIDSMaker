@@ -87,19 +87,6 @@ def clean_cfg_for_log(cfg):
 
 
 def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
-    modified_tasks = {subtask: restart for subtask, restart in cfg._subtasks_should_restart}
-    should_restart = {
-        subtask: restart for subtask, restart in cfg._subtasks_should_restart_with_deps
-    }
-
-    log("\n" + ("*" * 100))
-    log("Tasks modified since last runs:")
-    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in modified_tasks.items()]))
-
-    log("\nTasks requiring re-execution:")
-    log("  =>  ".join([f"{subtask}({restart})" for subtask, restart in should_restart.items()]))
-    log(("*" * 100) + "\n")
-
     set_seed(cfg)
 
     def run_task(task: str, cfg, method=None, iteration=None):
@@ -237,7 +224,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         if not sweep_id:
             sweep_config["name"] = exp
             sweep_id = wandb.sweep(sweep_config, project=project)
-            print(f"Sweep ID: tristan_research/{project}/{sweep_id}")
+            print(f"Sweep ID: YOUR_ORG/{project}/{sweep_id}")
 
         def run_pipeline_from_sweep(cfg):
             with wandb.init(name=exp):

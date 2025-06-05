@@ -1,5 +1,3 @@
-# ADP@0.501 => https://wandb.ai/tristan_research/framework_tuning_threatrace/sweeps/4ixj6w3p?nw=nwusertristanbilot
-
 preprocessing:
   build_graphs:
     time_window_size: 5.0

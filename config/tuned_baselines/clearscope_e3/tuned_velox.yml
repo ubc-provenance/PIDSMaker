@@ -1,5 +1,3 @@
-# ADP@1.00 => https://wandb.ai/tristan_research/framework_tuning_velox_hfh/runs/v3vlgpto?nw=nwusertristanbilot
-
 preprocessing:
   build_graphs:
     time_window_size: 1.0

@@ -1,5 +1,3 @@
-# ADP@1.00 => https://wandb.ai/tristan_research/framework_framework_tuning_orthrus/sweeps/fbafrj9x/workspace
-
 preprocessing:
   build_graphs:
     time_window_size: 15.0
