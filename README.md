@@ -4,8 +4,38 @@
 
 This repo contains the original code of the paper.
 
+<<<<<<< HEAD
 > [!IMPORTANT]
 > For a practical usage of the framework, we recommend using the last version of PIDSMaker, available on the [main branch](https://github.com/ubc-provenance/PIDSMaker).
+=======
+
+# Citation
+
+If you use this work, please cite the following paper:
+```
+@inproceedings{bilot2025simpler,
+	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
+	author={Bilot, Tristan and Jiang, Baoxiang and  Li, Zefeng and  El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
+	booktitle={Security Symposium (USENIX Sec'25)},
+	year={2025},
+	organization={USENIX}
+}
+```
+
+# 🥷 PIDSMaker
+
+The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
+It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
+
+**Currently supported PIDSs**:
+- Orthrus (USENIX Sec'25): [ORTHRUS: Achieving High Quality of Attribution in Provenance-based Intrusion Detection Systems](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf)
+- R-Caid (IEEE S\&P'24): [R-CAID: Embedding Root Cause Analysis within Provenance-based Intrusion Detection](https://gangw.web.illinois.edu/rcaid-sp24.pdf)
+- Flash (IEEE S\&P'24): [Flash: A Comprehensive Approach to Intrusion Detection via Provenance Graph Representation Learning](https://dartlab.org/assets/pdf/flash.pdf)
+- Kairos (IEEE S\&P'24): [Kairos: Practical Intrusion Detection and Investigation using Whole-system Provenance](https://arxiv.org/pdf/2308.05034)
+- Magic (USENIX Sec'24): [MAGIC: Detecting Advanced Persistent Threats via Masked Graph Representation Learning](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf)
+- NodLink (NDSS'24): [NODLINK: An Online System for Fine-Grained APT Attack Detection and Investigation](https://arxiv.org/pdf/2311.02331)
+- ThreaTrace (IEEE TIFS'22): [THREATRACE: Detecting and Tracing Host-Based Threats in Node Level Through Provenance Graph Learning](https://arxiv.org/pdf/2111.04333)
+>>>>>>> fee1406 (fix the reference)
 
 ## Setup
 
@@ -106,7 +136,7 @@ python plot_real_time_cpu_watt_memory.py velox CADETS_E3 --detection.gnn_trainin
 Reads the YML configuration in `experiments/tuning/systems/default/tuning_fix_uncertainty.yml` and runs a wandb sweep where each combination of parameters has a dedicated wandb run.
 The best run and set of hyperparameters is selected from the run with best ADP score.
 The best hyperparameters are then updated in `tuned_baselines/{dataset}/tuned_{system}.yml`.
-The tuned system with best hyperparameters can be used by adding the `--tuned` arg when running the pipeline. 
+The tuned system with best hyperparameters can be used by adding the `--tuned` arg when running the pipeline.
 The config will be merged with the original config from the system.
 
 In each run, the node anomaly scores are saved in the wandb experiments for later use with the metrics downloaded as csv files from the interface, in the `viz_scripts/plot_*.ipynb` notebooks to generate the SVG figures in the paper.
