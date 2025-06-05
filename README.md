@@ -1,5 +1,8 @@
 [![Support Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://code.visualstudio.com/docs/devcontainers/create-dev-container)
 [![Documentation](https://img.shields.io/badge/docs-online-pink.svg)](https://ubc-provenance.github.io/PIDSMaker/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15603122.svg)](https://doi.org/10.5281/zenodo.15603122)
+
+# Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems
 
 # Citation
 
@@ -17,7 +20,7 @@ If you use this work, please cite the following paper:
 
 # 🥷 PIDSMaker
 
-The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures. 
+The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
 
 **Currently supported PIDSs**:
@@ -36,7 +39,7 @@ It provides a single codebase to run most recent state-of-the-arts systems and e
 git clone https://github.com/ubc-provenance/PIDSMaker.git
 ```
 
-### ⏰ 10-min Docker Install with DARPA TC/OpTC Datasets 
+### ⏰ 10-min Docker Install with DARPA TC/OpTC Datasets
 
 We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](docs/docs/ten-minute-install.md).
 
