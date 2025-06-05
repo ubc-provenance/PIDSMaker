@@ -2,7 +2,6 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15603122.svg)](https://doi.org/10.5281/zenodo.15603122)
 ![GitHub License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker)
 
-
 # 🥷 PIDSMaker
 
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
