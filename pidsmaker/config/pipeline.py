@@ -513,7 +513,7 @@ def check_edge_cases(cfg):
     if use_tgn:
         if not use_tgn_neigh_loader:
             raise ValueError("Couldn't use `tgn` as encoder without `tgn_last_neighbor` as loader.")
-        if cfg.detection.graph_preprocessing.inter_graph_batching.used_methods != "none":
+        if cfg.detection.graph_preprocessing.inter_graph_batching.used_method != "none":
             raise ValueError("TGN-based encoders do not support inter graph batching yet.")
 
     if use_rcaid_pseudo_graph:

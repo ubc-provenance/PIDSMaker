@@ -258,7 +258,7 @@ class TestBatching:
     def test_inter_graph_batching(self, dataset, device, inter_graph_batching_method):
         custom_args = [
             (
-                "detection.graph_preprocessing.inter_graph_batching.used_methods",
+                "detection.graph_preprocessing.inter_graph_batching.used_method",
                 inter_graph_batching_method,
             ),
             ("detection.graph_preprocessing.inter_graph_batching.inter_graph_batch_size", 2),
