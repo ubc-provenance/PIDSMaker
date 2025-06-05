@@ -46,25 +46,26 @@
     <li class='bullet'><span class="key">gnn_training</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">use_seed</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">deterministic</span>: <span class="value">bool (19)</span></li>
         <li class='no-bullet'><span class="key-leaf">num_epochs</span>: <span class="value">int</span></li>
         <li class='no-bullet'><span class="key-leaf">patience</span>: <span class="value">int</span></li>
         <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float</span></li>
         <li class='no-bullet'><span class="key-leaf">weight_decay</span>: <span class="value">float</span></li>
-        <li class='no-bullet'><span class="key-leaf">node_hid_dim</span>: <span class="value">int (19)</span></li>
-        <li class='no-bullet'><span class="key-leaf">node_out_dim</span>: <span class="value">int (20)</span></li>
-        <li class='no-bullet'><span class="key-leaf">grad_accumulation</span>: <span class="value">int (21)</span></li>
-        <li class='no-bullet'><span class="key-leaf">inference_device</span>: <span class="value">str (22)</span></li>
-        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (23)</span></li>
+        <li class='no-bullet'><span class="key-leaf">node_hid_dim</span>: <span class="value">int (20)</span></li>
+        <li class='no-bullet'><span class="key-leaf">node_out_dim</span>: <span class="value">int (21)</span></li>
+        <li class='no-bullet'><span class="key-leaf">grad_accumulation</span>: <span class="value">int (22)</span></li>
+        <li class='no-bullet'><span class="key-leaf">inference_device</span>: <span class="value">str (23)</span></li>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (24)</span></li>
         <li class='bullet'><span class="key">encoder</span>
         <ul>
             <li class='no-bullet'><span class="key-leaf">dropout</span>: <span class="value">float</span></li>
-            <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (24)</span></li>
+            <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (25)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">decoder</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (25)</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_few_shot</span>: <span class="value">bool (26)</span></li>
+            <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (26)</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_few_shot</span>: <span class="value">bool (27)</span></li>
             <li class='bullet'><span class="key">few_shot</span>
             <ul>
                 <li class='no-bullet'><span class="key-leaf">include_attacks_in_ssl_training</span>: <span class="value">bool</span></li>
@@ -86,26 +87,26 @@
     </li>
     <li class='bullet'><span class="key">evaluation</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">viz_malicious_nodes</span>: <span class="value">bool (27)</span></li>
-        <li class='no-bullet'><span class="key-leaf">ground_truth_version</span>: <span class="value">str (28)</span></li>
-        <li class='no-bullet'><span class="key-leaf">best_model_selection</span>: <span class="value">str (29)</span></li>
+        <li class='no-bullet'><span class="key-leaf">viz_malicious_nodes</span>: <span class="value">bool (28)</span></li>
+        <li class='no-bullet'><span class="key-leaf">ground_truth_version</span>: <span class="value">str (29)</span></li>
+        <li class='no-bullet'><span class="key-leaf">best_model_selection</span>: <span class="value">str (30)</span></li>
         <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str</span></li>
         <li class='bullet'><span class="key">node_evaluation</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (30)</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_dst_node_loss</span>: <span class="value">bool (31)</span></li>
-            <li class='no-bullet'><span class="key-leaf">use_kmeans</span>: <span class="value">bool (32)</span></li>
-            <li class='no-bullet'><span class="key-leaf">kmeans_top_K</span>: <span class="value">int (33)</span></li>
+            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (31)</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_dst_node_loss</span>: <span class="value">bool (32)</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_kmeans</span>: <span class="value">bool (33)</span></li>
+            <li class='no-bullet'><span class="key-leaf">kmeans_top_K</span>: <span class="value">int (34)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">tw_evaluation</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (34)</span></li>
+            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (35)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">node_tw_evaluation</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (35)</span></li>
+            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (36)</span></li>
             <li class='no-bullet'><span class="key-leaf">use_dst_node_loss</span>: <span class="value">bool</span></li>
             <li class='no-bullet'><span class="key-leaf">use_kmeans</span>: <span class="value">bool</span></li>
             <li class='no-bullet'><span class="key-leaf">kmeans_top_K</span>: <span class="value">int</span></li>
@@ -113,7 +114,7 @@
         </li>
         <li class='bullet'><span class="key">queue_evaluation</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (36)</span></li>
+            <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (37)</span></li>
             <li class='no-bullet'><span class="key-leaf">queue_threshold</span>: <span class="value">int</span></li>
             <li class='bullet'><span class="key">kairos_idf_queue</span>
             <ul>
@@ -129,8 +130,8 @@
         </li>
         <li class='bullet'><span class="key">edge_evaluation</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">malicious_edge_selection</span>: <span class="value">str (37)</span></li>
-            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (38)</span></li>
+            <li class='no-bullet'><span class="key-leaf">malicious_edge_selection</span>: <span class="value">str (38)</span></li>
+            <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (39)</span></li>
         </ul>
         </li>
     </ul>
@@ -157,23 +158,24 @@
 16. Whether to insert the edges of the current graph before loading last neighbors.<br>
 17. Batches multiple graphs into a single large one for parallel training.                                     Does not support TGN. `graph_batching` batches `inter_graph_batch_size` together, `none` doesn't batch graphs.<br><br><b>Available options (one selection)</b>:<br>`graph_batching`<br>`none`
 18. Controls the value associated with `inter_graph_batching.used_method`.<br>
-19. Number of neurons in the middle layers of the encoder.<br>
-20. Number of neurons in the last layer of the encoder.<br>
-21. Number of epochs to gather gradients before backprop.<br>
-22. Device used during testing.<br><br><b>Available options (one selection)</b>:<br>`cpu`<br>`cuda`
-23. Which training pipeline use.<br><br><b>Available options (one selection)</b>:<br>`default`<br>`provd`
-24. First part of the neural network. Usually GNN encoders to capture complex patterns.<br><br><b>Available options (multi selection)</b>:<br>`tgn`<br>`graph_attention`<br>`sage`<br>`gat`<br>`gin`<br>`sum_aggregation`<br>`rcaid_gat`<br>`magic_gat`<br>`glstm`<br>`custom_mlp`<br>`none`
-25. Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)<br><br><b>Available options (multi selection)</b>:<br>`predict_edge_type`<br>`predict_node_type`<br>`predict_masked_struct`<br>`detect_edge_few_shot`<br>`predict_edge_contrastive`<br>`reconstruct_node_features`<br>`reconstruct_node_embeddings`<br>`reconstruct_edge_embeddings`<br>`reconstruct_masked_features`
-26. Old feature: need some work to update it.<br>
-27. Whether to generate images of malicious nodes' neighborhoods (not stable).<br>
-28. <br><b>Available options (one selection)</b>:<br>`orthrus`
-29. Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination`                                         selects the model that does the best separation between top-score TPs and top-score FPs.<br><br><b>Available options (one selection)</b>:<br>`best_adp`<br>`best_discrimination`
-30. Method to calculate the threshold value used to detect anomalies.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
-31. Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).<br>
-32. Whether to cluster nodes after thresholding as done in Orthrus<br>
-33. Number of top-score nodes selected before clustering.<br>
-34. Time-window detection. The code is broken and needs work to be updated.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
-35. Node-level detection where a same node in multiple time windows is                         considered as multiple unique nodes. More realistic evaluation for near real-time detection. The code is broken and needs work to be updated.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
-36. Queue-level detection as in Kairos. The code is broken and needs work to be updated.<br><br><b>Available options (one selection)</b>:<br>`kairos_idf_queue`<br>`provnet_lof_queue`
-37. The ground truth only contains node-level labels.                     This arg controls the strategy to label edges. `src_nodes` and `dst_nodes` consider an edge as malicious if only its source or only its destination                     node is malicious. `both` labels an edge as malicious if both end nodes are malicious.<br><br><b>Available options (one selection)</b>:<br>`src_node`<br>`dst_node`<br>`both_nodes`
-38. <br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
+19. Whether to force PyTorch to use deterministic algorithms.<br>
+20. Number of neurons in the middle layers of the encoder.<br>
+21. Number of neurons in the last layer of the encoder.<br>
+22. Number of epochs to gather gradients before backprop.<br>
+23. Device used during testing.<br><br><b>Available options (one selection)</b>:<br>`cpu`<br>`cuda`
+24. Which training pipeline use.<br><br><b>Available options (one selection)</b>:<br>`default`<br>`provd`
+25. First part of the neural network. Usually GNN encoders to capture complex patterns.<br><br><b>Available options (multi selection)</b>:<br>`tgn`<br>`graph_attention`<br>`sage`<br>`gat`<br>`gin`<br>`sum_aggregation`<br>`rcaid_gat`<br>`magic_gat`<br>`glstm`<br>`custom_mlp`<br>`none`
+26. Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)<br><br><b>Available options (multi selection)</b>:<br>`predict_edge_type`<br>`predict_node_type`<br>`predict_masked_struct`<br>`detect_edge_few_shot`<br>`predict_edge_contrastive`<br>`reconstruct_node_features`<br>`reconstruct_node_embeddings`<br>`reconstruct_edge_embeddings`<br>`reconstruct_masked_features`
+27. Old feature: need some work to update it.<br>
+28. Whether to generate images of malicious nodes' neighborhoods (not stable).<br>
+29. <br><b>Available options (one selection)</b>:<br>`orthrus`
+30. Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination`                                         selects the model that does the best separation between top-score TPs and top-score FPs.<br><br><b>Available options (one selection)</b>:<br>`best_adp`<br>`best_discrimination`
+31. Method to calculate the threshold value used to detect anomalies.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
+32. Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).<br>
+33. Whether to cluster nodes after thresholding as done in Orthrus<br>
+34. Number of top-score nodes selected before clustering.<br>
+35. Time-window detection. The code is broken and needs work to be updated.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
+36. Node-level detection where a same node in multiple time windows is                         considered as multiple unique nodes. More realistic evaluation for near real-time detection. The code is broken and needs work to be updated.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
+37. Queue-level detection as in Kairos. The code is broken and needs work to be updated.<br><br><b>Available options (one selection)</b>:<br>`kairos_idf_queue`<br>`provnet_lof_queue`
+38. The ground truth only contains node-level labels.                     This arg controls the strategy to label edges. `src_nodes` and `dst_nodes` consider an edge as malicious if only its source or only its destination                     node is malicious. `both` labels an edge as malicious if both end nodes are malicious.<br><br><b>Available options (one selection)</b>:<br>`src_node`<br>`dst_node`<br>`both_nodes`
+39. <br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
