@@ -157,7 +157,7 @@ def weight_edge_list(glist, n, event_mapping):
     )  # the number of the logs represent the number of the host in the enterprise environment
 
     for G in glist:
-        sorted_edges = sorted(G.edges(data=True, keys=True), key=lambda t: t[3].get("time"))
+        sorted_edges = G.edges(data=True, keys=True)
 
         min_time = sorted_edges[0][3]["time"]
         max_time = sorted_edges[-1][3]["time"]

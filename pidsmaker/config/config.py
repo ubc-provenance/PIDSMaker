@@ -719,6 +719,7 @@ TASK_ARGS = {
         },
         "gnn_training": {
             "use_seed": Arg(bool),
+            "deterministic": Arg(bool, desc="Whether to force PyTorch to use deterministic algorithms."),
             "num_epochs": Arg(int),
             "patience": Arg(int),
             "lr": Arg(float),

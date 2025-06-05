@@ -35,6 +35,7 @@ detection:
   gnn_training:
     used_method: default
     use_seed: True
+    deterministic: False
     num_epochs: 12
     patience: 3
     lr: 0.01

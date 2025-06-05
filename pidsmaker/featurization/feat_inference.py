@@ -27,7 +27,7 @@ from .feat_inference_methods import (
 def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
     for path in log_tqdm(sorted_paths, desc="Computing edge embeddings"):
         graph = torch.load(path)
-        sorted_edges = sorted(graph.edges(data=True, keys=True), key=lambda t: t[3]["time"])
+        sorted_edges = graph.edges(data=True, keys=True)
 
         src, dst, msg, t, y = [], [], [], [], []
         for u, v, k, attr in sorted_edges:

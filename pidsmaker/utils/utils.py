@@ -488,7 +488,9 @@ def get_indexid2msg(cfg, gather_multi_dataset=False):
             all_indexid2msg = {**all_indexid2msg, **indexid2msg}
         return all_indexid2msg
 
-    return load_file(cfg)
+    indexid2msg = load_file(cfg)
+    indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
+    return indexid2msg
 
 
 def get_split2nodes(cfg, gather_multi_dataset=False):
@@ -659,6 +661,9 @@ def set_seed(cfg):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        
+    if cfg.detection.gnn_training.deterministic:
+        torch.use_deterministic_algorithms(True, warn_only=True)
 
 
 def get_multi_datasets(cfg):
