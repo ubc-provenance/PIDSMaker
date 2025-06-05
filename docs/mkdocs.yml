@@ -1,6 +1,6 @@
 # Site name
 site_name: PIDSMaker Documentation
-# site_url: https:// # TODO
+site_url: https://ubc-provenance.github.io/PIDSMaker/
 repo_url: https://github.com/ubc-provenance/PIDSMaker
 
 # Navigation menu
@@ -20,9 +20,7 @@ nav:
     - Hyperparameter Tuning: features/tuning.md
     - Batching & Sampling: features/batching.md
     - Instability Measurement: features/instability.md
-  - Contribute:
-    - Guidelines: contribute/guidelines.md
-    - Development: dev.md
+  - Contributing: contributing.md
   - Release notes: release_notes.md
   
 # Theme
