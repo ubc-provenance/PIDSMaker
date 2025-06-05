@@ -18,7 +18,6 @@ from .feat_inference_methods import (
     feat_inference_fasttext,
     feat_inference_flash,
     feat_inference_HFH,
-    feat_inference_provd,
     feat_inference_TRW,
     feat_inference_word2vec,
 )
@@ -129,12 +128,6 @@ def main_from_config(cfg):
 
 
 def main(cfg):
-    method = cfg.featurization.feat_training.used_method.strip()
-    # Specific methods here
-    if method == "provd":
-        feat_inference_provd.main(cfg)
-        return
-
     multi_dataset_training = cfg.detection.graph_preprocessing.multi_dataset_training
     if not multi_dataset_training:
         main_from_config(cfg)

@@ -67,16 +67,6 @@
         <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">provd</span>
-    <ul>
-        <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
-        <li class='no-bullet'><span class="key-leaf">k</span>: <span class="value">int</span></li>
-        <li class='no-bullet'><span class="key-leaf">mpl</span>: <span class="value">int</span></li>
-        <li class='no-bullet'><span class="key-leaf">n_time_windows</span>: <span class="value">int</span></li>
-        <li class='no-bullet'><span class="key-leaf">n_neighbors</span>: <span class="value">int</span></li>
-        <li class='no-bullet'><span class="key-leaf">contamination</span>: <span class="value">float</span></li>
-    </ul>
-    </li>
     <li class='bullet'><span class="key">hierarchical_hashing</span>
     
     

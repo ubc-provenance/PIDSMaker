@@ -163,7 +163,7 @@
 21. Number of neurons in the last layer of the encoder.<br>
 22. Number of epochs to gather gradients before backprop.<br>
 23. Device used during testing.<br><br><b>Available options (one selection)</b>:<br>`cpu`<br>`cuda`
-24. Which training pipeline use.<br><br><b>Available options (one selection)</b>:<br>`default`<br>`provd`
+24. Which training pipeline use.<br><br><b>Available options (one selection)</b>:<br>`default`
 25. First part of the neural network. Usually GNN encoders to capture complex patterns.<br><br><b>Available options (multi selection)</b>:<br>`tgn`<br>`graph_attention`<br>`sage`<br>`gat`<br>`gin`<br>`sum_aggregation`<br>`rcaid_gat`<br>`magic_gat`<br>`glstm`<br>`custom_mlp`<br>`none`
 26. Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)<br><br><b>Available options (multi selection)</b>:<br>`predict_edge_type`<br>`predict_node_type`<br>`predict_masked_struct`<br>`detect_edge_few_shot`<br>`predict_edge_contrastive`<br>`reconstruct_node_features`<br>`reconstruct_node_embeddings`<br>`reconstruct_edge_embeddings`<br>`reconstruct_masked_features`
 27. Old feature: need some work to update it.<br>

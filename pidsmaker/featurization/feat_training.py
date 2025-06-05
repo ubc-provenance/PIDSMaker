@@ -6,7 +6,6 @@ from .feat_training_methods import (
     feat_training_doc2vec,
     feat_training_fasttext,
     feat_training_flash,
-    feat_training_provd,
     feat_training_trw,
     feat_training_word2vec,
 )
@@ -35,7 +34,5 @@ def main(cfg):
         feat_training_flash.main(cfg)
     elif method == "fasttext":
         feat_training_fasttext.main(cfg)
-    elif method == "provd":
-        feat_training_provd.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")

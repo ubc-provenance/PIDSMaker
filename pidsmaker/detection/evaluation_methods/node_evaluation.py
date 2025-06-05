@@ -227,27 +227,6 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     return results, thr
 
 
-def get_node_predictions_provd(cfg, **kwargs):
-    ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
-    node_list = torch.load(
-        os.path.join(cfg.featurization.feat_inference._model_dir, "node_list.pkl")
-    )
-
-    results = defaultdict(dict)
-    for d in node_list:
-        node_id = d["node"]
-        score = d["score"]
-        y_hat = d["y_hat"]
-
-        results[node_id]["score"] = score
-        results[node_id]["tw_with_max_loss"] = 0
-        results[node_id]["y_true"] = int(node_id in ground_truth_nids)
-        results[node_id]["time_range"] = None
-        results[node_id]["y_hat"] = y_hat
-
-    return results, None
-
-
 def analyze_false_positives(
     y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes
 ):
@@ -266,9 +245,7 @@ def analyze_false_positives(
 
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    if cfg.detection.gnn_training.used_method == "provd":
-        get_preds_fn = get_node_predictions_provd
-    elif cfg._is_node_level:
+    if cfg._is_node_level:
         get_preds_fn = get_node_predictions_node_level
     else:
         get_preds_fn = get_node_predictions

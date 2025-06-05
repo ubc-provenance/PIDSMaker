@@ -4,5 +4,4 @@ from . import (
     feat_inference_fasttext,
     feat_inference_flash,
     feat_inference_HFH,
-    feat_inference_provd,
 )

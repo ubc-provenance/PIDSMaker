@@ -1,8 +1,0 @@
-method: grid
-
-
-parameters:
-  featurization.feat_training.emb_dim:
-    values: [100, 200]
-  preprocessing.build_graphs.time_window_size:
-    values: [5.0, 10.0, 15.0]

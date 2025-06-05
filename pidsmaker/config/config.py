@@ -336,14 +336,6 @@ FEATURIZATIONS_CFG = {
         "min_count": Arg(int),
         "workers": Arg(int),
     },
-    "provd": {
-        "alpha": Arg(float),
-        "k": Arg(int),
-        "mpl": Arg(int),
-        "n_time_windows": Arg(int),
-        "n_neighbors": Arg(int),
-        "contamination": Arg(float),
-    },
     "hierarchical_hashing": {},
     "magic": {},
     "only_type": {},
@@ -733,7 +725,7 @@ TASK_ARGS = {
                 str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."
             ),
             "used_method": Arg(
-                str, vals=OR(["default", "provd"]), desc="Which training pipeline use."
+                str, vals=OR(["default"]), desc="Which training pipeline use."
             ),
             "encoder": {
                 "dropout": Arg(float),

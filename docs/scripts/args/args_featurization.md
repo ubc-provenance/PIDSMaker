@@ -24,4 +24,4 @@
 2. Epochs to train the embedding method. Arg not used by some methods.<br>
 3. The partition of data used to train the featurization method.<br><br><b>Available options (one selection)</b>:<br>`train`<br>`all`
 4. Whether the featurization method should be trained on all datasets in `multi_dataset`.<br>
-5. Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br>`word2vec`<br>`doc2vec`<br>`fasttext`<br>`alacarte`<br>`temporal_rw`<br>`flash`<br>`provd`<br>`hierarchical_hashing`<br>`magic`<br>`only_type`<br>`only_ones`
+5. Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br>`word2vec`<br>`doc2vec`<br>`fasttext`<br>`alacarte`<br>`temporal_rw`<br>`flash`<br>`hierarchical_hashing`<br>`magic`<br>`only_type`<br>`only_ones`
