@@ -1,6 +1,9 @@
 # Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems
 
-This repo contains the original code of the paper. For a practical usage of the framework, we recommend using the last version of PIDSMaker, available on the [main branch](https://github.com/ubc-provenance/PIDSMaker).
+This repo contains the original code of the paper.
+
+> [!IMPORTANT]
+> For a practical usage of the framework, we recommend using the last version of PIDSMaker, available on the [main branch](https://github.com/ubc-provenance/PIDSMaker).
 
 ## Setup
 
@@ -18,7 +21,8 @@ We have made the installation of DARPA TC/OpTC easy and fast, simply follow [the
 
 ### Reproducing Velox results
 
-> [!IMPORTANT] Reproducing all experiments in the paper requires days of GPU compute and multiple TBs of storage. We advise focusing on the smallest datasets (E3 / OpTC) and with the fastest systems (velox, orthrus, nodlink) for feasible experiments.
+> [!NOTE]
+> Due to significant training instability, reproducing the exact results from the paper is unlikely; multiple runs with different seeds may be required.
 
 ### Final detection results (Tables 4, 5, 6)
 
