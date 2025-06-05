@@ -8,10 +8,9 @@
 
 If you use this work, please cite the following paper:
 ```
-@inproceedings{jian2025,
-	title={{ORTHRUS: Achieving High Quality of Attribution in Provenance-based Intrusion
-	Detection Systems}},
-	author={Jiang, Baoxiang and Bilot, Tristan  and El Madhoun, Nour and Al Agha, Khaldoun  and Zouaoui, Anis and Iqbal, Shahrear and Han, Xueyuan and Pasquier, Thomas},
+@inproceedings{bilot2025simpler,
+	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
+	author={Bilot, Tristan and Jiang, Baoxiang and  Li, Zefeng and  El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
 	booktitle={Security Symposium (USENIX Sec'25)},
 	year={2025},
 	organization={USENIX}
