@@ -1,6 +1,20 @@
 [![Support Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://code.visualstudio.com/docs/devcontainers/create-dev-container)
 [![Documentation](https://img.shields.io/badge/docs-online-pink.svg)](https://ubc-provenance.github.io/PIDSMaker/)
 
+# Citation
+
+If you use this work, please cite the following paper:
+```
+@inproceedings{jian2025,
+	title={{ORTHRUS: Achieving High Quality of Attribution in Provenance-based Intrusion
+	Detection Systems}},
+	author={Jiang, Baoxiang and Bilot, Tristan  and El Madhoun, Nour and Al Agha, Khaldoun  and Zouaoui, Anis and Iqbal, Shahrear and Han, Xueyuan and Pasquier, Thomas},
+	booktitle={Security Symposium (USENIX Sec'25)},
+	year={2025},
+	organization={USENIX}
+}
+```
+
 # 🥷 PIDSMaker
 
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures. 
