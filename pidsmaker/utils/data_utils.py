@@ -704,8 +704,10 @@ def run_inter_graph_batching(datasets, cfg):
                 ):
                     batch = data_list[i : i + bs]
                     data = collate(CollatableTemporalData, data_list=batch)[0]
-                    if cfg._debug:
-                        debug_test_batching(batch, data)
+                    
+                    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
+                    if cfg._debug and use_tgn:
+                        debug_test_batching(batch, data, cfg)
                     result[-1].append(data)
             return result
 
