@@ -27,7 +27,7 @@ PIDSMaker addresses this gap by providing the following key features:
 
 ## Citing the Framework
 
-If you use this work, please cite the following paper:
+If you use this framework, please cite the following paper:
 ```
 @inproceedings{bilot2025simpler,
 	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
