@@ -1,22 +1,7 @@
-[![Support Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://code.visualstudio.com/docs/devcontainers/create-dev-container)
 [![Documentation](https://img.shields.io/badge/docs-online-pink.svg)](https://ubc-provenance.github.io/PIDSMaker/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15603122.svg)](https://doi.org/10.5281/zenodo.15603122)
+![GitHub License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker)
 
-# Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems
-
-# Citation
-
-If you use this work, please cite the following paper:
-```
-@inproceedings{jian2025,
-	title={{ORTHRUS: Achieving High Quality of Attribution in Provenance-based Intrusion
-	Detection Systems}},
-	author={Jiang, Baoxiang and Bilot, Tristan  and El Madhoun, Nour and Al Agha, Khaldoun  and Zouaoui, Anis and Iqbal, Shahrear and Han, Xueyuan and Pasquier, Thomas},
-	booktitle={Security Symposium (USENIX Sec'25)},
-	year={2025},
-	organization={USENIX}
-}
-```
 
 # 🥷 PIDSMaker
 
@@ -41,7 +26,11 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git
 
 ### ⏰ 10-min Docker Install with DARPA TC/OpTC Datasets
 
-We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](docs/docs/ten-minute-install.md).
+We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](http://localhost:8000/PIDSMaker/ten-minute-install/).
+
+## Documentation
+
+A comprehensive [documentation](https://ubc-provenance.github.io/PIDSMaker/) is available, explaining all possible arguments and providing examples on how integrating new systems.
 
 ## Basic usage of the framework
 
@@ -65,6 +54,19 @@ Once you have a shell in the pids container, experiments can be run in multiple 
     ./run.sh SYSTEM DATASET --tuned
     ```
     You can still watch the logs in your shell using `tail -f nohup.out`
+
+## Citation
+
+If you use this work, please cite the following paper:
+```
+@inproceedings{bilot2025simpler,
+	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
+	author={Bilot, Tristan and Jiang, Baoxiang and  Li, Zefeng and  El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
+	booktitle={Security Symposium (USENIX Sec'25)},
+	year={2025},
+	organization={USENIX}
+}
+```
 
 ## License
 
