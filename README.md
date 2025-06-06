@@ -1,8 +1,10 @@
+# 🥷 PIDSMaker
+
 [![Documentation](https://img.shields.io/badge/docs-online-pink.svg)](https://ubc-provenance.github.io/PIDSMaker/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15603122.svg)](https://doi.org/10.5281/zenodo.15603122)
-![GitHub License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker)
+![GitHub License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=red)
 
-# 🥷 PIDSMaker
+[**Paper**](https://tfjmp.org/publications/2025-usenixsec-2.pdf) | [**Documentation**](https://ubc-provenance.github.io/PIDSMaker/) | [**Installation**](https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/)
 
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
@@ -26,7 +28,7 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git
 
 ### ⏰ 10-min Docker Install with DARPA TC/OpTC Datasets
 
-We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](http://localhost:8000/PIDSMaker/ten-minute-install/).
+We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/).
 
 ## Documentation
 
@@ -67,6 +69,10 @@ If you use this work, please cite the following paper:
 	organization={USENIX}
 }
 ```
+
+## Contributing
+
+Pull requests are welcome! Please follow the [contribution guidelines](https://ubc-provenance.github.io/PIDSMaker/contributing/).
 
 ## License
 
