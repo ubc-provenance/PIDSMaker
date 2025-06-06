@@ -4,7 +4,7 @@
 
 DARPA TC and OpTC are very large datasets that are significantly challenging to process. We provide our pre-processed versions of these datasets. We use a postgres database to store and load the data and provide the dumps to download.
 
-Sizes for each database dump are as follow: **compressed** is the size of each dump after downloading and uncompressing the archive, **uncompressed** is the size taken once loaded into the postgres table.
+Sizes for each database dump are as follow: **compressed** is the raw size of each dump, **uncompressed** is the size taken once loaded into the postgres table.
 
 | Dataset       | Compressed (GB) | Uncompressed (GB) |
 |---------------|------------------|-------------------|
@@ -18,12 +18,9 @@ Sizes for each database dump are as follow: **compressed** is the size of each d
 | `OPTC_H_501`    | 1.5              | 6.7               |
 | `OPTC_H201`     | 2                | 9.1               |
 
-We provide two archives: `darpa_e3_optc.tar` containing all E3 and OpTC datasets, and `darpa_e5.tar` containing THEIA_E5 and CLEARSCOPE_E5.
-Given the huge size of CADETS_E5, **we do not include** this dataset in the archive.
-
 **Steps:**
 
-1. First [download the archive(s)](https://drive.google.com/drive/folders/1cTSrl_CTxg_rTC_ENddaqAxJXOku8O6y) into a new `data` folder. 
+1. First [download the archive(s)](https://drive.google.com/drive/folders/1cTSrl_CTxg_rTC_ENddaqAxJXOku8O6y) into a new `data` folder. We provide archives containing multiple datasets if their size is small, or provide the dump directly for larger datasets.
     On CLI, you can use `curl` with an authorization token (as explained [here](https://stackoverflow.com/a/67550427/10183259)):
     
     - Go to OAuth 2.0 Playground https://developers.google.com/oauthplayground/
@@ -37,17 +34,20 @@ Given the huge size of CADETS_E5, **we do not include** this dataset in the arch
     ```sh
     mkdir data && cd data
     
-    # darpa_e3_optc.tar
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M?alt=media -o darpa_e3_optc.tar
+    # optc_and_cadets_theia_clearscope_e3.tar
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M?alt=media -o optc_and_cadets_theia_clearscope_e3.tar
 
-    # darpa_e5.tar
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o darpa_e5.tar
+    # theia_clearscope_e5.tar
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o theia_clearscope_e5.tar
+
+    # cadets_e5.dump
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1Xiq7w0Ofz4jZG2PVFuNqi_i0fm28kRcT?alt=media -o cadets_e5.dump
     ```
 
-2. Then uncompress the archives (this shouldn't take much space)
+2. Then uncompress the archives (this won't increase space)
     ```
-    tar -xvf darpa_e3_optc.tar
-    tar -xvf darpa_e5.tar
+    tar -xvf optc_and_cadets_theia_clearscope_e3.tar
+    tar -xvf theia_clearscope_e5.tar
     ```
 
 Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
