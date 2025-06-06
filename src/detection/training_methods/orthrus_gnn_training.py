@@ -75,7 +75,7 @@ def main(cfg):
     assert run_evaluation in ["best_epoch", "each_epoch"], f"Invalid run evaluation {run_evaluation}"
     best_epoch_mode = run_evaluation == "best_epoch"
 
-    num_epochs = cfg.detection.gnn_training.num_epochs
+    num_epochs = 1 if cfg._from_weights else cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
     best_val_ap, best_model, best_epoch = -1.0, None, None

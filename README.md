@@ -17,6 +17,40 @@ cd velox
 
 We have made the installation of DARPA TC/OpTC easy and fast, simply follow [these guidelines](settings/ten-minute-install.md).
 
+## Reaching max ADP with Velox
+
+We provide weights to achieve the max ADP scores (i.e. best-case detection of all attacks) with Velox. 
+To run Velox with trained weights, do so:
+
+```shell
+cd scripts
+```
+
+```shell
+./run_local.sh velox CADETS_E3 --tuned --from_weights --featurization.embed_nodes.seed=35
+./run_local.sh velox THEIA_E3 --tuned --from_weights --featurization.embed_nodes.seed=29
+./run_local.sh velox CADETS_E5 --tuned --from_weights --featurization.embed_nodes.seed=35
+./run_local.sh velox THEIA_E5 --tuned --from_weights
+./run_local.sh velox CLEARSCOPE_E5 --tuned --from_weights --featurization.embed_nodes.seed=35
+./run_local.sh velox optc_h201 --tuned --from_weights
+./run_local.sh velox optc_h501 --tuned --from_weights --featurization.embed_nodes.seed=5
+./run_local.sh velox optc_h051 --tuned --from_weights --featurization.embed_nodes.seed=6
+```
+
+### Expected results
+
+| Name             | ADP | TP  | FP  | Precision | MCC       |
+|------------------|-----|-----|-----|-----------|-----------|
+| CADETS_E3        |   1.00  |  15   |   2  |     0.88      |     0.44      |
+| THEIA_E3         | 0.96|  12   |  1   |    0.92       |    0.31       |
+| CADETS_E5        |   0.52  |   1  |   45  |       0.02    |     0.01     |
+| THEIA_E5         | 1.00    |   1  |   2  |     1.00      |     0.17      |
+| CLEARSCOPE_E3    |     |     |     |           |           |
+| CLEARSCOPE_E5    |   0.44  |   11  |   37  |      0.23     |       0.22    |
+| optc_h201        |  1.00   |  1   |  5   |     0.17      |    0.01       |
+| optc_h501        |   1.00  |   1  |  7   |        0.12   |     0.01      |
+| optc_h051        |   1.00  |  0   |  0   |        0.00   |      0.00     |
+
 ## Reproduce experiments
 
 ### Reproducing Velox results
@@ -26,23 +60,24 @@ We have made the installation of DARPA TC/OpTC easy and fast, simply follow [the
 
 ### Final detection results (Tables 4, 5, 6)
 
-- Replace `{system}` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash`.
-- Replace `{dataset}` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | CADETS_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
-
 ```shell
-./run_local.sh {system} {dataset} --experiment=run_n_times --tuned
+./run_local.sh SYSTEM DATASET --experiment=run_n_times --tuned
 ```
+
+- Replace `SYSTEM` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash`.
+- Replace `DATASET` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | CADETS_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
+
 
 Note: Flash runs from gnn training as its featurization is too long to re-run.
 ```shell
-./run_local.sh flash {dataset} --experiment=run_n_times --tuned --experiment.uncertainty.deep_ensemble.restart_from=gnn_training
+./run_local.sh flash DATASET --experiment=run_n_times --tuned --experiment.uncertainty.deep_ensemble.restart_from=gnn_training
 ```
 
 ### Untuned/tuned systems (Fig. 5)
 
 ```shell
-./run_local.sh {system} {dataset} # untuned
-./run_local.sh {system} {dataset} --tuned # tuned
+./run_local.sh SYSTEM DATASET # untuned
+./run_local.sh SYSTEM DATASET --tuned # tuned
 ```
 
 ### ADP range (Fig.6)
@@ -59,7 +94,7 @@ The config file for the featurization is found in `experiments/tuning/components
 A wandb sweep is run with a run for each combination of hyperparams/featurization method.
 
 ```shell
-./run_local.sh {system} CADETS_E3 --tuning_mode=featurization --tuned --restart_from_scratch
+./run_local.sh SYSTEM CADETS_E3 --tuning_mode=featurization --tuned --restart_from_scratch
 ```
 
 ### Ablation heatmap (Fig. 9)
@@ -103,7 +138,7 @@ python plot_real_time_cpu_watt_memory.py velox CADETS_E3 --detection.gnn_trainin
 
 Reads the YML configuration in `experiments/tuning/systems/default/tuning_fix_uncertainty.yml` and runs a wandb sweep where each combination of parameters has a dedicated wandb run.
 The best run and set of hyperparameters is selected from the run with best ADP score.
-The best hyperparameters are then updated in `tuned_baselines/{dataset}/tuned_{system}.yml`.
+The best hyperparameters are then updated in `tuned_baselines/DATASET/tuned_SYSTEM.yml`.
 The tuned system with best hyperparameters can be used by adding the `--tuned` arg when running the pipeline. 
 The config will be merged with the original config from the system.
 
