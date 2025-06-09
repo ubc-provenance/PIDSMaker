@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15603122.svg)](https://doi.org/10.5281/zenodo.15603122)
+
 # Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems
 
 This repo contains the original code of the paper.
@@ -153,4 +155,17 @@ In each run, the node anomaly scores are saved in the wandb experiments for late
 ./run_all_datasets.sh magic --tuning_mode=hyperparameters
 ./run_all_datasets.sh sigl --tuning_mode=hyperparameters
 ./run_all_datasets.sh rcaid --tuning_mode=hyperparameters
+```
+
+## Citation
+
+If you use this work, please cite the following paper:
+```
+@inproceedings{bilot2025simpler,
+	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
+	author={Bilot, Tristan and Jiang, Baoxiang and  Li, Zefeng and  El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
+	booktitle={Security Symposium (USENIX Sec'25)},
+	year={2025},
+	organization={USENIX}
+}
 ```
