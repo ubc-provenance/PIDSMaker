@@ -11,6 +11,6 @@ featurization:
       context_window_size: 5
       min_count: 0
       use_skip_gram: True
-      num_workers: 15
+      num_workers: 1
       compute_loss: True
       add_paths: False

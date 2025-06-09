@@ -4,6 +4,10 @@ featurization:
   embed_nodes:
     emb_dim: 128
 
+featurization:
+  embed_nodes:
+    seed: 5
+
 detection:
   gnn_training:
     lr: 0.0001

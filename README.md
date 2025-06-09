@@ -27,29 +27,29 @@ cd scripts
 ```
 
 ```shell
-./run_local.sh velox CADETS_E3 --tuned --from_weights --featurization.embed_nodes.seed=35
-./run_local.sh velox THEIA_E3 --tuned --from_weights --featurization.embed_nodes.seed=29
-./run_local.sh velox CADETS_E5 --tuned --from_weights --featurization.embed_nodes.seed=35
+./run_local.sh velox CADETS_E3 --tuned --from_weights
+./run_local.sh velox THEIA_E3 --tuned --from_weights
+./run_local.sh velox CADETS_E5 --tuned --from_weights
 ./run_local.sh velox THEIA_E5 --tuned --from_weights
-./run_local.sh velox CLEARSCOPE_E5 --tuned --from_weights --featurization.embed_nodes.seed=35
+./run_local.sh velox CLEARSCOPE_E5 --tuned --from_weights
 ./run_local.sh velox optc_h201 --tuned --from_weights
-./run_local.sh velox optc_h501 --tuned --from_weights --featurization.embed_nodes.seed=5
-./run_local.sh velox optc_h051 --tuned --from_weights --featurization.embed_nodes.seed=6
+./run_local.sh velox optc_h501 --tuned --from_weights
+./run_local.sh velox optc_h051 --tuned --from_weights
 ```
 
 ### Expected results
 
 | Name             | ADP | TP  | FP  | Precision | MCC       |
 |------------------|-----|-----|-----|-----------|-----------|
-| CADETS_E3        |   1.00  |  15   |   2  |     0.88      |     0.44      |
-| THEIA_E3         | 0.96|  12   |  1   |    0.92       |    0.31       |
+| CADETS_E3        |   1.00  |  20   |   11  |     0.65      |     0.43      |
+| THEIA_E3         | 0.96|  16   |  453   |    0.03       |    0.07       |
 | CADETS_E5        |   0.52  |   1  |   45  |       0.02    |     0.01     |
-| THEIA_E5         | 1.00    |   1  |   2  |     1.00      |     0.17      |
-| CLEARSCOPE_E3    |     |     |     |           |           |
-| CLEARSCOPE_E5    |   0.44  |   11  |   37  |      0.23     |       0.22    |
-| optc_h201        |  1.00   |  1   |  5   |     0.17      |    0.01       |
-| optc_h501        |   1.00  |   1  |  7   |        0.12   |     0.01      |
-| optc_h051        |   1.00  |  0   |  0   |        0.00   |      0.00     |
+| THEIA_E5         | 1.00    |   2  |   2  |     0.50      |     0.12      |
+| CLEARSCOPE_E3    |   1.00  |  1   |  913   |    0.00       |      0.00     |
+| CLEARSCOPE_E5    |   0.48  |   9  |   34  |      0.21     |       0.19    |
+| optc_h201        |  1.00   |  0   |  0   |     0.00      |    0.00       |
+| optc_h501        |   0.50  |   1  |  10   |        0.09   |     0.01      |
+| optc_h051        |   1.00  |  1   |  17   |        0.06   |      0.02     |
 
 ## Reproduce experiments
 

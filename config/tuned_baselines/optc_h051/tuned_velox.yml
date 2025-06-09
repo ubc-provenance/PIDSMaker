@@ -7,7 +7,7 @@ preprocessing:
 featurization:
   embed_nodes:
     emb_dim: 128
-    seed: 2
+    seed: 3
 
 detection:
   gnn_training:

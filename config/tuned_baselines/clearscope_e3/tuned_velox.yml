@@ -6,10 +6,13 @@ preprocessing:
 
 featurization:
   embed_nodes:
-    emb_dim: 128
-    seed: 2
+    emb_dim: 64
+    seed: 42
 
 detection:
   gnn_training:
     lr: 0.0001
-    node_out_dim: 64
+    node_hid_dim: 256
+    node_out_dim: 128
+    encoder:
+      dropout: 0.1

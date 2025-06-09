@@ -4,15 +4,15 @@ metric:
   goal: maximize
 
 parameters:
+  preprocessing.build_graphs.time_window_size:
+    values: [1.0, 5.0]
   detection.gnn_training.lr:
-    values: [0.001, 0.0001]
+    values: [0.0001, 0.001]
   detection.gnn_training.encoder.dropout:
-    values: [0.3]
-
-  featurization.embed_nodes.used_method:
-    values: [hierarchical_hashing, fasttext, feature_word2vec, only_type]
-  detection.gnn_training.decoder.used_methods:
-    values: [predict_node_type, reconstruct_node_features, predict_edge_type]
-  detection.gnn_training.encoder.used_methods:
-    values: [none, tgn-graph_attention, sum_aggregation]
-    
+    values: [0.1, 0.3]
+  detection.gnn_training.node_out_dim:
+    values: [32, 64, 128, 256]
+  detection.gnn_training.node_hid_dim:
+    values: [32, 64, 128, 256]
+  featurization.embed_nodes.emb_dim:
+    values: [64, 128, 256]
