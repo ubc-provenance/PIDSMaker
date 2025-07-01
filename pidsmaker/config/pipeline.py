@@ -24,13 +24,13 @@ from .config import (
     Arg,
 )
 
-DEFAULT_ROOT_ARTIFACT_DIR = "/home/artifacts/"  # Destination folder (in the container) for generated files. Will be created if doesn't exist.
+DEFAULT_ROOT_ARTIFACT_DIR = "./artifacts/"  # Destination folder (in the container) for generated files. Will be created if doesn't exist.
 ROOT_PROJECT_PATH = pathlib.Path(__file__).parent.parent.parent.resolve()
 ROOT_GROUND_TRUTH_DIR = os.path.join(ROOT_PROJECT_PATH, "Ground_Truth/")
 
 
 DATABASE_DEFAULT_CONFIG = {
-    "host": "postgres",  # Host machine where the db is located
+    "host": "localhost",  # Host machine where the db is located
     "user": "postgres",  # Database user
     "password": "postgres",  # The password to the database user
     "port": "5432",  # The port number for Postgres
