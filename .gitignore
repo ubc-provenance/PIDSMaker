@@ -169,3 +169,13 @@ nohup.out
 artifacts/
 data/
 docs/site/
+postgres_data/
+postgres_lock/
+
+# Singularity files
+*.sif
+*.def
+
+# Postgres directories
+postgres_config/
+postgres_run/

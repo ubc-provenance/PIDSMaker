@@ -5,7 +5,9 @@ import shutil
 import time
 from collections import defaultdict
 
+import networkx as nx
 import torch
+import torch_geometric
 import wandb
 
 from pidsmaker.config import (
@@ -20,7 +22,10 @@ from pidsmaker.detection import (
     gnn_training,
     graph_preprocessing,
 )
-from pidsmaker.experiments.tuning import fuse_cfg_with_sweep_cfg, get_tuning_sweep_cfg
+from pidsmaker.experiments.tuning import (
+    fuse_cfg_with_sweep_cfg,
+    get_tuning_sweep_cfg,
+)
 from pidsmaker.experiments.uncertainty import (
     avg_std_metrics,
     fuse_hyperparameter_metrics,
@@ -40,7 +45,16 @@ from pidsmaker.preprocessing import (
 from pidsmaker.triage import (
     tracing,
 )
+from pidsmaker.utils.data_utils import CollatableTemporalData
 from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
+
+torch.serialization.add_safe_globals(
+    [
+        nx.classes.multidigraph.MultiDiGraph,
+        CollatableTemporalData,
+        torch_geometric.data.storage.GlobalStorage,
+    ]
+)
 
 
 def get_task_to_module(cfg):
@@ -159,7 +173,10 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
 
                     hyper_to_metrics = defaultdict(list)
                     for hyper in hyperparameters:
-                        log(f"[@hyperparameter {hyper}] - Started", pre_return_line=True)
+                        log(
+                            f"[@hyperparameter {hyper}] - Started",
+                            pre_return_line=True,
+                        )
 
                         for i in range(iterations):
                             log(f"[@iteration {i}]", pre_return_line=True)
@@ -184,7 +201,11 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
                     for i in range(iterations):
                         log(f"[@iteration {i}]", pre_return_line=True)
                         cfg = update_cfg_for_uncertainty_exp(
-                            method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None
+                            method,
+                            i,
+                            iterations,
+                            copy.deepcopy(original_cfg),
+                            hyperparameter=None,
                         )
                         metrics, times = run_pipeline(cfg, method=method, iteration=i)
                         method_to_metrics[method].append({**metrics, **times})
@@ -261,7 +282,7 @@ if __name__ == "__main__":
         project = "PIDSMaker"
 
     wandb.init(
-        mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
+        mode=("online" if (args.wandb and args.tuning_mode == "none") else "disabled"),
         project=project,
         name=exp_name,
         tags=tags,
