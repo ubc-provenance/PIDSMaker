@@ -119,7 +119,7 @@ It is within the `pids` container that coding and experiments take place.
 2. The other alternative is to load the container manually and open a shell directly in your terminal.
     ```
     docker compose -f compose-pidsmaker.yml up -d --build
-    docker compose exec pids bash
+    docker compose exec -f compose-pidsmaker.yml pids bash
     ```
 
 It's in this container that the python env is installed and where the framework will be used.
