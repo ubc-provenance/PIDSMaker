@@ -38,7 +38,7 @@ A comprehensive [documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 Once you have a shell in the pids container, experiments can be run in multiple ways.
 
-- Replace `SYSTEM` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash`.
+- Replace `SYSTEM` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash | magic`.
 - Replace `DATASET` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
 
 1. Run in the shell, no W&B:
