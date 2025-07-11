@@ -55,7 +55,10 @@ Once you have a shell in the pids container, experiments can be run in multiple 
     ```shell
     ./run.sh SYSTEM DATASET --tuned
     ```
-    You can still watch the logs in your shell using `tail -f nohup.out`
+
+You can still watch the logs in your shell using `tail -f nohup.out`
+
+**Warning:** Before performing evaluations, you should tune all systems. Follow the [instructions](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) available in our documentation.
 
 ## Citation
 
