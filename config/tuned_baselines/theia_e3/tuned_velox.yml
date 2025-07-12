@@ -3,7 +3,7 @@
 featurization:
   embed_nodes:
     emb_dim: 64
-    seed: 5
+    seed: 64
 
 detection:
   gnn_training:

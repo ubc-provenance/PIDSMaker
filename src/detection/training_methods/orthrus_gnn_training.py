@@ -67,7 +67,7 @@ def main(cfg):
 
     model = build_model(data_sample=train_data[0], device=device, cfg=cfg, max_node_num=max_node_num)
     if cfg._from_weights:
-        model.load_state_dict(torch.load(os.path.join(cfg._from_weights_path, f"{cfg.dataset.name}.pkl")))
+        model.load_state_dict(torch.load(os.path.join(cfg._from_weights_path, "encoder", f"{cfg.dataset.name}.pkl")))
 
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
     

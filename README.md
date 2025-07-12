@@ -22,7 +22,20 @@ We have made the installation of DARPA TC/OpTC easy and fast, simply follow [the
 ## Reaching max ADP with Velox
 
 We provide weights to achieve the max ADP scores (i.e. best-case detection of all attacks) with Velox. 
-To run Velox with trained weights, do so:
+
+#### 1. Download weights
+```shell
+pip install gdown
+cd weights
+
+# Neural net encoder weights
+gdown https://drive.google.com/drive/folders/18vc5JuMwUY2TmrlONG3xyPdh9NfBXyAD --folder
+
+# Word2vec weights
+gdown https://drive.google.com/drive/folders/1w-QoUYsnAKVVMLnLfxQ2qS1W5--1kUaD --folder
+```
+
+#### 2. Run experiments
 
 ```shell
 cd scripts
@@ -31,7 +44,6 @@ cd scripts
 ```shell
 ./run_local.sh velox CADETS_E3 --tuned --from_weights
 ./run_local.sh velox THEIA_E3 --tuned --from_weights
-./run_local.sh velox CADETS_E5 --tuned --from_weights
 ./run_local.sh velox THEIA_E5 --tuned --from_weights
 ./run_local.sh velox CLEARSCOPE_E5 --tuned --from_weights
 ./run_local.sh velox optc_h201 --tuned --from_weights
@@ -39,19 +51,54 @@ cd scripts
 ./run_local.sh velox optc_h051 --tuned --from_weights
 ```
 
+**Note**: We do not recommend using the `CLEARSCOPE_E3` dataset as we found that all netflow nodes are null.
+Overall, this dataset contains redundant events and is of poor quality.
+
 ### Expected results
 
-| Name             | ADP | TP  | FP  | Precision | MCC       |
-|------------------|-----|-----|-----|-----------|-----------|
-| CADETS_E3        |   1.00  |  20   |   11  |     0.65      |     0.43      |
-| THEIA_E3         | 0.96|  16   |  453   |    0.03       |    0.07       |
-| CADETS_E5        |   0.52  |   1  |   45  |       0.02    |     0.01     |
-| THEIA_E5         | 1.00    |   2  |   2  |     0.50      |     0.12      |
-| CLEARSCOPE_E3    |   1.00  |  1   |  913   |    0.00       |      0.00     |
-| CLEARSCOPE_E5    |   0.48  |   9  |   34  |      0.21     |       0.19    |
-| optc_h201        |  1.00   |  0   |  0   |     0.00      |    0.00       |
-| optc_h501        |   0.50  |   1  |  10   |        0.09   |     0.01      |
-| optc_h051        |   1.00  |  1   |  17   |        0.06   |      0.02     |
+Due to instability, results may be different from the paper.
+
+| Name             | ADP |
+|------------------|-----|
+| CADETS_E3        |   1.00  |
+| THEIA_E3         | 0.93|
+| THEIA_E5         | 1.00    |
+| CLEARSCOPE_E5    |   0.49  |
+| optc_h501        |   1.00  |
+| optc_h051        |   1.00  |
+| optc_h201        |  1.00   |
+
+We show that the simple architecture of Velox is enough to attribute the maximum anomaly score to at least one malicious node per dataset in average.
+Below are the predicted scores of Velox when run with `--from_weights`.
+
+## E3-CADETS
+
+![](.github/img/CADETS_E3.png)
+
+## E3-THEIA
+
+![](.github/img/THEIA_E3.png)
+
+## E5-CLEARSCOPE
+
+![](.github/img/CLEARSCOPE_E5.png)
+
+## E5-THEIA
+
+![](.github/img/THEIA_E5.png)
+
+## OPTC-H501
+
+![](.github/img/H501.png)
+
+## OPTC-H051
+![](.github/img/H051.png)
+
+## OPTC-H201
+
+![](.github/img/H201.png)
+
+
 
 ## Reproduce experiments
 
