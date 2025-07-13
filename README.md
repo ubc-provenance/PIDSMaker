@@ -24,6 +24,8 @@ We have made the installation of DARPA TC/OpTC easy and fast, simply follow [the
 We provide weights to achieve the max ADP scores (i.e. best-case detection of all attacks) with Velox. 
 
 #### 1. Download weights
+In the pids container, run:
+
 ```shell
 pip install gdown
 cd weights
