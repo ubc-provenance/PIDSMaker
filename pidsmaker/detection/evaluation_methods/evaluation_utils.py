@@ -36,11 +36,9 @@ from pidsmaker.utils.utils import (
 
 
 def classifier_evaluation(y_test, y_test_pred, scores):
-    labels_exist = sum(y_test) > 0
-    if labels_exist:
-        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
-    else:
-        tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
+    if not sum(y_test) > 0:
+        raise ValueError("Cannot evaluate: no positive labels in test set")
+    tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
 
     eps = 1e-12
     fpr = fp / (fp + tn + eps)
@@ -51,15 +49,18 @@ def classifier_evaluation(y_test, y_test_pred, scores):
 
     try:
         auc_val = roc_auc_score(y_test, scores)
-    except:
+    except ValueError as e:
+        log(f"WARNING: AUC calculation failed: {e}")
         auc_val = float("nan")
     try:
         ap = ap_score(y_test, scores)
-    except:
+    except ValueError as e:
+        log(f"WARNING: AP calculation failed: {e}")
         ap = float("nan")
     try:
         balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
-    except:
+    except ValueError as e:
+        log(f"WARNING: Balanced ACC calculation failed: {e}")
         balanced_acc = float("nan")
 
     sensitivity = tp / (tp + fn + eps)
