@@ -660,12 +660,11 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
         # Update tp and fp based on label
         if sorted_labels[i] == 1:
             tp += 1
+            # Update detected attacks set if node has associated attacks
+            if node in node2attacks:
+                detected_attacks.update(node2attacks[node])
         else:
             fp += 1
-
-        # Update detected attacks set if node has associated attacks
-        if node in node2attacks:
-            detected_attacks.update(node2attacks[node])
 
         # Calculate precision and detected attacks percentage
         precision = tp / (tp + fp)
