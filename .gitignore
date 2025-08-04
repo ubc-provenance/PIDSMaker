@@ -179,3 +179,4 @@ postgres_lock/
 # Postgres directories
 postgres_config/
 postgres_run/
+postgres_log/

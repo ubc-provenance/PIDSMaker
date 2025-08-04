@@ -106,7 +106,7 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     )
     parser.add_argument("--wandb", action="store_true", help="Whether to submit logs to wandb")
     parser.add_argument(
-        "--project", type=str, default="", help="Name of the wandb project (optional)"
+        "--project", type=str, default="PIDSMaker", help="Name of the wandb project"
     )
     parser.add_argument("--exp", type=str, default="", help="Name of the experiment")
     parser.add_argument(
@@ -457,7 +457,8 @@ def get_yml_cfg(args):
 
     # Inits with default configurations
     cfg = get_default_cfg(args)
-
+    # Set seed for reproducibility
+    cfg.seed = args.seed
     # Checks that all configurations are valid and merge yml file to cfg
     yml_file = get_yml_file(args.model)
     merge_cfg_and_check_syntax(cfg, yml_file)
