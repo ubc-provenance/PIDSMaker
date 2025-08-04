@@ -74,10 +74,10 @@ else
     echo -e "${YELLOW}Warning: ./postgres/init-create-empty-databases.sh not found, skipping${NC}"
 fi
 
-if [ -d "./settings/scripts" ]; then
-    BIND_MOUNTS="$BIND_MOUNTS --bind ./settings/scripts:/scripts"
+if [ -d "./scripts" ]; then
+    BIND_MOUNTS="$BIND_MOUNTS --bind ./scripts:/scripts"
 else
-    echo -e "${YELLOW}Warning: ./settings/scripts directory not found, skipping${NC}"
+    echo -e "${YELLOW}Warning: ./scripts directory not found, skipping${NC}"
 fi
 
 # Always bind INPUT_DIR

@@ -39,11 +39,11 @@ app-run: up
 
 load-dumps: up
 	@echo "Loading database dumps from inside container..."
-	@if [ -f "./settings/scripts/load_dumps.sh" ]; then \
+	@if [ -f "./load_dumps.sh" ]; then \
 		echo "Found load_dumps.sh, executing inside container..."; \
 		singularity exec instance://postgres_instance /scripts/load_dumps.sh; \
 	    else \
-		echo "Error: ./settings/scripts/load_dumps.sh not found"; \
+		echo "Error: ./load_dumps.sh not found"; \
 		exit 1; \
 	    fi
 
