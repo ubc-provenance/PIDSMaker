@@ -3,7 +3,7 @@ import os
 import torch
 
 from pidsmaker.utils.data_utils import load_all_datasets
-from pidsmaker.utils.utils import get_device, log, log_start, set_seed
+from pidsmaker.utils.utils import get_device, log, log_start
 
 
 def get_preprocessed_graphs(cfg):
@@ -22,7 +22,6 @@ def get_preprocessed_graphs(cfg):
 
 
 def main(cfg):
-    set_seed(cfg)
     log_start(__file__)
 
     if cfg.detection.graph_preprocessing.save_on_disk:

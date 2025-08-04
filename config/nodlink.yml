@@ -18,7 +18,6 @@ featurization:
   feat_training:
     epochs: 100
     emb_dim: 256
-    use_seed: True
     training_split: train
     used_method: fasttext
     fasttext:
@@ -45,7 +44,6 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
-    use_seed: True
     deterministic: False
     num_epochs: 12
     patience: 3

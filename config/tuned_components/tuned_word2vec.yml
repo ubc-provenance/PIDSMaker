@@ -3,7 +3,6 @@ featurization:
     epochs: 10
     emb_dim: 128
     training_split: train
-    use_seed: True
     used_method: word2vec
     word2vec:
       alpha: 0.025

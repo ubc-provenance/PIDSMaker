@@ -88,6 +88,7 @@ dependencies:
       - gitdb==4.0.12
       - gitpython==3.1.44
       - graphviz==0.20.1
+      - h5py==3.14.0
       - identify==2.6.12
       - idna==3.10
       - igraph==0.11.5

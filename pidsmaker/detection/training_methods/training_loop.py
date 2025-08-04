@@ -12,14 +12,12 @@ from pidsmaker.factory import (
     optimizer_factory,
     optimizer_few_shot_factory,
 )
-from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
+from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm
 
 from . import inference_loop
 
 
 def main(cfg):
-    set_seed(cfg)
-
     log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")

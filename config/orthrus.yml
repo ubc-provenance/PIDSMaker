@@ -21,7 +21,6 @@ featurization:
     emb_dim: 128
     epochs: 50
     training_split: all
-    use_seed: True
     used_method: word2vec
     word2vec:
       alpha: 0.025
@@ -58,7 +57,6 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
-    use_seed: True
     deterministic: False
     num_epochs: 12
     patience: 3

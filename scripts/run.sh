@@ -15,4 +15,4 @@ for arg in "$@"; do
 done
 
 # Execute the Python script with the passed arguments
-PYTHONHASHSEED=0 nohup python ../pidsmaker/main.py $args --wandb &
+nohup python ../pidsmaker/main.py $args --wandb &
