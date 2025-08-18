@@ -467,6 +467,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             raise ValueError(f"Invalid objective {objective}")
 
     # We wrap objectives into this class to calculate some metrics on validation set easily
+    # This is useful only if use_few_shot is True
     is_edge_type_prediction = objective_cfg.used_methods.strip() == "predict_edge_type"
     objectives = [
         ValidationWrapper(
