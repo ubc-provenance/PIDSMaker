@@ -81,8 +81,6 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
     if use_tgn:
         in_dim = tgn_memory_dim
 
-    original_edge_dim = edge_dim
-
     for method in map(
         lambda x: x.strip(),
         cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(","),
