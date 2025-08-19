@@ -29,7 +29,6 @@ def test_edge_level(
 ):
     model.eval()
 
-    edge_list = None
     start_time = data.t[0]
     all_losses = []
 
@@ -62,21 +61,17 @@ def test_edge_level(
             "edge_type": edge_types.astype(int),
         }
     )
-    if edge_list is None:
-        edge_list = edge_df
-    else:
-        edge_list = pd.concat([edge_list, edge_df])
 
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = (
-        ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_list["time"].max())
+        ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_df["time"].max())
     )
 
     logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
-    edge_list.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
+    edge_df.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
     return all_losses
 
 
