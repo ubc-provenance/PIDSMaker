@@ -653,7 +653,6 @@ def log_dataset_stats(datasets):
 
 def set_seed(cfg):
     seed = cfg.seed
-    os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
