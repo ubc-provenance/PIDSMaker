@@ -180,3 +180,6 @@ postgres_lock/
 postgres_config/
 postgres_run/
 postgres_log/
+
+# tokenizer data
+nltk_data/
