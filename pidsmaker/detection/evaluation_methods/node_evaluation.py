@@ -37,7 +37,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     log(f"Loading data from {test_tw_path}...")
 
     threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
-    if threshold_method == "magic": # data leaking by using test data
+    if threshold_method == "magic":  # data leaking by using test data
         thr = get_threshold(test_tw_path, threshold_method)
     else:
         thr = get_threshold(val_tw_path, threshold_method)
@@ -48,9 +48,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     node_to_max_loss = defaultdict(int)
 
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(
-        log_tqdm(sorted(filelist), desc="Compute labels")
-    ):
+    for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
         df = pd.read_csv(file).to_dict(orient="records")
         for line in df:
@@ -74,9 +72,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
     # For plotting the scores of seen and unseen nodes
     graph_dir = cfg.preprocessing.transformation._graphs_dir
-    train_set_paths = get_all_files_from_folders(
-        graph_dir, cfg.dataset.train_files
-    )
+    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
 
     train_node_set = set()
     for train_path in train_set_paths:
@@ -91,9 +87,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         )
 
         results[node_id]["score"] = pred_score
-        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(
-            node_id, -1
-        )
+        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
         results[node_id]["is_seen"] = int(str(node_id) in train_node_set)
 
@@ -126,9 +120,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     node_to_max_loss = defaultdict(int)
 
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(
-        log_tqdm(sorted(filelist), desc="Compute labels")
-    ):
+    for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
         df = pd.read_csv(file).to_dict(orient="records")
         for line in df:
@@ -139,13 +131,9 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
             node_to_values[node]["tw"].append(tw)
 
             if "threatrace_score" in line:
-                node_to_values[node]["threatrace_score"].append(
-                    line["threatrace_score"]
-                )
+                node_to_values[node]["threatrace_score"].append(line["threatrace_score"])
             if "correct_pred" in line:
-                node_to_values[node]["correct_pred"].append(
-                    line["correct_pred"]
-                )
+                node_to_values[node]["correct_pred"].append(line["correct_pred"])
             if "flash_score" in line:
                 node_to_values[node]["flash_score"].append(line["flash_score"])
             if "magic_score" in line:
@@ -157,9 +145,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
     # For plotting the scores of seen and unseen nodes
     graph_dir = cfg.preprocessing.transformation._graphs_dir
-    train_set_paths = get_all_files_from_folders(
-        graph_dir, cfg.dataset.train_files
-    )
+    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
 
     train_node_set = set()
     for train_path in train_set_paths:
@@ -172,10 +158,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         threatrace_label = 0
         flash_label = 0
         detected_tw = None
-        if (
-            cfg.detection.evaluation.node_evaluation.threshold_method
-            == "threatrace"
-        ):
+        if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
             max_score = 0
             pred_score = max(losses["threatrace_score"])
 
@@ -187,9 +170,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                     max_score = score
                     detected_tw = tw
 
-        elif (
-            cfg.detection.evaluation.node_evaluation.threshold_method == "flash"
-        ):
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
             max_score = 0
             pred_score = max(losses["flash_score"])
 
@@ -201,9 +182,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                     max_score = score
                     detected_tw = tw
 
-        elif (
-            cfg.detection.evaluation.node_evaluation.threshold_method == "magic"
-        ):
+        elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
             max_score = 0
             pred_score = max(losses["magic_score"])
 
@@ -220,9 +199,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
             )
 
         results[node_id]["score"] = pred_score
-        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(
-            node_id, -1
-        )
+        results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
         results[node_id]["is_seen"] = int(str(node_id) in train_node_set)
 
@@ -230,8 +207,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         detected_tw = detected_tw or node_to_max_loss_tw.get(node_id, None)
         if detected_tw is not None:
             results[node_id]["time_range"] = [
-                datetime_to_ns_time_US_handle_nano(tw)
-                for tw in filelist[detected_tw].split("~")
+                datetime_to_ns_time_US_handle_nano(tw) for tw in filelist[detected_tw].split("~")
             ]
         else:
             results[node_id]["time_range"] = None
@@ -239,15 +215,9 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         if use_kmeans:  # in this mode, we add the label after
             results[node_id]["y_hat"] = 0
         else:
-            if (
-                cfg.detection.evaluation.node_evaluation.threshold_method
-                == "threatrace"
-            ):
+            if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
                 results[node_id]["y_hat"] = threatrace_label
-            elif (
-                cfg.detection.evaluation.node_evaluation.threshold_method
-                == "flash"
-            ):
+            elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
                 results[node_id]["y_hat"] = flash_label
             else:
                 results[node_id]["y_hat"] = int(pred_score > thr)
@@ -263,11 +233,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 def analyze_false_positives(
     y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes
 ):
-    fp_indices = [
-        i
-        for i, (true, pred) in enumerate(zip(y_truth, y_preds))
-        if pred and not true
-    ]
+    fp_indices = [i for i, (true, pred) in enumerate(zip(y_truth, y_preds)) if pred and not true]
     malicious_tws = set(tw_to_malicious_nodes.keys())
     num_fps_in_malicious_tw = 0
 
@@ -276,9 +242,7 @@ def analyze_false_positives(
         num_fps_in_malicious_tw += int(is_in_malicious_tw)
 
     fp_in_malicious_tw_ratio = (
-        num_fps_in_malicious_tw / len(fp_indices)
-        if len(fp_indices) > 0
-        else float("nan")
+        num_fps_in_malicious_tw / len(fp_indices) if len(fp_indices) > 0 else float("nan")
     )
     return fp_in_malicious_tw_ratio
 
@@ -296,15 +260,11 @@ def main(
     else:
         get_preds_fn = get_node_predictions
 
-    results, thr = get_preds_fn(
-        cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path
-    )
+    results, thr = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
 
     # save results for future checking
     os.makedirs(cfg.detection.evaluation._results_dir, exist_ok=True)
-    results_save_dir = os.path.join(
-        cfg.detection.evaluation._results_dir, "results.pth"
-    )
+    results_save_dir = os.path.join(cfg.detection.evaluation._results_dir, "results.pth")
     torch.save(results, results_save_dir)
     log(f"Resutls saved to {results_save_dir}")
 
@@ -318,15 +278,9 @@ def main(
     )  # average detection precision
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     # simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
-    neat_scores_img_file = os.path.join(
-        out_dir, f"neat_scores_{model_epoch_dir}.svg"
-    )
-    seen_score_img_file = os.path.join(
-        out_dir, f"seen_score_{model_epoch_dir}.png"
-    )
-    discrim_img_file = os.path.join(
-        out_dir, f"discrim_curve_{model_epoch_dir}.png"
-    )
+    neat_scores_img_file = os.path.join(out_dir, f"neat_scores_{model_epoch_dir}.svg")
+    seen_score_img_file = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
+    discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
 
     attack_to_GPs = get_GP_of_each_attack(cfg)
     attack_to_TPs = defaultdict(int)
@@ -370,13 +324,9 @@ def main(
     adp_score = plot_detected_attacks_vs_precision(
         pred_scores, nodes, node2attacks, y_truth, adp_img_file
     )
-    discrim_scores = compute_discrimination_score(
-        pred_scores, nodes, node2attacks, y_truth
-    )
+    discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
     plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
-    discrim_tp = compute_discrimination_tp(
-        pred_scores, nodes, node2attacks, y_truth
-    )
+    discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths_node_level(
         pred_scores,
@@ -389,9 +339,7 @@ def main(
         cfg,
         thr,
     )
-    plot_scores_neat(
-        pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr
-    )
+    plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
     # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
 
@@ -412,9 +360,7 @@ def main(
         tps_in_atts.append((att, tps))
 
     stats["percent_detected_attacks"] = (
-        round(len(attack_to_TPs) / len(attack_to_GPs), 2)
-        if len(attack_to_GPs) > 0
-        else 0
+        round(len(attack_to_TPs) / len(attack_to_GPs), 2) if len(attack_to_GPs) > 0 else 0
     )
 
     fps, tps, precision, recall = get_metrics_if_all_attacks_detected(
@@ -430,9 +376,7 @@ def main(
     for k, v in discrim_scores.items():
         stats[k] = round(v, 4)
 
-    attack2tps = get_detected_tps_node_level(
-        pred_scores, nodes, node2attacks, y_truth, cfg
-    )
+    attack2tps = get_detected_tps_node_level(pred_scores, nodes, node2attacks, y_truth, cfg)
     for attack, detected_tps in attack2tps.items():
         stats[f"tps_{attack}"] = str(detected_tps)
 
