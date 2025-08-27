@@ -81,11 +81,7 @@ DATASET_DEFAULT_CONFIG = {
             "E5-CADETS/node_Nginx_Drakon_APT_17.csv",
         ],
         "attack_to_time_window": [
-            [
-                "E5-CADETS/node_Nginx_Drakon_APT.csv",
-                "2019-05-16 09:31:00",
-                "2019-05-16 10:12:00",
-            ],
+            ["E5-CADETS/node_Nginx_Drakon_APT.csv", "2019-05-16 09:31:00", "2019-05-16 10:12:00"],
             [
                 "E5-CADETS/node_Nginx_Drakon_APT_17.csv",
                 "2019-05-17 10:15:00",
@@ -121,22 +117,10 @@ DATASET_DEFAULT_CONFIG = {
             "E3-CADETS/node_Nginx_Backdoor_13.csv",
         ],
         "attack_to_time_window": [
-            [
-                "E3-CADETS/node_Nginx_Backdoor_06.csv",
-                "2018-04-06 11:20:00",
-                "2018-04-06 12:09:00",
-            ],
+            ["E3-CADETS/node_Nginx_Backdoor_06.csv", "2018-04-06 11:20:00", "2018-04-06 12:09:00"],
             # ["E3-CADETS/node_Nginx_Backdoor_11.csv" , '2018-04-11 15:07:00', '2018-04-11 15:16:00'],
-            [
-                "E3-CADETS/node_Nginx_Backdoor_12.csv",
-                "2018-04-12 13:59:00",
-                "2018-04-12 14:39:00",
-            ],
-            [
-                "E3-CADETS/node_Nginx_Backdoor_13.csv",
-                "2018-04-13 09:03:00",
-                "2018-04-13 09:16:00",
-            ],
+            ["E3-CADETS/node_Nginx_Backdoor_12.csv", "2018-04-12 13:59:00", "2018-04-12 14:39:00"],
+            ["E3-CADETS/node_Nginx_Backdoor_13.csv", "2018-04-13 09:03:00", "2018-04-13 09:16:00"],
         ],
     },
     "CLEARSCOPE_E5": {
@@ -147,13 +131,7 @@ DATASET_DEFAULT_CONFIG = {
         "num_edge_types": 10,
         "year_month": "2019-05",
         "start_end_day_range": (8, 18),
-        "train_files": [
-            "graph_8",
-            "graph_9",
-            "graph_10",
-            "graph_11",
-            "graph_12",
-        ],
+        "train_files": ["graph_8", "graph_9", "graph_10", "graph_11", "graph_12"],
         "val_files": ["graph_13"],
         "test_files": ["graph_14", "graph_15", "graph_17"],
         "unused_files": ["graph_16"],
@@ -231,11 +209,7 @@ DATASET_DEFAULT_CONFIG = {
             "h201/node_h201_0923.csv",
         ],
         "attack_to_time_window": [
-            [
-                "h201/node_h201_0923.csv",
-                "2019-09-23 11:23:00",
-                "2019-09-23 13:25:00",
-            ],
+            ["h201/node_h201_0923.csv", "2019-09-23 11:23:00", "2019-09-23 13:25:00"],
         ],
     },
     "optc_h501": {
@@ -254,11 +228,7 @@ DATASET_DEFAULT_CONFIG = {
             "h501/node_h501_0924.csv",
         ],
         "attack_to_time_window": [
-            [
-                "h501/node_h501_0924.csv",
-                "2019-09-24 10:28:00",
-                "2019-09-24 15:29:00",
-            ],
+            ["h501/node_h501_0924.csv", "2019-09-24 10:28:00", "2019-09-24 15:29:00"],
         ],
     },
     "optc_h051": {
@@ -277,11 +247,7 @@ DATASET_DEFAULT_CONFIG = {
             "h051/node_h051_0925.csv",
         ],
         "attack_to_time_window": [
-            [
-                "h051/node_h051_0925.csv",
-                "2019-09-25 10:29:00",
-                "2019-09-25 14:25:00",
-            ],
+            ["h051/node_h051_0925.csv", "2019-09-25 10:29:00", "2019-09-25 14:25:00"],
         ],
     },
 }
@@ -435,8 +401,7 @@ DECODERS_CFG = {
                                 output size matching the downstream objective (e.g. edge type prediction involves predicting 10 edge types, so the output of the decoder should be 10).",
         ),
         "src_dst_projection_coef": Arg(
-            int,
-            desc="Multiplier of input neurons to project src and dst nodes.",
+            int, desc="Multiplier of input neurons to project src and dst nodes."
         ),
     },
     "node_mlp": {
@@ -472,9 +437,7 @@ OBJECTIVES_CFG = {
     # Prediction-based
     "predict_edge_type": {
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
@@ -482,9 +445,7 @@ OBJECTIVES_CFG = {
     },
     "predict_node_type": {
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
@@ -492,26 +453,20 @@ OBJECTIVES_CFG = {
     "predict_masked_struct": {
         "loss": Arg(str, vals=OR(PRED_LOSSES)),
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
     },
     "detect_edge_few_shot": {
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
     },
     "predict_edge_contrastive": {
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
         "inner_product": {
@@ -522,27 +477,21 @@ OBJECTIVES_CFG = {
     "reconstruct_node_features": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
     },
     "reconstruct_node_embeddings": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
     },
     "reconstruct_edge_embeddings": {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
     },
@@ -550,9 +499,7 @@ OBJECTIVES_CFG = {
         "loss": Arg(str, vals=OR(RECON_LOSSES)),
         "mask_rate": Arg(float),
         "decoder": Arg(
-            str,
-            vals=OR(list(DECODERS_CFG.keys())),
-            desc="Decoder used before computing loss.",
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
     },
@@ -567,23 +514,14 @@ SYNTHETIC_ATTACKS = {
     },
 }
 
-THRESHOLD_METHODS = [
-    "max_val_loss",
-    "mean_val_loss",
-    "threatrace",
-    "magic",
-    "flash",
-    "nodlink",
-]
+THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "flash", "nodlink"]
 
 # --- Tasks, subtasks, and argument configurations ---
 TASK_ARGS = {
     "preprocessing": {
         "build_graphs": {
             "used_method": Arg(
-                str,
-                vals=OR(["default", "magic"]),
-                desc="The method to build time window graphs.",
+                str, vals=OR(["default", "magic"]), desc="The method to build time window graphs."
             ),
             "use_all_files": Arg(bool),
             "mimicry_edge_num": Arg(int),
@@ -593,8 +531,7 @@ TASK_ARGS = {
             ),
             "use_hashed_label": Arg(bool, desc="Whether to hash the textual features."),
             "fuse_edge": Arg(
-                bool,
-                desc="Whether to fuse duplicate sequential edges into a single edge.",
+                bool, desc="Whether to fuse duplicate sequential edges into a single edge."
             ),
             "node_label_features": {
                 "subject": Arg(
@@ -609,9 +546,7 @@ TASK_ARGS = {
                 ),
                 "netflow": Arg(
                     str,
-                    vals=AND(
-                        ["type", "remote_ip", "remote_port"],
-                    ),
+                    vals=AND(["type", "remote_ip", "remote_port"]),
                     desc="Which features use for netflow nodes. Features will be concatenated.",
                 ),
             },
@@ -643,8 +578,7 @@ TASK_ARGS = {
                 desc="Size of the text embedding. Arg not used by some featurization methods that do not build embeddings.",
             ),
             "epochs": Arg(
-                int,
-                desc="Epochs to train the embedding method. Arg not used by some methods.",
+                int, desc="Epochs to train the embedding method. Arg not used by some methods."
             ),
             "training_split": Arg(
                 str,
@@ -682,22 +616,13 @@ TASK_ARGS = {
             ),
             "edge_features": Arg(
                 str,
-                vals=AND(
-                    [
-                        "edge_type",
-                        "edge_type_triplet",
-                        "msg",
-                        "time_encoding",
-                        "none",
-                    ]
-                ),
+                vals=AND(["edge_type", "edge_type_triplet", "msg", "time_encoding", "none"]),
                 desc="Edge features to used during GNN training. `edge_type` refers to the system call type, `edge_type_triplet` \
                                     considers a same edge type as a new type if source or destination node types are different, `msg` is the message vector \
                                     used in the TGN, `time_encoding` encodes temporal order of events with their timestamps in the TGN, `none` uses no features.",
             ),
             "multi_dataset_training": Arg(
-                bool,
-                desc="Whether the GNN should be trained on all datasets in `multi_dataset`.",
+                bool, desc="Whether the GNN should be trained on all datasets in `multi_dataset`."
             ),
             "fix_buggy_graph_reindexer": Arg(
                 bool,
@@ -740,8 +665,7 @@ TASK_ARGS = {
                 },
                 "tgn_last_neighbor": {
                     "tgn_neighbor_size": Arg(
-                        int,
-                        desc="Number of last neighbors to store for each node.",
+                        int, desc="Number of last neighbors to store for each node."
                     ),
                     "tgn_neighbor_n_hop": Arg(
                         int,
@@ -782,26 +706,19 @@ TASK_ARGS = {
         },
         "gnn_training": {
             "deterministic": Arg(
-                bool,
-                desc="Whether to force PyTorch to use deterministic algorithms.",
+                bool, desc="Whether to force PyTorch to use deterministic algorithms."
             ),
             "num_epochs": Arg(int),
             "patience": Arg(int),
             "lr": Arg(float),
             "weight_decay": Arg(float),
-            "node_hid_dim": Arg(
-                int,
-                desc="Number of neurons in the middle layers of the encoder.",
-            ),
+            "node_hid_dim": Arg(int, desc="Number of neurons in the middle layers of the encoder."),
             "node_out_dim": Arg(int, desc="Number of neurons in the last layer of the encoder."),
             "grad_accumulation": Arg(
-                int,
-                desc="Number of epochs to gather gradients before backprop.",
+                int, desc="Number of epochs to gather gradients before backprop."
             ),
             "inference_device": Arg(
-                str,
-                vals=OR(["cpu", "cuda"]),
-                desc="Device used during testing.",
+                str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."
             ),
             "used_method": Arg(str, vals=OR(["default"]), desc="Which training pipeline use."),
             "encoder": {
@@ -859,12 +776,10 @@ TASK_ARGS = {
                     desc="Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).",
                 ),
                 "use_kmeans": Arg(
-                    bool,
-                    desc="Whether to cluster nodes after thresholding as done in Orthrus",
+                    bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"
                 ),
                 "kmeans_top_K": Arg(
-                    int,
-                    desc="Number of top-score nodes selected before clustering.",
+                    int, desc="Number of top-score nodes selected before clustering."
                 ),
             },
             "tw_evaluation": {
@@ -920,16 +835,7 @@ TASK_ARGS = {
             ),
             "depimpact": {
                 "used_method": Arg(
-                    str,
-                    vals=OR(
-                        [
-                            "component",
-                            "shortest_path",
-                            "1-hop",
-                            "2-hop",
-                            "3-hop",
-                        ]
-                    ),
+                    str, vals=OR(["component", "shortest_path", "1-hop", "2-hop", "3-hop"])
                 ),
                 "score_method": Arg(str, vals=OR(["degree", "recon_loss", "degree_recon"])),
                 "workers": Arg(int),
