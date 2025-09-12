@@ -31,10 +31,10 @@ pip install gdown
 cd weights
 
 # Neural net encoder weights
-gdown https://drive.google.com/drive/folders/18vc5JuMwUY2TmrlONG3xyPdh9NfBXyAD --folder
+gdown https://drive.google.com/drive/folders/13M4e-suqr_y2hnFIwyFlZ7zrXjlyKevA --folder
 
 # Word2vec weights
-gdown https://drive.google.com/drive/folders/1w-QoUYsnAKVVMLnLfxQ2qS1W5--1kUaD --folder
+gdown https://drive.google.com/drive/folders/1qO_nQWivT44RnEv_wcwjO8fWz5lGuZCd --folder
 ```
 
 #### 2. Run experiments
