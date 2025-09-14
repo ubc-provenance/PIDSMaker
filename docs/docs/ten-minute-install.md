@@ -20,7 +20,7 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
 
 **Steps:**
 
-1. First [download the archive(s)](https://drive.google.com/drive/folders/1cTSrl_CTxg_rTC_ENddaqAxJXOku8O6y) into a new `data` folder. We provide archives containing multiple datasets if their size is small, or provide the dump directly for larger datasets.
+1. First [download the archive(s)](https://drive.google.com/drive/folders/1hqfz8__zVqb3QzBuOI2SxrW4lLIdYqFr) into a new `data` folder. We provide archives containing multiple datasets if their size is small, or provide the dump directly for larger datasets.
     On CLI, you can use `curl` with an authorization token (as explained [here](https://stackoverflow.com/a/67550427/10183259)):
     
     - Go to OAuth 2.0 Playground https://developers.google.com/oauthplayground/
@@ -35,7 +35,7 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
     mkdir data && cd data
     
     # optc_and_cadets_theia_clearscope_e3.tar
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/11YVPAuWfeEqC_zV8KD0gNrnEPbHf2Y4M?alt=media -o optc_and_cadets_theia_clearscope_e3.tar
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1i7CkK20p21aBp3HGw46o-Uy31JpPC_Yx?alt=media -o optc_and_cadets_theia_clearscope_e3.tar
 
     # theia_clearscope_e5.tar
     curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o theia_clearscope_e5.tar
