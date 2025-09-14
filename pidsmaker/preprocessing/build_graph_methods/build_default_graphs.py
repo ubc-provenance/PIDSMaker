@@ -262,7 +262,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             start_time = events_list[0][-2]
             temp_list = []
             BATCH = 1024
-            window_size_in_sec = cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000
+            window_size_in_ns = cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000
 
             last_batch = False
             for batch_edges in get_batches(events_list, BATCH):
@@ -272,7 +272,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                 if (len(batch_edges) < BATCH) or (temp_list[-1] == events_list[-1]):
                     last_batch = True
 
-                if (batch_edges[-1][-2] > start_time + window_size_in_sec) or last_batch:
+                if (batch_edges[-1][-2] > start_time + window_size_in_ns) or last_batch:
                     time_interval = (
                         ns_time_to_datetime_US(start_time)
                         + "~"

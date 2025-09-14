@@ -37,7 +37,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     log(f"Loading data from {test_tw_path}...")
 
     threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
-    if threshold_method == "magic":
+    if threshold_method == "magic":  # data leaking by using test data
         thr = get_threshold(test_tw_path, threshold_method)
     else:
         thr = get_threshold(val_tw_path, threshold_method)
@@ -98,7 +98,8 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
     if use_kmeans:
         results = compute_kmeans_labels(
-            results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K
+            results,
+            topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K,
         )
     return results, thr
 
@@ -193,7 +194,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
         else:
             pred_score = reduce_losses_to_score(
-                losses["loss"], cfg.detection.evaluation.node_evaluation.threshold_method
+                losses["loss"],
+                cfg.detection.evaluation.node_evaluation.threshold_method,
             )
 
         results[node_id]["score"] = pred_score
@@ -222,7 +224,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
     if use_kmeans:
         results = compute_kmeans_labels(
-            results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K
+            results,
+            topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K,
         )
     return results, thr
 
@@ -244,7 +247,14 @@ def analyze_false_positives(
     return fp_in_malicious_tw_ratio
 
 
-def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
+def main(
+    val_tw_path,
+    test_tw_path,
+    model_epoch_dir,
+    cfg,
+    tw_to_malicious_nodes,
+    **kwargs,
+):
     if cfg._is_node_level:
         get_preds_fn = get_node_predictions_node_level
     else:
@@ -334,7 +344,12 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
 
     fp_in_malicious_tw_ratio = analyze_false_positives(
-        y_truth, y_preds, pred_scores, max_val_loss_tw, nodes, tw_to_malicious_nodes
+        y_truth,
+        y_preds,
+        pred_scores,
+        max_val_loss_tw,
+        nodes,
+        tw_to_malicious_nodes,
     )
     stats["fp_in_malicious_tw_ratio"] = round(fp_in_malicious_tw_ratio, 3)
 
@@ -345,7 +360,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         tps_in_atts.append((att, tps))
 
     stats["percent_detected_attacks"] = (
-        round(len(attack_to_GPs) / len(attack_to_TPs), 2) if len(attack_to_TPs) > 0 else 0
+        round(len(attack_to_TPs) / len(attack_to_GPs), 2) if len(attack_to_GPs) > 0 else 0
     )
 
     fps, tps, precision, recall = get_metrics_if_all_attacks_detected(

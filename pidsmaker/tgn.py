@@ -392,7 +392,9 @@ class LastNeighborLoader:
 
         # Compute cumulative start indices
         cum_edge_counts = torch.cat([torch.tensor([0], device=nodes.device), edge_counts.cumsum(0)])
-        local_slots = torch.arange(nodes.size(0), device=nodes.device) - cum_edge_counts[self._assoc[nodes]]
+        local_slots = (
+            torch.arange(nodes.size(0), device=nodes.device) - cum_edge_counts[self._assoc[nodes]]
+        )
         dense_id = local_slots + (self._assoc[nodes] * temp_size)
 
         # Initialize dense tensors with temporary size

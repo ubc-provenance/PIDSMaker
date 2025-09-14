@@ -23,8 +23,6 @@ def train_fasttext(corpus, cfg):
     min_count = cfg.featurization.feat_training.fasttext.min_count
     num_workers = cfg.featurization.feat_training.fasttext.num_workers
     negative = cfg.featurization.feat_training.fasttext.negative
-    use_seed = cfg.featurization.feat_training.use_seed
-    SEED = 0
 
     use_pretrained_fb_model = cfg.featurization.feat_training.fasttext.use_pretrained_fb_model
 
@@ -44,7 +42,7 @@ def train_fasttext(corpus, cfg):
             alpha=alpha,
             window=window_size,
             negative=negative,
-            seed=SEED,
+            seed=cfg.seed,
         )
 
     model.build_vocab(corpus, update=use_pretrained_fb_model)

@@ -81,8 +81,6 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
     if use_tgn:
         in_dim = tgn_memory_dim
 
-    original_edge_dim = edge_dim
-
     for method in map(
         lambda x: x.strip(),
         cfg.detection.gnn_training.encoder.used_methods.replace("-", ",").split(","),
@@ -467,6 +465,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
             raise ValueError(f"Invalid objective {objective}")
 
     # We wrap objectives into this class to calculate some metrics on validation set easily
+    # This is useful only if use_few_shot is True
     is_edge_type_prediction = objective_cfg.used_methods.strip() == "predict_edge_type"
     objectives = [
         ValidationWrapper(
