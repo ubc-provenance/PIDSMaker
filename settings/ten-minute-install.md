@@ -35,7 +35,7 @@ Sizes for each database dump are as follow: **compressed** is the size of each d
     mkdir data && cd data
     
     # optc_and_cadets_theia_clearscope_e3.tar
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/TODO?alt=media -o optc_and_cadets_theia_clearscope_e3.tar
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1i7CkK20p21aBp3HGw46o-Uy31JpPC_Yx?alt=media -o optc_and_cadets_theia_clearscope_e3.tar
 
     # theia_clearscope_e5.tar
     curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o theia_clearscope_e5.tar
