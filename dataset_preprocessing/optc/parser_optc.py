@@ -10,7 +10,12 @@ from parser_config import (
     OPTC_node_type_used as node_type_used,
     OPTC_rel2id as rel2id,
 )
-from optc_utils import *
+from parser_utils import (
+    get_all_filelist,
+    stringtomd5,
+    init_database_connection,
+    OPTC_datetime_to_timestamp_US as datetime_to_timestamp_US,
+)
 import argparse
 import os
 from tqdm import tqdm
