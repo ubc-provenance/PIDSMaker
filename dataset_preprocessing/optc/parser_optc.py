@@ -1,4 +1,15 @@
-from config import *
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from parser_config import (
+    DATA_DIR,
+    DATABASE_DEFAULT_CONFIG,
+    DATASET_DEFAULT_CONFIG,
+    OPTC_hostname_map as hostname_map,
+    OPTC_reversed_type as reversed_type_optc,
+    OPTC_node_type_used as node_type_used,
+    OPTC_rel2id as rel2id,
+)
 from optc_utils import *
 import argparse
 import os
@@ -8,7 +19,7 @@ import json
 
 def save_nodes(args):
     hostname = hostname_map[args.host]
-    dataset_dir = os.path.join(BASE_DIR, args.host + '/')
+    dataset_dir = os.path.join(DATA_DIR, args.host + '/')
     all_paths = get_all_filelist(dataset_dir)
 
     subject_uuid2attr = {}
@@ -137,7 +148,7 @@ def save_nodes(args):
 
 def save_events(args, uuid2index_id):
     hostname = hostname_map[args.host]
-    dataset_dir = os.path.join(BASE_DIR, args.host + '/')
+    dataset_dir = os.path.join(DATA_DIR, args.host + '/')
     all_paths = get_all_filelist(dataset_dir)
 
     cur, connect = init_database_connection(args.host)
