@@ -57,7 +57,9 @@ def main(cfg):
         with open(os.path.join(cfg._ground_truth_dir, file), "r") as f:
             reader = csv.reader(f)
             for row in reader:
-                _, node_uuid, _, label = row[0], row[1].strip(), row[2], row[3].strip()
+                # _, node_uuid, _, label = row[0], row[1].strip(), row[2], row[3].strip()
+                _, node_uuid, _, _, label = row[0], row[1].strip(), row[2], row[3], row[4].strip()
+
                 print(f"Processing node {node_uuid} with label {label}")
                 if label == "attack":
                     attack_uuids.add(node_uuid)
