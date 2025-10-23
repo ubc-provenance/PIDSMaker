@@ -730,6 +730,7 @@ TASK_ARGS = {
                     vals=AND(list(ENCODERS_CFG.keys())),
                     desc="First part of the neural network. Usually GNN encoders to capture complex patterns.",
                 ),
+                "x_is_tuple": Arg(bool),
                 **ENCODERS_CFG,
             },
             "decoder": {
