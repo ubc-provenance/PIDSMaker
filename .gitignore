@@ -177,9 +177,10 @@ postgres_lock/
 *.def
 
 # Postgres directories
-postgres_config/
-postgres_run/
-postgres_log/
+postgres_config
+postgres_run
+postgres_log
+postgres_data
 
 # tokenizer data
-nltk_data/
+nltk_data

@@ -1,6 +1,16 @@
 #!/bin/bash
 
-# PostgreSQL status script for Singularity
+# PostgreSQL status script for Singularity/Apptainer
+
+# Detect which container runtime is available
+if command -v apptainer &> /dev/null; then
+    CONTAINER_CMD="apptainer"
+elif command -v singularity &> /dev/null; then
+    CONTAINER_CMD="singularity"
+else
+    echo "ERROR: Neither apptainer nor singularity found in PATH"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -31,20 +41,20 @@ if [ ! -f postgres.sif ]; then
     exit 1
 fi
 
-if singularity exec postgres.sif pg_isready -h localhost -U postgres > /dev/null 2>&1; then
+if $CONTAINER_CMD exec postgres.sif pg_isready -h localhost -U postgres > /dev/null 2>&1; then
     echo -e "${GREEN}✓ PostgreSQL is accepting connections${NC}"
-    echo -e "${GREEN}  Connection: singularity exec postgres.sif psql -h localhost -U postgres${NC}"
+    echo -e "${GREEN}  Connection: ${CONTAINER_CMD} exec postgres.sif psql -h localhost -U postgres${NC}"
     POSTGRES_RUNNING=true
     
     # Show database list
     echo -e "${YELLOW}Databases:${NC}"
-    singularity exec postgres.sif psql -h localhost -U postgres -c "\l" 2>/dev/null | \
+    $CONTAINER_CMD exec postgres.sif psql -h localhost -U postgres -c "\l" 2>/dev/null | \
         grep -v template | grep -v "^-" | grep -v "^(" | grep -v "Name.*Owner" | \
         grep -v "^\s*$" | head -10
     
     # Show PostgreSQL version
     echo -e "${YELLOW}Version:${NC}"
-    singularity exec postgres.sif psql -h localhost -U postgres -c "SELECT version();" -t 2>/dev/null | head -1
+    $CONTAINER_CMD exec postgres.sif psql -h localhost -U postgres -c "SELECT version();" -t 2>/dev/null | head -1
     
 else
     echo -e "${RED}✗ PostgreSQL is not accepting connections${NC}"
@@ -53,10 +63,10 @@ fi
 # Method 3: Check process list as fallback
 if [ "$POSTGRES_RUNNING" = false ]; then
     # Check for any postgres-related processes with more flexible patterns
-    if pgrep -f "postgres" > /dev/null || pgrep -f "singularity.*postgres" > /dev/null; then
+    if pgrep -f "postgres" > /dev/null || pgrep -f "${CONTAINER_CMD}.*postgres" > /dev/null; then
         echo -e "${YELLOW}! Found postgres-related process but cannot connect${NC}"
         echo -e "${YELLOW}  Process list:${NC}"
-        ps aux | grep -E "(postgres|singularity)" | grep -v grep | head -5
+        ps aux | grep -E "(postgres|${CONTAINER_CMD})" | grep -v grep | head -5
     else
         echo -e "${RED}✗ No PostgreSQL processes found${NC}"
     fi

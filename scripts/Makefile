@@ -1,4 +1,4 @@
-# Makefile for Singularity PostgreSQL management
+# Makefile for Singularity/Apptainer PostgreSQL management
 
 .PHONY: up down status load-dumps full-setup logs clean help
 
@@ -25,11 +25,18 @@ reset: clean up
 
 app-build:
 	@echo "Building PIDSMaker container..."
-	@singularity build pidsmaker.sif pidsmaker.def || echo "Build failed - check if you have fakeroot access"
+	@if command -v apptainer &> /dev/null; then \
+		apptainer build pidsmaker.sif pidsmaker.def || echo "Build failed - check if you have fakeroot access"; \
+	elif command -v singularity &> /dev/null; then \
+		singularity build pidsmaker.sif pidsmaker.def || echo "Build failed - check if you have fakeroot access"; \
+	else \
+		echo "ERROR: Neither apptainer nor singularity found"; exit 1; \
+	fi
 
 app-run: up
 	@echo "Running PIDSMaker application..."
-	@singularity run --nv \
+	@CONTAINER_CMD=$$(command -v apptainer &> /dev/null && echo "apptainer" || echo "singularity"); \
+	$$CONTAINER_CMD run --nv \
 		--env DB_HOST=localhost \
 		--env DOCKER_PORT=5432 \
 		--env DB_USER=postgres \
@@ -39,9 +46,10 @@ app-run: up
 
 load-dumps: up
 	@echo "Loading database dumps from inside container..."
-	@if [ -f "./load_dumps.sh" ]; then \
+	@CONTAINER_CMD=$$(command -v apptainer &> /dev/null && echo "apptainer" || echo "singularity"); \
+	if [ -f "./load_dumps.sh" ]; then \
 		echo "Found load_dumps.sh, executing inside container..."; \
-		singularity exec instance://postgres_instance /scripts/load_dumps.sh; \
+		$$CONTAINER_CMD exec instance://postgres_instance /scripts/load_dumps.sh; \
 	    else \
 		echo "Error: ./load_dumps.sh not found"; \
 		exit 1; \
