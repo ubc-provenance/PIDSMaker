@@ -42,7 +42,6 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     else:
         log("WARNING: Computing confusion matrix failed.")
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
-    tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
 
     eps = 1e-12
     fpr = fp / (fp + tn + eps)
