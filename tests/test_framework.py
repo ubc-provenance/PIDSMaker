@@ -7,13 +7,12 @@ import wandb
 
 from pidsmaker import main
 from pidsmaker.config import (
-    DEFAULT_ROOT_ARTIFACT_DIR,
     ENCODERS_CFG,
     get_runtime_required_args,
     get_yml_cfg,
 )
 
-TESTS_ARTIFACT_DIR = os.path.join(DEFAULT_ROOT_ARTIFACT_DIR, "tests/")
+TESTS_ARTIFACT_DIR = os.path.join("./artifacts/", "tests/")
 
 
 def prepare_cfg(

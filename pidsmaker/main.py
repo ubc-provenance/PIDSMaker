@@ -5,9 +5,7 @@ import shutil
 import time
 from collections import defaultdict
 
-import networkx as nx
 import torch
-import torch_geometric
 import wandb
 
 from pidsmaker.config import (
@@ -45,16 +43,7 @@ from pidsmaker.preprocessing import (
 from pidsmaker.triage import (
     tracing,
 )
-from pidsmaker.utils.data_utils import CollatableTemporalData
 from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
-
-torch.serialization.add_safe_globals(
-    [
-        nx.classes.multidigraph.MultiDiGraph,
-        CollatableTemporalData,
-        torch_geometric.data.storage.GlobalStorage,
-    ]
-)
 
 
 def get_task_to_module(cfg):

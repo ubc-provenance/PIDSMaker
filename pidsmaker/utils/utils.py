@@ -18,8 +18,7 @@ import torch
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 
-nltk.download("punkt_tab", quiet=True, download_dir="./nltk_data")
-nltk.data.path.append("./nltk_data")
+nltk.download("punkt", quiet=True)
 
 from pidsmaker.config import update_cfg_for_multi_dataset
 
