@@ -276,18 +276,18 @@ if __name__ == "__main__":
     )
     tags = args.tags.split(",") if args.tags != "" else [args.model]
 
-    cfg = get_yml_cfg(args)
-
     wandb.init(
         mode=("online" if (args.wandb and args.tuning_mode == "none") else "disabled"),
         project=args.project,
         name=exp_name,
         tags=tags,
-        config=clean_cfg_for_log(cfg),
     )
 
     if len(unknown_args) > 0:
         raise argparse.ArgumentTypeError(f"Unknown args {unknown_args}")
+
+    cfg = get_yml_cfg(args)
+    wandb.config.update(clean_cfg_for_log(cfg))
 
     main(cfg, project=args.project, exp=exp_name, sweep_id=args.sweep_id)
 
