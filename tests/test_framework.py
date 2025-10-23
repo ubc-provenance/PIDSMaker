@@ -12,7 +12,7 @@ from pidsmaker.config import (
     get_yml_cfg,
 )
 
-TESTS_ARTIFACT_DIR = os.path.join("./artifacts/", "tests/")
+TESTS_ARTIFACT_DIR = os.path.join("/home/artifacts/", "tests/")
 
 
 def prepare_cfg(

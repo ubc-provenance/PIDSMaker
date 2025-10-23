@@ -147,7 +147,7 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(
-        "--artifact_dir", default="./artifacts/", help="Destination folder for generated files"
+        "--artifact_dir", default="/home/artifacts/", help="Destination folder for generated files"
     )
     parser.add_argument(
         "--test_mode",
