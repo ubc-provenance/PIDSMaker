@@ -456,8 +456,7 @@ def get_yml_cfg(args):
 
     # Inits with default configurations
     cfg = get_default_cfg(args)
-    # Set seed for reproducibility
-    cfg.seed = args.seed
+    
     # Checks that all configurations are valid and merge yml file to cfg
     yml_file = get_yml_file(args.model)
     merge_cfg_and_check_syntax(cfg, yml_file)
