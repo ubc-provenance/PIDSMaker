@@ -16,6 +16,8 @@ def train_word2vec(corpus, cfg, model_save_path):
     epochs = cfg.featurization.feat_training.epochs
     compute_loss = cfg.featurization.feat_training.word2vec.compute_loss
     negative = cfg.featurization.feat_training.word2vec.negative
+    use_seed = cfg.featurization.feat_training.use_seed
+    SEED = 0
 
     model = Word2Vec(
         corpus,
@@ -28,7 +30,7 @@ def train_word2vec(corpus, cfg, model_save_path):
         epochs=1,
         compute_loss=compute_loss,
         negative=negative,
-        seed=cfg.seed,
+        seed=SEED,
     )
 
     epoch_loss = model.get_latest_training_loss()

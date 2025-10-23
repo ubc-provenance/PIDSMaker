@@ -5,6 +5,7 @@
     <ul>
         <li class='no-bullet'><span class="key-leaf">emb_dim</span>: <span class="value">int (1)</span></li>
         <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (2)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_seed</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">training_split</span>: <span class="value">str (3)</span></li>
         <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool (4)</span></li>
         <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (5)</span></li>

@@ -1,3 +1,5 @@
+from pidsmaker.utils.utils import set_seed
+
 from .feat_training_methods import (
     build_trw,
     feat_training_alacarte,
@@ -11,6 +13,8 @@ from .utils import build_random_walks
 
 
 def main(cfg):
+    set_seed(cfg)
+
     method = cfg.featurization.feat_training.used_method.strip()
     if method == "alacarte":
         build_random_walks.main(cfg)

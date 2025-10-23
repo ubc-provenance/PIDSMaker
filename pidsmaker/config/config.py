@@ -580,6 +580,7 @@ TASK_ARGS = {
             "epochs": Arg(
                 int, desc="Epochs to train the embedding method. Arg not used by some methods."
             ),
+            "use_seed": Arg(bool),
             "training_split": Arg(
                 str,
                 vals=OR(["train", "all"]),
@@ -705,6 +706,7 @@ TASK_ARGS = {
             },
         },
         "gnn_training": {
+            "use_seed": Arg(bool),
             "deterministic": Arg(
                 bool, desc="Whether to force PyTorch to use deterministic algorithms."
             ),

@@ -18,8 +18,9 @@ def doc2vec(
     alpha: float,
     dm: int = 1,
 ):
+    SEED = 0
     model = Doc2Vec(
-        vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=cfg.seed
+        vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED
     )
     model.build_vocab(tagged_data)
 

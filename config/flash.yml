@@ -20,6 +20,7 @@ featurization:
     epochs: 10 # 300
     training_split: train
     used_method: flash
+    use_seed: True
     flash:
       min_count: 1
       workers: 15
@@ -40,6 +41,7 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
+    use_seed: True
     deterministic: False
     num_epochs: 12
     patience: 3

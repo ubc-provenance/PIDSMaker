@@ -146,7 +146,6 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--database_port", default="5432", help="The port number for Postgres (default: 5432)"
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
-    parser.add_argument("--seed", type=int, default=0, help="Random seed for reproducibility")
     parser.add_argument(
         "--artifact_dir", default="./artifacts/", help="Destination folder for generated files"
     )

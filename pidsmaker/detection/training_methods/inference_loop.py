@@ -15,6 +15,7 @@ from pidsmaker.utils.utils import (
     log,
     log_tqdm,
     ns_time_to_datetime_US,
+    set_seed,
 )
 
 
@@ -258,6 +259,8 @@ def test_node_level(
 
 
 def main(cfg, model, val_data, test_data, epoch, split, logging=True):
+    set_seed(cfg)
+
     if split == "all":
         splits = [(val_data, "val"), (test_data, "test")]
     elif split == "val":

@@ -16,6 +16,7 @@ from pidsmaker.utils.utils import (
     load_graphs_for_days,
     log_start,
     log_tqdm,
+    set_seed,
 )
 
 
@@ -109,6 +110,7 @@ def main_from_config(cfg):
 
 
 def main(cfg):
+    set_seed(cfg)
     log_start(__file__)
 
     multi_datasets = get_multi_datasets(cfg)

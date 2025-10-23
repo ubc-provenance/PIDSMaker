@@ -45,6 +45,7 @@
     </li>
     <li class='bullet'><span class="key">gnn_training</span>
     <ul>
+        <li class='no-bullet'><span class="key-leaf">use_seed</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">deterministic</span>: <span class="value">bool (19)</span></li>
         <li class='no-bullet'><span class="key-leaf">num_epochs</span>: <span class="value">int</span></li>
         <li class='no-bullet'><span class="key-leaf">patience</span>: <span class="value">int</span></li>

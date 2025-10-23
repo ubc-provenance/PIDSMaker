@@ -444,6 +444,8 @@ def feat_training_for_one_split(
     num_workers = cfg.featurization.feat_training.alacarte.num_workers
     compute_loss = cfg.featurization.feat_training.alacarte.compute_loss
     add_paths = cfg.featurization.feat_training.alacarte.add_paths
+    use_seed = cfg.featurization.feat_training.use_seed
+    SEED = 0
 
     log_dir = out_dir
 
@@ -483,17 +485,29 @@ def feat_training_for_one_split(
     # Training using Word2Vec if needed
     # ===-----------------------------------------------------------------------===
     if model_input is None:
-        model = Word2Vec(
-            paths,
-            vector_size=emb_dim,
-            window=window_size,
-            min_count=min_count,
-            sg=use_skip_gram,
-            workers=num_workers,
-            epochs=epochs,
-            compute_loss=compute_loss,
-            seed=cfg.seed,
-        )
+        if use_seed:
+            model = Word2Vec(
+                paths,
+                vector_size=emb_dim,
+                window=window_size,
+                min_count=min_count,
+                sg=use_skip_gram,
+                workers=num_workers,
+                epochs=epochs,
+                compute_loss=compute_loss,
+                seed=SEED,
+            )
+        else:
+            model = Word2Vec(
+                paths,
+                vector_size=emb_dim,
+                window=window_size,
+                min_count=min_count,
+                sg=use_skip_gram,
+                workers=num_workers,
+                epochs=epochs,
+                compute_loss=compute_loss,
+            )
     else:
         log("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)
