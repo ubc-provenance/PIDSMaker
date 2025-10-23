@@ -19,6 +19,7 @@ services:
     volumes:
       - ./:/home/pids
       - ${ARTIFACTS_DIR:-/artifacts}:/home/artifacts
+      # - /path/to/raw/data:/data
     entrypoint: bash
     stdin_open: true
     tty: true
