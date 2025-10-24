@@ -24,17 +24,9 @@ from .config import (
     Arg,
 )
 
-DEFAULT_ROOT_ARTIFACT_DIR = "/home/artifacts/"  # Destination folder (in the container) for generated files. Will be created if doesn't exist.
 ROOT_PROJECT_PATH = pathlib.Path(__file__).parent.parent.parent.resolve()
 ROOT_GROUND_TRUTH_DIR = os.path.join(ROOT_PROJECT_PATH, "Ground_Truth/")
 
-
-DATABASE_DEFAULT_CONFIG = {
-    "host": "postgres",  # Host machine where the db is located
-    "user": "postgres",  # Database user
-    "password": "postgres",  # The password to the database user
-    "port": "5432",  # The port number for Postgres
-}
 # ================================================================================
 
 
@@ -43,7 +35,7 @@ def get_default_cfg(args):
     Inits the shared cfg object with default configurations.
     """
     cfg = CN()
-    cfg._artifact_dir = args.artifact_dir_in_container or DEFAULT_ROOT_ARTIFACT_DIR
+    cfg._artifact_dir = args.artifact_dir
 
     cfg._test_mode = args.test_mode
     cfg._debug = not args.wandb
@@ -64,8 +56,10 @@ def get_default_cfg(args):
 
     # Database: we simply create variables for all configurations described in the dict
     cfg.database = CN()
-    for attr, value in DATABASE_DEFAULT_CONFIG.items():
-        setattr(cfg.database, attr, value)
+    cfg.database.host = args.database_host
+    cfg.database.user = args.database_user
+    cfg.database.password = args.database_password
+    cfg.database.port = args.database_port
 
     # Dataset: we simply create variables for all configurations described in the dict
     set_dataset_cfg(cfg, args.dataset)
@@ -112,7 +106,7 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     )
     parser.add_argument("--wandb", action="store_true", help="Whether to submit logs to wandb")
     parser.add_argument(
-        "--project", type=str, default="", help="Name of the wandb project (optional)"
+        "--project", type=str, default="PIDSMaker", help="Name of the wandb project"
     )
     parser.add_argument("--exp", type=str, default="", help="Name of the experiment")
     parser.add_argument(
@@ -139,9 +133,21 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     parser.add_argument(
         "--tuning_file_path", default="", help="If set, use the given YML path for tuning"
     )
+    parser.add_argument(
+        "--database_host", default="postgres", help="Host machine where the db is located"
+    )
+    parser.add_argument(
+        "--database_user", default="postgres", help="Database user to connect to the database"
+    )
+    parser.add_argument(
+        "--database_password", default="postgres", help="The password to the database user"
+    )
+    parser.add_argument(
+        "--database_port", default="5432", help="The port number for Postgres (default: 5432)"
+    )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(
-        "--artifact_dir_in_container", default="", help="ID of a wandb sweep for multi-agent runs"
+        "--artifact_dir", default="/home/artifacts/", help="Destination folder for generated files"
     )
     parser.add_argument(
         "--test_mode",
@@ -450,7 +456,7 @@ def get_yml_cfg(args):
 
     # Inits with default configurations
     cfg = get_default_cfg(args)
-
+    
     # Checks that all configurations are valid and merge yml file to cfg
     yml_file = get_yml_file(args.model)
     merge_cfg_and_check_syntax(cfg, yml_file)

@@ -40,6 +40,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     if labels_exist:
         tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
     else:
+        log("WARNING: Computing confusion matrix failed.")
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
 
     eps = 1e-12
@@ -51,15 +52,18 @@ def classifier_evaluation(y_test, y_test_pred, scores):
 
     try:
         auc_val = roc_auc_score(y_test, scores)
-    except:
+    except ValueError as e:
+        log(f"WARNING: AUC calculation failed: {e}")
         auc_val = float("nan")
     try:
         ap = ap_score(y_test, scores)
-    except:
+    except ValueError as e:
+        log(f"WARNING: AP calculation failed: {e}")
         ap = float("nan")
     try:
         balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
-    except:
+    except ValueError as e:
+        log(f"WARNING: Balanced ACC calculation failed: {e}")
         balanced_acc = float("nan")
 
     sensitivity = tp / (tp + fn + eps)
@@ -659,12 +663,11 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
         # Update tp and fp based on label
         if sorted_labels[i] == 1:
             tp += 1
+            # Update detected attacks set if node has associated attacks
+            if node in node2attacks:
+                detected_attacks.update(node2attacks[node])
         else:
             fp += 1
-
-        # Update detected attacks set if node has associated attacks
-        if node in node2attacks:
-            detected_attacks.update(node2attacks[node])
 
         # Calculate precision and detected attacks percentage
         precision = tp / (tp + fp)

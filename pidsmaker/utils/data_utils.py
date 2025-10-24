@@ -522,7 +522,13 @@ def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
         log_dataset_stats(datasets)
         # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
         use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
-        reindex_graphs(datasets, graph_reindexer, device, use_tgn)
+        reindex_graphs(
+            datasets,
+            graph_reindexer,
+            device,
+            use_tgn,
+            x_is_tuple=cfg.detection.gnn_training.encoder.x_is_tuple,
+        )
 
     return datasets
 
@@ -704,7 +710,7 @@ def run_inter_graph_batching(datasets, cfg):
                 ):
                     batch = data_list[i : i + bs]
                     data = collate(CollatableTemporalData, data_list=batch)[0]
-                    
+
                     use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
                     if cfg._debug and use_tgn:
                         debug_test_batching(batch, data, cfg)
@@ -782,7 +788,7 @@ class GraphReindexer:
 
             scatter(x_dst, edge_index[1], out=output, dim=0, reduce="mean")
             x_dst_result = output.clone()
-            return x_src_result[:max_num_node], x_dst_result[:max_num_node]
+            return (x_src_result[:max_num_node], x_dst_result[:max_num_node])
         else:
             if self.fix_buggy_graph_reindexer:
                 output = output.clone()
@@ -811,14 +817,10 @@ class GraphReindexer:
             data.edge_index, data.x_src, data.x_dst, x_is_tuple=x_is_tuple
         )
         data.original_n_id = n_id
+        data.x = x
 
         if not use_tgn:
             data.src, data.dst = edge_index[0], edge_index[1]
-
-        if x_is_tuple:
-            data.x_src, data.x_dst = x
-        else:
-            data.x = x
 
         data.node_type, *_ = self._reindex_graph(
             data.edge_index, data.node_type_src, data.node_type_dst, x_is_tuple=False
@@ -912,10 +914,10 @@ def load_model(model, path: str, cfg, map_location=None):
     return model
 
 
-def reindex_graphs(datasets, graph_reindexer, device, use_tgn):
+def reindex_graphs(datasets, graph_reindexer, device, use_tgn, x_is_tuple=False):
     for dataset in datasets:
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Reindexing graphs"):
                 batch.to(device)
-                graph_reindexer.reindex_graph(batch, use_tgn=use_tgn)
+                graph_reindexer.reindex_graph(batch, use_tgn=use_tgn, x_is_tuple=x_is_tuple)
                 batch.to("cpu")

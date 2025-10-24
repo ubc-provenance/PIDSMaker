@@ -8,7 +8,8 @@ class LinearEncoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, *args, **kwargs):
-        if isinstance(x, tuple):
+        # Handle both tuples and lists (PyG batching may convert tuples to lists)
+        if isinstance(x, (tuple, list)):
             h = self.dropout(self.lin1(x[0])), self.dropout(self.lin1(x[1]))
         else:
             h = self.dropout(self.lin1(x))

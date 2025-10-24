@@ -661,7 +661,7 @@ def set_seed(cfg):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-        
+
     if cfg.detection.gnn_training.deterministic:
         torch.use_deterministic_algorithms(True, warn_only=True)
 

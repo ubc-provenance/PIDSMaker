@@ -7,7 +7,7 @@ You can download all required files directly by running:
 pip install gdown
 ```
 ```shell
-./settings/scripts/download_{dataset}.sh {data_folder}
+./scripts/download_{dataset}.sh {data_folder}
 ```
 where `{dataset}` can be either `clearscope_e3`, `cadets_e3`, `theia_e3`, `clearscope_e5`, `cadets_e5` or `theia_e5` and `{data_folder}` is the absolute path to the output folder where all raw files will be downloaded.
 
@@ -26,14 +26,18 @@ sudo docker compose exec pids bash
 
 4. Convert the DARPA files 
 ```shell
-./settings/scripts/uncompress_darpa_files.sh /data/
+./scripts/uncompress_darpa_files.sh /data/
 ```
 
 > [!NOTE]  
 > This may take multiple hours depending on the dataset.
 
 ### Optional configurations
-- optionally, if using a specific postgres database instead of the postgres docker, update the connection config by setting `DATABASE_DEFAULT_CONFIG` within `pidsmaker/config.py`.
+- optionally, if using a specific postgres database instead of the postgres docker, pass the details as command line arguments to the python scripts
+  - `--database_host`: the host machine where the database is located (default: `postgres`)
+  - `--database_user`: the database user to connect to the database (default: `postgres`)
+  - `--database_password`: the password for the database user (default: `postgres`)
+  - `--database_port`: the port number for Postgres (default: `5432`)
 
 - optionaly, if you want to change the output folder where generated files are stored, update accordingly the volume by uncommenting `./artifacts:/home/artifacts` in `compose.yml`.
 

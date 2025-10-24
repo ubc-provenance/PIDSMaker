@@ -129,11 +129,14 @@ class Model(nn.Module):
         h_dst = res.get("h_dst", None)
 
         if None in [h_src, h_dst]:
-            h_src, h_dst = (
-                (h[batch.edge_index[0]], h[batch.edge_index[1]])
-                if isinstance(h, torch.Tensor)
-                else h
-            )
+            if isinstance(h, torch.Tensor):
+                # h is a single tensor with node embeddings - index by edge_index
+                h_src, h_dst = h[batch.edge_index[0]], h[batch.edge_index[1]]
+            elif isinstance(h, (tuple, list)):
+                # h is (h_src_nodes, h_dst_nodes) with separate node embeddings - index each
+                h_src, h_dst = h[0][batch.edge_index[0]], h[1][batch.edge_index[1]]
+            else:
+                h_src, h_dst = h
 
         return h, h_src, h_dst
 
