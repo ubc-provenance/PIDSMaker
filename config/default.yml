@@ -92,6 +92,7 @@ detection:
         activation: prelu
       custom_mlp:
         architecture_str: none
+      x_is_tuple: False
     decoder:
       predict_edge_type:
         decoder: edge_mlp

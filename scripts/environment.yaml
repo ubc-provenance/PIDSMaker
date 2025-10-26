@@ -1,0 +1,46 @@
+name: pids
+channels:
+- conda-forge
+dependencies:
+- pip=25.1.1
+- python=3.9.23
+- python_abi=3.9
+- psycopg2
+- tqdm
+- pip:
+  - --extra-index-url https://download.pytorch.org/whl/cu117
+  - -f https://data.pyg.org/whl/torch-1.13.0+cu117.html
+  - torch==1.13.1+cu117
+  - torchvision==0.14.1+cu117
+  - torchaudio==0.13.1
+  - scikit-learn==1.2.0
+  - networkx==2.8.7
+  - xxhash==3.2.0
+  - graphviz==0.20.1
+  - psutil
+  - scipy==1.10.1
+  - matplotlib==3.8.4
+  - wandb==0.16.6
+  - chardet==5.2.0
+  - nltk==3.8.1
+  - igraph==0.11.5
+  - cairocffi==1.7.0
+  - wget==3.2
+  - torch_geometric==2.5.3
+  - pyg_lib==0.2.0
+  - torch_scatter==2.1.1
+  - torch_sparse==0.6.17
+  - torch_cluster==1.6.1
+  - torch_spline_conv==1.2.2
+  - gensim==4.3.1
+  - pytz==2024.1
+  - pandas==2.2.2
+  - yacs==0.1.8
+  - numpy==1.26.4
+  - gdown==5.2.0
+  - pytest==8.3.5
+  - pytest-cov==6.1.1
+  - pre-commit==4.2.0
+  - setuptools==61.0
+  - mkdocs-material==9.6.12
+  - mkdocs-glightbox==0.4.0

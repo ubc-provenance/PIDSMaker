@@ -43,7 +43,7 @@ RUN conda install -y psycopg2 tqdm && \
                 wandb==0.16.6 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
                 cairocffi==1.7.0 wget==3.2
 
-RUN RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 
 RUN pip install torch_geometric==2.5.3 --no-cache-dir && \
     pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 \

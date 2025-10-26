@@ -541,17 +541,13 @@ TASK_ARGS = {
                 ),
                 "file": Arg(
                     str,
-                    vals=AND(
-                        ["type", "path"],
-                        desc="Which features use for file nodes. Features will be concatenated.",
-                    ),
+                    vals=AND(["type", "path"]),
+                    desc="Which features use for file nodes. Features will be concatenated.",
                 ),
                 "netflow": Arg(
                     str,
-                    vals=AND(
-                        ["type", "remote_ip", "remote_port"],
-                        desc="Which features use for netflow nodes. Features will be concatenated.",
-                    ),
+                    vals=AND(["type", "remote_ip", "remote_port"]),
+                    desc="Which features use for netflow nodes. Features will be concatenated.",
                 ),
             },
             "multi_dataset": Arg(
@@ -711,7 +707,9 @@ TASK_ARGS = {
         },
         "gnn_training": {
             "use_seed": Arg(bool),
-            "deterministic": Arg(bool, desc="Whether to force PyTorch to use deterministic algorithms."),
+            "deterministic": Arg(
+                bool, desc="Whether to force PyTorch to use deterministic algorithms."
+            ),
             "num_epochs": Arg(int),
             "patience": Arg(int),
             "lr": Arg(float),
@@ -724,9 +722,7 @@ TASK_ARGS = {
             "inference_device": Arg(
                 str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."
             ),
-            "used_method": Arg(
-                str, vals=OR(["default"]), desc="Which training pipeline use."
-            ),
+            "used_method": Arg(str, vals=OR(["default"]), desc="Which training pipeline use."),
             "encoder": {
                 "dropout": Arg(float),
                 "used_methods": Arg(
@@ -734,6 +730,7 @@ TASK_ARGS = {
                     vals=AND(list(ENCODERS_CFG.keys())),
                     desc="First part of the neural network. Usually GNN encoders to capture complex patterns.",
                 ),
+                "x_is_tuple": Arg(bool, desc="Whether to consider nodes differently when being source or destination."),
                 **ENCODERS_CFG,
             },
             "decoder": {

@@ -20,7 +20,10 @@ from pidsmaker.detection import (
     gnn_training,
     graph_preprocessing,
 )
-from pidsmaker.experiments.tuning import fuse_cfg_with_sweep_cfg, get_tuning_sweep_cfg
+from pidsmaker.experiments.tuning import (
+    fuse_cfg_with_sweep_cfg,
+    get_tuning_sweep_cfg,
+)
 from pidsmaker.experiments.uncertainty import (
     avg_std_metrics,
     fuse_hyperparameter_metrics,
@@ -159,7 +162,10 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
 
                     hyper_to_metrics = defaultdict(list)
                     for hyper in hyperparameters:
-                        log(f"[@hyperparameter {hyper}] - Started", pre_return_line=True)
+                        log(
+                            f"[@hyperparameter {hyper}] - Started",
+                            pre_return_line=True,
+                        )
 
                         for i in range(iterations):
                             log(f"[@iteration {i}]", pre_return_line=True)
@@ -184,7 +190,11 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
                     for i in range(iterations):
                         log(f"[@iteration {i}]", pre_return_line=True)
                         cfg = update_cfg_for_uncertainty_exp(
-                            method, i, iterations, copy.deepcopy(original_cfg), hyperparameter=None
+                            method,
+                            i,
+                            iterations,
+                            copy.deepcopy(original_cfg),
+                            hyperparameter=None,
                         )
                         metrics, times = run_pipeline(cfg, method=method, iteration=i)
                         method_to_metrics[method].append({**metrics, **times})
@@ -255,14 +265,9 @@ if __name__ == "__main__":
     )
     tags = args.tags.split(",") if args.tags != "" else [args.model]
 
-    if args.project != "":
-        project = args.project
-    else:
-        project = "PIDSMaker"
-
     wandb.init(
-        mode="online" if (args.wandb and args.tuning_mode == "none") else "disabled",
-        project=project,
+        mode=("online" if (args.wandb and args.tuning_mode == "none") else "disabled"),
+        project=args.project,
         name=exp_name,
         tags=tags,
     )
@@ -273,7 +278,7 @@ if __name__ == "__main__":
     cfg = get_yml_cfg(args)
     wandb.config.update(clean_cfg_for_log(cfg))
 
-    main(cfg, project=project, exp=exp_name, sweep_id=args.sweep_id)
+    main(cfg, project=args.project, exp=exp_name, sweep_id=args.sweep_id)
 
     wandb.finish()
 

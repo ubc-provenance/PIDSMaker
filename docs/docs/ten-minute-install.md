@@ -50,7 +50,7 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
     tar -xvf theia_clearscope_e5.tar
     ```
 
-Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
+<!-- Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manually create the databases from the official DARPA TC files. -->
 
 ## Docker Install
 
@@ -120,7 +120,7 @@ We create two containers: one that runs the postgres database, the other runs th
     pg_restore -U postgres -h localhost -p 5432 -d DATASET /data/DATASET.dump
     ```
     > [!NOTE]  
-    > If you want to parse raw data and create database from scratch, please follow the [guideline](../../dataset_preprocessing/create-db-from-scratch.md) instead of running the above two commands.
+    <!-- > If you want to parse raw data and create database from scratch, please follow the [guideline](../../dataset_preprocessing/create-db-from-scratch.md) instead of running the above two commands. -->
 6. Once databases are loaded, we won't need to touch this container anymore:
     ```sh
     exit
