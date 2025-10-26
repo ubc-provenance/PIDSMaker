@@ -29,6 +29,7 @@ Alternatively, you can [download the files manually](./download-files.md) by sel
 
 ### Optional configurations
 - optionally, if using a specific postgres database instead of the postgres docker, update the connection config by setting `DATABASE_DEFAULT_CONFIG` within `pidsmaker/config/pipeline.py`.
+- optionally, if using a specific postgres database instead of the postgres docker, copy [creating_database](../postgres/init-create-empty-databases.sh) to your database server and run it to create databases, and then copry [creating_tables](../postgres/init-create-databases.sh) to your server and run it to create tables
 
 
 ### Fill the database
