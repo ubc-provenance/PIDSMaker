@@ -1,31 +1,18 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from parser_config import (
-    DATA_DIR,
-    DATABASE_DEFAULT_CONFIG,
-    DATASET_DEFAULT_CONFIG,
-    OPTC_hostname_map as hostname_map,
-    OPTC_reversed_type as reversed_type_optc,
-    OPTC_node_type_used as node_type_used,
-    OPTC_rel2id as rel2id,
-)
-from parser_utils import (
-    get_all_filelist,
-    stringtomd5,
-    init_database_connection,
-    OPTC_datetime_to_timestamp_US as datetime_to_timestamp_US,
-)
-import argparse
+
+from pidsmaker.config import get_runtime_required_args, get_yml_cfg
+from pidsmaker.utils.utils import init_database_connection, stringtomd5, OPTC_datetime_to_timestamp_US, get_all_filelist
+from pidsmaker.utils.dataset_utils import get_rel2id, OPTC_hostname_map
+
 import os
 from tqdm import tqdm
 from psycopg2 import extras as ex
 import json
 
-def save_nodes(args):
-    hostname = hostname_map[args.host]
-    dataset_dir = os.path.join(DATA_DIR, args.host + '/')
+def save_nodes(cfg, dataset_dir):
+    hostname = OPTC_hostname_map[cfg.dataset.name]
     all_paths = get_all_filelist(dataset_dir)
+
+    rel2id = get_rel2id(cfg)
 
     subject_uuid2attr = {}
     netflow_uuid2attr = {}
@@ -43,7 +30,7 @@ def save_nodes(args):
                 if temp_dic['action'] not in rel2id:
                     continue
 
-                if temp_dic['object'] not in node_type_used:
+                if temp_dic['object'] not in ['FILE', 'FLOW', 'PROCESS']:
                     continue
 
                 src_uuid = temp_dic['actorID']
@@ -92,7 +79,7 @@ def save_nodes(args):
                     subject_uuid2attr[dst_uuid] = (path, cmd)
 
     index_id = 0
-    cur, connect = init_database_connection(args.host)
+    cur, connect = init_database_connection(cfg)
     uuid2index_id = {}
 
     # Save subject_nodes
@@ -151,12 +138,13 @@ def save_nodes(args):
 
     return uuid2index_id
 
-def save_events(args, uuid2index_id):
-    hostname = hostname_map[args.host]
-    dataset_dir = os.path.join(DATA_DIR, args.host + '/')
+def save_events(cfg, uuid2index_id, dataset_dir):
+    hostname = OPTC_hostname_map[cfg.dataset.name]
     all_paths = get_all_filelist(dataset_dir)
 
-    cur, connect = init_database_connection(args.host)
+    rel2id = get_rel2id(cfg)
+
+    cur, connect = init_database_connection(cfg)
 
     for i, file in enumerate(all_paths):
         with open(file, 'r') as f:
@@ -174,7 +162,7 @@ def save_events(args, uuid2index_id):
                 if operation not in rel2id:
                     continue
 
-                if operation in reversed_type_optc:
+                if operation in ["READ"]:
                     reverse_flag = True
 
                 src_uuid = temp_dic['actorID']
@@ -192,7 +180,7 @@ def save_events(args, uuid2index_id):
                         reverse_flag = True
 
                 timestr = temp_dic['timestamp']
-                timestamp = datetime_to_timestamp_US(timestr)
+                timestamp = OPTC_datetime_to_timestamp_US(timestr)
 
                 if reverse_flag:
                     temp_data = [dst_uuid, dst_index_id, operation, src_uuid, src_index_id, event_uuid, timestamp]
@@ -213,13 +201,15 @@ def save_events(args, uuid2index_id):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='The name of host to be processed.')
-    args = parser.parse_args()
+    args = get_runtime_required_args()
+    cfg = get_yml_cfg(args)
 
-    uuid2index_id = save_nodes(args)
+    dataset_name = cfg.dataset.name
+    raw_dir = "/data/"
+
+    uuid2index_id = save_nodes(cfg, raw_dir)
     print(f"Finished saving nodes.")
 
-    save_events(args, uuid2index_id)
+    save_events(cfg, uuid2index_id, raw_dir)
     print(f"Finished saving events.")
 
