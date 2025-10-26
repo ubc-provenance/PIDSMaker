@@ -255,7 +255,8 @@ if __name__ == "__main__":
     cfg = get_yml_cfg(args)
 
     filelist = filelist.get_filelist(cfg.dataset.name)
-    raw_dir = cfg.dataset.raw_dir
+    # raw_dir = cfg.dataset.raw_dir
+    raw_dir = "/data/"
 
     cur, connect = init_database_connection(cfg)
 

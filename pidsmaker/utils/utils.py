@@ -103,6 +103,20 @@ def datetime_to_timestamp_US(date):
     timeStamp = timestamp
     return int(timeStamp)
 
+def OPTC_datetime_to_timestamp_US(date):
+    '''convert OPTC datetime string to timestamp in nanoseconds'''
+    date=date.replace('-04:00','')
+    if '.' in date:
+        date,ms=date.split('.')
+    else:
+        ms=0
+    tz = pytz.timezone('Etc/GMT+4')
+    timeArray = time.strptime(date, "%Y-%m-%dT%H:%M:%S")
+    dt = datetime.fromtimestamp(mktime(timeArray))
+    timestamp = tz.localize(dt)
+    timestamp=timestamp.timestamp()
+    timeStamp = timestamp*1000+int(ms)
+    return int(timeStamp) * 1000000
 
 def init_database_connection(cfg):
     if cfg.preprocessing.build_graphs.use_all_files:
@@ -297,6 +311,15 @@ def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths.sort(key=lambda f: int("".join(filter(str.isdigit, f))))
     return paths
 
+def get_all_filelist(filepath):
+    '''get all file paths under the given filepath recursively'''
+    file_paths = []
+    for root, dirs, files in os.walk(filepath):
+        for file in files:
+            full_path = os.path.join(root, file)
+            abs_path = os.path.abspath(full_path)
+            file_paths.append(abs_path)
+    return file_paths
 
 def load_graphs_for_days(base_dir, days):
     """Loads all graph snapshots for a given list of days."""
