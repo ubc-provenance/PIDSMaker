@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "a"
+
 echo "$#"
 # Check if dataset name is provided
 if [ "$#" -ne 1 ]; then

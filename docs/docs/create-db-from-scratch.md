@@ -74,7 +74,7 @@ For TC datasets (`clearscope_e3`, `cadets_e3`, `theia_e3`, `clearscope_e5`, `cad
 Still in the container's shell, fill the database for the corresponding dataset by running this command:
 
 ```shell
-python dataset_preprocessing/darpa_tc/create_database.py orthrus DATASET
+python dataset_preprocessing/darpa_tc/create_database_e5.py orthrus DATASET
 ```
 where `DATASET` can be [`CLEARSCOPE_E5` | `CADETS_E5` | `THEIA_E5`]. 
 Or 
@@ -90,7 +90,7 @@ For OpTC dataset (`optc_h051`, `optc_h201` and `optc_h501`)
 
 Still in the container's shell, fill the database for the corresponding dataset by running this command:
 ```shell
-python dataset_preprocessing/optc/parser_optc.py orthrus DATASET
+python dataset_preprocessing/optc/create_database_optc.py orthrus DATASET
 ```
 where `DATASET` can be [`optc_h051` | `optc_h201` | `optc_h501`]
 
