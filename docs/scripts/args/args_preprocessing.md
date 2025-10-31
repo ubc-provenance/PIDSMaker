@@ -46,7 +46,7 @@
 3. Whether to hash the textual features.<br>
 4. Whether to fuse duplicate sequential edges into a single edge.<br>
 5. Which features use for process nodes. Features will be concatenated.<br><br><b>Available options (multi selection)</b>:<br>`type`<br>`path`<br>`cmd_line`
-6. <br><b>Available options (multi selection)</b>:<br>`type`<br>`path`
-7. <br><b>Available options (multi selection)</b>:<br>`type`<br>`remote_ip`<br>`remote_port`
+6. Which features use for file nodes. Features will be concatenated.<br><br><b>Available options (multi selection)</b>:<br>`type`<br>`path`
+7. Which features use for netflow nodes. Features will be concatenated.<br><br><b>Available options (multi selection)</b>:<br>`type`<br>`remote_ip`<br>`remote_port`
 8. A comma-separated list of datasets on which training is performed. Evaluation is done only the primary dataset run in CLI.<br><br><b>Available options (one selection)</b>:<br>`THEIA_E5`<br>`THEIA_E3`<br>`CADETS_E5`<br>`CADETS_E3`<br>`CLEARSCOPE_E5`<br>`CLEARSCOPE_E3`<br>`optc_h201`<br>`optc_h501`<br>`optc_h051`<br>`none`
 9. Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`<br><br><b>Available options (multi selection)</b>:<br>`undirected`<br>`dag`<br>`rcaid_pseudo_graph`<br>`none`<br>`synthetic_attack_naive`

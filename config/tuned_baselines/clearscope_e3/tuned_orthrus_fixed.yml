@@ -1,9 +1,0 @@
-preprocessing:
-  build_graphs:
-    time_window_size: 15.0
-
-detection:
-  gnn_training:
-    encoder:
-      dropout: 0.1
-  

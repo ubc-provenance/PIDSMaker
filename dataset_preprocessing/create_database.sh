@@ -1,17 +1,16 @@
 #!/bin/bash
-set -e  # Exit on any error
 
-echo "Starting database and table creation..."
+echo "$#"
+# Check if dataset name is provided
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 <dataset_name>"
+  exit 1
+fi
 
-# Loop over datasets
-for dataset in clearscope_e3 cadets_e3 theia_e3 clearscope_e5 cadets_e5 theia_e5 optc_051 optc_501 optc_201
-do
-    # Convert dataset name to lowercase
-    DATASET_NAME=$(echo "$dataset" | tr '[:upper:]' '[:lower:]')
-    echo "Creating database and tables for: $DATASET_NAME"
+DATASET_NAME=$(echo "$1" | tr '[:upper:]' '[:lower:]')  # Convert to lowercase
 
-    # PostgreSQL commands
-    psql -U postgres <<EOF
+# PostgreSQL commands
+psql -U postgres <<EOF
 CREATE DATABASE $DATASET_NAME;
 \c $DATASET_NAME;
 
@@ -61,7 +60,4 @@ CREATE TABLE subject_node_table (
 ALTER TABLE subject_node_table OWNER TO postgres;
 EOF
 
-    echo "Database '$DATASET_NAME' and tables created successfully!"
-done
-
-echo "All databases and tables created successfully!"
+echo "Database '$DATASET_NAME' and tables created successfully!"

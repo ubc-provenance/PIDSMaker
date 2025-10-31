@@ -234,3 +234,9 @@ ntype2id = {
 
 OPTC_DATASETS = {"optc_h201", "optc_h501", "optc_h051"}
 ATLASv2_DATASETS = {"atlasv2_h1"}
+
+OPTC_hostname_map = {
+    'optc_h051': 'SysClient0051',
+    'optc_h201': 'SysClient0201',
+    'optc_h501': 'SysClient0501',
+}

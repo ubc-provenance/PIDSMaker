@@ -6,10 +6,14 @@ repo_url: https://github.com/ubc-provenance/PIDSMaker
 # Navigation menu
 nav:
   - Home: index.md
-  - Install: ten-minute-install.md
+  - Installation:
+    - Docker installation: ten-minute-install.md
+    - Apptainer installation: singularity_install.md
+    - Install a dataset from scratch: create-db-from-scratch.md
   - Introduction: introduction.md
   - Pipeline: pipeline.md
-  - Tutorial: tutorial.md
+  - Tutorials:
+    - Implement a new PIDS: tutorial.md
   - Arguments:
     - Featurization: config/featurization.md
     - Encoders: config/encoders.md
@@ -22,7 +26,7 @@ nav:
     - Instability Measurement: features/instability.md
   - Contributing: contributing.md
   - Release notes: release_notes.md
-  
+
 # Theme
 theme:
     features:

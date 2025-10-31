@@ -119,6 +119,8 @@ We create two containers: one that runs the postgres database, the other runs th
     ```sh
     pg_restore -U postgres -h localhost -p 5432 -d DATASET /data/DATASET.dump
     ```
+    !!! note
+        If you want to parse raw data and create database from scratch, please follow the [guideline](./create-db-from-scratch.md) instead of running the above two commands.
 6. Once databases are loaded, we won't need to touch this container anymore:
     ```sh
     exit

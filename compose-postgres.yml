@@ -13,6 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-create-empty-databases.sh:/docker-entrypoint-initdb.d/init-create-empty-databases.sh
       - ./scripts:/scripts
+      - ./dataset_preprocessing:/dataset_preprocessing
       - ${INPUT_DIR:-/data}:/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]

@@ -169,6 +169,7 @@ nohup.out
 artifacts/
 data/
 docs/site/
+weights/
 postgres_data/
 postgres_lock/
 
