@@ -20,7 +20,15 @@
 
 ---
 
-[**Paper**](https://www.usenix.org/conference/usenixsecurity25/presentation/bilot) | [**Documentation**](https://ubc-provenance.github.io/PIDSMaker/) | [**Installation**](https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/)
+<p align="center">
+  <strong>
+    <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/bilot">📄 Paper</a>
+    &nbsp;|&nbsp;
+    <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
+    &nbsp;|&nbsp;
+    <a href="https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/">⚙️ Installation</a>
+  </strong>
+</p>
 
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
