@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img width="70%" src="./.github/img/pidsmaker.png" alt="PIDSMAKER logo"/><br><br>
+  <img width="60%" src="./.github/img/pidsmaker.png" alt="PIDSMAKER logo"/><br><br>
 
   <a href="https://ubc-provenance.github.io/PIDSMaker/">
     <img src="https://img.shields.io/badge/docs-online-pink.svg" alt="Documentation"/>
@@ -9,6 +9,13 @@
     <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.15603122.svg" alt="DOI"/>
   </a>
   <img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=red" alt="License"/>
+  </a>
+  <a href="https://github.com/ubc-provenance/PIDSMaker/releases">
+    <img src="https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker" alt="Latest Release"/>
+  </a>
+   <a href="https://github.com/ubc-provenance/PIDSMaker/stargazers">
+    <img src="https://img.shields.io/github/stars/ubc-provenance/PIDSMaker" alt="Stars"/>
+  </a>
 </p>
 
 ---
@@ -28,7 +35,7 @@ It provides a single codebase to run most recent state-of-the-arts systems and e
 - **NodLink** (NDSS'24): [NODLINK: An Online System for Fine-Grained APT Attack Detection and Investigation](https://arxiv.org/pdf/2311.02331)
 - **ThreaTrace** (IEEE TIFS'22): [THREATRACE: Detecting and Tracing Host-Based Threats in Node Level Through Provenance Graph Learning](https://arxiv.org/pdf/2111.04333)
 
-## Documentation
+## 📄 Documentation
 
 A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is available, explaining all possible arguments and providing examples on how integrating new systems.
 
@@ -44,7 +51,7 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git
 
 We have made the installation of PIDSMaker inclusing pre-processed databases for DARPA TC and OpTC datasets easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/).
 
-## Basic usage of the framework
+## 🧪 Basic usage of the framework
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
 
@@ -81,21 +88,29 @@ A few examples below.
 
 ### From CLI
 
-#### Running Kairos with embedding size of 128 instead of 100, and last neighbor sampling set to last 10 neighbors instead of 20
+<i>Running Kairos with embedding size of 128 instead of 100, and last neighbor sampling set to last 10 neighbors instead of 20.</i>
+
 ```shell
-python pidsmaker/main.py kairos CADETS_E3 --detection.gnn_training.node_hid_dim=128 --detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
+python pidsmaker/main.py kairos CADETS_E3 \
+  --detection.gnn_training.node_hid_dim=128 \
+  --detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
 ```
 
-#### Running Orthrus with Doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers
+<i>Running Orthrus with Doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers.</i>
+
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --featurization.feat_training.used_method=doc2vec --featurization.feat_training.emb_dim=128 --detection.gnn_training.encoder.used_methods=tgn,sage --detection.gnn_training.encoder.sage.num_layers=3
+python pidsmaker/main.py orthrus CADETS_E3 \
+  --featurization.feat_training.used_method=doc2vec \
+  --featurization.feat_training.emb_dim=128 \
+  --detection.gnn_training.encoder.used_methods=tgn,sage \
+  --detection.gnn_training.encoder.sage.num_layers=3
 ```
 
 ### From a new YAML config file
 
 Want to create a new PIDS? Create a new config under `config/your_system.yml`, inherit from existing PIDSs and tune it as you want.
 
-#### Magic with node type prediction instead of its hybrid masked feature reconstruction and structure prediction objective function, and use a 2-layer MLP with ReLU as decoder, and use NodLink's thresholding method
+<i>Magic with node type prediction instead of its hybrid masked feature reconstruction and structure prediction objective function, and use a 2-layer MLP with ReLU as decoder, and use NodLink's thresholding method.</i>
 
 ``` yaml
 _include_yml: magic
