@@ -6,8 +6,8 @@
     <img src="https://img.shields.io/badge/docs-online-pink.svg" alt="Documentation"/>
   </a>
   <a href="https://doi.org/10.5281/zenodo.15603122">
-    <img src="https://zenodo.org/badge/DOI/10.5281%2Fzenodo.15603122.svg" alt="DOI"/>
-  </a>
+  <img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.15603122-blue?logo=zenodo" alt="DOI"/>
+</a>
   <img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=red" alt="License"/>
   </a>
   <a href="https://github.com/ubc-provenance/PIDSMaker/releases">
