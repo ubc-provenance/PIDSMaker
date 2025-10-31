@@ -137,7 +137,7 @@ featurization:
       window_size: 5
       min_count: 1
       use_skip_gram: True
-      num_workers: 15
+      num_workers: 1
       compute_loss: True
       negative: 5
       decline_rate: 30
