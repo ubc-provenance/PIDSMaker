@@ -10,6 +10,9 @@ import torch
 # import cudf # TODO: find an alternative as too heavy
 import tracemalloc
 # from cuml.neighbors import NearestNeighbors  # TODO: find an alternative as too heavy
+import matplotlib.pyplot as plt
+from detection.evaluation_methods.evaluation_utils import get_threshold
+from gensim.models import Word2Vec
 
 
 @torch.no_grad()
@@ -21,6 +24,8 @@ def test_edge_level(
         model_epoch_file,
         cfg,
         device,
+        indexid2msg=None,
+        word2vec_model=None,
 ):
     model.eval()
 
@@ -28,11 +33,13 @@ def test_edge_level(
     edge_list = None
     start_time = data.t[0]
     all_losses = []
+    all_oov_categories = []  # Track OOV category for each loss: 'in_vocab', 'oov_subject', 'oov_file', 'oov_netflow'
 
     # NOTE: warning, this may reindex the data is TGN is not used
     batch_loader = batch_loader_factory(cfg, data, model.graph_reindexer, test_mode=True)
     
     validation = split == "val"
+    has_oov_checking = (indexid2msg is not None and word2vec_model is not None)
 
     for batch in batch_loader:
         results = model(batch, full_data, inference=True, validation=validation)
@@ -52,6 +59,30 @@ def test_edge_level(
         dstnodes = edge_index[1, :].cpu().numpy()
         t_vars = batch.t.cpu().numpy()
         losses = each_edge_loss.cpu().numpy()
+        
+        # Check OOV status for each edge and categorize by node type
+        if has_oov_checking:
+            for src, dst in zip(srcnodes, dstnodes):
+                src_oov, src_type = check_oov_status(src, indexid2msg, word2vec_model)
+                dst_oov, dst_type = check_oov_status(dst, indexid2msg, word2vec_model)
+                
+                # Determine OOV category for this edge
+                if not src_oov and not dst_oov:
+                    category = 'in_vocab'
+                elif src_oov and dst_oov:
+                    # Both OOV - prioritize: subject > file > netflow
+                    if src_type == 'subject' or dst_type == 'subject':
+                        category = 'oov_subject'
+                    elif src_type == 'file' or dst_type == 'file':
+                        category = 'oov_file'
+                    else:
+                        category = 'oov_netflow'
+                elif src_oov:
+                    category = f'oov_{src_type}' if src_type else 'oov_unknown'
+                else:  # dst_oov
+                    category = f'oov_{dst_type}' if dst_type else 'oov_unknown'
+                
+                all_oov_categories.append(category)
         
         edge_df = pd.DataFrame({
             'loss': losses.astype(float),
@@ -73,7 +104,10 @@ def test_edge_level(
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
     edge_list.to_csv(csv_file, sep=',', header=True, index=False, encoding='utf-8')
-    return all_losses
+
+    print("here")
+    
+    return all_losses, all_oov_categories if has_oov_checking else None
 
     # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {len(unique_nodes)}, Edges_count: {event_count}, Cost Time: {(end - start):.2f}s')
 
@@ -263,6 +297,33 @@ def test_node_level(
     # log(f'Time: {time_interval}, Loss: {losses:.4f}, Nodes_count: {node_count}, Cost Time: {(end - start):.2f}s')
 
 
+def check_oov_status(node_id, indexid2msg, word2vec_model):
+    """Check if any token of a node's label is OOV
+    Returns: (is_oov: bool, node_type: str or None)
+    """
+    if str(node_id) not in indexid2msg:
+        print("here", node_id)
+        return False, None  # Unknown node, treat as in vocab
+    
+    node_type, node_label = indexid2msg[str(node_id)]
+    tokens = tokenize_label(node_label, node_type)
+    # print(tokens)
+    
+    if len(tokens) == 0:
+        print("no tokens")
+        return True, node_type
+    
+    first_token = tokens[0]
+    # print(first_token)
+
+    for t in tokens:
+        if t not in word2vec_model.wv:
+            # print(t)
+            return True, node_type
+    return False, node_type
+    # return first_token not in word2vec_model.wv
+
+
 def main(cfg, model, val_data, test_data, full_data, epoch, split):
     if split == "all":
         splits = [(val_data, "val"), (test_data, "test")]
@@ -284,33 +345,69 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
     model_epoch_file = f"model_epoch_{epoch}"
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
+    
+    # Load Word2Vec model and node labels for OOV checking
+    try:
+        feature_word2vec_model_path = cfg.featurization.embed_nodes._model_dir + 'feature_word2vec.model'
+        word2vec_model = Word2Vec.load(feature_word2vec_model_path)
+        indexid2msg = get_indexid2msg(cfg)
+        has_oov_checking = True
+        log("Loaded Word2Vec model and node labels for OOV tracking")
+    except Exception as e:
+        log(f"Could not load Word2Vec model for OOV tracking: {e}")
+        has_oov_checking = False
+        word2vec_model = None
+        indexid2msg = None
+
+    # print(list(indexid2msg.keys())[:10])
+    # exit()
 
     val_ap = None
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
     tpb = []
     split2loss = {}
+    split2all_losses = {}
+    split2oov_categories = {}  # Track OOV categories for each loss
 
     for graphs, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
         tracemalloc.start()
         
         all_losses = []
+        all_oov_categories = []
         for g in log_tqdm(graphs, desc=desc):
             g.to(device=device)
             
             s = time.time()
             test_fn = test_node_level if cfg._is_node_level else test_edge_level
-            losses = test_fn(
-                data=g,
-                full_data=full_data,
-                model=model,
-                split=split_name,
-                model_epoch_file=model_epoch_file,
-                cfg=cfg,
-                device=device,
-            )
-            all_losses.extend(losses)
+            if test_fn == test_edge_level:
+                result = test_fn(
+                    data=g,
+                    full_data=full_data,
+                    model=model,
+                    split=split_name,
+                    model_epoch_file=model_epoch_file,
+                    cfg=cfg,
+                    device=device,
+                    indexid2msg=indexid2msg,
+                    word2vec_model=word2vec_model,
+                )
+                losses, oov_categories = result
+                all_losses.extend(losses)
+                if oov_categories is not None:
+                    all_oov_categories.extend(oov_categories)
+            else:
+                losses = test_fn(
+                    data=g,
+                    full_data=full_data,
+                    model=model,
+                    split=split_name,
+                    model_epoch_file=model_epoch_file,
+                    cfg=cfg,
+                    device=device,
+                )
+                all_losses.extend(losses)
             tpb.append(time.time() - s)
             
             g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
@@ -328,12 +425,149 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         
         mean_loss = np.mean(all_losses)
         split2loss[split_name] = mean_loss
+        split2all_losses[split_name] = all_losses
+        if len(all_oov_categories) > 0:
+            split2oov_categories[split_name] = all_oov_categories
         
         if split_name == "val":
             val_ap = model.get_val_ap()
             log(f'[@epoch{epoch:02d}] Validation finished - Mean Loss: {mean_loss:.4f} - Val AP: {val_ap:.4f}', return_line=True)
         else:
             log(f'[@epoch{epoch:02d}] Test finished - Mean Loss: {mean_loss:.4f}', return_line=True)
+    
+    # After all splits are processed, create histograms with threshold
+    for split_name in split2all_losses.keys():
+        all_losses = split2all_losses[split_name]
+        oov_categories = split2oov_categories.get(split_name, None)
+        
+        # Create histogram of all losses for this split
+        logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split_name, model_epoch_file)
+        os.makedirs(logs_dir, exist_ok=True)
+        
+        plt.figure(figsize=(10, 6))
+        
+        # If we have OOV categories, create stacked histogram with node types
+        if oov_categories is not None and len(oov_categories) == len(all_losses):
+            # Separate losses by OOV category
+            all_losses_np = np.array(all_losses)
+            oov_categories_np = np.array(oov_categories)
+            
+            # Extract losses for each category
+            losses_in_vocab = all_losses_np[oov_categories_np == 'in_vocab']
+            losses_oov_subject = all_losses_np[oov_categories_np == 'oov_subject']
+            losses_oov_file = all_losses_np[oov_categories_np == 'oov_file']
+            losses_oov_netflow = all_losses_np[oov_categories_np == 'oov_netflow']
+            
+            # Prepare data for stacked histogram (only include non-empty categories)
+            hist_data = []
+            hist_labels = []
+            hist_colors = []
+            
+            if len(losses_in_vocab) > 0:
+                hist_data.append(losses_in_vocab)
+                hist_labels.append('In-Vocabulary')
+                hist_colors.append('#00ffff')  # Neon Cyan
+            
+            if len(losses_oov_subject) > 0:
+                hist_data.append(losses_oov_subject)
+                hist_labels.append('OOV Subject/Process')
+                hist_colors.append('#ff006e')  # Neon Pink
+            
+            if len(losses_oov_file) > 0:
+                hist_data.append(losses_oov_file)
+                hist_labels.append('OOV File')
+                hist_colors.append('#ffaa00')  # Neon Orange
+            
+            if len(losses_oov_netflow) > 0:
+                hist_data.append(losses_oov_netflow)
+                hist_labels.append('OOV Network')
+                hist_colors.append('#bf00ff')  # Neon Purple
+            
+            # Create stacked histogram
+            if len(hist_data) > 0:
+                plt.hist(hist_data, bins=100, 
+                        label=hist_labels,
+                        color=hist_colors, 
+                        edgecolor='black', alpha=0.7, stacked=True)
+            
+            total_oov = len(losses_oov_subject) + len(losses_oov_file) + len(losses_oov_netflow)
+            oov_fraction = total_oov / len(all_losses)
+            plt.title(f'Loss Distribution - {split_name.upper()} Split (OOV: {oov_fraction*100:.1f}%)')
+        else:
+            # Regular histogram without OOV information
+            plt.hist(all_losses, bins=100, edgecolor='black', alpha=0.7)
+            plt.title(f'Loss Distribution - {split_name.upper()} Split (All Graphs)')
+        
+        plt.xlabel('Loss')
+        plt.ylabel('Frequency (log scale)')
+        plt.yscale('log')
+        
+        # Add threshold as vertical line (calculated from validation losses)
+        try:
+            if "val" in split2all_losses:
+                # Calculate threshold from validation losses
+                threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+                if threshold_method == "max_val_loss":
+                    threshold = max(split2all_losses["val"])
+                elif threshold_method == "mean_val_loss":
+                    threshold = np.mean(split2all_losses["val"])
+                else:
+                    # For other methods, try to get from the saved files
+                    val_tw_path = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "val", model_epoch_file)
+                    threshold = get_threshold(val_tw_path, threshold_method)
+                
+                plt.axvline(x=threshold, color='red', linestyle='--', linewidth=2, 
+                           label=f'Threshold ({threshold_method}): {threshold:.4f}')
+
+
+                # Debug printing: for the test split, print nodes and their labels for
+                # every edge whose loss exceeds the threshold.
+                if split_name == "test" and indexid2msg is not None:
+                    try:
+                        # Edge loss CSVs for this split and epoch are stored in logs_dir.
+                        for fname in os.listdir(logs_dir):
+                            if not fname.endswith(".csv"):
+                                continue
+                            csv_path = os.path.join(logs_dir, fname)
+                            try:
+                                edge_df = pd.read_csv(csv_path)
+                            except Exception as e:
+                                log(f"Could not read edge loss file {csv_path}: {e}")
+                                continue
+
+                            # Filter edges with loss above the threshold
+                            high_edges = edge_df[edge_df["loss"] > threshold]
+                            for _, row in high_edges.iterrows():
+                                src_id = int(row["srcnode"])
+                                dst_id = int(row["dstnode"])
+                                loss_val = float(row["loss"])
+
+                                # src_type, src_label = indexid2msg.get(str(src_id), ("unknown", "unknown"))
+                                # dst_type, dst_label = indexid2msg.get(str(dst_id), ("unknown", "unknown"))
+
+                                node_type, node_label = indexid2msg[str(src_id)]
+                                src_tokens = tokenize_label(node_label, node_type)
+
+                                node_type, node_label = indexid2msg[str(dst_id)]
+                                dst_tokens = tokenize_label(node_label, node_type)
+
+                                print(
+                                    f"[HIGH LOSS EDGE] loss={loss_val:.4f} | "
+                                    f"src_id={src_id} ({src_tokens}) | "
+                                    f"dst_id={dst_id} ({dst_tokens})"
+                                )
+                    except Exception as e:
+                        log(f"Could not print high-loss edge details: {e}")
+        except Exception as e:
+            log(f"Could not add threshold line: {e}")
+        
+        plt.legend()
+        
+        # Save histogram
+        histogram_file = os.path.join(logs_dir, f"all_losses_histogram.png")
+        plt.savefig(histogram_file, dpi=300, bbox_inches='tight')
+        plt.close()
+        log(f'Saved loss histogram for {split_name} split: {histogram_file}')
 
     del model
     
@@ -345,6 +579,10 @@ def main(cfg, model, val_data, test_data, full_data, epoch, split):
         "peak_inference_gpu_memory": peak_inference_gpu_mem,
         "time_per_batch_inference": np.mean(tpb),
     }
+
+    print(stats)
+    print("those were the stats! we are exiting now!")
+    exit()
     return stats
 
 
