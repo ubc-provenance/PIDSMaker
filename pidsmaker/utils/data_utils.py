@@ -210,7 +210,10 @@ def extract_msg_from_data(
             map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(","))
         )
 
-    possible_triplets = get_possible_triplets(cfg)
+    edge_features = list(
+        map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(","))
+    )
+    possible_triplets = get_possible_triplets(cfg) if "edge_type_triplet" in edge_features else None
 
     for g in data_set:
         fields = {}
@@ -262,9 +265,6 @@ def extract_msg_from_data(
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
 
-        edge_features = list(
-            map(lambda x: x.strip(), cfg.detection.graph_preprocessing.edge_features.split(","))
-        )
         num_edge_types = get_num_edge_type(cfg)
         edge_feats = build_edge_feats(fields, msg, edge_features, possible_triplets, num_edge_types)
 
