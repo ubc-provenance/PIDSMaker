@@ -12,7 +12,7 @@ from pidsmaker.utils.utils import listdir_sorted, log
 
 
 def get_new_stats(tw_to_info, evaluation_results, cfg):
-    method = cfg.detection.evaluation.used_method.strip()
+    method = cfg.evaluation.used_method.strip()
     if method == "node_tw_evaluation":
         flat_y_truth = []
         flat_y_hat = []
@@ -59,7 +59,7 @@ def get_new_stats(tw_to_info, evaluation_results, cfg):
 
 
 def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
-    base_dir = cfg.preprocessing.transformation._graphs_dir
+    base_dir = cfg.transformation._graphs_dir
     results = defaultdict(lambda: defaultdict(dict))
 
     for tw, timestr in tw_to_timestr.items():
@@ -79,11 +79,11 @@ def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
 
 
 def main(cfg):
-    if cfg.triage.tracing.used_method is None:
+    if cfg.triage.used_method is None:
         return
 
-    in_dir = cfg.detection.evaluation._precision_recall_dir
-    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
+    in_dir = cfg.evaluation._precision_recall_dir
+    test_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}
     best_model_epoch = listdir_sorted(test_losses_dir)[-1]
@@ -96,13 +96,13 @@ def main(cfg):
             best_model_epoch = model_epoch_dir
 
     sorted_tw_paths = sorted(
-        os.listdir(os.path.join(cfg.featurization.feat_inference._edge_embeds_dir, "test"))
+        os.listdir(os.path.join(cfg.feat_inference._edge_embeds_dir, "test"))
     )
     tw_to_time = {}
     for tw, tw_file in enumerate(sorted_tw_paths):
         tw_to_time[tw] = tw_file[:-20]
 
-    method = cfg.detection.evaluation.used_method.strip()
+    method = cfg.evaluation.used_method.strip()
 
     results_file = os.path.join(in_dir, f"result_{best_model_epoch}.pth")
     if method == "node_tw_evaluation":
@@ -111,7 +111,7 @@ def main(cfg):
         results_without_tw = torch.load(results_file)
         results = transfer_results_of_node_evaluation(results_without_tw, tw_to_time, cfg)
 
-    if cfg.triage.tracing.used_method == "depimpact":
+    if cfg.triage.used_method == "depimpact":
         tw_to_info, all_traced_nodes = depimpact.main(results, tw_to_time, cfg)
         new_stats = get_new_stats(tw_to_info=tw_to_info, evaluation_results=results, cfg=cfg)
 

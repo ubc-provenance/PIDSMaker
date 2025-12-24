@@ -48,9 +48,9 @@ class PositionalEncoder:
 def main(cfg):
     log_start(__file__)
 
-    trained_w2v_dir = cfg.featurization.feat_training._model_dir
+    trained_w2v_dir = cfg.feat_training._model_dir
     w2vmodel = Word2Vec.load(os.path.join(trained_w2v_dir, "word2vec_model_final.model"))
-    w2v_vector_size = cfg.featurization.feat_training.emb_dim
+    w2v_vector_size = cfg.feat_training.emb_dim
 
     node2corpus = get_node2corpus(cfg, splits=["train", "val", "test"])
     indexid2vec = {}

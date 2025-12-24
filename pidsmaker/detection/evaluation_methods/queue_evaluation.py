@@ -207,7 +207,7 @@ def anomalous_queue_construction_kairos(
         added_que_flag = False
         for hq in queues:
             for his_tw in hq:
-                if cfg.detection.evaluation.queue_evaluation.kairos_idf_queue.include_test_set_in_IDF:
+                if cfg.evaluation.queue_evaluation.kairos_idf_queue.include_test_set_in_IDF:
                     cal_re = cal_set_rel(
                         train_node_IDF,
                         test_node_IDF,
@@ -249,14 +249,14 @@ def anomalous_queue_construction_kairos(
 
 def create_queues_kairos(cfg):
     # In kairos, IDF is computed only on benign edges (train set)
-    base_dir = cfg.preprocessing.transformation._graphs_dir
+    base_dir = cfg.transformation._graphs_dir
     train_feat_files = get_all_files_from_folders(base_dir, cfg.dataset.train_files)
     test_feat_files = get_all_files_from_folders(base_dir, cfg.dataset.test_files)
 
     train_node_IDF, num_train_files = cal_idf_kairos(train_feat_files)
     test_node_IDF, num_test_files = cal_idf_kairos(test_feat_files)
 
-    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
+    test_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "test")
     for model_epoch_dir in tqdm(listdir_sorted(test_losses_dir), desc="Building queues"):
         log(f"\nEvaluation of model {model_epoch_dir}...")
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
@@ -264,7 +264,7 @@ def create_queues_kairos(cfg):
             test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg
         )
 
-        out_dir = cfg.detection.evaluation.queue_evaluation._queues_dir
+        out_dir = cfg.evaluation.queue_evaluation._queues_dir
         os.makedirs(out_dir, exist_ok=True)
         torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
 
@@ -424,7 +424,7 @@ def anomalous_queue_construction_provnet(
 
 def train_lof_model(cfg):
     node2vec_train_val_path = os.path.join(
-        cfg.featurization.feat_training.alacarte._vec_graphs_dir, "nodelabel2vec_val"
+        cfg.feat_training.alacarte._vec_graphs_dir, "nodelabel2vec_val"
     )
     labels_and_embeddings = torch.load(node2vec_train_val_path)
 
@@ -437,7 +437,7 @@ def train_lof_model(cfg):
             embeddings.append(labels_and_embeddings[label])
 
     clf = LocalOutlierFactor(novelty=True, n_neighbors=30).fit(embeddings)
-    torch.save(clf, os.path.join(cfg.detection.evaluation._task_path, "trained_lof.pkl"))
+    torch.save(clf, os.path.join(cfg.evaluation._task_path, "trained_lof.pkl"))
     return clf
 
 
@@ -458,10 +458,10 @@ def ground_truth_label(test_tw_path, cfg):
 
 def create_queues_provnet(cfg):
     node2vec_path = os.path.join(
-        cfg.featurization.feat_training.alacarte._vec_graphs_dir, "nodelabel2vec"
+        cfg.feat_training.alacarte._vec_graphs_dir, "nodelabel2vec"
     )
     node2vec_train_val_path = os.path.join(
-        cfg.featurization.feat_training.alacarte._vec_graphs_dir, "nodelabel2vec_val"
+        cfg.feat_training.alacarte._vec_graphs_dir, "nodelabel2vec_val"
     )
 
     node2vec = torch.load(node2vec_path)
@@ -469,8 +469,8 @@ def create_queues_provnet(cfg):
 
     lof_model = train_lof_model(cfg)
 
-    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
-    val_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "val")
+    test_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "test")
+    val_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "val")
 
     for model_epoch_dir in listdir_sorted(test_losses_dir):
         log(f"\nEvaluation of model {model_epoch_dir}...")
@@ -489,14 +489,14 @@ def create_queues_provnet(cfg):
             val_thr=val_thr,
         )
 
-        out_dir = cfg.detection.evaluation.queue_evaluation._queues_dir
+        out_dir = cfg.evaluation.queue_evaluation._queues_dir
         os.makedirs(out_dir, exist_ok=True)
         torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
 
 
 def predict_queues(cfg):
     # Evaluating the testing set
-    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
+    test_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "test")
 
     best_precision, best_stats = 0.0, None
     for model_epoch_dir in listdir_sorted(test_losses_dir):
@@ -508,7 +508,7 @@ def predict_queues(cfg):
 
         queues = torch.load(
             os.path.join(
-                cfg.detection.evaluation.queue_evaluation._queues_dir,
+                cfg.evaluation.queue_evaluation._queues_dir,
                 f"{model_epoch_dir}_queues.pkl",
             )
         )
@@ -525,7 +525,7 @@ def predict_queues(cfg):
                     anomaly_score = (anomaly_score) * (hq["loss"] + 1)
             log(f"-> queue anomaly score: {anomaly_score:.2f} | {'ATTACK' if label else ''}")
 
-            if anomaly_score > cfg.detection.evaluation.queue_evaluation.queue_threshold:
+            if anomaly_score > cfg.evaluation.queue_evaluation.queue_threshold:
                 idx_list = []
                 for i in queue:
                     idx_list.append(i["index"])
@@ -535,7 +535,7 @@ def predict_queues(cfg):
                     pred_label[i] = 1
                 log(f"Anomaly score: {anomaly_score}")
 
-        out_dir = cfg.detection.evaluation.queue_evaluation._predicted_queues_dir
+        out_dir = cfg.evaluation.queue_evaluation._predicted_queues_dir
         os.makedirs(out_dir, exist_ok=True)
         torch.save(
             detected_queues, os.path.join(out_dir, f"{model_epoch_dir}_predicted_queues.pkl")
@@ -559,7 +559,7 @@ def predict_queues(cfg):
 
 
 def main(cfg):
-    method = cfg.detection.evaluation.queue_evaluation.used_method
+    method = cfg.evaluation.queue_evaluation.used_method
 
     if method == "kairos_idf_queue":
         create_queues_kairos(cfg)

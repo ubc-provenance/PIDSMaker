@@ -59,15 +59,15 @@ def select_processes_with_constraints(
 
 def main(train_graphs, val_graphs, cfg):
     """Integrates synthetic attack patterns into temporal provenance graphs."""
-    num_attacks = cfg.preprocessing.transformation.synthetic_attack_naive.num_attacks
+    num_attacks = cfg.transformation.synthetic_attack_naive.num_attacks
     num_malicious_process = (
-        cfg.preprocessing.transformation.synthetic_attack_naive.num_malicious_process
+        cfg.transformation.synthetic_attack_naive.num_malicious_process
     )
     num_unauthorized_file_access = (
-        cfg.preprocessing.transformation.synthetic_attack_naive.num_unauthorized_file_access
+        cfg.transformation.synthetic_attack_naive.num_unauthorized_file_access
     )
     process_selection_method = (
-        cfg.preprocessing.transformation.synthetic_attack_naive.process_selection_method
+        cfg.transformation.synthetic_attack_naive.process_selection_method
     )
 
     # Combine all graph snapshots into a single graph for analysis

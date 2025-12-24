@@ -7,16 +7,16 @@ from pidsmaker.utils.utils import log, log_start
 
 
 def train_word2vec(corpus, cfg, model_save_path):
-    emb_dim = cfg.featurization.feat_training.emb_dim
-    alpha = cfg.featurization.feat_training.word2vec.alpha
-    window_size = cfg.featurization.feat_training.word2vec.window_size
-    min_count = cfg.featurization.feat_training.word2vec.min_count
-    use_skip_gram = cfg.featurization.feat_training.word2vec.use_skip_gram
-    num_workers = cfg.featurization.feat_training.word2vec.num_workers
-    epochs = cfg.featurization.feat_training.epochs
-    compute_loss = cfg.featurization.feat_training.word2vec.compute_loss
-    negative = cfg.featurization.feat_training.word2vec.negative
-    use_seed = cfg.featurization.feat_training.use_seed
+    emb_dim = cfg.feat_training.emb_dim
+    alpha = cfg.feat_training.word2vec.alpha
+    window_size = cfg.feat_training.word2vec.window_size
+    min_count = cfg.feat_training.word2vec.min_count
+    use_skip_gram = cfg.feat_training.word2vec.use_skip_gram
+    num_workers = cfg.feat_training.word2vec.num_workers
+    epochs = cfg.feat_training.epochs
+    compute_loss = cfg.feat_training.word2vec.compute_loss
+    negative = cfg.feat_training.word2vec.negative
+    use_seed = cfg.feat_training.use_seed
     SEED = 0
 
     model = Word2Vec(
@@ -52,11 +52,11 @@ def train_word2vec(corpus, cfg, model_save_path):
 
 def main(cfg):
     log_start(__file__)
-    model_save_path = cfg.featurization.feat_training._model_dir
+    model_save_path = cfg.feat_training._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
     log("Loading and tokenizing corpus from database...")
-    multi_dataset_training = cfg.featurization.feat_training.multi_dataset_training
+    multi_dataset_training = cfg.feat_training.multi_dataset_training
 
     corpus = get_corpus(cfg, gather_multi_dataset=multi_dataset_training)
 

@@ -1,111 +1,107 @@
 _include_yml: default
 
-preprocessing:
-  build_graphs:
-    used_method: default
-    use_all_files: True
-    mimicry_edge_num: 0
-    time_window_size: 15.0
-    use_hashed_label: False
-    fuse_edge: True
-    node_label_features:
-      subject: type, path, cmd_line
-      file: type, path
-      netflow: type, remote_ip, remote_port
-    multi_dataset: none
-  transformation:
-    used_methods: none
+build_graphs:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 15.0
+  use_hashed_label: False
+  fuse_edge: True
+  node_label_features:
+    subject: type, path, cmd_line
+    file: type, path
+    netflow: type, remote_ip, remote_port
+  multi_dataset: none
+transformation:
+  used_methods: none
 
-featurization:
-  feat_training:
-    emb_dim: 128
-    epochs: 50
-    training_split: all
-    use_seed: True
-    used_method: word2vec
-    word2vec:
-      alpha: 0.025
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      num_workers: 1
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
-  feat_inference:
-    to_remove: True
+feat_training:
+  emb_dim: 128
+  epochs: 50
+  training_split: all
+  use_seed: True
+  used_method: word2vec
+  word2vec:
+    alpha: 0.025
+    window_size: 5
+    min_count: 1
+    use_skip_gram: True
+    num_workers: 1
+    compute_loss: True
+    negative: 5
+    decline_rate: 30
+feat_inference:
+  to_remove: True
 
-detection:
-  graph_preprocessing:
-    save_on_disk: False
-    node_features: node_emb,node_type
-    edge_features: edge_type
-    fix_buggy_graph_reindexer: False
-    global_batching:
-      used_method: none
-    intra_graph_batching:
-      used_methods: edges, tgn_last_neighbor
-      edges:
-        intra_graph_batch_size: 1024
-      tgn_last_neighbor:
-        tgn_neighbor_size: 20
-        tgn_neighbor_n_hop: 1
-        fix_buggy_orthrus_TGN: False
-        fix_tgn_neighbor_loader: False
-        directed: False
-        insert_neighbors_before: False
-    inter_graph_batching:
-      used_method: none
-  gnn_training:
-    used_method: default
-    use_seed: True
-    deterministic: False
-    num_epochs: 12
-    patience: 3
-    lr: 0.00001
-    weight_decay: 0.00001
-    node_hid_dim: 128
-    node_out_dim: 64
-    grad_accumulation: 1
-    encoder:
-      dropout: 0.5
-      used_methods: tgn,graph_attention
-      graph_attention:
-        activation: relu
-        num_heads: 8
-        concat: True
-        flow: source_to_target
-        num_layers: 2
-      tgn:
-        tgn_memory_dim: 100
-        tgn_time_dim: 100
-        use_node_feats_in_gnn: True
-        use_memory: False
-        use_time_order_encoding: False
-        project_src_dst: True
-    decoder:
-      used_methods: predict_edge_type
-      predict_edge_type:
-        decoder: edge_mlp
-        use_triplet_types: False
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 2
-      
-      use_few_shot: False
+graph_preprocessing:
+  save_on_disk: False
+  node_features: node_emb,node_type
+  edge_features: edge_type
+  fix_buggy_graph_reindexer: False
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: edges, tgn_last_neighbor
+    edges:
+      intra_graph_batch_size: 1024
+    tgn_last_neighbor:
+      tgn_neighbor_size: 20
+      tgn_neighbor_n_hop: 1
+      fix_buggy_orthrus_TGN: False
+      fix_tgn_neighbor_loader: False
+      directed: False
+      insert_neighbors_before: False
+  inter_graph_batching:
+    used_method: none
+gnn_training:
+  used_method: default
+  use_seed: True
+  deterministic: False
+  num_epochs: 12
+  patience: 3
+  lr: 0.00001
+  weight_decay: 0.00001
+  node_hid_dim: 128
+  node_out_dim: 64
+  grad_accumulation: 1
+  encoder:
+    dropout: 0.5
+    used_methods: tgn,graph_attention
+    graph_attention:
+      activation: relu
+      num_heads: 8
+      concat: True
+      flow: source_to_target
+      num_layers: 2
+    tgn:
+      tgn_memory_dim: 100
+      tgn_time_dim: 100
+      use_node_feats_in_gnn: True
+      use_memory: False
+      use_time_order_encoding: False
+      project_src_dst: True
+  decoder:
+    used_methods: predict_edge_type
+    predict_edge_type:
+      decoder: edge_mlp
+      use_triplet_types: False
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 2
+    
+    use_few_shot: False
 
-  evaluation:
-    viz_malicious_nodes: False
-    ground_truth_version: orthrus
-    best_model_selection: best_adp
-    used_method: node_evaluation
-    node_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 30
+evaluation:
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_adp
+  used_method: node_evaluation
+  node_evaluation:
+    threshold_method: max_val_loss
+    use_dst_node_loss: True
+    use_kmeans: True
+    kmeans_top_K: 30
 
-# triage :
 #   tracing:
 #     used_method: depimpact
 #     depimpact:

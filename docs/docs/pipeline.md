@@ -41,8 +41,8 @@ While these YAML files provide the default configuration, they are not the only 
 
 ``` py
 python pidsmaker/main.py orthrus CADETS_E3 \
-    --featurization.feat_training.emb_dim=64 \
-    --detection.gnn_training.lr=0.0001
+    --feat_training.emb_dim=64 \
+    --gnn_training.lr=0.0001
 ```
 
 The previous command is similar to the following YAML config:

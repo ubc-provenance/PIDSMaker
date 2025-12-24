@@ -36,7 +36,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
 
-    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    threshold_method = cfg.evaluation.node_evaluation.threshold_method
     if threshold_method == "magic":  # data leaking by using test data
         thr = get_threshold(test_tw_path, threshold_method)
     else:
@@ -58,20 +58,20 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
             # Scores
             node_to_losses[srcnode].append(loss)
-            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
+            if cfg.evaluation.node_evaluation.use_dst_node_loss:
                 node_to_losses[dstnode].append(loss)
 
             # If max-val thr is used, we want to keep track when the node with max loss happens
             if loss > node_to_max_loss[srcnode]:
                 node_to_max_loss[srcnode] = loss
                 node_to_max_loss_tw[srcnode] = tw
-            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
+            if cfg.evaluation.node_evaluation.use_dst_node_loss:
                 if loss > node_to_max_loss[dstnode]:
                     node_to_max_loss[dstnode] = loss
                     node_to_max_loss_tw[dstnode] = tw
 
     # For plotting the scores of seen and unseen nodes
-    graph_dir = cfg.preprocessing.transformation._graphs_dir
+    graph_dir = cfg.transformation._graphs_dir
     train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
 
     train_node_set = set()
@@ -79,11 +79,11 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         train_graph = torch.load(train_path)
         train_node_set |= set(train_graph.nodes())
 
-    use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
+    use_kmeans = cfg.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_losses.items():
         pred_score = reduce_losses_to_score(
-            losses, cfg.detection.evaluation.node_evaluation.threshold_method
+            losses, cfg.evaluation.node_evaluation.threshold_method
         )
 
         results[node_id]["score"] = pred_score
@@ -99,7 +99,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     if use_kmeans:
         results = compute_kmeans_labels(
             results,
-            topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K,
+            topk_K=cfg.evaluation.node_evaluation.kmeans_top_K,
         )
     return results, thr
 
@@ -108,7 +108,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
 
-    threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    threshold_method = cfg.evaluation.node_evaluation.threshold_method
     if threshold_method == "magic":
         thr = get_threshold(test_tw_path, threshold_method)
     else:
@@ -144,7 +144,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                 node_to_max_loss_tw[node] = tw
 
     # For plotting the scores of seen and unseen nodes
-    graph_dir = cfg.preprocessing.transformation._graphs_dir
+    graph_dir = cfg.transformation._graphs_dir
     train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
 
     train_node_set = set()
@@ -152,13 +152,13 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         train_graph = torch.load(train_path)
         train_node_set |= set(train_graph.nodes())
 
-    use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
+    use_kmeans = cfg.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_values.items():
         threatrace_label = 0
         flash_label = 0
         detected_tw = None
-        if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
+        if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
             max_score = 0
             pred_score = max(losses["threatrace_score"])
 
@@ -170,7 +170,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                     max_score = score
                     detected_tw = tw
 
-        elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+        elif cfg.evaluation.node_evaluation.threshold_method == "flash":
             max_score = 0
             pred_score = max(losses["flash_score"])
 
@@ -182,7 +182,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                     max_score = score
                     detected_tw = tw
 
-        elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
+        elif cfg.evaluation.node_evaluation.threshold_method == "magic":
             max_score = 0
             pred_score = max(losses["magic_score"])
 
@@ -195,7 +195,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         else:
             pred_score = reduce_losses_to_score(
                 losses["loss"],
-                cfg.detection.evaluation.node_evaluation.threshold_method,
+                cfg.evaluation.node_evaluation.threshold_method,
             )
 
         results[node_id]["score"] = pred_score
@@ -215,9 +215,9 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         if use_kmeans:  # in this mode, we add the label after
             results[node_id]["y_hat"] = 0
         else:
-            if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
+            if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
                 results[node_id]["y_hat"] = threatrace_label
-            elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+            elif cfg.evaluation.node_evaluation.threshold_method == "flash":
                 results[node_id]["y_hat"] = flash_label
             else:
                 results[node_id]["y_hat"] = int(pred_score > thr)
@@ -225,7 +225,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     if use_kmeans:
         results = compute_kmeans_labels(
             results,
-            topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K,
+            topk_K=cfg.evaluation.node_evaluation.kmeans_top_K,
         )
     return results, thr
 
@@ -263,14 +263,14 @@ def main(
     results, thr = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
 
     # save results for future checking
-    os.makedirs(cfg.detection.evaluation._results_dir, exist_ok=True)
-    results_save_dir = os.path.join(cfg.detection.evaluation._results_dir, "results.pth")
+    os.makedirs(cfg.evaluation._results_dir, exist_ok=True)
+    results_save_dir = os.path.join(cfg.evaluation._results_dir, "results.pth")
     torch.save(results, results_save_dir)
     log(f"Resutls saved to {results_save_dir}")
 
     node_to_path = get_node_to_path_and_type(cfg)
 
-    out_dir = cfg.detection.evaluation._precision_recall_dir
+    out_dir = cfg.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(

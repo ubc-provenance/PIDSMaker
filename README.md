@@ -100,18 +100,18 @@ A few examples below.
 
 ```shell
 python pidsmaker/main.py kairos CADETS_E3 \
-  --detection.gnn_training.node_hid_dim=128 \
-  --detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
+  --gnn_training.node_hid_dim=128 \
+  --graph_preprocessing.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
 ```
 
 <i>Running Orthrus with Doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers.</i>
 
 ```shell
 python pidsmaker/main.py orthrus CADETS_E3 \
-  --featurization.feat_training.used_method=doc2vec \
-  --featurization.feat_training.emb_dim=128 \
-  --detection.gnn_training.encoder.used_methods=tgn,sage \
-  --detection.gnn_training.encoder.sage.num_layers=3
+  --feat_training.used_method=doc2vec \
+  --feat_training.emb_dim=128 \
+  --gnn_training.encoder.used_methods=tgn,sage \
+  --gnn_training.encoder.sage.num_layers=3
 ```
 
 ### From a new YAML config file
@@ -153,11 +153,11 @@ You can specify the range of hyperparameters to search in a yaml config.
 method: grid 
 
 parameters:
-  detection.gnn_training.lr:
+  gnn_training.lr:
     values: [0.001, 0.0001]
-  detection.gnn_training.node_hid_dim:
+  gnn_training.node_hid_dim:
     values: [32, 64, 128, 256]
-  featurization.feat_training.used_method:
+  feat_training.used_method:
     values: [fasttext, word2vec]
 ```
 

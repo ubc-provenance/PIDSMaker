@@ -42,18 +42,18 @@ def main(cfg):
     )
     best_epoch_mode = run_evaluation == "best_epoch"
 
-    num_epochs = cfg.detection.gnn_training.num_epochs
+    num_epochs = cfg.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
     peak_train_cpu_mem = 0
     peak_train_gpu_mem = 0
     test_stats = None
-    patience = cfg.detection.gnn_training.patience
+    patience = cfg.gnn_training.patience
     patience_counter = 0
     all_test_stats = []
     global_best_val_score = float("-inf")
-    use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
-    grad_acc = cfg.detection.gnn_training.grad_accumulation
+    use_few_shot = cfg.gnn_training.decoder.use_few_shot
+    grad_acc = cfg.gnn_training.grad_accumulation
 
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
@@ -121,8 +121,8 @@ def main(cfg):
             model.to_fine_tuning(True)
             optimizer = optimizer_few_shot_factory(cfg, parameters=set(model.parameters()))
 
-            num_epochs_few_shot = cfg.detection.gnn_training.decoder.few_shot.num_epochs_few_shot
-            patience_few_shot = cfg.detection.gnn_training.decoder.few_shot.patience_few_shot
+            num_epochs_few_shot = cfg.gnn_training.decoder.few_shot.num_epochs_few_shot
+            patience_few_shot = cfg.gnn_training.decoder.few_shot.patience_few_shot
 
             for tuning_epoch in range(0, num_epochs_few_shot):
                 model.reset_state()
@@ -254,7 +254,7 @@ def main(cfg):
 
 
 def remove_attacks_if_needed(graph, cfg):
-    if not cfg.detection.gnn_training.decoder.few_shot.include_attacks_in_ssl_training:
+    if not cfg.gnn_training.decoder.few_shot.include_attacks_in_ssl_training:
         if 1 in graph.y:
             return graph.clone()[graph.y != 1]
     return graph

@@ -2,13 +2,13 @@ method: grid
 
 
 parameters:
-  preprocessing.build_graphs.time_window_size:
+  build_graphs.time_window_size:
     values: [1.0, 5.0, 10.0]
-  detection.gnn_training.lr:
+  gnn_training.lr:
     values: [0.0001, 0.00001]
-  detection.gnn_training.encoder.dropout:
+  gnn_training.encoder.dropout:
     values: [0.4]
-  detection.gnn_training.node_hid_dim:
+  gnn_training.node_hid_dim:
     values: [128, 256]
-  detection.gnn_training.node_out_dim:
+  gnn_training.node_out_dim:
     values: [-1]

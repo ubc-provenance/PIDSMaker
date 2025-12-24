@@ -119,7 +119,7 @@ def OPTC_datetime_to_timestamp_US(date):
     return int(timeStamp) * 1000000
 
 def init_database_connection(cfg):
-    if cfg.preprocessing.build_graphs.use_all_files:
+    if cfg.build_graphs.use_all_files:
         database_name = cfg.dataset.database_all_file
     else:
         database_name = cfg.dataset.database
@@ -410,7 +410,7 @@ def get_device(cfg):
 
 
 def get_node_to_path_and_type(cfg):
-    out_path = cfg.preprocessing.build_graphs._node_id_to_path
+    out_path = cfg.build_graphs._node_id_to_path
     out_file = os.path.join(out_path, "node_to_paths.pkl")
 
     if not os.path.exists(out_file):
@@ -488,7 +488,7 @@ def gen_relation_onehot(rel2id):
 def get_indexid2msg(cfg, gather_multi_dataset=False):
     def load_file(cfg):
         indexid2msg_file = os.path.join(
-            cfg.preprocessing.build_graphs._dicts_dir, "indexid2msg.pkl"
+            cfg.build_graphs._dicts_dir, "indexid2msg.pkl"
         )
         indexid2msg = torch.load(indexid2msg_file)
         return indexid2msg
@@ -518,12 +518,12 @@ def get_indexid2msg(cfg, gather_multi_dataset=False):
 
 def get_split2nodes(cfg, gather_multi_dataset=False):
     def load_file(cfg):
-        path = os.path.join(cfg.preprocessing.build_graphs._dicts_dir, "split2nodes.pkl")
+        path = os.path.join(cfg.build_graphs._dicts_dir, "split2nodes.pkl")
         split2nodes = torch.load(path)
         return split2nodes
 
     multi_datasets = get_multi_datasets(cfg)
-    use_multi_dataset = "none" not in cfg.preprocessing.build_graphs.multi_dataset
+    use_multi_dataset = "none" not in cfg.build_graphs.multi_dataset
 
     if gather_multi_dataset and use_multi_dataset:
         all_split2nodes = defaultdict(set)
@@ -675,7 +675,7 @@ def log_dataset_stats(datasets):
 
 
 def set_seed(cfg):
-    if cfg.detection.gnn_training.use_seed:
+    if cfg.gnn_training.use_seed:
         seed = 0
         random.seed(seed)
         np.random.seed(seed)
@@ -685,13 +685,13 @@ def set_seed(cfg):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    if cfg.detection.gnn_training.deterministic:
+    if cfg.gnn_training.deterministic:
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 
 def get_multi_datasets(cfg):
     # The main dataset should be always the first one
-    multi_dataset = cfg.preprocessing.build_graphs.multi_dataset
+    multi_dataset = cfg.build_graphs.multi_dataset
     multi_datasets = list(
         map(lambda x: x.strip(), multi_dataset.split("," if "," in multi_dataset else "-"))
     )

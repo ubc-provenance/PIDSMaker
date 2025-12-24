@@ -20,7 +20,7 @@ def get_node2corpus(cfg, splits):
     indexid2msg = get_indexid2msg(cfg)
 
     days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
-    sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, days)
+    sorted_paths = get_all_files_from_folders(cfg.transformation._graphs_dir, days)
 
     data_of_graphs = []
 
@@ -92,16 +92,16 @@ def main(cfg):
     training_files = get_splits_to_train_featurization(cfg)
     all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files).values())
 
-    emb_dim = cfg.featurization.feat_training.emb_dim
-    epochs = cfg.featurization.feat_training.epochs
-    min_count = cfg.featurization.feat_training.flash.min_count
-    workers = cfg.featurization.feat_training.flash.workers
+    emb_dim = cfg.feat_training.emb_dim
+    epochs = cfg.feat_training.epochs
+    min_count = cfg.feat_training.flash.min_count
+    workers = cfg.feat_training.flash.workers
 
     log("Training word2vec model...")
     model = Word2Vec(vector_size=emb_dim, min_count=min_count, workers=workers, epochs=epochs)
     model.build_vocab(RepeatableIterator(all_phrases), progress_per=10000)
     model.train(RepeatableIterator(all_phrases), total_examples=model.corpus_count, epochs=epochs)
 
-    model_save_dir = cfg.featurization.feat_training._model_dir
+    model_save_dir = cfg.feat_training._model_dir
     os.makedirs(model_save_dir, exist_ok=True)
     model.save(os.path.join(model_save_dir, "word2vec_model_final.model"))

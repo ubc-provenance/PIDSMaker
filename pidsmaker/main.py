@@ -50,35 +50,35 @@ def get_task_to_module(cfg):
     return {
         "build_graphs": {
             "module": build_graphs,
-            "task_path": cfg.preprocessing.build_graphs._task_path,
+            "task_path": cfg.build_graphs._task_path,
         },
         "transformation": {
             "module": transformation,
-            "task_path": cfg.preprocessing.transformation._task_path,
+            "task_path": cfg.transformation._task_path,
         },
         "feat_training": {
             "module": feat_training,
-            "task_path": cfg.featurization.feat_training._task_path,
+            "task_path": cfg.feat_training._task_path,
         },
         "feat_inference": {
             "module": feat_inference,
-            "task_path": cfg.featurization.feat_inference._task_path,
+            "task_path": cfg.feat_inference._task_path,
         },
         "graph_preprocessing": {
             "module": graph_preprocessing,
-            "task_path": cfg.detection.graph_preprocessing._task_path,
+            "task_path": cfg.graph_preprocessing._task_path,
         },
         "gnn_training": {
             "module": gnn_training,
-            "task_path": cfg.detection.gnn_training._task_path,
+            "task_path": cfg.gnn_training._task_path,
         },
         "evaluation": {
             "module": evaluation,
-            "task_path": cfg.detection.evaluation._task_path,
+            "task_path": cfg.evaluation._task_path,
         },
-        "tracing": {
+        "triage": {
             "module": tracing,
-            "task_path": cfg.triage.tracing._task_path,
+            "task_path": cfg.triage._task_path,
         },
     }
 
@@ -204,7 +204,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
                         cfg._is_running_mc_dropout = False
 
             # Save metrics to disk for future analysis and plots
-            out_dir = cfg.detection.evaluation._uncertainty_exp_dir
+            out_dir = cfg.evaluation._uncertainty_exp_dir
             os.makedirs(out_dir, exist_ok=True)
             method_to_metrics_path = os.path.join(out_dir, "method_to_metrics.pkl")
             torch.save(method_to_metrics, method_to_metrics_path)
@@ -284,4 +284,4 @@ if __name__ == "__main__":
 
     # If it's a one-time run, we delete the files as we can't leverage them in future
     if cfg._restart_from_scratch:
-        shutil.rmtree(cfg.preprocessing.build_graphs._task_path, ignore_errors=True)
+        shutil.rmtree(cfg.build_graphs._task_path, ignore_errors=True)

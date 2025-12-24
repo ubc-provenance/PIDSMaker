@@ -101,7 +101,7 @@ def main(graph: nx.Graph, cfg) -> nx.Graph:
     root_nodes = identify_root_nodes(graph)
     pseudo_graph = create_pseudo_graph(graph, root_nodes)
 
-    use_pruning = cfg.preprocessing.transformation.rcaid_pseudo_graph.use_pruning
+    use_pruning = cfg.transformation.rcaid_pseudo_graph.use_pruning
     if use_pruning:
         pseudo_graph = prune_pseudo_roots(pseudo_graph, graph, 0.5)
 

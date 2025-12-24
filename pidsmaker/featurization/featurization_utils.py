@@ -16,7 +16,7 @@ def get_splits_to_train_featurization(cfg):
     """
     Returns the splits on which train the embedding method.
     """
-    training_split = cfg.featurization.feat_training.training_split.strip()
+    training_split = cfg.feat_training.training_split.strip()
     if training_split == "all":
         return ["train", "val", "test"]
 
@@ -64,7 +64,7 @@ def get_corpus_using_neighbors_features(cfg, doc2vec_format=False):
     """
     splits = get_splits_to_train_featurization(cfg)
     days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
-    sorted_paths = get_all_files_from_folders(cfg.preprocessing.transformation._graphs_dir, days)
+    sorted_paths = get_all_files_from_folders(cfg.transformation._graphs_dir, days)
     graph_list = [torch.load(path) for path in sorted_paths]
 
     words = []

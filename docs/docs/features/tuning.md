@@ -10,11 +10,11 @@ Tuning is configured using YAML files, just like system definitions. For example
 method: grid # (1)!
 
 parameters:
-  detection.gnn_training.lr:
+  gnn_training.lr:
     values: [0.001, 0.0001]
-  detection.gnn_training.node_hid_dim:
+  gnn_training.node_hid_dim:
     values: [32, 64, 128, 256]
-  featurization.feat_training.used_method:
+  feat_training.used_method:
     values: [fasttext, word2vec]
 ```
 

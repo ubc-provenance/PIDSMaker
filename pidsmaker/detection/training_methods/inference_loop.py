@@ -68,7 +68,7 @@ def test_edge_level(
         ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_df["time"].max())
     )
 
-    logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
+    logs_dir = os.path.join(cfg.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
@@ -102,7 +102,7 @@ def test_node_level(
     n_id = getattr(data, "original_n_id_tgn", getattr(data, "original_n_id"))
 
     # ThreaTrace code
-    if cfg.detection.evaluation.node_evaluation.threshold_method == "threatrace":
+    if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
         out = results["out"]
         pred = out.max(1)[1]
         pro = F.softmax(out, dim=1)
@@ -132,7 +132,7 @@ def test_node_level(
             node_list.append(temp_dic)
 
     # Flash code
-    elif cfg.detection.evaluation.node_evaluation.threshold_method == "flash":
+    elif cfg.evaluation.node_evaluation.threshold_method == "flash":
         out = results["out"]
         pred = out.max(1)[1]
         sorted, indices = out.sort(dim=1, descending=True)
@@ -156,8 +156,8 @@ def test_node_level(
             node_list.append(temp_dic)
 
     # Magic codes
-    elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
-        os.makedirs(cfg.detection.gnn_training._magic_dir, exist_ok=True)
+    elif cfg.evaluation.node_evaluation.threshold_method == "magic":
+        os.makedirs(cfg.gnn_training._magic_dir, exist_ok=True)
         if split == "val":
             x_train, _, _ = model.embed(data, inference=True)
             x_train = x_train.cpu().numpy()
@@ -190,7 +190,7 @@ def test_node_level(
                 mean_distance_train = 1e-9
 
             train_distance_file = os.path.join(
-                cfg.detection.gnn_training._magic_dir, "train_distance.txt"
+                cfg.gnn_training._magic_dir, "train_distance.txt"
             )
             with open(train_distance_file, "a") as f:
                 f.write(f"{mean_distance_train}\n")
@@ -204,7 +204,7 @@ def test_node_level(
 
         elif split == "test":
             train_distance_file = os.path.join(
-                cfg.detection.gnn_training._magic_dir, "train_distance.txt"
+                cfg.gnn_training._magic_dir, "train_distance.txt"
             )
             mean_distance_train = calculate_average_from_file(train_distance_file)
 
@@ -249,7 +249,7 @@ def test_node_level(
 
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)
 
-    logs_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, split, model_epoch_file)
+    logs_dir = os.path.join(cfg.gnn_training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
     csv_file = os.path.join(logs_dir, time_interval + ".csv")
 
@@ -270,7 +270,7 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True):
     else:
         raise ValueError(f"Invalid split {split}")
 
-    inference_device = cfg.detection.gnn_training.inference_device
+    inference_device = cfg.gnn_training.inference_device
     if inference_device is not None:
         if device not in ["cpu", "cuda"]:
             raise ValueError(f"Invalid inference device {device}")

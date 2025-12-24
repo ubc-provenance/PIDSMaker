@@ -17,8 +17,8 @@ from pidsmaker.utils.utils import log
 
 
 def standard_evaluation(cfg, evaluation_fn):
-    test_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "test")
-    val_losses_dir = os.path.join(cfg.detection.gnn_training._edge_losses_dir, "val")
+    test_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "test")
+    val_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "val")
 
     tw_to_malicious_nodes = compute_tw_labels(cfg)
 
@@ -31,7 +31,7 @@ def standard_evaluation(cfg, evaluation_fn):
     sorted_files = (
         listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
     )
-    out_dir = cfg.detection.evaluation._precision_recall_dir
+    out_dir = cfg.evaluation._precision_recall_dir
 
     save_files_to_wandb = cfg._experiment != "uncertainty"
 
@@ -90,7 +90,7 @@ def standard_evaluation(cfg, evaluation_fn):
 
 
 def best_metric_pick_best_epoch(stats, best_metrics, cfg):
-    best_model_selection = cfg.detection.evaluation.best_model_selection
+    best_model_selection = cfg.evaluation.best_model_selection
 
     if best_model_selection == "best_adp":
         condition = (stats["adp_score"] > best_metrics["adp_score"]) or (
@@ -112,7 +112,7 @@ def best_metric_pick_best_epoch(stats, best_metrics, cfg):
 
 
 def main(cfg):
-    method = cfg.detection.evaluation.used_method.strip()
+    method = cfg.evaluation.used_method.strip()
     if method == "node_evaluation":
         return standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
     elif method == "tw_evaluation":
@@ -124,4 +124,4 @@ def main(cfg):
     elif method == "edge_evaluation":
         return standard_evaluation(cfg, evaluation_fn=edge_evaluation.main)
     else:
-        raise ValueError(f"Invalid evaluation method {cfg.detection.evaluation.used_method}")
+        raise ValueError(f"Invalid evaluation method {cfg.evaluation.used_method}")

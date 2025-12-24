@@ -16,7 +16,7 @@ from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     log(f"Loading data from {test_tw_path}...")
 
-    thr = get_threshold(val_tw_path, cfg.detection.evaluation.tw_evaluation.threshold_method)
+    thr = get_threshold(val_tw_path, cfg.evaluation.tw_evaluation.threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     tw_to_losses = defaultdict(list)
@@ -36,7 +36,7 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     results = defaultdict(dict)
     for tw, losses in tw_to_losses.items():
         pred_score = reduce_losses_to_score(
-            losses, cfg.detection.evaluation.tw_evaluation.threshold_method
+            losses, cfg.evaluation.tw_evaluation.threshold_method
         )
 
         results[tw]["score"] = pred_score
@@ -49,7 +49,7 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
     results = get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes)
 
-    out_dir = cfg.detection.evaluation._precision_recall_dir
+    out_dir = cfg.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")

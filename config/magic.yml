@@ -1,79 +1,76 @@
-preprocessing:
-  build_graphs:
-    used_method: default
-    use_all_files: True
-    mimicry_edge_num: 0
-    time_window_size: 15.0
-    use_hashed_label: False
-    fuse_edge: True
-    node_label_features:
-      subject: path, cmd_line
-      file: path
-      netflow: remote_ip
-    multi_dataset: none
-  transformation:
+build_graphs:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 15.0
+  use_hashed_label: False
+  fuse_edge: True
+  node_label_features:
+    subject: path, cmd_line
+    file: path
+    netflow: remote_ip
+  multi_dataset: none
+transformation:
+  used_methods: none
+
+feat_training:
+  used_method: only_type
+feat_inference:
+  to_remove: True
+
+graph_preprocessing:
+  save_on_disk: False
+  node_features: node_type
+  edge_features: none
+  fix_buggy_graph_reindexer: False
+  global_batching:
+    used_method: none
+  intra_graph_batching:
     used_methods: none
-
-featurization:
-  feat_training:
-    used_method: only_type
-  feat_inference:
-    to_remove: True
-
-detection:
-  graph_preprocessing:
-    save_on_disk: False
-    node_features: node_type
-    edge_features: none
-    fix_buggy_graph_reindexer: False
-    global_batching:
-      used_method: none
-    intra_graph_batching:
-      used_methods: none
-    inter_graph_batching:
-      used_method: none
-  gnn_training:
-    used_method: default
-    use_seed: True
-    deterministic: False
-    num_epochs: 12
-    patience: 3
-    lr: 0.001
-    weight_decay: 0.0005
-    node_hid_dim: 64
-    node_out_dim: 64
-    grad_accumulation: 1
-    encoder:
-      dropout: 0.0
-      used_methods: magic_gat
+  inter_graph_batching:
+    used_method: none
+gnn_training:
+  used_method: default
+  use_seed: True
+  deterministic: False
+  num_epochs: 12
+  patience: 3
+  lr: 0.001
+  weight_decay: 0.0005
+  node_hid_dim: 64
+  node_out_dim: 64
+  grad_accumulation: 1
+  encoder:
+    dropout: 0.0
+    used_methods: magic_gat
+    magic_gat:
+      num_layers: 3
+      num_heads: 4
+      negative_slope: 0.2
+      alpha_l: 3.0
+      activation: prelu
+  decoder:
+    used_methods: reconstruct_masked_features,predict_masked_struct
+    reconstruct_masked_features:
+      loss: SCE
+      mask_rate: 0.5
+      decoder: magic_gat
       magic_gat:
         num_layers: 3
         num_heads: 4
         negative_slope: 0.2
-        alpha_l: 3.0
-        activation: prelu
-    decoder:
-      used_methods: reconstruct_masked_features,predict_masked_struct
-      reconstruct_masked_features:
-        loss: SCE
-        mask_rate: 0.5
-        decoder: magic_gat
-        magic_gat:
-          num_layers: 3
-          num_heads: 4
-          negative_slope: 0.2
-      predict_masked_struct:
-        loss: BCE
-        decoder: node_mlp
-        node_mlp:
-          architecture_str: linear(4) | leaky_relu
-        balanced_loss: False
+    predict_masked_struct:
+      loss: BCE
+      decoder: node_mlp
+      node_mlp:
+        architecture_str: linear(4) | leaky_relu
+      balanced_loss: False
 
-  evaluation:
-    viz_malicious_nodes: False
-    ground_truth_version: orthrus
-    best_model_selection: best_adp
-    used_method: node_evaluation
-    node_evaluation:
-      threshold_method: magic # can't use anything else here
-      use_dst_node_loss: True
+evaluation:
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_adp
+  used_method: node_evaluation
+  node_evaluation:
+    threshold_method: magic # can't use anything else here
+    use_dst_node_loss: True

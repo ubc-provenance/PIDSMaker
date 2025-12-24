@@ -206,14 +206,14 @@ def get_node_map(from_zero=False):
 def get_num_edge_type(cfg):
     if (
         cfg.dataset.name not in OPTC_DATASETS
-        and "edge_type_triplet" in cfg.detection.graph_preprocessing.edge_features
+        and "edge_type_triplet" in cfg.graph_preprocessing.edge_features
     ):
         return sum([len(events) for events in possible_events.values()])
     return cfg.dataset.num_edge_types
 
 
 def get_rel2id_considering_triplets(cfg):
-    if "edge_type_triplet" in cfg.detection.graph_preprocessing.edge_features:
+    if "edge_type_triplet" in cfg.graph_preprocessing.edge_features:
         return {
             i + 1: e
             for i, e in enumerate(

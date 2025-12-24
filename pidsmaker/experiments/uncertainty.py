@@ -27,21 +27,21 @@ def update_cfg_for_uncertainty_exp(
 
         if hyperparameter == "text_h_dim":
             clear_files_from_feat_training(cfg)
-            if cfg.featurization.feat_training.emb_dim is not None:
-                cfg.featurization.feat_training.emb_dim += int(
-                    delta * cfg.featurization.feat_training.emb_dim
+            if cfg.feat_training.emb_dim is not None:
+                cfg.feat_training.emb_dim += int(
+                    delta * cfg.feat_training.emb_dim
                 )
         else:
             clear_files_from_gnn_training(cfg)
             if hyperparameter == "lr":
-                cfg.detection.gnn_training.lr += delta * cfg.detection.gnn_training.lr
+                cfg.gnn_training.lr += delta * cfg.gnn_training.lr
             elif hyperparameter == "num_epochs":
-                cfg.detection.gnn_training.num_epochs += int(
-                    delta * cfg.detection.gnn_training.num_epochs
+                cfg.gnn_training.num_epochs += int(
+                    delta * cfg.gnn_training.num_epochs
                 )
             elif hyperparameter == "gnn_h_dim":
-                cfg.detection.gnn_training.node_hid_dim += int(
-                    delta * cfg.detection.gnn_training.node_hid_dim
+                cfg.gnn_training.node_hid_dim += int(
+                    delta * cfg.gnn_training.node_hid_dim
                 )
             else:
                 raise ValueError(f"Invalid hyperparameter {hyperparameter}")
@@ -73,7 +73,7 @@ def update_cfg_for_uncertainty_exp(
 # Utils
 def clear_files_from_gnn_training(cfg):
     """Removes task paths to avoid old artifacts + consequently force restarts from gnn_training"""
-    paths = [cfg.detection.gnn_training._task_path, cfg.detection.evaluation._task_path]
+    paths = [cfg.gnn_training._task_path, cfg.evaluation._task_path]
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)
@@ -82,8 +82,8 @@ def clear_files_from_gnn_training(cfg):
 
 def clear_files_from_feat_training(cfg):
     paths = [
-        cfg.featurization.feat_training._task_path,
-        cfg.featurization.feat_inference._task_path,
+        cfg.feat_training._task_path,
+        cfg.feat_inference._task_path,
     ]
 
     for path in paths:

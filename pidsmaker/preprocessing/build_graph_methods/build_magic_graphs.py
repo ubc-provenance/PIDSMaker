@@ -17,7 +17,7 @@ from pidsmaker.utils.utils import (
 
 
 def get_node_list(cur, cfg):
-    use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
+    use_hashed_label = cfg.build_graphs.use_hashed_label
     node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
 
     uuid2idx = {}
@@ -200,7 +200,7 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
             start_time = events_list[0][-2]
             temp_list = []
             BATCH = 1024
-            window_size_in_sec = cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000
+            window_size_in_sec = cfg.build_graphs.time_window_size * 60_000_000_000
 
             last_batch = False
             for batch_edges in get_batches(events_list, BATCH):
@@ -274,10 +274,10 @@ def main(cfg):
     cur, connect = init_database_connection(cfg)
     uuid2idx, uuid2type, uuid2name, hash2uuid = get_node_list(cur=cur, cfg=cfg)
 
-    os.makedirs(cfg.preprocessing.build_graphs._magic_dir, exist_ok=True)
-    os.makedirs(cfg.preprocessing.build_graphs._magic_graphs_dir, exist_ok=True)
-    file_out_dir = cfg.preprocessing.build_graphs._magic_dir
-    graph_out_dir = cfg.preprocessing.build_graphs._magic_graphs_dir
+    os.makedirs(cfg.build_graphs._magic_dir, exist_ok=True)
+    os.makedirs(cfg.build_graphs._magic_graphs_dir, exist_ok=True)
+    file_out_dir = cfg.build_graphs._magic_dir
+    graph_out_dir = cfg.build_graphs._magic_graphs_dir
 
     with open(os.path.join(file_out_dir, "names.json"), "w", encoding="utf-8") as fw:
         json.dump(uuid2name, fw)

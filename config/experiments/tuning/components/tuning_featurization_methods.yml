@@ -25,5 +25,5 @@ parameters:
       no_featurization,
     ]
 
-  featurization.feat_training.emb_dim:
+  feat_training.emb_dim:
     values: [32, 128, 256]

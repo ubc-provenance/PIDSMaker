@@ -3,17 +3,15 @@
 
 _include_yml: orthrus
 
-featurization:
-  feat_training:
-    training_split: train
-   
-detection:
-  gnn_training:
-    lr: 0.0001
-    node_out_dim: 128
-    encoder:
-      dropout: 0.3
-     
-  evaluation:
-    node_evaluation:
-      use_kmeans: False
+feat_training:
+  training_split: train
+  
+gnn_training:
+  lr: 0.0001
+  node_out_dim: 128
+  encoder:
+    dropout: 0.3
+    
+evaluation:
+  node_evaluation:
+    use_kmeans: False

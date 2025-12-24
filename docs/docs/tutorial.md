@@ -91,13 +91,13 @@ All logic related to component instantiation is located in `factory.py`. To inte
             dropout=dropout,
             graph_reindexer=graph_reindexer,
             activation=activation_fn_factory(
-                cfg.detection.gnn_training.encoder.custom_encoder.activation),
-            num_layers=cfg.detection.gnn_training.encoder.custom_encoder.num_layers,
+                cfg.gnn_training.encoder.custom_encoder.activation),
+            num_layers=cfg.gnn_training.encoder.custom_encoder.num_layers,
             device=device,
         )
 ```
 
-Our new argument `activation` can be accessed from the `cfg` object via `cfg.detection.gnn_training.encoder.custom_encoder.activation`.
+Our new argument `activation` can be accessed from the `cfg` object via `cfg.gnn_training.encoder.custom_encoder.activation`.
 
 Then add the encoder to the list of available encoders in `__init__.py`.
 
@@ -239,16 +239,16 @@ While this first version of the model yields relatively satisfactory results, we
 ``` sh
 # Remove node type from node features, keep only the word2vec embedding
 ./run.sh custom_system CADETS_E3 --project=test_custom_system \
-    --detection.graph_preprocessing.node_features=node_emb
+    --graph_preprocessing.node_features=node_emb
 
 # Increase node embedding size
 ./run.sh custom_system CADETS_E3 --project=test_custom_system \
-    --detection.gnn_training.node_hid_dim=256 \
-    --detection.gnn_training.node_out_dim=256
+    --gnn_training.node_hid_dim=256 \
+    --gnn_training.node_out_dim=256
 
 # Reduce the number of GNN layers
 ./run.sh custom_system CADETS_E3 --project=test_custom_system \
-    --detection.gnn_training.encoder.custom_encoder.num_layers=2
+    --gnn_training.encoder.custom_encoder.num_layers=2
 ```
 
 For more advanced hyperparameter exploration, consider using the [hyperparameter tuning feature](features/tuning.md).

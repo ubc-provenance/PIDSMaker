@@ -7,7 +7,7 @@ from pidsmaker.utils.utils import get_multi_datasets
 
 
 def main_from_config(cfg):
-    graph_method = cfg.preprocessing.build_graphs.used_method
+    graph_method = cfg.build_graphs.used_method
     if graph_method == "default":
         build_default_graphs.main(cfg)
     elif graph_method == "magic":
