@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import wandb
 
-from pidsmaker.detection.batching import get_preprocessed_graphs
+from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.factory import (
     build_model,
     optimizer_factory,

@@ -12,7 +12,7 @@ from pidsmaker.utils.utils import (
     log_tqdm,
 )
 
-from .feat_inference_methods import (
+from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_alacarte,
     feat_inference_doc2vec,
     feat_inference_fasttext,

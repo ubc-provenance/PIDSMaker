@@ -15,11 +15,6 @@ from pidsmaker.config import (
     set_task_to_done,
     update_task_paths_to_restart,
 )
-from pidsmaker.detection import (
-    evaluation,
-    training,
-    batching,
-)
 from pidsmaker.experiments.tuning import (
     fuse_cfg_with_sweep_cfg,
     get_tuning_sweep_cfg,
@@ -32,18 +27,17 @@ from pidsmaker.experiments.uncertainty import (
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
 )
-from pidsmaker.featurization import (
-    feat_inference,
-    featurization,
-)
-from pidsmaker.preprocessing import (
+from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
+from pidsmaker.tasks import (
     construction,
     transformation,
-)
-from pidsmaker.triage import (
+    featurization,
+    feat_inference,
+    batching,
+    training,
+    evaluation,
     triage,
 )
-from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
 
 
 def get_task_to_module(cfg):

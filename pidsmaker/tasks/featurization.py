@@ -1,6 +1,6 @@
 from pidsmaker.utils.utils import set_seed
 
-from .featurization_methods import (
+from pidsmaker.featurization.featurization_methods import (
     build_trw,
     featurization_alacarte,
     featurization_doc2vec,
@@ -9,7 +9,7 @@ from .featurization_methods import (
     featurization_trw,
     featurization_word2vec,
 )
-from .utils import build_random_walks
+from pidsmaker.featurization.utils import build_random_walks
 
 
 def main(cfg):
