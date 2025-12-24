@@ -83,7 +83,7 @@ def main(cfg):
         return
 
     in_dir = cfg.evaluation._precision_recall_dir
-    test_losses_dir = os.path.join(cfg.gnn_training._edge_losses_dir, "test")
+    test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
 
     best_mcc, best_stats = -1e6, {}
     best_model_epoch = listdir_sorted(test_losses_dir)[-1]

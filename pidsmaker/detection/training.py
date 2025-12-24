@@ -4,7 +4,7 @@ from pidsmaker.detection.training_methods import (
 
 
 def main(cfg):
-    method = cfg.gnn_training.used_method.strip()
+    method = cfg.training.used_method.strip()
     if method == "default":
         return training_loop.main(cfg)
     else:

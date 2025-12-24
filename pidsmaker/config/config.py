@@ -399,13 +399,13 @@ DATASET_DEFAULT_CONFIG = {
 # Arguments
 
 TASK_DEPENDENCIES = {
-    "build_graphs": [],
-    "transformation": ["build_graphs"],
-    "feat_training": ["transformation"],
-    "feat_inference": ["feat_training"],
-    "graph_preprocessing": ["feat_inference"],
-    "gnn_training": ["graph_preprocessing"],
-    "evaluation": ["gnn_training"],
+    "construction": [],
+    "transformation": ["construction"],
+    "featurization": ["transformation"],
+    "feat_inference": ["featurization"],
+    "batching": ["feat_inference"],
+    "training": ["batching"],
+    "evaluation": ["training"],
     "triage": ["evaluation"],
 }
 
@@ -662,7 +662,7 @@ THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "fl
 
 # --- Tasks, subtasks, and argument configurations ---
 TASK_ARGS = {
-    "build_graphs": {
+    "construction": {
         "used_method": Arg(
             str, vals=OR(["default", "magic"]), desc="The method to build time window graphs."
         ),
@@ -713,7 +713,7 @@ TASK_ARGS = {
         },
         **SYNTHETIC_ATTACKS,
     },
-    "feat_training": {
+    "featurization": {
         "emb_dim": Arg(
             int,
             desc="Size of the text embedding. Arg not used by some featurization methods that do not build embeddings.",
@@ -741,7 +741,7 @@ TASK_ARGS = {
     "feat_inference": {
         "to_remove": Arg(bool),  # TODO: remove
     },
-    "graph_preprocessing": {
+    "batching": {
         "save_on_disk": Arg(
             bool,
             desc="Whether to store the graphs on disk upon building the graphs. \
@@ -844,7 +844,7 @@ TASK_ARGS = {
             ),
         },
     },
-    "gnn_training": {
+    "training": {
         "use_seed": Arg(bool),
         "deterministic": Arg(
             bool, desc="Whether to force PyTorch to use deterministic algorithms."

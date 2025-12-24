@@ -26,36 +26,36 @@ def update_cfg_for_uncertainty_exp(
             delta = 0
 
         if hyperparameter == "text_h_dim":
-            clear_files_from_feat_training(cfg)
-            if cfg.feat_training.emb_dim is not None:
-                cfg.feat_training.emb_dim += int(
-                    delta * cfg.feat_training.emb_dim
+            clear_files_from_featurization(cfg)
+            if cfg.featurization.emb_dim is not None:
+                cfg.featurization.emb_dim += int(
+                    delta * cfg.featurization.emb_dim
                 )
         else:
-            clear_files_from_gnn_training(cfg)
+            clear_files_from_training(cfg)
             if hyperparameter == "lr":
-                cfg.gnn_training.lr += delta * cfg.gnn_training.lr
+                cfg.training.lr += delta * cfg.training.lr
             elif hyperparameter == "num_epochs":
-                cfg.gnn_training.num_epochs += int(
-                    delta * cfg.gnn_training.num_epochs
+                cfg.training.num_epochs += int(
+                    delta * cfg.training.num_epochs
                 )
             elif hyperparameter == "gnn_h_dim":
-                cfg.gnn_training.node_hid_dim += int(
-                    delta * cfg.gnn_training.node_hid_dim
+                cfg.training.node_hid_dim += int(
+                    delta * cfg.training.node_hid_dim
                 )
             else:
                 raise ValueError(f"Invalid hyperparameter {hyperparameter}")
 
     elif method == "mc_dropout":
-        clear_files_from_gnn_training(cfg)
+        clear_files_from_training(cfg)
         cfg._is_running_mc_dropout = True
 
     elif method == "deep_ensemble":
         restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
-        if restart_from == "feat_training":
-            clear_files_from_feat_training(cfg)
-        elif restart_from == "gnn_training":
-            clear_files_from_gnn_training(cfg)
+        if restart_from == "featurization":
+            clear_files_from_featurization(cfg)
+        elif restart_from == "training":
+            clear_files_from_training(cfg)
         else:
             raise ValueError(f"Unsupported 'restart from' value: {restart_from}")
 
@@ -71,18 +71,18 @@ def update_cfg_for_uncertainty_exp(
 
 
 # Utils
-def clear_files_from_gnn_training(cfg):
-    """Removes task paths to avoid old artifacts + consequently force restarts from gnn_training"""
-    paths = [cfg.gnn_training._task_path, cfg.evaluation._task_path]
+def clear_files_from_training(cfg):
+    """Removes task paths to avoid old artifacts + consequently force restarts from training"""
+    paths = [cfg.training._task_path, cfg.evaluation._task_path]
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)
         os.makedirs(path)
 
 
-def clear_files_from_feat_training(cfg):
+def clear_files_from_featurization(cfg):
     paths = [
-        cfg.feat_training._task_path,
+        cfg.featurization._task_path,
         cfg.feat_inference._task_path,
     ]
 
@@ -90,7 +90,7 @@ def clear_files_from_feat_training(cfg):
         shutil.rmtree(path, ignore_errors=True)
         os.makedirs(path)
 
-    clear_files_from_gnn_training(cfg)
+    clear_files_from_training(cfg)
 
 
 def include_metric_in_stats(value):

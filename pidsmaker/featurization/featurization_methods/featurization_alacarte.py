@@ -416,7 +416,7 @@ def obtain_targets_from_file(input_path, w2v):
     return ret
 
 
-def feat_training_for_one_split(
+def featurization_for_one_split(
     split: str,
     use_corpus: bool,
     use_matrix_input: bool,
@@ -424,27 +424,27 @@ def feat_training_for_one_split(
     cfg,
     verbose=True,
 ):
-    out_dir = cfg.feat_training.alacarte._vec_graphs_dir
+    out_dir = cfg.featurization.alacarte._vec_graphs_dir
     adjacency_dir = os.path.join(
-        cfg.feat_training.alacarte._random_walk_dir, f"{split}-adj"
+        cfg.featurization.alacarte._random_walk_dir, f"{split}-adj"
     )
     dataset = os.path.join(
-        cfg.feat_training.alacarte._random_walk_dir, f"{split}_set_corpus.csv"
+        cfg.featurization.alacarte._random_walk_dir, f"{split}_set_corpus.csv"
     )
-    corpus_dir = cfg.feat_training.alacarte._random_walk_corpus_dir
+    corpus_dir = cfg.featurization.alacarte._random_walk_corpus_dir
     corpus = dataset if use_corpus else None
     matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None
     model_input = os.path.join(out_dir, "model.bin") if use_pretrained_model else None
 
-    epochs = cfg.feat_training.epochs
-    emb_dim = cfg.feat_training.emb_dim
-    window_size = cfg.feat_training.alacarte.context_window_size
-    min_count = cfg.feat_training.alacarte.min_count
-    use_skip_gram = cfg.feat_training.alacarte.use_skip_gram
-    num_workers = cfg.feat_training.alacarte.num_workers
-    compute_loss = cfg.feat_training.alacarte.compute_loss
-    add_paths = cfg.feat_training.alacarte.add_paths
-    use_seed = cfg.feat_training.use_seed
+    epochs = cfg.featurization.epochs
+    emb_dim = cfg.featurization.emb_dim
+    window_size = cfg.featurization.alacarte.context_window_size
+    min_count = cfg.featurization.alacarte.min_count
+    use_skip_gram = cfg.featurization.alacarte.use_skip_gram
+    num_workers = cfg.featurization.alacarte.num_workers
+    compute_loss = cfg.featurization.alacarte.compute_loss
+    add_paths = cfg.featurization.alacarte.add_paths
+    use_seed = cfg.featurization.use_seed
     SEED = 0
 
     log_dir = out_dir
@@ -748,20 +748,20 @@ def feat_training_for_one_split(
 def main(cfg):
     log_start(__file__)
 
-    os.makedirs(cfg.feat_training.alacarte._vec_graphs_dir, exist_ok=True)
+    os.makedirs(cfg.featurization.alacarte._vec_graphs_dir, exist_ok=True)
 
     # In test mode, we only have access to
     if cfg._test_mode:
-        feat_training_for_one_split(
+        featurization_for_one_split(
             "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
         )
     else:
-        feat_training_for_one_split(
+        featurization_for_one_split(
             "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
         )
-        feat_training_for_one_split(
+        featurization_for_one_split(
             "val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
         )
-        feat_training_for_one_split(
+        featurization_for_one_split(
             "test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
         )

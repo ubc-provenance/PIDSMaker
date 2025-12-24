@@ -1063,7 +1063,7 @@ def compute_tw_labels(cfg):
     """
     Gets the malcious node IDs present in each time window.
     """
-    out_path = cfg.build_graphs._tw_labels
+    out_path = cfg.construction._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
     uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
 

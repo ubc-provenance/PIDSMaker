@@ -11,11 +11,11 @@ def run_temporal_random_walk(split_files, out_dir, cfg):
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     os.makedirs(out_dir, exist_ok=True)
-    walk_length = cfg.feat_training.temporal_rw.walk_length
-    num_walks = cfg.feat_training.temporal_rw.num_walks
-    workers = cfg.feat_training.temporal_rw.trw_workers
-    time_weight = cfg.feat_training.temporal_rw.time_weight
-    half_life = cfg.feat_training.temporal_rw.half_life
+    walk_length = cfg.featurization.temporal_rw.walk_length
+    num_walks = cfg.featurization.temporal_rw.num_walks
+    workers = cfg.featurization.temporal_rw.trw_workers
+    time_weight = cfg.featurization.temporal_rw.time_weight
+    half_life = cfg.featurization.temporal_rw.half_life
 
     for path in log_tqdm(sorted_paths, desc="Building temporal random walks"):
         file = path.split("/")[-1]
@@ -39,13 +39,13 @@ def run_temporal_random_walk(split_files, out_dir, cfg):
 def main(cfg):
     log_start(__file__)
 
-    os.makedirs(cfg.feat_training.temporal_rw._random_walk_dir, exist_ok=True)
-    os.makedirs(cfg.feat_training.temporal_rw._random_walk_corpus_dir, exist_ok=True)
+    os.makedirs(cfg.featurization.temporal_rw._random_walk_dir, exist_ok=True)
+    os.makedirs(cfg.featurization.temporal_rw._random_walk_corpus_dir, exist_ok=True)
 
     run_temporal_random_walk(
         split_files=cfg.dataset.train_files,
         out_dir=os.path.join(
-            cfg.feat_training.temporal_rw._random_walk_corpus_dir, "train/"
+            cfg.featurization.temporal_rw._random_walk_corpus_dir, "train/"
         ),
         cfg=cfg,
     )
@@ -53,7 +53,7 @@ def main(cfg):
     run_temporal_random_walk(
         split_files=cfg.dataset.val_files,
         out_dir=os.path.join(
-            cfg.feat_training.temporal_rw._random_walk_corpus_dir, "val/"
+            cfg.featurization.temporal_rw._random_walk_corpus_dir, "val/"
         ),
         cfg=cfg,
     )
@@ -61,7 +61,7 @@ def main(cfg):
     run_temporal_random_walk(
         split_files=cfg.dataset.test_files,
         out_dir=os.path.join(
-            cfg.feat_training.temporal_rw._random_walk_corpus_dir, "test/"
+            cfg.featurization.temporal_rw._random_walk_corpus_dir, "test/"
         ),
         cfg=cfg,
     )
@@ -69,7 +69,7 @@ def main(cfg):
     run_temporal_random_walk(
         split_files=cfg.dataset.unused_files,
         out_dir=os.path.join(
-            cfg.feat_training.temporal_rw._random_walk_corpus_dir, "unused/"
+            cfg.featurization.temporal_rw._random_walk_corpus_dir, "unused/"
         ),
         cfg=cfg,
     )

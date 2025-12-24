@@ -17,8 +17,8 @@ from pidsmaker.config import (
 )
 from pidsmaker.detection import (
     evaluation,
-    gnn_training,
-    graph_preprocessing,
+    training,
+    batching,
 )
 from pidsmaker.experiments.tuning import (
     fuse_cfg_with_sweep_cfg,
@@ -34,50 +34,50 @@ from pidsmaker.experiments.uncertainty import (
 )
 from pidsmaker.featurization import (
     feat_inference,
-    feat_training,
+    featurization,
 )
 from pidsmaker.preprocessing import (
-    build_graphs,
+    construction,
     transformation,
 )
 from pidsmaker.triage import (
-    tracing,
+    triage,
 )
 from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
 
 
 def get_task_to_module(cfg):
     return {
-        "build_graphs": {
-            "module": build_graphs,
-            "task_path": cfg.build_graphs._task_path,
+        "construction": {
+            "module": construction,
+            "task_path": cfg.construction._task_path,
         },
         "transformation": {
             "module": transformation,
             "task_path": cfg.transformation._task_path,
         },
-        "feat_training": {
-            "module": feat_training,
-            "task_path": cfg.feat_training._task_path,
+        "featurization": {
+            "module": featurization,
+            "task_path": cfg.featurization._task_path,
         },
         "feat_inference": {
             "module": feat_inference,
             "task_path": cfg.feat_inference._task_path,
         },
-        "graph_preprocessing": {
-            "module": graph_preprocessing,
-            "task_path": cfg.graph_preprocessing._task_path,
+        "batching": {
+            "module": batching,
+            "task_path": cfg.batching._task_path,
         },
-        "gnn_training": {
-            "module": gnn_training,
-            "task_path": cfg.gnn_training._task_path,
+        "training": {
+            "module": training,
+            "task_path": cfg.training._task_path,
         },
         "evaluation": {
             "module": evaluation,
             "task_path": cfg.evaluation._task_path,
         },
         "triage": {
-            "module": tracing,
+            "module": triage,
             "task_path": cfg.triage._task_path,
         },
     }
@@ -127,7 +127,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         metrics = task_results["evaluation"]["return"] or {}
         metrics = {
             **metrics,
-            "val_score": task_results["gnn_training"]["return"],
+            "val_score": task_results["training"]["return"],
         }
 
         times = {
@@ -284,4 +284,4 @@ if __name__ == "__main__":
 
     # If it's a one-time run, we delete the files as we can't leverage them in future
     if cfg._restart_from_scratch:
-        shutil.rmtree(cfg.build_graphs._task_path, ignore_errors=True)
+        shutil.rmtree(cfg.construction._task_path, ignore_errors=True)

@@ -100,7 +100,7 @@ class CollatableTemporalData(TemporalData):
 
 
 def load_all_datasets(cfg, device, only_keep=None):
-    multi_dataset = cfg.graph_preprocessing.multi_dataset_training
+    multi_dataset = cfg.batching.multi_dataset_training
     train_data = load_data_set(cfg, split="train", multi_dataset=multi_dataset)
     val_data = load_data_set(cfg, split="val", multi_dataset=multi_dataset)
     test_data = load_data_set(cfg, split="test", multi_dataset=False)
@@ -118,7 +118,7 @@ def load_all_datasets(cfg, device, only_keep=None):
     graph_reindexer = GraphReindexer(
         device=device,
         num_nodes=max_node,
-        fix_buggy_graph_reindexer=cfg.graph_preprocessing.fix_buggy_graph_reindexer,
+        fix_buggy_graph_reindexer=cfg.batching.fix_buggy_graph_reindexer,
     )
 
     # Global batching (unique edge type batches, fixed-size edge length)
@@ -173,14 +173,14 @@ def extract_msg_from_data(
     Initializes the attributes of a `Data` object based on the `msg`
     computed in previous tasks.
     """
-    emb_dim = cfg.feat_training.emb_dim
-    only_type = cfg.feat_training.used_method.strip() == "only_type"
-    only_ones = cfg.feat_training.used_method.strip() == "only_ones"
+    emb_dim = cfg.featurization.emb_dim
+    only_type = cfg.featurization.used_method.strip() == "only_type"
+    only_ones = cfg.featurization.used_method.strip() == "only_ones"
     if only_type or only_ones or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
-    selected_node_feats = cfg.graph_preprocessing.node_features
+    selected_node_feats = cfg.batching.node_features
 
     msg_len = data_set[0].msg.shape[1]
     expected_msg_len = (emb_dim * 2) + (node_type_dim * 2) + edge_type_dim
@@ -211,7 +211,7 @@ def extract_msg_from_data(
         )
 
     edge_features = list(
-        map(lambda x: x.strip(), cfg.graph_preprocessing.edge_features.split(","))
+        map(lambda x: x.strip(), cfg.batching.edge_features.split(","))
     )
     possible_triplets = get_possible_triplets(cfg) if "edge_type_triplet" in edge_features else None
 
@@ -260,7 +260,7 @@ def extract_msg_from_data(
         x_dst = torch.cat(x_dst, dim=-1)
 
         # If we want to predict the edge type, we remove the edge type from the message
-        if "predict_edge_type" in cfg.gnn_training.decoder.used_methods:
+        if "predict_edge_type" in cfg.training.decoder.used_methods:
             msg = torch.cat([x_src, x_dst], dim=-1)
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
@@ -288,8 +288,8 @@ def extract_msg_from_data(
         g.node_type_dst = fields["dst_type"]
 
         if (
-            "tgn" in cfg.gnn_training.encoder.used_methods
-            and cfg.gnn_training.encoder.tgn.use_memory
+            "tgn" in cfg.training.encoder.used_methods
+            and cfg.training.encoder.tgn.use_memory
         ):
             g.msg = msg
 
@@ -404,7 +404,7 @@ def batch_temporal_data(
         return data_list
 
     elif batch_mode == "minutes":
-        window_length_ns = int(cfg.build_graphs.time_window_size * 60_000_000_000)
+        window_length_ns = int(cfg.construction.time_window_size * 60_000_000_000)
         sliding_ns = int(batch_size * 60_000_000_000)  # min to ns
 
         t = data.t
@@ -484,7 +484,7 @@ def batch_temporal_data(
 def run_global_batching(train_data, val_data, test_data, cfg, device):
     # Concatenates all data into a single data so that iterating over batches
     # of edges is more consistent with TGN
-    global_batching_cfg = cfg.graph_preprocessing.global_batching
+    global_batching_cfg = cfg.batching.global_batching
     batch_mode = global_batching_cfg.used_method
     bs = global_batching_cfg.global_batching_batch_size
     bs_inference = global_batching_cfg.global_batching_batch_size_inference
@@ -516,18 +516,18 @@ def run_global_batching(train_data, val_data, test_data, cfg, device):
 
 def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
     use_unique_edge_types = (
-        "unique_edge_types" in cfg.graph_preprocessing.global_batching.used_method
+        "unique_edge_types" in cfg.batching.global_batching.used_method
     )
     if not use_unique_edge_types:
         log_dataset_stats(datasets)
         # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
-        use_tgn = "tgn" in cfg.gnn_training.encoder.used_methods
+        use_tgn = "tgn" in cfg.training.encoder.used_methods
         reindex_graphs(
             datasets,
             graph_reindexer,
             device,
             use_tgn,
-            x_is_tuple=cfg.gnn_training.encoder.x_is_tuple,
+            x_is_tuple=cfg.training.encoder.x_is_tuple,
         )
 
     return datasets
@@ -541,7 +541,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
             for batch in log_tqdm(data_list, desc="Creating TGN batches"):
                 # Use temporal batch loader used in TGN
                 if method == "edges":
-                    batch_size = cfg.graph_preprocessing.intra_graph_batching.edges.intra_graph_batch_size
+                    batch_size = cfg.batching.intra_graph_batching.edges.intra_graph_batch_size
                     batch_loader = custom_temporal_data_loader(batch, batch_size=batch_size)
                 elif method == "neighbor_sampling":
                     raise NotImplementedError
@@ -554,7 +554,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
 
     methods = map(
         lambda x: x.strip(),
-        cfg.graph_preprocessing.intra_graph_batching.used_methods.split(","),
+        cfg.batching.intra_graph_batching.used_methods.split(","),
     )
     for method in methods:
         if method == "none":
@@ -565,7 +565,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
 
         elif method == "tgn_last_neighbor":
             tgn_loader_cfg = (
-                cfg.graph_preprocessing.intra_graph_batching.tgn_last_neighbor
+                cfg.batching.intra_graph_batching.tgn_last_neighbor
             )
             sample = datasets[0][0][0]
             datasets = compute_tgn_graphs(
@@ -699,7 +699,7 @@ def run_inter_graph_batching(datasets, cfg):
             return dataset
 
         elif method == "graph_batching":
-            bs = cfg.graph_preprocessing.inter_graph_batching.inter_graph_batch_size
+            bs = cfg.batching.inter_graph_batching.inter_graph_batch_size
             result = []
             for data_list in dataset:
                 result.append([])
@@ -711,7 +711,7 @@ def run_inter_graph_batching(datasets, cfg):
                     batch = data_list[i : i + bs]
                     data = collate(CollatableTemporalData, data_list=batch)[0]
 
-                    use_tgn = "tgn" in cfg.gnn_training.encoder.used_methods
+                    use_tgn = "tgn" in cfg.training.encoder.used_methods
                     if cfg._debug and use_tgn:
                         debug_test_batching(batch, data, cfg)
                     result[-1].append(data)
@@ -719,7 +719,7 @@ def run_inter_graph_batching(datasets, cfg):
 
         raise ValueError(f"Invalid inter-graph batching method {method}")
 
-    method = cfg.graph_preprocessing.inter_graph_batching.used_method
+    method = cfg.batching.inter_graph_batching.used_method
     datasets = [inter_batching(dataset, method) for dataset in datasets]
     return datasets
 
@@ -887,8 +887,8 @@ def save_model(model, path: str, cfg):
             pickle_protocol=pickle.HIGHEST_PROTOCOL,
         )
         if (
-            cfg.gnn_training.encoder.tgn.use_memory
-            or "time_encoding" in cfg.graph_preprocessing.edge_features
+            cfg.training.encoder.tgn.use_memory
+            or "time_encoding" in cfg.batching.edge_features
         ):
             torch.save(
                 model.encoder.memory,
@@ -906,8 +906,8 @@ def load_model(model, path: str, cfg, map_location=None):
     if isinstance(model.encoder, TGNEncoder):
         model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"))
         if (
-            cfg.gnn_training.encoder.tgn.use_memory
-            or "time_encoding" in cfg.graph_preprocessing.edge_features
+            cfg.training.encoder.tgn.use_memory
+            or "time_encoding" in cfg.batching.edge_features
         ):
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 

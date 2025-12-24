@@ -91,13 +91,13 @@ All logic related to component instantiation is located in `factory.py`. To inte
             dropout=dropout,
             graph_reindexer=graph_reindexer,
             activation=activation_fn_factory(
-                cfg.gnn_training.encoder.custom_encoder.activation),
-            num_layers=cfg.gnn_training.encoder.custom_encoder.num_layers,
+                cfg.training.encoder.custom_encoder.activation),
+            num_layers=cfg.training.encoder.custom_encoder.num_layers,
             device=device,
         )
 ```
 
-Our new argument `activation` can be accessed from the `cfg` object via `cfg.gnn_training.encoder.custom_encoder.activation`.
+Our new argument `activation` can be accessed from the `cfg` object via `cfg.training.encoder.custom_encoder.activation`.
 
 Then add the encoder to the list of available encoders in `__init__.py`.
 
@@ -119,61 +119,58 @@ In this example, we take `orthrus` as base configuration. We only override some 
 ``` yaml title="config/custom_system.yml" linenums="1"
 _include_yml: orthrus # (1)!
 
-preprocessing:
-  build_graphs:
-    time_window_size: 15.0 # (2)!
-    node_label_features: # (14)!
-      subject: type, path, cmd_line
-      file: type, path
-      netflow: type, remote_ip, remote_port
+construction:
+  time_window_size: 15.0 # (2)!
+  node_label_features: # (14)!
+    subject: type, path, cmd_line
+    file: type, path
+    netflow: type, remote_ip, remote_port
 
 featurization:
-  feat_training:
-    emb_dim: 128
-    epochs: 50
-    used_method: word2vec # (15)!
-    word2vec:
-      alpha: 0.025
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      num_workers: 1
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
+  emb_dim: 128
+  epochs: 50
+  used_method: word2vec # (15)!
+  word2vec:
+    alpha: 0.025
+    window_size: 5
+    min_count: 1
+    use_skip_gram: True
+    num_workers: 1
+    compute_loss: True
+    negative: 5
+    decline_rate: 30
 
-detection:
-  graph_preprocessing:
-    node_features: node_emb,node_type # (16)!
-    edge_features: none # (17)!
-    intra_graph_batching:
-      used_methods: none # (3)!
-  
-  gnn_training:
-    lr: 0.0001 # (4)!
-    node_hid_dim: 128
-    node_out_dim: 128
+batching:
+  node_features: node_emb,node_type # (16)!
+  edge_features: none # (17)!
+  intra_graph_batching:
+    used_methods: none # (3)!
 
-    encoder:
-      dropout: 0.3
-      used_methods: custom_encoder # (5)!
-      custom_encoder:
-        activation: relu # (6)!
-        num_layers: 3
+training:
+  lr: 0.0001 # (4)!
+  node_hid_dim: 128
+  node_out_dim: 128
 
-    decoder:
-      used_methods: predict_edge_type # (7)!
-      predict_edge_type:
-        decoder: edge_mlp # (8)!
-        edge_mlp:
-          src_dst_projection_coef: 2 # (9)!
-          architecture_str: linear(0.5) | relu # (10)!
+  encoder:
+    dropout: 0.3
+    used_methods: custom_encoder # (5)!
+    custom_encoder:
+      activation: relu # (6)!
+      num_layers: 3
 
-  evaluation:
-    used_method: node_evaluation # (11)!
-    node_evaluation:
-      threshold_method: max_val_loss # (12)!
-      use_kmeans: False # (13)!
+  decoder:
+    used_methods: predict_edge_type # (7)!
+    predict_edge_type:
+      decoder: edge_mlp # (8)!
+      edge_mlp:
+        src_dst_projection_coef: 2 # (9)!
+        architecture_str: linear(0.5) | relu # (10)!
+
+evaluation:
+  used_method: node_evaluation # (11)!
+  node_evaluation:
+    threshold_method: max_val_loss # (12)!
+    use_kmeans: False # (13)!
 ```
 
 1.  In this example, we take the `orthrus` system as base configuration.
@@ -239,16 +236,16 @@ While this first version of the model yields relatively satisfactory results, we
 ``` sh
 # Remove node type from node features, keep only the word2vec embedding
 ./run.sh custom_system CADETS_E3 --project=test_custom_system \
-    --graph_preprocessing.node_features=node_emb
+    --batching.node_features=node_emb
 
 # Increase node embedding size
 ./run.sh custom_system CADETS_E3 --project=test_custom_system \
-    --gnn_training.node_hid_dim=256 \
-    --gnn_training.node_out_dim=256
+    --training.node_hid_dim=256 \
+    --training.node_out_dim=256
 
 # Reduce the number of GNN layers
 ./run.sh custom_system CADETS_E3 --project=test_custom_system \
-    --gnn_training.encoder.custom_encoder.num_layers=2
+    --training.encoder.custom_encoder.num_layers=2
 ```
 
 For more advanced hyperparameter exploration, consider using the [hyperparameter tuning feature](features/tuning.md).

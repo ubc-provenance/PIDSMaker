@@ -1,1 +1,1 @@
-from . import feat_inference, feat_training
+from . import feat_inference, featurization

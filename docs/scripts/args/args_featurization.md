@@ -1,7 +1,7 @@
 <div class="annotate">
 
 <ul>
-    <li class='bullet'><span class="key">feat_training</span>
+    <li class='bullet'><span class="key">featurization</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">emb_dim</span>: <span class="value">int (1)</span></li>
         <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (2)</span></li>

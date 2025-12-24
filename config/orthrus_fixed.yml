@@ -1,9 +1,9 @@
 _include_yml: orthrus_non_snooped
 
-feat_training:
+featurization:
   used_method: only_type
 
-graph_preprocessing:
+batching:
   fix_buggy_graph_reindexer: True
   intra_graph_batching:
     tgn_last_neighbor:

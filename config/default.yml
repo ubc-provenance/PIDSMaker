@@ -6,7 +6,7 @@ transformation:
     num_unauthorized_file_access: 20
     process_selection_method: random # TODO: try new methods
 
-feat_training:
+featurization:
   temporal_rw:
     walk_length: 30
     num_walks: 10
@@ -54,7 +54,7 @@ feat_training:
 feat_inference:
   to_remove: True
 
-gnn_training:
+training:
   encoder:
     graph_attention:
       activation: relu

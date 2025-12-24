@@ -1,4 +1,4 @@
-build_graphs:
+construction:
   used_method: default
   use_all_files: True
   mimicry_edge_num: 0
@@ -13,14 +13,14 @@ build_graphs:
 transformation:
   used_methods: none
 
-feat_training:
+featurization:
   emb_dim: 16
   training_split: all
   used_method: hierarchical_hashing
 feat_inference:
   to_remove: True
 
-graph_preprocessing:
+batching:
   save_on_disk: False
   node_features: node_emb,node_type
   edge_features: msg,time_encoding
@@ -40,7 +40,7 @@ graph_preprocessing:
       insert_neighbors_before: False
   inter_graph_batching:
     used_method: none
-gnn_training:
+training:
   used_method: default
   use_seed: True
   deterministic: False

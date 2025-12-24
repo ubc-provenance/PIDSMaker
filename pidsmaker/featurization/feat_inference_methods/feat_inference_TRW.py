@@ -35,9 +35,9 @@ def main(cfg):
 
     indexid2msg = get_indexid2msg(cfg)
 
-    trw_word2vec_model_path = cfg.feat_training._model_dir + "trw_word2vec.model"
+    trw_word2vec_model_path = cfg.featurization._model_dir + "trw_word2vec.model"
     model = Word2Vec.load(trw_word2vec_model_path)
-    decline_percentage = cfg.feat_training.temporal_rw.decline_rate
+    decline_percentage = cfg.featurization.temporal_rw.decline_rate
 
     indexid2vec = {}
     for indexid in log_tqdm(used_nodes, desc="Embeding all nodes in the dataset"):

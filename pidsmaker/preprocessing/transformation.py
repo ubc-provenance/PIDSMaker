@@ -26,7 +26,7 @@ def no_transformation(base_dir, dst_dir):
 
 
 def add_synthetic_attacks(base_dir, dst_dir, cfg, method):
-    base_dir = cfg.build_graphs._graphs_dir
+    base_dir = cfg.construction._graphs_dir
     train_graphs = load_graphs_for_days(base_dir, cfg.dataset.train_files)
     val_graphs = load_graphs_for_days(base_dir, cfg.dataset.val_files)
 
@@ -96,7 +96,7 @@ def main_from_config(cfg):
     methods = cfg.transformation.used_methods
     methods = list(map(lambda x: x.strip(), methods.split(",")))
 
-    base_dir = cfg.build_graphs._graphs_dir
+    base_dir = cfg.construction._graphs_dir
     dst_dir = cfg.transformation._graphs_dir
 
     if len(methods) == 1 and methods[0] == "none":

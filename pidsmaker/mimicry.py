@@ -110,8 +110,8 @@ def random_timestamp(start_ns, end_ns):
 
 
 def save_mimicry_nodes(cfg, cur, nodes, attack):
-    os.makedirs(cfg.build_graphs._mimicry_dir, exist_ok=True)
-    save_dir = os.path.join(cfg.build_graphs._mimicry_dir, attack.split("/")[-1])
+    os.makedirs(cfg.construction._mimicry_dir, exist_ok=True)
+    save_dir = os.path.join(cfg.construction._mimicry_dir, attack.split("/")[-1])
 
     data = []
     sql1 = "SELECT node_uuid, index_id, path FROM file_node_table;"
@@ -150,7 +150,7 @@ def gen_mimicry_edges(cfg):
 
     rel2id = get_rel2id(cfg)
 
-    mimicry_edge_num = cfg.build_graphs.mimicry_edge_num
+    mimicry_edge_num = cfg.construction.mimicry_edge_num
     attack_num = len(cfg.dataset.ground_truth_relative_path)
     num_each_att = divide_integer(mimicry_edge_num, attack_num)
 

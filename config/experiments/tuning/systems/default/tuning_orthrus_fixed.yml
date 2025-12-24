@@ -2,15 +2,15 @@ method: grid
 
 
 parameters:
-  gnn_training.lr:
+  training.lr:
     values: [0.001, 0.0001]
-  gnn_training.node_hid_dim:
+  training.node_hid_dim:
     values: [64, 128, 256]
-  gnn_training.node_out_dim:
+  training.node_out_dim:
     values: [-1]
-  gnn_training.num_epochs:
+  training.num_epochs:
     values: [20]
-  gnn_training.encoder.tgn.tgn_memory_dim:
+  training.encoder.tgn.tgn_memory_dim:
     values: [-1]
-  gnn_training.encoder.tgn.tgn_time_dim:
+  training.encoder.tgn.tgn_time_dim:
     values: [-1]

@@ -33,15 +33,15 @@ def tokenize_corpus(corpus, indexid2msg):
 
 
 def train_word2vec(corpus, model_save_path, cfg):
-    emb_dim = cfg.feat_training.emb_dim
-    window_size = cfg.feat_training.temporal_rw.window_size
-    min_count = cfg.feat_training.temporal_rw.min_count
-    use_skip_gram = cfg.feat_training.temporal_rw.use_skip_gram
-    num_workers = cfg.feat_training.temporal_rw.wv_workers
-    epochs = cfg.feat_training.epochs
-    compute_loss = cfg.feat_training.temporal_rw.compute_loss
-    negative = cfg.feat_training.temporal_rw.negative
-    use_seed = cfg.feat_training.use_seed
+    emb_dim = cfg.featurization.emb_dim
+    window_size = cfg.featurization.temporal_rw.window_size
+    min_count = cfg.featurization.temporal_rw.min_count
+    use_skip_gram = cfg.featurization.temporal_rw.use_skip_gram
+    num_workers = cfg.featurization.temporal_rw.wv_workers
+    epochs = cfg.featurization.epochs
+    compute_loss = cfg.featurization.temporal_rw.compute_loss
+    negative = cfg.featurization.temporal_rw.negative
+    use_seed = cfg.featurization.use_seed
     SEED = 0
 
     model = Word2Vec(
@@ -74,8 +74,8 @@ def train_word2vec(corpus, model_save_path, cfg):
 
 
 def update_word2vec(corpus, model_save_path, cfg):
-    epochs = cfg.feat_training.epochs
-    compute_loss = cfg.feat_training.temporal_rw.compute_loss
+    epochs = cfg.featurization.epochs
+    compute_loss = cfg.featurization.temporal_rw.compute_loss
 
     log(f"Loading word2vec from {model_save_path}")
     model = Word2Vec.load(os.path.join(model_save_path, "trw_word2vec.model"))
@@ -93,7 +93,7 @@ def update_word2vec(corpus, model_save_path, cfg):
 
 def main(cfg):
     log_start(__file__)
-    model_save_path = cfg.feat_training._model_dir
+    model_save_path = cfg.featurization._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 
     log(f"Building TRW based word2vec model and save model to {model_save_path}")
@@ -101,7 +101,7 @@ def main(cfg):
     log("Get indexid2msg from database...")
     indexid2msg = get_indexid2msg(cfg)
 
-    corpus_base_dir = cfg.feat_training.temporal_rw._random_walk_corpus_dir
+    corpus_base_dir = cfg.featurization.temporal_rw._random_walk_corpus_dir
     corpus_folders = ["train", "val", "test", "unused"]
     corpus_file_list = get_all_files_from_folders(corpus_base_dir, corpus_folders)
     for i in log_tqdm(

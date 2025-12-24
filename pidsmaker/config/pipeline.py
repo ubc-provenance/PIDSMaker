@@ -186,7 +186,7 @@ def overwrite_cfg_with_args(cfg, args):
     given within args.
 
     To override a parameter in cfg, use a dotted style:
-    ```python pidsmaker/main.py --gnn_training.seed=42```
+    ```python pidsmaker/main.py --training.seed=42```
     """
     for arg, value in args.__dict__.items():
         if "." in arg and value is not None:
@@ -200,11 +200,11 @@ def overwrite_cfg_with_args(cfg, args):
 
 
 def set_shortcut_variables(cfg):
-    cfg._is_node_level = cfg.gnn_training.decoder.used_methods is not None and any(
+    cfg._is_node_level = cfg.training.decoder.used_methods is not None and any(
         [
             method
             for method in OBJECTIVES_NODE_LEVEL
-            if method in cfg.gnn_training.decoder.used_methods
+            if method in cfg.training.decoder.used_methods
         ]
     )
 
@@ -216,7 +216,7 @@ def set_task_paths(cfg, subtask_concat_value=None):
         task_cfg = getattr(cfg, task)
         restart_values = flatten_arg_values(task_cfg)
         if (
-            task == "build_graphs"
+            task == "construction"
         ):  # to restart from beginning if train files are changed
             restart_values += cfg.dataset.train_files
             if (
@@ -248,7 +248,7 @@ def set_task_paths(cfg, subtask_concat_value=None):
         final_hash_string = deps_hash + subtask_to_hash[task]
         final_hash_string = hashlib.sha256(final_hash_string.encode("utf-8")).hexdigest()
 
-        if task in ["build_graphs", "transformation", "feat_training", "feat_inference"]:
+        if task in ["construction", "transformation", "featurization", "feat_inference"]:
             task_cfg._task_path = os.path.join(
                 cfg._artifact_dir, task, cfg.dataset.name, task, final_hash_string
             )
@@ -262,26 +262,26 @@ def set_task_paths(cfg, subtask_concat_value=None):
         os.makedirs(task_cfg._logs_dir, exist_ok=True)
 
     # Preprocessing paths
-    cfg.build_graphs._graphs_dir = os.path.join(
-        cfg.build_graphs._task_path, "nx/"
+    cfg.construction._graphs_dir = os.path.join(
+        cfg.construction._task_path, "nx/"
     )
-    cfg.build_graphs._tw_labels = os.path.join(
-        cfg.build_graphs._task_path, "tw_labels/"
+    cfg.construction._tw_labels = os.path.join(
+        cfg.construction._task_path, "tw_labels/"
     )
-    cfg.build_graphs._node_id_to_path = os.path.join(
-        cfg.build_graphs._task_path, "node_id_to_path/"
+    cfg.construction._node_id_to_path = os.path.join(
+        cfg.construction._task_path, "node_id_to_path/"
     )
-    cfg.build_graphs._dicts_dir = os.path.join(
-        cfg.build_graphs._task_path, "indexid2msg/"
+    cfg.construction._dicts_dir = os.path.join(
+        cfg.construction._task_path, "indexid2msg/"
     )
-    cfg.build_graphs._mimicry_dir = os.path.join(
-        cfg.build_graphs._task_path, "mimicry/"
+    cfg.construction._mimicry_dir = os.path.join(
+        cfg.construction._task_path, "mimicry/"
     )
-    cfg.build_graphs._magic_dir = os.path.join(
-        cfg.build_graphs._task_path, "magic/"
+    cfg.construction._magic_dir = os.path.join(
+        cfg.construction._task_path, "magic/"
     )
-    cfg.build_graphs._magic_graphs_dir = os.path.join(
-        cfg.build_graphs._magic_dir, "dgl_graphs/"
+    cfg.construction._magic_graphs_dir = os.path.join(
+        cfg.construction._magic_dir, "dgl_graphs/"
     )
 
     cfg.transformation._graphs_dir = os.path.join(
@@ -289,23 +289,23 @@ def set_task_paths(cfg, subtask_concat_value=None):
     )
 
     # Featurization paths
-    cfg.feat_training._model_dir = os.path.join(
-        cfg.feat_training._task_path, "stored_models/"
+    cfg.featurization._model_dir = os.path.join(
+        cfg.featurization._task_path, "stored_models/"
     )
-    cfg.feat_training.temporal_rw._random_walk_dir = os.path.join(
-        cfg.feat_training._task_path, "random_walks/"
+    cfg.featurization.temporal_rw._random_walk_dir = os.path.join(
+        cfg.featurization._task_path, "random_walks/"
     )
-    cfg.feat_training.temporal_rw._random_walk_corpus_dir = os.path.join(
-        cfg.feat_training.temporal_rw._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.temporal_rw._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.temporal_rw._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.feat_training.alacarte._random_walk_dir = os.path.join(
-        cfg.feat_training._task_path, "random_walks/"
+    cfg.featurization.alacarte._random_walk_dir = os.path.join(
+        cfg.featurization._task_path, "random_walks/"
     )
-    cfg.feat_training.alacarte._random_walk_corpus_dir = os.path.join(
-        cfg.feat_training.alacarte._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.alacarte._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.alacarte._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.feat_training.alacarte._vec_graphs_dir = os.path.join(
-        cfg.feat_training._task_path, "vectorized/"
+    cfg.featurization.alacarte._vec_graphs_dir = os.path.join(
+        cfg.featurization._task_path, "vectorized/"
     )
 
     cfg.feat_inference._edge_embeds_dir = os.path.join(
@@ -316,18 +316,18 @@ def set_task_paths(cfg, subtask_concat_value=None):
     )
 
     # Detection paths
-    cfg.graph_preprocessing._preprocessed_graphs_dir = os.path.join(
-        cfg.graph_preprocessing._task_path, "preprocessed_graphs/"
+    cfg.batching._preprocessed_graphs_dir = os.path.join(
+        cfg.batching._task_path, "preprocessed_graphs/"
     )
 
-    cfg.gnn_training._trained_models_dir = os.path.join(
-        cfg.gnn_training._task_path, "trained_models/"
+    cfg.training._trained_models_dir = os.path.join(
+        cfg.training._task_path, "trained_models/"
     )
-    cfg.gnn_training._edge_losses_dir = os.path.join(
-        cfg.gnn_training._task_path, "edge_losses/"
+    cfg.training._edge_losses_dir = os.path.join(
+        cfg.training._task_path, "edge_losses/"
     )
-    cfg.gnn_training._magic_dir = os.path.join(
-        cfg.gnn_training._task_path, "magic/"
+    cfg.training._magic_dir = os.path.join(
+        cfg.training._task_path, "magic/"
     )
     cfg.evaluation._precision_recall_dir = os.path.join(
         cfg.evaluation._task_path, "precision_recall_dir/"
@@ -495,11 +495,11 @@ def check_edge_cases(cfg):
     We want to check all errors prior to running the framework here.
     Yield EnvironmentError to be handled in tests.
     """
-    decoders = cfg.gnn_training.decoder.used_methods
+    decoders = cfg.training.decoder.used_methods
     use_tgn_neigh_loader = (
-        "tgn_last_neighbor" in cfg.graph_preprocessing.intra_graph_batching.used_methods
+        "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
     )
-    use_tgn = "tgn" in cfg.gnn_training.encoder.used_methods
+    use_tgn = "tgn" in cfg.training.encoder.used_methods
     use_rcaid_pseudo_graph = "rcaid_pseudo_graph" in cfg.transformation.used_methods
 
     if use_tgn_neigh_loader:
@@ -513,7 +513,7 @@ def check_edge_cases(cfg):
     if use_tgn:
         if not use_tgn_neigh_loader:
             raise ValueError("Couldn't use `tgn` as encoder without `tgn_last_neighbor` as loader.")
-        if cfg.graph_preprocessing.inter_graph_batching.used_method != "none":
+        if cfg.batching.inter_graph_batching.used_method != "none":
             raise ValueError("TGN-based encoders do not support inter graph batching yet.")
 
     if use_rcaid_pseudo_graph:
@@ -522,9 +522,9 @@ def check_edge_cases(cfg):
                 "Cannot predict edge type as it is removed in the pseudo graph transformation"
             )
 
-    if cfg.feat_training.used_method == "fasttext":
-        if cfg.feat_training.fasttext.use_pretrained_fb_model:
-            emb_dim = cfg.feat_training.emb_dim
+    if cfg.featurization.used_method == "fasttext":
+        if cfg.featurization.fasttext.use_pretrained_fb_model:
+            emb_dim = cfg.featurization.emb_dim
             if emb_dim != 300:
                 raise ValueError(
                     f"Invalid `emb_dim={emb_dim}`, should be set to 300 if `use_pretrained_fb_model=True`."
@@ -534,24 +534,24 @@ def check_edge_cases(cfg):
         if cfg.evaluation.node_evaluation.threshold_method != "magic":
             raise ValueError("These decoders are only working with magic thresholding yet.")
 
-    if cfg.gnn_training.decoder.use_few_shot:
+    if cfg.training.decoder.use_few_shot:
         if cfg.transformation.used_methods not in SYNTHETIC_ATTACKS.keys():
             raise ValueError(
                 "Few-shot mode requires an attack generation method within `preprocessing.transformation.used_methods`"
             )
 
-    use_multi_dataset = "none" not in cfg.build_graphs.multi_dataset
-    if cfg.feat_training.multi_dataset_training and use_multi_dataset:
-        method = cfg.feat_training.used_method.strip()
+    use_multi_dataset = "none" not in cfg.construction.multi_dataset
+    if cfg.featurization.multi_dataset_training and use_multi_dataset:
+        method = cfg.featurization.used_method.strip()
         if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
     if (
-        cfg.feat_training.multi_dataset_training
-        or cfg.graph_preprocessing.multi_dataset_training
+        cfg.featurization.multi_dataset_training
+        or cfg.batching.multi_dataset_training
     ):
         if not use_multi_dataset:
             raise ValueError(
-                "Using multi-dataset mode requires setting `preprocessing.build_graphs.multi_dataset`"
+                "Using multi-dataset mode requires setting `preprocessing.construction.multi_dataset`"
             )
 
     if cfg.evaluation.used_method == "edge_evaluation":
@@ -619,7 +619,7 @@ def update_task_paths_to_restart(cfg, subtask_concat_value=None):
 def update_cfg_for_multi_dataset(cfg, dataset):
     cfg = deepcopy(cfg)
     cfg.dataset.name = dataset
-    #     cfg.build_graphs.multi_dataset = "none"
+    #     cfg.construction.multi_dataset = "none"
     should_restart = update_task_paths_to_restart(cfg)
     return cfg, should_restart
 
@@ -748,7 +748,7 @@ def add_cfg_args_to_parser(cfg, parser):
 
 
 def get_darpa_tc_node_feats_from_cfg(cfg):
-    features = cfg.build_graphs.node_label_features
+    features = cfg.construction.node_label_features
     return {
         "subject": list(map(lambda x: x.strip(), features.subject.split(","))),
         "file": list(map(lambda x: x.strip(), features.file.split(","))),

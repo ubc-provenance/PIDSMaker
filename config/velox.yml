@@ -2,10 +2,10 @@
 
 _include_yml: orthrus_non_snooped
 
-graph_preprocessing:
+batching:
   intra_graph_batching:
     used_methods: edges
-gnn_training:
+training:
   encoder:
     used_methods: none # uses only a linear layer
     x_is_tuple: True

@@ -35,19 +35,19 @@ def doc2vec(
 
 def main(cfg):
     log_start(__file__)
-    model_save_path = cfg.feat_training._model_dir
+    model_save_path = cfg.featurization._model_dir
 
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
-    if cfg.feat_training.doc2vec.include_neighbors:
+    if cfg.featurization.doc2vec.include_neighbors:
         tagged_data = get_corpus_using_neighbors_features(cfg, doc2vec_format=True)
 
     # Standard token-level Doc2vec
     else:
         tagged_data = get_corpus(cfg, doc2vec_format=True)
 
-    epochs = cfg.feat_training.epochs
-    emb_dim = cfg.feat_training.emb_dim
-    alpha = cfg.feat_training.doc2vec.alpha
+    epochs = cfg.featurization.epochs
+    emb_dim = cfg.featurization.emb_dim
+    alpha = cfg.featurization.doc2vec.alpha
 
     log("Start building and training Doc2Vec model...")
     doc2vec(
