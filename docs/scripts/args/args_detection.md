@@ -170,7 +170,7 @@
 27. Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)<br><br><b>Available options (multi selection)</b>:<br>`predict_edge_type`<br>`predict_node_type`<br>`predict_masked_struct`<br>`detect_edge_few_shot`<br>`predict_edge_contrastive`<br>`reconstruct_node_features`<br>`reconstruct_node_embeddings`<br>`reconstruct_edge_embeddings`<br>`reconstruct_masked_features`
 28. Old feature: need some work to update it.<br>
 29. Whether to generate images of malicious nodes' neighborhoods (not stable).<br>
-30. <br><b>Available options (one selection)</b>:<br>`orthrus`
+30. <br><b>Available options (one selection)</b>:<br>`orthrus`<br>`reapr`
 31. Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination`                                         selects the model that does the best separation between top-score TPs and top-score FPs.<br><br><b>Available options (one selection)</b>:<br>`best_adp`<br>`best_discrimination`
 32. Method to calculate the threshold value used to detect anomalies.<br><br><b>Available options (one selection)</b>:<br>`max_val_loss`<br>`mean_val_loss`<br>`threatrace`<br>`magic`<br>`flash`<br>`nodlink`
 33. Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).<br>

@@ -1,7 +1,0 @@
-detection:
-  gnn_training:
-    lr: 0.00005
-    node_hid_dim: 100
-    node_out_dim: 100
-    encoder:
-      dropout: 0.4

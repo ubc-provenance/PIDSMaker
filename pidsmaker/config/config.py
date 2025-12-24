@@ -904,7 +904,7 @@ TASK_ARGS = {
                 bool,
                 desc="Whether to generate images of malicious nodes' neighborhoods (not stable).",
             ),
-            "ground_truth_version": Arg(str, vals=OR(["orthrus"])),
+            "ground_truth_version": Arg(str, vals=OR(["orthrus", "reapr"])),
             "best_model_selection": Arg(
                 str,
                 vals=OR(["best_adp", "best_discrimination"]),

@@ -1,8 +1,0 @@
-featurization:
-  feat_training:
-    used_method: only_type
-
-detection:
-  gnn_training:
-    encoder:
-      node_features: node_type
