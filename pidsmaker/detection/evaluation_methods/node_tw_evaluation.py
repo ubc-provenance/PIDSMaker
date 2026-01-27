@@ -25,7 +25,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log("Calculating threshold...")
 
-    thr = get_threshold(val_tw_path, cfg.detection.evaluation.node_tw_evaluation.threshold_method)
+    thr = get_threshold(val_tw_path, cfg.evaluation.node_tw_evaluation.threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     tw_to_node_to_losses = defaultdict(lambda: defaultdict(list))
@@ -50,19 +50,19 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
             tw_to_node_to_losses[tw][srcnode].append(
                 loss
             )  # TODO: now we only consider src nodes and we don't evaluate on dst nodes
-            if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
+            if cfg.evaluation.node_tw_evaluation.use_dst_node_loss:
                 tw_to_node_to_losses[tw][dstnode].append(loss)
 
             # If max-val thr is used, we want to keep track when the node with max loss happens
             if loss > node_to_max_loss[srcnode]:
                 node_to_max_loss[srcnode] = loss
                 node_to_max_loss_tw[srcnode] = tw
-            if cfg.detection.evaluation.node_tw_evaluation.use_dst_node_loss:
+            if cfg.evaluation.node_tw_evaluation.use_dst_node_loss:
                 if loss > node_to_max_loss[dstnode]:
                     node_to_max_loss[dstnode] = loss
                     node_to_max_loss_tw[dstnode] = tw
 
-    use_kmeans = cfg.detection.evaluation.node_tw_evaluation.use_kmeans
+    use_kmeans = cfg.evaluation.node_tw_evaluation.use_kmeans
     results = {}
     for tw, node_to_losses in tw_to_node_to_losses.items():
         is_malicious_tw = False
@@ -71,7 +71,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
             results[tw] = {}
         for node_id, losses in node_to_losses.items():
             pred_score = reduce_losses_to_score(
-                losses, cfg.detection.evaluation.node_tw_evaluation.threshold_method
+                losses, cfg.evaluation.node_tw_evaluation.threshold_method
             )
 
             if node_id not in results[tw]:
@@ -91,7 +91,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
 
         if is_malicious_tw:
             results[tw] = compute_kmeans_labels(
-                results[tw], topk_K=cfg.detection.evaluation.node_tw_evaluation.kmeans_top_K
+                results[tw], topk_K=cfg.evaluation.node_tw_evaluation.kmeans_top_K
             )
 
     return results, tw_to_edge_index, tw_to_edge_loss, thr, node_to_max_loss_tw
@@ -103,7 +103,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     )
     node_to_path = get_node_to_path_and_type(cfg)
 
-    out_dir = cfg.detection.evaluation._precision_recall_dir
+    out_dir = cfg.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
@@ -141,7 +141,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                 )
                 malicious_nodes.add(nid)
 
-        if cfg.detection.evaluation.viz_malicious_nodes and len(malicious_nodes) > 0:
+        if cfg.evaluation.viz_malicious_nodes and len(malicious_nodes) > 0:
             graph_path = viz_graph(
                 edge_index=np.array(tw_to_ei[tw]),
                 edge_scores=np.array(tw_to_edge_loss[tw]),

@@ -69,17 +69,17 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
                 merge_cfg_and_check_syntax(cfg, yml_file)
 
                 # Train or Train+Test embedding method training
-                cfg.featurization.feat_training.training_split = split
+                cfg.featurization.training_split = split
 
                 # If a model doesn't use embedding in features, we add them to benchmark
-                if "node_emb" not in cfg.detection.graph_preprocessing.node_features:
-                    cfg.detection.graph_preprocessing.node_features += ",node_emb"
+                if "node_emb" not in cfg.batching.node_features:
+                    cfg.batching.node_features += ",node_emb"
 
         elif key == "orthrus_node_label_features":
             if value == True:
-                cfg.preprocessing.build_graphs.node_label_features.subject = "type, path, cmd_line"
-                cfg.preprocessing.build_graphs.node_label_features.file = "type, path"
-                cfg.preprocessing.build_graphs.node_label_features.netflow = (
+                cfg.construction.node_label_features.subject = "type, path, cmd_line"
+                cfg.construction.node_label_features.file = "type, path"
+                cfg.construction.node_label_features.netflow = (
                     "type, remote_ip, remote_port"
                 )
 
@@ -88,18 +88,18 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
             set_nested_attr(cfg, key, value)
 
     # Special cases
-    if cfg.detection.gnn_training.node_out_dim == -1:
-        cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim
-    elif cfg.detection.gnn_training.node_out_dim == -2:
-        cfg.detection.gnn_training.node_out_dim = cfg.detection.gnn_training.node_hid_dim // 2
+    if cfg.training.node_out_dim == -1:
+        cfg.training.node_out_dim = cfg.training.node_hid_dim
+    elif cfg.training.node_out_dim == -2:
+        cfg.training.node_out_dim = cfg.training.node_hid_dim // 2
 
-    if cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim == -1:
-        cfg.detection.gnn_training.encoder.tgn.tgn_memory_dim = (
-            cfg.detection.gnn_training.node_hid_dim
+    if cfg.training.encoder.tgn.tgn_memory_dim == -1:
+        cfg.training.encoder.tgn.tgn_memory_dim = (
+            cfg.training.node_hid_dim
         )
-    if cfg.detection.gnn_training.encoder.tgn.tgn_time_dim == -1:
-        cfg.detection.gnn_training.encoder.tgn.tgn_time_dim = (
-            cfg.detection.gnn_training.node_hid_dim
+    if cfg.training.encoder.tgn.tgn_time_dim == -1:
+        cfg.training.encoder.tgn.tgn_time_dim = (
+            cfg.training.node_hid_dim
         )
 
     # We modified the cfg so we have to update the task paths accordingly

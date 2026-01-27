@@ -1,17 +1,15 @@
 _include_yml: orthrus_non_snooped
 
 featurization:
-  feat_training:
-    used_method: only_type
+  used_method: only_type
 
-detection:
-  graph_preprocessing:
-    fix_buggy_graph_reindexer: True
-    intra_graph_batching:
-      tgn_last_neighbor:
-        fix_tgn_neighbor_loader: False
-        fix_buggy_orthrus_TGN: True
+batching:
+  fix_buggy_graph_reindexer: True
+  intra_graph_batching:
+    tgn_last_neighbor:
+      fix_tgn_neighbor_loader: False
+      fix_buggy_orthrus_TGN: True
 
-  evaluation:
-    used_method: edge_evaluation
-    best_model_selection: best_adp
+evaluation:
+  used_method: edge_evaluation
+  best_model_selection: best_adp

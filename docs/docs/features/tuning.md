@@ -10,11 +10,11 @@ Tuning is configured using YAML files, just like system definitions. For example
 method: grid # (1)!
 
 parameters:
-  detection.gnn_training.lr:
+  training.lr:
     values: [0.001, 0.0001]
-  detection.gnn_training.node_hid_dim:
+  training.node_hid_dim:
     values: [32, 64, 128, 256]
-  featurization.feat_training.used_method:
+  featurization.used_method:
     values: [fasttext, word2vec]
 ```
 
@@ -72,13 +72,11 @@ Get the hyperparameters associated with the best run and put them into a `config
 
 ``` yaml linenums="1" title="tuned_my_system.yml"
 featurization:
-  feat_training:
-    used_method: word2vec
+  used_method: word2vec
 
-detection:
-  gnn_training:
-    lr: 0.0001
-    node_hid_dim: 128
+training:
+  lr: 0.0001
+  node_hid_dim: 128
 ```
 
 Each system should have a tuned file per dataset, or the best hyperparameters can be directly set in its `my_system.yml` file if it uses the same hyperparameters in all datasets.

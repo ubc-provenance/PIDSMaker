@@ -28,7 +28,7 @@ def compute_indexid2msg(cfg):
     """
     cur, connect = init_database_connection(cfg)
 
-    use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
+    use_hashed_label = cfg.construction.use_hashed_label
     node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
     indexid2msg = {}
 
@@ -107,7 +107,7 @@ def save_indexid2msg(indexid2msg, split2nodes, cfg):
     all_nodes = set().union(*(split2nodes[split] for split in ["train", "val", "test"]))
     indexid2msg = {k: v for k, v in indexid2msg.items() if k in all_nodes}
 
-    out_dir = cfg.preprocessing.build_graphs._dicts_dir
+    out_dir = cfg.construction._dicts_dir
     os.makedirs(out_dir, exist_ok=True)
     log("Saving indexid2msg to disk...")
     torch.save(indexid2msg, os.path.join(out_dir, "indexid2msg.pkl"))
@@ -121,7 +121,7 @@ def compute_and_save_split2nodes(cfg):
         "val" => nodes in val,
     }
     """
-    split_to_files = get_split_to_files(cfg, cfg.preprocessing.build_graphs._graphs_dir)
+    split_to_files = get_split_to_files(cfg, cfg.construction._graphs_dir)
     split2nodes = defaultdict(set)
 
     for split, files in split_to_files.items():
@@ -131,7 +131,7 @@ def compute_and_save_split2nodes(cfg):
                 split2nodes[split].add(node)
     split2nodes = dict(split2nodes)
 
-    out_dir = cfg.preprocessing.build_graphs._dicts_dir
+    out_dir = cfg.construction._dicts_dir
     os.makedirs(out_dir, exist_ok=True)
     log("Saving split2nodes to disk...")
     torch.save(split2nodes, os.path.join(out_dir, "split2nodes.pkl"))
@@ -157,7 +157,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
     rel2id = get_rel2id(cfg)
     include_edge_type = rel2id
 
-    mimicry_edge_num = cfg.preprocessing.build_graphs.mimicry_edge_num
+    mimicry_edge_num = cfg.construction.mimicry_edge_num
     if mimicry_edge_num is not None and mimicry_edge_num > 0:
         attack_mimicry_events = mimicry.gen_mimicry_edges(cfg)
     else:
@@ -262,7 +262,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             start_time = events_list[0][-2]
             temp_list = []
             BATCH = 1024
-            window_size_in_ns = cfg.preprocessing.build_graphs.time_window_size * 60_000_000_000
+            window_size_in_ns = cfg.construction.time_window_size * 60_000_000_000
 
             last_batch = False
             for batch_edges in get_batches(events_list, BATCH):
@@ -283,7 +283,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
 
                     node_info = {}
                     edge_list = []
-                    if cfg.preprocessing.build_graphs.fuse_edge:
+                    if cfg.construction.fuse_edge:
                         edge_info = {}
                         for (
                             src_node,
@@ -400,7 +400,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                         if cfg._test_mode and i >= NUM_TEST_EDGES:
                             break
 
-                    date_dir = f"{cfg.preprocessing.build_graphs._graphs_dir}/graph_{day}/"
+                    date_dir = f"{cfg.construction._graphs_dir}/graph_{day}/"
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 

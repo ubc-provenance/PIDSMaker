@@ -3,7 +3,7 @@ set -e  # Exit on any error
 
 echo "Starting database and table creation..."
 
-for dataset in clearscope_e3 cadets_e3 theia_e3 clearscope_e5 cadets_e5 theia_e5 optc_051 optc_501 optc_201
+for dataset in clearscope_e3 cadets_e3 theia_e3 clearscope_e5 cadets_e5 theia_e5 optc_051 optc_501 optc_201 fivedirections_e3 fivedirections_e5 trace_e3 trace_e5
 do
     DATASET_NAME=$(echo "$dataset" | tr '[:upper:]' '[:lower:]')
     echo "Creating database and tables for: $DATASET_NAME"

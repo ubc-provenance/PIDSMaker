@@ -1063,7 +1063,7 @@ def compute_tw_labels(cfg):
     """
     Gets the malcious node IDs present in each time window.
     """
-    out_path = cfg.preprocessing.build_graphs._tw_labels
+    out_path = cfg.construction._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
     uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
 
@@ -1071,9 +1071,9 @@ def compute_tw_labels(cfg):
     os.makedirs(out_path, exist_ok=True)
 
     t_to_node = labelling.get_t2malicious_node(cfg)
-    # test_data = load_data_set(cfg, path=cfg.featurization.feat_inference._edge_embeds_dir, split="test")
+    # test_data = load_data_set(cfg, path=cfg.feat_inference._edge_embeds_dir, split="test")
 
-    graph_dir = cfg.preprocessing.transformation._graphs_dir
+    graph_dir = cfg.transformation._graphs_dir
     test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
 
     num_found_event_labels = 0

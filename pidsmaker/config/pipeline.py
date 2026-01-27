@@ -186,7 +186,7 @@ def overwrite_cfg_with_args(cfg, args):
     given within args.
 
     To override a parameter in cfg, use a dotted style:
-    ```python pidsmaker/main.py --detection.gnn_training.seed=42```
+    ```python pidsmaker/main.py --training.seed=42```
     """
     for arg, value in args.__dict__.items():
         if "." in arg and value is not None:
@@ -200,11 +200,11 @@ def overwrite_cfg_with_args(cfg, args):
 
 
 def set_shortcut_variables(cfg):
-    cfg._is_node_level = cfg.detection.gnn_training.decoder.used_methods is not None and any(
+    cfg._is_node_level = cfg.training.decoder.used_methods is not None and any(
         [
             method
             for method in OBJECTIVES_NODE_LEVEL
-            if method in cfg.detection.gnn_training.decoder.used_methods
+            if method in cfg.training.decoder.used_methods
         ]
     )
 
@@ -212,159 +212,153 @@ def set_shortcut_variables(cfg):
 def set_task_paths(cfg, subtask_concat_value=None):
     subtask_to_hash = {}
     # Directories common to all tasks
-    for task, subtask in TASK_ARGS.items():
+    for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
-
-        # We first compute a unique hash for each usbtask
-        for subtask_name, subtask_args in subtask.items():
-            subtask_cfg = getattr(task_cfg, subtask_name)
-            restart_values = flatten_arg_values(subtask_cfg)
+        restart_values = flatten_arg_values(task_cfg)
+        if (
+            task == "construction"
+        ):  # to restart from beginning if train files are changed
+            restart_values += cfg.dataset.train_files
             if (
-                subtask_name == "build_graphs"
-            ):  # to restart from beginning if train files are changed
-                restart_values += cfg.dataset.train_files
-                if (
-                    cfg._restart_from_scratch
-                ):  # to start from a brand new folder, we generate a random id to add to the hash
-                    restart_values += [cfg._run_random_seed]
-            if subtask_concat_value is not None:
-                if subtask_name == subtask_concat_value["subtask"]:
-                    restart_values += [subtask_concat_value["concat_value"]]
+                cfg._restart_from_scratch
+            ):  # to start from a brand new folder, we generate a random id to add to the hash
+                restart_values += [cfg._run_random_seed]
+        if subtask_concat_value is not None:
+            if task == subtask_concat_value["subtask"]:
+                restart_values += [subtask_concat_value["concat_value"]]
 
-            clean_hash_args = [
-                "".join([c for c in str(arg) if c not in set(" []\"'")])
-                for arg in restart_values
-                if not arg.startswith("_")
-            ]
-            final_hash_string = ",".join(clean_hash_args)
-            final_hash_string = hashlib.sha256(final_hash_string.encode("utf-8")).hexdigest()
+        clean_hash_args = [
+            "".join([c for c in str(arg) if c not in set(" []\"'")])
+            for arg in restart_values
+            if not arg.startswith("_")
+        ]
+        final_hash_string = ",".join(clean_hash_args)
+        final_hash_string = hashlib.sha256(final_hash_string.encode("utf-8")).hexdigest()
 
-            subtask_to_hash[subtask_name] = final_hash_string
+        subtask_to_hash[task] = final_hash_string
 
     # Then, for each subtask, we want its unique hash to also depend from its previous dependencies' hashes.
     # For example, if I run the same subtask A two times, with two different subtasks B and C, the results
     # would be different and would be stored in the same folder A if we don't consider the hash of B and C.
-    for task, subtask in TASK_ARGS.items():
+    for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
-        for subtask_name, subtask_args in subtask.items():
-            subtask_cfg = getattr(task_cfg, subtask_name)
-            deps = sorted(list(get_dependees(subtask_name, TASK_DEPENDENCIES, set())))
-            deps_hash = "".join([subtask_to_hash[dep] for dep in deps])
+        deps = sorted(list(get_dependees(task, TASK_DEPENDENCIES, set())))
+        deps_hash = "".join([subtask_to_hash[dep] for dep in deps])
 
-            final_hash_string = deps_hash + subtask_to_hash[subtask_name]
-            final_hash_string = hashlib.sha256(final_hash_string.encode("utf-8")).hexdigest()
+        final_hash_string = deps_hash + subtask_to_hash[task]
+        final_hash_string = hashlib.sha256(final_hash_string.encode("utf-8")).hexdigest()
 
-            if task in ["preprocessing", "featurization"]:
-                subtask_cfg._task_path = os.path.join(
-                    cfg._artifact_dir, task, cfg.dataset.name, subtask_name, final_hash_string
-                )
-            else:
-                subtask_cfg._task_path = os.path.join(
-                    cfg._artifact_dir, task, subtask_name, final_hash_string, cfg.dataset.name
-                )
+        if task in ["construction", "transformation", "featurization", "feat_inference"]:
+            task_cfg._task_path = os.path.join(
+                cfg._artifact_dir, task, cfg.dataset.name, task, final_hash_string
+            )
+        else:
+            task_cfg._task_path = os.path.join(
+                cfg._artifact_dir, task, task, final_hash_string, cfg.dataset.name
+            )
 
-            # The directory to save logs related to the preprocessing task
-            subtask_cfg._logs_dir = os.path.join(subtask_cfg._task_path, "logs/")
-            os.makedirs(subtask_cfg._logs_dir, exist_ok=True)
+        # The directory to save logs related to the preprocessing task
+        task_cfg._logs_dir = os.path.join(task_cfg._task_path, "logs/")
+        os.makedirs(task_cfg._logs_dir, exist_ok=True)
 
     # Preprocessing paths
-    cfg.preprocessing.build_graphs._graphs_dir = os.path.join(
-        cfg.preprocessing.build_graphs._task_path, "nx/"
+    cfg.construction._graphs_dir = os.path.join(
+        cfg.construction._task_path, "nx/"
     )
-    cfg.preprocessing.build_graphs._tw_labels = os.path.join(
-        cfg.preprocessing.build_graphs._task_path, "tw_labels/"
+    cfg.construction._tw_labels = os.path.join(
+        cfg.construction._task_path, "tw_labels/"
     )
-    cfg.preprocessing.build_graphs._node_id_to_path = os.path.join(
-        cfg.preprocessing.build_graphs._task_path, "node_id_to_path/"
+    cfg.construction._node_id_to_path = os.path.join(
+        cfg.construction._task_path, "node_id_to_path/"
     )
-    cfg.preprocessing.build_graphs._dicts_dir = os.path.join(
-        cfg.preprocessing.build_graphs._task_path, "indexid2msg/"
+    cfg.construction._dicts_dir = os.path.join(
+        cfg.construction._task_path, "indexid2msg/"
     )
-    cfg.preprocessing.build_graphs._mimicry_dir = os.path.join(
-        cfg.preprocessing.build_graphs._task_path, "mimicry/"
+    cfg.construction._mimicry_dir = os.path.join(
+        cfg.construction._task_path, "mimicry/"
     )
-    cfg.preprocessing.build_graphs._magic_dir = os.path.join(
-        cfg.preprocessing.build_graphs._task_path, "magic/"
+    cfg.construction._magic_dir = os.path.join(
+        cfg.construction._task_path, "magic/"
     )
-    cfg.preprocessing.build_graphs._magic_graphs_dir = os.path.join(
-        cfg.preprocessing.build_graphs._magic_dir, "dgl_graphs/"
+    cfg.construction._magic_graphs_dir = os.path.join(
+        cfg.construction._magic_dir, "dgl_graphs/"
     )
 
-    cfg.preprocessing.transformation._graphs_dir = os.path.join(
-        cfg.preprocessing.transformation._task_path, "nx/"
+    cfg.transformation._graphs_dir = os.path.join(
+        cfg.transformation._task_path, "nx/"
     )
 
     # Featurization paths
-    cfg.featurization.feat_training._model_dir = os.path.join(
-        cfg.featurization.feat_training._task_path, "stored_models/"
+    cfg.featurization._model_dir = os.path.join(
+        cfg.featurization._task_path, "stored_models/"
     )
-    cfg.featurization.feat_training.temporal_rw._random_walk_dir = os.path.join(
-        cfg.featurization.feat_training._task_path, "random_walks/"
+    cfg.featurization.temporal_rw._random_walk_dir = os.path.join(
+        cfg.featurization._task_path, "random_walks/"
     )
-    cfg.featurization.feat_training.temporal_rw._random_walk_corpus_dir = os.path.join(
-        cfg.featurization.feat_training.temporal_rw._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.temporal_rw._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.temporal_rw._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.featurization.feat_training.alacarte._random_walk_dir = os.path.join(
-        cfg.featurization.feat_training._task_path, "random_walks/"
+    cfg.featurization.alacarte._random_walk_dir = os.path.join(
+        cfg.featurization._task_path, "random_walks/"
     )
-    cfg.featurization.feat_training.alacarte._random_walk_corpus_dir = os.path.join(
-        cfg.featurization.feat_training.alacarte._random_walk_dir, "random_walk_corpus/"
+    cfg.featurization.alacarte._random_walk_corpus_dir = os.path.join(
+        cfg.featurization.alacarte._random_walk_dir, "random_walk_corpus/"
     )
-    cfg.featurization.feat_training.alacarte._vec_graphs_dir = os.path.join(
-        cfg.featurization.feat_training._task_path, "vectorized/"
+    cfg.featurization.alacarte._vec_graphs_dir = os.path.join(
+        cfg.featurization._task_path, "vectorized/"
     )
 
-    cfg.featurization.feat_inference._edge_embeds_dir = os.path.join(
-        cfg.featurization.feat_inference._task_path, "edge_embeds/"
+    cfg.feat_inference._edge_embeds_dir = os.path.join(
+        cfg.feat_inference._task_path, "edge_embeds/"
     )
-    cfg.featurization.feat_inference._model_dir = os.path.join(
-        cfg.featurization.feat_inference._task_path, "stored_models/"
+    cfg.feat_inference._model_dir = os.path.join(
+        cfg.feat_inference._task_path, "stored_models/"
     )
 
     # Detection paths
-    cfg.detection.graph_preprocessing._preprocessed_graphs_dir = os.path.join(
-        cfg.detection.graph_preprocessing._task_path, "preprocessed_graphs/"
+    cfg.batching._preprocessed_graphs_dir = os.path.join(
+        cfg.batching._task_path, "preprocessed_graphs/"
     )
 
-    cfg.detection.gnn_training._trained_models_dir = os.path.join(
-        cfg.detection.gnn_training._task_path, "trained_models/"
+    cfg.training._trained_models_dir = os.path.join(
+        cfg.training._task_path, "trained_models/"
     )
-    cfg.detection.gnn_training._edge_losses_dir = os.path.join(
-        cfg.detection.gnn_training._task_path, "edge_losses/"
+    cfg.training._edge_losses_dir = os.path.join(
+        cfg.training._task_path, "edge_losses/"
     )
-    cfg.detection.gnn_training._magic_dir = os.path.join(
-        cfg.detection.gnn_training._task_path, "magic/"
+    cfg.training._magic_dir = os.path.join(
+        cfg.training._task_path, "magic/"
     )
-    cfg.detection.evaluation._precision_recall_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "precision_recall_dir/"
+    cfg.evaluation._precision_recall_dir = os.path.join(
+        cfg.evaluation._task_path, "precision_recall_dir/"
     )
-    cfg.detection.evaluation._uncertainty_exp_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "uncertainty_exp/"
+    cfg.evaluation._uncertainty_exp_dir = os.path.join(
+        cfg.evaluation._task_path, "uncertainty_exp/"
     )
-    cfg.detection.evaluation.queue_evaluation._precision_recall_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "precision_recall_dir/"
+    cfg.evaluation.queue_evaluation._precision_recall_dir = os.path.join(
+        cfg.evaluation._task_path, "precision_recall_dir/"
     )
-    cfg.detection.evaluation.queue_evaluation._queues_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "queues_dir/"
+    cfg.evaluation.queue_evaluation._queues_dir = os.path.join(
+        cfg.evaluation._task_path, "queues_dir/"
     )
-    cfg.detection.evaluation.queue_evaluation._predicted_queues_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "predicted_queues_dir/"
+    cfg.evaluation.queue_evaluation._predicted_queues_dir = os.path.join(
+        cfg.evaluation._task_path, "predicted_queues_dir/"
     )
-    cfg.detection.evaluation.queue_evaluation._kairos_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "kairos_dir/"
+    cfg.evaluation.queue_evaluation._kairos_dir = os.path.join(
+        cfg.evaluation._task_path, "kairos_dir/"
     )
-    cfg.detection.evaluation._results_dir = os.path.join(
-        cfg.detection.evaluation._task_path, "results/"
+    cfg.evaluation._results_dir = os.path.join(
+        cfg.evaluation._task_path, "results/"
     )
 
     # Ground Truth paths
     cfg._ground_truth_dir = os.path.join(
-        ROOT_GROUND_TRUTH_DIR, cfg.detection.evaluation.ground_truth_version + "/"
+        ROOT_GROUND_TRUTH_DIR, cfg.evaluation.ground_truth_version + "/"
     )
 
     # Triage paths
-    cfg.triage.tracing._tracing_graph_dir = os.path.join(
-        cfg.triage.tracing._task_path, "tracing_graphs"
+    cfg.triage._tracing_graph_dir = os.path.join(
+        cfg.triage._task_path, "tracing_graphs"
     )
 
 
@@ -468,14 +462,14 @@ def get_yml_cfg(args):
         )
         if args.model == "orthrus_fixed" and args.dataset == "CLEARSCOPE_E3":  # speciifc case
             tuning_file = args.model
-        yml_file = get_yml_file(
+        tuned_yml_file = get_yml_file(
             f"tuned_{tuning_file}", folder=f"tuned_baselines/{cfg.dataset.name.lower()}/"
         )
-        merge_cfg_and_check_syntax(cfg, yml_file)
+        merge_cfg_and_check_syntax(cfg, tuned_yml_file)
 
     # Same for experiments
-    yml_file = get_yml_file(os.path.join(UNCERTAINTY_EXP_YML_FOLDER, args.experiment))
-    merge_cfg_and_check_syntax(cfg, yml_file, syntax_check=EXPERIMENTS_CONFIG)
+    exp_yml_file = get_yml_file(os.path.join(UNCERTAINTY_EXP_YML_FOLDER, args.experiment))
+    merge_cfg_and_check_syntax(cfg, exp_yml_file, syntax_check=EXPERIMENTS_CONFIG)
 
     # Overwrites args to the cfg
     overwrite_cfg_with_args(cfg, args)
@@ -501,12 +495,12 @@ def check_edge_cases(cfg):
     We want to check all errors prior to running the framework here.
     Yield EnvironmentError to be handled in tests.
     """
-    decoders = cfg.detection.gnn_training.decoder.used_methods
+    decoders = cfg.training.decoder.used_methods
     use_tgn_neigh_loader = (
-        "tgn_last_neighbor" in cfg.detection.graph_preprocessing.intra_graph_batching.used_methods
+        "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
     )
-    use_tgn = "tgn" in cfg.detection.gnn_training.encoder.used_methods
-    use_rcaid_pseudo_graph = "rcaid_pseudo_graph" in cfg.preprocessing.transformation.used_methods
+    use_tgn = "tgn" in cfg.training.encoder.used_methods
+    use_rcaid_pseudo_graph = "rcaid_pseudo_graph" in cfg.transformation.used_methods
 
     if use_tgn_neigh_loader:
         if use_rcaid_pseudo_graph:
@@ -519,7 +513,7 @@ def check_edge_cases(cfg):
     if use_tgn:
         if not use_tgn_neigh_loader:
             raise ValueError("Couldn't use `tgn` as encoder without `tgn_last_neighbor` as loader.")
-        if cfg.detection.graph_preprocessing.inter_graph_batching.used_method != "none":
+        if cfg.batching.inter_graph_batching.used_method != "none":
             raise ValueError("TGN-based encoders do not support inter graph batching yet.")
 
     if use_rcaid_pseudo_graph:
@@ -528,39 +522,39 @@ def check_edge_cases(cfg):
                 "Cannot predict edge type as it is removed in the pseudo graph transformation"
             )
 
-    if cfg.featurization.feat_training.used_method == "fasttext":
-        if cfg.featurization.feat_training.fasttext.use_pretrained_fb_model:
-            emb_dim = cfg.featurization.feat_training.emb_dim
+    if cfg.featurization.used_method == "fasttext":
+        if cfg.featurization.fasttext.use_pretrained_fb_model:
+            emb_dim = cfg.featurization.emb_dim
             if emb_dim != 300:
                 raise ValueError(
                     f"Invalid `emb_dim={emb_dim}`, should be set to 300 if `use_pretrained_fb_model=True`."
                 )
 
     if "reconstruct_masked_features" in decoders or "predict_masked_struct" in decoders:
-        if cfg.detection.evaluation.node_evaluation.threshold_method != "magic":
+        if cfg.evaluation.node_evaluation.threshold_method != "magic":
             raise ValueError("These decoders are only working with magic thresholding yet.")
 
-    if cfg.detection.gnn_training.decoder.use_few_shot:
-        if cfg.preprocessing.transformation.used_methods not in SYNTHETIC_ATTACKS.keys():
+    if cfg.training.decoder.use_few_shot:
+        if cfg.transformation.used_methods not in SYNTHETIC_ATTACKS.keys():
             raise ValueError(
                 "Few-shot mode requires an attack generation method within `preprocessing.transformation.used_methods`"
             )
 
-    use_multi_dataset = "none" not in cfg.preprocessing.build_graphs.multi_dataset
-    if cfg.featurization.feat_training.multi_dataset_training and use_multi_dataset:
-        method = cfg.featurization.feat_training.used_method.strip()
+    use_multi_dataset = "none" not in cfg.construction.multi_dataset
+    if cfg.featurization.multi_dataset_training and use_multi_dataset:
+        method = cfg.featurization.used_method.strip()
         if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
     if (
-        cfg.featurization.feat_training.multi_dataset_training
-        or cfg.detection.graph_preprocessing.multi_dataset_training
+        cfg.featurization.multi_dataset_training
+        or cfg.batching.multi_dataset_training
     ):
         if not use_multi_dataset:
             raise ValueError(
-                "Using multi-dataset mode requires setting `preprocessing.build_graphs.multi_dataset`"
+                "Using multi-dataset mode requires setting `preprocessing.construction.multi_dataset`"
             )
 
-    if cfg.detection.evaluation.used_method == "edge_evaluation":
+    if cfg.evaluation.used_method == "edge_evaluation":
         if cfg._is_node_level:
             raise ValueError("Edge evaluation not implemented for node-level detection.")
 
@@ -573,32 +567,26 @@ def set_subtasks_to_restart(yml_file: str, cfg):
     In practice, we restart a subtask if there is no TASK_FINISHED_FILE in its `_task_path`.
     """
     user_config = load_yml_file_recursive(yml_file)
-    subtasks_in_yml_file = set(
-        [
-            subtask
-            for task, subtasks in user_config.items()
-            if not task.startswith("_")
-            for subtask in subtasks.keys()
-        ]
+    tasks_in_yml_file = set(
+        [task for task in user_config if not task.startswith("_")]
     )
 
     should_restart = OrderedDict()
-    for task, subtasks in TASK_ARGS.items():
-        for subtask in subtasks.keys():
-            if subtask in subtasks_in_yml_file:
-                subtask_cfg = getattr(getattr(cfg, task), subtask)
-                existing_files = [files for _, _, files in os.walk(subtask_cfg._task_path)]
-                has_finished = any(
-                    [
-                        files
-                        for files in existing_files
-                        for f in files
-                        if f.endswith(TASK_FINISHED_FILE)
-                    ]
-                )
-                should_restart[subtask] = not has_finished
-            else:
-                should_restart[subtask] = False
+    for task in TASK_ARGS:
+        if task in tasks_in_yml_file:
+            task_cfg = getattr(cfg, task)
+            existing_files = [files for _, _, files in os.walk(task_cfg._task_path)]
+            has_finished = any(
+                [
+                    files
+                    for files in existing_files
+                    for f in files
+                    if f.endswith(TASK_FINISHED_FILE)
+                ]
+            )
+            should_restart[task] = not has_finished
+        else:
+            should_restart[task] = False
 
     should_restart_with_deps = get_subtasks_to_restart_with_dependencies(
         should_restart, TASK_DEPENDENCIES, cfg._force_restart
@@ -631,7 +619,7 @@ def update_task_paths_to_restart(cfg, subtask_concat_value=None):
 def update_cfg_for_multi_dataset(cfg, dataset):
     cfg = deepcopy(cfg)
     cfg.dataset.name = dataset
-    #     cfg.preprocessing.build_graphs.multi_dataset = "none"
+    #     cfg.construction.multi_dataset = "none"
     should_restart = update_task_paths_to_restart(cfg)
     return cfg, should_restart
 
@@ -688,11 +676,8 @@ def get_subtasks_to_restart_with_dependencies(
 
     # Adds the subtasks to force restart
     if len(force_restart) > 0:
-        subtasks = set(
-            [subtask for task, subtasks in TASK_ARGS.items() for subtask in subtasks.keys()]
-        )
         for subtask in force_restart.split(","):
-            if subtask not in subtasks:
+            if subtask not in TASK_ARGS:
                 raise ValueError(f"Invalid subtask name `{subtask}` given to `--force_restart`.")
             force_restart_deps = get_dependencies(subtask, dependencies, set())
             if "_end" in force_restart_deps:
@@ -701,9 +686,8 @@ def get_subtasks_to_restart_with_dependencies(
             should_restart_with_deps = should_restart_with_deps | force_restart_deps
 
     should_restart_with_deps = {
-        subtask: (subtask in should_restart_with_deps)
-        for task, subtasks in TASK_ARGS.items()
-        for subtask in subtasks.keys()
+        task: (task in should_restart_with_deps)
+        for task in TASK_ARGS
     }
 
     return should_restart_with_deps
@@ -764,7 +748,7 @@ def add_cfg_args_to_parser(cfg, parser):
 
 
 def get_darpa_tc_node_feats_from_cfg(cfg):
-    features = cfg.preprocessing.build_graphs.node_label_features
+    features = cfg.construction.node_label_features
     return {
         "subject": list(map(lambda x: x.strip(), features.subject.split(","))),
         "file": list(map(lambda x: x.strip(), features.file.split(","))),

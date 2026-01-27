@@ -23,7 +23,7 @@ from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 
 def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_edges = get_ground_truth_edges(cfg)
-    threshold_method = cfg.detection.evaluation.edge_evaluation.threshold_method
+    threshold_method = cfg.evaluation.edge_evaluation.threshold_method
     if threshold_method == "magic":
         thr = get_threshold(test_tw_path, threshold_method)
     else:
@@ -65,7 +65,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     edge2attack = transform_attack2nodes_to_node2attacks(attack_to_mal_edges)
 
-    out_dir = cfg.detection.evaluation._precision_recall_dir
+    out_dir = cfg.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")

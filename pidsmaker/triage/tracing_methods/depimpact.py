@@ -99,11 +99,11 @@ def run(tasks, workers):
 
 
 def main(evaluation_results, tw_to_timestr, cfg):
-    base_dir = cfg.preprocessing.transformation._graphs_dir
+    base_dir = cfg.transformation._graphs_dir
     ground_truth_nids, _, _ = labelling.get_ground_truth(cfg)  # int
 
-    used_method = cfg.triage.tracing.depimpact.used_method
-    score_method = cfg.triage.tracing.depimpact.score_method
+    used_method = cfg.triage.depimpact.used_method
+    score_method = cfg.triage.depimpact.score_method
 
     tw_to_poi, tw_to_node_score = get_tasks(evaluation_results)
     tasks = []
@@ -115,7 +115,7 @@ def main(evaluation_results, tw_to_timestr, cfg):
         for poi in pois:
             tasks.append((tw, graph_dir, poi, tw_to_node_score[tw], used_method, score_method))
 
-    workers = cfg.triage.tracing.depimpact.workers
+    workers = cfg.triage.depimpact.workers
 
     all_results = run(tasks, workers)
 
@@ -161,7 +161,7 @@ def main(evaluation_results, tw_to_timestr, cfg):
         tw_to_info[int(tw)]["subgraph_nodes"] |= set(subgraph_nodes)
     log("==" * 20)
 
-    out_dir = cfg.triage.tracing._tracing_graph_dir
+    out_dir = cfg.triage._tracing_graph_dir
     os.makedirs(out_dir, exist_ok=True)
 
     detailed_info_filename = used_method + "_" + score_method + "_detailed.csv"
@@ -179,7 +179,7 @@ def main(evaluation_results, tw_to_timestr, cfg):
 
         all_traced_nodes |= set(subgraph.nodes())
 
-        if cfg.triage.tracing.depimpact.visualize:
+        if cfg.triage.depimpact.visualize:
             log(f"Visualize graph for tw {str(tw)}")
             visualize_dependency_graph(
                 dependency_graph=subgraph,
