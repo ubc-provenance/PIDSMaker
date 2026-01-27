@@ -95,9 +95,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
                 edge_dim=edge_dim or None,
-                activation=activation_fn_factory(
-                    cfg.training.encoder.graph_attention.activation
-                ),
+                activation=activation_fn_factory(cfg.training.encoder.graph_attention.activation),
                 dropout=dropout,
                 num_heads=cfg.training.encoder.graph_attention.num_heads,
                 concat=cfg.training.encoder.graph_attention.concat,
@@ -109,9 +107,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
-                activation=activation_fn_factory(
-                    cfg.training.encoder.sage.activation
-                ),
+                activation=activation_fn_factory(cfg.training.encoder.sage.activation),
                 dropout=dropout,
                 num_layers=cfg.training.encoder.sage.num_layers,
             )
@@ -181,9 +177,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 negative_slope=negative_slope,
                 concat_out=True,
                 residual=True,
-                activation=activation_fn_factory(
-                    cfg.training.encoder.magic_gat.activation
-                ),
+                activation=activation_fn_factory(cfg.training.encoder.magic_gat.activation),
                 is_decoder=False,
             )
 
@@ -207,9 +201,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
         use_memory = tgn_cfg.use_memory
         use_time_order_encoding = tgn_cfg.use_time_order_encoding
         project_src_dst = tgn_cfg.project_src_dst
-        edge_features = list(
-            map(lambda x: x.strip(), cfg.batching.edge_features.split(","))
-        )
+        edge_features = list(map(lambda x: x.strip(), cfg.batching.edge_features.split(",")))
 
         use_time_enc = "time_encoding" in cfg.batching.edge_features
 
@@ -295,9 +287,7 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_c
             negative_slope=negative_slope,
             concat_out=True,
             residual=True,
-            activation=activation_fn_factory(
-                cfg.training.encoder.magic_gat.activation
-            ),
+            activation=activation_fn_factory(cfg.training.encoder.magic_gat.activation),
             is_decoder=True,
         )
     elif method == "none":
@@ -570,9 +560,7 @@ def get_dimensions_from_data_sample(data):
 
 def get_edge_dim(cfg, msg_dim):
     edge_dim = 0
-    edge_features = list(
-        map(lambda x: x.strip(), cfg.batching.edge_features.split(","))
-    )
+    edge_features = list(map(lambda x: x.strip(), cfg.batching.edge_features.split(",")))
     use_tgn = "tgn" in cfg.training.encoder.used_methods
     tgn_memory_dim = cfg.training.encoder.tgn.tgn_memory_dim
 

@@ -35,9 +35,7 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     tw_labels = set(tw_to_malicious_nodes.keys())
     results = defaultdict(dict)
     for tw, losses in tw_to_losses.items():
-        pred_score = reduce_losses_to_score(
-            losses, cfg.evaluation.tw_evaluation.threshold_method
-        )
+        pred_score = reduce_losses_to_score(losses, cfg.evaluation.tw_evaluation.threshold_method)
 
         results[tw]["score"] = pred_score
         results[tw]["y_hat"] = int(pred_score > thr)

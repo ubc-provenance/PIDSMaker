@@ -82,9 +82,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     use_kmeans = cfg.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_losses.items():
-        pred_score = reduce_losses_to_score(
-            losses, cfg.evaluation.node_evaluation.threshold_method
-        )
+        pred_score = reduce_losses_to_score(losses, cfg.evaluation.node_evaluation.threshold_method)
 
         results[node_id]["score"] = pred_score
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)

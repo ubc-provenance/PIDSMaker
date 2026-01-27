@@ -228,9 +228,7 @@ class TestBatching:
         elif global_batching_method == "minutes":
             bs = 10
         if bs:
-            custom_args.append(
-                ("batching.global_batching.global_batching_batch_size", bs)
-            )
+            custom_args.append(("batching.global_batching.global_batching_batch_size", bs))
 
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
         main.main(cfg)

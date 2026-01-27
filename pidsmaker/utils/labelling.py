@@ -26,9 +26,7 @@ def get_ground_truth(cfg):
         num_GPs = len(ground_truth_nids)
         for file in cfg.dataset.ground_truth_relative_path:
             file_name = file.split("/")[-1]
-            with open(
-                os.path.join(cfg.construction._mimicry_dir, file_name), "r"
-            ) as f:
+            with open(os.path.join(cfg.construction._mimicry_dir, file_name), "r") as f:
                 reader = csv.reader(f)
                 for row in reader:
                     node_uuid, node_labels, _ = row[0], row[1], row[2]
@@ -68,9 +66,7 @@ def get_GP_of_each_attack(cfg):
         mimicry_edge_num = cfg.construction.mimicry_edge_num
         if mimicry_edge_num is not None and mimicry_edge_num > 0:
             num_mimicry_GPs = 0
-            with open(
-                os.path.join(cfg.construction._mimicry_dir, path.split("/")[-1]), "r"
-            ) as f:
+            with open(os.path.join(cfg.construction._mimicry_dir, path.split("/")[-1]), "r") as f:
                 reader = csv.reader(f)
                 for row in reader:
                     num_mimicry_GPs += 1

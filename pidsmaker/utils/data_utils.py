@@ -210,9 +210,7 @@ def extract_msg_from_data(
             map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(","))
         )
 
-    edge_features = list(
-        map(lambda x: x.strip(), cfg.batching.edge_features.split(","))
-    )
+    edge_features = list(map(lambda x: x.strip(), cfg.batching.edge_features.split(",")))
     possible_triplets = get_possible_triplets(cfg) if "edge_type_triplet" in edge_features else None
 
     for g in data_set:
@@ -287,10 +285,7 @@ def extract_msg_from_data(
         g.node_type_src = fields["src_type"]
         g.node_type_dst = fields["dst_type"]
 
-        if (
-            "tgn" in cfg.training.encoder.used_methods
-            and cfg.training.encoder.tgn.use_memory
-        ):
+        if "tgn" in cfg.training.encoder.used_methods and cfg.training.encoder.tgn.use_memory:
             g.msg = msg
 
         # NOTE: do not add edge_index as it is already within `CollatableTemporalData`
@@ -515,9 +510,7 @@ def run_global_batching(train_data, val_data, test_data, cfg, device):
 
 
 def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
-    use_unique_edge_types = (
-        "unique_edge_types" in cfg.batching.global_batching.used_method
-    )
+    use_unique_edge_types = "unique_edge_types" in cfg.batching.global_batching.used_method
     if not use_unique_edge_types:
         log_dataset_stats(datasets)
         # By default we only have x_src and x_dst of shape (E, d), here we create x of shape (N, d)
@@ -564,9 +557,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
             datasets = [standard_intra_batching(dataset, method) for dataset in datasets]
 
         elif method == "tgn_last_neighbor":
-            tgn_loader_cfg = (
-                cfg.batching.intra_graph_batching.tgn_last_neighbor
-            )
+            tgn_loader_cfg = cfg.batching.intra_graph_batching.tgn_last_neighbor
             sample = datasets[0][0][0]
             datasets = compute_tgn_graphs(
                 datasets=datasets,
@@ -886,10 +877,7 @@ def save_model(model, path: str, cfg):
             os.path.join(path, "neighbor_loader.pkl"),
             pickle_protocol=pickle.HIGHEST_PROTOCOL,
         )
-        if (
-            cfg.training.encoder.tgn.use_memory
-            or "time_encoding" in cfg.batching.edge_features
-        ):
+        if cfg.training.encoder.tgn.use_memory or "time_encoding" in cfg.batching.edge_features:
             torch.save(
                 model.encoder.memory,
                 os.path.join(path, "memory.pkl"),
@@ -905,10 +893,7 @@ def load_model(model, path: str, cfg, map_location=None):
 
     if isinstance(model.encoder, TGNEncoder):
         model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"))
-        if (
-            cfg.training.encoder.tgn.use_memory
-            or "time_encoding" in cfg.batching.edge_features
-        ):
+        if cfg.training.encoder.tgn.use_memory or "time_encoding" in cfg.batching.edge_features:
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 
     return model

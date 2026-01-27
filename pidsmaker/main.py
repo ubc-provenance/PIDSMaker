@@ -27,17 +27,17 @@ from pidsmaker.experiments.uncertainty import (
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
 )
-from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
 from pidsmaker.tasks import (
-    construction,
-    transformation,
-    featurization,
-    feat_inference,
     batching,
-    training,
+    construction,
     evaluation,
+    feat_inference,
+    featurization,
+    training,
+    transformation,
     triage,
 )
+from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
 
 
 def get_task_to_module(cfg):

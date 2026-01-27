@@ -1,10 +1,10 @@
 from . import (
-    construction,
-    transformation,
-    featurization,
-    feat_inference,
     batching,
-    training,
+    construction,
     evaluation,
+    feat_inference,
+    featurization,
+    training,
+    transformation,
     triage,
 )

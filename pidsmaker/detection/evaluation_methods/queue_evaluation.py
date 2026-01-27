@@ -457,9 +457,7 @@ def ground_truth_label(test_tw_path, cfg):
 
 
 def create_queues_provnet(cfg):
-    node2vec_path = os.path.join(
-        cfg.featurization.alacarte._vec_graphs_dir, "nodelabel2vec"
-    )
+    node2vec_path = os.path.join(cfg.featurization.alacarte._vec_graphs_dir, "nodelabel2vec")
     node2vec_train_val_path = os.path.join(
         cfg.featurization.alacarte._vec_graphs_dir, "nodelabel2vec_val"
     )

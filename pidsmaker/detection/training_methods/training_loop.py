@@ -6,12 +6,12 @@ import numpy as np
 import torch
 import wandb
 
-from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.factory import (
     build_model,
     optimizer_factory,
     optimizer_few_shot_factory,
 )
+from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop

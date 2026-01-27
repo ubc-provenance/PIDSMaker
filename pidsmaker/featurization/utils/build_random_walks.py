@@ -21,17 +21,13 @@ def preprocess_split(split: Literal["train", "val", "test"], split_files: list[s
     sorted_paths = get_all_files_from_folders(base_dir, split_files)
 
     g = []
-    graph_info = open(
-        f"{cfg.featurization.alacarte._random_walk_dir}/graph_info.csv", "w"
-    )
+    graph_info = open(f"{cfg.featurization.alacarte._random_walk_dir}/graph_info.csv", "w")
     writer = csv.writer(graph_info)
     random_walks_file = os.path.join(
         cfg.featurization.alacarte._random_walk_corpus_dir, f"{split}.csv"
     )
     random_walks_file_fd = open(random_walks_file, "w")
-    adjacency_path = os.path.join(
-        cfg.featurization.alacarte._random_walk_dir, f"{split}-adj"
-    )
+    adjacency_path = os.path.join(cfg.featurization.alacarte._random_walk_dir, f"{split}-adj")
 
     corpus_file = os.path.join(
         cfg.featurization.alacarte._random_walk_dir, f"{split}_set_corpus.csv"

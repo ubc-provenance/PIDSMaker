@@ -3,15 +3,6 @@ import os
 import torch
 
 from pidsmaker.config import update_cfg_for_multi_dataset
-from pidsmaker.utils.data_utils import CollatableTemporalData
-from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
-from pidsmaker.utils.utils import (
-    gen_relation_onehot,
-    get_multi_datasets,
-    get_split_to_files,
-    log_tqdm,
-)
-
 from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_alacarte,
     feat_inference_doc2vec,
@@ -20,6 +11,14 @@ from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_HFH,
     feat_inference_TRW,
     feat_inference_word2vec,
+)
+from pidsmaker.utils.data_utils import CollatableTemporalData
+from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.utils.utils import (
+    gen_relation_onehot,
+    get_multi_datasets,
+    get_split_to_files,
+    log_tqdm,
 )
 
 

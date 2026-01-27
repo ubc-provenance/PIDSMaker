@@ -425,12 +425,8 @@ def featurization_for_one_split(
     verbose=True,
 ):
     out_dir = cfg.featurization.alacarte._vec_graphs_dir
-    adjacency_dir = os.path.join(
-        cfg.featurization.alacarte._random_walk_dir, f"{split}-adj"
-    )
-    dataset = os.path.join(
-        cfg.featurization.alacarte._random_walk_dir, f"{split}_set_corpus.csv"
-    )
+    adjacency_dir = os.path.join(cfg.featurization.alacarte._random_walk_dir, f"{split}-adj")
+    dataset = os.path.join(cfg.featurization.alacarte._random_walk_dir, f"{split}_set_corpus.csv")
     corpus_dir = cfg.featurization.alacarte._random_walk_corpus_dir
     corpus = dataset if use_corpus else None
     matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None
