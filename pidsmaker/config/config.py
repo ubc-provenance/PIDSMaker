@@ -275,8 +275,8 @@ DATASET_DEFAULT_CONFIG = {
     },
     "TRACE_E3": {
         "raw_dir": "",
-        "database": "trace_e3_all",
-        "database_all_file": "trace_e3_all",
+        "database": "trace_e3",
+        "database_all_file": "trace_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
         "year_month": "2018-04",
@@ -316,8 +316,8 @@ DATASET_DEFAULT_CONFIG = {
     },
     "FIVEDIRECTIONS_E5": {
         "raw_dir": "",
-        "database": "fivedirections_e5_all",
-        "database_all_file": "fivedirections_e5_all",
+        "database": "fivedirections_e5",
+        "database_all_file": "fivedirections_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
         "year_month": "2019-05",
@@ -357,8 +357,8 @@ DATASET_DEFAULT_CONFIG = {
     },
     "FIVEDIRECTIONS_E3": {
         "raw_dir": "",
-        "database": "fivedirections_e3_all",
-        "database_all_file": "fivedirections_e3_all",
+        "database": "fivedirections_e3",
+        "database_all_file": "fivedirections_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
         "year_month": "2018-04",
