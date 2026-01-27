@@ -7,6 +7,7 @@ from tqdm import tqdm
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.utils.dataset_utils import edge_reversed, exclude_edge_type
 from pidsmaker.utils.utils import init_database_connection, log
+import json
 
 from . import filelist
 
@@ -27,31 +28,40 @@ def store_netflow(file_path, cur, connect, index_id, filelist):
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
             for line in f:
-                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.NetFlowObject"' in line:
-                    try:
-                        # res = re.findall(
-                        #     'NetFlowObject":{"uuid":"(.*?)"(.*?)"localAddress":{"string":"(.*?)"},"localPort":{"int":(.*?)},"remoteAddress":{"string":"(.*?)"},"remotePort":{"int":(.*?)}',
-                        #     line)[0]
-                        res = re.findall(
-                            'NetFlowObject":{"uuid":"(.*?)"(.*?)"localAddress":"(.*?)","localPort":(.*?),"remoteAddress":"(.*?)","remotePort":(.*?),',
-                            line,
-                        )[0]
+                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.NetFlowObject"' not in line:
+                    continue
 
-                        nodeid = res[0]
-                        srcaddr = res[2]
-                        srcport = res[3]
-                        dstaddr = res[4]
-                        dstport = res[5]
+                try:
+                    obj = json.loads(line)
+                    netobj = obj["datum"]["com.bbn.tc.schema.avro.cdm18.NetFlowObject"]
 
-                        nodeproperty = srcaddr + "," + srcport + "," + dstaddr + "," + dstport
-                        hashstr = stringtomd5(nodeid)
-                        netobj2hash[nodeid] = [hashstr, nodeproperty]
-                        netobj2hash[hashstr] = nodeid
-                        netobjset.add(hashstr)
-                        successful_num += 1
-                    except:
-                        failed_num += 1
-                        pass
+                    nodeid = netobj["uuid"]
+
+                    srcaddr = netobj.get("localAddress", "null")
+                    srcport = netobj.get("localPort", "null")
+                    dstaddr = netobj.get("remoteAddress", "null")
+                    dstport = netobj.get("remotePort", "null")
+
+                    if isinstance(srcaddr, dict):
+                        srcaddr = srcaddr.get("string", "null")
+                    if isinstance(dstaddr, dict):
+                        dstaddr = dstaddr.get("string", "null")
+                    if isinstance(srcport, dict):
+                        srcport = str(srcport.get("int", "null"))
+                    if isinstance(dstport, dict):
+                        dstport = str(dstport.get("int", "null"))
+
+                    nodeproperty = f"{str(srcaddr)},{str(srcport)},{str(dstaddr)},{str(dstport)}"
+                    hashstr = stringtomd5(nodeid)
+
+                    netobj2hash[nodeid] = [hashstr, nodeproperty]
+                    netobj2hash[hashstr] = nodeid
+                    netobjset.add(hashstr)
+
+                    successful_num += 1
+
+                except Exception as e:
+                    failed_num += 1
 
     # Store data into database
     datalist = []
@@ -81,24 +91,35 @@ def store_subject(file_path, cur, connect, index_id, filelist):
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
             for line in f:
-                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.Subject"' in line:
-                    subject_uuid = re.findall(
-                        'Subject":{"uuid":"(.*?)"(.*?)"cmdLine":{"string":"(.*?)"}(.*?)"path":"(.*?)"',
-                        line,
-                    )
+                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.Subject"' not in line:
+                    continue
+                
+                try:
+                    obj = json.loads(line)
+                    subject = obj["datum"]["com.bbn.tc.schema.avro.cdm18.Subject"]
 
-                    try:
-                        subject_obj2hash[subject_uuid[0][0]] = [
-                            subject_uuid[0][-1],
-                            subject_uuid[0][-3],
-                        ]  # {uuid:[path, cmd]}
-                        success_count += 1
-                    except:
-                        try:
-                            subject_obj2hash[subject_uuid[0][0]] = ["null", subject_uuid[0][-3]]
-                        except:
-                            pass
-                        fail_count += 1
+                    uuid = subject["uuid"]
+
+                    cmd = "null"
+                    cmd_raw = subject.get("cmdLine")
+
+                    if isinstance(cmd_raw, str):
+                        # in cadets_e3
+                        cmd = cmd_raw
+                    elif isinstance(cmd_raw, dict):
+                        # in theia_e3 / clearscope_e3
+                        cmd = cmd_raw.get("string", "null")
+
+                    path = "null"
+                    props = subject.get("properties", {}).get("map", {})
+                    if "path" in props:
+                        path = props["path"]
+
+                    subject_obj2hash[uuid] = [path, cmd]
+                    success_count += 1
+                except Exception as e:
+                    fail_count += 1
+
     # Store into database
     datalist = []
     subject_uuid2hash = {}
@@ -128,15 +149,32 @@ def store_file(file_path, cur, connect, index_id, filelist):
     for file in tqdm(filelist):
         with open(file_path + file, "r") as f:
             for line in f:
-                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.FileObject"' in line:
-                    Object_uuid = re.findall(
-                        'FileObject":{"uuid":"(.*?)",(.*?)"filename":"(.*?)"', line
-                    )
-                    try:
-                        file_obj2hash[Object_uuid[0][0]] = Object_uuid[0][-1]
-                        success_count += 1
-                    except:
-                        fail_count += 1
+                if '{"datum":{"com.bbn.tc.schema.avro.cdm18.FileObject"' not in line:
+                    continue
+                
+                try:
+                    obj = json.loads(line)
+                    fileobj = obj["datum"]["com.bbn.tc.schema.avro.cdm18.FileObject"]
+                    uuid = fileobj["uuid"]
+
+                    filename = "null"
+                    base = fileobj.get("baseObject", {})
+                    props = base.get("properties", {}).get("map", {})
+
+                    if "filename" in base:        
+                        filename = base["filename"]
+                    elif "path" in base:          
+                        filename = base["path"]
+
+                    if "filename" in props:        
+                        filename = props["filename"]
+                    elif "path" in props:          
+                        filename = props["path"]
+
+                    file_obj2hash[uuid] = filename
+                    
+                except Exception as e:
+                    fail_count += 1
 
     datalist = []
     file_uuid2hash = {}
