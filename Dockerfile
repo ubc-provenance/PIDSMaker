@@ -18,6 +18,15 @@ ENV PATH=$JAVA_HOME/bin:$PATH
 # installing sudo
 RUN apt-get update && apt-get install -y sudo git
 
+# installing node for Claude Code
+RUN apt-get update \
+ && apt-get install -y ca-certificates curl \
+ && echo "deb [trusted=yes] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y nodejs \
+ && node -v && npm -v \
+ && rm -rf /var/lib/apt/lists/*
+
 # installing Anaconda version 23.3.1
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
 RUN bash Anaconda3-2023.03-1-Linux-x86_64.sh -b -p /opt/conda

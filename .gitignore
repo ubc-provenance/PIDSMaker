@@ -185,3 +185,5 @@ postgres_data
 
 # tokenizer data
 nltk_data
+
+.claude
