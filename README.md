@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img width="50%" src="./.github/img/pidsmaker.png" alt="PIDSMAKER logo"/><br><br>
+  <img width="80%" src="./.github/img/pidsmaker3.png" alt="PIDSMAKER logo"/><br><br>
 
   <a href="https://ubc-provenance.github.io/PIDSMaker/">
     <img src="https://img.shields.io/badge/docs-online-pink.svg" alt="Documentation"/>
@@ -86,6 +86,16 @@ You can still watch the logs in your shell using `tail -f nohup.out`.
 We generally using using W&B for experiment monitoring and historization (see installation guidelines). 
 
 **Warning:** Before performing evaluations, you should tune all systems (see docs [here](https://ubc-provenance.github.io/PIDSMaker/features/tuning/)).
+
+## Reproducing results
+
+As explained in SC5 of [Bilot et al.](https://www.usenix.org/system/files/usenixsecurity25-bilot.pdf), PIDSs exhibit significant instability—that is, high sensitivity to training perturbations—due to their self-supervised training nature. 
+Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different results. 
+Consequently, reproducing results as the framework evolves presents a real challenge.
+
+Based on our experiments, we provide [tuned hyperparameters](tuned_systems.md) for the main systems.
+
+We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
 
 ## Customize existing systems
 
