@@ -1,7 +1,7 @@
 <div class="annotate">
 
 <ul>
-    <li class='bullet'><span class="key">graph_preprocessing</span>
+    <li class='bullet'><span class="key">batching</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">save_on_disk</span>: <span class="value">bool (1)</span></li>
         <li class='no-bullet'><span class="key-leaf">node_features</span>: <span class="value">str (2)</span></li>
@@ -43,7 +43,7 @@
         </li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">gnn_training</span>
+    <li class='bullet'><span class="key">training</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">use_seed</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">deterministic</span>: <span class="value">bool (19)</span></li>

@@ -100,18 +100,18 @@ A few examples below.
 
 ```shell
 python pidsmaker/main.py kairos CADETS_E3 \
-  --detection.gnn_training.node_hid_dim=128 \
-  --detection.graph_preprocessing.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
+  --training.node_hid_dim=128 \
+  --batching.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
 ```
 
 <i>Running Orthrus with Doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers.</i>
 
 ```shell
 python pidsmaker/main.py orthrus CADETS_E3 \
-  --featurization.feat_training.used_method=doc2vec \
-  --featurization.feat_training.emb_dim=128 \
-  --detection.gnn_training.encoder.used_methods=tgn,sage \
-  --detection.gnn_training.encoder.sage.num_layers=3
+  --featurization.used_method=doc2vec \
+  --featurization.emb_dim=128 \
+  --training.encoder.used_methods=tgn,sage \
+  --training.encoder.sage.num_layers=3
 ```
 
 ### From a new YAML config file
@@ -123,17 +123,16 @@ Want to create a new PIDS? Create a new config under `config/your_system.yml`, i
 ``` yaml
 _include_yml: magic
 
-detection:
-  gnn_training:
-    decoder:
-      used_methods: predict_node_type
-      predict_node_type:
-        node_mlp:
-          architecture_str: linear(0.5) | relu
+training:
+  decoder:
+    used_methods: predict_node_type
+    predict_node_type:
+      node_mlp:
+        architecture_str: linear(0.5) | relu
 
-  evaluation:
-    node_evaluation:
-      threshold_method: nodlink
+evaluation:
+  node_evaluation:
+    threshold_method: nodlink
 ```
 
 ### Visualization
@@ -153,11 +152,11 @@ You can specify the range of hyperparameters to search in a yaml config.
 method: grid 
 
 parameters:
-  detection.gnn_training.lr:
+  training.lr:
     values: [0.001, 0.0001]
-  detection.gnn_training.node_hid_dim:
+  training.node_hid_dim:
     values: [32, 64, 128, 256]
-  featurization.feat_training.used_method:
+  featurization.used_method:
     values: [fasttext, word2vec]
 ```
 

@@ -1,73 +1,70 @@
-preprocessing:
-  build_graphs:
-    used_method: default
-    use_all_files: True
-    mimicry_edge_num: 0
-    time_window_size: 15.0
-    use_hashed_label: False
-    fuse_edge: True
-    node_label_features:
-      subject: path, cmd_line
-      file: path
-      netflow: remote_ip, remote_port
-    multi_dataset: none
-  transformation:
-    used_methods: none
+construction:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 15.0
+  use_hashed_label: False
+  fuse_edge: True
+  node_label_features:
+    subject: path, cmd_line
+    file: path
+    netflow: remote_ip, remote_port
+  multi_dataset: none
+transformation:
+  used_methods: none
 
 featurization:
-  feat_training:
-    emb_dim: 30
-    epochs: 10 # 300
-    training_split: train
-    used_method: flash
-    use_seed: True
-    flash:
-      min_count: 1
-      workers: 15
-  feat_inference:
-    to_remove: True
+  emb_dim: 30
+  epochs: 10 # 300
+  training_split: train
+  used_method: flash
+  use_seed: True
+  flash:
+    min_count: 1
+    workers: 15
+feat_inference:
+  to_remove: True
 
-detection:
-  graph_preprocessing:
-    save_on_disk: False
-    node_features: node_emb
-    edge_features: none
-    fix_buggy_graph_reindexer: False
-    global_batching:
-      used_method: none
-    intra_graph_batching:
-      used_methods: none
-    inter_graph_batching:
-      used_method: none
-  gnn_training:
-    used_method: default
-    use_seed: True
-    deterministic: False
-    num_epochs: 12
-    patience: 3
-    lr: 0.01
-    weight_decay: 0.0005
-    node_hid_dim: 30
-    node_out_dim: 3
-    grad_accumulation: 1
-    encoder:
-      dropout: 0.5
-      used_methods: sage
-      sage:
-        activation: relu
-        num_layers: 2
-    decoder:
-      used_methods: predict_node_type
-      predict_node_type:
-        decoder: none
-        balanced_loss: True
+batching:
+  save_on_disk: False
+  node_features: node_emb
+  edge_features: none
+  fix_buggy_graph_reindexer: False
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: none
+  inter_graph_batching:
+    used_method: none
+training:
+  used_method: default
+  use_seed: True
+  deterministic: False
+  num_epochs: 12
+  patience: 3
+  lr: 0.01
+  weight_decay: 0.0005
+  node_hid_dim: 30
+  node_out_dim: 3
+  grad_accumulation: 1
+  encoder:
+    dropout: 0.5
+    used_methods: sage
+    sage:
+      activation: relu
+      num_layers: 2
+  decoder:
+    used_methods: predict_node_type
+    predict_node_type:
+      decoder: none
+      balanced_loss: True
 
-  evaluation:
-    viz_malicious_nodes: False
-    ground_truth_version: orthrus
-    best_model_selection: best_adp
-    used_method: node_evaluation
-    node_evaluation:
-      threshold_method: flash
-      use_dst_node_loss: True
-      use_kmeans: False
+evaluation:
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_adp
+  used_method: node_evaluation
+  node_evaluation:
+    threshold_method: flash
+    use_dst_node_loss: True
+    use_kmeans: False

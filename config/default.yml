@@ -1,167 +1,164 @@
-preprocessing:
-  transformation:
-    used_methods: none
-    synthetic_attack_naive:
-      num_attacks: 1
-      num_malicious_process: 5
-      num_unauthorized_file_access: 20
-      process_selection_method: random # TODO: try new methods
+transformation:
+  used_methods: none
+  synthetic_attack_naive:
+    num_attacks: 1
+    num_malicious_process: 5
+    num_unauthorized_file_access: 20
+    process_selection_method: random # TODO: try new methods
 
 featurization:
-  feat_training:
-    temporal_rw:
-      walk_length: 30
-      num_walks: 10
-      trw_workers: 8
-      time_weight: uniform
-      half_life: 1
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      wv_workers: 6
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
-    doc2vec:
-      include_neighbors: False
-      alpha: 0.025
-    alacarte:
-      walk_length: 30
-      num_walks: 10
-      context_window_size: 5
-      min_count: 0
-      use_skip_gram: True
-      num_workers: 1
-      compute_loss: True
-      add_paths: False
-    word2vec:
-      alpha: 0.025
-      window_size: 5
-      min_count: 1
-      use_skip_gram: True
-      num_workers: 1
-      compute_loss: True
-      negative: 5
-      decline_rate: 30
-    fasttext:
-      min_count: 2
-      alpha: 0.01
-      window_size: 3
-      negative: 3
-      num_workers: 1
-      use_pretrained_fb_model: False
-    flash:
-      min_count: 1
-      workers: 15
-  feat_inference:
-    to_remove: True
+  temporal_rw:
+    walk_length: 30
+    num_walks: 10
+    trw_workers: 8
+    time_weight: uniform
+    half_life: 1
+    window_size: 5
+    min_count: 1
+    use_skip_gram: True
+    wv_workers: 6
+    compute_loss: True
+    negative: 5
+    decline_rate: 30
+  doc2vec:
+    include_neighbors: False
+    alpha: 0.025
+  alacarte:
+    walk_length: 30
+    num_walks: 10
+    context_window_size: 5
+    min_count: 0
+    use_skip_gram: True
+    num_workers: 1
+    compute_loss: True
+    add_paths: False
+  word2vec:
+    alpha: 0.025
+    window_size: 5
+    min_count: 1
+    use_skip_gram: True
+    num_workers: 1
+    compute_loss: True
+    negative: 5
+    decline_rate: 30
+  fasttext:
+    min_count: 2
+    alpha: 0.01
+    window_size: 3
+    negative: 3
+    num_workers: 1
+    use_pretrained_fb_model: False
+  flash:
+    min_count: 1
+    workers: 15
+feat_inference:
+  to_remove: True
 
-detection:
-  gnn_training:
-    encoder:
-      graph_attention:
-        activation: relu
-        num_heads: 8
-        concat: True
-        flow: source_to_target
-        num_layers: 2
-      tgn:
-        tgn_memory_dim: 100
-        tgn_time_dim: 100
-        use_node_feats_in_gnn: True
-        use_memory: False
-        use_time_order_encoding: False
-        project_src_dst: True
-      sage:
-        activation: relu
-        num_layers: 2
-      gat:
-        activation: relu
-        num_heads: 8
-        concat: True
-        flow: source_to_target
-        num_layers: 2
-      gin:
-        activation: relu
-        num_layers: 2
-      magic_gat:
-        num_layers: 3
-        num_heads: 4
-        negative_slope: 0.2
-        alpha_l: 3.0
-        activation: prelu
-      custom_mlp:
+training:
+  encoder:
+    graph_attention:
+      activation: relu
+      num_heads: 8
+      concat: True
+      flow: source_to_target
+      num_layers: 2
+    tgn:
+      tgn_memory_dim: 100
+      tgn_time_dim: 100
+      use_node_feats_in_gnn: True
+      use_memory: False
+      use_time_order_encoding: False
+      project_src_dst: True
+    sage:
+      activation: relu
+      num_layers: 2
+    gat:
+      activation: relu
+      num_heads: 8
+      concat: True
+      flow: source_to_target
+      num_layers: 2
+    gin:
+      activation: relu
+      num_layers: 2
+    magic_gat:
+      num_layers: 3
+      num_heads: 4
+      negative_slope: 0.2
+      alpha_l: 3.0
+      activation: prelu
+    custom_mlp:
+      architecture_str: none
+    x_is_tuple: False
+  decoder:
+    predict_edge_type:
+      decoder: edge_mlp
+      use_triplet_types: False
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 2
+    predict_node_type:
+      decoder: node_mlp
+      balanced_loss: False
+      node_mlp:
         architecture_str: none
-      x_is_tuple: False
-    decoder:
-      predict_edge_type:
-        decoder: edge_mlp
-        use_triplet_types: False
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 2
-      predict_node_type:
-        decoder: node_mlp
-        balanced_loss: False
-        node_mlp:
-          architecture_str: none
-      reconstruct_node_features:
-        loss: MSE
-        decoder: node_mlp
-        node_mlp:
-          architecture_str: none
-      reconstruct_node_embeddings:
-        loss: MSE
-        decoder: node_mlp
-        node_mlp:
-          architecture_str: none
-      reconstruct_edge_embeddings:
-        loss: MSE
-        decoder: edge_mlp
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 1
-      predict_edge_contrastive:
-        decoder: inner_product
-        inner_product:
-          dropout: 0.0
-        edge_mlp:
-          architecture_str: linear(0.5) | relu
-          src_dst_projection_coef: 1
-      
-      few_shot:
-        include_attacks_in_ssl_training: False
-        freeze_encoder: True
-        num_epochs_few_shot: 50
-        patience_few_shot: 5
-        lr_few_shot: 0.001
-        weight_decay_few_shot: 0.00001
-        decoder:
-          used_methods: detect_edge_few_shot
-          detect_edge_few_shot:
-            decoder: edge_mlp # node_mlp
-            node_mlp:
-              architecture_str: linear(1.0) | relu
-            edge_mlp:
-              architecture_str: linear(0.5) | relu
-              src_dst_projection_coef: 1
+    reconstruct_node_features:
+      loss: MSE
+      decoder: node_mlp
+      node_mlp:
+        architecture_str: none
+    reconstruct_node_embeddings:
+      loss: MSE
+      decoder: node_mlp
+      node_mlp:
+        architecture_str: none
+    reconstruct_edge_embeddings:
+      loss: MSE
+      decoder: edge_mlp
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 1
+    predict_edge_contrastive:
+      decoder: inner_product
+      inner_product:
+        dropout: 0.0
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 1
+    
+    few_shot:
+      include_attacks_in_ssl_training: False
+      freeze_encoder: True
+      num_epochs_few_shot: 50
+      patience_few_shot: 5
+      lr_few_shot: 0.001
+      weight_decay_few_shot: 0.00001
+      decoder:
+        used_methods: detect_edge_few_shot
+        detect_edge_few_shot:
+          decoder: edge_mlp # node_mlp
+          node_mlp:
+            architecture_str: linear(1.0) | relu
+          edge_mlp:
+            architecture_str: linear(0.5) | relu
+            src_dst_projection_coef: 1
 
-  evaluation:
-    node_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 30
-    node_tw_evaluation:
-      threshold_method: max_val_loss
-      use_dst_node_loss: True
-      use_kmeans: True
-      kmeans_top_K: 3
-    queue_evaluation:
-      queue_threshold: 20
-      used_method: kairos_idf_queue
-      kairos_idf_queue:
-        include_test_set_in_IDF: True
-    edge_evaluation:
-      malicious_edge_selection: src_node
-      threshold_method: max_val_loss
+evaluation:
+  node_evaluation:
+    threshold_method: max_val_loss
+    use_dst_node_loss: True
+    use_kmeans: True
+    kmeans_top_K: 30
+  node_tw_evaluation:
+    threshold_method: max_val_loss
+    use_dst_node_loss: True
+    use_kmeans: True
+    kmeans_top_K: 3
+  queue_evaluation:
+    queue_threshold: 20
+    used_method: kairos_idf_queue
+    kairos_idf_queue:
+      include_test_set_in_IDF: True
+  edge_evaluation:
+    malicious_edge_selection: src_node
+    threshold_method: max_val_loss

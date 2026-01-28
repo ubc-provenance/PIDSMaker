@@ -10,7 +10,7 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    model_path = os.path.join(cfg.featurization.feat_training._model_dir, "fasttext.pkl")
+    model_path = os.path.join(cfg.featurization._model_dir, "fasttext.pkl")
     model = FastText.load(model_path)
 
     indexid2vec = {}

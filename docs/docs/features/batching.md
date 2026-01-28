@@ -35,9 +35,9 @@ The batch size plays a key role in determining the trade-off between memory usag
 
 ### TGN Last Neighbor Sampling
 
-In the [Temporal Graph Network (TGN)](https://arxiv.org/abs/2006.10637) architecture, the objective is to predict edges within a graph batch at time $t$ based on the last neighbors of each node seen in batches happening prior to $t$. Setting `tgn_last_neighbor` to the argument `detection.graph_preprocessing.intra_graph_batching.used_methods` enables to pre-compute the TGN graph for each preprocessed graph in the dataset. Specifically, it does not replace the graph directly but adds `tgn_*` attributes to it, which can be used by the downstream encoder.
+In the [Temporal Graph Network (TGN)](https://arxiv.org/abs/2006.10637) architecture, the objective is to predict edges within a graph batch at time $t$ based on the last neighbors of each node seen in batches happening prior to $t$. Setting `tgn_last_neighbor` to the argument `batching.intra_graph_batching.used_methods` enables to pre-compute the TGN graph for each preprocessed graph in the dataset. Specifically, it does not replace the graph directly but adds `tgn_*` attributes to it, which can be used by the downstream encoder.
 
-To use the TGN architecture, you **should** also add `tgn` to `detection.gnn_training.encoder.used_methods` as it enables to properly handle TGN attributes.
+To use the TGN architecture, you **should** also add `tgn` to `training.encoder.used_methods` as it enables to properly handle TGN attributes.
 The `TGNEncoder` accepts as argument an `encoder`, defined in the config, which will be applied to the pre-computed TGN graph.
 
 Examples of TGN config can be found in `kairos.yml` and `orthrus.yml`.

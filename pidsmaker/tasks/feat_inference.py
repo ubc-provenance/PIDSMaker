@@ -12,7 +12,7 @@ from pidsmaker.utils.utils import (
     log_tqdm,
 )
 
-from .feat_inference_methods import (
+from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_alacarte,
     feat_inference_doc2vec,
     feat_inference_fasttext,
@@ -82,7 +82,7 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
 
 
 def get_indexid2vec(cfg):
-    method = cfg.featurization.feat_training.used_method.strip()
+    method = cfg.featurization.used_method.strip()
     if method in ["only_type", "only_ones"]:
         return None
     if method == "alacarte":
@@ -109,7 +109,7 @@ def main_from_config(cfg):
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 
-    base_dir = cfg.preprocessing.transformation._graphs_dir
+    base_dir = cfg.transformation._graphs_dir
     split_to_files = get_split_to_files(cfg, base_dir)
 
     # Here we get a mapping {node_id => embedding vector}
@@ -122,23 +122,23 @@ def main_from_config(cfg):
             etype2oh=etype2onehot,
             ntype2oh=ntype2onehot,
             sorted_paths=sorted_paths,
-            out_dir=os.path.join(cfg.featurization.feat_inference._edge_embeds_dir, f"{split}/"),
+            out_dir=os.path.join(cfg.feat_inference._edge_embeds_dir, f"{split}/"),
             cfg=cfg,
         )
 
 
 def main(cfg):
-    multi_dataset_training = cfg.detection.graph_preprocessing.multi_dataset_training
+    multi_dataset_training = cfg.batching.multi_dataset_training
     if not multi_dataset_training:
         main_from_config(cfg)
 
     # Multi-dataset mode
     else:
-        trained_model_dir = cfg.featurization.feat_training._model_dir
+        trained_model_dir = cfg.featurization._model_dir
         multi_datasets = get_multi_datasets(cfg)
         for dataset in multi_datasets:
             updated_cfg, should_restart = update_cfg_for_multi_dataset(cfg, dataset)
-            updated_cfg.featurization.feat_training._model_dir = trained_model_dir
+            updated_cfg.featurization._model_dir = trained_model_dir
 
             if should_restart["feat_inference"]:
                 main_from_config(updated_cfg)

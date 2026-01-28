@@ -1,71 +1,68 @@
-preprocessing:
-  build_graphs:
-    used_method: default
-    use_all_files: True
-    mimicry_edge_num: 0
-    time_window_size: 15.0
-    use_hashed_label: False
-    fuse_edge: True
-    node_label_features:
-      subject: path, cmd_line
-      file: path
-      netflow: remote_ip
-    multi_dataset: none
-  transformation:
-    used_methods: rcaid_pseudo_graph
-    rcaid_pseudo_graph:
-      use_pruning: True
+construction:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 15.0
+  use_hashed_label: False
+  fuse_edge: True
+  node_label_features:
+    subject: path, cmd_line
+    file: path
+    netflow: remote_ip
+  multi_dataset: none
+transformation:
+  used_methods: rcaid_pseudo_graph
+  rcaid_pseudo_graph:
+    use_pruning: True
 
 featurization:
-  feat_training:
-    epochs: 5
-    emb_dim: 128
-    use_seed: True
-    training_split: all
-    used_method: doc2vec
-    doc2vec:
-      include_neighbors: True
-      alpha: 0.025
-  feat_inference:
-    to_remove: True
+  epochs: 5
+  emb_dim: 128
+  use_seed: True
+  training_split: all
+  used_method: doc2vec
+  doc2vec:
+    include_neighbors: True
+    alpha: 0.025
+feat_inference:
+  to_remove: True
 
-detection:
-  graph_preprocessing:
-    save_on_disk: False
-    node_features: node_emb
-    edge_features: none
-    fix_buggy_graph_reindexer: False
-    global_batching:
-      used_method: none
-    intra_graph_batching:
-      used_methods: none
-    inter_graph_batching:
-      used_method: none
-  gnn_training:
-    used_method: default
-    use_seed: True
-    deterministic: False
-    num_epochs: 12
-    patience: 3
-    lr: 0.0001
-    weight_decay: 0.0001
-    node_hid_dim: 128
-    node_out_dim: 3
-    grad_accumulation: 1
-    encoder:
-      dropout: 0.5
-      used_methods: rcaid_gat
-    decoder:
-      used_methods: predict_node_type
-      predict_node_type:
-        decoder: none
-        balanced_loss: False
+batching:
+  save_on_disk: False
+  node_features: node_emb
+  edge_features: none
+  fix_buggy_graph_reindexer: False
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: none
+  inter_graph_batching:
+    used_method: none
+training:
+  used_method: default
+  use_seed: True
+  deterministic: False
+  num_epochs: 12
+  patience: 3
+  lr: 0.0001
+  weight_decay: 0.0001
+  node_hid_dim: 128
+  node_out_dim: 3
+  grad_accumulation: 1
+  encoder:
+    dropout: 0.5
+    used_methods: rcaid_gat
+  decoder:
+    used_methods: predict_node_type
+    predict_node_type:
+      decoder: none
+      balanced_loss: False
 
-  evaluation:
-    viz_malicious_nodes: False
-    ground_truth_version: orthrus
-    best_model_selection: best_adp
-    used_method: node_evaluation
-    node_evaluation:
-      threshold_method: max_val_loss
-      use_kmeans: False
+evaluation:
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_adp
+  used_method: node_evaluation
+  node_evaluation:
+    threshold_method: max_val_loss
+    use_kmeans: False

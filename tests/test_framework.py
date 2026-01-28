@@ -12,7 +12,7 @@ from pidsmaker.config import (
     get_yml_cfg,
 )
 
-TESTS_ARTIFACT_DIR = os.path.join("/home/artifacts/", "tests/")
+TESTS_ARTIFACT_DIR = os.path.join("/home/artifacts/", "tests2/")
 
 
 def prepare_cfg(
@@ -28,21 +28,21 @@ def prepare_cfg(
 ):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
-    args.__dict__["artifact_dir_in_container"] = TESTS_ARTIFACT_DIR
+    args.__dict__["artifact_dir"] = TESTS_ARTIFACT_DIR
 
     if transformation:
-        args.__dict__["preprocessing.transformation.used_methods"] = transformation
+        args.__dict__["transformation.used_methods"] = transformation
     if featurization:
-        args.__dict__["featurization.feat_training.used_method"] = featurization
+        args.__dict__["featurization.used_method"] = featurization
     if encoder:
-        args.__dict__["detection.gnn_training.encoder.used_methods"] = encoder
+        args.__dict__["training.encoder.used_methods"] = encoder
     if objective:
-        args.__dict__["detection.gnn_training.decoder.used_methods"] = objective
+        args.__dict__["training.decoder.used_methods"] = objective
     if decoder and objective:
-        args.__dict__[f"detection.gnn_training.decoder.{objective}.decoder"] = decoder
+        args.__dict__[f"training.decoder.{objective}.decoder"] = decoder
 
     if encoder and "tgn" not in encoder:
-        args.__dict__["detection.graph_preprocessing.intra_graph_batching.used_methods"] = "edges"
+        args.__dict__["batching.intra_graph_batching.used_methods"] = "edges"
 
     if custom_args:
         for k, v in custom_args:
@@ -219,8 +219,8 @@ class TestBatching:
     @pytest.mark.parametrize("global_batching_method", global_batching_methods)
     def test_global_batching(self, dataset, device, global_batching_method):
         custom_args = [
-            ("detection.graph_preprocessing.global_batching.used_method", global_batching_method),
-            ("detection.graph_preprocessing.global_batching.global_batching_batch_size", 1000),
+            ("batching.global_batching.used_method", global_batching_method),
+            ("batching.global_batching.global_batching_batch_size", 1000),
         ]
         bs = None
         if global_batching_method == "edges":
@@ -229,7 +229,7 @@ class TestBatching:
             bs = 10
         if bs:
             custom_args.append(
-                ("detection.graph_preprocessing.global_batching.global_batching_batch_size", bs)
+                ("batching.global_batching.global_batching_batch_size", bs)
             )
 
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
@@ -239,16 +239,16 @@ class TestBatching:
     def test_intra_graph_batching(self, dataset, device, intra_graph_batching_method):
         custom_args = [
             (
-                "detection.graph_preprocessing.intra_graph_batching.used_methods",
+                "batching.intra_graph_batching.used_methods",
                 intra_graph_batching_method,
             ),
             (
-                "detection.graph_preprocessing.intra_graph_batching.edges.intra_graph_batch_size",
+                "batching.intra_graph_batching.edges.intra_graph_batch_size",
                 200,
             ),
         ]
         if "tgn_last_neighbor" not in intra_graph_batching_method:
-            custom_args.append(("detection.gnn_training.encoder.used_methods", "graph_attention"))
+            custom_args.append(("training.encoder.used_methods", "graph_attention"))
 
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
@@ -257,12 +257,12 @@ class TestBatching:
     def test_inter_graph_batching(self, dataset, device, inter_graph_batching_method):
         custom_args = [
             (
-                "detection.graph_preprocessing.inter_graph_batching.used_method",
+                "batching.inter_graph_batching.used_method",
                 inter_graph_batching_method,
             ),
-            ("detection.graph_preprocessing.inter_graph_batching.inter_graph_batch_size", 2),
-            ("detection.graph_preprocessing.intra_graph_batching.used_methods", "none"),
-            ("detection.gnn_training.encoder.used_methods", "graph_attention"),
+            ("batching.inter_graph_batching.inter_graph_batch_size", 2),
+            ("batching.intra_graph_batching.used_methods", "none"),
+            ("training.encoder.used_methods", "graph_attention"),
         ]
 
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)

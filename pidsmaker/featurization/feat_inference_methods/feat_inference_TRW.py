@@ -23,7 +23,7 @@ def cal_word_weight(n, percentage):
 
 def main(cfg):
     log_start(__file__)
-    base_dir = cfg.preprocessing.transformation._graphs_dir
+    base_dir = cfg.transformation._graphs_dir
     sorted_paths = get_all_files_from_folders(
         base_dir, (cfg.dataset.train_files + cfg.dataset.test_files + cfg.dataset.val_files)
     )
@@ -35,9 +35,9 @@ def main(cfg):
 
     indexid2msg = get_indexid2msg(cfg)
 
-    trw_word2vec_model_path = cfg.featurization.feat_training._model_dir + "trw_word2vec.model"
+    trw_word2vec_model_path = cfg.featurization._model_dir + "trw_word2vec.model"
     model = Word2Vec.load(trw_word2vec_model_path)
-    decline_percentage = cfg.featurization.feat_training.temporal_rw.decline_rate
+    decline_percentage = cfg.featurization.temporal_rw.decline_rate
 
     indexid2vec = {}
     for indexid in log_tqdm(used_nodes, desc="Embeding all nodes in the dataset"):

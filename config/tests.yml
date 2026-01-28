@@ -1,12 +1,10 @@
 _include_yml: orthrus
 
 featurization:
-  feat_training:
-    epochs: 1
-    emb_dim: 16
-    
-detection:
-  gnn_training:
-    num_epochs: 1
-    node_hid_dim: 16
-    node_out_dim: 16
+  epochs: 1
+  emb_dim: 16
+  
+training:
+  num_epochs: 1
+  node_hid_dim: 16
+  node_out_dim: 16

@@ -1,7 +1,7 @@
 <div class="annotate">
 
 <ul>
-    <li class='bullet'><span class="key">build_graphs</span>
+    <li class='bullet'><span class="key">construction</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (1)</span></li>
         <li class='no-bullet'><span class="key-leaf">use_all_files</span>: <span class="value">bool</span></li>

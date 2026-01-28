@@ -18,12 +18,12 @@ def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
-    word2vec_model_path = cfg.featurization.feat_training._model_dir + "word2vec.model"
+    word2vec_model_path = cfg.featurization._model_dir + "word2vec.model"
     model = Word2Vec.load(word2vec_model_path)
 
-    decline_percentage = cfg.featurization.feat_training.word2vec.decline_rate
+    decline_percentage = cfg.featurization.word2vec.decline_rate
 
-    zeros = np.zeros((cfg.featurization.feat_training.emb_dim,))
+    zeros = np.zeros((cfg.featurization.emb_dim,))
     indexid2vec = {}
     for indexid, msg in log_tqdm(indexid2msg.items(), desc="Embeding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
