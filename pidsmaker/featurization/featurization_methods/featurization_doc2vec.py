@@ -1,3 +1,10 @@
+"""Doc2Vec-based node featurization with neighborhood awareness.
+
+Doc2Vec learns representations considering node neighborhoods, capturing both node
+identity and local graph structure. Used by systems like Orthrus and R-Caid for
+context-aware embeddings in provenance graphs.
+"""
+
 import os
 
 from gensim.models.doc2vec import Doc2Vec
@@ -18,6 +25,20 @@ def doc2vec(
     alpha: float,
     dm: int = 1,
 ):
+    """Train Doc2Vec model on graph corpus.
+
+    Args:
+        cfg: Configuration object
+        tagged_data: Tagged documents (walks with node identifiers)
+        model_save_path: Path to save model
+        epochs: Training epochs
+        emb_dim: Embedding dimension
+        alpha: Learning rate
+        dm: 1 for PV-DM, 0 for PV-DBOW
+
+    Returns:
+        Doc2Vec: Trained model
+    """
     SEED = 0
     model = Doc2Vec(
         vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED

@@ -189,9 +189,7 @@ def test_node_level(
             if mean_distance_train == 0:
                 mean_distance_train = 1e-9
 
-            train_distance_file = os.path.join(
-                cfg.training._magic_dir, "train_distance.txt"
-            )
+            train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
             with open(train_distance_file, "a") as f:
                 f.write(f"{mean_distance_train}\n")
 
@@ -203,9 +201,7 @@ def test_node_level(
                 node_list.append(temp_dic)
 
         elif split == "test":
-            train_distance_file = os.path.join(
-                cfg.training._magic_dir, "train_distance.txt"
-            )
+            train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
             mean_distance_train = calculate_average_from_file(train_distance_file)
 
             x_test, _, _ = model.embed(data, inference=True)

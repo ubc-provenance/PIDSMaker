@@ -703,8 +703,7 @@ TASK_ARGS = {
         "used_methods": Arg(
             str,
             vals=AND(
-                ["undirected", "dag", "rcaid_pseudo_graph", "none"]
-                + list(SYNTHETIC_ATTACKS.keys())
+                ["undirected", "dag", "rcaid_pseudo_graph", "none"] + list(SYNTHETIC_ATTACKS.keys())
             ),
             desc="Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`",
         ),
@@ -855,12 +854,8 @@ TASK_ARGS = {
         "weight_decay": Arg(float),
         "node_hid_dim": Arg(int, desc="Number of neurons in the middle layers of the encoder."),
         "node_out_dim": Arg(int, desc="Number of neurons in the last layer of the encoder."),
-        "grad_accumulation": Arg(
-            int, desc="Number of epochs to gather gradients before backprop."
-        ),
-        "inference_device": Arg(
-            str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."
-        ),
+        "grad_accumulation": Arg(int, desc="Number of epochs to gather gradients before backprop."),
+        "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "used_method": Arg(str, vals=OR(["default"]), desc="Which training pipeline use."),
         "encoder": {
             "dropout": Arg(float),
@@ -869,7 +864,9 @@ TASK_ARGS = {
                 vals=AND(list(ENCODERS_CFG.keys())),
                 desc="First part of the neural network. Usually GNN encoders to capture complex patterns.",
             ),
-            "x_is_tuple": Arg(bool, desc="Whether to consider nodes differently when being source or destination."),
+            "x_is_tuple": Arg(
+                bool, desc="Whether to consider nodes differently when being source or destination."
+            ),
             **ENCODERS_CFG,
         },
         "decoder": {
@@ -920,9 +917,7 @@ TASK_ARGS = {
             "use_kmeans": Arg(
                 bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"
             ),
-            "kmeans_top_K": Arg(
-                int, desc="Number of top-score nodes selected before clustering."
-            ),
+            "kmeans_top_K": Arg(int, desc="Number of top-score nodes selected before clustering."),
         },
         "tw_evaluation": {
             "threshold_method": Arg(

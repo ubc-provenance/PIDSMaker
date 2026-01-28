@@ -1,3 +1,15 @@
+"""General utility functions for PIDSMaker.
+
+Provides commonly used utilities including:
+- Timestamp conversion (nanoseconds ↔ datetime)
+- Hashing and string manipulation
+- Database connection handling
+- File I/O and path management
+- Logging and progress tracking (log, log_tqdm)
+- Statistical functions (mean, std, percentile)
+- Random seed setting for reproducibility
+"""
+
 import csv
 import hashlib
 import os
@@ -24,6 +36,14 @@ from pidsmaker.config import update_cfg_for_multi_dataset
 
 
 def stringtomd5(originstr):
+    """Convert string to MD5 hash (using SHA256).
+
+    Args:
+        originstr: String to hash
+
+    Returns:
+        str: Hexadecimal hash digest
+    """
     originstr = originstr.encode("utf-8")
     signaturemd5 = hashlib.sha256()
     signaturemd5.update(originstr)
@@ -103,20 +123,22 @@ def datetime_to_timestamp_US(date):
     timeStamp = timestamp
     return int(timeStamp)
 
+
 def OPTC_datetime_to_timestamp_US(date):
-    '''convert OPTC datetime string to timestamp in nanoseconds'''
-    date=date.replace('-04:00','')
-    if '.' in date:
-        date,ms=date.split('.')
+    """convert OPTC datetime string to timestamp in nanoseconds"""
+    date = date.replace("-04:00", "")
+    if "." in date:
+        date, ms = date.split(".")
     else:
-        ms=0
-    tz = pytz.timezone('Etc/GMT+4')
+        ms = 0
+    tz = pytz.timezone("Etc/GMT+4")
     timeArray = time.strptime(date, "%Y-%m-%dT%H:%M:%S")
     dt = datetime.fromtimestamp(mktime(timeArray))
     timestamp = tz.localize(dt)
-    timestamp=timestamp.timestamp()
-    timeStamp = timestamp*1000+int(ms)
+    timestamp = timestamp.timestamp()
+    timeStamp = timestamp * 1000 + int(ms)
     return int(timeStamp) * 1000000
+
 
 def init_database_connection(cfg):
     if cfg.construction.use_all_files:
@@ -311,8 +333,9 @@ def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths.sort(key=lambda f: int("".join(filter(str.isdigit, f))))
     return paths
 
+
 def get_all_filelist(filepath):
-    '''get all file paths under the given filepath recursively'''
+    """get all file paths under the given filepath recursively"""
     file_paths = []
     for root, dirs, files in os.walk(filepath):
         for file in files:
@@ -320,6 +343,7 @@ def get_all_filelist(filepath):
             abs_path = os.path.abspath(full_path)
             file_paths.append(abs_path)
     return file_paths
+
 
 def load_graphs_for_days(base_dir, days):
     """Loads all graph snapshots for a given list of days."""
@@ -487,9 +511,7 @@ def gen_relation_onehot(rel2id):
 
 def get_indexid2msg(cfg, gather_multi_dataset=False):
     def load_file(cfg):
-        indexid2msg_file = os.path.join(
-            cfg.construction._dicts_dir, "indexid2msg.pkl"
-        )
+        indexid2msg_file = os.path.join(cfg.construction._dicts_dir, "indexid2msg.pkl")
         indexid2msg = torch.load(indexid2msg_file)
         return indexid2msg
 

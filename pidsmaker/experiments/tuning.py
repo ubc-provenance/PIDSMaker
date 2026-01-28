@@ -79,9 +79,7 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
             if value == True:
                 cfg.construction.node_label_features.subject = "type, path, cmd_line"
                 cfg.construction.node_label_features.file = "type, path"
-                cfg.construction.node_label_features.netflow = (
-                    "type, remote_ip, remote_port"
-                )
+                cfg.construction.node_label_features.netflow = "type, remote_ip, remote_port"
 
         # default cfg path
         else:
@@ -94,13 +92,9 @@ def fuse_cfg_with_sweep_cfg(cfg, sweep_cfg):
         cfg.training.node_out_dim = cfg.training.node_hid_dim // 2
 
     if cfg.training.encoder.tgn.tgn_memory_dim == -1:
-        cfg.training.encoder.tgn.tgn_memory_dim = (
-            cfg.training.node_hid_dim
-        )
+        cfg.training.encoder.tgn.tgn_memory_dim = cfg.training.node_hid_dim
     if cfg.training.encoder.tgn.tgn_time_dim == -1:
-        cfg.training.encoder.tgn.tgn_time_dim = (
-            cfg.training.node_hid_dim
-        )
+        cfg.training.encoder.tgn.tgn_time_dim = cfg.training.node_hid_dim
 
     # We modified the cfg so we have to update the task paths accordingly
     update_task_paths_to_restart(cfg)

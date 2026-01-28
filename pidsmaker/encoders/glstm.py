@@ -1,8 +1,21 @@
+"""Graph LSTM (GLSTM) encoder for NodLink system.
+
+GLSTM extends LSTM to graphs by maintaining cell states for nodes and propagating
+information along edges with type-specific transformations. Supports edge-type-aware
+message passing for heterogeneous provenance graphs.
+"""
+
 import torch
 import torch.nn as nn
 
 
 class GLSTM(nn.Module):
+    """Graph LSTM encoder with edge-type-specific transformations.
+
+    Maintains LSTM-like cell and hidden states for each node, updating them
+    through edge-type-aware message passing. Designed for NodLink's online
+    detection approach on provenance graphs.
+    """
     def __init__(
         self,
         in_features,

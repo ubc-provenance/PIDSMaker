@@ -28,21 +28,15 @@ def update_cfg_for_uncertainty_exp(
         if hyperparameter == "text_h_dim":
             clear_files_from_featurization(cfg)
             if cfg.featurization.emb_dim is not None:
-                cfg.featurization.emb_dim += int(
-                    delta * cfg.featurization.emb_dim
-                )
+                cfg.featurization.emb_dim += int(delta * cfg.featurization.emb_dim)
         else:
             clear_files_from_training(cfg)
             if hyperparameter == "lr":
                 cfg.training.lr += delta * cfg.training.lr
             elif hyperparameter == "num_epochs":
-                cfg.training.num_epochs += int(
-                    delta * cfg.training.num_epochs
-                )
+                cfg.training.num_epochs += int(delta * cfg.training.num_epochs)
             elif hyperparameter == "gnn_h_dim":
-                cfg.training.node_hid_dim += int(
-                    delta * cfg.training.node_hid_dim
-                )
+                cfg.training.node_hid_dim += int(delta * cfg.training.node_hid_dim)
             else:
                 raise ValueError(f"Invalid hyperparameter {hyperparameter}")
 

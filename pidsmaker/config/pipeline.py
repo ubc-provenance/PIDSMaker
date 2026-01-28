@@ -201,11 +201,7 @@ def overwrite_cfg_with_args(cfg, args):
 
 def set_shortcut_variables(cfg):
     cfg._is_node_level = cfg.training.decoder.used_methods is not None and any(
-        [
-            method
-            for method in OBJECTIVES_NODE_LEVEL
-            if method in cfg.training.decoder.used_methods
-        ]
+        [method for method in OBJECTIVES_NODE_LEVEL if method in cfg.training.decoder.used_methods]
     )
 
 
@@ -215,9 +211,7 @@ def set_task_paths(cfg, subtask_concat_value=None):
     for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
         restart_values = flatten_arg_values(task_cfg)
-        if (
-            task == "construction"
-        ):  # to restart from beginning if train files are changed
+        if task == "construction":  # to restart from beginning if train files are changed
             restart_values += cfg.dataset.train_files
             if (
                 cfg._restart_from_scratch
@@ -262,36 +256,20 @@ def set_task_paths(cfg, subtask_concat_value=None):
         os.makedirs(task_cfg._logs_dir, exist_ok=True)
 
     # Preprocessing paths
-    cfg.construction._graphs_dir = os.path.join(
-        cfg.construction._task_path, "nx/"
-    )
-    cfg.construction._tw_labels = os.path.join(
-        cfg.construction._task_path, "tw_labels/"
-    )
+    cfg.construction._graphs_dir = os.path.join(cfg.construction._task_path, "nx/")
+    cfg.construction._tw_labels = os.path.join(cfg.construction._task_path, "tw_labels/")
     cfg.construction._node_id_to_path = os.path.join(
         cfg.construction._task_path, "node_id_to_path/"
     )
-    cfg.construction._dicts_dir = os.path.join(
-        cfg.construction._task_path, "indexid2msg/"
-    )
-    cfg.construction._mimicry_dir = os.path.join(
-        cfg.construction._task_path, "mimicry/"
-    )
-    cfg.construction._magic_dir = os.path.join(
-        cfg.construction._task_path, "magic/"
-    )
-    cfg.construction._magic_graphs_dir = os.path.join(
-        cfg.construction._magic_dir, "dgl_graphs/"
-    )
+    cfg.construction._dicts_dir = os.path.join(cfg.construction._task_path, "indexid2msg/")
+    cfg.construction._mimicry_dir = os.path.join(cfg.construction._task_path, "mimicry/")
+    cfg.construction._magic_dir = os.path.join(cfg.construction._task_path, "magic/")
+    cfg.construction._magic_graphs_dir = os.path.join(cfg.construction._magic_dir, "dgl_graphs/")
 
-    cfg.transformation._graphs_dir = os.path.join(
-        cfg.transformation._task_path, "nx/"
-    )
+    cfg.transformation._graphs_dir = os.path.join(cfg.transformation._task_path, "nx/")
 
     # Featurization paths
-    cfg.featurization._model_dir = os.path.join(
-        cfg.featurization._task_path, "stored_models/"
-    )
+    cfg.featurization._model_dir = os.path.join(cfg.featurization._task_path, "stored_models/")
     cfg.featurization.temporal_rw._random_walk_dir = os.path.join(
         cfg.featurization._task_path, "random_walks/"
     )
@@ -311,24 +289,16 @@ def set_task_paths(cfg, subtask_concat_value=None):
     cfg.feat_inference._edge_embeds_dir = os.path.join(
         cfg.feat_inference._task_path, "edge_embeds/"
     )
-    cfg.feat_inference._model_dir = os.path.join(
-        cfg.feat_inference._task_path, "stored_models/"
-    )
+    cfg.feat_inference._model_dir = os.path.join(cfg.feat_inference._task_path, "stored_models/")
 
     # Detection paths
     cfg.batching._preprocessed_graphs_dir = os.path.join(
         cfg.batching._task_path, "preprocessed_graphs/"
     )
 
-    cfg.training._trained_models_dir = os.path.join(
-        cfg.training._task_path, "trained_models/"
-    )
-    cfg.training._edge_losses_dir = os.path.join(
-        cfg.training._task_path, "edge_losses/"
-    )
-    cfg.training._magic_dir = os.path.join(
-        cfg.training._task_path, "magic/"
-    )
+    cfg.training._trained_models_dir = os.path.join(cfg.training._task_path, "trained_models/")
+    cfg.training._edge_losses_dir = os.path.join(cfg.training._task_path, "edge_losses/")
+    cfg.training._magic_dir = os.path.join(cfg.training._task_path, "magic/")
     cfg.evaluation._precision_recall_dir = os.path.join(
         cfg.evaluation._task_path, "precision_recall_dir/"
     )
@@ -347,9 +317,7 @@ def set_task_paths(cfg, subtask_concat_value=None):
     cfg.evaluation.queue_evaluation._kairos_dir = os.path.join(
         cfg.evaluation._task_path, "kairos_dir/"
     )
-    cfg.evaluation._results_dir = os.path.join(
-        cfg.evaluation._task_path, "results/"
-    )
+    cfg.evaluation._results_dir = os.path.join(cfg.evaluation._task_path, "results/")
 
     # Ground Truth paths
     cfg._ground_truth_dir = os.path.join(
@@ -357,9 +325,7 @@ def set_task_paths(cfg, subtask_concat_value=None):
     )
 
     # Triage paths
-    cfg.triage._tracing_graph_dir = os.path.join(
-        cfg.triage._task_path, "tracing_graphs"
-    )
+    cfg.triage._tracing_graph_dir = os.path.join(cfg.triage._task_path, "tracing_graphs")
 
 
 def validate_yml_file(yml_file: str, dictionary: dict):
@@ -450,7 +416,7 @@ def get_yml_cfg(args):
 
     # Inits with default configurations
     cfg = get_default_cfg(args)
-    
+
     # Checks that all configurations are valid and merge yml file to cfg
     yml_file = get_yml_file(args.model)
     merge_cfg_and_check_syntax(cfg, yml_file)
@@ -496,9 +462,7 @@ def check_edge_cases(cfg):
     Yield EnvironmentError to be handled in tests.
     """
     decoders = cfg.training.decoder.used_methods
-    use_tgn_neigh_loader = (
-        "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
-    )
+    use_tgn_neigh_loader = "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
     use_tgn = "tgn" in cfg.training.encoder.used_methods
     use_rcaid_pseudo_graph = "rcaid_pseudo_graph" in cfg.transformation.used_methods
 
@@ -545,10 +509,7 @@ def check_edge_cases(cfg):
         method = cfg.featurization.used_method.strip()
         if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
-    if (
-        cfg.featurization.multi_dataset_training
-        or cfg.batching.multi_dataset_training
-    ):
+    if cfg.featurization.multi_dataset_training or cfg.batching.multi_dataset_training:
         if not use_multi_dataset:
             raise ValueError(
                 "Using multi-dataset mode requires setting `preprocessing.construction.multi_dataset`"
@@ -567,9 +528,7 @@ def set_subtasks_to_restart(yml_file: str, cfg):
     In practice, we restart a subtask if there is no TASK_FINISHED_FILE in its `_task_path`.
     """
     user_config = load_yml_file_recursive(yml_file)
-    tasks_in_yml_file = set(
-        [task for task in user_config if not task.startswith("_")]
-    )
+    tasks_in_yml_file = set([task for task in user_config if not task.startswith("_")])
 
     should_restart = OrderedDict()
     for task in TASK_ARGS:
@@ -577,12 +536,7 @@ def set_subtasks_to_restart(yml_file: str, cfg):
             task_cfg = getattr(cfg, task)
             existing_files = [files for _, _, files in os.walk(task_cfg._task_path)]
             has_finished = any(
-                [
-                    files
-                    for files in existing_files
-                    for f in files
-                    if f.endswith(TASK_FINISHED_FILE)
-                ]
+                [files for files in existing_files for f in files if f.endswith(TASK_FINISHED_FILE)]
             )
             should_restart[task] = not has_finished
         else:
@@ -685,10 +639,7 @@ def get_subtasks_to_restart_with_dependencies(
             force_restart_deps.add(subtask)
             should_restart_with_deps = should_restart_with_deps | force_restart_deps
 
-    should_restart_with_deps = {
-        task: (task in should_restart_with_deps)
-        for task in TASK_ARGS
-    }
+    should_restart_with_deps = {task: (task in should_restart_with_deps) for task in TASK_ARGS}
 
     return should_restart_with_deps
 

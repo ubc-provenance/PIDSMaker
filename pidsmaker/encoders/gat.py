@@ -1,8 +1,19 @@
+"""Graph Attention Network (GAT) encoder.
+
+GAT uses attention mechanisms to weight neighbor contributions dynamically during
+aggregation. Multi-head attention provides different representation subspaces.
+"""
+
 import torch.nn as nn
 from torch_geometric.nn import GATConv
 
 
 class GAT(nn.Module):
+    """GAT encoder with multi-head attention layers.
+
+    Applies attention-based aggregation where each node attends to its neighbors
+    with learned attention weights. Supports multi-head attention for richer representations.
+    """
     def __init__(
         self, in_dim, hid_dim, out_dim, activation, dropout, num_heads, concat, num_layers
     ):
@@ -36,6 +47,16 @@ class GAT(nn.Module):
         )
 
     def forward(self, x, edge_index, **kwargs):
+        """Forward pass through GAT layers.
+
+        Args:
+            x: Node features (N, in_dim)
+            edge_index: Edge indices (2, E)
+            **kwargs: Additional arguments (unused)
+
+        Returns:
+            dict: {'h': node embeddings (N, out_dim)}
+        """
         for conv in self.convs[:-1]:
             x = conv(x, edge_index)
             x = self.activation(x)

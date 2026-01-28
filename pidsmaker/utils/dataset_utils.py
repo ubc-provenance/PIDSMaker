@@ -204,10 +204,7 @@ def get_node_map(from_zero=False):
 
 
 def get_num_edge_type(cfg):
-    if (
-        cfg.dataset.name not in OPTC_DATASETS
-        and "edge_type_triplet" in cfg.batching.edge_features
-    ):
+    if cfg.dataset.name not in OPTC_DATASETS and "edge_type_triplet" in cfg.batching.edge_features:
         return sum([len(events) for events in possible_events.values()])
     return cfg.dataset.num_edge_types
 
@@ -236,7 +233,7 @@ OPTC_DATASETS = {"optc_h201", "optc_h501", "optc_h051"}
 ATLASv2_DATASETS = {"atlasv2_h1"}
 
 OPTC_hostname_map = {
-    'optc_h051': 'SysClient0051',
-    'optc_h201': 'SysClient0201',
-    'optc_h501': 'SysClient0501',
+    "optc_h051": "SysClient0051",
+    "optc_h201": "SysClient0201",
+    "optc_h501": "SysClient0501",
 }

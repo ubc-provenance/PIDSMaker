@@ -1,7 +1,9 @@
-import gdown
-import os
 import argparse
+import os
+
+import gdown
 from google_drive_urls import url_map
+
 
 def main(args):
     host = args.host
@@ -22,10 +24,11 @@ def main(args):
 
             print(f"Finish downloading {i}/{num}-th folder to {out_dir}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', help='The number of host.')
-    parser.add_argument('output', help='Output base dir.')
+    parser.add_argument("host", help="The number of host.")
+    parser.add_argument("output", help="Output base dir.")
     args = parser.parse_args()
 
     main(args)

@@ -1,3 +1,14 @@
+"""Training loop for PIDS models.
+
+Handles model training with:
+- Self-supervised pretraining with multiple objectives
+- Optional few-shot fine-tuning for attack detection
+- Gradient accumulation for large graphs
+- Early stopping with patience
+- Memory tracking (GPU and CPU)
+- Validation-based model selection
+"""
+
 import copy
 import tracemalloc
 from time import perf_counter as timer
@@ -6,18 +17,32 @@ import numpy as np
 import torch
 import wandb
 
-from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.factory import (
     build_model,
     optimizer_factory,
     optimizer_few_shot_factory,
 )
+from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
 
 
 def main(cfg):
+    """Main training loop executing self-supervised pretraining and optional few-shot fine-tuning.
+
+    Training process:
+    1. Self-supervised pretraining on reconstruction/prediction objectives
+    2. Optional few-shot fine-tuning on labeled attack data
+    3. Validation-based model selection (best epoch or each epoch)
+    4. Early stopping with configurable patience
+
+    Args:
+        cfg: Configuration with training hyperparameters (epochs, lr, patience, etc.)
+
+    Returns:
+        float: Best validation score achieved during training
+    """
     set_seed(cfg)
 
     log_start(__file__)
@@ -254,6 +279,15 @@ def main(cfg):
 
 
 def remove_attacks_if_needed(graph, cfg):
+    """Remove attack edges from graph for self-supervised training if configured.
+
+    Args:
+        graph: Graph batch with labels in graph.y
+        cfg: Configuration with few_shot.include_attacks_in_ssl_training setting
+
+    Returns:
+        graph: Original graph or filtered graph without attacks (y=1)
+    """
     if not cfg.training.decoder.few_shot.include_attacks_in_ssl_training:
         if 1 in graph.y:
             return graph.clone()[graph.y != 1]

@@ -1,4 +1,12 @@
+"""DARPA TC E3 dataset preprocessing - create PostgreSQL database from JSON logs.
+
+Parses DARPA TC Engagement 3 provenance JSON files and populates PostgreSQL
+database with nodes and events for graph construction. Handles Trace, Theia,
+ClearScope, and Cadets datasets.
+"""
+
 import hashlib
+import json
 import re
 
 from psycopg2 import extras as ex
@@ -7,7 +15,6 @@ from tqdm import tqdm
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.utils.dataset_utils import edge_reversed, exclude_edge_type
 from pidsmaker.utils.utils import init_database_connection, log
-import json
 
 from . import filelist
 
@@ -93,7 +100,7 @@ def store_subject(file_path, cur, connect, index_id, filelist):
             for line in f:
                 if '{"datum":{"com.bbn.tc.schema.avro.cdm18.Subject"' not in line:
                     continue
-                
+
                 try:
                     obj = json.loads(line)
                     subject = obj["datum"]["com.bbn.tc.schema.avro.cdm18.Subject"]
@@ -151,7 +158,7 @@ def store_file(file_path, cur, connect, index_id, filelist):
             for line in f:
                 if '{"datum":{"com.bbn.tc.schema.avro.cdm18.FileObject"' not in line:
                     continue
-                
+
                 try:
                     obj = json.loads(line)
                     fileobj = obj["datum"]["com.bbn.tc.schema.avro.cdm18.FileObject"]
@@ -161,18 +168,18 @@ def store_file(file_path, cur, connect, index_id, filelist):
                     base = fileobj.get("baseObject", {})
                     props = base.get("properties", {}).get("map", {})
 
-                    if "filename" in base:        
+                    if "filename" in base:
                         filename = base["filename"]
-                    elif "path" in base:          
+                    elif "path" in base:
                         filename = base["path"]
 
-                    if "filename" in props:        
+                    if "filename" in props:
                         filename = props["filename"]
-                    elif "path" in props:          
+                    elif "path" in props:
                         filename = props["path"]
 
                     file_obj2hash[uuid] = filename
-                    
+
                 except Exception as e:
                     fail_count += 1
 

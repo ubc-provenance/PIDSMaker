@@ -1,7 +1,11 @@
-##########################################################################################
-# Some of the code is adapted from:
-# https://github.com/NLPrinceton/ALaCarte/blob/master/alacarte.py
-##########################################################################################
+"""ALACARTE-based node featurization for out-of-vocabulary handling.
+
+ALACARTE (A La Carte) learns to generate embeddings for unseen nodes by training
+an induction matrix that maps context features to embeddings. Enables zero-shot
+embedding generation during inference without retraining Word2Vec.
+
+Adapted from: https://github.com/NLPrinceton/ALaCarte/blob/master/alacarte.py
+"""
 
 import os
 from collections import Counter, OrderedDict, defaultdict
@@ -425,12 +429,8 @@ def featurization_for_one_split(
     verbose=True,
 ):
     out_dir = cfg.featurization.alacarte._vec_graphs_dir
-    adjacency_dir = os.path.join(
-        cfg.featurization.alacarte._random_walk_dir, f"{split}-adj"
-    )
-    dataset = os.path.join(
-        cfg.featurization.alacarte._random_walk_dir, f"{split}_set_corpus.csv"
-    )
+    adjacency_dir = os.path.join(cfg.featurization.alacarte._random_walk_dir, f"{split}-adj")
+    dataset = os.path.join(cfg.featurization.alacarte._random_walk_dir, f"{split}_set_corpus.csv")
     corpus_dir = cfg.featurization.alacarte._random_walk_corpus_dir
     corpus = dataset if use_corpus else None
     matrix_input = os.path.join(out_dir, "matrix.bin") if use_matrix_input else None

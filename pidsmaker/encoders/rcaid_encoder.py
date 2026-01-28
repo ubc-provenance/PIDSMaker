@@ -1,3 +1,9 @@
+"""R-Caid system GAT encoder with residual MLP aggregation.
+
+R-Caid-specific encoder combining multi-layer GAT with MLP-based aggregation
+for root cause analysis and attack investigation in provenance graphs.
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,6 +11,7 @@ from torch_geometric.nn import GATConv
 
 
 class _RcaidMLP(nn.Module):
+    """Internal MLP for R-Caid aggregation."""
     def __init__(self, input_dim, output_dim):
         super(_RcaidMLP, self).__init__()
         self.fc1 = nn.Linear(input_dim, output_dim)
@@ -17,6 +24,11 @@ class _RcaidMLP(nn.Module):
 
 
 class RCaidGAT(nn.Module):
+    """R-Caid GAT encoder with 3-layer attention and MLP aggregation.
+
+    Combines three GAT layers with an MLP that aggregates intermediate and final
+    representations for improved node embeddings in causal analysis tasks.
+    """
     def __init__(self, in_dim, hid_dim, out_dim, dropout, num_heads=4):
         super(RCaidGAT, self).__init__()
         self.gat1 = GATConv(in_dim, hid_dim, heads=num_heads, concat=True)
