@@ -1,3 +1,10 @@
+"""DARPA TC E5 dataset preprocessing - create PostgreSQL database from JSON logs.
+
+Parses DARPA TC Engagement 5 provenance JSON files and populates PostgreSQL
+database with nodes and events for graph construction. Handles Trace, Theia,
+ClearScope, and Cadets datasets.
+"""
+
 import re
 
 from psycopg2 import extras as ex

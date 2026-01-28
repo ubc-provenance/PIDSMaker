@@ -1,3 +1,12 @@
+"""Data utilities for graph batching and temporal data handling.
+
+Provides custom PyTorch Geometric data structures and utilities for:
+- Temporal graph data collation and batching
+- Graph reindexing for mini-batch training
+- TGN memory and neighbor sampling integration
+- Multi-dataset handling and preprocessing
+"""
+
 import copy
 import math
 import os

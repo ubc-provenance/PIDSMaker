@@ -1,7 +1,11 @@
-##########################################################################################
-# Some of the code is adapted from:
-# https://github.com/NLPrinceton/ALaCarte/blob/master/alacarte.py
-##########################################################################################
+"""ALACARTE-based node featurization for out-of-vocabulary handling.
+
+ALACARTE (A La Carte) learns to generate embeddings for unseen nodes by training
+an induction matrix that maps context features to embeddings. Enables zero-shot
+embedding generation during inference without retraining Word2Vec.
+
+Adapted from: https://github.com/NLPrinceton/ALaCarte/blob/master/alacarte.py
+"""
 
 import os
 from collections import Counter, OrderedDict, defaultdict

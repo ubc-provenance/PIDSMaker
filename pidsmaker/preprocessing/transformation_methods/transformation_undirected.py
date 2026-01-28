@@ -1,3 +1,10 @@
+"""Undirected graph transformation.
+
+Adds reverse edges to make provenance graphs undirected (bidirectional). This allows
+encoders to propagate information in both directions along dependencies. Not
+compatible with TGN (Temporal Graph Networks) due to time ordering requirements.
+"""
+
 import networkx as nx
 
 

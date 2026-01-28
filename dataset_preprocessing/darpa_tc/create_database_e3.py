@@ -1,3 +1,10 @@
+"""DARPA TC E3 dataset preprocessing - create PostgreSQL database from JSON logs.
+
+Parses DARPA TC Engagement 3 provenance JSON files and populates PostgreSQL
+database with nodes and events for graph construction. Handles Trace, Theia,
+ClearScope, and Cadets datasets.
+"""
+
 import hashlib
 import json
 import re

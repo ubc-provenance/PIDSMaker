@@ -1,3 +1,10 @@
+"""DAG transformation for provenance graphs.
+
+Converts provenance graphs to Directed Acyclic Graphs (DAGs) by removing cycles
+and self-loops. Some PIDS systems assume acyclic structure for efficiency or
+simplicity in backward/forward tracing algorithms.
+"""
+
 import networkx as nx
 
 

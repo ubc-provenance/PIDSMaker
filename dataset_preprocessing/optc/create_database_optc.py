@@ -1,3 +1,9 @@
+"""OpTC dataset preprocessing - create PostgreSQL database from JSON logs.
+
+Parses OpTC provenance JSON files and populates PostgreSQL database with nodes
+(subjects, files, netflows) and events (edges) for graph construction.
+"""
+
 import json
 import os
 
@@ -10,6 +16,7 @@ from pidsmaker.utils.utils import (
     OPTC_datetime_to_timestamp_US,
     get_all_filelist,
     init_database_connection,
+    log,
     stringtomd5,
 )
 
@@ -98,13 +105,13 @@ def save_nodes(cfg, dataset_dir):
         uuid2index_id[sub_uuid] = index_id
         index_id += 1
 
-    print(f"Start saving subject nodes.")
+    log(f"Start saving subject nodes.")
     sql = """insert into subject_node_table
                              values %s
                 """
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
-    print(f"Finished saving subject nodes.")
+    log(f"Finished saving subject nodes.")
     del subject_uuid2attr
     del datalist
 
@@ -116,13 +123,13 @@ def save_nodes(cfg, dataset_dir):
         uuid2index_id[file_uuid] = index_id
         index_id += 1
 
-    print(f"Start saving file nodes.")
+    log(f"Start saving file nodes.")
     sql = """insert into file_node_table
                              values %s
                 """
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
-    print(f"Finished saving file nodes.")
+    log(f"Finished saving file nodes.")
     del file_uuid2attr
     del datalist
 
@@ -142,13 +149,13 @@ def save_nodes(cfg, dataset_dir):
         uuid2index_id[net_uuid] = index_id
         index_id += 1
 
-    print(f"Start saving net nodes.")
+    log(f"Start saving net nodes.")
     sql = """insert into netflow_node_table
                              values %s
                 """
     ex.execute_values(cur, sql, datalist, page_size=10000)
     connect.commit()
-    print(f"Finished saving net nodes.")
+    log(f"Finished saving net nodes.")
     del netflow_uuid2attr
     del datalist
 
@@ -222,13 +229,13 @@ def save_events(cfg, uuid2index_id, dataset_dir):
 
                 datalist.append(temp_data)
 
-            print(f"Start saving events for {i}-th/{len(all_paths)} file.")
+            log(f"Start saving events for {i}-th/{len(all_paths)} file.")
             sql = """insert into event_table
                                         values %s
                         """
             ex.execute_values(cur, sql, datalist, page_size=50000)
             connect.commit()
-            print(f"Finish saving events for {i}-th/{len(all_paths)} file.")
+            log(f"Finish saving events for {i}-th/{len(all_paths)} file.")
 
 
 if __name__ == "__main__":
@@ -239,7 +246,7 @@ if __name__ == "__main__":
     raw_dir = "/data/"
 
     uuid2index_id = save_nodes(cfg, raw_dir)
-    print(f"Finished saving nodes.")
+    log(f"Finished saving nodes.")
 
     save_events(cfg, uuid2index_id, raw_dir)
-    print(f"Finished saving events.")
+    log(f"Finished saving events.")

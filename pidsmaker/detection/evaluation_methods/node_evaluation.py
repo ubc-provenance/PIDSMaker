@@ -1,3 +1,15 @@
+"""Node-level anomaly detection evaluation.
+
+Aggregates edge-level anomaly scores to node-level scores and evaluates
+detection performance against ground truth. Supports multiple threshold methods
+(magic, max-val, nodlink) and score reduction strategies (sum, mean, max, percentile).
+
+Key metrics:
+- Precision, Recall, F1 at node level
+- ADP (Average Detection Precision)
+- Discrimination score (attack nodes ranked before benign nodes)
+"""
+
 import os
 from collections import defaultdict
 
@@ -33,6 +45,20 @@ from pidsmaker.utils.utils import (
 
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
+    """Compute node-level anomaly scores from edge-level losses.
+
+    Aggregates edge losses to node scores using configured reduction strategy,
+    applies threshold, and generates predictions for evaluation.
+
+    Args:
+        val_tw_path: Path to validation time window results
+        test_tw_path: Path to test time window results
+        cfg: Configuration with evaluation settings
+        **kwargs: Additional arguments
+
+    Returns:
+        dict: Contains metrics, predictions, scores, and visualization data
+    """
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
 

@@ -1,3 +1,17 @@
+"""Queue-based evaluation for PIDS systems (Kairos-style).
+
+This module implements queue-based attack investigation where anomalous edges
+are grouped into queues using IDF (Inverse Document Frequency) scoring of nodes.
+Supports backward/forward tracing from Points of Interest (POIs) to identify
+attack propagation paths.
+
+Key functions:
+- cal_idf_kairos: Calculate IDF scores for nodes across time windows
+- cal_anomaly_loss_kairos: Identify anomalous edges using loss thresholds
+- is_include_key_word: Filter out benign system nodes
+- cal_set_rel: Compute queue relationships based on shared high-IDF nodes
+"""
+
 import copy
 import math
 import os
@@ -23,8 +37,17 @@ from pidsmaker.utils.utils import (
 )
 
 
-# Kairos code
 def cal_idf_kairos(graph_files):
+    """Calculate IDF (Inverse Document Frequency) scores for nodes across graph files.
+
+    IDF measures node rarity: high IDF = node appears in few time windows (more suspicious).
+
+    Args:
+        graph_files: List of paths to graph files
+
+    Returns:
+        tuple: (node_IDF dict mapping node labels to IDF scores, total file count)
+    """
     node_set = defaultdict(set)
     for f_path in tqdm(graph_files, desc="Calculating IDF"):
         g = torch.load(f_path)
@@ -44,6 +67,17 @@ def cal_idf_kairos(graph_files):
 
 
 def is_include_key_word_bak(s):
+    """Check if node label contains benign system keywords (legacy version).
+
+    This is an older version with slightly different keyword list than is_include_key_word().
+    Used for backward compatibility with older experiments.
+
+    Args:
+        s: Node label string
+
+    Returns:
+        bool: True if label contains any benign system keyword
+    """
     keywords = [
         ":",
         "null",
@@ -69,6 +103,17 @@ def is_include_key_word_bak(s):
 
 
 def is_include_key_word(s):
+    """Check if node label contains benign system keywords (current version).
+
+    Filters out common benign nodes (system files, null values, temp files) to reduce
+    false positives in queue-based investigation.
+
+    Args:
+        s: Node label string
+
+    Returns:
+        bool: True if label contains any benign system keyword
+    """
     keywords = [
         ":",
         "/dev/pts",
@@ -95,13 +140,26 @@ def is_include_key_word(s):
 
 
 def cal_set_rel_bak(node_IDF, s1, s2, num_files):
+    """Calculate queue relationship score between two node sets (legacy version).
+
+    Counts high-IDF nodes shared between two sets to determine if queues should be merged.
+
+    Args:
+        node_IDF: Dict mapping node labels to IDF scores
+        s1: First node set
+        s2: Second node set
+        num_files: Total number of files for IDF threshold calculation
+
+    Returns:
+        int: Count of shared high-IDF nodes (>90th percentile)
+    """
     new_s = (
         s1 & s2
     )  # used to find common nodes in two windows to check if they should be in the same queue
     count = 0
     for i in new_s:
         #     jdata=json.loads(i)
-        if is_include_key_word_bak(i) is not True:
+        if not is_include_key_word_bak(i):
             if i in node_IDF.keys():
                 IDF = node_IDF[i]
             else:
@@ -116,13 +174,29 @@ def cal_set_rel_bak(node_IDF, s1, s2, num_files):
 
 
 def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_files, num_train_files):
+    """Calculate queue relationship score using both train and test IDF scores.
+
+    Improved version that considers IDF from both training and test sets for better
+    anomaly detection. Queues are related if they share nodes with high combined IDF.
+
+    Args:
+        train_node_IDF: Training set IDF scores
+        test_node_IDF: Test set IDF scores
+        s1: First node set
+        s2: Second node set
+        num_test_files: Number of test files
+        num_train_files: Number of training files
+
+    Returns:
+        int: Count of shared high-IDF nodes (combined IDF > 5)
+    """
     IDF_train = train_node_IDF
     new_s = (
         s1 & s2
     )  # used to find common nodes in two windows to check if they should be in the same queue
     count = 0
     for i in new_s:
-        if is_include_key_word(i) is not True:
+        if not is_include_key_word(i):
             if i in test_node_IDF:
                 IDF_test = test_node_IDF[i]
             else:
@@ -142,6 +216,18 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_files, num_train
 
 
 def cal_anomaly_loss_kairos(loss_list, edge_list):
+    """Identify anomalous edges using statistical threshold on loss values.
+
+    Uses mean + 3*std threshold to classify edges as anomalous. Returns nodes
+    involved in anomalous edges and their cumulative loss.
+
+    Args:
+        loss_list: List of loss values for edges
+        edge_list: List of edge tuples (src, dst)
+
+    Returns:
+        tuple: (cumulative_loss, node_set, edge_set) for anomalous edges
+    """
     if len(loss_list) != len(edge_list):
         log("error!")
         return 0

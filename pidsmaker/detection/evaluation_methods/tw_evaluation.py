@@ -1,3 +1,10 @@
+"""Time-window level anomaly detection evaluation.
+
+Aggregates edge-level scores to time-window level and classifies entire windows
+as malicious or benign. Evaluates detection at coarser granularity than node-level,
+useful for identifying suspicious time periods for investigation.
+"""
+
 import os
 from collections import defaultdict
 
@@ -14,6 +21,17 @@ from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 
 
 def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
+    """Compute time-window level predictions from edge losses.
+
+    Args:
+        val_tw_path: Validation results path (for threshold)
+        test_tw_path: Test results path
+        cfg: Configuration with threshold method
+        tw_to_malicious_nodes: Ground truth time windows containing attacks
+
+    Returns:
+        dict: Time window predictions with scores, y_hat, y_true
+    """
     log(f"Loading data from {test_tw_path}...")
 
     thr = get_threshold(val_tw_path, cfg.evaluation.tw_evaluation.threshold_method)

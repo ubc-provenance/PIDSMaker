@@ -1,8 +1,19 @@
+"""MAGIC system GAT encoder with masked graph representation learning.
+
+MAGIC-specific GAT variant supporting both encoding and decoding roles for
+masked feature reconstruction and structure prediction objectives.
+"""
+
 import torch.nn as nn
 from torch_geometric.nn import GATConv
 
 
 class MagicGAT(nn.Module):
+    """GAT encoder/decoder for MAGIC masked graph learning.
+
+    Multi-layer GAT with configurable heads, residual connections, and dropout.
+    Can function as encoder (for feature extraction) or decoder (for reconstruction).
+    """
     def __init__(
         self,
         in_dim,

@@ -1,3 +1,14 @@
+"""PIDSMaker main entry point.
+
+This module orchestrates the complete PIDS pipeline execution across three modes:
+1. Standard mode: Single run through all pipeline tasks
+2. Uncertainty mode: Multiple runs for uncertainty quantification (MC Dropout, deep ensemble, hyperparameter sensitivity)
+3. Tuning mode: Hyperparameter sweeps using Weights & Biases
+
+The pipeline executes 8 tasks sequentially: construction → transformation →
+featurization → feat_inference → batching → training → evaluation → triage
+"""
+
 import argparse
 import copy
 import os
@@ -41,6 +52,14 @@ from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed
 
 
 def get_task_to_module(cfg):
+    """Map task names to their corresponding modules and task paths.
+
+    Args:
+        cfg: Configuration object containing task paths
+
+    Returns:
+        dict: Mapping of task names to module and task_path information
+    """
     return {
         "construction": {
             "module": construction,
@@ -78,15 +97,46 @@ def get_task_to_module(cfg):
 
 
 def clean_cfg_for_log(cfg):
+    """Clean configuration for W&B logging by removing internal keys.
+
+    Args:
+        cfg: Configuration object
+
+    Returns:
+        dict: Cleaned configuration with underscore keys removed except specified ones
+    """
     return remove_underscore_keys(
         dict(cfg), keys_to_keep=["_task_path", "_exp", "_tuning_file_path"]
     )
 
 
 def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
+    """Main execution function for PIDSMaker pipeline.
+
+    Orchestrates pipeline execution across three modes: standard, uncertainty, and tuning.
+    Handles task scheduling, restart logic, and metric collection.
+
+    Args:
+        cfg: Configuration object with all pipeline settings
+        project: W&B project name for logging
+        exp: Experiment name for tracking
+        sweep_id: W&B sweep ID for tuning mode (optional)
+        **kwargs: Additional keyword arguments
+    """
     set_seed(cfg)
 
     def run_task(task: str, cfg, method=None, iteration=None):
+        """Execute a single pipeline task with restart logic and timing.
+
+        Args:
+            task: Task name (construction, transformation, featurization, etc.)
+            cfg: Configuration object
+            method: Uncertainty method name (for deep_ensemble restart logic)
+            iteration: Current iteration number (for uncertainty experiments)
+
+        Returns:
+            dict: Contains 'time' (execution time) and 'return' (task result)
+        """
         start = time.time()
         return_value = None
 
@@ -115,6 +165,16 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         return {"time": time.time() - start, "return": return_value}
 
     def run_pipeline(cfg, method=None, iteration=None):
+        """Execute complete pipeline: all 8 tasks from construction to triage.
+
+        Args:
+            cfg: Configuration object
+            method: Uncertainty method name (optional, for restart logic)
+            iteration: Current iteration number (optional, for deep ensemble)
+
+        Returns:
+            tuple: (metrics dict from evaluation, times dict with task execution times)
+        """
         tasks = get_task_to_module(cfg).keys()
         task_results = {task: run_task(task, cfg, method, iteration) for task in tasks}
 
@@ -130,6 +190,16 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         return metrics, times
 
     def run_pipeline_with_experiments(cfg):
+        """Run pipeline with experiment mode handling (standard, uncertainty, or tuning).
+
+        Execution modes:
+        - Standard: Single pipeline run with metrics logged to W&B
+        - Uncertainty: Multiple runs for MC Dropout, deep ensemble, or hyperparameter sensitivity
+          with averaged/min/max statistics computed and logged
+
+        Args:
+            cfg: Configuration object with experiment settings
+        """
         # Standard behavior: we run the whole pipeline
         if cfg.experiment.used_method == "none":
             log("Running pipeline in 'Standard' mode.")
@@ -228,9 +298,14 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         if not sweep_id:
             sweep_config["name"] = exp
             sweep_id = wandb.sweep(sweep_config, project=project)
-            print(f"Sweep ID: YOUR_ORG/{project}/{sweep_id}")
+            log(f"Sweep ID: YOUR_ORG/{project}/{sweep_id}")
 
         def run_pipeline_from_sweep(cfg):
+            """Execute pipeline for a single hyperparameter configuration from W&B sweep.
+
+            Args:
+                cfg: Base configuration object (will be updated with sweep parameters)
+            """
             with wandb.init(name=exp):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)

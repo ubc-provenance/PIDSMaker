@@ -1,3 +1,10 @@
+"""Word2Vec-based node featurization.
+
+Learns distributed representations of node labels using Word2Vec on random walks
+through the provenance graph. Supports skip-gram and CBOW architectures for
+capturing structural and semantic relationships between nodes.
+"""
+
 import os
 
 from gensim.models import Word2Vec
@@ -7,6 +14,16 @@ from pidsmaker.utils.utils import log, log_start
 
 
 def train_word2vec(corpus, cfg, model_save_path):
+    """Train Word2Vec model on graph corpus (random walks).
+
+    Args:
+        corpus: List of walks (sequences of node labels)
+        cfg: Configuration with Word2Vec hyperparameters
+        model_save_path: Path to save trained model
+
+    Returns:
+        Word2Vec: Trained model
+    """
     emb_dim = cfg.featurization.emb_dim
     alpha = cfg.featurization.word2vec.alpha
     window_size = cfg.featurization.word2vec.window_size

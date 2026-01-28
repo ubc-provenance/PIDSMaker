@@ -1,3 +1,15 @@
+"""General utility functions for PIDSMaker.
+
+Provides commonly used utilities including:
+- Timestamp conversion (nanoseconds ↔ datetime)
+- Hashing and string manipulation
+- Database connection handling
+- File I/O and path management
+- Logging and progress tracking (log, log_tqdm)
+- Statistical functions (mean, std, percentile)
+- Random seed setting for reproducibility
+"""
+
 import csv
 import hashlib
 import os
@@ -24,6 +36,14 @@ from pidsmaker.config import update_cfg_for_multi_dataset
 
 
 def stringtomd5(originstr):
+    """Convert string to MD5 hash (using SHA256).
+
+    Args:
+        originstr: String to hash
+
+    Returns:
+        str: Hexadecimal hash digest
+    """
     originstr = originstr.encode("utf-8")
     signaturemd5 = hashlib.sha256()
     signaturemd5.update(originstr)
