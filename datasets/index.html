@@ -1,0 +1,1690 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ubc-provenance.github.io/PIDSMaker/datasets/">
+      
+      
+        <link rel="prev" href="../pipeline/">
+      
+      
+        <link rel="next" href="../tuned_systems/">
+      
+      
+      <link rel="icon" href="../assets/pidsmaker.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.12">
+    
+    
+      
+        <title>Datasets - PIDSMaker Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2afb09e1.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+   <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../assets/javascripts/glightbox.min.js"></script></head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#datasets" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PIDSMaker Documentation" class="md-header__button md-logo" aria-label="PIDSMaker Documentation" data-md-component="logo">
+      
+  <img src="../assets/pidsmaker_new.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PIDSMaker Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Datasets
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PIDSMaker Documentation" class="md-nav__button md-logo" aria-label="PIDSMaker Documentation" data-md-component="logo">
+      
+  <img src="../assets/pidsmaker_new.png" alt="logo">
+
+    </a>
+    PIDSMaker Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Installation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ten-minute-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../singularity_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Apptainer installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-db-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installing a dataset from scratch
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Basics
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Basics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Introduction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pipeline
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Datasets
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Datasets
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darpa-tc" class="md-nav__link">
+    <span class="md-ellipsis">
+      DARPA TC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA TC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#engagement-3-e3-april-2018" class="md-nav__link">
+    <span class="md-ellipsis">
+      Engagement 3 (E3) - April 2018
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 3 (E3) - April 2018">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cadets_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      CADETS_E3
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#theia_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      THEIA_E3
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLEARSCOPE_E3
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement-5-e5-may-2019" class="md-nav__link">
+    <span class="md-ellipsis">
+      Engagement 5 (E5) - May 2019
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 5 (E5) - May 2019">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#theia_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      THEIA_E5
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLEARSCOPE_E5
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darpa-optc" class="md-nav__link">
+    <span class="md-ellipsis">
+      DARPA OpTC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA OpTC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optc_h201" class="md-nav__link">
+    <span class="md-ellipsis">
+      optc_h201
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h501" class="md-nav__link">
+    <span class="md-ellipsis">
+      optc_h501
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h051" class="md-nav__link">
+    <span class="md-ellipsis">
+      optc_h051
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data structure
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#graph-partitioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph partitioning
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-custom-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding custom datasets
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tuned_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Running tuned PIDSs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Implementing a new PIDS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Features
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/tuning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hyperparameter Tuning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/instability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Instability Measurement
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Batching & Sampling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Arguments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Arguments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tasks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/featurization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Featurization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Encoders
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/decoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Decoders
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/objectives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Objectives
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Release notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darpa-tc" class="md-nav__link">
+    <span class="md-ellipsis">
+      DARPA TC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA TC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#engagement-3-e3-april-2018" class="md-nav__link">
+    <span class="md-ellipsis">
+      Engagement 3 (E3) - April 2018
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 3 (E3) - April 2018">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cadets_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      CADETS_E3
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#theia_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      THEIA_E3
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLEARSCOPE_E3
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement-5-e5-may-2019" class="md-nav__link">
+    <span class="md-ellipsis">
+      Engagement 5 (E5) - May 2019
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 5 (E5) - May 2019">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#theia_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      THEIA_E5
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLEARSCOPE_E5
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#darpa-optc" class="md-nav__link">
+    <span class="md-ellipsis">
+      DARPA OpTC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA OpTC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optc_h201" class="md-nav__link">
+    <span class="md-ellipsis">
+      optc_h201
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h501" class="md-nav__link">
+    <span class="md-ellipsis">
+      optc_h501
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h051" class="md-nav__link">
+    <span class="md-ellipsis">
+      optc_h051
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data structure
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#graph-partitioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph partitioning
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-custom-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding custom datasets
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="datasets">Datasets<a class="headerlink" href="#datasets" title="Permanent link">&para;</a></h1>
+<p>PIDSMaker supports several public datasets commonly used in APT detection research. This page describes each dataset and its attack scenarios.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>OS</th>
+<th>Attacks</th>
+<th>Size (GB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CADETS_E3</td>
+<td>FreeBSD</td>
+<td>3</td>
+<td>10</td>
+</tr>
+<tr>
+<td>THEIA_E3</td>
+<td>Linux</td>
+<td>2</td>
+<td>12</td>
+</tr>
+<tr>
+<td>CLEARSCOPE_E3</td>
+<td>Android</td>
+<td>1</td>
+<td>4.8</td>
+</tr>
+<tr>
+<td>FIVEDIRECTIONS_E3</td>
+<td>Linux</td>
+<td>2</td>
+<td>22</td>
+</tr>
+<tr>
+<td>TRACE_E3</td>
+<td>Linux</td>
+<td>3</td>
+<td>100</td>
+</tr>
+<tr>
+<td>CADETS_E5</td>
+<td>FreeBSD</td>
+<td>2</td>
+<td>276</td>
+</tr>
+<tr>
+<td>THEIA_E5</td>
+<td>Linux</td>
+<td>1</td>
+<td>36</td>
+</tr>
+<tr>
+<td>CLEARSCOPE_E5</td>
+<td>Android</td>
+<td>2</td>
+<td>49</td>
+</tr>
+<tr>
+<td>FIVEDIRECTIONS_E5</td>
+<td>Linux</td>
+<td>4</td>
+<td>280</td>
+</tr>
+<tr>
+<td>TRACE_E5</td>
+<td>Linux</td>
+<td>1</td>
+<td>710</td>
+</tr>
+<tr>
+<td>optc_h201</td>
+<td>Windows</td>
+<td>1</td>
+<td>9</td>
+</tr>
+<tr>
+<td>optc_h501</td>
+<td>Windows</td>
+<td>1</td>
+<td>6.7</td>
+</tr>
+<tr>
+<td>optc_h051</td>
+<td>Windows</td>
+<td>1</td>
+<td>7.7</td>
+</tr>
+</tbody>
+</table>
+<h2 id="darpa-tc">DARPA TC<a class="headerlink" href="#darpa-tc" title="Permanent link">&para;</a></h2>
+<p>The DARPA Transparent Computing program produced benchmark datasets for evaluating provenance-based security systems.</p>
+<h3 id="engagement-3-e3-april-2018"><a href="https://github.com/darpa-i2o/Transparent-Computing/blob/master/README-E3.md">Engagement 3 (E3) - April 2018</a><a class="headerlink" href="#engagement-3-e3-april-2018" title="Permanent link">&para;</a></h3>
+<h4 id="cadets_e3">CADETS_E3<a class="headerlink" href="#cadets_e3" title="Permanent link">&para;</a></h4>
+<p>FreeBSD host with Nginx server exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>49 min</td>
+<td>Nginx exploited to deploy Drakon loader with root escalation. Netrecon executed after C2 connection, followed by failed <code>libdrakon</code> injection into <code>sshd</code>. Host crashed with kernel panic.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>40 min</td>
+<td>Nginx re-exploited to deploy Drakon and MicroAPT implants under random names (<code>tmux</code>, <code>minions</code>, <code>sendmail</code>). Privilege escalation failed; MicroAPT ran unprivileged for port scanning.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>13 min</td>
+<td>Nginx re-exploited to deploy new Drakon implant with root privileges. Multiple failed <code>sshd</code> injection attempts using renamed <code>libdrakon</code> copies.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>CADETS_E3
+</code></pre></div>
+<h4 id="theia_e3">THEIA_E3<a class="headerlink" href="#theia_e3" title="Permanent link">&para;</a></h4>
+<p>Ubuntu host with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>50 min</td>
+<td>Malicious Firefox extension dropped Drakon implant. MicroAPT staged under <code>/var/log/mail</code>, connected to C2 for control and network scanning.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>30 min</td>
+<td>Firefox exploited to drop Drakon implant as <code>/home/admin/clean</code> with root privileges, then copied as <code>profile</code>. Both connected to C2 server.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>THEIA_E3
+</code></pre></div>
+<h4 id="clearscope_e3">CLEARSCOPE_E3<a class="headerlink" href="#clearscope_e3" title="Permanent link">&para;</a></h4>
+<p>Android device with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>54 min</td>
+<td>Firefox exploited via malicious website. Drakon implant installed and elevated, but module loading failed. Persistent C2 connection maintained.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>CLEARSCOPE_E3
+</code></pre></div>
+<h3 id="engagement-5-e5-may-2019"><a href="https://github.com/darpa-i2o/Transparent-Computing">Engagement 5 (E5) - May 2019</a><a class="headerlink" href="#engagement-5-e5-may-2019" title="Permanent link">&para;</a></h3>
+<h4 id="theia_e5">THEIA_E5<a class="headerlink" href="#theia_e5" title="Permanent link">&para;</a></h4>
+<p>Ubuntu host with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>19 min</td>
+<td>Firefox exploited via malicious website. Root gained with BinFmt-Elevate, Drakon shellcode injected into <code>sshd</code>, persistence file created, C2 access maintained.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>THEIA_E5
+</code></pre></div>
+<h4 id="clearscope_e5">CLEARSCOPE_E5<a class="headerlink" href="#clearscope_e5" title="Permanent link">&para;</a></h4>
+<p>Android device with APK-based attacks.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>41 min</td>
+<td>Malicious <code>appstarter</code> APK loaded MicroAPT. Elevate driver installed for privilege escalation. Sensitive databases exfiltrated (calllog, calendar, SMS) and screenshot captured.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>8 min</td>
+<td>MicroAPT deployed directly via adb shell after APK dropper failed. Privilege escalation via BinFmt Elevate driver, then file exfiltration.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>CLEARSCOPE_E5
+</code></pre></div>
+<h2 id="darpa-optc"><a href="https://github.com/FiveDirections/OpTC-data">DARPA OpTC</a><a class="headerlink" href="#darpa-optc" title="Permanent link">&para;</a></h2>
+<p>Windows enterprise environment with realistic APT scenarios.</p>
+<h3 id="optc_h201">optc_h201<a class="headerlink" href="#optc_h201" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1h58</td>
+<td>PowerShell Empire stager executed with elevated access. Mimikatz used for credential theft, registry persistence set, recon performed, then pivoted to other hosts via WMI.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>optc_h201
+</code></pre></div>
+<h3 id="optc_h501">optc_h501<a class="headerlink" href="#optc_h501" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>5h01</td>
+<td>Phishing email launched PowerShell Empire stager. Escalated via DeathStar, WMI persistence established, RDP tunneling and file exfiltration performed, then pivoted to other hosts.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>optc_h501
+</code></pre></div>
+<h3 id="optc_h051">optc_h051<a class="headerlink" href="#optc_h051" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>3h56</td>
+<td>Malicious Notepad++ update installed Meterpreter. Escalated to SYSTEM, migrated into LSASS for Mimikatz credential theft, established persistence, timestomped files, added admin account for RDP.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>pidsmaker/main.py<span class="w"> </span>SYSTEM<span class="w"> </span>optc_h051
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>TODO: add descriptions for CADETS_E5, FIVED and TRACE datasets.</p>
+</div>
+<h2 id="data-structure">Data structure<a class="headerlink" href="#data-structure" title="Permanent link">&para;</a></h2>
+<h3 id="graph-partitioning">Graph partitioning<a class="headerlink" href="#graph-partitioning" title="Permanent link">&para;</a></h3>
+<p>Each dataset is partitioned into daily graphs, split into:</p>
+<ul>
+<li><strong>Train graphs</strong>: Normal activity for model training</li>
+<li><strong>Validation graphs</strong>: Normal activity for threshold calibration</li>
+<li><strong>Test graphs</strong>: Contains both normal activity and attacks</li>
+</ul>
+<h2 id="adding-custom-datasets">Adding custom datasets<a class="headerlink" href="#adding-custom-datasets" title="Permanent link">&para;</a></h2>
+<p>To add a new dataset, define its configuration in <code>pidsmaker/config/config.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">DATASET_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;MY_DATASET&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;database&quot;</span><span class="p">:</span> <span class="s2">&quot;my_database_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;num_node_types&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s2">&quot;num_edge_types&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s2">&quot;train_files&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;graph_1&quot;</span><span class="p">,</span> <span class="s2">&quot;graph_2&quot;</span><span class="p">,</span> <span class="s2">&quot;graph_3&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;val_files&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;graph_4&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;test_files&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;graph_5&quot;</span><span class="p">,</span> <span class="s2">&quot;graph_6&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;ground_truth_relative_path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;MY_DATASET/labels.csv&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;attack_to_time_window&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;MY_DATASET/labels.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;2024-01-05 10:00:00&quot;</span><span class="p">,</span> <span class="s2">&quot;2024-01-05 12:00:00&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Then follow the <a href="../create-db-from-scratch/">database creation guide</a> to load your data.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 UBC provenance team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/ubc-provenance/PIDSMaker" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1M480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2m-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3m-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["tabs", "content.code.copy", "content.code.annotate", "navigation.instant", "navigation.sections"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
+</html>
