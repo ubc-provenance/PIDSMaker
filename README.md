@@ -51,12 +51,12 @@ It also includes several easy-to-install provenance datasets for APT detection.
 | CADETS_E3 | FreeBSD | 3 | 10 |
 | THEIA_E3 | Linux | 2 | 12 |
 | CLEARSCOPE_E3 | Android | 1 | 4.8 |
-| FIVEDIRECTIONS_E3 | Linux | 2 | 22 |
+| FIVEDIRECTIONS_E3 | Windows | 2 | 22 |
 | TRACE_E3 | Linux | 3 | 100 |
 | CADETS_E5 | FreeBSD | 2 | 276 |
 | THEIA_E5 | Linux | 1 | 36 |
 | CLEARSCOPE_E5 | Android | 2 | 49 |
-| FIVEDIRECTIONS_E5 | Linux | 4 | 280 |
+| FIVEDIRECTIONS_E5 | Windows | 4 | 280 |
 | TRACE_E5 | Linux | 1 | 710 |
 | optc_h201 | Windows | 1 | 9 |
 | optc_h501 | Windows | 1 | 6.7 |
