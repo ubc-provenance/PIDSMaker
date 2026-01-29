@@ -13,6 +13,7 @@ nav:
   - Basics:
     - Introduction: introduction.md
     - Pipeline: pipeline.md
+    - Datasets: datasets.md
     - Running tuned PIDSs: tuned_systems.md
     - Implementing a new PIDS: tutorial.md
   - Features:

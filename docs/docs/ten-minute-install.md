@@ -8,19 +8,20 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
 
 | Dataset       | Compressed (GB) | Uncompressed (GB) |
 |---------------|------------------|-------------------|
-| `CLEARSCOPE_E3` | 0.6              | 4.8               |
 | `CADETS_E3`     | 1.4              | 10              |
 | `THEIA_E3`      | 1.1              | 12                |
+| `CLEARSCOPE_E3` | 0.6              | 4.8               |
 | `FIVEDIRECTIONS_E3`      | 3.2              | 22                |
 | `TRACE_E3`      | 11              | 100                |
-| `CLEARSCOPE_E5` | 6.2              | 49                |
 | `CADETS_E5`     | 36               | 276               |
+| `THEIA_E5`      | 5.8              | 36                |
+| `CLEARSCOPE_E5` | 6.2              | 49                |
 | `FIVEDIRECTIONS_E5`      | 39              | 280                |
 | `TRACE_E5`      | 91              | 710                |
-| `THEIA_E5`      | 5.8              | 36                |
-| `OPTC_H051`     | 1.7              | 7.7               |
-| `OPTC_H_501`    | 1.5              | 6.7               |
 | `OPTC_H201`     | 2                | 9               |
+| `OPTC_H_501`    | 1.5              | 6.7               |
+| `OPTC_H051`     | 1.7              | 7.7               |
+
 
 **Steps:**
 

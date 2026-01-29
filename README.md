@@ -47,6 +47,12 @@ It provides a single codebase to run most recent state-of-the-arts systems and e
 
 A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is available, explaining all possible arguments and providing examples on how integrating new systems.
 
+### Pipeline
+
+The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/features/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
+
+<img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
+
 
 ## Setup
 
