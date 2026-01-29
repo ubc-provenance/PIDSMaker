@@ -101,12 +101,13 @@ write_md(ENCODERS_CFG, "encoders")
 write_md(DECODERS_CFG, "decoders")
 write_md(OBJECTIVES_CFG, "objectives", ignore=list(DECODERS_CFG.keys()))
 
-for task, d in TASK_ARGS.items():
-    write_md(
-        d,
-        task,
-        ignore=list(DECODERS_CFG.keys())
-        + list(ENCODERS_CFG.keys())
-        + list(OBJECTIVES_CFG.keys())
-        + list(FEATURIZATIONS_CFG.keys()),
-    )
+# Generate args for each task individually
+IGNORE_NESTED = (
+    list(DECODERS_CFG.keys())
+    + list(ENCODERS_CFG.keys())
+    + list(OBJECTIVES_CFG.keys())
+    + list(FEATURIZATIONS_CFG.keys())
+)
+
+for task_name, task_args in TASK_ARGS.items():
+    write_md(task_args, task_name, ignore=IGNORE_NESTED)

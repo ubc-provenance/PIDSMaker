@@ -21,11 +21,11 @@ nav:
     - Instability Measurement: features/instability.md
     - Batching & Sampling: features/batching.md
   - Arguments:
+    - Tasks: config/tasks.md
     - Featurization: config/featurization.md
     - Encoders: config/encoders.md
     - Decoders: config/decoders.md
     - Objectives: config/objectives.md
-    - Tasks: config/tasks.md
   - Contributing: contributing.md
   - Release notes: release_notes.md
 
