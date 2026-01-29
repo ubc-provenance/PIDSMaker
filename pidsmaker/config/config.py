@@ -138,7 +138,7 @@ DATASET_DEFAULT_CONFIG = {
         "ground_truth_relative_path": [
             "E5-CLEARSCOPE/node_clearscope_e5_appstarter_0515.csv",
             # "E5-CLEARSCOPE/node_clearscope_e5_firefox_0517.csv",
-            "E5-CLEARSCOPE/node_clearscope_e5_lockwatch_0517.csv",
+            # "E5-CLEARSCOPE/node_clearscope_e5_lockwatch_0517.csv",
             "E5-CLEARSCOPE/node_clearscope_e5_tester_0517.csv",
         ],
         "attack_to_time_window": [

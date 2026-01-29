@@ -1,28 +1,27 @@
 # Pipeline
 
-Within PIDSMaker, the execution of each system is broken down into **8 tasks**, each of which receives a set of input arguments defined in the system's YAML configuration files located in the `config/` directory.
+Within PIDSMaker, the execution of each system is broken down into **7 stages**, each of which receives a set of input arguments defined in the system's YAML configuration files located in the `config/` directory.
 
-```bash hl_lines="10 11 13 14 16 17 18 20" title="Main files associated with the pipeline"
-config/                 # existing systems are defined by their own YML file
+<img src="../img/pipeline.svg" style="width: 100%"/>
+
+```bash title="Main files associated with the pipeline"
+config/                         # existing systems are defined by their own YML file
 ├── orthrus.yml
 ├── kairos.yml
 └── ...
 pidsmaker/
-├── config/
-│   ├── config.py       # available arguments to use in YML files
-│   └── pipeline.py     # pipeline code
-├── preprocessing/               
-│   ├── construction.py        # task 1. feature extraction + graph TW construction
-│   └── transformation.py      # task 2. graph transformation
-├── featurization/              
-│   ├── featurization.py       # task 3. featurization (word2vec, doc2vec, ...) training
-│   └── feat_inference.py      # task 4. featurization inference
-├── detection/                  
-│   ├── batching.py # task 5. batch construction, neighbor sampling, etc
-│   ├── training.py        # task 6. GNN training + inference (testing) loop
-│   └── evaluation.py          # task 7. metrics calculation + plots
-├── triage/       
-│   └── tracing.py             # task 8. optional post-processing attack tracing
+├── main.py                     # only entry point of the framework
+│── config/
+│   ├── config.py               # available arguments to use in YML files
+│   └── pipeline.py             # pipeline code
+├── tasks/                      
+│   ├── construction.py         # stage 1. parse raw provenance + graph construction
+│   ├── transformation.py       # stage 2. graph transformations
+│   ├── featurization.py        # stage 3. text embedding featurization (Word2Vec, Doc2Vec, ...)
+│   ├── batching.py             # stage 4. batch construction, neighbor sampling, etc
+│   ├── training.py             # stage 5. GNN training + inference loop
+│   ├── evaluation.py           # stage 6. metrics calculation + plots
+│   └── triage.py               # stage 7. optional post-processing attack tracing
 ```
 
 Under the hood, PIDSMaker generates a unique hash for each task based on its set of arguments. Once a task completes, its output files are saved to disk in a folder named after this hash. This mechanism allows the system to detect whether a task has already been executed by recomputing the hash from the current arguments and checking for the existence of the corresponding folder.
@@ -49,9 +48,9 @@ The previous command is similar to the following YAML config:
 
 ``` yaml
 featurization:
-    emb_dim: 64
+  emb_dim: 64
 training:
-    lr: 0.0001
+  lr: 0.0001
 ```
 
 ## Forcing restart

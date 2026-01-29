@@ -70,8 +70,8 @@ To achieve this, we need to define a new set of arguments tailored specifically 
 ENCODERS_CFG = {
     ...
     "custom_encoder": {
-        "activation": str,
-        "num_layers": int,
+        "activation": Arg(str),
+        "num_layers": Arg(int),
     },
 }
 ```
@@ -198,7 +198,6 @@ In the pids container, you can now run the pipeline. We highly recommend using V
 For tiny experiments, you can run the framework locally like so:
 
 ``` sh
-cd scripts
 python pidsmaker/main.py custom_system CADETS_E3 --project=test_custom_system
 ```
 
@@ -206,6 +205,7 @@ For more practical experimentation, prefer running the framework in background a
 To do so, ensure you have logged to W&B with `wandb login` and run:
 
 ``` sh
+cd scripts
 ./run.sh custom_system CADETS_E3 --project=test_custom_system
 ```
 

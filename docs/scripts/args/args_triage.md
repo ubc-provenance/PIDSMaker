@@ -1,17 +1,13 @@
 <div class="annotate">
 
 <ul>
-    <li class='bullet'><span class="key">tracing</span>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (1)</span></li>
+    <li class='bullet'><span class="key">depimpact</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (1)</span></li>
-        <li class='bullet'><span class="key">depimpact</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (2)</span></li>
-            <li class='no-bullet'><span class="key-leaf">score_method</span>: <span class="value">str (3)</span></li>
-            <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
-            <li class='no-bullet'><span class="key-leaf">visualize</span>: <span class="value">bool</span></li>
-        </ul>
-        </li>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (2)</span></li>
+        <li class='no-bullet'><span class="key-leaf">score_method</span>: <span class="value">str (3)</span></li>
+        <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">visualize</span>: <span class="value">bool</span></li>
     </ul>
     </li>
 </ul>

@@ -1,24 +1,16 @@
-
 <p align="center">
-  <img width="50%" src="./.github/img/pidsmaker.png" alt="PIDSMAKER logo"/><br><br>
-
-  <a href="https://ubc-provenance.github.io/PIDSMaker/">
-    <img src="https://img.shields.io/badge/docs-online-pink.svg" alt="Documentation"/>
-  </a>
-  <a href="https://doi.org/10.5281/zenodo.15603122">
-  <img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.15603122-blue?logo=zenodo" alt="DOI"/>
-</a>
-  <img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=red" alt="License"/>
-  </a>
-  <a href="https://github.com/ubc-provenance/PIDSMaker/releases">
-    <img src="https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker" alt="Latest Release"/>
-  </a>
-   <a href="https://github.com/ubc-provenance/PIDSMaker/stargazers">
-    <img src="https://img.shields.io/github/stars/ubc-provenance/PIDSMaker" alt="Stars"/>
-  </a>
+  <img width="80%" src="./.github/img/pidsmaker_title.png" alt="PIDSMAKER logo"/>
 </p>
 
----
+<div align="center">
+
+[![Docs](https://img.shields.io/badge/Docs-Online-ed6a2f?style=flat&labelColor=gray)](https://ubc-provenance.github.io/PIDSMaker/)
+[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.15603122-ed6a2f?style=flat&labelColor=gray)](https://doi.org/10.5281/zenodo.15603122)
+[![License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/releases)
+[![Stars](https://img.shields.io/github/stars/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=white&logo=github&logoColor=black)](https://github.com/ubc-provenance/PIDSMaker/stargazers)
+
+</div>
 
 <p align="center">
   <strong>
@@ -30,22 +22,55 @@
   </strong>
 </p>
 
+---
+
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
 
-**Currently supported PIDSs**:
-- **Velox** (USENIX Sec'25): [Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems](https://tfjmp.org/publications/2025-usenixsec-2.pdf)
-- **Orthrus** (USENIX Sec'25): [ORTHRUS: Achieving High Quality of Attribution in Provenance-based Intrusion Detection Systems](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf)
-- **R-Caid** (IEEE S\&P'24): [R-CAID: Embedding Root Cause Analysis within Provenance-based Intrusion Detection](https://gangw.web.illinois.edu/rcaid-sp24.pdf)
-- **Flash** (IEEE S\&P'24): [Flash: A Comprehensive Approach to Intrusion Detection via Provenance Graph Representation Learning](https://dartlab.org/assets/pdf/flash.pdf)
-- **Kairos** (IEEE S\&P'24): [Kairos: Practical Intrusion Detection and Investigation using Whole-system Provenance](https://arxiv.org/pdf/2308.05034)
-- **Magic** (USENIX Sec'24): [MAGIC: Detecting Advanced Persistent Threats via Masked Graph Representation Learning](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf)
-- **NodLink** (NDSS'24): [NODLINK: An Online System for Fine-Grained APT Attack Detection and Investigation](https://arxiv.org/pdf/2311.02331)
-- **ThreaTrace** (IEEE TIFS'22): [THREATRACE: Detecting and Tracing Host-Based Threats in Node Level Through Provenance Graph Learning](https://arxiv.org/pdf/2111.04333)
+### Supported Systems
+
+The framework currently integrates the following PIDSs.
+
+| PIDS       | Venue               | Paper |
+|------------|---------------------|-------|
+| Velox      | USENIX Security 2025 | [Link](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
+| Orthrus    | USENIX Security 2025 | [Link](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
+| R-Caid     | IEEE S&P 2024        | [Link](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
+| Flash      | IEEE S&P 2024        | [Link](https://dartlab.org/assets/pdf/flash.pdf) |
+| Kairos     | IEEE S&P 2024        | [Link](https://arxiv.org/pdf/2308.05034) |
+| Magic      | USENIX Security 2024 | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
+| NodLink    | NDSS 2024           | [Link](https://arxiv.org/pdf/2311.02331) |
+| ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
+
+### Supported Datasets
+
+It also includes several easy-to-install provenance datasets for APT detection.
+
+| Dataset | OS | Attacks | Size (GB) |
+|---------|------|---------|-----------|
+| CADETS_E3 | FreeBSD | 3 | 10 |
+| THEIA_E3 | Linux | 2 | 12 |
+| CLEARSCOPE_E3 | Linux | 1 | 4.8 |
+| FIVEDIRECTIONS_E3 | Linux | 2 | 22 |
+| TRACE_E3 | Linux | 3 | 100 |
+| CADETS_E5 | FreeBSD | 2 | 276 |
+| THEIA_E5 | Linux | 1 | 36 |
+| CLEARSCOPE_E5 | Linux | 2 | 49 |
+| FIVEDIRECTIONS_E5 | Linux | 4 | 280 |
+| TRACE_E5 | Linux | 1 | 710 |
+| optc_h201 | Windows | 1 | 9 |
+| optc_h501 | Windows | 1 | 6.7 |
+| optc_h051 | Windows | 1 | 7.7 |
 
 ## 📄 Documentation
 
 A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is available, explaining all possible arguments and providing examples on how integrating new systems.
+
+### Pipeline
+
+The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
+
+<img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
 
 
 ## Setup
@@ -63,8 +88,8 @@ We have made the installation of PIDSMaker inclusing pre-processed databases for
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
 
-- Replace `SYSTEM` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash | magic`.
-- Replace `DATASET` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
+- Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
+- Replace `DATASET` by `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5 `, `optc_h201`, `optc_h501`, or `optc_h051`.
 
 1. Run in the shell:
     ```shell
@@ -86,6 +111,17 @@ You can still watch the logs in your shell using `tail -f nohup.out`.
 We generally using using W&B for experiment monitoring and historization (see installation guidelines). 
 
 **Warning:** Before performing evaluations, you should tune all systems (see docs [here](https://ubc-provenance.github.io/PIDSMaker/features/tuning/)).
+
+## Reproducing results
+
+PIDSs exhibit significant instability—that is, high sensitivity to training perturbations—due to their self-supervised training nature. 
+Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different results. 
+Consequently, reproducing results as the framework evolves presents a real challenge.
+
+Based on our experiments, we provide [tuned hyperparameters](https://ubc-provenance.github.io/PIDSMaker/tuned_systems) for the main systems.
+However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
+
+We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
 
 ## Customize existing systems
 
