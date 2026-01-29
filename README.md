@@ -1,23 +1,8 @@
 
 <p align="center">
   <img width="80%" src="./.github/img/pidsmaker_title.png" alt="PIDSMAKER logo"/><br>
-  <a href="https://ubc-provenance.github.io/PIDSMaker/">
-    <img src="https://img.shields.io/badge/docs-online-ed6a2f?style=flat" alt="Documentation"/>
-  </a>
-  <a href="https://doi.org/10.5281/zenodo.15603122">
-    <img src="https://img.shields.io/badge/DOI-10.5281/zenodo.15603122-ed6a2f?style=flat" alt="DOI"/>
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="License"/>
-  </a>
-  <a href="https://github.com/ubc-provenance/PIDSMaker/releases">
-    <img src="https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="Latest Release"/>
-  </a>
-<a href="https://github.com/ubc-provenance/PIDSMaker/stargazers">
-    <img src="https://img.shields.io/github/stars/ubc-provenance/PIDSMaker" alt="Stars"/>
-  </a>
+  <a href="https://ubc-provenance.github.io/PIDSMaker/"><img src="https://img.shields.io/badge/docs-online-ed6a2f?style=flat" alt="Documentation"/></a><a href="https://doi.org/10.5281/zenodo.15603122"><img src="https://img.shields.io/badge/DOI-10.5281/zenodo.15603122-ed6a2f?style=flat" alt="DOI"/></a><a href="LICENSE"><img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="License"/></a><a href="https://github.com/ubc-provenance/PIDSMaker/releases"><img src="https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="Latest Release"/></a><a href="https://github.com/ubc-provenance/PIDSMaker/stargazers"><img src="https://img.shields.io/github/stars/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="Stars"/></a>
 </p>
-
 <p align="center">
   <strong>
     <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/bilot">📄 Paper</a>
