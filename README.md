@@ -87,9 +87,7 @@ We have made the installation of PIDSMaker inclusing pre-processed databases for
 ## 🧪 Basic usage of the framework
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
-
-- Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
-- Replace `DATASET` by `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5 `, `optc_h201`, `optc_h501`, or `optc_h051`.
+Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
 
 1. Run in the shell:
     ```shell
