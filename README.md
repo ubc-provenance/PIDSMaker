@@ -42,6 +42,25 @@ The framework currently integrates the following PIDSs.
 | NodLink    | NDSS 2024           | [Link](https://arxiv.org/pdf/2311.02331) |
 | ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
 
+### Supported Datasets
+
+It also includes several easy-to-install provenance datasets for APT detection.
+
+| Dataset | OS | Attacks | Size (GB) |
+|---------|------|---------|-----------|
+| CADETS_E3 | FreeBSD | 3 | 10 |
+| THEIA_E3 | Linux | 2 | 12 |
+| CLEARSCOPE_E3 | Linux | 1 | 4.8 |
+| FIVEDIRECTIONS_E3 | Linux | 2 | 22 |
+| TRACE_E3 | Linux | 3 | 100 |
+| CADETS_E5 | FreeBSD | 2 | 276 |
+| THEIA_E5 | Linux | 1 | 36 |
+| CLEARSCOPE_E5 | Linux | 2 | 49 |
+| FIVEDIRECTIONS_E5 | Linux | 4 | 280 |
+| TRACE_E5 | Linux | 1 | 710 |
+| optc_h201 | Windows | 1 | 9 |
+| optc_h501 | Windows | 1 | 6.7 |
+| optc_h051 | Windows | 1 | 7.7 |
 
 ## 📄 Documentation
 
@@ -49,7 +68,7 @@ A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 ### Pipeline
 
-The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/features/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
+The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
 
 <img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
 
@@ -69,8 +88,8 @@ We have made the installation of PIDSMaker inclusing pre-processed databases for
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
 
-- Replace `SYSTEM` by `velox | orthrus | nodlink | threatrace | kairos | rcaid | flash | magic`.
-- Replace `DATASET` by `CLEARSCOPE_E3 | CADETS_E3 | THEIA_E3 | CLEARSCOPE_E5 | THEIA_E5 | optc_h201 | optc_h501 | optc_h051`.
+- Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
+- Replace `DATASET` by `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5 `, `optc_h201`, `optc_h501`, or `optc_h051`.
 
 1. Run in the shell:
     ```shell
