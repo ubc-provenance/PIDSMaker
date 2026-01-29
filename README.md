@@ -1,24 +1,22 @@
 
 <p align="center">
-  <img width="80%" src="./.github/img/pidsmaker3.png" alt="PIDSMAKER logo"/><br><br>
-
+  <img width="80%" src="./.github/img/pidsmaker_title.png" alt="PIDSMAKER logo"/><br>
   <a href="https://ubc-provenance.github.io/PIDSMaker/">
-    <img src="https://img.shields.io/badge/docs-online-pink.svg" alt="Documentation"/>
+    <img src="https://img.shields.io/badge/docs-online-ed6a2f?style=flat" alt="Documentation"/>
   </a>
   <a href="https://doi.org/10.5281/zenodo.15603122">
-    <img src="https://zenodo.org/badge/DOI/10.5281%2Fzenodo.15603122.svg" alt="DOI"/>
+    <img src="https://img.shields.io/badge/DOI-10.5281/zenodo.15603122-ed6a2f?style=flat" alt="DOI"/>
   </a>
-  <img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=red" alt="License"/>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="License"/>
   </a>
   <a href="https://github.com/ubc-provenance/PIDSMaker/releases">
-    <img src="https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker" alt="Latest Release"/>
+    <img src="https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?color=ed6a2f&style=flat" alt="Latest Release"/>
   </a>
-   <a href="https://github.com/ubc-provenance/PIDSMaker/stargazers">
+<a href="https://github.com/ubc-provenance/PIDSMaker/stargazers">
     <img src="https://img.shields.io/github/stars/ubc-provenance/PIDSMaker" alt="Stars"/>
   </a>
 </p>
-
----
 
 <p align="center">
   <strong>
@@ -29,6 +27,8 @@
     <a href="https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/">⚙️ Installation</a>
   </strong>
 </p>
+
+---
 
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
@@ -89,11 +89,12 @@ We generally using using W&B for experiment monitoring and historization (see in
 
 ## Reproducing results
 
-As explained in SC5 of [Bilot et al.](https://www.usenix.org/system/files/usenixsecurity25-bilot.pdf), PIDSs exhibit significant instability—that is, high sensitivity to training perturbations—due to their self-supervised training nature. 
+PIDSs exhibit significant instability—that is, high sensitivity to training perturbations—due to their self-supervised training nature. 
 Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different results. 
 Consequently, reproducing results as the framework evolves presents a real challenge.
 
-Based on our experiments, we provide [tuned hyperparameters](tuned_systems.md) for the main systems.
+Based on our experiments, we provide [tuned hyperparameters](https://ubc-provenance.github.io/PIDSMaker/tuned_systems) for the main systems.
+However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
 
 We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
 

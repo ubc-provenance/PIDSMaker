@@ -1,11 +1,14 @@
-# PIDSMaker
+<p align="center">
+  <img width="80%" src="./assets/pidsmaker_title.png" alt="PIDSMAKER logo"/>
+  </p>
 
+# PIDSMaker
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-art systems and easily customize them to develop new variants.
 
 ## Purpose
 
-🥷 PIDSMaker is an open-source framework designed to be collaboratively developed and maintained by the security research community. It was born out of the observation that recent papers in top-tier security venues often evaluate on the same datasets but differ in labeling strategies and in the implementation of baseline methods.
+PIDSMaker is an open-source framework designed to be collaboratively developed and maintained by the security research community. It was born out of the observation that recent papers in top-tier security venues often evaluate on the same datasets but differ in labeling strategies and in the implementation of baseline methods.
 
 Until now, no standardized open-source framework has existed to facilitate fair comparisons.
 PIDSMaker addresses this gap by providing the following key features:

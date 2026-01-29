@@ -71,4 +71,4 @@ The utilization of CPU can be forced using the `--cpu` CLI argument.
 
 ## The framework
 
-To familiarize yourself with 🥷 PIDSMaker, consider going through the [pipeline](pipeline.md) and [tutorial](tutorial.md) pages.
+To familiarize yourself with PIDSMaker, consider going through the [pipeline](pipeline.md) and [tutorial](tutorial.md) pages.

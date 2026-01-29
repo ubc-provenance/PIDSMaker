@@ -9,21 +9,22 @@ nav:
   - Installation:
     - Docker installation: ten-minute-install.md
     - Apptainer installation: singularity_install.md
-    - Install a dataset from scratch: create-db-from-scratch.md
-  - Introduction: introduction.md
-  - Pipeline: pipeline.md
-  - Tutorials:
-    - Implement a new PIDS: tutorial.md
+    - Installing a dataset from scratch: create-db-from-scratch.md
+  - Basics:
+    - Introduction: introduction.md
+    - Pipeline: pipeline.md
+    - Running tuned PIDSs: tuned_systems.md
+    - Implementing a new PIDS: tutorial.md
+  - Features:
+    - Hyperparameter Tuning: features/tuning.md
+    - Instability Measurement: features/instability.md
+    - Batching & Sampling: features/batching.md
   - Arguments:
     - Featurization: config/featurization.md
     - Encoders: config/encoders.md
     - Decoders: config/decoders.md
     - Objectives: config/objectives.md
     - Tasks: config/tasks.md
-  - Features:
-    - Hyperparameter Tuning: features/tuning.md
-    - Batching & Sampling: features/batching.md
-    - Instability Measurement: features/instability.md
   - Contributing: contributing.md
   - Release notes: release_notes.md
 
@@ -37,13 +38,13 @@ theme:
       # - navigation.expand
       - navigation.sections
     name: material
-    logo: assets/ninja_small.png
-    favicon: assets/ninja_small.ico
+    logo: assets/pidsmaker_new.png
+    favicon: assets/pidsmaker.ico
     static_templates:
       - 404.html
     palette:
       scheme: default
-      primary: amber
+      primary: deep orange
 
 # Extensions
 markdown_extensions:

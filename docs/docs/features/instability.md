@@ -5,7 +5,7 @@
 Most systems are prone to instability, with some runs reaching high performance, while others fail dramatically. To quantify this instability, we run the system multiple times and compute the mean and standard deviation of key performance metrics. This can be done easily by using the `--experiment=run_n_times` tag:
 
 ```shell
-./run.sh orthrus CADETS_E3 --tuned --experiment=run_n_times
+./run.sh orthrus CADETS_E3 --experiment=run_n_times
 ```
 
 This process executes the pipeline N times using the same configuration, with each run starting from a specified task. All parameters can be configured in `config/experiments/uncertainty/run_n_times.yml`, where the number of iterations is defined by `iterations`, and the initial task by `restart_from`.

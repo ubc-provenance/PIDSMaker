@@ -1,4 +1,4 @@
-# Install a dataset from scratch
+# Installing a dataset from scratch
 
 PIDSMaker comes by default with pre-processed versions of DARPA datasets.
 If you want to install them from scratch using the official public files, follow this guide.
