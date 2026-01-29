@@ -9,27 +9,8 @@ In this introduction, we go through the basics that allow you to run existings P
 
 The framework currently support the following systems and datasets:
 
-**Systems**
-
-- `velox`
-- `orthrus`
-- `nodlink`
-- `threatrace`
-- `kairos`
-- `rcaid`
-- `flash`
-
-**Datasets**
-
-- `CADETS_E3`
-- `THEIA_E3`
-- `CLEARSCOPE_E3`
-- `CADETS_E5`
-- `THEIA_E5`
-- `CLEARSCOPE_E5`
-- `optc_h201`
-- `optc_h501`
-- `optc_h051`
+- `SYSTEM`: `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
+- `DATASET`: `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5`, `optc_h201`, `optc_h501`, `optc_h051`.
 
 **Run the framework**
 
