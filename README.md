@@ -14,7 +14,9 @@
 
 <p align="center">
   <strong>
-    <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/bilot">📄 Paper</a>
+    <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/bilot">📄 Experiments Paper</a>
+    &nbsp;|&nbsp;
+	<a href="https://www.arxiv.org/abs/2601.22983">📄 Framework Paper</a>
     &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
     &nbsp;|&nbsp;
@@ -208,8 +210,17 @@ Once you find the best hyperparameters, store them in a yaml file and run your t
 
 ## Citation
 
-If you use this work, please cite the following paper:
+If you use this work, please cite the two following papers:
 ```
+@misc{bilot2026pidsmaker,
+      title={PIDSMaker: Building and Evaluating Provenance-based Intrusion Detection Systems}, 
+      author={Tristan Bilot and Baoxiang Jiang and Thomas Pasquier},
+      year={2026},
+      eprint={2601.22983},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2601.22983}, 
+}
 @inproceedings{bilot2025simpler,
 	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
 	author={Bilot, Tristan and Jiang, Baoxiang and  Li, Zefeng and  El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
