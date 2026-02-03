@@ -49,7 +49,7 @@ SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
 RUN conda install -y psycopg2 tqdm && \
     pip install scikit-learn==1.2.0 networkx==2.8.7 xxhash==3.2.0 \
                 graphviz==0.20.1 psutil scipy==1.10.1 matplotlib==3.8.4 \
-                wandb==0.16.6 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
+                wandb==0.24.1 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
                 cairocffi==1.7.0 wget==3.2
 
 RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
