@@ -463,6 +463,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                     decoder=decoder,
                     loss_fn=loss_fn,
                     mask_rate=mask_rate,
+                    embed_dim=in_dim,  # Node feature dimension for mask_token
                 )
             )
 

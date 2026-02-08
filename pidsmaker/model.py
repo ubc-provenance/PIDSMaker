@@ -100,8 +100,27 @@ class Model(nn.Module):
         """
         train_mode = not inference
 
+        # Apply masking to input features if training with reconstruction objective
+        mask_nodes = None
+        x_for_encoding = getattr(batch, "x", None)
+        
+        if train_mode and x_for_encoding is not None:
+            # Check if we have a GMAEFeatReconstruction objective
+            for objective in self.objectives:
+                if hasattr(objective, "mask_input"):
+                    x_for_encoding, mask_nodes = objective.mask_input(x_for_encoding)
+                    break  # Only mask once
+
         with torch.set_grad_enabled(train_mode):
-            h, h_src, h_dst = self.embed(batch, inference=inference)
+            # Pass masked input to encoder if masking was applied
+            if x_for_encoding is not None and hasattr(batch, "x"):
+                # Temporarily replace batch.x with masked version
+                original_x = batch.x
+                batch.x = x_for_encoding
+                h, h_src, h_dst = self.embed(batch, inference=inference)
+                batch.x = original_x  # Restore original for objectives
+            else:
+                h, h_src, h_dst = self.embed(batch, inference=inference)
 
             # Train mode: loss | Inference mode: scores
             loss_or_scores = None
@@ -121,6 +140,7 @@ class Model(nn.Module):
                     node_type_dst=batch.node_type_dst,
                     validation=validation,
                     batch=batch,
+                    mask_nodes=mask_nodes,  # Pass mask_nodes to objectives
                 )
                 loss = results["loss"]
 
