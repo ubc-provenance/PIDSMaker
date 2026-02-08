@@ -217,6 +217,7 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 residual=True,
                 activation=activation_fn_factory(cfg.training.encoder.magic_gat.activation),
                 is_decoder=False,
+                edge_dim=edge_dim,  # Pass the calculated edge dimension
             )
 
         # MLP encoders

@@ -4,6 +4,7 @@ MAGIC-specific GAT variant supporting both encoding and decoding roles for
 masked feature reconstruction and structure prediction objectives.
 """
 
+import torch
 import torch.nn as nn
 from torch_geometric.nn import GATConv
 
@@ -28,6 +29,7 @@ class MagicGAT(nn.Module):
         activation=None,
         concat_out=False,
         is_decoder=False,
+        edge_dim=None,
     ):
         super(MagicGAT, self).__init__()
         self.out_dim = out_dim
@@ -43,9 +45,11 @@ class MagicGAT(nn.Module):
                 in_dim,
                 hid_dim,
                 heads=n_heads,
-                concat=self.concat_out,
+                concat=True, # Old pipeline used True
                 dropout=attn_drop,
                 negative_slope=negative_slope,
+                edge_dim=edge_dim,
+                add_self_loops=False,
             )
         )
 
@@ -56,30 +60,48 @@ class MagicGAT(nn.Module):
                     hid_dim * n_heads,
                     hid_dim,
                     heads=n_heads,
-                    concat=self.concat_out,
+                    concat=True, # Old pipeline used True
                     dropout=attn_drop,
                     negative_slope=negative_slope,
+                    edge_dim=edge_dim,
+                    add_self_loops=False,
                 )
             )
 
         # Last layer
+        # Old pipeline used n_heads for the last layer too
         self.gats.append(
             GATConv(
                 hid_dim * n_heads,
                 out_dim,
-                heads=1,
-                concat=self.concat_out,
+                heads=n_heads, 
+                concat=True, 
                 dropout=attn_drop,
                 negative_slope=negative_slope,
+                edge_dim=edge_dim,
+                add_self_loops=False,
             )
         )
 
         self.dropout = nn.Dropout(feat_drop)
         self.activation = activation
         self.residual = residual
-        self.last_linear = nn.Linear(hid_dim * n_heads, out_dim)
+        
+        # Residual connection projection for the last layer
+        # Output of last layer is now out_dim * n_heads due to concat=True and heads=n_heads
+        self.last_linear = nn.Linear(hid_dim * n_heads, out_dim * n_heads)
 
-    def forward(self, x, edge_index, **kwargs):
+        if not self.is_decoder:
+            # MAGIC-style concatenation: Concat all layers + Linear Projection
+            # Intermediate layers: hid_dim * n_heads
+            # Last layer: out_dim * n_heads
+            concat_dim = (n_layers - 1) * (hid_dim * n_heads) + (out_dim * n_heads)
+            self.out_proj = nn.Linear(concat_dim, out_dim)
+
+    def forward(self, x, edge_index, edge_attr=None, edge_feats=None, **kwargs):
+        if edge_attr is None:
+            edge_attr = edge_feats
+            
         hidden_list = []
         h = x
 
@@ -87,9 +109,9 @@ class MagicGAT(nn.Module):
         for layer in range(self.n_layers):
             h_in = h  # For residual connection
             h = self.dropout(h)
-            h = self.gats[layer](h, edge_index)
+            h = self.gats[layer](h, edge_index, edge_attr=edge_attr)
 
-            if self.residual and layer > 0:  # Adding residual connection if enabled
+            if self.residual and layer > 0:
                 if layer == self.n_layers - 1:
                     h_in = self.last_linear(h_in)
                 h = h + h_in
@@ -98,6 +120,11 @@ class MagicGAT(nn.Module):
                 h = self.activation(h)
 
             hidden_list.append(h)
+
+        if not self.is_decoder:
+            # Concatenate all layer outputs
+            h = torch.cat(hidden_list, dim=-1)
+            h = self.out_proj(h)
 
         return h if self.is_decoder else {"h": h}
 
