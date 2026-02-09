@@ -310,8 +310,6 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
                 sweep_cfg = wandb.config
                 cfg = fuse_cfg_with_sweep_cfg(cfg, sweep_cfg)
 
-                wandb.run.name = exp
-                wandb.run.save()
                 wandb.log({"dataset": cfg.dataset.name, "exp": exp})
 
                 run_pipeline_with_experiments(cfg)
