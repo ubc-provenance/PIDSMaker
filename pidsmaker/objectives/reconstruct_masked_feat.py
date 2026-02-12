@@ -22,16 +22,16 @@ class GMAEFeatReconstruction(nn.Module):
         num_mask_nodes = int(self.mask_rate * num_nodes)
         perm = torch.randperm(num_nodes, device=x.device)
         mask_nodes = perm[:num_mask_nodes]
-        
+
         x_masked = x.clone()
         x_masked[mask_nodes] = self.mask_token.to(x.device)
-        
+
         return x_masked, mask_nodes
 
     def forward(self, x, h, edge_index, inference, **kwargs):
         # Recover mask_nodes passed from Model.forward
         mask_nodes = kwargs.get("mask_nodes", None)
-        
+
         # During inference or if no mask was applied, we might not have mask_nodes.
         # But for training this objective, we expect them.
         if mask_nodes is None and not inference:
@@ -40,7 +40,7 @@ class GMAEFeatReconstruction(nn.Module):
 
         batch = kwargs.get("batch")
         edge_feats = getattr(batch, "edge_feats", None) if batch else None
-        
+
         recon = self.decoder(h, edge_index, edge_feats=edge_feats)
 
         # Calculate loss only on masked nodes

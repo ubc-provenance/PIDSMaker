@@ -15,6 +15,7 @@ class MagicGAT(nn.Module):
     Multi-layer GAT with configurable heads, residual connections, and dropout.
     Can function as encoder (for feature extraction) or decoder (for reconstruction).
     """
+
     def __init__(
         self,
         in_dim,
@@ -45,7 +46,7 @@ class MagicGAT(nn.Module):
                 in_dim,
                 hid_dim,
                 heads=n_heads,
-                concat=True, # Old pipeline used True
+                concat=True,  # Old pipeline used True
                 dropout=attn_drop,
                 negative_slope=negative_slope,
                 edge_dim=edge_dim,
@@ -60,7 +61,7 @@ class MagicGAT(nn.Module):
                     hid_dim * n_heads,
                     hid_dim,
                     heads=n_heads,
-                    concat=True, # Old pipeline used True
+                    concat=True,  # Old pipeline used True
                     dropout=attn_drop,
                     negative_slope=negative_slope,
                     edge_dim=edge_dim,
@@ -74,8 +75,8 @@ class MagicGAT(nn.Module):
             GATConv(
                 hid_dim * n_heads,
                 out_dim,
-                heads=n_heads, 
-                concat=True, 
+                heads=n_heads,
+                concat=True,
                 dropout=attn_drop,
                 negative_slope=negative_slope,
                 edge_dim=edge_dim,
@@ -86,7 +87,7 @@ class MagicGAT(nn.Module):
         self.dropout = nn.Dropout(feat_drop)
         self.activation = activation
         self.residual = residual
-        
+
         # Residual connection projection for the last layer
         # Output of last layer is now out_dim * n_heads due to concat=True and heads=n_heads
         self.last_linear = nn.Linear(hid_dim * n_heads, out_dim * n_heads)
@@ -101,7 +102,7 @@ class MagicGAT(nn.Module):
     def forward(self, x, edge_index, edge_attr=None, edge_feats=None, **kwargs):
         if edge_attr is None:
             edge_attr = edge_feats
-            
+
         hidden_list = []
         h = x
 

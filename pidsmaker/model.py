@@ -25,6 +25,7 @@ class Model(nn.Module):
         device: PyTorch device (cuda/cpu)
         few_shot_mode: Whether currently in few-shot fine-tuning mode
     """
+
     def __init__(
         self,
         encoder: nn.Module,
@@ -103,7 +104,7 @@ class Model(nn.Module):
         # Apply masking to input features if training with reconstruction objective
         mask_nodes = None
         x_for_encoding = getattr(batch, "x", None)
-        
+
         if train_mode and x_for_encoding is not None:
             # Check if we have a GMAEFeatReconstruction objective
             for objective in self.objectives:
