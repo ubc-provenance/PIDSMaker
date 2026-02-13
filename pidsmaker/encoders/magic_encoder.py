@@ -46,7 +46,7 @@ class MagicGAT(nn.Module):
                 in_dim,
                 hid_dim,
                 heads=n_heads,
-                concat=True,  # Old pipeline used True
+                concat=self.concat_out,
                 dropout=attn_drop,
                 negative_slope=negative_slope,
                 edge_dim=edge_dim,
@@ -61,7 +61,7 @@ class MagicGAT(nn.Module):
                     hid_dim * n_heads,
                     hid_dim,
                     heads=n_heads,
-                    concat=True,  # Old pipeline used True
+                    concat=self.concat_out,
                     dropout=attn_drop,
                     negative_slope=negative_slope,
                     edge_dim=edge_dim,
@@ -70,13 +70,12 @@ class MagicGAT(nn.Module):
             )
 
         # Last layer
-        # Old pipeline used n_heads for the last layer too
         self.gats.append(
             GATConv(
                 hid_dim * n_heads,
                 out_dim,
                 heads=n_heads,
-                concat=True,
+                concat=self.concat_out,
                 dropout=attn_drop,
                 negative_slope=negative_slope,
                 edge_dim=edge_dim,
