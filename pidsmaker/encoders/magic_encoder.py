@@ -98,9 +98,7 @@ class MagicGAT(nn.Module):
             concat_dim = (n_layers - 1) * (hid_dim * n_heads) + (out_dim * n_heads)
             self.out_proj = nn.Linear(concat_dim, out_dim)
 
-    def forward(self, x, edge_index, edge_attr=None, edge_feats=None, **kwargs):
-        if edge_attr is None:
-            edge_attr = edge_feats
+    def forward(self, x, edge_index, edge_feats=None, **kwargs):
 
         hidden_list = []
         h = x
@@ -109,7 +107,7 @@ class MagicGAT(nn.Module):
         for layer in range(self.n_layers):
             h_in = h  # For residual connection
             h = self.dropout(h)
-            h = self.gats[layer](h, edge_index, edge_attr=edge_attr)
+            h = self.gats[layer](h, edge_index, edge_feats)
 
             if self.residual and layer > 0:
                 if layer == self.n_layers - 1:
@@ -130,3 +128,4 @@ class MagicGAT(nn.Module):
 
     def reset_classifier(self, num_classes):
         self.head = nn.Linear(self.out_dim, num_classes)
+
