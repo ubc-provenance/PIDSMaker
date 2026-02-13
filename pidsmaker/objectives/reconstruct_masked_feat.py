@@ -35,8 +35,10 @@ class GMAEFeatReconstruction(nn.Module):
         # During inference or if no mask was applied, we might not have mask_nodes.
         # But for training this objective, we expect them.
         if mask_nodes is None and not inference:
-            # Fallback: no masking was applied upstream, return 0 loss
-            return {"loss": torch.tensor(0.0, device=x.device, requires_grad=True)}
+            raise ValueError(
+                "GMAEFeatReconstruction objective requires masked nodes, but mask_nodes is None."
+            )
+
 
         batch = kwargs.get("batch")
         edge_feats = getattr(batch, "edge_feats", None) if batch else None
