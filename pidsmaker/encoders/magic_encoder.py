@@ -40,25 +40,25 @@ class MagicGAT(nn.Module):
         self.gats = nn.ModuleList()
         self.is_decoder = is_decoder
 
-        # First layer
-        self.gats.append(
-            GATConv(
-                in_dim,
-                hid_dim,
-                heads=n_heads,
-                concat=self.concat_out,
-                dropout=attn_drop,
-                negative_slope=negative_slope,
-                edge_dim=edge_dim,
-                add_self_loops=False,
-            )
-        )
-
-        # Hidden layers
-        for _ in range(1, n_layers - 1):
+        # decoder
+        if n_layers == 1:
             self.gats.append(
                 GATConv(
-                    hid_dim * n_heads,
+                    in_dim,
+                    out_dim,
+                    heads=n_heads,
+                    concat=self.concat_out,
+                    dropout=attn_drop,
+                    negative_slope=negative_slope,
+                    edge_dim=edge_dim,
+                    add_self_loops=False,
+                )
+            )
+        else:
+            # First layer
+            self.gats.append(
+                GATConv(
+                    in_dim,
                     hid_dim,
                     heads=n_heads,
                     concat=self.concat_out,
@@ -69,19 +69,34 @@ class MagicGAT(nn.Module):
                 )
             )
 
-        # Last layer
-        self.gats.append(
-            GATConv(
-                hid_dim * n_heads,
-                out_dim,
-                heads=n_heads,
-                concat=self.concat_out,
-                dropout=attn_drop,
-                negative_slope=negative_slope,
-                edge_dim=edge_dim,
-                add_self_loops=False,
+            # Hidden layers
+            for _ in range(1, n_layers - 1):
+                self.gats.append(
+                    GATConv(
+                        hid_dim * n_heads,
+                        hid_dim,
+                        heads=n_heads,
+                        concat=self.concat_out,
+                        dropout=attn_drop,
+                        negative_slope=negative_slope,
+                        edge_dim=edge_dim,
+                        add_self_loops=False,
+                    )
+                )
+
+            # Last layer
+            self.gats.append(
+                GATConv(
+                    hid_dim * n_heads,
+                    out_dim,
+                    heads=n_heads,
+                    concat=self.concat_out,
+                    dropout=attn_drop,
+                    negative_slope=negative_slope,
+                    edge_dim=edge_dim,
+                    add_self_loops=False,
+                )
             )
-        )
 
         self.dropout = nn.Dropout(feat_drop)
         self.activation = activation
@@ -89,14 +104,23 @@ class MagicGAT(nn.Module):
 
         # Residual connection projection for the last layer
         # Output of last layer is now out_dim * n_heads due to concat=True and heads=n_heads
-        self.last_linear = nn.Linear(hid_dim * n_heads, out_dim * n_heads)
+        if n_layers == 1:
+            # original implementation used n_layer=1 with n_head=1 but i added support for other configurations
+            if in_dim != out_dim * n_heads:
+                self.last_linear = nn.Linear(in_dim, out_dim * n_heads)
+        else:
+            self.last_linear = nn.Linear(hid_dim * n_heads, out_dim * n_heads)
 
         if not self.is_decoder:
             # MAGIC-style concatenation: Concat all layers + Linear Projection
             # Intermediate layers: hid_dim * n_heads
             # Last layer: out_dim * n_heads
-            concat_dim = (n_layers - 1) * (hid_dim * n_heads) + (out_dim * n_heads)
+            if n_layers == 1:
+                concat_dim = out_dim * n_heads
+            else:
+                concat_dim = (n_layers - 1) * (hid_dim * n_heads) + (out_dim * n_heads)
             self.out_proj = nn.Linear(concat_dim, out_dim)
+
 
     def forward(self, x, edge_index, edge_feats=None, **kwargs):
 
@@ -104,13 +128,13 @@ class MagicGAT(nn.Module):
         h = x
 
         # Forward through GAT layers
-        for layer in range(self.n_layers):
+        for layer in range(len(self.gats)):
             h_in = h  # For residual connection
             h = self.dropout(h)
             h = self.gats[layer](h, edge_index, edge_feats)
 
             if self.residual and layer > 0:
-                if layer == self.n_layers - 1:
+                if layer == len(self.gats) - 1 and hasattr(self, "last_linear"):
                     h_in = self.last_linear(h_in)
                 h = h + h_in
 
