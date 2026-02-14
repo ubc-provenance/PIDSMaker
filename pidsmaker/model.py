@@ -86,6 +86,39 @@ class Model(nn.Module):
         h, h_src, h_dst = self.gather_h(batch, res)
         return h, h_src, h_dst
 
+    def _embed_nodes(self, batch, inference):
+        """Runs the encoder, optionally applying input masking for reconstruction objectives."""
+        train_mode = not inference
+        mask_nodes = None
+        x_for_encoding = getattr(batch, "x", None)
+
+        if train_mode and x_for_encoding is not None:
+            # Check if we have a GMAEFeatReconstruction objective
+            for objective in self.objectives:
+                # ValidationWrapper hides the underlying objective's methods (like mask_input). 
+                # We need to access the inner objective to find and call mask_input if it exists.
+                # TODO: make ValidationWrapper transparently proxy method calls or use a more generic unwrapping approach.
+                actual_objective = objective
+                if hasattr(objective, "objective"):
+                    actual_objective = objective.objective
+
+                if hasattr(actual_objective, "mask_input"):
+                    x_for_encoding, mask_nodes = actual_objective.mask_input(x_for_encoding)
+                    break  # Only mask once
+
+        with torch.set_grad_enabled(train_mode):
+            # Pass masked input to encoder if masking was applied
+            if mask_nodes is not None and hasattr(batch, "x") and x_for_encoding is not None:
+                # Temporarily replace batch.x with masked version
+                original_x = batch.x
+                batch.x = x_for_encoding
+                h, h_src, h_dst = self.embed(batch, inference=inference)
+                batch.x = original_x  # Restore original for objectives
+            else:
+                h, h_src, h_dst = self.embed(batch, inference=inference)
+
+        return h, h_src, h_dst, mask_nodes
+
     def forward(self, batch, inference=False, validation=False):
         """Forward pass: embed nodes and compute loss/scores across all objectives.
 
@@ -99,30 +132,10 @@ class Model(nn.Module):
                 - Training mode: scalar loss (sum of all objective losses)
                 - Inference mode: per-edge anomaly scores (E,)
         """
+        h, h_src, h_dst, mask_nodes = self._embed_nodes(batch, inference)
         train_mode = not inference
 
-        # Apply masking to input features if training with reconstruction objective
-        mask_nodes = None
-        x_for_encoding = getattr(batch, "x", None)
-
-        if train_mode and x_for_encoding is not None:
-            # Check if we have a GMAEFeatReconstruction objective
-            for objective in self.objectives:
-                if hasattr(objective, "mask_input"):
-                    x_for_encoding, mask_nodes = objective.mask_input(x_for_encoding)
-                    break  # Only mask once
-
         with torch.set_grad_enabled(train_mode):
-            # Pass masked input to encoder if masking was applied
-            if x_for_encoding is not None and hasattr(batch, "x"):
-                # Temporarily replace batch.x with masked version
-                original_x = batch.x
-                batch.x = x_for_encoding
-                h, h_src, h_dst = self.embed(batch, inference=inference)
-                batch.x = original_x  # Restore original for objectives
-            else:
-                h, h_src, h_dst = self.embed(batch, inference=inference)
-
             # Train mode: loss | Inference mode: scores
             loss_or_scores = None
 
