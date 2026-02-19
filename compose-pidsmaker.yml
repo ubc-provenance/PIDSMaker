@@ -2,10 +2,6 @@ services:
   pids:
     build:
       context: .
-      args:
-        USER_ID: ${HOST_UID}
-        GROUP_ID: ${HOST_GID}
-        USER_NAME: ${USER_NAME}
     container_name: ${COMPOSE_PROJECT_NAME}-pids
     networks:
       - shared_network
@@ -18,9 +14,8 @@ services:
       DB_PASSWORD: postgres
     volumes:
       - ./:/home/pids
-      - ${ARTIFACTS_DIR:-/artifacts}:/home/artifacts
+      - ${ARTIFACTS_DIR:-/home/artifacts}:/home/artifacts
       # - /path/to/raw/data:/data
-    entrypoint: bash
     stdin_open: true
     tty: true
     deploy:

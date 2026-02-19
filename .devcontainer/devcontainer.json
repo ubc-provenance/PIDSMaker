@@ -4,7 +4,7 @@
   "service": "pids",
   "workspaceFolder": "/home/pids",
   "forwardPorts": ["${env:DOCKER_PORT}"],
-  "remoteUser": "${env:USER_NAME}",
+  "remoteUser": "pids",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,7 +12,8 @@
         "ms-vscode-remote.remote-containers",
         "nvidia.nsight-vscode-edition", // For CUDA/GPU debugging
         "eamodio.gitlens",
-        "ms-toolsai.jupyter"
+        "ms-toolsai.jupyter",
+        "anthropic.claude-code"
       ]
     }
   },
