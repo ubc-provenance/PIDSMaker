@@ -56,8 +56,8 @@ training:
       mask_rate: 0.5
       decoder: magic_gat
       magic_gat:
-        num_layers: 3
-        num_heads: 4
+        num_layers: 1
+        num_heads: 1
         negative_slope: 0.2
     predict_masked_struct:
       loss: BCE

@@ -3,41 +3,57 @@ import torch.nn as nn
 
 
 class GMAEFeatReconstruction(nn.Module):
-    def __init__(self, decoder, loss_fn, mask_rate):
+    def __init__(self, decoder, loss_fn, mask_rate, embed_dim):
         super(GMAEFeatReconstruction, self).__init__()
         self.decoder = decoder
         self.loss_fn = loss_fn
         self.mask_rate = mask_rate
+        # Learnable mask token initialized to zeros, matching MAGIC-main
+        self.mask_token = nn.Parameter(torch.zeros(1, embed_dim))
 
-    def generate_mask_token(self, x):
-        # generate mask_token dynamically
-        mask_token = torch.zeros_like(x[0])
-        return mask_token
+    def mask_input(self, x):
+        """
+        Masks the input features BEFORE encoding.
+        Returns:
+            x_masked: The input features with masked nodes replaced by token
+            mask_nodes: Indices of masked nodes
+        """
+        num_nodes = x.shape[0]
+        num_mask_nodes = int(self.mask_rate * num_nodes)
+        perm = torch.randperm(num_nodes, device=x.device)
+        mask_nodes = perm[:num_mask_nodes]
+
+        x_masked = x.clone()
+        x_masked[mask_nodes] = self.mask_token.to(x.device)
+
+        return x_masked, mask_nodes
 
     def forward(self, x, h, edge_index, inference, **kwargs):
-        mask_rate = self.mask_rate
-        num_nodes = x.shape[0]
-        num_mask_nodes = int(mask_rate * num_nodes)
-        perm = torch.randperm(num_nodes)
-        mask_nodes = perm[:num_mask_nodes]
-        keep_nodes = perm[num_mask_nodes:]
+        # Recover mask_nodes passed from Model.forward
+        mask_nodes = kwargs.get("mask_nodes", None)
 
-        mask_token = self.generate_mask_token(x)
+        # During inference or if no mask was applied, we might not have mask_nodes.
+        # But for training this objective, we expect them.
+        if mask_nodes is None and not inference:
+            raise ValueError(
+                "GMAEFeatReconstruction objective requires masked nodes, but mask_nodes is None."
+            )
 
-        # TODO: Nothing is masked here actually, and mask_token and x_masked are not even used
-        # We simply compute the loss on a subset of nodes but there is no masking
-        x_masked = x.clone()
-        x_masked[mask_nodes] = mask_token.to(x.device)
 
-        recon = self.decoder(h, edge_index)
+        batch = kwargs.get("batch")
+        edge_feats = getattr(batch, "edge_feats", None) if batch else None
 
-        x_init = x[mask_nodes].to(h.device)
-        x_rec = recon[mask_nodes].to(h.device)
+        recon = self.decoder(h, edge_index, edge_feats=edge_feats)
 
-        # TODO: During inference, we should return for each node  its own loss
-        # Now, with the current code it returns only the loss for masked nodes so
-        # We can use this loss in the final loss because the shape mismatch.
-        # For now, I simply return 0 to avoid error, so that there is only the other GMAEStructPrediction considered
+        # Calculate loss only on masked nodes
+        if mask_nodes is not None:
+            x_init = x[mask_nodes].to(h.device)
+            x_rec = recon[mask_nodes].to(h.device)
+        else:
+            # If inference, maybe we want global loss? Or just 0 as per previous code
+            x_init = x
+            x_rec = recon
+
         if inference:
             losses = torch.zeros((x.shape[0],), device=x.device)
             return {"loss": losses}
