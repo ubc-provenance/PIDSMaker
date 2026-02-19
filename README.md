@@ -212,14 +212,11 @@ Once you find the best hyperparameters, store them in a yaml file and run your t
 
 If you use this work, please cite the two following papers:
 ```
-@misc{bilot2026pidsmaker,
-      title={PIDSMaker: Building and Evaluating Provenance-based Intrusion Detection Systems}, 
-      author={Tristan Bilot and Baoxiang Jiang and Thomas Pasquier},
-      year={2026},
-      eprint={2601.22983},
-      archivePrefix={arXiv},
-      primaryClass={cs.CR},
-      url={https://arxiv.org/abs/2601.22983}, 
+@article{bilot2026pidsmaker,
+  title={PIDSMaker: Building and Evaluating Provenance-based Intrusion Detection Systems},
+  author={Bilot, Tristan and Jiang, Baoxiang and Pasquier, Thomas},
+  journal={arXiv preprint arXiv:2601.22983},
+  year={2026}
 }
 @inproceedings{bilot2025simpler,
 	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
