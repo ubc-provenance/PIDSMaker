@@ -83,65 +83,69 @@ sudo systemctl restart docker
 ## Load databases
 We create two containers: one that runs the postgres database, the other runs the Python env and the pipeline.
 
-1. Set your paths in .env
-    ```sh
-    cd ..
-    cp .env.local .env
-    ```
-    
-    - In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to the folder where all generated files will go (multiple GBs).
-    
-    - Run the following command and set accordingly `HOST_UID`, `HOST_GID` and `USER_NAME` in `.env`.
-        ```sh
-        echo "HOST_UID=$(id -u)" && echo "HOST_GID=$(id -g)" && echo "USER_NAME=$(whoami)"
-        ```
+### 1. Set your paths in .env
 
-    - Then run:
-        ```sh
-        source .env
-        ```
+```sh
+cp .env.local .env
+```
 
-    - Then create the output artifacts folder if it doesn't exist yet and ensure it is owned by your user.
-        ```sh
-        mkdir ${ARTIFACTS_DIR} || chown ${USER_NAME} -R ${ARTIFACTS_DIR}
-        ```
+ In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to a path where all generated files will go (multiple GBs).
 
-2. Build  and start the database container up:
-    ```sh
-    docker compose -p postgres -f compose-postgres.yml up -d --build
-    ```
-    Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
+
+### 2. Build  and start the database container up:
+
+```sh
+docker compose -p postgres -f compose-postgres.yml up -d --build
+```
+Note: each time you modify variables in `.env`, update env variables using `source .env` prior to running `docker compose`.
     
-3. In a terminal, get a shell into this container:
-    ```sh
-    docker compose -p postgres exec postgres bash
-    ```
-4. If you have enough space to uncompress all datasets locally (135 GB), run this script to load all databases:
-    ```sh
-    ./scripts/load_dumps.sh
-    ```
-    If you have limited space and want to load databases one by one, do:
-    ```sh
-    pg_restore -U postgres -h localhost -p 5432 -d DATASET /data/DATASET.dump
-    ```
-    !!! note
-        If you want to parse raw data and create database from scratch, please follow the [guideline](./create-db-from-scratch.md) instead of running the above two commands.
-6. Once databases are loaded, we won't need to touch this container anymore:
-    ```sh
-    exit
-    ```
+### 3. Get a shell into the postgres container
+
+```sh
+docker compose -p postgres exec postgres bash
+```
+
+### 4. Load database dumps
+
+If you have enough space to uncompress all datasets you have downloaded locally in the `data` folder, run this script:
+
+```sh
+./scripts/load_dumps.sh
+```
+
+If you have limited space and want to load databases one by one, do:
+
+```sh
+pg_restore -U postgres -h localhost -p 5432 -d DATASET /data/DATASET.dump
+```
+
+!!! note
+    If you want to parse raw data and create database from scratch, please follow the [guideline](./create-db-from-scratch.md) instead of running the above two commands.
+
+Once databases are loaded, we won't need to touch this container anymore:
+
+```sh
+exit
+```
 
 ## Get into the PIDSMaker container
 
 It is within the `pids` container that coding and experiments take place.
 
-1. For VSCode users, we recommend using the [dev container](https://code.visualstudio.com/docs/devcontainers/create-dev-container) extension to directly open VSCode in the container. To do so, simply install the extension, then ctrl+shift+P and <i>Dev Containers: Open Folder in Container</i>.
+### 1. VSCode Devcontainer approach
 
-2. The other alternative is to load the container manually and open a shell directly in your terminal.
-    ```sh
-    docker compose -f compose-pidsmaker.yml up -d --build
-    docker compose exec pids bash
-    ```
+
+For VSCode users, we recommend using the [dev container](https://code.visualstudio.com/docs/devcontainers/create-dev-container) extension to directly open VSCode in the container. To do so, simply install the extension, then ctrl+shift+P and <i>Dev Containers: Open Folder in Container</i>.
+
+
+### 2. Manual approach
+
+The other alternative is to load the container manually and open a shell directly in your terminal.
+
+```sh
+docker compose -f compose-pidsmaker.yml up -d --build
+docker compose exec pids bash
+```
 
 It's in this container that the python env is installed and where the framework will be used.
 
