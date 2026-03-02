@@ -18,6 +18,8 @@
     &nbsp;|&nbsp;
 	<a href="https://www.arxiv.org/abs/2601.22983">📄 Framework Paper</a>
     &nbsp;|&nbsp;
+    <a href="https://tristanbilot.github.io/public_content/slides_pidsmaker.pdf">🎙️ NDSS PRISM'26 Slides</a>
+	  &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
     &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/">⚙️ Installation</a>
