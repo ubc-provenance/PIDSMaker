@@ -47,9 +47,22 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
 
     # cadets_e5.dump
     curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1Xiq7w0Ofz4jZG2PVFuNqi_i0fm28kRcT?alt=media -o cadets_e5.dump
-    ```
 
-2. Then uncompress the archives (this won't increase space)
+    # trace_e3.dump
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1xZNBbhWQO0xGVBsg6ujdPh9UMUXiUQQd?alt=media -o trace_e3.dump
+    
+    # trace_e5.dump
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/14asyR0arrxLS4uglx8pMiR2OuoQ4emq6?alt=media -o trace_e5.dump.part_aa
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1SOo-McGOJJqQM4I_m7xWRF-PlFN9U7Wf?alt=media -o trace_e5.dump.part_ab
+    cat trace_e5.dump.part_aa trace_e5.dump.part_ab > trace_e5.dump
+
+    # fivedirections_e3.dump
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/17YHqUMbuNwP05iaOaifxvcQc2oC9pJbZ?alt=media -o fivedirections_e3.dump
+
+    # fivedirections_e5.dump
+    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1EkxlbReJgMHW4TwAypPggQBA-RTRVxs4?alt=media -o fivedirections_e5.dump
+
+3. Then uncompress the archives (this won't increase space)
     ```
     tar -xvf optc_and_cadets_theia_clearscope_e3.tar
     tar -xvf theia_clearscope_e5.tar
