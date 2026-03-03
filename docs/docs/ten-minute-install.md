@@ -25,48 +25,32 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
 
 **Steps:**
 
-1. First [download the archive(s)](https://drive.google.com/drive/folders/1hqfz8__zVqb3QzBuOI2SxrW4lLIdYqFr) into a new `data` folder. We provide archives containing multiple datasets if their size is small, or provide the dump directly for larger datasets.
-    On CLI, you can use `curl` with an authorization token (as explained [here](https://stackoverflow.com/a/67550427/10183259)):
+Datasets can be downloaded in two ways.
+
+### Option 1: From the Google drive interface
+
+Go [here](https://drive.google.com/drive/folders/1hqfz8__zVqb3QzBuOI2SxrW4lLIdYqFr) and download the database dumps associated with the datasets you want.
+
+### Option 2: From CLI
+
+On most servers, it is more practical to download from CLI.
+To do so, you must first get a Google API authorization token (as explained [here](https://stackoverflow.com/a/67550427/10183259)):
     
-    - Go to OAuth 2.0 Playground https://developers.google.com/oauthplayground/
-    - In the `Select the Scope` box, paste `https://www.googleapis.com/auth/drive.readonly`
-    - Click `Authorize APIs` and then `Exchange authorization code for tokens`
-    - Copy the **Access token**
-    - Run in terminal
+- First, go to [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)
+- In the `Select the Scope` box, paste `https://www.googleapis.com/auth/drive.readonly`
+- Log into your Google account
+- Click `Authorize APIs` and then `Exchange authorization code for tokens`
+- Copy the **access_token**
     
-    **Note**: Each call to curl downloads only a part of each file. You should call the same command multiple times to download the archvives at 100%
+Then use this script to download the datasets directly from CLI:
 
-    ```sh
-    mkdir data && cd data
-    
-    # optc_and_cadets_theia_clearscope_e3.tar
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1i7CkK20p21aBp3HGw46o-Uy31JpPC_Yx?alt=media -o optc_and_cadets_theia_clearscope_e3.tar
+```sh
+# Example 1: Comma-separated datasets
+./download_datasets.sh cadets_e3,optc_h201,clearscope_e5 YOUR_ACCESS_TOKEN
 
-    # theia_clearscope_e5.tar
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1DfolzEa3PVz_6fGZUNEUm0sBP42LB7_1?alt=media -o theia_clearscope_e5.tar
-
-    # cadets_e5.dump
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1Xiq7w0Ofz4jZG2PVFuNqi_i0fm28kRcT?alt=media -o cadets_e5.dump
-
-    # trace_e3.dump
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1xZNBbhWQO0xGVBsg6ujdPh9UMUXiUQQd?alt=media -o trace_e3.dump
-    
-    # trace_e5.dump
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/14asyR0arrxLS4uglx8pMiR2OuoQ4emq6?alt=media -o trace_e5.dump.part_aa
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1SOo-McGOJJqQM4I_m7xWRF-PlFN9U7Wf?alt=media -o trace_e5.dump.part_ab
-    cat trace_e5.dump.part_aa trace_e5.dump.part_ab > trace_e5.dump
-
-    # fivedirections_e3.dump
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/17YHqUMbuNwP05iaOaifxvcQc2oC9pJbZ?alt=media -o fivedirections_e3.dump
-
-    # fivedirections_e5.dump
-    curl -H "Authorization: Bearer ACCESS_TOKEN" -C - https://www.googleapis.com/drive/v3/files/1EkxlbReJgMHW4TwAypPggQBA-RTRVxs4?alt=media -o fivedirections_e5.dump
-
-3. Then uncompress the archives (this won't increase space)
-    ```
-    tar -xvf optc_and_cadets_theia_clearscope_e3.tar
-    tar -xvf theia_clearscope_e5.tar
-    ```
+# Example 2: All datasets
+./download_datasets.sh all YOUR_ACCESS_TOKEN
+```
 
 Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manually create the databases from the official DARPA TC files.
 
