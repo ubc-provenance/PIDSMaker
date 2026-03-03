@@ -42,7 +42,7 @@ To do so, you must first get a Google API authorization token (as explained [her
 - Click `Authorize APIs` and then `Exchange authorization code for tokens`
 - Copy the **access_token**
     
-Then use this script to download the datasets directly from CLI:
+Then use this script to download the datasets directly from CLI (datasets should be in lowercase):
 
 ```sh
 # Example 1: Comma-separated datasets
@@ -86,7 +86,7 @@ We create two containers: one that runs the postgres database, the other runs th
 cp .env.local .env
 ```
 
- In `.env`, set `INPUT_DIR` to the `data` folder path. Optionally, set `ARTIFACTS_DIR` to a path where all generated files will go (multiple GBs).
+ In `.env`, set `INPUT_DIR` to the `data` folder path (where .dump files are). Optionally, set `ARTIFACTS_DIR` to a path where all generated files will go (multiple GBs).
 
 
 ### 2. Build  and start the database container up:
@@ -113,8 +113,10 @@ If you have enough space to uncompress all datasets you have downloaded locally 
 If you have limited space and want to load databases one by one, do:
 
 ```sh
-pg_restore -U postgres -h localhost -p 5432 -d DATASET /data/DATASET.dump
+pg_restore -U postgres -h localhost -p 5432 -d DATASET_NAME /data/DATASET_NAME.dump
 ```
+
+`DATASET_NAME` is in lowercase (e.g. `cadets_e3`).
 
 !!! note
     If you want to parse raw data and create database from scratch, please follow the [guideline](./create-db-from-scratch.md) instead of running the above two commands.
