@@ -143,7 +143,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
 
         # Deep ensemble mode modifies cfg so that it restarts some tasks
         if method == "deep_ensemble":
-            should_restart = prepare_for_deep_ensemble(cfg, iteration)
+            should_restart, cfg = prepare_for_deep_ensemble(cfg, iteration)
 
         # This updates all task paths if needed
         else:

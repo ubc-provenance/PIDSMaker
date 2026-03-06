@@ -94,7 +94,7 @@ def prepare_for_deep_ensemble(cfg, iteration):
     should_restart = update_task_paths_to_restart(
         cfg, subtask_concat_value=subtask_concat_value
     )
-    return should_restart
+    return should_restart, cfg
 
 # Utils
 def clear_files_from_training(cfg):
