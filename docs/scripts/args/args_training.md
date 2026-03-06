@@ -1,7 +1,7 @@
 <div class="annotate">
 
 <ul>
-    <li class='no-bullet'><span class="key-leaf">use_seed</span>: <span class="value">bool</span></li>
+    <li class='no-bullet'><span class="key-leaf">seed</span>: <span class="value">int</span></li>
     <li class='no-bullet'><span class="key-leaf">deterministic</span>: <span class="value">bool (1)</span></li>
     <li class='no-bullet'><span class="key-leaf">num_epochs</span>: <span class="value">int</span></li>
     <li class='no-bullet'><span class="key-leaf">patience</span>: <span class="value">int</span></li>

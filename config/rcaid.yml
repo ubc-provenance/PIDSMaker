@@ -18,7 +18,7 @@ transformation:
 featurization:
   epochs: 5
   emb_dim: 128
-  use_seed: True
+  seed: 0
   training_split: all
   used_method: doc2vec
   doc2vec:
@@ -40,7 +40,7 @@ batching:
     used_method: none
 training:
   used_method: default
-  use_seed: True
+  seed: 0
   deterministic: False
   num_epochs: 12
   patience: 3

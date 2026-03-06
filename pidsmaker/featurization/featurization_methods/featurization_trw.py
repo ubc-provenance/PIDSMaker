@@ -41,8 +41,7 @@ def train_word2vec(corpus, model_save_path, cfg):
     epochs = cfg.featurization.epochs
     compute_loss = cfg.featurization.temporal_rw.compute_loss
     negative = cfg.featurization.temporal_rw.negative
-    use_seed = cfg.featurization.use_seed
-    SEED = 0
+    SEED = cfg.featurization.seed
 
     model = Word2Vec(
         corpus,

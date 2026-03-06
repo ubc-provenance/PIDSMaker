@@ -23,8 +23,7 @@ def train_fasttext(corpus, cfg):
     min_count = cfg.featurization.fasttext.min_count
     num_workers = cfg.featurization.fasttext.num_workers
     negative = cfg.featurization.fasttext.negative
-    use_seed = cfg.featurization.use_seed
-    SEED = 0
+    SEED = cfg.featurization.seed
 
     use_pretrained_fb_model = cfg.featurization.fasttext.use_pretrained_fb_model
 
