@@ -696,8 +696,8 @@ def log_dataset_stats(datasets):
             log_helper(label, dataset)
 
 
-def set_seed(cfg):
-    seed = cfg.training.seed
+def set_seed(cfg, seed=None):
+    seed = seed or cfg.training.seed
     random.seed(seed)
     np.random.seed(seed)
 

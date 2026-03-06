@@ -43,7 +43,7 @@ def main(cfg):
     Returns:
         float: Best validation score achieved during training
     """
-    set_seed(cfg)
+    set_seed(cfg, seed=cfg.training.seed)
 
     log_start(__file__)
     device = get_device(cfg)
