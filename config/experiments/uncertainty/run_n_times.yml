@@ -7,5 +7,6 @@ experiment:
   used_method: uncertainty
   uncertainty:
     deep_ensemble:
+      method: increasing_seed
       iterations: 5
       restart_from: featurization

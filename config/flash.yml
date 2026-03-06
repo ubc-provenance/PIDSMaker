@@ -18,7 +18,7 @@ featurization:
   epochs: 10 # 300
   training_split: train
   used_method: flash
-  use_seed: True
+  seed: 0
   flash:
     min_count: 1
     workers: 15
@@ -38,7 +38,7 @@ batching:
     used_method: none
 training:
   used_method: default
-  use_seed: True
+  seed: 0
   deterministic: False
   num_epochs: 12
   patience: 3

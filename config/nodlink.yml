@@ -16,7 +16,7 @@ transformation:
 featurization:
   epochs: 100
   emb_dim: 256
-  use_seed: True
+  seed: 0
   training_split: train
   used_method: fasttext
   fasttext:
@@ -42,7 +42,7 @@ batching:
     used_method: none
 training:
   used_method: default
-  use_seed: True
+  seed: 0
   deterministic: False
   num_epochs: 12
   patience: 3

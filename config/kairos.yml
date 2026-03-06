@@ -42,7 +42,7 @@ batching:
     used_method: none
 training:
   used_method: default
-  use_seed: True
+  seed: 0
   deterministic: False
   num_epochs: 12
   patience: 3

@@ -12,7 +12,7 @@ from pidsmaker.utils.utils import set_seed
 
 
 def main(cfg):
-    set_seed(cfg)
+    set_seed(cfg, seed=cfg.featurization.seed)
 
     method = cfg.featurization.used_method.strip()
     if method == "alacarte":
