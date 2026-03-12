@@ -211,8 +211,8 @@ def set_task_paths(cfg, subtask_concat_value=None):
     for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
         restart_values = flatten_arg_values(task_cfg)
-        if task == "construction":  # to restart from beginning if train files are changed
-            restart_values += cfg.dataset.train_files
+        if task == "construction":  # to restart from beginning if train dates are changed
+            restart_values += cfg.dataset.train_dates
             if (
                 cfg._restart_from_scratch
             ):  # to start from a brand new folder, we generate a random id to add to the hash
@@ -716,22 +716,17 @@ def set_task_to_done(task_path: str):
     print(f"Task done: {task_path}\n")
 
 
-def get_days_from_cfg(cfg):
+def get_dates_from_cfg(cfg):
     if cfg._test_mode:
         # Get the day number of the first day in each set
-        days = [
-            int(days[0].split("_")[-1])
-            for days in [cfg.dataset.train_files, cfg.dataset.val_files, cfg.dataset.test_files]
+        dates = [
+            dates[0]
+            for dates in [cfg.dataset.train_dates, cfg.dataset.val_dates, cfg.dataset.test_dates]
         ]
     else:
-        days = list(
-            map(
-                lambda x: int(x.split("_")[1]),
-                [*cfg.dataset.train_files, *cfg.dataset.val_files, *cfg.dataset.test_files],
-            )
-        )
+        dates = cfg.dataset.train_dates + cfg.dataset.val_dates + cfg.dataset.test_dates
 
-    return days
+    return dates
 
 
 def get_uncertainty_methods_to_run(cfg):

@@ -25,7 +25,7 @@ from sklearn.metrics import (
 
 import pidsmaker.utils.labelling as labelling
 from pidsmaker.utils.utils import (
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     get_node_to_path_and_type,
     listdir_sorted,
     log,
@@ -1074,7 +1074,7 @@ def compute_tw_labels(cfg):
     # test_data = load_data_set(cfg, path=cfg.feat_inference._edge_embeds_dir, split="test")
 
     graph_dir = cfg.transformation._graphs_dir
-    test_graphs = get_all_files_from_folders(graph_dir, cfg.dataset.test_files)
+    test_graphs = get_all_graphs_for_dates(graph_dir, cfg.dataset.test_dates)
 
     num_found_event_labels = 0
     tw_to_malicious_nodes = defaultdict(list)
