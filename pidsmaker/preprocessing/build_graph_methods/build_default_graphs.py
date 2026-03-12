@@ -13,7 +13,7 @@ import networkx as nx
 import torch
 
 import pidsmaker.mimicry as mimicry
-from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_days_from_cfg
+from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
 from pidsmaker.utils.dataset_utils import get_rel2id
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
@@ -176,29 +176,6 @@ def compute_and_save_split2nodes(cfg):
     return split2nodes
 
 
-def generate_timestamps(start_time, end_time, interval_minutes):
-    """Generate list of timestamps at fixed intervals between start and end times.
-
-    Args:
-        start_time: Start time string in format "YYYY-MM-DD HH:MM:SS"
-        end_time: End time string in format "YYYY-MM-DD HH:MM:SS"
-        interval_minutes: Minutes between consecutive timestamps
-
-    Returns:
-        list: List of timestamp strings at specified intervals
-    """
-    start = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-    end = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-
-    timestamps = []
-    current_time = start
-    while current_time <= end:
-        timestamps.append(current_time.strftime("%Y-%m-%d %H:%M:%S"))
-        current_time += timedelta(minutes=interval_minutes)
-    timestamps.append(end)
-    return timestamps
-
-
 def gen_edge_fused_tw(indexid2msg, cfg):
     """Generate time-windowed provenance graphs from database events.
 
@@ -242,12 +219,12 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             yield arr[i : i + batch_size]
 
     # In test mode, we ensure to get 1 TW in each set
-    days = get_days_from_cfg(cfg)
+    dates = get_dates_from_cfg(cfg)
 
     log("Building graphs...")
-    for day in days:
-        date_start = cfg.dataset.year_month + "-" + str(day) + " 00:00:00"
-        date_stop = cfg.dataset.year_month + "-" + str(day + 1) + " 00:00:00"
+    for date in dates:
+        date_start = f"{date} 00:00:00"
+        date_stop = f"{(datetime.strptime(date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')} 00:00:00"
 
         timestamps = [date_start, date_stop]
         test_mode_set_done = False
@@ -474,7 +451,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                         if cfg._test_mode and i >= NUM_TEST_EDGES:
                             break
 
-                    date_dir = f"{cfg.construction._graphs_dir}/graph_{day}/"
+                    date_dir = f"{cfg.construction._graphs_dir}/graph_{date}/"
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 

@@ -14,6 +14,7 @@ class GAT(nn.Module):
     Applies attention-based aggregation where each node attends to its neighbors
     with learned attention weights. Supports multi-head attention for richer representations.
     """
+
     def __init__(
         self, in_dim, hid_dim, out_dim, activation, dropout, num_heads, concat, num_layers
     ):

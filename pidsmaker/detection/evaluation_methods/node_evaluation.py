@@ -36,7 +36,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
 )
 from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.utils.utils import (
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     get_node_to_path_and_type,
     listdir_sorted,
     log,
@@ -98,7 +98,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
     # For plotting the scores of seen and unseen nodes
     graph_dir = cfg.transformation._graphs_dir
-    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
+    train_set_paths = get_all_graphs_for_dates(graph_dir, cfg.dataset.train_dates)
 
     train_node_set = set()
     for train_path in train_set_paths:
@@ -169,7 +169,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
 
     # For plotting the scores of seen and unseen nodes
     graph_dir = cfg.transformation._graphs_dir
-    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
+    train_set_paths = get_all_graphs_for_dates(graph_dir, cfg.dataset.train_dates)
 
     train_node_set = set()
     for train_path in train_set_paths:
