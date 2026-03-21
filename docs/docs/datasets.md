@@ -149,15 +149,41 @@ To add a new dataset, define its configuration in `pidsmaker/config/config.py`:
 ```python
 DATASET_DEFAULT_CONFIG = {
     "MY_DATASET": {
+        "raw_dir": "",
         "database": "my_database_name",
-        "num_node_types": 3,
-        "num_edge_types": 10,
-        "train_files": ["graph_1", "graph_2", "graph_3"],
-        "val_files": ["graph_4"],
-        "test_files": ["graph_5", "graph_6"],
+        "database_all_file": "my_database_name",
+        "num_node_types": 3, # Number of node types in the dataset __format__ (i.e., in pidsmaker/utils/dataset_utils.py)
+        "num_edge_types": 10, # Number of edge types in the dataset __format__ (i.e., in pidsmaker/utils/dataset_utils.py)
+        "start_date": "2018-04-02", # Start date (Inclusive)
+        "end_date": "2018-04-14", # End date (Exclusive)
+        "train_dates": [
+            # Dates/graphs used for training (i.e., benign activity)
+            "2018-04-02",
+            "2018-04-03",
+            "2018-04-04",
+            "2018-04-05",
+            "2018-04-07",
+            "2018-04-08",
+            "2018-04-09",
+        ],
+        "val_dates": [
+            # Dates/graphs used for validation/threshold calibration (i.e., benign activity)
+            "2018-04-10"
+        ],
+        "test_dates": [
+            # Dates/graphs used for testing (i.e., contains both benign and attack activity)
+            "2018-04-06",
+            "2018-04-11",
+            "2018-04-12",
+            "2018-04-13"
+        ],
+        "unused_dates": [
+            # Any unused dates/graphs that should be ignored
+             "2018-04-14"
+        ],
         "ground_truth_relative_path": ["MY_DATASET/labels.csv"],
         "attack_to_time_window": [
-            ["MY_DATASET/labels.csv", "2024-01-05 10:00:00", "2024-01-05 12:00:00"],
+            ["MY_DATASET/labels.csv", "2018-04-11 10:00:00", "2018-04-12 12:00:00"],
         ],
     },
 }

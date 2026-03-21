@@ -14,6 +14,7 @@ class SAGE(nn.Module):
     Uses SAGEConv layers with mean aggregation for node embedding generation.
     Suitable for large graphs with neighborhood sampling.
     """
+
     def __init__(self, in_dim, hid_dim, out_dim, activation, dropout, num_layers):
         super().__init__()
         self.activation = activation

@@ -12,6 +12,7 @@ from torch_geometric.nn import GATConv
 
 class _RcaidMLP(nn.Module):
     """Internal MLP for R-Caid aggregation."""
+
     def __init__(self, input_dim, output_dim):
         super(_RcaidMLP, self).__init__()
         self.fc1 = nn.Linear(input_dim, output_dim)
@@ -29,6 +30,7 @@ class RCaidGAT(nn.Module):
     Combines three GAT layers with an MLP that aggregates intermediate and final
     representations for improved node embeddings in causal analysis tasks.
     """
+
     def __init__(self, in_dim, hid_dim, out_dim, dropout, num_heads=4):
         super(RCaidGAT, self).__init__()
         self.gat1 = GATConv(in_dim, hid_dim, heads=num_heads, concat=True)

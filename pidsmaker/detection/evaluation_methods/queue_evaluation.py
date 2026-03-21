@@ -28,7 +28,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     compute_tw_labels,
 )
 from pidsmaker.utils.utils import (
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     listdir_sorted,
     log,
     mean,
@@ -139,7 +139,7 @@ def is_include_key_word(s):
     return flag
 
 
-def cal_set_rel_bak(node_IDF, s1, s2, num_files):
+def cal_set_rel_bak(node_IDF, s1, s2, num_dates):
     """Calculate queue relationship score between two node sets (legacy version).
 
     Counts high-IDF nodes shared between two sets to determine if queues should be merged.
@@ -148,7 +148,7 @@ def cal_set_rel_bak(node_IDF, s1, s2, num_files):
         node_IDF: Dict mapping node labels to IDF scores
         s1: First node set
         s2: Second node set
-        num_files: Total number of files for IDF threshold calculation
+        num_dates: Total number of dates for IDF threshold calculation
 
     Returns:
         int: Count of shared high-IDF nodes (>90th percentile)
@@ -163,17 +163,17 @@ def cal_set_rel_bak(node_IDF, s1, s2, num_files):
             if i in node_IDF.keys():
                 IDF = node_IDF[i]
             else:
-                IDF = math.log(num_files / (1))
+                IDF = math.log(num_dates / (1))
 
             if (IDF) > math.log(
-                num_files * 0.9 / (1)
+                num_dates * 0.9 / (1)
             ):  # TODO: default value for kairos, but can be parametrized
                 log("node:", i, " IDF:", IDF)
                 count += 1
     return count
 
 
-def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_files, num_train_files):
+def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_dates, num_train_dates):
     """Calculate queue relationship score using both train and test IDF scores.
 
     Improved version that considers IDF from both training and test sets for better
@@ -184,8 +184,8 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_files, num_train
         test_node_IDF: Test set IDF scores
         s1: First node set
         s2: Second node set
-        num_test_files: Number of test files
-        num_train_files: Number of training files
+        num_test_dates: Number of test dates
+        num_train_dates: Number of training dates
 
     Returns:
         int: Count of shared high-IDF nodes (combined IDF > 5)
@@ -200,12 +200,12 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_files, num_train
             if i in test_node_IDF:
                 IDF_test = test_node_IDF[i]
             else:
-                IDF_test = math.log(num_test_files / (1))
+                IDF_test = math.log(num_test_dates / (1))
 
             if i in train_node_IDF:
                 IDF_train = train_node_IDF[i]
             else:
-                IDF_train = math.log(num_train_files / (1))
+                IDF_train = math.log(num_train_dates / (1))
 
             if (
                 IDF_test + IDF_train
@@ -258,7 +258,7 @@ def cal_anomaly_loss_kairos(loss_list, edge_list):
 
 
 def anomalous_queue_construction_kairos(
-    test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg
+    test_tw_path, train_node_IDF, test_node_IDF, num_train_dates, num_test_dates, cfg
 ):
     # check if we use val set here
 
@@ -299,12 +299,12 @@ def anomalous_queue_construction_kairos(
                         test_node_IDF,
                         current_tw["nodeset"],
                         his_tw["nodeset"],
-                        num_test_files,
-                        num_train_files,
+                        num_test_dates,
+                        num_train_dates,
                     )
                 else:
                     cal_re = cal_set_rel_bak(
-                        train_node_IDF, current_tw["nodeset"], his_tw["nodeset"], num_train_files
+                        train_node_IDF, current_tw["nodeset"], his_tw["nodeset"], num_train_dates
                     )
                 if cal_re != 0 and current_tw["name"] != his_tw["name"]:
                     hq.append(copy.deepcopy(current_tw))
@@ -336,18 +336,18 @@ def anomalous_queue_construction_kairos(
 def create_queues_kairos(cfg):
     # In kairos, IDF is computed only on benign edges (train set)
     base_dir = cfg.transformation._graphs_dir
-    train_feat_files = get_all_files_from_folders(base_dir, cfg.dataset.train_files)
-    test_feat_files = get_all_files_from_folders(base_dir, cfg.dataset.test_files)
+    train_feat_files = get_all_graphs_for_dates(base_dir, cfg.dataset.train_dates)
+    test_feat_files = get_all_graphs_for_dates(base_dir, cfg.dataset.test_dates)
 
-    train_node_IDF, num_train_files = cal_idf_kairos(train_feat_files)
-    test_node_IDF, num_test_files = cal_idf_kairos(test_feat_files)
+    train_node_IDF, num_train_dates = cal_idf_kairos(train_feat_files)
+    test_node_IDF, num_test_dates = cal_idf_kairos(test_feat_files)
 
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
     for model_epoch_dir in tqdm(listdir_sorted(test_losses_dir), desc="Building queues"):
         log(f"\nEvaluation of model {model_epoch_dir}...")
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         queues = anomalous_queue_construction_kairos(
-            test_tw_path, train_node_IDF, test_node_IDF, num_train_files, num_test_files, cfg
+            test_tw_path, train_node_IDF, test_node_IDF, num_train_dates, num_test_dates, cfg
         )
 
         out_dir = cfg.evaluation.queue_evaluation._queues_dir

@@ -35,9 +35,9 @@ from pidsmaker.experiments.uncertainty import (
     fuse_hyperparameter_metrics,
     max_metrics,
     min_metrics,
+    prepare_for_deep_ensemble,
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
-    prepare_for_deep_ensemble,
 )
 from pidsmaker.tasks import (
     batching,

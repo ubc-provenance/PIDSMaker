@@ -4,7 +4,7 @@ import torch
 from gensim.models.doc2vec import TaggedDocument
 
 from pidsmaker.utils.utils import (
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     get_indexid2msg,
     get_split2nodes,
     log_tqdm,
@@ -63,8 +63,8 @@ def get_corpus_using_neighbors_features(cfg, doc2vec_format=False):
     We need to loop on the graphs here to find neighbors.
     """
     splits = get_splits_to_train_featurization(cfg)
-    days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
-    sorted_paths = get_all_files_from_folders(cfg.transformation._graphs_dir, days)
+    dates = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_dates") for split in splits]))
+    sorted_paths = get_all_graphs_for_dates(cfg.transformation._graphs_dir, dates)
     graph_list = [torch.load(path) for path in sorted_paths]
 
     words = []

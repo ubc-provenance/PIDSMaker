@@ -7,18 +7,18 @@ import torch
 from pidsmaker.utils.utils import (
     gen_darpa_adj_files,
     gen_darpa_rw_file,
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     log,
     log_start,
 )
 
 
-def preprocess_split(split: Literal["train", "val", "test"], split_files: list[str], cfg):
+def preprocess_split(split: Literal["train", "val", "test"], dates: list[str], cfg):
     # Concatenates all files from all folders from this set and flattens in a single list
     base_dir = cfg.transformation._graphs_dir
     num_walks = cfg.featurization.alacarte.num_walks
 
-    sorted_paths = get_all_files_from_folders(base_dir, split_files)
+    sorted_paths = get_all_graphs_for_dates(base_dir, dates)
 
     g = []
     graph_info = open(f"{cfg.featurization.alacarte._random_walk_dir}/graph_info.csv", "w")
@@ -63,6 +63,6 @@ def main(cfg):
     os.makedirs(cfg.featurization.alacarte._random_walk_dir, exist_ok=True)
     os.makedirs(cfg.featurization.alacarte._random_walk_corpus_dir, exist_ok=True)
 
-    preprocess_split(split="train", split_files=cfg.dataset.train_files, cfg=cfg)
-    preprocess_split(split="val", split_files=cfg.dataset.val_files, cfg=cfg)
-    preprocess_split(split="test", split_files=cfg.dataset.test_files, cfg=cfg)
+    preprocess_split(split="train", dates=cfg.dataset.train_dates, cfg=cfg)
+    preprocess_split(split="val", dates=cfg.dataset.val_dates, cfg=cfg)
+    preprocess_split(split="test", dates=cfg.dataset.test_dates, cfg=cfg)

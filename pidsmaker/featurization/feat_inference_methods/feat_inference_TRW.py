@@ -3,7 +3,7 @@ import torch
 from gensim.models import Word2Vec
 
 from pidsmaker.utils.utils import (
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     get_indexid2msg,
     log_start,
     log_tqdm,
@@ -24,8 +24,8 @@ def cal_word_weight(n, percentage):
 def main(cfg):
     log_start(__file__)
     base_dir = cfg.transformation._graphs_dir
-    sorted_paths = get_all_files_from_folders(
-        base_dir, (cfg.dataset.train_files + cfg.dataset.test_files + cfg.dataset.val_files)
+    sorted_paths = get_all_graphs_for_dates(
+        base_dir, cfg.dataset.train_dates + cfg.dataset.test_dates + cfg.dataset.val_dates
     )
     used_nodes = set()
     for file_path in log_tqdm(sorted_paths, desc="Get nodes in graphs"):
