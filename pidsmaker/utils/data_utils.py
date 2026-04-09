@@ -31,7 +31,7 @@ from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
     get_rel2id,
-    possible_events,
+    get_possible_events,
 )
 from pidsmaker.utils.utils import get_multi_datasets, log_dataset_stats, log_tqdm
 
@@ -195,7 +195,7 @@ def extract_msg_from_data(
     expected_msg_len = (emb_dim * 2) + (node_type_dim * 2) + edge_type_dim
     if msg_len != expected_msg_len:
         raise ValueError(
-            f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len}"
+            f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len} (Is your num_edge_types correct?)"
         )
 
     field_to_size = {
@@ -302,10 +302,10 @@ def extract_msg_from_data(
 
     return data_set
 
-
 def get_possible_triplets(cfg):
     entity_map = get_node_map(from_zero=True)
     event_map = get_rel2id(cfg, from_zero=True)
+    possible_events = get_possible_events(cfg)
 
     possible_triplets = [
         [entity_map[src_type], entity_map[dst_type], event_map[event]]
