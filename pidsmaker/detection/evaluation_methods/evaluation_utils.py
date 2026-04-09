@@ -34,6 +34,20 @@ from pidsmaker.utils.utils import (
     std,
 )
 
+# Assign different colors for each attack type
+# Source: Tailwind 4 colors (800 shade)
+attack_colors = {
+    0: "#9f0712",
+    1: "#894b00",
+    2: "#3c6300",
+    3: "#006045",
+    4: "#005f78",
+    5: "#193cb8",
+    6: "#5d0ec0",
+    7: "#8a0194",
+    8: "#a3004c",
+    9: "#1d293d"
+}
 
 def classifier_evaluation(y_test, y_test_pred, scores):
     labels_exist = sum(y_test) > 0
@@ -262,12 +276,6 @@ def plot_scores_with_paths_node_level(
     red = (155 / 255, 44 / 255, 37 / 255)
     green = (62 / 255, 126 / 255, 42 / 255)
 
-    attack_colors = {
-        0: "black",
-        1: "red",
-        2: "blue",
-    }
-
     node2attack = np.array([list(node2attacks.get(node))[0] for node in nodes[y_truth == 1]])
 
     # Plot each type with a different marker for Label 0
@@ -413,12 +421,6 @@ def plot_scores_with_paths_edge_level(
     red = (155 / 255, 44 / 255, 37 / 255)
     green = (62 / 255, 126 / 255, 42 / 255)
 
-    attack_colors = {
-        0: "black",
-        1: "red",
-        2: "blue",
-    }
-
     malicious_elements = [n for y_true, n in zip(y_truth, edges) if y_true == 1]
     node2attack = np.array([list(node2attacks.get(node))[0] for node in malicious_elements])
 
@@ -526,13 +528,6 @@ def plot_scores_neat(scores, y_truth, nodes, node2attacks, out_file, threshold=N
         if label == 0 and (score > 0.9 or (score <= 0.9 and i % 500 == 1))
     ]
     scores_1 = [(score, node) for score, label, node in zip(scores, y_truth, nodes) if label == 1]
-
-    # Assign different colors for each attack type
-    attack_colors = {
-        0: "black",
-        1: "red",
-        2: "blue",
-    }
 
     center_coef = 0.2  # to center the lines/dots
 
