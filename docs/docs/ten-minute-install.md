@@ -21,6 +21,8 @@ Sizes for each database dump are as follow: **compressed** is the raw size of ea
 | `OPTC_H201`     | 2                | 9               |
 | `OPTC_H_501`    | 1.5              | 6.7               |
 | `OPTC_H051`     | 1.7              | 7.7               |
+| `ATLASV2_EDR` | 0.2 | 1 |
+| `CARBANAKV2_EDR` | 1.1 | 6.6 |
 
 
 **Steps:**

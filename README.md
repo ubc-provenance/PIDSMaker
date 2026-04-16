@@ -65,6 +65,8 @@ It also includes several easy-to-install provenance datasets for APT detection.
 | optc_h201 | Windows | 1 | 9 |
 | optc_h501 | Windows | 1 | 6.7 |
 | optc_h051 | Windows | 1 | 7.7 |
+| ATLASV2_EDR | Windows | 10 | 1 |
+| CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
 
 ## 📄 Documentation
 

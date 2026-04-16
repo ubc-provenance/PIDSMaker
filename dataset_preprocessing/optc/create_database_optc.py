@@ -11,7 +11,7 @@ from psycopg2 import extras as ex
 from tqdm import tqdm
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
-from pidsmaker.utils.dataset_utils import OPTC_hostname_map, get_rel2id
+from pidsmaker.utils.dataset_utils import optc_hostname_map, get_rel2id
 from pidsmaker.utils.utils import (
     OPTC_datetime_to_timestamp_US,
     get_all_filelist,
@@ -22,7 +22,7 @@ from pidsmaker.utils.utils import (
 
 
 def save_nodes(cfg, dataset_dir):
-    hostname = OPTC_hostname_map[cfg.dataset.name]
+    hostname = optc_hostname_map[cfg.dataset.name]
     all_paths = get_all_filelist(dataset_dir)
 
     rel2id = get_rel2id(cfg)
@@ -163,7 +163,7 @@ def save_nodes(cfg, dataset_dir):
 
 
 def save_events(cfg, uuid2index_id, dataset_dir):
-    hostname = OPTC_hostname_map[cfg.dataset.name]
+    hostname = optc_hostname_map[cfg.dataset.name]
     all_paths = get_all_filelist(dataset_dir)
 
     rel2id = get_rel2id(cfg)
