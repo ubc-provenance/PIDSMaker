@@ -5,7 +5,7 @@
 <div align="center">
 
 [![Docs](https://img.shields.io/badge/Docs-Online-ed6a2f?style=flat&labelColor=gray)](https://ubc-provenance.github.io/PIDSMaker/)
-[![DOI](https://zenodo.org/badge/962967264.svg)](https://doi.org/10.5281/zenodo.19813646)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19813647.svg)](https://doi.org/10.5281/zenodo.19813646)
 [![License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/releases)
 [![Stars](https://img.shields.io/github/stars/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=white&logo=github&logoColor=black)](https://github.com/ubc-provenance/PIDSMaker/stargazers)
