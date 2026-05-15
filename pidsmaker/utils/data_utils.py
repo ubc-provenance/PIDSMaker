@@ -210,14 +210,15 @@ def extract_msg_from_data(
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
 
+    # Always parse the user-declared feature list first
+    selected_node_feats = list(
+        map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(","))
+    )
+    # only_type / only_ones mean "no learned embedding"; drop only node_emb, keep the rest
     if only_type:
-        selected_node_feats = ["node_type"]
+        selected_node_feats = [f for f in selected_node_feats if f != "node_emb"] or ["node_type"]
     elif only_ones:
-        selected_node_feats = ["only_ones"]
-    else:
-        selected_node_feats = list(
-            map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(","))
-        )
+        selected_node_feats = [f for f in selected_node_feats if f != "node_emb"] or ["only_ones"]
 
     edge_features = list(map(lambda x: x.strip(), cfg.batching.edge_features.split(",")))
     possible_triplets = get_possible_triplets(cfg) if "edge_type_triplet" in edge_features else None

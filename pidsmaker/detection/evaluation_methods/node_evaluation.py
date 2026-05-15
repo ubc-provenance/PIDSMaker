@@ -183,27 +183,32 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         flash_label = 0
         detected_tw = None
         if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-            max_score = 0
-            pred_score = max(losses["threatrace_score"])
+            # Original ThreaTrace (IEEE TIFS'22, Eq 1 + train_darpatc.py):
+            # anomaly  <=>  (ratio < thre)  OR  (predicted_type != ground_truth_type)
+            # i.e. low confidence OR wrong prediction => anomaly.
+            # Track the most "anomalous" (lowest-score) signal across time windows.
+            min_score = float('inf')
+            pred_score = min(losses["threatrace_score"])
 
             for score, node_type_pred, tw in zip(
                 losses["threatrace_score"], losses["correct_pred"], losses["tw"]
             ):
-                if score > thr and node_type_pred and score > max_score:
+                if (score < thr or not node_type_pred) and score < min_score:
                     threatrace_label = 1
-                    max_score = score
+                    min_score = score
                     detected_tw = tw
 
         elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-            max_score = 0
-            pred_score = max(losses["flash_score"])
+            # Same confidence-based logic as threatrace branch.
+            min_score = float('inf')
+            pred_score = min(losses["flash_score"])
 
             for score, node_type_pred, tw in zip(
                 losses["flash_score"], losses["correct_pred"], losses["tw"]
             ):
-                if score > thr and node_type_pred and score > max_score:
+                if (score < thr or not node_type_pred) and score < min_score:
                     flash_label = 1
-                    max_score = score
+                    min_score = score
                     detected_tw = tw
 
         elif cfg.evaluation.node_evaluation.threshold_method == "magic":
