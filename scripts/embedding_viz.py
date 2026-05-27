@@ -1,0 +1,369 @@
+#!/usr/bin/env python3
+"""CLI entry point for interactive 3D embedding visualization.
+
+Usage:
+    python scripts/embedding_viz.py <model> <dataset> [options]
+
+Examples:
+    # Word2Vec raw embeddings (default)
+    python scripts/embedding_viz.py orthrus CADETS_E3
+
+    # GNN encoder embeddings
+    python scripts/embedding_viz.py orthrus CADETS_E3 --embeddings encoder
+
+    # Both views
+    python scripts/embedding_viz.py orthrus CADETS_E3 --embeddings both
+
+    # Custom sampling
+    python scripts/embedding_viz.py orthrus CADETS_E3 --max_benign 10000 --max_attack all
+
+    # t-SNE instead of UMAP
+    python scripts/embedding_viz.py orthrus CADETS_E3 --method tsne
+"""
+
+import argparse
+import os
+import json
+import sys
+import glob
+
+import torch
+import yaml
+
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from pidsmaker.config import get_yml_cfg, get_runtime_required_args
+from pidsmaker.vizgen.embed_exporter import (
+    extract_encoder_embeddings,
+    extract_word2vec_embeddings,
+    smart_sample,
+)
+from pidsmaker.vizgen.dimensionality_reduction import reduce_to_3d
+from pidsmaker.vizgen.html_builder import build_html
+from pidsmaker.utils.utils import get_device, get_node_to_path_and_type, log
+
+
+def load_viz_config():
+    """Load viz_config.yml defaults."""
+    config_path = os.path.join(
+        os.path.dirname(__file__), "..", "config", "viz_config.yml"
+    )
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            return yaml.safe_load(f).get("embedding_viz", {})
+    return {}
+
+
+def _get_artifacts_root():
+    """Return the correct artifacts root for Docker vs Host."""
+    if os.path.exists("/home/artifacts"):
+        return "/home/artifacts"
+    pidsmaker_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return os.environ.get("PIDS_ARTIFACTS_DIR", os.path.join(pidsmaker_root, "artifacts"))
+
+
+def _find_manifests(dataset):
+    """Locate all viz_manifest.json files for a given dataset."""
+    artifacts_root = _get_artifacts_root()
+    manifests = []
+    for base in ("evaluation/evaluation", "detection/evaluation"):
+        pattern = os.path.join(artifacts_root, base, "*", dataset, "viz_manifest.json")
+        manifests.extend(glob.glob(pattern))
+    return manifests
+
+
+def find_models(dataset="CADETS_E3"):
+    """Discover evaluated model epochs for visualization.
+
+    Reads viz_manifest.json (written by set_task_to_done) for exact artifact
+    paths.  Falls back to glob-based discovery if no manifest exists yet.
+    """
+    print(f"Scanning for best models for dataset: {dataset}...")
+    manifests = _find_manifests(dataset)
+
+    if manifests:
+        # Pick the most recently modified manifest
+        manifests.sort(key=os.path.getmtime, reverse=True)
+        manifest_path = manifests[0]
+        print(f"  Using manifest: {manifest_path}")
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+        return _models_from_manifest(manifest)
+
+    # --- Fallback: glob-based discovery (backward compat) ---
+    print("  No viz_manifest.json found — falling back to glob discovery.")
+    return _models_from_glob(dataset)
+
+
+def _models_from_manifest(manifest):
+    """Build a models list from a viz_manifest.json."""
+    models = []
+    for entry in manifest.get("epochs", []):
+        stats_path = entry["stats_path"]
+        if not os.path.exists(stats_path):
+            continue
+        try:
+            stats = torch.load(stats_path, map_location="cpu")
+        except Exception:
+            continue
+
+        adp = stats.get("adp_score", 0)
+        epoch_str = entry["epoch"]
+        
+        model_path = None
+        tm_dir = manifest.get("trained_models_dir")
+        if tm_dir and os.path.exists(tm_dir):
+            mp = os.path.join(tm_dir, f"model_epoch_{epoch_str}")
+            if os.path.exists(mp):
+                model_path = mp
+
+        models.append({
+            "name": f"Epoch_{epoch_str}_ADP_{adp:.3f}",
+            "path": model_path,
+            "adp": adp,
+            "epoch": epoch_str,
+            "stats_path": stats_path,
+            "scores_path": entry.get("scores_path"),
+            "edge_scores_path": entry.get("scores_path"),  # compat alias
+            "edge_losses_dir": manifest.get("edge_losses_dir"),
+            "trained_models_dir": tm_dir,
+            "eval_task_path": manifest.get("eval_task_path"),
+        })
+
+    models.sort(key=lambda x: x["adp"], reverse=True)
+    return models[:6]
+
+
+def _models_from_glob(dataset):
+    """Legacy glob-based model discovery."""
+    artifacts_root = _get_artifacts_root()
+    eval_patterns = [
+        os.path.join(artifacts_root, "detection/evaluation/*", dataset,
+                      "precision_recall_dir/stats_model_epoch_*.*"),
+        os.path.join(artifacts_root, "evaluation/evaluation/*", dataset,
+                      "precision_recall_dir/stats_model_epoch_*.*"),
+    ]
+    models_found = []
+    for pattern in eval_patterns:
+        for f in glob.glob(pattern):
+            if f.endswith(".png"):
+                continue
+            try:
+                s = torch.load(f, map_location="cpu")
+                adp = s.get("adp_score", 0)
+                epoch_str = os.path.basename(f).replace("stats_model_epoch_", "").rsplit(".", 1)[0]
+                models_found.append({
+                    "name": f"Epoch_{epoch_str}_ADP_{adp:.3f}",
+                    "path": None,
+                    "adp": adp,
+                    "epoch": epoch_str,
+                    "stats_path": f,
+                    "edge_scores_path": f.replace("stats_", "scores_"),
+                })
+            except Exception:
+                continue
+
+    models_found.sort(key=lambda x: x["adp"], reverse=True)
+    return models_found[:6]
+
+def get_malicious_node_ids(cfg):
+    """Get ground-truth malicious node IDs."""
+    from pidsmaker.utils.labelling import get_ground_truth
+
+    gt_nids, _, _ = get_ground_truth(cfg)
+    log(f"Ground truth: {len(gt_nids)} malicious nodes")
+    return gt_nids
+
+
+def run_visualization(args, cfg):
+    """Main visualization pipeline."""
+    viz_cfg = load_viz_config()
+
+    # CLI args override config
+    embeddings = args.embeddings or viz_cfg.get("embeddings", "word2vec")
+    method = args.method or viz_cfg.get("method", "umap")
+    max_benign = args.max_benign or viz_cfg.get("max_benign_nodes", "all")
+    max_attack = args.max_attack or viz_cfg.get("max_attack_nodes", "all")
+    default_hops = int(viz_cfg.get("default_hops", 0))
+
+    # Output directory logic — use manifest eval_task_path if available
+    models = find_models(cfg.dataset.name)
+    artifacts_root = _get_artifacts_root()
+
+    eval_task_path = None
+    if models and models[0].get("eval_task_path"):
+        eval_task_path = models[0]["eval_task_path"]
+
+    if eval_task_path:
+        out_dir = os.path.join(eval_task_path, "viz")
+    else:
+        out_dir = os.path.join(artifacts_root, "viz")
+        
+    os.makedirs(out_dir, exist_ok=True)
+    log(f"Saving visualization artifacts to {out_dir}")
+
+    # Get ground truth
+    malicious_ids = get_malicious_node_ids(cfg)
+
+    modes = []
+    if embeddings in ("word2vec", "both"):
+        modes.append({"type": "word2vec", "suffix": "word2vec", "title": f"{cfg.dataset.name} — Word2Vec Raw Embeddings"})
+    if embeddings in ("encoder", "both"):
+        if not models:
+            raise ValueError(f"No trained models found for dataset {cfg.dataset.name}")
+        models_to_run = models if args.all_epochs else [models[0]]
+        for m_info in models_to_run:
+            ep = m_info.get("epoch", "latest")
+            # For the default/latest model, keep the standard suffix for compatibility
+            # unless --all_epochs is passed, in which case we append the epoch.
+            if not args.all_epochs and m_info == models[0]:
+                suffix = "encoder"
+            else:
+                suffix = f"encoder_epoch_{ep}"
+            modes.append({
+                "type": "encoder", 
+                "suffix": suffix, 
+                "title": f"{cfg.dataset.name} — GNN Encoder (Epoch {ep})",
+                "model_info": m_info
+            })
+
+    for job in modes:
+        mode_type = job["type"]
+        log(f"\n{'='*60}")
+        log(f"Running {job['suffix']} embedding extraction...")
+        log(f"{'='*60}")
+
+        if mode_type == "word2vec":
+            result = extract_word2vec_embeddings(cfg, malicious_ids)
+            title = job["title"]
+        else:
+            # Load model and data
+            try:
+                from pidsmaker.tasks.batching import get_preprocessed_graphs
+            except ImportError:
+                from pidsmaker.detection.graph_preprocessing import get_preprocessed_graphs
+            device = get_device(cfg)
+            train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
+
+            from pidsmaker.factory import build_model
+
+            model = build_model(
+                data_sample=train_data[0][0],
+                device=device,
+                cfg=cfg,
+                max_node_num=max_node_num,
+            )
+
+            m_info = job["model_info"]
+            sd_path = m_info['path']
+            if os.path.isdir(sd_path):
+                sd_path = os.path.join(sd_path, "state_dict.pkl")
+            model.load_state_dict(
+                torch.load(sd_path, map_location=device, weights_only=False)
+            )
+            log(f"Loaded model weights from {sd_path}")
+
+            # Parse epoch from sd_path (e.g., model_epoch_10)
+            epoch_str = m_info.get("epoch", "0")
+            detected_nodes = None
+            try:
+                import pandas as pd
+                stats_path = m_info.get("stats_path")
+                scores_path = m_info.get("scores_path") or m_info.get("edge_scores_path")
+
+                if stats_path and os.path.exists(stats_path):
+                    stats = torch.load(stats_path, map_location='cpu')
+                    threshold = stats.get('threshold', 0.0)
+
+                    if scores_path and os.path.exists(scores_path):
+                        df = torch.load(scores_path, map_location='cpu')
+
+                        detected_mask = df['loss'] > threshold
+                        detected_edges = df[detected_mask]
+                        detected_edge_nodes = np.unique(np.concatenate([
+                            detected_edges['srcnode'].values,
+                            detected_edges['dstnode'].values
+                        ]))
+                        detected_nodes = set(np.intersect1d(list(malicious_ids), detected_edge_nodes))
+                        log(f"Evaluation Stats: Threshold={threshold:.3f}. Found {len(detected_nodes)} detected nodes.")
+            except Exception as e:
+                log(f"Warning: Failed to parse evaluation stats for coloring: {e}")
+
+            result = extract_encoder_embeddings(
+                model, test_data, device, malicious_ids, detected_node_ids=detected_nodes
+            )
+            title = job["title"]
+
+        # Sample
+        result = smart_sample(result, max_benign, max_attack)
+
+        # Dimensionality reduction (GPU-accelerated if available)
+        device = get_device(cfg)
+        points = reduce_to_3d(result, method=method, device=device)
+
+        # Node metadata
+        log("Loading node metadata from database...")
+        node_meta = get_node_to_path_and_type(cfg)
+
+        # Define output path
+        suffix = job["suffix"]
+        out_path = os.path.join(
+            out_dir,
+            f"embedding_viz_{cfg.dataset.name}_{suffix}.html",
+        )
+        if hasattr(args, "output") and args.output:
+            out_path = args.output
+
+        # Build HTML
+        log("Building interactive HTML viewer...")
+        html = build_html(
+            points=points,
+            edges=result.edges,
+            node_metadata=node_meta,
+            title=title,
+            default_hops=default_hops,
+            out_path=out_path,
+        )
+
+        with open(out_path, "w") as f:
+            f.write(html)
+
+        log(f"Saved visualization to: {out_path}")
+        log(f"File size: {os.path.getsize(out_path) / (1024*1024):.1f} MB")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Interactive 3D Embedding Visualization")
+    parser.add_argument("model", type=str, help="Model config name (e.g. orthrus, velox)")
+    parser.add_argument("dataset", type=str, help="Dataset name (e.g. CADETS_E3)")
+    parser.add_argument("--embeddings", type=str, choices=["word2vec", "encoder", "both"],
+                        default=None, help="Embedding source (default: from viz_config.yml)")
+    parser.add_argument("--method", type=str, choices=["umap", "tsne"],
+                        default=None, help="DR method (default: from viz_config.yml)")
+    parser.add_argument("--max_benign", type=str, default=None,
+                        help="Max benign nodes or 'all'")
+    parser.add_argument("--max_attack", type=str, default=None,
+                        help="Max attack nodes or 'all'")
+    parser.add_argument("--output", type=str, default=None,
+                        help="Custom output path for the HTML file")
+    parser.add_argument("--all_epochs", action="store_true",
+                        help="Export embeddings for all available training epochs")
+
+    args, unknown = parser.parse_known_args()
+
+    # Build pipeline args for get_yml_cfg (positional: model dataset)
+    sys.argv = [
+        sys.argv[0],
+        args.model,
+        args.dataset,
+    ] + unknown
+
+    pipeline_args, _ = get_runtime_required_args(return_unknown_args=True)
+    cfg = get_yml_cfg(pipeline_args)
+
+    run_visualization(args, cfg)
+
+
+if __name__ == "__main__":
+    main()

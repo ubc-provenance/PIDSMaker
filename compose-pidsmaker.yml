@@ -12,9 +12,14 @@ services:
       DOCKER_PORT: ${DOCKER_PORT:-5432}
       DB_USER: postgres
       DB_PASSWORD: postgres
+      DISPLAY: ${DISPLAY:-:0}
+      QT_X11_NO_MITSHM: 1
+      XAUTHORITY: /root/.Xauthority
     volumes:
       - ./:/home/pids
       - ${ARTIFACTS_DIR:-/home/artifacts}:/home/artifacts
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ~/.Xauthority:/root/.Xauthority:ro
       # - /path/to/raw/data:/data
     stdin_open: true
     tty: true

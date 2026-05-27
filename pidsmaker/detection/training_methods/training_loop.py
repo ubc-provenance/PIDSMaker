@@ -23,9 +23,11 @@ from pidsmaker.factory import (
     optimizer_few_shot_factory,
 )
 from pidsmaker.tasks.batching import get_preprocessed_graphs
+from pidsmaker.utils.data_utils import save_model
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
+import os
 
 
 def main(cfg):
@@ -218,8 +220,9 @@ def main(cfg):
             model.load_state_dict(best_model)
             model.to_device(device)
 
-        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-        # save_model(model, model_path, cfg)
+        gnn_models_dir = cfg.training._trained_models_dir
+        model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+        save_model(model, model_path, cfg)
 
         # Test
         if (epoch + 1) % 2 == 0 or epoch == 0:

@@ -15,8 +15,11 @@ RUN apt update && \
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 ENV PATH=$JAVA_HOME/bin:$PATH
 
-# installing sudo, git, gosu (for privilege dropping in entrypoint)
-RUN apt-get update && apt-get install -y sudo git && \
+# installing sudo, git, gosu (for privilege dropping in entrypoint), and X11/GUI libs
+RUN apt-get update && apt-get install -y sudo git \
+    libgl1-mesa-glx libglib2.0-0 libxcb-xinerama0 libxcb-icccm4 \
+    libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 \
+    libxkbcommon-x11-0 libdbus-1-3 qtwayland5 mesa-utils && \
     set -eux; \
     wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-amd64"; \
     chmod +x /usr/local/bin/gosu; \
@@ -71,7 +74,7 @@ RUN pip install gensim==4.3.1 pytz==2024.1 pandas==2.2.2 yacs==0.1.8
 RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
     pip uninstall -y numpy && pip install numpy==1.26.4
 
-RUN pip install gdown==5.2.0
+RUN pip install gdown==5.2.0 umap-learn==0.5.6 PyQt5 vispy PyOpenGL
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
 
 COPY . .

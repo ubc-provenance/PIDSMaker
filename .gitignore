@@ -187,3 +187,8 @@ postgres_data
 nltk_data
 
 .claude
+scripts/viz_env/
+m2/
+datasets/
+Ground_Truth/orthrus/M2*
+embedding_viz_*.json

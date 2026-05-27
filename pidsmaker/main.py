@@ -184,6 +184,76 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         }
         return metrics, times
 
+    def _run_viz(cfg):
+        """Generate interactive 3-D WebGL embedding visualization and save to artifacts/viz/.
+
+        Automatically runs after every pipeline completion.  Pass ``--force_restart viz``
+        to delete any existing HTML for this (model, dataset) pair and regenerate from
+        scratch regardless of whether a file already exists.
+
+        The output lands at::
+
+            /home/artifacts/viz/embedding_viz_<DATASET>_word2vec.html
+            /home/artifacts/viz/embedding_viz_<DATASET>_encoder.html  (GNN models only)
+
+        Args:
+            cfg: Full pipeline configuration object.
+        """
+        import subprocess
+        import sys
+
+        # Script lives at  pidsmaker/../scripts/embedding_viz.py  inside the repo
+        viz_script = os.environ.get(
+            "PIDS_VIZ_SCRIPT",
+            os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "scripts", "embedding_viz.py")
+            ),
+        )
+
+        model_name = cfg._model  # e.g. "velox", "orthrus"
+        dataset    = cfg.dataset.name
+        viz_dir    = os.path.join(cfg._artifact_dir, "viz")
+        os.makedirs(viz_dir, exist_ok=True)
+
+        # --force_restart viz → delete stale outputs so they are always rebuilt
+        if getattr(cfg, "_force_restart_viz", False):
+            log("[viz] --force_restart viz detected — removing stale HTML files.")
+            for suffix in ("word2vec", "encoder"):
+                stale = os.path.join(viz_dir, f"embedding_viz_{dataset}_{suffix}.html")
+                if os.path.exists(stale):
+                    os.remove(stale)
+                    log(f"[viz] Removed {stale}")
+
+        # Check whether we can skip (both expected files already exist)
+        # word2vec models only produce a word2vec view; GNN models produce both
+        emb_mode = "word2vec" if model_name == "word2vec" else "both"
+        expected_suffixes = ["word2vec"] if emb_mode == "word2vec" else ["word2vec", "encoder"]
+        already_done = all(
+            os.path.exists(os.path.join(viz_dir, f"embedding_viz_{dataset}_{s}.html"))
+            for s in expected_suffixes
+        )
+        if already_done and not getattr(cfg, "_force_restart_viz", False):
+            log(f"[viz] Visualization already up-to-date in {viz_dir}. Skipping. "
+                "(use --force_restart viz to regenerate)")
+            return
+
+        log(f"[viz] Generating interactive WebGL visualization → {viz_dir}")
+        cmd = [
+            sys.executable, "-u", viz_script,
+            model_name, dataset,
+            "--embeddings", emb_mode,
+            "--method", "umap",
+            "--max_benign", "all",
+            "--max_attack", "all",
+            "--all_epochs",
+        ]
+        log(f"[viz] Command: {' '.join(cmd)}")
+        proc = subprocess.run(cmd, check=False)
+        if proc.returncode == 0:
+            log(f"[viz] Done! HTML saved to {viz_dir}")
+        else:
+            log(f"[viz] Script exited with code {proc.returncode}")
+
     def run_pipeline_with_experiments(cfg):
         """Run pipeline with experiment mode handling (standard, uncertainty, or tuning).
 
@@ -201,6 +271,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
             metrics, times = run_pipeline(cfg)
             wandb.log(metrics)
             wandb.log(times)
+            _run_viz(cfg)
 
         elif cfg.experiment.used_method == "uncertainty":
             log("Running pipeline in 'Uncertainty' mode.")

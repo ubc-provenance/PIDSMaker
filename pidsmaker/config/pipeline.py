@@ -41,7 +41,10 @@ def get_default_cfg(args):
     cfg._debug = not args.wandb
     cfg._is_running_mc_dropout = False
 
-    cfg._force_restart = args.force_restart
+    # Split off the special 'viz' keyword so the task validator doesn't choke on it
+    force_restart_parts = [t.strip() for t in args.force_restart.split(",") if t.strip()]
+    cfg._force_restart_viz = "viz" in force_restart_parts
+    cfg._force_restart = ",".join(t for t in force_restart_parts if t != "viz")
     cfg._use_cpu = args.cpu
     cfg._model = args.model
     cfg._tuning_mode = args.tuning_mode
@@ -153,6 +156,12 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--test_mode",
         action="store_true",
         help="Whether to run the framework as in functional tests.",
+    )
+    parser.add_argument(
+        "--use_cached_training",
+        action="store_true",
+        help="If set, automatically picks up the most recent completed training run for the "
+             "same dataset and seeds its done.txt into the current task path, skipping retraining.",
     )
 
     # Script-specific args
@@ -410,6 +419,74 @@ def deep_merge_dicts(target, source):
     return target
 
 
+def seed_cached_training(cfg):
+    """Automatically pick up the most recent completed training run for the same dataset.
+
+    Finds the newest training directory with a done.txt for cfg.dataset.name and seeds
+    the current task path with:
+      - done.txt  (makes the pipeline skip the training step)
+      - edge_losses/ (symlinked so evaluation can read per-edge scores)
+
+    Args:
+        cfg: Configuration object (training._task_path and dataset.name must be set)
+    """
+    import glob
+    import shutil
+
+    dataset = cfg.dataset.name
+    current_path = cfg.training._task_path
+    artifact_dir = cfg._artifact_dir
+
+    # Glob all completed training runs for this dataset
+    pattern = os.path.join(artifact_dir, "training", "training", "*", dataset, "done.txt")
+    candidates = glob.glob(pattern)
+
+    if not candidates:
+        print(f"[use_cached_training] No completed training run found for {dataset}. "
+              "Proceeding with full training.")
+        return
+
+    # Pick the most recently modified one
+    candidates.sort(key=os.path.getmtime, reverse=True)
+    best_done = candidates[0]
+    best_dir = os.path.dirname(best_done)  # …/training/<hash>/<dataset>
+
+    # Skip if it's literally the same directory (nothing to do)
+    if os.path.realpath(best_dir) == os.path.realpath(current_path):
+        print(f"[use_cached_training] Current task path already has a completed run. Skipping seed.")
+        return
+
+    print(f"[use_cached_training] Seeding training cache from:\n  {best_dir}\n  → {current_path}")
+    os.makedirs(current_path, exist_ok=True)
+
+    # Plant done.txt
+    dest_done = os.path.join(current_path, TASK_FINISHED_FILE)
+    if not os.path.exists(dest_done):
+        shutil.copy2(best_done, dest_done)
+        print(f"[use_cached_training] Planted done.txt at {dest_done}")
+
+    # Symlink edge_losses/ (needed by evaluation)
+    src_edge_losses = os.path.join(best_dir, "edge_losses")
+    dst_edge_losses = os.path.join(current_path, "edge_losses")
+    if os.path.isdir(src_edge_losses) and not os.path.exists(dst_edge_losses):
+        os.symlink(src_edge_losses, dst_edge_losses)
+        print(f"[use_cached_training] Symlinked edge_losses from {src_edge_losses}")
+
+    # Symlink trained_models/ if it exists
+    src_models = os.path.join(best_dir, "trained_models")
+    dst_models = os.path.join(current_path, "trained_models")
+    if os.path.isdir(src_models) and not os.path.exists(dst_models):
+        os.symlink(src_models, dst_models)
+        print(f"[use_cached_training] Symlinked trained_models from {src_models}")
+
+    # Symlink magic/ if it exists
+    src_magic = os.path.join(best_dir, "magic")
+    dst_magic = os.path.join(current_path, "magic")
+    if os.path.isdir(src_magic) and not os.path.exists(dst_magic):
+        os.symlink(src_magic, dst_magic)
+        print(f"[use_cached_training] Symlinked magic from {src_magic}")
+
+
 def get_yml_cfg(args):
     # Checks that CLI args are OK
     check_args(args)
@@ -446,6 +523,11 @@ def get_yml_cfg(args):
     # Based on the defined restart args, computes a unique path on disk
     # to store the files of each task
     set_task_paths(cfg)
+
+    # Auto-seed training cache from the most recent completed run for this dataset
+    use_cached = getattr(args, "use_cached_training", False)
+    if use_cached:
+        seed_cached_training(cfg)
 
     # Calculates which subtasks have to be re-executed
     set_subtasks_to_restart(yml_file, cfg)
@@ -629,10 +711,17 @@ def get_subtasks_to_restart_with_dependencies(
         should_restart_with_deps.remove("_end")
 
     # Adds the subtasks to force restart
+    # NOTE: 'viz' is a special keyword handled in main.py, strip it here to avoid ValueError
     if len(force_restart) > 0:
         for subtask in force_restart.split(","):
+            subtask = subtask.strip()
+            if not subtask or subtask == "viz":
+                continue
             if subtask not in TASK_ARGS:
-                raise ValueError(f"Invalid subtask name `{subtask}` given to `--force_restart`.")
+                raise ValueError(
+                    f"Invalid subtask name `{subtask}` given to `--force_restart`. "
+                    f"Valid tasks: {list(TASK_ARGS.keys())} + 'viz'"
+                )
             force_restart_deps = get_dependencies(subtask, dependencies, set())
             if "_end" in force_restart_deps:
                 force_restart_deps.remove("_end")
@@ -708,12 +797,86 @@ def get_darpa_tc_node_feats_from_cfg(cfg):
 
 
 TASK_FINISHED_FILE = "done.txt"
+VIZ_MANIFEST_FILE = "viz_manifest.json"
+
+
+def write_viz_manifest(task_path: str):
+    """Write a viz_manifest.json alongside done.txt in evaluation task paths.
+
+    Records exact file paths so the visualizer never needs to glob or guess
+    file extensions (.pkl vs .pth).  Only fires for evaluation directories.
+    """
+    import json as _json
+
+    pr_dir = os.path.join(task_path, "precision_recall_dir")
+    if not os.path.isdir(pr_dir):
+        return  # Not an evaluation task — nothing to do
+
+    epochs = []
+    for fname in sorted(os.listdir(pr_dir)):
+        if fname.startswith("stats_model_epoch_") and not fname.endswith(".png"):
+            epoch_str = fname.replace("stats_model_epoch_", "").rsplit(".", 1)[0]
+            stats_path = os.path.join(pr_dir, fname)
+            ext = os.path.splitext(fname)[1]  # .pth or .pkl — captured, not guessed
+
+            scores_path = os.path.join(pr_dir, f"scores_model_epoch_{epoch_str}.pkl")
+            result_path = os.path.join(pr_dir, f"result_model_epoch_{epoch_str}{ext}")
+
+            entry = {
+                "epoch": epoch_str,
+                "stats_path": stats_path,
+                "scores_path": scores_path if os.path.exists(scores_path) else None,
+                "result_path": result_path if os.path.exists(result_path) else None,
+            }
+            epochs.append(entry)
+
+    # Resolve training dir (sibling hash structure)
+    # evaluation task_path looks like: <artifacts>/evaluation/evaluation/<hash>/<dataset>
+    # training counterpart:            <artifacts>/training/training/<hash>/<dataset>
+    dataset = os.path.basename(task_path)
+    artifacts_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(task_path))))
+    training_base = os.path.join(artifacts_root, "training", "training")
+
+    edge_losses_dir = None
+    trained_models_dir = None
+    if os.path.isdir(training_base):
+        # Pick the most recent training hash that has this dataset
+        candidates = []
+        for h in os.listdir(training_base):
+            ds_dir = os.path.join(training_base, h, dataset)
+            if os.path.isdir(ds_dir):
+                candidates.append((os.path.getmtime(ds_dir), h, ds_dir))
+        if candidates:
+            candidates.sort(reverse=True)
+            best_train_dir = candidates[0][2]
+            el = os.path.join(best_train_dir, "edge_losses")
+            if os.path.isdir(el):
+                edge_losses_dir = el
+            tm = os.path.join(best_train_dir, "trained_models")
+            if os.path.isdir(tm):
+                trained_models_dir = tm
+
+    manifest = {
+        "eval_task_path": task_path,
+        "dataset": dataset,
+        "edge_losses_dir": edge_losses_dir,
+        "trained_models_dir": trained_models_dir,
+        "epochs": epochs,
+    }
+
+    manifest_path = os.path.join(task_path, VIZ_MANIFEST_FILE)
+    with open(manifest_path, "w") as f:
+        _json.dump(manifest, f, indent=2)
+    print(f"[viz] Wrote {manifest_path}")
 
 
 def set_task_to_done(task_path: str):
     with open(os.path.join(task_path, TASK_FINISHED_FILE), "w") as f:
         f.write("Task done")
     print(f"Task done: {task_path}\n")
+
+    # If this is an evaluation directory, write the viz manifest
+    write_viz_manifest(task_path)
 
 
 def get_dates_from_cfg(cfg):
