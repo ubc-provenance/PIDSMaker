@@ -96,6 +96,7 @@ def main():
             enc_path=enc_path,
             w2v_path=w2v_path,
             current_path=load_path,
+            dataset_name=args.dataset,
         )
         window.showMaximized()
         sys.exit(app.exec_())

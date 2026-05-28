@@ -136,6 +136,11 @@ def load_all_datasets(cfg, device, only_keep=None):
     # Intra graph batching (TGN 1024 batches, last neighbor loader)
     datasets = run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_reindexer)
 
+    # Free full_data memory early to reduce peak RAM usage
+    del full_data
+    import gc
+    gc.collect()
+
     # Reindexing stuff (create node-level attributes)
     datasets = run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg)
 
@@ -492,28 +497,27 @@ def run_global_batching(train_data, val_data, test_data, cfg, device):
     batch_mode = global_batching_cfg.used_method
     bs = global_batching_cfg.global_batching_batch_size
     bs_inference = global_batching_cfg.global_batching_batch_size_inference
+    
+    import gc
+
     if batch_mode != "none":
         if (bs not in [None, 0]) or batch_mode == "unique_edge_types":
-            train_data = [
-                batch_temporal_data(collate_temporal_data(graphs), bs, batch_mode, cfg, device)
-                for graphs in train_data
-            ]
-            val_data = [
-                batch_temporal_data(collate_temporal_data(graphs), bs, batch_mode, cfg, device)
-                for graphs in val_data
-            ]
-            test_data = [
-                batch_temporal_data(collate_temporal_data(graphs), bs, batch_mode, cfg, device)
-                for graphs in test_data
-            ]
+            for i in range(len(train_data)):
+                train_data[i] = batch_temporal_data(collate_temporal_data(train_data[i]), bs, batch_mode, cfg, device)
+                gc.collect()
+            for i in range(len(val_data)):
+                val_data[i] = batch_temporal_data(collate_temporal_data(val_data[i]), bs, batch_mode, cfg, device)
+                gc.collect()
+            for i in range(len(test_data)):
+                test_data[i] = batch_temporal_data(collate_temporal_data(test_data[i]), bs, batch_mode, cfg, device)
+                gc.collect()
 
         elif bs_inference not in [None, 0]:
-            test_data = [
-                batch_temporal_data(
-                    collate_temporal_data(graphs), bs_inference, batch_mode, cfg, device
+            for i in range(len(test_data)):
+                test_data[i] = batch_temporal_data(
+                    collate_temporal_data(test_data[i]), bs_inference, batch_mode, cfg, device
                 )
-                for graphs in test_data
-            ]
+                gc.collect()
 
     return train_data, val_data, test_data
 
@@ -536,6 +540,7 @@ def run_reindexing_preprocessing(datasets, graph_reindexer, device, cfg):
 
 
 def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_reindexer):
+    datasets = list(datasets)
     def standard_intra_batching(dataset, method):
         result = []
         for data_list in dataset:
@@ -563,7 +568,10 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
             continue
 
         elif method in ["edges", "neighbor_sampling"]:
-            datasets = [standard_intra_batching(dataset, method) for dataset in datasets]
+            import gc
+            for i in range(len(datasets)):
+                datasets[i] = standard_intra_batching(datasets[i], method)
+                gc.collect()
 
         elif method == "tgn_last_neighbor":
             tgn_loader_cfg = cfg.batching.intra_graph_batching.tgn_last_neighbor
@@ -694,6 +702,7 @@ def compute_tgn_graphs(
 
 
 def run_inter_graph_batching(datasets, cfg):
+    datasets = list(datasets)
     def inter_batching(dataset, method):
         if method == "none":
             return dataset
@@ -720,7 +729,10 @@ def run_inter_graph_batching(datasets, cfg):
         raise ValueError(f"Invalid inter-graph batching method {method}")
 
     method = cfg.batching.inter_graph_batching.used_method
-    datasets = [inter_batching(dataset, method) for dataset in datasets]
+    import gc
+    for i in range(len(datasets)):
+        datasets[i] = inter_batching(datasets[i], method)
+        gc.collect()
     return datasets
 
 
@@ -881,11 +893,6 @@ def save_model(model, path: str, cfg):
     )
 
     if isinstance(model.encoder, TGNEncoder):
-        torch.save(
-            model.encoder.neighbor_loader,
-            os.path.join(path, "neighbor_loader.pkl"),
-            pickle_protocol=pickle.HIGHEST_PROTOCOL,
-        )
         if cfg.training.encoder.tgn.use_memory or "time_encoding" in cfg.batching.edge_features:
             torch.save(
                 model.encoder.memory,
@@ -901,7 +908,6 @@ def load_model(model, path: str, cfg, map_location=None):
     model.load_state_dict(torch.load(os.path.join(path, "state_dict.pkl")))
 
     if isinstance(model.encoder, TGNEncoder):
-        model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"))
         if cfg.training.encoder.tgn.use_memory or "time_encoding" in cfg.batching.edge_features:
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 

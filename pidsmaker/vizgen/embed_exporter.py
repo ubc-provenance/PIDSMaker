@@ -185,60 +185,58 @@ def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set, dict]:
 
     patterns = [
         os.path.join(artifact_dir,
-                     f"*/evaluation/*/{dataset}/precision_recall_dir/stats_model_epoch_*.pkl"),
+                     f"*/evaluation/*/{dataset}/precision_recall_dir/scores_*.pkl"),
         os.path.join(artifact_dir,
-                     f"evaluation/*/{dataset}/precision_recall_dir/stats_model_epoch_*.pkl"),
+                     f"evaluation/*/{dataset}/precision_recall_dir/scores_*.pkl"),
     ]
-    stats_files: list[str] = []
+    scores_files = []
     for pat in patterns:
-        stats_files.extend(glob.glob(pat))
+        scores_files.extend(glob.glob(pat))
 
-    if not stats_files:
-        log("[embed_exporter] No evaluation stats found — treating all malicious as detected.")
+    if not scores_files:
+        log("[embed_exporter] No evaluation scores found — treating all malicious as detected.")
         return malicious_node_ids, set(), {}
 
-    stats_files.sort(key=os.path.getmtime, reverse=True)
-    stats_path      = stats_files[0]
-    edge_scores_path = stats_path.replace("stats_", "edge_scores_")
+    scores_files.sort(key=os.path.getmtime, reverse=True)
+    scores_path = scores_files[0]
 
     try:
-        import pandas as pd
-        stats     = torch.load(stats_path, map_location="cpu")
-        threshold = stats.get("threshold", 0.0)
-        df        = torch.load(edge_scores_path, map_location="cpu")
+        data = torch.load(scores_path, map_location="cpu")
+        y_preds = data.get("y_preds", [])
+        scores = data.get("pred_scores", [])
+        
+        involved = set()
+        node_anomaly_info = {}
+        
+        if "edges" in data:
+            edges = data["edges"]
+            for i in range(len(y_preds)):
+                u, v = int(edges[i][0]), int(edges[i][1])
+                score = float(scores[i])
+                if y_preds[i]:
+                    involved.add(u)
+                    involved.add(v)
+                
+                if u not in node_anomaly_info or score > node_anomaly_info[u]["score"]:
+                    node_anomaly_info[u] = {"score": score, "edge": f"{u} -> {v}"}
+                if v not in node_anomaly_info or score > node_anomaly_info[v]["score"]:
+                    node_anomaly_info[v] = {"score": score, "edge": f"{u} -> {v}"}
+        elif "nodes" in data:
+            nodes = data["nodes"]
+            for i in range(len(y_preds)):
+                u = int(nodes[i])
+                score = float(scores[i])
+                if y_preds[i]:
+                    involved.add(u)
+                
+                if u not in node_anomaly_info or score > node_anomaly_info[u]["score"]:
+                    node_anomaly_info[u] = {"score": score, "edge": f"Node {u}"}
 
-        above    = df[df["loss"] > threshold]
-        involved = set(
-            np.unique(
-                np.concatenate([above["srcnode"].values, above["dstnode"].values])
-            ).tolist()
-        )
         detected   = malicious_node_ids & involved
         undetected = malicious_node_ids - involved
 
-        # Extract max anomaly score and responsible edge for each node
-        df_src = df[['srcnode', 'dstnode', 'loss']].copy()
-        df_src.rename(columns={'srcnode': 'node', 'dstnode': 'other'}, inplace=True)
-        df_src['is_src'] = True
-        
-        df_dst = df[['dstnode', 'srcnode', 'loss']].copy()
-        df_dst.rename(columns={'dstnode': 'node', 'srcnode': 'other'}, inplace=True)
-        df_dst['is_src'] = False
-        
-        combined = pd.concat([df_src, df_dst])
-        idx_max = combined.groupby('node')['loss'].idxmax()
-        top_edges = combined.loc[idx_max]
-        
-        node_anomaly_info = {}
-        for _, row in top_edges.iterrows():
-            n = int(row['node'])
-            node_anomaly_info[n] = {
-                "score": float(row['loss']),
-                "edge": f"{n} -> {int(row['other'])}" if row['is_src'] else f"{int(row['other'])} -> {n}"
-            }
-
         log(
-            f"[embed_exporter] Detection split (threshold={threshold:.3f}): "
+            f"[embed_exporter] Detection split: "
             f"{len(detected)} detected, {len(undetected)} undetected"
         )
         return detected, undetected, node_anomaly_info

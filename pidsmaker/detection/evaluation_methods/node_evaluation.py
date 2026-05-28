@@ -76,11 +76,11 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file).to_dict(orient="records")
-        for line in df:
-            srcnode = line["srcnode"]
-            dstnode = line["dstnode"]
-            loss = line["loss"]
+        df = pd.read_csv(file)
+        for line in df.itertuples(index=False):
+            srcnode = line.srcnode
+            dstnode = line.dstnode
+            loss = line.loss
 
             # Scores
             node_to_losses[srcnode].append(loss)
@@ -146,22 +146,22 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file).to_dict(orient="records")
-        for line in df:
-            node = line["node"]
-            loss = line["loss"]
+        df = pd.read_csv(file)
+        for line in df.itertuples(index=False):
+            node = line.node
+            loss = line.loss
 
             node_to_values[node]["loss"].append(loss)
             node_to_values[node]["tw"].append(tw)
 
-            if "threatrace_score" in line:
-                node_to_values[node]["threatrace_score"].append(line["threatrace_score"])
-            if "correct_pred" in line:
-                node_to_values[node]["correct_pred"].append(line["correct_pred"])
-            if "flash_score" in line:
-                node_to_values[node]["flash_score"].append(line["flash_score"])
-            if "magic_score" in line:
-                node_to_values[node]["magic_score"].append(line["magic_score"])
+            if hasattr(line, "threatrace_score"):
+                node_to_values[node]["threatrace_score"].append(line.threatrace_score)
+            if hasattr(line, "correct_pred"):
+                node_to_values[node]["correct_pred"].append(line.correct_pred)
+            if hasattr(line, "flash_score"):
+                node_to_values[node]["flash_score"].append(line.flash_score)
+            if hasattr(line, "magic_score"):
+                node_to_values[node]["magic_score"].append(line.magic_score)
 
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss

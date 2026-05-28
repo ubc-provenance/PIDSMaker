@@ -170,18 +170,33 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         Returns:
             tuple: (metrics dict from evaluation, times dict with task execution times)
         """
+        import gc
         tasks = get_task_to_module(cfg).keys()
-        task_results = {task: run_task(task, cfg, method, iteration) for task in tasks}
+        
+        metrics = {}
+        val_score = None
+        times = {}
 
-        metrics = task_results["evaluation"]["return"] or {}
+        for task in tasks:
+            result = run_task(task, cfg, method, iteration)
+            times[f"time_{task}"] = round(result["time"], 2)
+            
+            if task == "evaluation":
+                metrics = result["return"] or {}
+            elif task == "training":
+                val_score = result["return"]
+                
+            # Explicitly delete result and run garbage collection
+            del result
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
         metrics = {
             **metrics,
-            "val_score": task_results["training"]["return"],
+            "val_score": val_score,
         }
 
-        times = {
-            f"time_{task}": round(results["time"], 2) for task, results in task_results.items()
-        }
         return metrics, times
 
     def _run_viz(cfg):
@@ -415,6 +430,9 @@ if __name__ == "__main__":
 
     wandb.finish()
 
-    # If it's a one-time run, we delete the files as we can't leverage them in future
+    # If it's a one-time run, we delete intermediate files as we can't leverage them in future
+    # We must keep training/evaluation/triage because they contain the final results & viz manifests
     if cfg._restart_from_scratch:
-        shutil.rmtree(cfg.construction._task_path, ignore_errors=True)
+        for task in ["construction", "transformation", "featurization", "feat_inference", "batching"]:
+            task_cfg = getattr(cfg, task)
+            shutil.rmtree(task_cfg._task_path, ignore_errors=True)

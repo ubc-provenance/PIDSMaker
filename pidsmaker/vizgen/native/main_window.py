@@ -3,7 +3,7 @@ import colorsys
 import numpy as np
 from collections import defaultdict
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QApplication
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 
 import vispy.scene
 from vispy.scene import visuals
@@ -11,6 +11,25 @@ from vispy.scene import visuals
 from .shaders import TemporalMarkers
 from .ui_components import setup_left_panel, setup_overlays
 from .loader import load_data
+import json
+
+class DataLoaderThread(QThread):
+    dataLoaded = pyqtSignal(object, int, int) # data_tuple, current_hop, ep_num
+
+    def __init__(self, file_path, ep_num, current_hop):
+        super().__init__()
+        self.file_path = file_path
+        self.ep_num = ep_num
+        self.current_hop = current_hop
+
+    def run(self):
+        try:
+            data = load_data(self.file_path)
+            self.dataLoaded.emit(data, self.current_hop, self.ep_num)
+        except Exception as e:
+            print(f"Error loading data: {e}")
+            self.dataLoaded.emit(None, self.current_hop, self.ep_num)
+
 
 class MainWindow(QMainWindow):
     def __init__(
@@ -25,9 +44,12 @@ class MainWindow(QMainWindow):
         enc_path=None,
         w2v_path=None,
         current_path=None,
+        dataset_name="",
     ):
         super().__init__()
         self.setWindowTitle("PIDSMaker Native GPU Visualizer")
+        
+        self.dataset_name = dataset_name
         self.resize(1600, 900)
 
         self.pos_hops = pos_hops
@@ -66,9 +88,7 @@ class MainWindow(QMainWindow):
         self.available_epochs = []
         if self.enc_path:
             viz_dir = os.path.dirname(self.enc_path)
-            ds_name = os.path.basename(self.enc_path).split("_")[
-                2
-            ]  # embedding_viz_{dataset}_...
+            ds_name = os.path.basename(self.enc_path).split("_encoder_")[0].replace("embedding_viz_", "")
             import glob
 
             epoch_files = glob.glob(
@@ -90,12 +110,7 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(0)
         self.setCentralWidget(central_widget)
 
-        self.max_coord = max(
-            np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))
-        )
-        self.center_pos = tuple(
-            np.median(self.pos, axis=0)
-        )
+        self.update_spatial_bounds()
         self.max_tw = int(np.max(self.tw_indices)) if len(self.tw_indices) > 0 else 0
 
         scroll_area = setup_left_panel(self)
@@ -135,14 +150,14 @@ class MainWindow(QMainWindow):
 
         from vispy.visuals.transforms import STTransform
 
-        axis = visuals.XYZAxis(parent=self.view3d.scene)
+        self.axis = visuals.XYZAxis(parent=self.view3d.scene)
         scale_factor = (
             max(np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))) / 3.0
         )
         if scale_factor < 1.0:
             scale_factor = 5.0
 
-        axis.transform = STTransform(
+        self.axis.transform = STTransform(
             scale=(scale_factor, scale_factor, scale_factor), translate=self.center_pos
         )
 
@@ -182,8 +197,25 @@ class MainWindow(QMainWindow):
     def showEvent(self, event):
         super().showEvent(event)
         QTimer.singleShot(50, self.update_overlay_pos)
+        if hasattr(self, "lbl_status") and not self.lbl_status.text():
+            self.lbl_status.hide()
+
+    def show_status(self, msg, timeout=0):
+        if hasattr(self, "lbl_status"):
+            self.lbl_status.setText(msg)
+            self.lbl_status.setVisible(bool(msg))
+            self.overlay_br.adjustSize()
+            self.update_overlay_pos()
+            QApplication.processEvents()
+            
+            if timeout > 0:
+                QTimer.singleShot(timeout, lambda: self.show_status(""))
 
     def toggle_embeddings(self):
+        if getattr(self, "_is_loading", False):
+            print("A load operation is already in progress. Ignoring toggle request.")
+            return
+
         if "word2vec" in self.current_path and self.enc_path:
             self.current_path = self.enc_path
         elif "encoder" in self.current_path and self.w2v_path:
@@ -191,10 +223,14 @@ class MainWindow(QMainWindow):
         else:
             return
 
+        self._is_loading = True
         print(f"Hot-swapping to {os.path.basename(self.current_path)}...")
         self.btn_toggle_emb.setText("Loading Embeddings...")
         self.btn_toggle_emb.setEnabled(False)
-        QApplication.processEvents()
+        basename = os.path.basename(self.current_path)
+        if len(basename) > 30:
+            basename = basename[:12] + "..." + basename[-15:]
+        self.show_status(f"Loading {basename}... Please wait.")
 
         try:
             pos_hops, colors, sizes, metadata, stats, attack_edges = load_data(
@@ -211,8 +247,18 @@ class MainWindow(QMainWindow):
             self.visible_mask = np.ones(len(self.pos), dtype=bool)
             self.precompute_filters()
         finally:
+            self._is_loading = False
             self.btn_toggle_emb.setText("Switch Embedding Space")
             self.btn_toggle_emb.setEnabled(True)
+            self.show_status("Dataset loaded successfully.", timeout=3000)
+            print(f"Finished switching embedding space to {os.path.basename(self.current_path)}.")
+
+            if hasattr(self, "lbl_metrics"):
+                if self.stats.get("adp") is not None:
+                    self.lbl_metrics.setText(f"ADP: {self.stats['adp']:.3f}  |  Disc: {self.stats['disc_score']:.3f}")
+                    self.lbl_metrics.show()
+                else:
+                    self.lbl_metrics.hide()
 
         self.tw_indices = np.array(
             [m.get("tw_idx", 0) for m in self.metadata], dtype=np.float32
@@ -233,13 +279,11 @@ class MainWindow(QMainWindow):
                 next_tw = occurrences[k + 1][0]
                 self.tw_end[idx] = next_tw
 
-        self.max_coord = max(
-            np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))
-        )
-        self.center_pos = tuple(
-            np.median(self.pos, axis=0)
-        )
-        self.reset_camera()
+        self.update_spatial_bounds()
+
+        if hasattr(self, "slider_hops"):
+            self.slider_hops.setMaximum(len(self.pos_hops) - 1)
+            self.slider_hops.setValue(self.current_hop)
 
         if hasattr(self, "lbl_model"):
             self.lbl_model.setText(
@@ -264,29 +308,116 @@ class MainWindow(QMainWindow):
 
         self.update_scatter()
 
-    def on_epoch_scrub(self, idx):
-        ep_num, ef_path = self.available_epochs[idx]
+    def on_epoch_slider_moved(self, idx):
+        ep_num, _ = self.available_epochs[idx]
         self.lbl_epoch.setText(f"Epoch: {ep_num}")
+
+    def on_epoch_scrub(self):
+        if getattr(self, "_is_loading", False):
+            print("Already loading another epoch. Ignoring scrub request.")
+            return
+
+        self._is_loading = True
+        idx = self.slider_epoch.value()
+        ep_num, ef_path = self.available_epochs[idx]
+        self.lbl_epoch.setText(f"Epoch: {ep_num} (Loading...)")
+        basename = os.path.basename(ef_path)
+        if len(basename) > 30:
+            basename = basename[:12] + "..." + basename[-15:]
+        self.show_status(f"Scrubbing to Epoch {ep_num} ({basename})...")
+        if hasattr(self, "slider_epoch"):
+            self.slider_epoch.setEnabled(False)
+
         self.current_path = ef_path
-
         print(f"Scrubbing to Epoch {ep_num}...")
-        import json
-        with open(self.current_path, "r") as f:
-            pts = json.load(f)
+        
+        self.loader_thread = DataLoaderThread(ef_path, ep_num, self.current_hop)
+        self.loader_thread.dataLoaded.connect(self.on_epoch_data_loaded)
+        self.loader_thread.start()
 
-        for i, p in enumerate(pts):
-            self.pos[i] = [p["x"], p["y"], p["z"]]
+    def on_epoch_data_loaded(self, data, current_hop, ep_num):
+        self._is_loading = False
+        if hasattr(self, "slider_epoch"):
+            self.slider_epoch.setEnabled(True)
+            
+        if not data:
+            self.lbl_epoch.setText(f"Epoch: {ep_num} (Error)")
+            self.show_status(f"Failed to load Epoch {ep_num}.", timeout=3000)
+            print(f"Error: Failed to load Epoch {ep_num}.")
+            return
+            
+        pos_hops, colors, sizes, metadata, stats, attack_edges = data
+        self.pos_hops = pos_hops
+        self.colors = colors
+        self.sizes = sizes
+        self.metadata = metadata
+        self.stats = stats
+        self.attack_edges = attack_edges
+
+        self.precompute_filters()
+
+        num_hops = len(pos_hops)
+        
+        self.show_status(f"Epoch {ep_num} loaded successfully.", timeout=3000)
+        print(f"Finished loading Epoch {ep_num} ({num_hops} hops extracted).")
+        
+        self.current_hop = min(current_hop, num_hops - 1)
+        
+        if hasattr(self, "slider_hops"):
+            self.slider_hops.setMaximum(num_hops - 1)
+            self.slider_hops.setValue(self.current_hop)
+            
+        self.pos = self.pos_hops[self.current_hop]
 
         if hasattr(self, "lbl_model"):
             self.lbl_model.setText(f"Model: GNN (Epoch {ep_num})")
             self.overlay_br.adjustSize()
 
-        self.apply_visual_state()
+        if hasattr(self, "lbl_tot"):
+            self.lbl_tot.setText(str(stats["total"]))
+            self.lbl_ben.setText(str(stats["benign"]))
+            self.lbl_mal.setText(str(stats["malicious"]))
+            self.lbl_mal_proc.setText(f"<span style='color: #EF4444;'>{stats['mal_proc']}</span>")
+            self.lbl_mal_net.setText(f"<span style='color: #3B82F6;'>{stats['mal_net']}</span>")
+            self.lbl_mal_file.setText(f"<span style='color: #F59E0B;'>{stats['mal_file']}</span>")
+            
+        if hasattr(self, "lbl_metrics"):
+            if stats.get("adp") is not None:
+                self.lbl_metrics.setText(f"ADP: {stats['adp']:.3f} | Disc: {stats['disc_score']:.3f}")
+            else:
+                self.lbl_metrics.setText("N/A")
+
+        self.tw_indices = np.array(
+            [m.get("tw_idx", 0) for m in self.metadata], dtype=np.float32
+        )
+        self.max_tw = int(np.max(self.tw_indices)) if len(self.tw_indices) > 0 else 0
+        if hasattr(self, "slider_tw"):
+            self.slider_tw.setRange(-100, self.max_tw * 100)
+
+        self.tw_start = self.tw_indices.copy()
+        self.tw_end = np.full(len(self.pos), np.inf, dtype=np.float32)
+        node_tws = defaultdict(list)
+        for i, m in enumerate(self.metadata):
+            node_tws[m.get("node_id")].append((m.get("tw_idx", 0), i))
+
+        for nid, occurrences in node_tws.items():
+            occurrences.sort(key=lambda x: x[0])
+            for k in range(len(occurrences) - 1):
+                idx = occurrences[k][1]
+                next_tw = occurrences[k + 1][0]
+                self.tw_end[idx] = next_tw
+                
+        self.node_tws = node_tws
+
+        self.update_spatial_bounds()
+        self.lbl_epoch.setText(f"Epoch: {ep_num}")
+        self.update_scatter()
 
     def on_hop_scrub(self, val):
         self.current_hop = val
         self.lbl_hops.setText(f"Hops ({val}):")
         self.pos = self.pos_hops[val]
+        self.update_spatial_bounds()
         self.apply_visual_state()
 
     def update_tw_label(self):
@@ -351,7 +482,38 @@ class MainWindow(QMainWindow):
             )
         
         self.view3d.camera = self.camera
+        self.view3d.camera = self.camera
         self.apply_visual_state()
+
+    def update_spatial_bounds(self):
+        self.max_coord = max(
+            np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))
+        ) if len(self.pos) > 0 else 1.0
+        
+        if len(self.pos) > 0:
+            med = np.median(self.pos, axis=0)
+            dist = np.sum((self.pos - med)**2, axis=1)
+            threshold = np.percentile(dist, 99.5)
+            core_pos = self.pos[dist <= threshold] if len(self.pos) > 0 else self.pos
+            if len(core_pos) == 0: core_pos = self.pos
+            self.center_pos = tuple((np.max(core_pos, axis=0) + np.min(core_pos, axis=0)) / 2.0)
+        else:
+            self.center_pos = (0, 0, 0)
+            
+        if hasattr(self, "axis"):
+            scale_factor = (
+                max(np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))) / 3.0
+            ) if len(self.pos) > 0 else 5.0
+            
+            if scale_factor < 1.0:
+                scale_factor = 5.0
+            from vispy.visuals.transforms import STTransform
+            self.axis.transform = STTransform(
+                scale=(scale_factor, scale_factor, scale_factor), translate=self.center_pos
+            )
+            
+        if hasattr(self, "camera"):
+            self.reset_camera()
 
     def update_camera_center(self):
         cx = self.center_pos[0] + (self.slider_pan_x.value() / 100.0) * self.max_coord
@@ -385,8 +547,8 @@ class MainWindow(QMainWindow):
 
     def precompute_filters(self):
         self.benign_mask = np.array([m.get("label", 0) == 0 for m in self.metadata], dtype=bool)
-        self.det_mask = np.array([m.get("label", 0) == 1 and m.get("detection_status", 0) in (0, 1) for m in self.metadata], dtype=bool)
-        self.undet_mask = np.array([m.get("label", 0) == 1 and m.get("detection_status", 0) == 2 for m in self.metadata], dtype=bool)
+        self.det_mask = np.array([m.get("label", 0) != 0 and m.get("detection_status", 0) in (0, 1) for m in self.metadata], dtype=bool)
+        self.undet_mask = np.array([m.get("label", 0) != 0 and m.get("detection_status", 0) == 2 for m in self.metadata], dtype=bool)
         self.search_corpus = [str(m.get("node_id", "")) + " " + m.get("path", "").lower() for m in self.metadata]
 
     def update_scatter(self):
@@ -414,7 +576,11 @@ class MainWindow(QMainWindow):
     def apply_visual_state(self):
         if not self.visible_mask.any():
             self.scatter.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
+            self.scatter.shared_program['a_tw_start'] = np.zeros(1, dtype=np.float32)
+            self.scatter.shared_program['a_tw_end'] = np.zeros(1, dtype=np.float32)
             self.scatter_hl.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
+            self.scatter_hl.shared_program['a_tw_start'] = np.zeros(1, dtype=np.float32)
+            self.scatter_hl.shared_program['a_tw_end'] = np.zeros(1, dtype=np.float32)
             return
 
         display_colors = self.colors.copy()
@@ -591,13 +757,16 @@ class MainWindow(QMainWindow):
         bg_mask = self.visible_mask & (~match_mask)
         
         rebuild = True
-        if hasattr(self, "_last_bg_mask") and hasattr(self, "_last_display_colors"):
-            if np.array_equal(self._last_bg_mask, bg_mask) and np.array_equal(self._last_display_colors, display_colors):
+        if hasattr(self, "_last_bg_mask") and hasattr(self, "_last_display_colors") and hasattr(self, "_last_render_pos"):
+            if (np.array_equal(self._last_bg_mask, bg_mask) and 
+                np.array_equal(self._last_display_colors, display_colors) and
+                np.array_equal(self._last_render_pos, render_pos)):
                 rebuild = False
                 
         if rebuild:
             self._last_bg_mask = bg_mask.copy()
             self._last_display_colors = display_colors.copy()
+            self._last_render_pos = render_pos.copy()
             
             if bg_mask.any():
                 self.scatter.set_data(
@@ -610,6 +779,8 @@ class MainWindow(QMainWindow):
                 self.scatter.shared_program['a_tw_end'] = self.tw_end[bg_mask]
             else:
                 self.scatter.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
+                self.scatter.shared_program['a_tw_start'] = np.zeros(1, dtype=np.float32)
+                self.scatter.shared_program['a_tw_end'] = np.zeros(1, dtype=np.float32)
 
             if match_mask.any():
                 hl_mask = self.visible_mask & match_mask
@@ -623,6 +794,8 @@ class MainWindow(QMainWindow):
                 self.scatter_hl.shared_program['a_tw_end'] = self.tw_end[hl_mask]
             else:
                 self.scatter_hl.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
+                self.scatter_hl.shared_program['a_tw_start'] = np.zeros(1, dtype=np.float32)
+                self.scatter_hl.shared_program['a_tw_end'] = np.zeros(1, dtype=np.float32)
 
         if hasattr(self, "lbl_leg_benign"):
             show_ben = self.chk_benign.isChecked() and (self.stats["benign"] > 0)

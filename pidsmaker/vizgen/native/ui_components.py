@@ -105,13 +105,20 @@ def setup_left_panel(window):
     v_ctrl.addLayout(h_buttons)
 
     if len(window.available_epochs) > 0:
+        current_idx = len(window.available_epochs) - 1
+        for i, (ep_num, ef_path) in enumerate(window.available_epochs):
+            if ef_path == window.current_path:
+                current_idx = i
+                break
+                
         h_epoch = QHBoxLayout()
-        window.lbl_epoch = QLabel(f"Epoch: {window.available_epochs[-1][0]}")
+        window.lbl_epoch = QLabel(f"Epoch: {window.available_epochs[current_idx][0]}")
         h_epoch.addWidget(window.lbl_epoch)
         window.slider_epoch = QSlider(Qt.Horizontal)
         window.slider_epoch.setRange(0, len(window.available_epochs) - 1)
-        window.slider_epoch.setValue(len(window.available_epochs) - 1)
-        window.slider_epoch.valueChanged.connect(window.on_epoch_scrub)
+        window.slider_epoch.setValue(current_idx)
+        window.slider_epoch.valueChanged.connect(window.on_epoch_slider_moved)
+        window.slider_epoch.sliderReleased.connect(window.on_epoch_scrub)
         h_epoch.addWidget(window.slider_epoch)
         v_ctrl.addLayout(h_epoch)
 
@@ -156,6 +163,25 @@ def setup_left_panel(window):
     v_stats.addWidget(desc)
 
     flay = QFormLayout()
+    
+    window.lbl_ds_name = QLabel(getattr(window, 'dataset_name', 'Unknown'))
+    window.lbl_ds_name.setStyleSheet("font-weight: bold; font-size: 13px; color: #60A5FA;")
+    flay.addRow(
+        QLabel("<span style='font-weight:bold; font-size: 13px; color: #60A5FA;'>Dataset:</span>"),
+        window.lbl_ds_name,
+    )
+    
+    window.lbl_metrics_global = QLabel("")
+    window.lbl_metrics_global.setStyleSheet("font-weight: bold; font-size: 12px; color: #10B981;")
+    if window.stats.get("adp") is not None:
+        window.lbl_metrics_global.setText(f"ADP: {window.stats['adp']:.3f} | Disc: {window.stats['disc_score']:.3f}")
+    else:
+        window.lbl_metrics_global.setText("N/A")
+    flay.addRow(
+        QLabel("<span style='font-weight:bold; font-size: 12px; color: #10B981;'>Performance:</span>"),
+        window.lbl_metrics_global,
+    )
+
     window.lbl_tot = QLabel(str(window.stats["total"]))
     window.lbl_tot.setStyleSheet("font-weight: bold; font-size: 14px; color: white;")
     flay.addRow(
@@ -260,6 +286,7 @@ def setup_overlays(window):
 
     window.overlay_br = QFrame(window.canvas3d.native)
     window.overlay_br.setStyleSheet(glass_style)
+    window.overlay_br.setMaximumWidth(300)
     ov_layout = QVBoxLayout(window.overlay_br)
 
     if window.viz_cfg.get("show_stats_overlay", True):
@@ -274,6 +301,9 @@ def setup_overlays(window):
         ov_layout.addWidget(window.lbl_model)
         ov_layout.addWidget(QLabel("Total Nodes: " + str(window.stats["total"])))
 
+        # Use the global reference since we moved it
+        window.lbl_metrics = window.lbl_metrics_global
+
     import os
     if (
         window.enc_path
@@ -284,6 +314,11 @@ def setup_overlays(window):
         window.btn_toggle_emb = QPushButton("Switch Embedding Space")
         window.btn_toggle_emb.clicked.connect(window.toggle_embeddings)
         ov_layout.addWidget(window.btn_toggle_emb)
+
+    window.lbl_status = QLabel("")
+    window.lbl_status.setStyleSheet("color: #60a5fa; font-weight: normal; font-style: italic; font-size: 12px;")
+    window.lbl_status.setWordWrap(True)
+    ov_layout.addWidget(window.lbl_status)
 
     window.overlay_br.adjustSize()
 
@@ -340,7 +375,7 @@ def setup_overlays(window):
     window.slider_tw = QSlider(Qt.Horizontal)
     window.slider_tw.setRange(-100, window.max_tw * 100)
     window.slider_tw.setValue(-100)
-    window.slider_tw.setFixedWidth(400)
+    window.slider_tw.setFixedWidth(250)
     window.slider_tw.valueChanged.connect(window.update_tw_label)
     window.slider_tw.sliderPressed.connect(window.pause_playback)
     window.lbl_tw_val = QLabel("All")

@@ -154,11 +154,11 @@ def calculate_threshold(val_tw_dir, threshold_method):
     loss_list = []
     for file in sorted(filelist):
         f = os.path.join(val_tw_dir, file)
-        df = pd.read_csv(f).to_dict()
+        df = pd.read_csv(f)
         if threshold_method == "magic":
-            loss_list.extend(df["magic_score"].values())
+            loss_list.extend(df["magic_score"].tolist())
         else:
-            loss_list.extend(df["loss"].values())
+            loss_list.extend(df["loss"].tolist())
 
     thr = {
         "max": max(loss_list),

@@ -58,6 +58,25 @@ def main(cfg):
 
     train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
 
+    # Save test_data to a lightweight cache for embedding_viz.py so it doesn't recompute
+    viz_cache_dir = cfg.batching._preprocessed_graphs_dir
+    os.makedirs(viz_cache_dir, exist_ok=True)
+    viz_cache_file = os.path.join(viz_cache_dir, "viz_test_graphs.pkl")
+    if not os.path.exists(viz_cache_file):
+        torch.save((test_data, max_node_num), viz_cache_file)
+    
+    log("Graph data loaded.")
+
+    # Cache graphs to disk so the viz subprocess can load them cheaply
+    # instead of recomputing the entire TGN batching pipeline from scratch
+    if not cfg.batching.save_on_disk:
+        _cache_dir = cfg.batching._preprocessed_graphs_dir
+        _cache_file = os.path.join(_cache_dir, "torch_graphs.pkl")
+        if not os.path.exists(_cache_file):
+            os.makedirs(_cache_dir, exist_ok=True)
+            log("Caching preprocessed graphs to disk for visualization reuse...")
+            torch.save((train_data, val_data, test_data, max_node_num), _cache_file)
+
     model = build_model(
         data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num
     )
@@ -277,6 +296,12 @@ def main(cfg):
             ),
         }
     )
+
+    del train_data
+    del val_data
+    del test_data
+    import gc
+    gc.collect()
 
     return best_val_score
 

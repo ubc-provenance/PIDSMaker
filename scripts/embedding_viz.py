@@ -229,10 +229,13 @@ def run_visualization(args, cfg):
             })
 
     cached_graph_data = None
+    
+    encoder_jobs = [j for j in modes if j["type"] == "encoder"]
+    last_encoder_suffix = encoder_jobs[-1]["suffix"] if encoder_jobs else None
 
     for job in modes:
         mode_type = job["type"]
-        log(f"\n{'='*60}")
+        log(f"{'='*60}", pre_return_line=True)
         log(f"Running {job['suffix']} embedding extraction...")
         log(f"{'='*60}")
 
@@ -242,19 +245,43 @@ def run_visualization(args, cfg):
         else:
             # Load model and data (only once)
             if cached_graph_data is None:
-                try:
-                    from pidsmaker.tasks.batching import get_preprocessed_graphs
-                except ImportError:
-                    from pidsmaker.detection.graph_preprocessing import get_preprocessed_graphs
-                cached_graph_data = get_preprocessed_graphs(cfg)
+                import gc
+
+                # Try loading from disk cache first (saved by training_loop.py)
+                # This avoids recomputing the entire TGN batching pipeline from scratch
+                _cache_dir = cfg.batching._preprocessed_graphs_dir
+                _cache_file = os.path.join(_cache_dir, "torch_graphs.pkl")
+                _viz_cache_file = os.path.join(_cache_dir, "viz_test_graphs.pkl")
+
+                if os.path.exists(_viz_cache_file):
+                    log(f"Loading preprocessed test graphs from viz cache: {_viz_cache_file}")
+                    test_data, max_node_num = torch.load(_viz_cache_file)
+                elif os.path.exists(_cache_file):
+                    log(f"Loading preprocessed graphs from cache: {_cache_file}")
+                    _, _, test_data, max_node_num = torch.load(_cache_file)
+                else:
+                    log("No cached graphs found, recomputing (this may use significant RAM)...")
+                    try:
+                        from pidsmaker.tasks.batching import get_preprocessed_graphs
+                    except ImportError:
+                        from pidsmaker.detection.graph_preprocessing import get_preprocessed_graphs
+                    
+                    tmp_train, tmp_val, test_data, max_node_num = get_preprocessed_graphs(cfg)
+                    del tmp_train
+                    del tmp_val
+                    import gc
+                    gc.collect()
+
+                gc.collect()
+                cached_graph_data = (test_data, max_node_num)
                 
             device = get_device(cfg)
-            train_data, val_data, test_data, max_node_num = cached_graph_data
+            test_data, max_node_num = cached_graph_data
 
             from pidsmaker.factory import build_model
 
             model = build_model(
-                data_sample=train_data[0][0],
+                data_sample=test_data[0][0],
                 device=device,
                 cfg=cfg,
                 max_node_num=max_node_num,
@@ -376,6 +403,20 @@ def run_visualization(args, cfg):
 
         log(f"Saved visualization to: {out_path}")
         log(f"File size: {os.path.getsize(out_path) / (1024*1024):.1f} MB")
+
+        # Free memory at the end of loop iteration
+        del html
+        del points
+        del result
+        del node_meta
+        
+        # Free massive cached graphs if this was the last encoder job
+        if mode_type == "encoder" and job["suffix"] == last_encoder_suffix:
+            if cached_graph_data is not None:
+                del cached_graph_data
+                cached_graph_data = None
+                
+        gc.collect()
 
 
 def main():

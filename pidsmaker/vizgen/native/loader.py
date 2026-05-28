@@ -2,10 +2,29 @@ import os
 import json
 import time
 import numpy as np
+import pickle
 from .constants import get_color
 
 def load_data(path):
-    print(f"Loading {path}...")
+    cache_path = path + ".cache.pkl"
+    if os.path.exists(cache_path) and os.path.getmtime(cache_path) >= os.path.getmtime(path):
+        print(f"Loading cached data from {os.path.basename(cache_path)}...")
+        t0 = time.time()
+        try:
+            with open(cache_path, "rb") as f:
+                data = pickle.load(f)
+            
+            # Invalidate old cache if it doesn't have adp
+            if "adp" not in data[4]:
+                print("Old cache format detected. Regenerating...")
+                raise ValueError("Old cache format")
+                
+            print(f"Loaded from cache in {time.time()-t0:.2f}s")
+            return data
+        except Exception as e:
+            print(f"Cache load failed: {e}. Falling back to JSON parsing...")
+
+    print(f"Loading {os.path.basename(path)}...")
     t0 = time.time()
     with open(path, "r") as f:
         pts = json.load(f)
@@ -16,6 +35,20 @@ def load_data(path):
     colors = np.zeros((len(pts), 4), dtype=np.float32)
     sizes = np.zeros(len(pts), dtype=np.float32)
 
+    adp = None
+    disc_score = None
+    try:
+        ep_str = path.split("_epoch_")[1].split("_")[0]
+        pr_dir = os.path.join(os.path.dirname(os.path.dirname(path)), "precision_recall_dir")
+        stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pkl")
+        if os.path.exists(stats_path):
+            import torch
+            d = torch.load(stats_path, map_location="cpu")
+            adp = d.get("adp", 0.0)
+            disc_score = d.get("discrimination_score", 0.0)
+    except Exception:
+        pass
+
     stats = {
         "total": len(pts),
         "benign": 0,
@@ -23,6 +56,8 @@ def load_data(path):
         "mal_proc": 0,
         "mal_file": 0,
         "mal_net": 0,
+        "adp": adp,
+        "disc_score": disc_score,
     }
 
     for i, p in enumerate(pts):
@@ -70,8 +105,22 @@ def load_data(path):
                         edge_set.add(pair)
         attack_edges = list(edge_set)
         print(f"Extracted {len(attack_edges)} attack graph edges")
+        
+        del adj
+        import gc
+        gc.collect()
 
-    return pos_hops, colors, sizes, pts, stats, attack_edges
+    res = (pos_hops, colors, sizes, pts, stats, attack_edges)
+    
+    try:
+        t1 = time.time()
+        with open(cache_path, "wb") as f:
+            pickle.dump(res, f)
+        print(f"Saved cache to {os.path.basename(cache_path)} in {time.time()-t1:.2f}s")
+    except Exception as e:
+        print(f"Failed to save cache: {e}")
+
+    return res
 
 
 def resolve_latest_viz_dir(dataset):
