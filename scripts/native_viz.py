@@ -34,6 +34,127 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 from vispy.scene import visuals
+from vispy.scene.visuals import create_visual_node
+
+# --- GPU Shader Offloading (100M+ Points) ---
+base_vertex_shader = """
+uniform float u_antialias;
+uniform float u_px_scale;
+uniform bool u_scaling;
+uniform bool u_spherical;
+uniform float u_canvas_size_min;
+uniform float u_canvas_size_max;
+
+attribute vec3 a_position;
+attribute vec4 a_fg_color;
+attribute vec4 a_bg_color;
+attribute float a_edgewidth;
+attribute float a_size;
+attribute float a_symbol;
+
+varying vec4 v_fg_color;
+varying vec4 v_bg_color;
+varying float v_edgewidth;
+varying float v_total_size;
+varying float v_depth_middle;
+varying float v_alias_ratio;
+varying float v_symbol;
+
+float big_float = 1e10;
+
+// --- TEMPORAL UNIFORMS ---
+uniform float u_time;
+attribute float a_tw_start;
+attribute float a_tw_end;
+
+void main (void) {
+    v_fg_color  = a_fg_color;
+    v_bg_color  = a_bg_color;
+    v_symbol = a_symbol + 0.5;
+
+    float current_size = a_size;
+    
+    // --- TEMPORAL GLSL MATH ---
+    if (u_time >= 0.0) {
+        float age = u_time - a_tw_start;
+        // Node hasn't appeared yet, or it has permanently died
+        if (u_time < a_tw_start || u_time >= a_tw_end) {
+            v_bg_color.a = 0.0;
+            v_fg_color.a = 0.0;
+            current_size = 0.0; // Shrink to 0 to skip rasterization completely
+        } else {
+            // Thermal Heatmap (Nodes glow hot when they first appear)
+            float blend = clamp(1.0 - (age / 1.5), 0.0, 1.0);
+            vec3 hot_color = vec3(1.0, 1.0, 0.8);
+            v_bg_color.rgb = mix(v_bg_color.rgb, hot_color, blend);
+            v_fg_color.rgb = mix(v_fg_color.rgb, hot_color, blend);
+            
+            // Age Ghosting (Nodes fade to 0.5 opacity as they get older)
+            float alphas = clamp(1.0 - (age * 0.3), 0.50, 1.0);
+            v_bg_color.a *= alphas;
+            v_fg_color.a *= alphas;
+        }
+    }
+
+    $setup_texcoord();
+
+    vec4 pos = vec4(a_position, 1);
+    vec4 fb_pos = $visual_to_framebuffer(pos);
+    vec4 x;
+    vec4 size_vec;
+
+    if (u_scaling) {
+        pos = $framebuffer_to_scene_or_visual(fb_pos);
+        x = $framebuffer_to_scene_or_visual(fb_pos + vec4(big_float, 0, 0, 0));
+        x = (x - pos);
+        size_vec = $scene_or_visual_to_framebuffer(pos + normalize(x) * current_size);
+        $v_size = size_vec.x / size_vec.w - fb_pos.x / fb_pos.w;
+        v_edgewidth = ($v_size / current_size) * a_edgewidth;
+    }
+    else {
+        $v_size = current_size * u_px_scale;
+        v_edgewidth = a_edgewidth * u_px_scale;
+    }
+
+    float original_size = $v_size;
+    if (u_canvas_size_min >= 0.0) {
+        $v_size = max($v_size, u_canvas_size_min);
+    }
+    if (u_canvas_size_max >= 0.0) {
+        $v_size = min($v_size, u_canvas_size_max);
+    }
+    if ($v_size != original_size) {
+        v_edgewidth = v_edgewidth * ($v_size / original_size);
+        if (u_canvas_size_min >= 0.0) {
+            v_edgewidth = max(v_edgewidth, u_canvas_size_min * 0.5);
+        }
+        v_edgewidth = min(v_edgewidth, $v_size * 0.5);
+    }
+
+    float total_size = $v_size + 4. * (v_edgewidth + 1.5 * u_antialias);
+    v_total_size = total_size;
+
+    vec4 final_fb_pos = $apply_offset(fb_pos, total_size);
+    gl_Position = $framebuffer_to_render(final_fb_pos);
+    gl_PointSize = total_size;
+
+    if (u_spherical == true) {
+        vec4 z = $framebuffer_to_scene_or_visual(fb_pos + vec4(0, 0, big_float, 0));
+        z = (z - pos);
+        vec4 depth_z_vec = $scene_or_visual_to_framebuffer(pos + normalize(z) * current_size / 2);
+        v_depth_middle = depth_z_vec.z / depth_z_vec.w - fb_pos.z / fb_pos.w;
+        v_alias_ratio = total_size / $v_size;
+    }
+}
+"""
+
+class TemporalMarkersVisual(vispy.visuals.MarkersVisual):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._shaders['vertex'] = base_vertex_shader
+        self.shared_program.vert = self._shaders['vertex']
+
+TemporalMarkers = create_visual_node(TemporalMarkersVisual)
 
 # Color Map Definition
 C = {
@@ -422,14 +543,20 @@ class MainWindow(QMainWindow):
         )
         self.view3d.camera = self.camera
 
-        # Fast path background markers
-        self.scatter = visuals.Markers(antialias=0)
+        # Fast path background markers (GPU Shader Offloaded)
+        self.scatter = TemporalMarkers(antialias=0)
         self.scatter.set_data(self.pos, edge_width=0, face_color=self.colors, size=self.sizes)
+        self.scatter.shared_program['a_tw_start'] = self.tw_start
+        self.scatter.shared_program['a_tw_end'] = self.tw_end
+        self.scatter.shared_program['u_time'] = -1.0
         self.view3d.add(self.scatter)
 
         # Fast path highlight markers (drawn on top)
-        self.scatter_hl = visuals.Markers(antialias=0)
+        self.scatter_hl = TemporalMarkers(antialias=0)
         self.scatter_hl.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
+        self.scatter_hl.shared_program['a_tw_start'] = np.array([0.0], dtype=np.float32)
+        self.scatter_hl.shared_program['a_tw_end'] = np.array([np.inf], dtype=np.float32)
+        self.scatter_hl.shared_program['u_time'] = -1.0
         self.view3d.add(self.scatter_hl)
 
         # Trajectory Line
@@ -793,7 +920,7 @@ class MainWindow(QMainWindow):
             if self.slider_tw.value() >= self.slider_tw.maximum():
                 self.slider_tw.setValue(-100)
             self.play_timer.start(100)  # 10 fps
-            self.btn_play.setText("⏸ Pause")
+            self.btn_play.setText("|| Pause")
 
     def pause_playback(self):
         if self.play_timer.isActive():
@@ -999,31 +1126,12 @@ class MainWindow(QMainWindow):
                 pos=np.zeros((2, 3), dtype=np.float32), color=(0, 0, 0, 0)
             )
 
-        # Apply Time Window State-Persistence Model
-        t_val = self.slider_tw.value() / 100.0
-        time_mask = np.ones(len(self.metadata), dtype=bool)
-
-        if t_val >= 0:
-            # Active if it's the MOST RECENT known state for a node up to time t_val
-            time_mask = (self.tw_start <= t_val) & (t_val < self.tw_end)
-
-            # Performance optimization: Only compute thermal heatmap on active points
-            active_idx = np.where(time_mask)[0]
-            if len(active_idx) > 0:
-                # Calculate age (how long since this node was last active)
-                age = t_val - self.tw_start[active_idx]
-
-                # Thermal Heatmap: Actively firing nodes glow Hot Yellow/White and cool down
-                blend_factor = np.clip(1.0 - (age / 1.5), 0.0, 1.0)
-                hot_color = np.array([1.0, 1.0, 0.8], dtype=np.float32)
-                for c_idx in range(3):
-                    display_colors[active_idx, c_idx] = (
-                        display_colors[active_idx, c_idx] * (1.0 - blend_factor)
-                    ) + (hot_color[c_idx] * blend_factor)
-
-                # Ghosting: fade to 0.50
-                alphas = np.clip(1.0 - (age * 0.3), 0.50, 1.0)
-                display_colors[active_idx, 3] *= alphas
+        # --- GPU Shader Offloading (100M+ Points) ---
+        # The timeline animation is handled entirely by the GPU's Vertex Shader.
+        # Python does 0 math. We just send the single u_time float to the VRAM.
+        t_val = self.slider_tw.value() / 100.0 if (hasattr(self, "chk_temporal") and self.chk_temporal.isChecked()) else -1.0
+        self.scatter.shared_program['u_time'] = t_val
+        self.scatter_hl.shared_program['u_time'] = t_val
 
         # --- Attack Graph ---
         if (
@@ -1110,32 +1218,45 @@ class MainWindow(QMainWindow):
                 pos=np.zeros((2, 3), dtype=np.float32), color=(0, 0, 0, 0)
             )
 
-        # Performance: Hide inactive points via alpha instead of array resizing to avoid VBO reallocation
-        display_colors[~time_mask, 3] = 0.0
+        # Draw background nodes
+        bg_mask = self.visible_mask & (~match_mask)
+        
+        # Fast VBO re-upload bypass: Only upload to GPU if colors or mask actually changed
+        rebuild = True
+        if hasattr(self, "_last_bg_mask") and hasattr(self, "_last_display_colors"):
+            if np.array_equal(self._last_bg_mask, bg_mask) and np.array_equal(self._last_display_colors, display_colors):
+                rebuild = False
+                
+        if rebuild:
+            self._last_bg_mask = bg_mask.copy()
+            self._last_display_colors = display_colors.copy()
+            
+            if bg_mask.any():
+                self.scatter.set_data(
+                    render_pos[bg_mask],
+                    edge_width=0,
+                    face_color=display_colors[bg_mask],
+                    size=self.sizes[bg_mask],
+                )
+                # Push temporal attributes for the active subset to GPU VRAM
+                self.scatter.shared_program['a_tw_start'] = self.tw_start[bg_mask]
+                self.scatter.shared_program['a_tw_end'] = self.tw_end[bg_mask]
+            else:
+                self.scatter.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
 
-        # Draw background nodes (fast path uses array sizes now)
-        bg_mask = self.visible_mask & (~match_mask) & time_mask
-        if bg_mask.any():
-            self.scatter.set_data(
-                render_pos[bg_mask],
-                edge_width=0,
-                face_color=display_colors[bg_mask],
-                size=self.sizes[bg_mask],
-            )
-        else:
-            self.scatter.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
-
-        # Draw highlighted nodes on top (fast path: scalar size=12)
-        if (match_mask & time_mask).any():
-            hl_mask = self.visible_mask & match_mask & time_mask
-            self.scatter_hl.set_data(
-                render_pos[hl_mask],
-                edge_width=0,
-                face_color=[1.0, 1.0, 1.0, 1.0],  # Bright white
-                size=12,
-            )
-        else:
-            self.scatter_hl.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
+            # Draw highlighted nodes on top (fast path: scalar size=12)
+            if match_mask.any():
+                hl_mask = self.visible_mask & match_mask
+                self.scatter_hl.set_data(
+                    render_pos[hl_mask],
+                    edge_width=0,
+                    face_color=[1.0, 1.0, 1.0, 1.0],  # Bright white
+                    size=12,
+                )
+                self.scatter_hl.shared_program['a_tw_start'] = self.tw_start[hl_mask]
+                self.scatter_hl.shared_program['a_tw_end'] = self.tw_end[hl_mask]
+            else:
+                self.scatter_hl.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
 
         # Update dynamic legend
         if hasattr(self, "lbl_leg_benign"):
