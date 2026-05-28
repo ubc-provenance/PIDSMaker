@@ -179,8 +179,8 @@ class MainWindow(QMainWindow):
         left_panel.setStyleSheet("""
             #leftPanel { background-color: #111116; border-right: 1px solid #2a2a35; }
             QWidget { color: #e0e0e0; }
-            QGroupBox { font-weight: bold; border: 1px solid #2a2a35; border-radius: 6px; margin-top: 15px; padding-top: 15px; color: #a0a0b0; }
-            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 10px; top: 0px; padding: 0 5px; }
+            QGroupBox { font-weight: bold; border: 1px solid #333344; border-radius: 6px; margin-top: 14px; padding-top: 12px; color: #a0a0b0; }
+            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 12px; top: 6px; padding: 0 4px; background-color: #111116; }
             QLineEdit { background-color: #1a1a24; border: 1px solid #333; border-radius: 4px; padding: 4px; color: white; }
             QPushButton { background-color: #2a2a35; border: 1px solid #444; border-radius: 4px; padding: 5px; font-weight: bold; }
             QPushButton:hover { background-color: #3a3a45; }
@@ -565,6 +565,7 @@ class MainWindow(QMainWindow):
         self.slider_tw.setValue(-100)
         self.slider_tw.setFixedWidth(400)
         self.slider_tw.valueChanged.connect(self.update_tw_label)
+        self.slider_tw.sliderPressed.connect(self.pause_playback)
         self.lbl_tw_val = QLabel("All")
         self.lbl_tw_val.setFixedWidth(40)
         h_tw.addWidget(self.slider_tw)
@@ -791,8 +792,13 @@ class MainWindow(QMainWindow):
         else:
             if self.slider_tw.value() >= self.slider_tw.maximum():
                 self.slider_tw.setValue(-100)
-            self.play_timer.start(50)  # 20 fps
+            self.play_timer.start(100)  # 10 fps
             self.btn_play.setText("⏸ Pause")
+
+    def pause_playback(self):
+        if self.play_timer.isActive():
+            self.play_timer.stop()
+            self.btn_play.setText("▶ Play")
 
     def reset_time(self):
         if self.play_timer.isActive():
@@ -803,8 +809,8 @@ class MainWindow(QMainWindow):
         speed_txt = self.combo_speed.currentText().replace("x", "")
         multiplier = int(speed_txt) if speed_txt.isdigit() else 1
 
-        # Base tick is 5 slider units (0.05 TWs per 50ms = 1 TW per second)
-        v = self.slider_tw.value() + (5 * multiplier)
+        # Base tick is 10 slider units (0.10 TWs per 100ms = 1 TW per second)
+        v = self.slider_tw.value() + (10 * multiplier)
         if v >= self.slider_tw.maximum():
             v = self.slider_tw.maximum()
             self.slider_tw.setValue(v)
@@ -1001,20 +1007,23 @@ class MainWindow(QMainWindow):
             # Active if it's the MOST RECENT known state for a node up to time t_val
             time_mask = (self.tw_start <= t_val) & (t_val < self.tw_end)
 
-            # Calculate age (how long since this node was last active)
-            age = t_val - self.tw_start
+            # Performance optimization: Only compute thermal heatmap on active points
+            active_idx = np.where(time_mask)[0]
+            if len(active_idx) > 0:
+                # Calculate age (how long since this node was last active)
+                age = t_val - self.tw_start[active_idx]
 
-            # Thermal Heatmap: Actively firing nodes glow Hot Yellow/White and cool down
-            blend_factor = np.clip(1.0 - (age / 1.5), 0.0, 1.0)
-            hot_color = np.array([1.0, 1.0, 0.8], dtype=np.float32)
-            for c_idx in range(3):
-                display_colors[:, c_idx] = (
-                    display_colors[:, c_idx] * (1.0 - blend_factor)
-                ) + (hot_color[c_idx] * blend_factor)
+                # Thermal Heatmap: Actively firing nodes glow Hot Yellow/White and cool down
+                blend_factor = np.clip(1.0 - (age / 1.5), 0.0, 1.0)
+                hot_color = np.array([1.0, 1.0, 0.8], dtype=np.float32)
+                for c_idx in range(3):
+                    display_colors[active_idx, c_idx] = (
+                        display_colors[active_idx, c_idx] * (1.0 - blend_factor)
+                    ) + (hot_color[c_idx] * blend_factor)
 
-            # Ghosting: fade to 0.50
-            alphas = np.clip(1.0 - (age * 0.3), 0.50, 1.0)
-            display_colors[:, 3] *= alphas
+                # Ghosting: fade to 0.50
+                alphas = np.clip(1.0 - (age * 0.3), 0.50, 1.0)
+                display_colors[active_idx, 3] *= alphas
 
         # --- Attack Graph ---
         if (
@@ -1100,6 +1109,9 @@ class MainWindow(QMainWindow):
             self.attack_lines.set_data(
                 pos=np.zeros((2, 3), dtype=np.float32), color=(0, 0, 0, 0)
             )
+
+        # Performance: Hide inactive points via alpha instead of array resizing to avoid VBO reallocation
+        display_colors[~time_mask, 3] = 0.0
 
         # Draw background nodes (fast path uses array sizes now)
         bg_mask = self.visible_mask & (~match_mask) & time_mask
