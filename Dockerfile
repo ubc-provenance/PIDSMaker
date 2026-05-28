@@ -75,12 +75,19 @@ RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
     pip uninstall -y numpy && pip install numpy==1.26.4
 
 RUN pip install gdown==5.2.0 umap-learn==0.5.6 PyQt5 vispy PyOpenGL
+RUN pip install cuml-cu11 --extra-index-url https://pypi.nvidia.com
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
+
+ENV LD_LIBRARY_PATH="/opt/conda/envs/pids/lib/python3.9/site-packages/nvidia/cuda_runtime/lib:/opt/conda/envs/pids/lib/python3.9/site-packages/torch/lib:$LD_LIBRARY_PATH"
+
+RUN ln -s /opt/conda/envs/pids/lib/python3.9/site-packages/torch/lib/libcudart*.so* /usr/lib/x86_64-linux-gnu/libcudart.so && \
+    ln -s /opt/conda/envs/pids/lib/python3.9/site-packages/torch/lib/libnvrtc*.so.11.2 /usr/lib/x86_64-linux-gnu/libnvrtc.so.11.2 && \
+    ln -s /opt/conda/envs/pids/lib/python3.9/site-packages/torch/lib/libnvrtc-builtins.so.11.7 /usr/lib/x86_64-linux-gnu/libnvrtc-builtins.so.11.7
 
 COPY . .
 
 # COPY is done by the docker daemon as root, so we need to chown.
-# Only chown the project dir and the user home — not /home/artifacts
+# Only chown the project dir and the user home, not /home/artifacts
 # which is a runtime volume managed by entrypoint.sh.
 RUN chown -R pids:pids /home/pids /home/user
 USER pids

@@ -26,7 +26,7 @@ def _get_plotly_js():
         urllib.request.urlretrieve(
             "https://cdn.plot.ly/plotly-2.27.0.min.js", cache_path
         )
-    with open(cache_path, "r") as f:
+    with open(cache_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -69,35 +69,41 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
     points_file = out_path.replace('.html', '_points.json')
     adj_file = out_path.replace('.html', '_adj.json')
 
+    max_tw = max((p.get("tw_idx", 0) for p in points), default=0)
+
     # Compact serialization: round floats, strip empty fields
     log(f"[html_builder] Serializing {len(points)} points to {os.path.basename(points_file)}...")
     compact_points = []
     for p in points:
         cp = {
             "node_id": p["node_id"],
-            "x": round(p["x"], 3),
-            "y": round(p["y"], 3),
-            "z": round(p["z"], 3),
+            "coords_hops": [[round(c, 3) for c in hop] for hop in p.get("coords_hops", [[0,0,0]])],
             "tw_idx": p["tw_idx"],
             "tw_label": p["tw_label"],
             "label": p["label"],
             "detection_status": p["detection_status"],
+            "anomaly_score": p.get("anomaly_score", 0.0),
+            "top_edge": p.get("top_edge", ""),
             "path": p["path"],
             "type": p["type"],
         }
         if p.get("cmd") and p["cmd"] != p["path"]:
             cp["cmd"] = p["cmd"]
         compact_points.append(cp)
-    with open(points_file, "w") as f:
+    with open(points_file, "w", encoding="utf-8") as f:
         json.dump(compact_points, f, separators=(',', ':'))
     log(f"[html_builder] Points file: {os.path.getsize(points_file) / (1024*1024):.1f} MB")
     
+    # Free memory
+    del compact_points
+    
     log(f"[html_builder] Serializing adjacency list to {os.path.basename(adj_file)}...")
-    with open(adj_file, "w") as f:
-        json.dump({str(k): v for k, v in adj.items()}, f, separators=(',', ':'))
+    with open(adj_file, "w", encoding="utf-8") as f:
+        json.dump(adj, f, separators=(',', ':'))
     log(f"[html_builder] Adj file: {os.path.getsize(adj_file) / (1024*1024):.1f} MB")
     
-    max_tw = max((p.get("tw_idx", 0) for p in points), default=0)
+    # Free memory
+    del adj
 
     log(f"[html_builder] Formatting HTML template...")
     html = _HTML_TEMPLATE.format(

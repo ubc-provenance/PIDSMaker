@@ -40,63 +40,66 @@ def reduce_to_3d(result, method="umap", device=None):
     if not embeddings:
         raise ValueError("No embeddings to reduce.")
 
-    X = np.stack([e.embedding for e in embeddings], axis=0).astype(np.float32)
-    n_samples, n_features = X.shape
-    log(f"[dim_reduction] Reducing {n_samples} embeddings ({n_features}D) via {method}...")
+    num_hops = len(embeddings[0].embedding_hops) if hasattr(embeddings[0], 'embedding_hops') and embeddings[0].embedding_hops else 1
+    coords_3d_hops = []
 
-    # ── Deduplicate identical vectors ─────────────────────────────────────
-    # Many provenance nodes share the exact same Word2Vec embedding (e.g.
-    # 304K nodes with one vector in CADETS_E3).  Running UMAP on 643K
-    # points where only ~20K are unique wastes GPU time and creates dense
-    # blobs that obscure real cluster structure.
-    X_rounded = np.round(X, decimals=6)
-    _, unique_idx, inverse_idx = np.unique(
-        X_rounded, axis=0, return_index=True, return_inverse=True
-    )
-    X_unique = X[unique_idx]
-    n_unique = len(X_unique)
-    log(f"[dim_reduction] Deduplicated: {n_samples} -> {n_unique} unique vectors "
-        f"({n_samples - n_unique} duplicates removed)")
+    for hop_idx in range(num_hops):
+        if num_hops > 1:
+            log(f"--- Running UMAP for Hop {hop_idx}/{num_hops-1} ---")
+            
+        if hasattr(embeddings[0], 'embedding_hops') and embeddings[0].embedding_hops:
+            X = np.stack([e.embedding_hops[hop_idx] for e in embeddings], axis=0).astype(np.float32)
+        else:
+            X = np.stack([e.embedding for e in embeddings], axis=0).astype(np.float32)
+            
+        n_samples, n_features = X.shape
+        if hop_idx == 0:
+            log(f"[dim_reduction] Reducing {n_samples} embeddings ({n_features}D) via {method}...")
 
-    # ── Run DR on unique vectors only ─────────────────────────────────────
-    std = X_unique.std(axis=0)
-    constant_mask = std < 1e-8
-    if constant_mask.all():
-        log("[dim_reduction] WARNING: All features are constant. Using random projection.")
-        np.random.seed(42)
-        coords_unique = np.random.randn(n_unique, 3).astype(np.float32) * 0.01
-    elif constant_mask.any():
-        log(f"[dim_reduction] Dropping {constant_mask.sum()} constant features.")
-        coords_unique = _run_reduction(X_unique[:, ~constant_mask], method, n_unique, device)
-    else:
-        coords_unique = _run_reduction(X_unique, method, n_unique, device)
+        X_rounded = np.round(X, decimals=6)
+        _, unique_idx, inverse_idx = np.unique(
+            X_rounded, axis=0, return_index=True, return_inverse=True
+        )
+        X_unique = X[unique_idx]
+        n_unique = len(X_unique)
+        
+        if hop_idx == 0:
+            log(f"[dim_reduction] Deduplicated: {n_samples} -> {n_unique} unique vectors")
 
-    # ── Map unique UMAP coords back to all original embeddings ────────────
-    coords_3d = coords_unique[inverse_idx]
+        std = X_unique.std(axis=0)
+        constant_mask = std < 1e-8
+        if constant_mask.all():
+            log("[dim_reduction] WARNING: All features are constant. Using random projection.")
+            np.random.seed(42 + hop_idx)
+            coords_unique = np.random.randn(n_unique, 3).astype(np.float32) * 0.01
+        elif constant_mask.any():
+            coords_unique = _run_reduction(X_unique[:, ~constant_mask], method, n_unique, device)
+        else:
+            coords_unique = _run_reduction(X_unique, method, n_unique, device)
 
-    # Add tiny jitter to duplicates so they don't stack on the same pixel
-    np.random.seed(42)
-    jitter_scale = np.std(coords_unique, axis=0) * 0.02  # 2% of spread
-    jitter = np.random.randn(n_samples, 3).astype(np.float32) * jitter_scale
-    coords_3d = coords_3d + jitter
+        coords_3d = coords_unique[inverse_idx]
 
-    # Center the point cloud at (0, 0, 0)
-    coords_3d -= coords_3d.mean(axis=0)
+        np.random.seed(42 + hop_idx)
+        jitter_scale = np.std(coords_unique, axis=0) * 0.02
+        jitter = np.random.randn(n_samples, 3).astype(np.float32) * jitter_scale
+        coords_3d = coords_3d + jitter
+        coords_3d -= coords_3d.mean(axis=0)
+        coords_3d_hops.append(coords_3d)
 
     points = []
     for i, emb in enumerate(embeddings):
         points.append({
             "node_id": int(emb.node_id),
-            "x": float(coords_3d[i, 0]),
-            "y": float(coords_3d[i, 1]),
-            "z": float(coords_3d[i, 2]),
+            "coords_hops": [[float(coords_3d_hops[h][i, 0]), float(coords_3d_hops[h][i, 1]), float(coords_3d_hops[h][i, 2])] for h in range(num_hops)],
             "tw_idx": int(emb.time_window_idx),
             "tw_label": emb.time_window_label,
             "label": int(emb.label),
             "detection_status": int(emb.detection_status),
+            "anomaly_score": float(getattr(emb, 'anomaly_score', 0.0)),
+            "top_edge": getattr(emb, 'top_edge', ""),
         })
 
-    log(f"[dim_reduction] Reduced to {len(points)} 3D points.")
+    log(f"[dim_reduction] Reduced to {len(points)} 3D points across {num_hops} hops.")
     return points
 
 
@@ -125,11 +128,10 @@ def _gpu_knn(X, n_neighbors, device_str):
     knn_indices = np.empty((n, k), dtype=np.int64)
     knn_dists = np.empty((n, k), dtype=np.float32)
     
+    from tqdm import tqdm
+    
     t0 = time.time()
-    for i, start in enumerate(range(0, n, batch_size)):
-        if i % max(1, (n // batch_size) // 10) == 0:
-            pct = int((start / n) * 100)
-            _report_progress(f"GPU kNN: {pct}% complete...")
+    for start in tqdm(range(0, n, batch_size), desc="GPU kNN"):
         end = min(start + batch_size, n)
         # Compute pairwise distances for this batch
         dists = torch.cdist(X_gpu[start:end], X_gpu)  # (batch, n)
@@ -163,7 +165,7 @@ def _run_reduction(X, method, n_samples, device=None):
         # Strategy 1: Try RAPIDS cuML (full GPU UMAP)
         try:
             from cuml.manifold import UMAP as cuUMAP
-            _report_progress("Using RAPIDS cuML GPU UMAP — this should take 2-5 minutes.")
+            _report_progress("Using RAPIDS cuML GPU UMAP")
             t0 = time.time()
             reducer = cuUMAP(
                 n_components=3, n_neighbors=n_neighbors, min_dist=min_dist,
@@ -205,7 +207,7 @@ def _run_reduction(X, method, n_samples, device=None):
                 metric="euclidean", random_state=42,
                 precomputed_knn=(knn_indices, knn_dists, None),
                 n_epochs=200,  # Reduce from 500 default for large data
-                verbose=False,  # Disabled to prevent progress bar pyramid
+                verbose=True,  # Enabled tqdm progress bar
             )
             result = reducer.fit_transform(X)
             _report_progress(f"GPU-hybrid UMAP completed in {time.time()-t0:.1f}s total")
@@ -218,7 +220,7 @@ def _run_reduction(X, method, n_samples, device=None):
             reducer = umap.UMAP(
                 n_components=3, n_neighbors=n_neighbors, min_dist=min_dist,
                 metric="euclidean", random_state=42,
-                verbose=False,
+                verbose=True,
             )
             result = reducer.fit_transform(X)
             _report_progress(f"CPU UMAP completed in {time.time()-t0:.1f}s")

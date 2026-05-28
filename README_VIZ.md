@@ -27,33 +27,41 @@ Required dependencies (automatically installed in the Docker image):
 - **System:** `libgl1-mesa-glx`, `libglib2.0-0`, `libxcb-*`, `libxkbcommon-x11-0`, `libdbus-1-3`, `qtwayland5`
 - **Python:** `PyQt5`, `vispy`, `PyOpenGL`, `umap-learn`
 
-### Host Requirements
+## Quickstart / How to Run
 
-While the code runs in Docker, the GUI window must render on your host machine's display. 
-You **must** configure your host to accept X11 connections from Docker.
-
-On your host terminal (outside of Docker), run this once per session:
+### Step 1: Prepare the Host Environment
+While the code runs in Docker, the GUI window must render on your host machine's display. You **must** configure your host to accept X11 connections. On your host terminal, run this once per session:
 ```bash
 xhost +local:docker
 ```
 *(If you see `qt.qpa.xcb: could not connect to display` errors, it means this step was skipped).*
 
-## Commands
-
-### Run Full Pipeline & Generate Visualization
-Executes the standard pipeline (featurization -> training -> evaluation) and automatically generates the `.json` coordinates at the end:
+### Step 2: Build and Start the Container
+From your host machine, build the image (which installs dependencies like PyTorch and RAPIDS) and start the persistent container:
 ```bash
-docker compose --env-file .env.local -f compose-pidsmaker.yml run pids python pidsmaker/main.py velox CADETS_E3 --restart_from_scratch
+docker compose -f compose-pidsmaker.yml build pids
+docker compose -f compose-pidsmaker.yml up -d
 ```
 
-### Regenerate Visualization Artifacts
-If the model is already trained and you only need to re-run UMAP coordinate generation:
+### Step 3: Enter the Container
+Drop into the running container to execute commands:
 ```bash
-docker compose --env-file .env.local -f compose-pidsmaker.yml run pids python pidsmaker/main.py velox CADETS_E3 --force_restart viz
+docker exec -it pidsmaker-pids-1 bash
 ```
 
-### Launch Interactive GUI
-Starts the native 3D viewer (requires X11 forwarding from the container to your host):
+### Step 4: Run the Pipeline (Inside Container)
+To run the full end-to-end pipeline (featurization -> training -> evaluation -> viz) from scratch:
 ```bash
-docker compose --env-file .env.local -f compose-pidsmaker.yml run pids python scripts/native_viz.py velox CADETS_E3
+python pidsmaker/main.py velox THEIA_E3 --restart_from_scratch
+```
+
+If the model is already trained and you only need to re-run the UMAP coordinate generation:
+```bash
+python pidsmaker/main.py velox THEIA_E3 --force_restart viz
+```
+
+### Step 5: Launch Interactive GUI (Inside Container)
+Starts the native 3D viewer to explore the generated embeddings:
+```bash
+python scripts/native_viz.py velox THEIA_E3
 ```

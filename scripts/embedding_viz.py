@@ -50,7 +50,7 @@ def load_viz_config():
         os.path.dirname(__file__), "..", "config", "viz_config.yml"
     )
     if os.path.exists(config_path):
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             return yaml.safe_load(f).get("embedding_viz", {})
     return {}
 
@@ -87,7 +87,7 @@ def find_models(dataset="CADETS_E3"):
         manifests.sort(key=os.path.getmtime, reverse=True)
         manifest_path = manifests[0]
         print(f"  Using manifest: {manifest_path}")
-        with open(manifest_path, "r") as f:
+        with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
         return _models_from_manifest(manifest)
 
@@ -228,6 +228,8 @@ def run_visualization(args, cfg):
                 "model_info": m_info
             })
 
+    cached_graph_data = None
+
     for job in modes:
         mode_type = job["type"]
         log(f"\n{'='*60}")
@@ -238,13 +240,16 @@ def run_visualization(args, cfg):
             result = extract_word2vec_embeddings(cfg, malicious_ids)
             title = job["title"]
         else:
-            # Load model and data
-            try:
-                from pidsmaker.tasks.batching import get_preprocessed_graphs
-            except ImportError:
-                from pidsmaker.detection.graph_preprocessing import get_preprocessed_graphs
+            # Load model and data (only once)
+            if cached_graph_data is None:
+                try:
+                    from pidsmaker.tasks.batching import get_preprocessed_graphs
+                except ImportError:
+                    from pidsmaker.detection.graph_preprocessing import get_preprocessed_graphs
+                cached_graph_data = get_preprocessed_graphs(cfg)
+                
             device = get_device(cfg)
-            train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
+            train_data, val_data, test_data, max_node_num = cached_graph_data
 
             from pidsmaker.factory import build_model
 
@@ -267,6 +272,7 @@ def run_visualization(args, cfg):
             # Parse epoch from sd_path (e.g., model_epoch_10)
             epoch_str = m_info.get("epoch", "0")
             detected_nodes = None
+            node_anomaly_info = None
             try:
                 import pandas as pd
                 stats_path = m_info.get("stats_path")
@@ -279,19 +285,53 @@ def run_visualization(args, cfg):
                     if scores_path and os.path.exists(scores_path):
                         df = torch.load(scores_path, map_location='cpu')
 
-                        detected_mask = df['loss'] > threshold
+                        if isinstance(df, dict):
+                            df = pd.DataFrame(df)
+
+                        # Handle different naming conventions in evaluation scripts
+                        score_col = 'loss'
+                        if 'loss' not in df.columns:
+                            if 'score' in df.columns:
+                                score_col = 'score'
+                            elif 'anomaly_score' in df.columns:
+                                score_col = 'anomaly_score'
+
+                        detected_mask = df[score_col] > threshold
                         detected_edges = df[detected_mask]
                         detected_edge_nodes = np.unique(np.concatenate([
                             detected_edges['srcnode'].values,
                             detected_edges['dstnode'].values
                         ]))
                         detected_nodes = set(np.intersect1d(list(malicious_ids), detected_edge_nodes))
+                        
+                        df_src = df[['srcnode', 'dstnode', score_col]].copy()
+                        df_src.rename(columns={'srcnode': 'node', 'dstnode': 'other'}, inplace=True)
+                        df_src['is_src'] = True
+                        
+                        df_dst = df[['dstnode', 'srcnode', score_col]].copy()
+                        df_dst.rename(columns={'dstnode': 'node', 'srcnode': 'other'}, inplace=True)
+                        df_dst['is_src'] = False
+                        
+                        combined = pd.concat([df_src, df_dst])
+                        idx_max = combined.groupby('node')[score_col].idxmax()
+                        top_edges = combined.loc[idx_max]
+                        
+                        node_anomaly_info = {}
+                        for _, row in top_edges.iterrows():
+                            n = int(row['node'])
+                            node_anomaly_info[n] = {
+                                "score": float(row[score_col]),
+                                "edge": f"{n} -> {int(row['other'])}" if row['is_src'] else f"{int(row['other'])} -> {n}"
+                            }
+
                         log(f"Evaluation Stats: Threshold={threshold:.3f}. Found {len(detected_nodes)} detected nodes.")
             except Exception as e:
                 log(f"Warning: Failed to parse evaluation stats for coloring: {e}")
 
             result = extract_encoder_embeddings(
-                model, test_data, device, malicious_ids, detected_node_ids=detected_nodes
+                model, test_data, device, malicious_ids, 
+                detected_node_ids=detected_nodes,
+                node_anomaly_info=node_anomaly_info
             )
             title = job["title"]
 
@@ -301,6 +341,11 @@ def run_visualization(args, cfg):
         # Dimensionality reduction (GPU-accelerated if available)
         device = get_device(cfg)
         points = reduce_to_3d(result, method=method, device=device)
+        
+        # Free massive embeddings array immediately
+        result.embeddings = []
+        import gc
+        gc.collect()
 
         # Node metadata
         log("Loading node metadata from database...")
@@ -326,7 +371,7 @@ def run_visualization(args, cfg):
             out_path=out_path,
         )
 
-        with open(out_path, "w") as f:
+        with open(out_path, "w", encoding="utf-8") as f:
             f.write(html)
 
         log(f"Saved visualization to: {out_path}")

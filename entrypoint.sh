@@ -26,8 +26,8 @@ fi
 
 # Ensure the artifacts directory exists and is writable by the container user.
 # This handles both the case where Docker created it as root and the case
-# where it doesn't exist yet on the host.
+# where it doesn't exist yet on the host. We use -R to fix existing subfolders.
 mkdir -p /home/artifacts
-chown "$TARGET_UID:$TARGET_GID" /home/artifacts
+chown -R "$TARGET_UID:$TARGET_GID" /home/artifacts
 
 exec gosu "$CONTAINER_USER" "$@"

@@ -95,7 +95,7 @@ def get_color(p):
 class MainWindow(QMainWindow):
     def __init__(
         self,
-        pos,
+        pos_hops,
         colors,
         sizes,
         metadata,
@@ -110,7 +110,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PIDSMaker Native GPU Visualizer")
         self.resize(1600, 900)
 
-        self.pos = pos
+        self.pos_hops = pos_hops
+        self.current_hop = len(pos_hops) - 1
+        self.pos = self.pos_hops[self.current_hop]
         self.colors = colors
         self.sizes = sizes
         self.metadata = metadata
@@ -120,7 +122,7 @@ class MainWindow(QMainWindow):
         self.w2v_path = w2v_path
         self.current_path = current_path
         self.attack_edges = attack_edges
-        self.visible_mask = np.ones(len(pos), dtype=bool)
+        self.visible_mask = np.ones(len(self.pos), dtype=bool)
         self.precompute_filters()
 
         # Calculate State-Persistence arrays
@@ -212,7 +214,7 @@ class MainWindow(QMainWindow):
             np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))
         )
         self.center_pos = tuple(
-            (np.min(self.pos, axis=0) + np.max(self.pos, axis=0)) / 2.0
+            np.median(self.pos, axis=0)
         )
 
         h_pan_x = QHBoxLayout()
@@ -243,9 +245,12 @@ class MainWindow(QMainWindow):
         v_ctrl.addLayout(h_pan_z)
 
         h_hops = QHBoxLayout()
-        h_hops.addWidget(QLabel("Hops (0):"))
+        self.lbl_hops = QLabel(f"Hops ({self.current_hop}):")
+        h_hops.addWidget(self.lbl_hops)
         self.slider_hops = QSlider(Qt.Horizontal)
-        self.slider_hops.setMaximum(3)
+        self.slider_hops.setMaximum(len(self.pos_hops) - 1)
+        self.slider_hops.setValue(self.current_hop)
+        self.slider_hops.valueChanged.connect(self.on_hop_scrub)
         h_hops.addWidget(self.slider_hops)
         v_ctrl.addLayout(h_hops)
 
@@ -264,7 +269,7 @@ class MainWindow(QMainWindow):
 
         btn_reset_home = QPushButton("Reset Home")
         btn_reset_home.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        btn_reset_home.clicked.connect(self.reset_hops)
+        btn_reset_home.clicked.connect(self.reset_camera)
         h_buttons.addWidget(btn_reset_home)
 
         v_ctrl.addLayout(h_buttons)
@@ -386,6 +391,11 @@ class MainWindow(QMainWindow):
         self.chk_attack.stateChanged.connect(self.apply_visual_state)
         v_overlays.addWidget(self.chk_attack)
 
+        self.chk_heat = QCheckBox("Discrimination Heatmap")
+        self.chk_heat.setChecked(False)
+        self.chk_heat.stateChanged.connect(self.update_scatter)
+        v_overlays.addWidget(self.chk_heat)
+
         left_layout.addWidget(grp_overlays)
 
         # 6. Selected Node Info
@@ -414,7 +424,7 @@ class MainWindow(QMainWindow):
 
         # Fast path background markers
         self.scatter = visuals.Markers(antialias=0)
-        self.scatter.set_data(pos, edge_width=0, face_color=colors, size=self.sizes)
+        self.scatter.set_data(self.pos, edge_width=0, face_color=self.colors, size=self.sizes)
         self.view3d.add(self.scatter)
 
         # Fast path highlight markers (drawn on top)
@@ -674,10 +684,12 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
 
         try:
-            pos, colors, sizes, metadata, stats, attack_edges = load_data(
+            pos_hops, colors, sizes, metadata, stats, attack_edges = load_data(
                 self.current_path
             )
-            self.pos = pos
+            self.pos_hops = pos_hops
+            self.current_hop = len(pos_hops) - 1
+            self.pos = self.pos_hops[self.current_hop]
             self.colors = colors
             self.sizes = sizes
             self.metadata = metadata
@@ -713,7 +725,7 @@ class MainWindow(QMainWindow):
             np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))
         )
         self.center_pos = tuple(
-            (np.min(self.pos, axis=0) + np.max(self.pos, axis=0)) / 2.0
+            np.median(self.pos, axis=0)
         )
         self.reset_camera()
 
@@ -756,6 +768,12 @@ class MainWindow(QMainWindow):
             self.lbl_model.setText(f"Model: GNN (Epoch {ep_num})")
             self.overlay_br.adjustSize()
 
+        self.apply_visual_state()
+
+    def on_hop_scrub(self, val):
+        self.current_hop = val
+        self.lbl_hops.setText(f"Hops ({val}):")
+        self.pos = self.pos_hops[val]
         self.apply_visual_state()
 
     def update_tw_label(self):
@@ -884,6 +902,16 @@ class MainWindow(QMainWindow):
             return
 
         display_colors = self.colors.copy()
+        
+        if hasattr(self, "chk_heat") and self.chk_heat.isChecked():
+            from vispy.color import Colormap
+            cm = Colormap(['#0d0887', '#6a00a8', '#b12a90', '#e16462', '#fca636', '#f0f921'])
+            scores = np.array([m.get("anomaly_score", 0.0) for m in self.metadata])
+            max_score = np.max(scores) if len(scores) > 0 and np.max(scores) > 0 else 1.0
+            norm_scores = np.clip(scores / max_score, 0, 1)
+            heatmap_colors = cm.map(norm_scores)
+            heatmap_colors[:, 3] = display_colors[:, 3]
+            display_colors[self.benign_mask] = heatmap_colors[self.benign_mask]
 
         render_pos = self.pos.copy()
         if hasattr(self, "chk_temporal") and not self.chk_temporal.isChecked():
@@ -1170,7 +1198,13 @@ class MainWindow(QMainWindow):
         text += f"<b>Type:</b> {m.get('type', 'Unknown')}<br>"
         label_html = "<span style='color:#ef4444'>Malicious</span>" if m.get("label") == 1 else "<span style='color:#10b981'>Benign</span>"
         text += f"<b>Label:</b> {label_html}<br>"
-        text += f"<b>Time Window:</b> {m.get('tw_label', 'Unknown')}<br><br>"
+        text += f"<b>Time Window:</b> {m.get('tw_label', 'Unknown')}<br>"
+        if m.get("anomaly_score"):
+            text += f"<b>Anomaly Score:</b> {m.get('anomaly_score', 0):.4f}<br>"
+        if m.get("top_edge"):
+            text += f"<b>Top Edge:</b> {m.get('top_edge', '')}<br>"
+        text += "<br>"
+        
         if "path" in m and m["path"]:
             text += f"<b>Path:</b> {m['path']}"
 
@@ -1185,7 +1219,8 @@ def load_data(path):
         pts = json.load(f)
     print(f"Loaded {len(pts)} points in {time.time()-t0:.2f}s")
 
-    pos = np.zeros((len(pts), 3), dtype=np.float32)
+    num_hops = len(pts[0].get("coords_hops", [[0,0,0]])) if "coords_hops" in pts[0] else 1
+    pos_hops = [np.zeros((len(pts), 3), dtype=np.float32) for _ in range(num_hops)]
     colors = np.zeros((len(pts), 4), dtype=np.float32)
     sizes = np.zeros(len(pts), dtype=np.float32)
 
@@ -1199,7 +1234,12 @@ def load_data(path):
     }
 
     for i, p in enumerate(pts):
-        pos[i] = [p["x"], p["y"], p["z"]]
+        if "coords_hops" in p:
+            for h in range(num_hops):
+                pos_hops[h][i] = p["coords_hops"][h][:3]
+        else:
+            pos_hops[0][i] = [p.get("x", 0), p.get("y", 0), p.get("z", 0)]
+            
         colors[i] = get_color(p)
 
         # Calc stats
@@ -1240,7 +1280,7 @@ def load_data(path):
         attack_edges = list(edge_set)
         print(f"Extracted {len(attack_edges)} attack graph edges")
 
-    return pos, colors, sizes, pts, stats, attack_edges
+    return pos_hops, colors, sizes, pts, stats, attack_edges
 
 
 def resolve_latest_viz_dir(dataset):
@@ -1251,9 +1291,12 @@ def resolve_latest_viz_dir(dataset):
     import glob
 
     pidsmaker_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    artifacts_root = os.environ.get(
-        "PIDS_ARTIFACTS_DIR", os.path.join(pidsmaker_root, "artifacts")
-    )
+    if os.path.exists("/home/artifacts"):
+        artifacts_root = "/home/artifacts"
+    else:
+        artifacts_root = os.environ.get(
+            "PIDS_ARTIFACTS_DIR", os.path.join(pidsmaker_root, "artifacts")
+        )
 
     # 1. Try manifest-first: look for viz_manifest.json
     manifest_patterns = [
@@ -1344,17 +1387,21 @@ def main():
     enc_path = os.path.join(
         viz_dir, f"embedding_viz_{args.dataset}_encoder_points.json"
     )
+    
+    # If the default encoder file isn't there, we might have run with --all_epochs
+    if not os.path.exists(enc_path):
+        import glob
+        matches = glob.glob(os.path.join(viz_dir, f"embedding_viz_{args.dataset}_encoder_*_points.json"))
+        if matches:
+            matches.sort(key=os.path.getmtime, reverse=True)
+            enc_path = matches[0]
 
     load_path = enc_path if os.path.exists(enc_path) else w2v_path
     if not os.path.exists(load_path):
-        load_path = os.path.join(
-            viz_dir, f"embedding_viz_{args.dataset}_word2vec_points.json"
-        )
-        if not os.path.exists(load_path):
-            print(f"Error: Could not find points.json in {viz_dir}")
-            sys.exit(1)
+        print(f"Error: Could not find points.json in {viz_dir}")
+        sys.exit(1)
 
-    pos, colors, sizes, metadata, stats, attack_edges = load_data(load_path)
+    pos_hops, colors, sizes, metadata, stats, attack_edges = load_data(load_path)
     viz_cfg = {}
     viz_config_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "config", "viz_config.yml")
@@ -1368,7 +1415,7 @@ def main():
     try:
         current_theme = "encoder" if "encoder" in load_path else "word2vec"
         window = MainWindow(
-            pos,
+            pos_hops,
             colors,
             sizes,
             metadata,

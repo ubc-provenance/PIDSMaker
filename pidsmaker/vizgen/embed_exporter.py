@@ -26,6 +26,9 @@ class TemporalEmbedding:
     embedding: np.ndarray
     label: int
     detection_status: int = 0
+    anomaly_score: float = 0.0
+    top_edge: str = ""
+    embedding_hops: list[np.ndarray] = field(default_factory=list)
 
 
 @dataclass
@@ -41,6 +44,7 @@ def extract_encoder_embeddings(
     device,
     malicious_node_ids: set,
     detected_node_ids: set | None = None,
+    node_anomaly_info: dict | None = None,
 ) -> ExtractionResult:
     """Extract per-node per-time-window embeddings from a trained model."""
     model.eval()
@@ -86,6 +90,28 @@ def extract_encoder_embeddings(
                     else:
                         det_status = 0
 
+                    anomaly_score = 0.0
+                    top_edge = ""
+                    if node_anomaly_info is not None:
+                        ninfo = node_anomaly_info.get(gid, {})
+                        anomaly_score = ninfo.get("score", 0.0)
+                        top_edge = ninfo.get("edge", "")
+
+                    # Support hop-by-hop animation: extract hidden states if available
+                    hops = []
+                    if hasattr(model, "last_hidden_states") and model.last_hidden_states is not None:
+                        for layer_h in model.last_hidden_states:
+                            if isinstance(layer_h, torch.Tensor):
+                                layer_h_np = layer_h.cpu().numpy()
+                            elif isinstance(layer_h, (tuple, list)):
+                                layer_h_np = torch.cat([layer_h[0], layer_h[1]], dim=0).cpu().numpy()
+                            else:
+                                layer_h_np = layer_h.cpu().numpy()
+                            hops.append(layer_h_np[local_idx])
+                    else:
+                        # Fallback to just the final output
+                        hops = [h_np[local_idx]]
+
                     all_embeddings.append(
                         TemporalEmbedding(
                             node_id=gid,
@@ -94,6 +120,9 @@ def extract_encoder_embeddings(
                             embedding=h_np[local_idx],
                             label=gt_label,
                             detection_status=det_status,
+                            anomaly_score=anomaly_score,
+                            top_edge=top_edge,
+                            embedding_hops=hops,
                         )
                     )
 
@@ -144,7 +173,7 @@ def _load_edges_from_nx_graphs(cfg) -> set:
     return edges
 
 
-def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set]:
+def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set, dict]:
     """Return (detected_ids, undetected_ids) from the latest evaluation stats.
 
     Scans /home/artifacts/**/evaluation/<dataset>/precision_recall_dir/ for the
@@ -166,13 +195,14 @@ def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set]:
 
     if not stats_files:
         log("[embed_exporter] No evaluation stats found — treating all malicious as detected.")
-        return malicious_node_ids, set()
+        return malicious_node_ids, set(), {}
 
     stats_files.sort(key=os.path.getmtime, reverse=True)
     stats_path      = stats_files[0]
     edge_scores_path = stats_path.replace("stats_", "edge_scores_")
 
     try:
+        import pandas as pd
         stats     = torch.load(stats_path, map_location="cpu")
         threshold = stats.get("threshold", 0.0)
         df        = torch.load(edge_scores_path, map_location="cpu")
@@ -185,14 +215,36 @@ def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set]:
         )
         detected   = malicious_node_ids & involved
         undetected = malicious_node_ids - involved
+
+        # Extract max anomaly score and responsible edge for each node
+        df_src = df[['srcnode', 'dstnode', 'loss']].copy()
+        df_src.rename(columns={'srcnode': 'node', 'dstnode': 'other'}, inplace=True)
+        df_src['is_src'] = True
+        
+        df_dst = df[['dstnode', 'srcnode', 'loss']].copy()
+        df_dst.rename(columns={'dstnode': 'node', 'srcnode': 'other'}, inplace=True)
+        df_dst['is_src'] = False
+        
+        combined = pd.concat([df_src, df_dst])
+        idx_max = combined.groupby('node')['loss'].idxmax()
+        top_edges = combined.loc[idx_max]
+        
+        node_anomaly_info = {}
+        for _, row in top_edges.iterrows():
+            n = int(row['node'])
+            node_anomaly_info[n] = {
+                "score": float(row['loss']),
+                "edge": f"{n} -> {int(row['other'])}" if row['is_src'] else f"{int(row['other'])} -> {n}"
+            }
+
         log(
             f"[embed_exporter] Detection split (threshold={threshold:.3f}): "
             f"{len(detected)} detected, {len(undetected)} undetected"
         )
-        return detected, undetected
+        return detected, undetected, node_anomaly_info
     except Exception as e:
         log(f"[embed_exporter] Detection split failed ({e}) — treating all as detected.")
-        return malicious_node_ids, set()
+        return malicious_node_ids, set(), {}
 
 
 # ── Word2Vec extractor ────────────────────────────────────────────────────────
@@ -243,7 +295,7 @@ def extract_word2vec_embeddings(
             log(f"[embed_exporter] Failed to save viz cache: {e}")
 
     # Detected vs undetected split for richer colour coding
-    detected_ids, undetected_ids = _get_detection_split(malicious_node_ids, cfg)
+    detected_ids, undetected_ids, node_anomaly_info = _get_detection_split(malicious_node_ids, cfg)
 
     all_embeddings: list[TemporalEmbedding] = []
     for node_id, vec in indexid2vec.items():
@@ -268,6 +320,9 @@ def extract_word2vec_embeddings(
                 embedding=vec,
                 label=gt_label,
                 detection_status=det_status,
+                anomaly_score=node_anomaly_info.get(node_id, {}).get("score", 0.0),
+                top_edge=node_anomaly_info.get(node_id, {}).get("edge", ""),
+                embedding_hops=[vec],
             )
         )
 
