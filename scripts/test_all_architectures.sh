@@ -6,8 +6,8 @@ DATASET=${1:-"CADETS_E3"}
 # List of all primary architectures in PIDSMaker
 MODELS=("velox" "orthrus" "magic" "kairos" "flash" "nodlink" "rcaid" "threatrace")
 
-# 85GB in Megabytes (85 * 1024)
-MEM_LIMIT=87040
+# 80GB in Megabytes (80 * 1024)
+MEM_LIMIT=81920
 
 # Check if runlim is installed
 if ! command -v runlim &> /dev/null; then
@@ -37,7 +37,7 @@ mkdir -p "$LOG_DIR"
 echo "=========================================================="
 echo "Starting PIDSMaker Architecture Test Suite"
 echo "Dataset: $DATASET"
-echo "Memory Limit: 85GB ($MEM_LIMIT MB)"
+echo "Memory Limit: 80GB ($MEM_LIMIT MB)"
 echo "Logs Output: $LOG_DIR/"
 echo "=========================================================="
 
