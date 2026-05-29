@@ -263,7 +263,7 @@ def run_visualization(args, cfg):
                     log(f"Loading preprocessed graphs from cache: {_cache_file}")
                     _, _, test_data, max_node_num = torch.load(_cache_file)
                 else:
-                    log("No cached graphs found, recomputing (this may use significant RAM)...")
+                    log("No cached graphs found, recomputing...")
                     try:
                         from pidsmaker.tasks.batching import get_preprocessed_graphs
                     except ImportError:
