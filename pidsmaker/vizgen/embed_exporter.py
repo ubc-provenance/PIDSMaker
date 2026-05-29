@@ -63,10 +63,22 @@ def extract_encoder_embeddings(
                 else:
                     orig_n_id = np.arange(h.shape[0] if isinstance(h, torch.Tensor) else h[0].shape[0])
 
-                src_l = batch.edge_index[0].cpu().numpy()
-                dst_l = batch.edge_index[1].cpu().numpy()
-                for u, v in zip(orig_n_id[src_l], orig_n_id[dst_l]):
-                    global_edges.add((int(u), int(v)))
+                if hasattr(batch, "original_edge_index"):
+                    src_g = batch.original_edge_index[0].cpu().numpy()
+                    dst_g = batch.original_edge_index[1].cpu().numpy()
+                    for u, v in zip(src_g, dst_g):
+                        global_edges.add((int(u), int(v)))
+                else:
+                    src_l = batch.edge_index[0].cpu().numpy()
+                    dst_l = batch.edge_index[1].cpu().numpy()
+                    
+                    # If edge_index contains global IDs (max index >= len(orig_n_id)), use them directly
+                    if len(orig_n_id) > 0 and (src_l.max() >= len(orig_n_id) or dst_l.max() >= len(orig_n_id)):
+                        for u, v in zip(src_l, dst_l):
+                            global_edges.add((int(u), int(v)))
+                    else:
+                        for u, v in zip(orig_n_id[src_l], orig_n_id[dst_l]):
+                            global_edges.add((int(u), int(v)))
 
                 if isinstance(h, torch.Tensor):
                     h_np = h.cpu().numpy()
