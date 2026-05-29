@@ -216,7 +216,15 @@ def run_visualization(args, cfg):
     if embeddings in ("encoder", "both"):
         if not models:
             raise ValueError(f"No trained models found for dataset {cfg.dataset.name}")
-        models_to_run = models if args.all_epochs else [models[0]]
+        if hasattr(args, 'epoch') and args.epoch is not None:
+            # Single-epoch mode: filter to the requested epoch
+            models_to_run = [m for m in models if str(m.get('epoch')) == str(args.epoch)]
+            if not models_to_run:
+                raise ValueError(f"Epoch {args.epoch} not found in available models")
+        elif args.all_epochs:
+            models_to_run = models
+        else:
+            models_to_run = [models[0]]
         for m_info in models_to_run:
             ep = m_info.get("epoch", "latest")
             # For the default/latest model, keep the standard suffix for compatibility
@@ -441,6 +449,8 @@ def main():
                         help="Custom output path for the HTML file")
     parser.add_argument("--all_epochs", action="store_true",
                         help="Export embeddings for all available training epochs")
+    parser.add_argument("--epoch", type=str, default=None,
+                        help="Export embeddings for a specific epoch only (used for memory-safe per-epoch runs)")
 
     args, unknown = parser.parse_known_args()
 

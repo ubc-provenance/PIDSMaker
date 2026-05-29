@@ -233,9 +233,14 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         # --force_restart viz → delete stale outputs so they are always rebuilt
         if getattr(cfg, "_force_restart_viz", False):
             log("[viz] --force_restart viz detected — removing stale HTML files.")
-            for suffix in ("word2vec", "encoder"):
-                stale = os.path.join(viz_dir, f"embedding_viz_{dataset}_{suffix}.html")
-                if os.path.exists(stale):
+            import glob as _glob
+            stale_patterns = [
+                os.path.join(viz_dir, f"embedding_viz_{dataset}_word2vec.html"),
+                os.path.join(viz_dir, f"embedding_viz_{dataset}_encoder.html"),
+                os.path.join(viz_dir, f"embedding_viz_{dataset}_encoder_epoch_*.html"),
+            ]
+            for pattern in stale_patterns:
+                for stale in _glob.glob(pattern):
                     os.remove(stale)
                     log(f"[viz] Removed {stale}")
 
@@ -253,21 +258,76 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
             return
 
         log(f"[viz] Generating interactive WebGL visualization → {viz_dir}")
-        cmd = [
+
+        # Step 1: Generate word2vec visualization (lightweight, always works)
+        cmd_w2v = [
             sys.executable, "-u", viz_script,
             model_name, dataset,
-            "--embeddings", emb_mode,
+            "--embeddings", "word2vec",
             "--method", "umap",
             "--max_benign", "all",
             "--max_attack", "all",
-            "--all_epochs",
         ]
-        log(f"[viz] Command: {' '.join(cmd)}")
-        proc = subprocess.run(cmd, check=False)
-        if proc.returncode == 0:
-            log(f"[viz] Done! HTML saved to {viz_dir}")
-        else:
-            log(f"[viz] Script exited with code {proc.returncode}")
+        log(f"[viz] Command: {' '.join(cmd_w2v)}")
+        proc = subprocess.run(cmd_w2v, check=False)
+        if proc.returncode != 0:
+            log(f"[viz] Word2vec viz exited with code {proc.returncode}")
+
+        # Step 2: Generate encoder visualizations — one subprocess per epoch
+        # to prevent OOM from accumulated memory across epochs.
+        # Discover available epochs from the manifest
+        manifest_pattern = os.path.join(
+            cfg._artifact_dir, "evaluation", "evaluation", "*", dataset, "viz_manifest.json"
+        )
+        import glob as _glob
+        manifests = _glob.glob(manifest_pattern)
+        epochs = []
+        if manifests:
+            manifests.sort(key=os.path.getmtime, reverse=True)
+            import json as _json
+            with open(manifests[0], "r") as _f:
+                _manifest = _json.load(_f)
+            epochs = []
+            if "epochs" in _manifest:
+                sorted_entries = sorted(_manifest["epochs"], key=lambda x: x.get("stats_path", ""))
+                
+                # Load stats to get ADP score (same logic as embedding_viz.py)
+                import torch as _torch
+                scored_epochs = []
+                for entry in sorted_entries:
+                    try:
+                        stats = _torch.load(entry["stats_path"], map_location="cpu")
+                        adp = stats.get("adp_score", 0)
+                        scored_epochs.append((entry["epoch"], adp))
+                    except Exception:
+                        pass
+                
+                scored_epochs.sort(key=lambda x: x[1], reverse=True)
+                epochs = [e[0] for e in scored_epochs[:6]]
+
+        if not epochs:
+            # Fallback: just run the best epoch
+            epochs = [None]
+
+        for epoch in epochs:
+            cmd_enc = [
+                sys.executable, "-u", viz_script,
+                model_name, dataset,
+                "--embeddings", "encoder",
+                "--method", "umap",
+                "--max_benign", "all",
+                "--max_attack", "all",
+            ]
+            if epoch is not None:
+                cmd_enc += ["--epoch", str(epoch)]
+            log(f"[viz] Command: {' '.join(cmd_enc)}")
+            proc = subprocess.run(cmd_enc, check=False)
+            if proc.returncode == 0:
+                log(f"[viz] Encoder epoch {epoch} done!")
+            else:
+                log(f"[viz] Encoder epoch {epoch} exited with code {proc.returncode}")
+
+        log(f"[viz] All visualizations saved to {viz_dir}")
 
     def run_pipeline_with_experiments(cfg):
         """Run pipeline with experiment mode handling (standard, uncertainty, or tuning).
@@ -430,9 +490,7 @@ if __name__ == "__main__":
 
     wandb.finish()
 
-    # If it's a one-time run, we delete intermediate files as we can't leverage them in future
-    # We must keep training/evaluation/triage because they contain the final results & viz manifests
     if cfg._restart_from_scratch:
-        for task in ["construction", "transformation", "featurization", "feat_inference", "batching"]:
+        for task in ["construction", "transformation", "featurization", "feat_inference"]:
             task_cfg = getattr(cfg, task)
             shutil.rmtree(task_cfg._task_path, ignore_errors=True)

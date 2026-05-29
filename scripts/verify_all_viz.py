@@ -11,7 +11,7 @@ def test_visualizations():
     
     architectures = ["velox", "orthrus", "magic", "kairos", "flash", "nodlink", "rcaid"]
     dataset = "CADETS_E3"
-    log_dir = "scripts/test_logs_CADETS_E3_20260528_232558"
+    log_dir = "scripts/test_logs_CADETS_E3_20260529_092923"
     
     results = {}
     
