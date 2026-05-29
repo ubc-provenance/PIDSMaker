@@ -856,11 +856,27 @@ def write_viz_manifest(task_path: str):
             if os.path.isdir(tm):
                 trained_models_dir = tm
 
+    batching_base = os.path.join(artifacts_root, "batching", "batching")
+    preprocessed_graphs_dir = None
+    if os.path.isdir(batching_base):
+        candidates = []
+        for h in os.listdir(batching_base):
+            ds_dir = os.path.join(batching_base, h, dataset)
+            if os.path.isdir(ds_dir):
+                candidates.append((os.path.getmtime(ds_dir), h, ds_dir))
+        if candidates:
+            candidates.sort(reverse=True)
+            best_batching_dir = candidates[0][2]
+            pg = os.path.join(best_batching_dir, "preprocessed_graphs")
+            if os.path.isdir(pg):
+                preprocessed_graphs_dir = pg
+
     manifest = {
         "eval_task_path": task_path,
         "dataset": dataset,
         "edge_losses_dir": edge_losses_dir,
         "trained_models_dir": trained_models_dir,
+        "preprocessed_graphs_dir": preprocessed_graphs_dir,
         "epochs": epochs,
     }
 

@@ -128,6 +128,7 @@ def _models_from_manifest(manifest):
             "edge_scores_path": entry.get("scores_path"),  # compat alias
             "edge_losses_dir": manifest.get("edge_losses_dir"),
             "trained_models_dir": tm_dir,
+            "preprocessed_graphs_dir": manifest.get("preprocessed_graphs_dir"),
             "eval_task_path": manifest.get("eval_task_path"),
         })
 
@@ -250,6 +251,8 @@ def run_visualization(args, cfg):
                 # Try loading from disk cache first (saved by training_loop.py)
                 # This avoids recomputing the entire TGN batching pipeline from scratch
                 _cache_dir = cfg.batching._preprocessed_graphs_dir
+                if job.get("model_info", {}).get("preprocessed_graphs_dir"):
+                    _cache_dir = job["model_info"]["preprocessed_graphs_dir"]
                 _cache_file = os.path.join(_cache_dir, "torch_graphs.pkl")
                 _viz_cache_file = os.path.join(_cache_dir, "viz_test_graphs.pkl")
 
