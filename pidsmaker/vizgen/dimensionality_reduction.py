@@ -8,7 +8,6 @@ Supports GPU-accelerated UMAP via:
 
 import numpy as np
 import time
-from tqdm import tqdm
 
 from pidsmaker.vizgen.embed_exporter import ExtractionResult
 from pidsmaker.utils.utils import log
@@ -183,7 +182,7 @@ def _run_reduction(X, method, n_samples, device=None):
         except ImportError:
             raise ImportError("umap-learn is required. Install with: pip install umap-learn")
         
-        n_neighbors = min(15, n_samples - 1)
+        
         
         use_gpu_knn = False
         if device and 'cuda' in str(device):

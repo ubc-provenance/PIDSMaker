@@ -22,11 +22,13 @@ Examples:
 """
 
 import argparse
+import gc
 import os
 import json
 import sys
 import glob
 
+import numpy as np
 import torch
 import yaml
 
@@ -92,7 +94,8 @@ def find_models(dataset="CADETS_E3"):
         return _models_from_manifest(manifest)
 
     # --- Fallback: glob-based discovery (backward compat) ---
-    print("  No viz_manifest.json found — falling back to glob discovery.")
+    print("  WARNING: No viz_manifest.json found — falling back to glob discovery.")
+    print("  WARNING: Encoder embeddings may fail (no trained_models_dir or preprocessed_graphs_dir available).")
     return _models_from_glob(dataset)
 
 
@@ -246,7 +249,6 @@ def run_visualization(args, cfg):
         else:
             # Load model and data (only once)
             if cached_graph_data is None:
-                import gc
 
                 # Try loading from disk cache first (saved by training_loop.py)
                 # This avoids recomputing the entire TGN batching pipeline from scratch
@@ -272,7 +274,6 @@ def run_visualization(args, cfg):
                     tmp_train, tmp_val, test_data, max_node_num = get_preprocessed_graphs(cfg)
                     del tmp_train
                     del tmp_val
-                    import gc
                     gc.collect()
 
                 gc.collect()
@@ -291,13 +292,16 @@ def run_visualization(args, cfg):
             )
 
             m_info = job["model_info"]
-            sd_path = m_info['path']
-            if os.path.isdir(sd_path):
+            sd_path = m_info.get('path')
+            if sd_path and os.path.isdir(sd_path):
                 sd_path = os.path.join(sd_path, "state_dict.pkl")
-            model.load_state_dict(
-                torch.load(sd_path, map_location=device, weights_only=False)
-            )
-            log(f"Loaded model weights from {sd_path}")
+            if sd_path:
+                model.load_state_dict(
+                    torch.load(sd_path, map_location=device, weights_only=False)
+                )
+                log(f"Loaded model weights from {sd_path}")
+            else:
+                log(f"Warning: No valid model path found for epoch {m_info.get('epoch')}. Using uninitialized weights.")
 
             # Parse epoch from sd_path (e.g., model_epoch_10)
             epoch_str = m_info.get("epoch", "0")
@@ -374,7 +378,6 @@ def run_visualization(args, cfg):
         
         # Free massive embeddings array immediately
         result.embeddings = []
-        import gc
         gc.collect()
 
         # Node metadata
@@ -412,7 +415,7 @@ def run_visualization(args, cfg):
         del points
         del result
         del node_meta
-        
+
         # Free massive cached graphs if this was the last encoder job
         if mode_type == "encoder" and job["suffix"] == last_encoder_suffix:
             if cached_graph_data is not None:

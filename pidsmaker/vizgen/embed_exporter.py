@@ -72,8 +72,10 @@ def extract_encoder_embeddings(
                     src_l = batch.edge_index[0].cpu().numpy()
                     dst_l = batch.edge_index[1].cpu().numpy()
                     
-                    # If edge_index contains global IDs (max index >= len(orig_n_id)), use them directly
-                    if len(orig_n_id) > 0 and (src_l.max() >= len(orig_n_id) or dst_l.max() >= len(orig_n_id)):
+                    if len(src_l) == 0:
+                        pass  # Empty batch — no edges to process
+                    elif len(orig_n_id) > 0 and (src_l.max() >= len(orig_n_id) or dst_l.max() >= len(orig_n_id)):
+                        # edge_index contains global IDs — use them directly
                         for u, v in zip(src_l, dst_l):
                             global_edges.add((int(u), int(v)))
                     else:
@@ -158,8 +160,6 @@ def _load_edges_from_nx_graphs(cfg) -> set:
     This is orders of magnitude faster than get_preprocessed_graphs() for the
     purpose of building the adjacency context needed by smart_sample().
     """
-    import torch
-
     graphs_dir = cfg.construction._graphs_dir
     # Graphs are extensionless files nested under date dirs — use recursive glob
     all_paths = [

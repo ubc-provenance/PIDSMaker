@@ -840,14 +840,27 @@ def write_viz_manifest(task_path: str):
     edge_losses_dir = None
     trained_models_dir = None
     if os.path.isdir(training_base):
-        # Pick the most recent training hash that has this dataset
+        # Find the training hash whose done.txt was written closest in time
+        # to OUR evaluation done.txt — this ensures we get the correct
+        # architecture's weights even when multiple models run back-to-back.
+        eval_done = os.path.join(task_path, TASK_FINISHED_FILE)
+        eval_mtime = os.path.getmtime(eval_done) if os.path.exists(eval_done) else None
+
         candidates = []
         for h in os.listdir(training_base):
             ds_dir = os.path.join(training_base, h, dataset)
-            if os.path.isdir(ds_dir):
-                candidates.append((os.path.getmtime(ds_dir), h, ds_dir))
+            train_done = os.path.join(ds_dir, TASK_FINISHED_FILE)
+            if os.path.isdir(ds_dir) and os.path.exists(train_done):
+                t_mtime = os.path.getmtime(train_done)
+                # Training must have finished BEFORE evaluation
+                if eval_mtime is not None and t_mtime <= eval_mtime:
+                    time_diff = eval_mtime - t_mtime
+                    candidates.append((time_diff, h, ds_dir))
+                else:
+                    # Fallback: just use directory mtime
+                    candidates.append((float('inf'), h, ds_dir))
         if candidates:
-            candidates.sort(reverse=True)
+            candidates.sort()  # Smallest time_diff first = closest match
             best_train_dir = candidates[0][2]
             el = os.path.join(best_train_dir, "edge_losses")
             if os.path.isdir(el):

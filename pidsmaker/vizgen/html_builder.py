@@ -265,8 +265,12 @@ async function _loadData() {{
     }} else {{
       points = await pRes.json();
     }}
-    // Ensure cmd field exists on all points
-    points.forEach(p => {{ if (!p.cmd) p.cmd = ''; }});
+    // Ensure cmd field exists on all points and unpack coords_hops into p.x/p.y/p.z
+    points.forEach(p => {{
+      if (!p.cmd) p.cmd = '';
+      const c = (p.coords_hops && p.coords_hops[0]) || [0,0,0];
+      p.x = c[0]; p.y = c[1]; p.z = c[2];
+    }});
     
     txt.innerText = "Downloading graph topology...";
     const aRes = await fetch('{adj_url}');
@@ -340,7 +344,11 @@ function pollStudioStatus() {{
       // Reload points dynamically
       fetch('{points_url}').then(r => r.json()).then(newPoints => {{
         points = newPoints;
-        points.forEach(p => {{ if (!p.cmd) p.cmd = ''; }});
+        points.forEach(p => {{
+          if (!p.cmd) p.cmd = '';
+          const c = (p.coords_hops && p.coords_hops[0]) || [0,0,0];
+          p.x = c[0]; p.y = c[1]; p.z = c[2];
+        }});
         nodeIndex = {{}};
         points.forEach((p,i) => {{
           if (!nodeIndex[p.node_id]) nodeIndex[p.node_id] = [];
