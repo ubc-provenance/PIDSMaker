@@ -94,6 +94,36 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
         json.dump(compact_points, f, separators=(',', ':'))
     log(f"[html_builder] Points file: {os.path.getsize(points_file) / (1024*1024):.1f} MB")
     
+    # Export a CSV file for offline analysis (Pandas/Excel)
+    csv_file = out_path.replace('.html', '_nodes.csv')
+    log(f"[html_builder] Exporting nodes to CSV for analysis: {os.path.basename(csv_file)}...")
+    import csv as _csv
+    with open(csv_file, "w", encoding="utf-8", newline='') as f:
+        writer = _csv.writer(f)
+        writer.writerow([
+            "node_id", "node_type", "path", "cmd", 
+            "ground_truth_malicious", "detection_status", 
+            "anomaly_score", "top_edge", "umap_x", "umap_y", "umap_z"
+        ])
+        for p in compact_points:
+            coords = p.get("coords_hops", [[0.0, 0.0, 0.0]])[0]
+            x = coords[0] if len(coords) > 0 else 0.0
+            y = coords[1] if len(coords) > 1 else 0.0
+            z = coords[2] if len(coords) > 2 else 0.0
+            
+            writer.writerow([
+                p["node_id"],
+                p.get("type", ""),
+                p.get("path", ""),
+                p.get("cmd", ""),
+                p.get("label", 0),
+                p.get("detection_status", 0),
+                p.get("anomaly_score", 0.0),
+                p.get("top_edge", ""),
+                x, y, z
+            ])
+    log(f"[html_builder] CSV file: {os.path.getsize(csv_file) / (1024*1024):.1f} MB")
+
     # Free memory
     del compact_points
     

@@ -149,69 +149,90 @@ def extract_encoder_embeddings(
     return ExtractionResult(embeddings=all_embeddings, edges=global_edges)
 
 
-# ── Fast NX graph edge loader ─────────────────────────────────────────────────
-
 def _load_edges_from_nx_graphs(cfg) -> set:
-    """Load edges from NX construction graph pickles.
-
-    The NX graphs live under cfg.construction._graphs_dir in a nested structure:
-        <graphs_dir>/<date>/<start_ts>~<end_ts>   (no file extension)
-
-    This is orders of magnitude faster than get_preprocessed_graphs() for the
-    purpose of building the adjacency context needed by smart_sample().
+    """Load edges from preprocessed PyG graphs (faster and consistent with encoder), fallback to NX graphs.
     """
+    dataset = cfg.dataset.name
+    artifact_dir = getattr(cfg, "_artifact_dir", "/home/artifacts")
+    edges: set[tuple[int, int]] = set()
+
+    # Strategy 1: Load from PyG preprocessed graphs
+    patterns = [
+        os.path.join(artifact_dir, "batching", "batching", "*", dataset, "preprocessed_graphs", "viz_test_graphs.pkl"),
+        os.path.join(artifact_dir, "batching", "batching", "*", dataset, "preprocessed_graphs", "torch_graphs.pkl")
+    ]
+    for pattern in patterns:
+        matches = glob.glob(pattern)
+        if matches:
+            matches.sort(key=os.path.getmtime, reverse=True)
+            cache_file = matches[0]
+            try:
+                log(f"[embed_exporter] Extracting edges from preprocessed cache: {cache_file}")
+                data = torch.load(cache_file, map_location="cpu")
+                test_data = data[0] if len(data) == 2 else data[2]
+                    
+                for dataset_part in test_data:
+                    for batch in dataset_part:
+                        orig_n_id = batch.original_n_id.numpy() if hasattr(batch, "original_n_id") else None
+                        
+                        if hasattr(batch, "original_edge_index"):
+                            src_g = batch.original_edge_index[0].numpy()
+                            dst_g = batch.original_edge_index[1].numpy()
+                            for u, v in zip(src_g, dst_g):
+                                edges.add((int(u), int(v)))
+                        else:
+                            src_l = batch.edge_index[0].numpy()
+                            dst_l = batch.edge_index[1].numpy()
+                            
+                            if len(src_l) == 0:
+                                pass
+                            elif orig_n_id is not None and len(orig_n_id) > 0 and (src_l.max() >= len(orig_n_id) or dst_l.max() >= len(orig_n_id)):
+                                for u, v in zip(src_l, dst_l):
+                                    edges.add((int(u), int(v)))
+                            elif orig_n_id is not None:
+                                for u, v in zip(orig_n_id[src_l], orig_n_id[dst_l]):
+                                    edges.add((int(u), int(v)))
+                log(f"[embed_exporter] Extracted {len(edges)} edges from cache.")
+                if edges:
+                    return edges
+            except Exception as e:
+                log(f"[embed_exporter] Error loading PyG cache {cache_file}: {e}")
+
+    # Strategy 2: Fallback to NX graphs
     graphs_dir = cfg.construction._graphs_dir
-    # Graphs are extensionless files nested under date dirs — use recursive glob
+    # graphs_dir is e.g. /home/artifacts/construction/CADETS_E3/construction/<hash>/nx/
+    if not os.path.exists(graphs_dir) or not os.listdir(graphs_dir):
+        pattern = os.path.join(artifact_dir, "construction", "*", dataset, "construction", "*", "nx")
+        matches = glob.glob(pattern)
+        if not matches:
+            pattern = os.path.join(artifact_dir, "construction", dataset, "construction", "*", "nx")
+            matches = glob.glob(pattern)
+        if matches:
+            matches.sort(key=os.path.getmtime, reverse=True)
+            graphs_dir = matches[0]
+
     all_paths = [
         p for p in glob.glob(os.path.join(graphs_dir, "**", "*"), recursive=True)
         if os.path.isfile(p) and not p.endswith(".pkl") and not p.endswith(".txt")
     ]
     if not all_paths:
-        log(f"[embed_exporter] WARNING: no NX graphs found in {graphs_dir}. "
-            "Neighbourhood sampling will fall back to random.")
+        log(f"[embed_exporter] WARNING: no NX graphs found in {graphs_dir}. ")
         return set()
 
-    edges: set[tuple[int, int]] = set()
     for path in all_paths:
         try:
             G = torch.load(path)
             if hasattr(G, "edges"):
                 for u, v in G.edges():
                     edges.add((int(u), int(v)))
-        except Exception:
-            pass
+        except Exception as e:
+            log(f"[embed_exporter] Error loading {path}: {e}")
 
     log(f"[embed_exporter] Loaded {len(edges)} edges from {len(all_paths)} NX graph files.")
     return edges
 
 
-def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set, dict]:
-    """Return (detected_ids, undetected_ids) from the latest evaluation stats.
-
-    Scans /home/artifacts/**/evaluation/<dataset>/precision_recall_dir/ for the
-    most recently written stats pkl and the matching edge_scores pkl, then
-    computes which malicious node IDs were involved in edges above threshold.
-    """
-    dataset      = cfg.dataset.name
-    artifact_dir = getattr(cfg, "_artifact_dir", "/home/artifacts")
-
-    patterns = [
-        os.path.join(artifact_dir,
-                     f"*/evaluation/*/{dataset}/precision_recall_dir/scores_*.pkl"),
-        os.path.join(artifact_dir,
-                     f"evaluation/*/{dataset}/precision_recall_dir/scores_*.pkl"),
-    ]
-    scores_files = []
-    for pat in patterns:
-        scores_files.extend(glob.glob(pat))
-
-    if not scores_files:
-        log("[embed_exporter] No evaluation scores found — treating all malicious as detected.")
-        return malicious_node_ids, set(), {}
-
-    scores_files.sort(key=os.path.getmtime, reverse=True)
-    scores_path = scores_files[0]
-
+def parse_scores_file(scores_path: str, malicious_node_ids: set) -> tuple[set, set, dict]:
     try:
         data = torch.load(scores_path, map_location="cpu")
         y_preds = data.get("y_preds", [])
@@ -255,6 +276,35 @@ def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set, dict]:
     except Exception as e:
         log(f"[embed_exporter] Detection split failed ({e}) — treating all as detected.")
         return malicious_node_ids, set(), {}
+
+
+def _get_detection_split(malicious_node_ids: set, cfg) -> tuple[set, set, dict]:
+    """Return (detected_ids, undetected_ids) from the latest evaluation stats.
+
+    Scans /home/artifacts/**/evaluation/<dataset>/precision_recall_dir/ for the
+    most recently written stats pkl and the matching edge_scores pkl, then
+    computes which malicious node IDs were involved in edges above threshold.
+    """
+    dataset      = cfg.dataset.name
+    artifact_dir = getattr(cfg, "_artifact_dir", "/home/artifacts")
+
+    patterns = [
+        os.path.join(artifact_dir,
+                     f"*/evaluation/*/{dataset}/precision_recall_dir/scores_*.pkl"),
+        os.path.join(artifact_dir,
+                     f"evaluation/*/{dataset}/precision_recall_dir/scores_*.pkl"),
+    ]
+    scores_files = []
+    for pat in patterns:
+        scores_files.extend(glob.glob(pat))
+
+    if not scores_files:
+        log("[embed_exporter] No evaluation scores found — treating all malicious as detected.")
+        return malicious_node_ids, set(), {}
+
+    scores_files.sort(key=os.path.getmtime, reverse=True)
+    scores_path = scores_files[0]
+    return parse_scores_file(scores_path, malicious_node_ids)
 
 
 # ── Word2Vec extractor ────────────────────────────────────────────────────────

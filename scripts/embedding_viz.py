@@ -311,62 +311,15 @@ def run_visualization(args, cfg):
             else:
                 log(f"Warning: No valid model path found for epoch {m_info.get('epoch')}. Using uninitialized weights.")
 
-            # Parse epoch from sd_path (e.g., model_epoch_10)
             epoch_str = m_info.get("epoch", "0")
             detected_nodes = None
             node_anomaly_info = None
             try:
-                import pandas as pd
-                stats_path = m_info.get("stats_path")
                 scores_path = m_info.get("scores_path") or m_info.get("edge_scores_path")
-
-                if stats_path and os.path.exists(stats_path):
-                    stats = torch.load(stats_path, map_location='cpu')
-                    threshold = stats.get('threshold', 0.0)
-
-                    if scores_path and os.path.exists(scores_path):
-                        df = torch.load(scores_path, map_location='cpu')
-
-                        if isinstance(df, dict):
-                            df = pd.DataFrame(df)
-
-                        # Handle different naming conventions in evaluation scripts
-                        score_col = 'loss'
-                        if 'loss' not in df.columns:
-                            if 'score' in df.columns:
-                                score_col = 'score'
-                            elif 'anomaly_score' in df.columns:
-                                score_col = 'anomaly_score'
-
-                        detected_mask = df[score_col] > threshold
-                        detected_edges = df[detected_mask]
-                        detected_edge_nodes = np.unique(np.concatenate([
-                            detected_edges['srcnode'].values,
-                            detected_edges['dstnode'].values
-                        ]))
-                        detected_nodes = set(np.intersect1d(list(malicious_ids), detected_edge_nodes))
-                        
-                        df_src = df[['srcnode', 'dstnode', score_col]].copy()
-                        df_src.rename(columns={'srcnode': 'node', 'dstnode': 'other'}, inplace=True)
-                        df_src['is_src'] = True
-                        
-                        df_dst = df[['dstnode', 'srcnode', score_col]].copy()
-                        df_dst.rename(columns={'dstnode': 'node', 'srcnode': 'other'}, inplace=True)
-                        df_dst['is_src'] = False
-                        
-                        combined = pd.concat([df_src, df_dst])
-                        idx_max = combined.groupby('node')[score_col].idxmax()
-                        top_edges = combined.loc[idx_max]
-                        
-                        node_anomaly_info = {}
-                        for _, row in top_edges.iterrows():
-                            n = int(row['node'])
-                            node_anomaly_info[n] = {
-                                "score": float(row[score_col]),
-                                "edge": f"{n} -> {int(row['other'])}" if row['is_src'] else f"{int(row['other'])} -> {n}"
-                            }
-
-                        log(f"Evaluation Stats: Threshold={threshold:.3f}. Found {len(detected_nodes)} detected nodes.")
+                if scores_path and os.path.exists(scores_path):
+                    from pidsmaker.vizgen.embed_exporter import parse_scores_file
+                    detected_nodes, _, node_anomaly_info = parse_scores_file(scores_path, malicious_ids)
+                    log(f"Evaluation Stats: Found {len(detected_nodes)} detected nodes for epoch {epoch_str}.")
             except Exception as e:
                 log(f"Warning: Failed to parse evaluation stats for coloring: {e}")
 
