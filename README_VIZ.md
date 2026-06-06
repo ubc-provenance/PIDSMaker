@@ -61,7 +61,16 @@ python pidsmaker/main.py velox THEIA_E3 --force_restart viz
 ```
 
 ### Step 5: Launch Interactive GUI (Inside Container)
-Starts the native 3D viewer to explore the generated embeddings:
+You can launch the visualizer in two ways:
+
+**Option A: The Run Browser (Recommended)**
+Run the script without any arguments to open the visualizer's Run Browser. This provides a UI to scan, compare, and select from all previously completed runs:
+```bash
+python scripts/native_viz.py
+```
+
+**Option B: Direct Launch**
+If you know exactly which dataset and model you want to view, you can bypass the Run Browser by passing them as arguments:
 ```bash
 python scripts/native_viz.py velox THEIA_E3
 ```

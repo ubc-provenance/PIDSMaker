@@ -351,25 +351,21 @@ class MainWindow(QMainWindow):
 
         self.update_scatter()
 
-    def on_epoch_slider_moved(self, idx):
-        ep_num, _ = self.available_epochs[idx]
-        self.lbl_epoch.setText(f"Epoch: {ep_num}")
-
     def on_epoch_scrub(self):
         if getattr(self, "_is_loading", False):
             print("Already loading another epoch. Ignoring scrub request.")
             return
 
         self._is_loading = True
-        idx = self.slider_epoch.value()
+        idx = self.cmb_epoch_select.currentIndex()
         ep_num, ef_path = self.available_epochs[idx]
-        self.lbl_epoch.setText(f"Epoch: {ep_num} (Loading...)")
+        self.lbl_epoch.setText(f"Loading Epoch {ep_num}...")
         basename = os.path.basename(ef_path)
         if len(basename) > 30:
             basename = basename[:12] + "..." + basename[-15:]
         self.show_status(f"Scrubbing to Epoch {ep_num} ({basename})...")
-        if hasattr(self, "slider_epoch"):
-            self.slider_epoch.setEnabled(False)
+        if hasattr(self, "cmb_epoch_select"):
+            self.cmb_epoch_select.setEnabled(False)
 
         self.current_path = ef_path
         print(f"Scrubbing to Epoch {ep_num}...")
@@ -380,11 +376,14 @@ class MainWindow(QMainWindow):
 
     def on_epoch_data_loaded(self, data, current_hop, ep_num):
         self._is_loading = False
-        if hasattr(self, "slider_epoch"):
-            self.slider_epoch.setEnabled(True)
-            
+        if hasattr(self, "cmb_epoch_select"):
+            self.cmb_epoch_select.setEnabled(True)
+        if data:
+            self.lbl_epoch.setText(f"Loaded: Epoch {ep_num}")
+            self.lbl_epoch.setStyleSheet("color: #9ca3af; font-size: 12px; font-weight: bold;")
         if not data:
-            self.lbl_epoch.setText(f"Epoch: {ep_num} (Error)")
+            self.lbl_epoch.setText(f"Error loading Epoch {ep_num}")
+            self.lbl_epoch.setStyleSheet("color: #ef4444; font-size: 12px; font-weight: bold;")
             self.show_status(f"Failed to load Epoch {ep_num}.", timeout=3000)
             print(f"Error: Failed to load Epoch {ep_num}.")
             return
@@ -453,7 +452,8 @@ class MainWindow(QMainWindow):
         self.node_tws = node_tws
 
         self.update_spatial_bounds()
-        self.lbl_epoch.setText(f"Epoch: {ep_num}")
+        self.lbl_epoch.setText(f"Loaded: Epoch {ep_num}")
+        self.lbl_epoch.setStyleSheet("color: #9ca3af; font-size: 12px; font-weight: bold;")
         self.update_scatter()
 
     def on_hop_scrub(self, val):

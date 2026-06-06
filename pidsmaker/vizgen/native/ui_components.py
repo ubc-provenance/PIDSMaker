@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSlider,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -111,16 +112,32 @@ def setup_left_panel(window):
                 current_idx = i
                 break
                 
-        h_epoch = QHBoxLayout()
-        window.lbl_epoch = QLabel(f"Epoch: {window.available_epochs[current_idx][0]}")
-        h_epoch.addWidget(window.lbl_epoch)
-        window.slider_epoch = QSlider(Qt.Horizontal)
-        window.slider_epoch.setRange(0, len(window.available_epochs) - 1)
-        window.slider_epoch.setValue(current_idx)
-        window.slider_epoch.valueChanged.connect(window.on_epoch_slider_moved)
-        window.slider_epoch.sliderReleased.connect(window.on_epoch_scrub)
-        h_epoch.addWidget(window.slider_epoch)
-        v_ctrl.addLayout(h_epoch)
+        from PyQt5.QtWidgets import QComboBox
+        v_epoch = QVBoxLayout()
+        
+        window.lbl_epoch = QLabel(f"Loaded: Epoch {window.available_epochs[current_idx][0]}")
+        window.lbl_epoch.setStyleSheet("color: #9ca3af; font-size: 12px; font-weight: bold;")
+        v_epoch.addWidget(window.lbl_epoch)
+        
+        window.cmb_epoch_select = QComboBox()
+        window.cmb_epoch_select.setStyleSheet("""
+            QComboBox {
+                background-color: #2b2b36; color: white; padding: 5px 10px; border: 1px solid #3f3f4e; border-radius: 4px; font-weight: bold;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+                background-color: #2b2b36; color: white; selection-background-color: #3b82f6; outline: none; border: 1px solid #3f3f4e;
+            }
+            QComboBox:disabled { background-color: #1e1e24; color: #6b7280; }
+        """)
+        for ep_num, _ in window.available_epochs:
+            window.cmb_epoch_select.addItem(f"Epoch {ep_num}", ep_num)
+        
+        window.cmb_epoch_select.setCurrentIndex(current_idx)
+        window.cmb_epoch_select.currentIndexChanged.connect(window.on_epoch_scrub)
+        v_epoch.addWidget(window.cmb_epoch_select)
+        
+        v_ctrl.addLayout(v_epoch)
 
     window.chk_temporal = QCheckBox("3D Temporal Mode")
     window.chk_temporal.setChecked(True)
@@ -197,13 +214,21 @@ def setup_left_panel(window):
     window.lbl_metrics_global = QLabel("")
     window.lbl_metrics_global.setStyleSheet("font-weight: bold; font-size: 12px; color: #10B981;")
     if window.stats.get("adp") is not None:
-        window.lbl_metrics_global.setText(f"ADP: {window.stats['adp']:.3f} | Disc: {window.stats['disc_score']:.3f}")
+        window.lbl_metrics_global.setText(f"ADP: {window.stats['adp']:.3f} | Discrim: {window.stats['disc_score']:.3f}")
     else:
         window.lbl_metrics_global.setText("N/A")
     flay.addRow(
         QLabel("<span style='font-weight:bold; font-size: 12px; color: #10B981;'>Performance:</span>"),
         window.lbl_metrics_global,
     )
+
+    if window.stats.get("attack_start_tw", float('inf')) != float('inf'):
+        tw = window.stats["attack_start_tw"]
+        tm = window.stats.get("attack_start_time", "")
+        txt = f"<span style='color:#fca636'>Window {tw}</span> <span style='font-size:10px;color:#a0a0b0'>({tm})</span>" if tm else f"<span style='color:#fca636'>Window {tw}</span>"
+        lbl_astart = QLabel(txt)
+        lbl_astart.setStyleSheet("font-weight: bold; font-size: 12px;")
+        flay.addRow(QLabel("<span style='font-weight:bold; font-size: 12px; color: #fca636;'>Attack Start:</span>"), lbl_astart)
 
     window.lbl_tot = QLabel(str(window.stats["total"]))
     window.lbl_tot.setStyleSheet("font-weight: bold; font-size: 14px; color: white;")
@@ -281,6 +306,63 @@ def setup_left_panel(window):
     )
     v_info.addWidget(window.info_lbl)
     left_layout.addWidget(grp_info)
+
+    grp_config = QGroupBox("RUN CONFIGURATION")
+    v_config = QVBoxLayout(grp_config)
+    txt_config = QTextEdit()
+    txt_config.setReadOnly(True)
+    txt_config.setStyleSheet("font-family: monospace; font-size: 11px; color: #a3e635; background-color: #111115; border: 1px solid #3f3f4e;")
+    cfg_text = window.stats.get("run_config", "")
+    if cfg_text:
+        txt_config.setPlainText(cfg_text)
+    else:
+        txt_config.setPlainText("# No run_config.yml found for this run.\n# Hyperparameters are unavailable.")
+    v_config.addWidget(txt_config)
+    
+    btn_expand_cfg = QPushButton("Expand Configuration")
+    btn_expand_cfg.setStyleSheet("""
+        QPushButton {
+            background-color: #2a2a35; color: #a3e635; border: 1px solid #4a4a55; padding: 4px; border-radius: 3px; font-weight: bold;
+        }
+        QPushButton:hover { background-color: #3a3a45; }
+    """)
+    def show_full_config():
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton
+        dlg = QDialog(window)
+        dlg.setWindowTitle("Full Run Configuration")
+        dlg.resize(800, 600)
+        dlg.setStyleSheet("QDialog { background-color: #111115; }")
+        dl = QVBoxLayout(dlg)
+        dl.setContentsMargins(10, 10, 10, 10)
+        
+        dt = QTextEdit()
+        dt.setReadOnly(True)
+        dt.setStyleSheet("""
+            QTextEdit {
+                font-family: monospace; font-size: 13px; color: #a3e635; 
+                background-color: #0b0b0d; border: 1px solid #2a2a35; border-radius: 4px; padding: 10px;
+            }
+            QScrollBar:vertical { background: #1a1a24; width: 10px; margin: 0px; }
+            QScrollBar::handle:vertical { background: #3a3a45; min-height: 20px; border-radius: 5px; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        """)
+        dt.setPlainText(cfg_text if cfg_text else "# No run_config.yml found.")
+        dl.addWidget(dt)
+        
+        btn_close = QPushButton("Close")
+        btn_close.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a35; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold;
+            }
+            QPushButton:hover { background-color: #e53e3e; }
+        """)
+        btn_close.clicked.connect(dlg.accept)
+        dl.addWidget(btn_close)
+        
+        dlg.exec_()
+    btn_expand_cfg.clicked.connect(show_full_config)
+    v_config.addWidget(btn_expand_cfg)
+    left_layout.addWidget(grp_config)
 
     left_layout.addStretch()
     

@@ -14,8 +14,8 @@ def load_data(path):
             with open(cache_path, "rb") as f:
                 data = pickle.load(f)
             
-            # Invalidate old cache if it doesn't have adp
-            if "adp" not in data[4]:
+            # Invalidate old cache if it doesn't have adp or attack_start
+            if "adp" not in data[4] or "attack_start_tw" not in data[4] or "run_config" not in data[4]:
                 print("Old cache format detected. Regenerating...")
                 raise ValueError("Old cache format")
                 
@@ -38,14 +38,92 @@ def load_data(path):
     adp = None
     disc_score = None
     try:
-        ep_str = path.split("_epoch_")[1].split("_")[0]
-        pr_dir = os.path.join(os.path.dirname(os.path.dirname(path)), "precision_recall_dir")
-        stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pkl")
-        if os.path.exists(stats_path):
-            import torch
-            d = torch.load(stats_path, map_location="cpu")
-            adp = d.get("adp", 0.0)
-            disc_score = d.get("discrimination_score", 0.0)
+        if "word2vec" in path:
+            adp = 0.0
+            disc_score = 0.0
+        else:
+            if "_epoch_" in path:
+                ep_str = path.split("_epoch_")[1].split("_")[0]
+                pr_dir = os.path.join(os.path.dirname(os.path.dirname(path)), "precision_recall_dir")
+                stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pth")
+                if not os.path.exists(stats_path):
+                    stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pkl")
+            else:
+                # Legacy encoder - just grab the newest stats file
+                import glob
+                pr_dir = os.path.join(os.path.dirname(os.path.dirname(path)), "precision_recall_dir")
+                stats_files = glob.glob(os.path.join(pr_dir, "stats_model_epoch_*.pth"))
+                stats_path = stats_files[0] if stats_files else None
+                
+            if stats_path and os.path.exists(stats_path):
+                import torch
+                d = torch.load(stats_path, map_location="cpu")
+                adp = d.get("adp_score", 0.0)
+                disc_score = d.get("discrimination", 0.0)
+    except Exception:
+        pass
+        
+    config_text = ""
+    try:
+        eval_dir = os.path.dirname(os.path.dirname(path))
+        cfg_path = os.path.join(eval_dir, "run_config.yml")
+        if not os.path.exists(cfg_path):
+            # main.py saves to parent of dataset dir (hash dir), so also check there
+            cfg_path = os.path.join(os.path.dirname(eval_dir), "run_config.yml")
+        if os.path.exists(cfg_path):
+            import yaml
+            with open(cfg_path, 'r') as f:
+                cfg_data = yaml.safe_load(f)
+                
+                def clean_dict(d):
+                    if not isinstance(d, dict):
+                        return d
+                    cleaned = {}
+                    
+                    # Identify inactive methods to filter out
+                    KNOWN_METHODS = {
+                        "alacarte", "doc2vec", "fasttext", "flash", "temporal_rw", "word2vec",
+                        "custom_mlp", "gat", "gin", "graph_attention", "magic_gat", "sage", "tgn", "none", "rcaid_gat", "sum_aggregation", "glstm",
+                        "few_shot", "predict_edge_contrastive", "predict_edge_type", "predict_node_type", "reconstruct_edge_embeddings", "reconstruct_node_embeddings", "reconstruct_node_features", "reconstruct_masked_features", "predict_masked_struct", "detect_edge_few_shot",
+                        "global_batching", "inter_graph_batching", "intra_graph_batching",
+                        "edges", "tgn_last_neighbor",
+                        "depimpact", "synthetic_attack_naive", "rcaid_pseudo_graph",
+                        "kairos_idf_queue", "provnet_lof_queue"
+                    }
+                    
+                    active_method = None
+                    if "used_method" in d and isinstance(d["used_method"], str):
+                        active_method = d["used_method"]
+                    elif "used_methods" in d and isinstance(d["used_methods"], str):
+                        active_method = d["used_methods"]
+                        
+                    for k, v in d.items():
+                        if isinstance(k, str) and k.startswith('_'):
+                            continue
+                        if v is None or v == "" or v == [] or v == {}:
+                            continue
+                            
+                        # Blacklist bloated arrays and irrelevent static DB config
+                        if k in ["attack_to_time_window", "ground_truth_relative_path", "train_dates", "test_dates", "val_dates", "unused_dates", "database", "database_all_file", "host", "password", "port", "user", "node_label_features"]:
+                            continue
+                            
+                        # Filter out sibling dictionaries that represent inactive methods
+                        if active_method and isinstance(v, dict) and k in KNOWN_METHODS and k != active_method:
+                            continue
+                            
+                        if isinstance(v, dict):
+                            v_clean = clean_dict(v)
+                            if v_clean:
+                                # Don't show dictionaries if their only remaining key is used_method: none
+                                if len(v_clean) == 1 and list(v_clean.keys())[0] in ["used_method", "used_methods"] and v_clean[list(v_clean.keys())[0]] == "none":
+                                    continue
+                                cleaned[k] = v_clean
+                        else:
+                            cleaned[k] = v
+                    return cleaned
+                    
+                cleaned_cfg = clean_dict(cfg_data)
+                config_text = yaml.dump(cleaned_cfg, default_flow_style=False, sort_keys=True)
     except Exception:
         pass
 
@@ -58,6 +136,9 @@ def load_data(path):
         "mal_net": 0,
         "adp": adp,
         "disc_score": disc_score,
+        "attack_start_tw": float('inf'),
+        "attack_start_time": "",
+        "run_config": config_text
     }
 
     for i, p in enumerate(pts):
@@ -71,12 +152,19 @@ def load_data(path):
 
         lbl = p.get("label", 0)
         ptype = (p.get("type") or "").lower()
+        tw_idx = p.get("tw_idx", 0)
+        tw_label = p.get("tw_label", "")
+
         if lbl == 0:
             stats["benign"] += 1
             sizes[i] = 3.0
         else:
             stats["malicious"] += 1
             sizes[i] = 5.0
+            if tw_idx < stats["attack_start_tw"]:
+                stats["attack_start_tw"] = tw_idx
+                stats["attack_start_time"] = tw_label
+                
             if "process" in ptype or "subject" in ptype:
                 stats["mal_proc"] += 1
             elif "file" in ptype:
@@ -123,7 +211,7 @@ def load_data(path):
     return res
 
 
-def resolve_latest_viz_dir(dataset):
+def resolve_latest_viz_dir(dataset, model=None):
     import glob
 
     pidsmaker_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -147,10 +235,18 @@ def resolve_latest_viz_dir(dataset):
         manifests.extend(glob.glob(pattern))
     if manifests:
         manifests.sort(key=os.path.getmtime, reverse=True)
-        eval_dir = os.path.dirname(manifests[0])
-        viz_dir = os.path.join(eval_dir, "viz")
-        if os.path.isdir(viz_dir):
-            return viz_dir
+        for manifest in manifests:
+            eval_dir = os.path.dirname(manifest)
+            viz_dir = os.path.join(eval_dir, "viz")
+            if os.path.isdir(viz_dir):
+                if model:
+                    has_w2v = any("word2vec" in f for f in os.listdir(viz_dir))
+                    has_enc = any("encoder" in f for f in os.listdir(viz_dir))
+                    if model.lower() == "velox" and not has_w2v:
+                        continue
+                    if model.lower() in ["orthrus", "rcaid"] and not has_enc:
+                        continue
+                return viz_dir
 
     viz_dirs = []
     for base in ("evaluation/evaluation", "detection/evaluation"):
@@ -163,4 +259,14 @@ def resolve_latest_viz_dir(dataset):
             return None
 
     viz_dirs.sort(key=os.path.getmtime, reverse=True)
-    return viz_dirs[0]
+    for viz_dir in viz_dirs:
+        if model:
+            has_w2v = any("word2vec" in f for f in os.listdir(viz_dir))
+            has_enc = any("encoder" in f for f in os.listdir(viz_dir))
+            if model.lower() == "velox" and not has_w2v:
+                continue
+            if model.lower() in ["orthrus", "rcaid"] and not has_enc:
+                continue
+        return viz_dir
+        
+    return None
