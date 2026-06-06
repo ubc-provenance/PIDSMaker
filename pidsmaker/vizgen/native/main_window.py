@@ -169,6 +169,49 @@ class MainWindow(QMainWindow):
         self.canvas3d.events.mouse_release.connect(self.on_mouse_release)
         self.press_pos = None
         self.selected_node_id = None
+        self.csv_filter_ids = set()
+
+    def load_node_csv(self):
+        from PyQt5.QtWidgets import QFileDialog
+        import csv
+        path, _ = QFileDialog.getOpenFileName(self, "Load Node CSV", "", "CSV Files (*.csv);;Text Files (*.txt);;All Files (*)")
+        if not path:
+            return
+        
+        try:
+            names = set()
+            with open(path, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row:
+                        val = row[0].strip().lower()
+                        # Ignore common headers if they are accidentally included
+                        if val and val not in ['name', 'path', 'id', 'node', 'category']:
+                            names.add(val)
+
+            self.csv_filter_names = names
+            
+            self.lbl_csv_status.setText(f"Loaded {len(names)} search terms:")
+            self.lbl_csv_terms.setText(", ".join(sorted(list(names))))
+            self.lbl_csv_terms.show()
+            self.lbl_csv_status.show()
+            self.btn_clear_csv.show()
+            self.btn_load_csv.setText("Change...")
+            
+            self.update_scatter()
+            self.focus_on_visible()
+        except Exception as e:
+            self.show_status(f"Error loading CSV: {e}", timeout=4000)
+
+    def clear_node_csv(self):
+        self.csv_filter_names = set()
+        self.lbl_csv_status.hide()
+        self.lbl_csv_terms.hide()
+        self.lbl_csv_terms.setText("")
+        self.btn_clear_csv.hide()
+        self.btn_load_csv.setText("Load CSV...")
+        self.update_scatter()
+        self.update_spatial_bounds()
 
     def update_overlay_pos(self):
         cw = self.canvas3d.native.width()
@@ -525,6 +568,24 @@ class MainWindow(QMainWindow):
         elif hasattr(self.camera, 'center'):
             self.camera.center = (cx, cy)
 
+    def focus_on_visible(self):
+        if not hasattr(self, 'visible_mask') or not self.visible_mask.any():
+            return
+            
+        vis_pos = self.pos[self.visible_mask]
+        
+        self.max_coord = max(
+            np.max(np.abs(vis_pos[:, 0])), np.max(np.abs(vis_pos[:, 1]))
+        ) if len(vis_pos) > 0 else 1.0
+        
+        if len(vis_pos) > 0:
+            self.center_pos = tuple((np.max(vis_pos, axis=0) + np.min(vis_pos, axis=0)) / 2.0)
+        else:
+            self.center_pos = (0, 0, 0)
+            
+        if hasattr(self, "camera"):
+            self.reset_camera()
+
     def reset_camera(self):
         self.slider_pan_x.setValue(0)
         self.slider_pan_y.setValue(0)
@@ -564,6 +625,21 @@ class MainWindow(QMainWindow):
             mask |= self.det_mask
         if show_undet:
             mask |= self.undet_mask
+
+        # Apply strict CSV filter based on names
+        if hasattr(self, 'csv_filter_names') and len(self.csv_filter_names) > 0:
+            for i in np.where(mask)[0]:
+                path_str = str(self.metadata[i].get("path", "")).lower()
+                cmd_str = str(self.metadata[i].get("cmd", "")).lower()
+                
+                match_found = False
+                for name in self.csv_filter_names:
+                    if name in path_str or name in cmd_str:
+                        match_found = True
+                        break
+                        
+                if not match_found:
+                    mask[i] = False
 
         if search_txt:
             for i in np.where(mask)[0]:

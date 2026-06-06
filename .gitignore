@@ -192,3 +192,5 @@ m2/
 datasets/
 Ground_Truth/orthrus/M2*
 embedding_viz_*.json
+test_nodes.csv
+test_names.csv

@@ -152,6 +152,29 @@ def setup_left_panel(window):
     window.search_timer.timeout.connect(window.update_scatter)
     window.search_box.textChanged.connect(window.search_timer.start)
     v_search.addWidget(window.search_box)
+    
+    h_csv = QHBoxLayout()
+    window.btn_load_csv = QPushButton("Load CSV...")
+    window.btn_load_csv.clicked.connect(window.load_node_csv)
+    h_csv.addWidget(window.btn_load_csv)
+    
+    window.btn_clear_csv = QPushButton("Clear CSV")
+    window.btn_clear_csv.clicked.connect(window.clear_node_csv)
+    window.btn_clear_csv.hide()
+    h_csv.addWidget(window.btn_clear_csv)
+    v_search.addLayout(h_csv)
+    
+    window.lbl_csv_status = QLabel("")
+    window.lbl_csv_status.setStyleSheet("color: #a0a0b0; font-size: 11px;")
+    window.lbl_csv_status.hide()
+    v_search.addWidget(window.lbl_csv_status)
+    
+    window.lbl_csv_terms = QLabel("")
+    window.lbl_csv_terms.setWordWrap(True)
+    window.lbl_csv_terms.setStyleSheet("color: #60a5fa; font-size: 11px; background-color: #1a1a24; padding: 4px; border-radius: 4px; border: 1px solid #333;")
+    window.lbl_csv_terms.hide()
+    v_search.addWidget(window.lbl_csv_terms)
+
     left_layout.addWidget(grp_search)
 
     grp_stats = QGroupBox("GLOBAL STATISTICS")
