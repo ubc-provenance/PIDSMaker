@@ -10,6 +10,68 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QProcess
 
+def dict_diff(d1, d2):
+    if not isinstance(d1, dict) or not isinstance(d2, dict):
+        return d1 if d1 != d2 else None
+    diff = {}
+    for k, v in d1.items():
+        if k not in d2:
+            diff[k] = v
+        else:
+            sub_diff = dict_diff(v, d2[k])
+            if sub_diff is not None:
+                if isinstance(sub_diff, dict) and not sub_diff:
+                    if not v and not d2[k]:
+                        pass
+                    else:
+                        diff[k] = sub_diff
+                else:
+                    diff[k] = sub_diff
+    return diff
+
+def clean_dict(d):
+    if not isinstance(d, dict):
+        return d
+    cleaned = {}
+    
+    KNOWN_METHODS = {
+        "alacarte", "doc2vec", "fasttext", "flash", "temporal_rw", "word2vec",
+        "custom_mlp", "gat", "gin", "graph_attention", "magic_gat", "sage", "tgn", "none", "rcaid_gat", "sum_aggregation", "glstm",
+        "few_shot", "predict_edge_contrastive", "predict_edge_type", "predict_node_type", "reconstruct_edge_embeddings", "reconstruct_node_embeddings", "reconstruct_node_features", "reconstruct_masked_features", "predict_masked_struct", "detect_edge_few_shot",
+        "global_batching", "inter_graph_batching", "intra_graph_batching",
+        "edges", "tgn_last_neighbor",
+        "depimpact", "synthetic_attack_naive", "rcaid_pseudo_graph",
+        "kairos_idf_queue", "provnet_lof_queue"
+    }
+    
+    active_method = None
+    if "used_method" in d and isinstance(d["used_method"], str):
+        active_method = d["used_method"]
+    elif "used_methods" in d and isinstance(d["used_methods"], str):
+        active_method = d["used_methods"]
+        
+    for k, v in d.items():
+        if isinstance(k, str) and k.startswith('_'):
+            continue
+        if v is None or v == "" or v == [] or v == {}:
+            continue
+            
+        if k in ["attack_to_time_window", "ground_truth_relative_path", "train_dates", "test_dates", "val_dates", "unused_dates", "database", "database_all_file", "host", "password", "port", "user", "node_label_features"]:
+            continue
+            
+        if active_method and isinstance(v, dict) and k in KNOWN_METHODS and k != active_method:
+            continue
+            
+        if isinstance(v, dict):
+            v_clean = clean_dict(v)
+            if v_clean:
+                if len(v_clean) == 1 and list(v_clean.keys())[0] in ["used_method", "used_methods"] and v_clean[list(v_clean.keys())[0]] == "none":
+                    continue
+                cleaned[k] = v_clean
+        else:
+            cleaned[k] = v
+    return cleaned
+
 class RunBrowserDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -331,7 +393,7 @@ class RunBrowserDialog(QDialog):
         
         selected_file = self.cmb_epoch.currentData()
         
-        stats_text = "--- EVALUATION STATS ---\n"
+        stats_text = ""
         if selected_file and run["has_viz"]:
             try:
                 import torch
@@ -340,8 +402,6 @@ class RunBrowserDialog(QDialog):
                 
                 stats_path = None
                 if "word2vec" in basename:
-                    stats_text += f"ADP: 0.0000\n"
-                    stats_text += f"Discrimination: 0.0000\n"
                     self.table.item(row, 3).setText("-")
                     self.table.item(row, 4).setText("-")
                 else:
@@ -359,89 +419,19 @@ class RunBrowserDialog(QDialog):
                         d = torch.load(stats_path, map_location="cpu")
                         adp = d.get("adp_score", 0.0)
                         disc = d.get("discrimination", 0.0)
-                        stats_text += f"ADP: {adp:.4f}\n"
-                        stats_text += f"Discrimination: {disc:.4f}\n"
                         self.table.item(row, 3).setText(f"{adp:.4f}")
                         self.table.item(row, 4).setText(f"{disc:.4f}")
                     else:
-                        stats_text += "No evaluation stats found for this epoch.\n"
                         self.table.item(row, 3).setText("-")
                         self.table.item(row, 4).setText("-")
             except Exception as e:
-                stats_text += f"Failed to parse stats: {e}\n"
                 self.table.item(row, 3).setText("-")
                 self.table.item(row, 4).setText("-")
-        else:
-            stats_text += "Stats unavailable.\n"
             
-        stats_text += "\n--- RUN CONFIGURATION ---\n"
         if run["config_path"]:
             try:
                 with open(run["config_path"], 'r') as f:
                     cfg_data = yaml.safe_load(f)
-                    
-                    def dict_diff(d1, d2):
-                        if not isinstance(d1, dict) or not isinstance(d2, dict):
-                            return d1 if d1 != d2 else None
-                        diff = {}
-                        for k, v in d1.items():
-                            if k not in d2:
-                                diff[k] = v
-                            else:
-                                sub_diff = dict_diff(v, d2[k])
-                                if sub_diff is not None:
-                                    if isinstance(sub_diff, dict) and not sub_diff:
-                                        if not v and not d2[k]:
-                                            pass
-                                        else:
-                                            diff[k] = sub_diff
-                                    else:
-                                        diff[k] = sub_diff
-                        return diff
-
-                    def clean_dict(d):
-                        if not isinstance(d, dict):
-                            return d
-                        cleaned = {}
-                        
-                        KNOWN_METHODS = {
-                            "alacarte", "doc2vec", "fasttext", "flash", "temporal_rw", "word2vec",
-                            "custom_mlp", "gat", "gin", "graph_attention", "magic_gat", "sage", "tgn", "none", "rcaid_gat", "sum_aggregation", "glstm",
-                            "few_shot", "predict_edge_contrastive", "predict_edge_type", "predict_node_type", "reconstruct_edge_embeddings", "reconstruct_node_embeddings", "reconstruct_node_features", "reconstruct_masked_features", "predict_masked_struct", "detect_edge_few_shot",
-                            "global_batching", "inter_graph_batching", "intra_graph_batching",
-                            "edges", "tgn_last_neighbor",
-                            "depimpact", "synthetic_attack_naive", "rcaid_pseudo_graph",
-                            "kairos_idf_queue", "provnet_lof_queue"
-                        }
-                        
-                        active_method = None
-                        if "used_method" in d and isinstance(d["used_method"], str):
-                            active_method = d["used_method"]
-                        elif "used_methods" in d and isinstance(d["used_methods"], str):
-                            active_method = d["used_methods"]
-                            
-                        for k, v in d.items():
-                            if isinstance(k, str) and k.startswith('_'):
-                                continue
-                            if v is None or v == "" or v == [] or v == {}:
-                                continue
-                                
-                            if k in ["attack_to_time_window", "ground_truth_relative_path", "train_dates", "test_dates", "val_dates", "unused_dates", "database", "database_all_file", "host", "password", "port", "user", "node_label_features"]:
-                                continue
-                                
-                            if active_method and isinstance(v, dict) and k in KNOWN_METHODS and k != active_method:
-                                continue
-                                
-                            if isinstance(v, dict):
-                                v_clean = clean_dict(v)
-                                if v_clean:
-                                    if len(v_clean) == 1 and list(v_clean.keys())[0] in ["used_method", "used_methods"] and v_clean[list(v_clean.keys())[0]] == "none":
-                                        continue
-                                    cleaned[k] = v_clean
-                            else:
-                                cleaned[k] = v
-                        return cleaned
-                        
                     cleaned_cfg = clean_dict(cfg_data)
                     
                     # Try to diff against base config
