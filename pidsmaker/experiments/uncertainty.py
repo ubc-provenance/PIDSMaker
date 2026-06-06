@@ -102,7 +102,7 @@ def clear_files_from_training(cfg):
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
 
 
 def clear_files_from_featurization(cfg):
@@ -113,7 +113,7 @@ def clear_files_from_featurization(cfg):
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
 
     clear_files_from_training(cfg)
 
