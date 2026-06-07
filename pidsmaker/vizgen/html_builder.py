@@ -38,13 +38,11 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
     adj = {nid: [] for nid in valid_ids}
     
     log("[html_builder] Building adjacency matrix...")
-    for u, v in edges:
-        u, v = int(u), int(v)
+    for u, v, t in edges:
+        u, v, t = int(u), int(v), int(t)
         if u in valid_ids and v in valid_ids:
-            adj[u].append(v)
-            adj[v].append(u)
-    for nid in adj:
-        adj[nid] = list(set(adj[nid]))
+            adj[u].append({"nb": v, "t": t, "dir": "out"})
+            adj[v].append({"nb": u, "t": t, "dir": "in"})
 
     log("[html_builder] Attaching node metadata...")
     for p in points:
@@ -438,6 +436,7 @@ function getSize(p) {{
 
 let currentTW = -1; // -1 = all
 let selectedNodeId = null;
+let activeTraceNodes = null;
 let playing = false;
 let playTimer = null;
 let is3D = true;
@@ -471,6 +470,20 @@ function buildTraces(dimNodeId) {{
     const pts = vis.filter(cat.filter);
     if (pts.length === 0) return;
     
+    const colors = pts.map(p => {{
+      if (activeTraceNodes) {{
+        return activeTraceNodes.has(p.node_id) ? cat.color : C.dimmed;
+      }}
+      return cat.color;
+    }});
+
+    const opacities = pts.map(p => {{
+      if (activeTraceNodes) {{
+        return activeTraceNodes.has(p.node_id) ? 1.0 : 0.05;
+      }}
+      return cat.name === 'Benign' ? (is3D ? 0.25 : 0.3) : (is3D ? 0.7 : 0.75);
+    }});
+
     const trace = {{
       x: pts.map(p=>p.x), y: pts.map(p=>p.y),
       customdata: pts.map(p => p.node_id),
@@ -479,9 +492,9 @@ function buildTraces(dimNodeId) {{
       hoverinfo:'text',
       marker: {{
         size: cat.name === 'Benign' ? (is3D ? 2 : 2.5) : (is3D ? 3.5 : 4),
-        color: cat.color,
+        color: colors,
         line: {{width:0}},
-        opacity: cat.name === 'Benign' ? (is3D ? 0.25 : 0.3) : (is3D ? 0.7 : 0.75),
+        opacity: opacities,
       }},
     }};
     // Only generate hover text for small traces or malicious — saves huge memory for benign
@@ -669,6 +682,7 @@ function selectNode(nid) {{
 
 function clearSelection() {{
   selectedNodeId = null;
+  activeTraceNodes = null;
   Plotly.react('plotly-div', buildTraces(null), getLayout(), config);
   document.getElementById('inspector-content').innerHTML = getGlobalStatsHtml();
 }}
@@ -754,6 +768,16 @@ function updateInspector(nid) {{
   html += `<b>Appearances:</b> ${{tws.length}} time windows<br>`;
   html += '</div>';
 
+  html += `<div class="card"><h3>Causal Tracing</h3>`;
+  html += `<p style="font-size:11px;color:#aaa;margin-bottom:8px">Isolate the temporal impact (forward) and origin (backward) of this node.</p>`;
+  if (activeTraceNodes) {{
+    html += `<button class="icon-btn" style="width:100%;background:rgba(255,80,80,0.2)" onclick="activeTraceNodes=null;refresh();updateInspector(${{nid}})">Clear Causal Trace</button>`;
+    html += `<div style="margin-top:8px;font-size:12px;color:#64b4ff">Isolated ${{activeTraceNodes.size}} causally linked nodes.</div>`;
+  }} else {{
+    html += `<button class="icon-btn" style="width:100%;background:rgba(100,180,255,0.2)" onclick="performCausalTrace(${{nid}})">Trace Causal Chain</button>`;
+  }}
+  html += `</div>`;
+
   // Temporal trajectory with clickable TW buttons
   html += '<div class="card"><h3>Temporal Trajectory</h3>';
   html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
@@ -791,14 +815,68 @@ function getKHopNeighbors(nid, k) {{
   for (let h = 0; h < k; h++) {{
     const next = [];
     frontier.forEach(n => {{
-      (adj[String(n)] || []).forEach(nb => {{
-        if (!visited.has(nb)) {{ visited.add(nb); next.push(nb); }}
+      (adj[String(n)] || []).forEach(edge => {{
+        if (!visited.has(edge.nb)) {{ visited.add(edge.nb); next.push(edge.nb); }}
       }});
     }});
     frontier = next;
   }}
   visited.delete(nid);
   return [...visited];
+}}
+
+function getCausalTrace(nid) {{
+  const traceNodes = new Set([nid]);
+  
+  // Forward BFS
+  let forwardQ = [];
+  (adj[String(nid)] || []).forEach(edge => {{
+    if (edge.dir === 'out') forwardQ.push({{node: edge.nb, time: edge.t}});
+  }});
+  const visitedFwd = new Set();
+  
+  while(forwardQ.length > 0) {{
+    const curr = forwardQ.shift();
+    const stateKey = `${{curr.node}}-${{curr.time}}`;
+    if (visitedFwd.has(stateKey)) continue;
+    visitedFwd.add(stateKey);
+    traceNodes.add(curr.node);
+    
+    (adj[String(curr.node)] || []).forEach(edge => {{
+      if (edge.dir === 'out' && edge.t >= curr.time) {{
+        forwardQ.push({{node: edge.nb, time: edge.t}});
+      }}
+    }});
+  }}
+  
+  // Backward BFS
+  let backwardQ = [];
+  (adj[String(nid)] || []).forEach(edge => {{
+    if (edge.dir === 'in') backwardQ.push({{node: edge.nb, time: edge.t}});
+  }});
+  const visitedBwd = new Set();
+  
+  while(backwardQ.length > 0) {{
+    const curr = backwardQ.shift();
+    const stateKey = `${{curr.node}}-${{curr.time}}`;
+    if (visitedBwd.has(stateKey)) continue;
+    visitedBwd.add(stateKey);
+    traceNodes.add(curr.node);
+    
+    (adj[String(curr.node)] || []).forEach(edge => {{
+      if (edge.dir === 'in' && edge.t <= curr.time) {{
+        backwardQ.push({{node: edge.nb, time: edge.t}});
+      }}
+    }});
+  }}
+  
+  return traceNodes;
+}}
+
+function performCausalTrace(nid) {{
+  activeTraceNodes = getCausalTrace(nid);
+  refresh();
+  updateInspector(nid);
 }}
 
 // Controls

@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
         metadata,
         stats,
         attack_edges,
+        full_adj=None,
         viz_cfg=None,
         enc_path=None,
         w2v_path=None,
@@ -64,6 +65,8 @@ class MainWindow(QMainWindow):
         self.w2v_path = w2v_path
         self.current_path = current_path
         self.attack_edges = attack_edges
+        self.full_adj = full_adj or {}
+        self.active_trace_nodes = None
         self.visible_mask = np.ones(len(self.pos), dtype=bool)
         self.precompute_filters()
 
@@ -276,7 +279,7 @@ class MainWindow(QMainWindow):
         self.show_status(f"Loading {basename}... Please wait.")
 
         try:
-            pos_hops, colors, sizes, metadata, stats, attack_edges = load_data(
+            pos_hops, colors, sizes, metadata, stats, attack_edges, full_adj = load_data(
                 self.current_path
             )
             self.pos_hops = pos_hops
@@ -287,6 +290,7 @@ class MainWindow(QMainWindow):
             self.metadata = metadata
             self.stats = stats
             self.attack_edges = attack_edges
+            self.full_adj = full_adj
             self.visible_mask = np.ones(len(self.pos), dtype=bool)
             self.precompute_filters()
         finally:
@@ -388,13 +392,14 @@ class MainWindow(QMainWindow):
             print(f"Error: Failed to load Epoch {ep_num}.")
             return
             
-        pos_hops, colors, sizes, metadata, stats, attack_edges = data
+        pos_hops, colors, sizes, metadata, stats, attack_edges, full_adj = data
         self.pos_hops = pos_hops
         self.colors = colors
         self.sizes = sizes
         self.metadata = metadata
         self.stats = stats
         self.attack_edges = attack_edges
+        self.full_adj = full_adj
 
         self.precompute_filters()
 
@@ -949,3 +954,94 @@ class MainWindow(QMainWindow):
 
         self.info_lbl.setText(text)
         self.apply_visual_state()
+        
+    def get_causal_trace(self, start_nid, max_nodes=10000):
+        from collections import deque
+        trace_nodes = {start_nid}
+        
+        # Forward BFS
+        forward_q = deque()
+        for edge in self.full_adj.get(str(start_nid), []):
+            if isinstance(edge, dict) and edge.get("dir") == "out":
+                forward_q.append((edge["nb"], edge["t"]))
+        
+        visited_fwd = set()
+        while forward_q and len(trace_nodes) < max_nodes:
+            curr_node, curr_time = forward_q.popleft()
+            state_key = f"{curr_node}-{curr_time}"
+            if state_key in visited_fwd: continue
+            visited_fwd.add(state_key)
+            trace_nodes.add(int(curr_node))
+            
+            for edge in self.full_adj.get(str(curr_node), []):
+                if isinstance(edge, dict) and edge.get("dir") == "out" and edge.get("t", 0) >= curr_time:
+                    forward_q.append((edge["nb"], edge["t"]))
+                    
+        # Backward BFS
+        backward_q = deque()
+        for edge in self.full_adj.get(str(start_nid), []):
+            if isinstance(edge, dict) and edge.get("dir") == "in":
+                backward_q.append((edge["nb"], edge["t"]))
+                
+        visited_bwd = set()
+        while backward_q and len(trace_nodes) < max_nodes:
+            curr_node, curr_time = backward_q.popleft()
+            state_key = f"{curr_node}-{curr_time}"
+            if state_key in visited_bwd: continue
+            visited_bwd.add(state_key)
+            trace_nodes.add(int(curr_node))
+            
+            for edge in self.full_adj.get(str(curr_node), []):
+                if isinstance(edge, dict) and edge.get("dir") == "in" and edge.get("t", 0) <= curr_time:
+                    backward_q.append((edge["nb"], edge["t"]))
+                    
+        return trace_nodes
+
+    def show_causal_window(self):
+        if not self.selected_node_id:
+            self.show_status("No node selected for tracing.", timeout=3000)
+            return
+            
+        trace_ids = self.get_causal_trace(self.selected_node_id)
+        
+        # Gather node metadata for the traced nodes, chronologically
+        trace_metadata = []
+        found_ids = set()
+        for m in self.metadata:
+            if m.get("node_id") in trace_ids:
+                trace_metadata.append(m)
+                found_ids.add(m.get("node_id"))
+                
+        # Inject dummy metadata for nodes that exist in full_adj but were filtered from points
+        missing_ids = trace_ids - found_ids
+        for missing_id in missing_ids:
+            trace_metadata.append({
+                "node_id": missing_id,
+                "type": "Filtered/Off-Graph",
+                "path": "Unknown (Excluded from 3D View)",
+                "anomaly_score": 0.0,
+                "label": 0,
+                "tw_idx": 0
+            })
+                
+        # Sort by time window
+        trace_metadata.sort(key=lambda x: x.get("tw_idx", 0))
+        
+        # Deduplicate node appearances by taking the first appearance
+        seen_nodes = set()
+        unique_trace = []
+        for m in trace_metadata:
+            nid = m.get("node_id")
+            if nid not in seen_nodes:
+                seen_nodes.add(nid)
+                unique_trace.append(m)
+                
+        from .ui_components import CausalTraceWindow
+        self.causal_window = CausalTraceWindow(
+            self.selected_node_id, 
+            unique_trace, 
+            self, 
+            full_adj=self.full_adj, 
+            trace_node_ids=trace_ids
+        )
+        self.causal_window.show()

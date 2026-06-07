@@ -49,7 +49,7 @@ def extract_encoder_embeddings(
     """Extract per-node per-time-window embeddings from a trained model."""
     model.eval()
     all_embeddings: list[TemporalEmbedding] = []
-    global_edges: set[tuple[int, int]] = set()
+    global_edges: set[tuple[int, int, int]] = set()
 
     tw_idx = 0
     with torch.no_grad():
@@ -66,21 +66,23 @@ def extract_encoder_embeddings(
                 if hasattr(batch, "original_edge_index"):
                     src_g = batch.original_edge_index[0].cpu().numpy()
                     dst_g = batch.original_edge_index[1].cpu().numpy()
-                    for u, v in zip(src_g, dst_g):
-                        global_edges.add((int(u), int(v)))
+                    times = batch.edge_time.cpu().numpy() if hasattr(batch, "edge_time") else np.zeros(len(src_g), dtype=int)
+                    for u, v, t in zip(src_g, dst_g, times):
+                        global_edges.add((int(u), int(v), int(t)))
                 else:
                     src_l = batch.edge_index[0].cpu().numpy()
                     dst_l = batch.edge_index[1].cpu().numpy()
+                    times = batch.edge_time.cpu().numpy() if hasattr(batch, "edge_time") else np.zeros(len(src_l), dtype=int)
                     
                     if len(src_l) == 0:
                         pass  # Empty batch — no edges to process
                     elif len(orig_n_id) > 0 and (src_l.max() >= len(orig_n_id) or dst_l.max() >= len(orig_n_id)):
                         # edge_index contains global IDs — use them directly
-                        for u, v in zip(src_l, dst_l):
-                            global_edges.add((int(u), int(v)))
+                        for u, v, t in zip(src_l, dst_l, times):
+                            global_edges.add((int(u), int(v), int(t)))
                     else:
-                        for u, v in zip(orig_n_id[src_l], orig_n_id[dst_l]):
-                            global_edges.add((int(u), int(v)))
+                        for u, v, t in zip(orig_n_id[src_l], orig_n_id[dst_l], times):
+                            global_edges.add((int(u), int(v), int(t)))
 
                 if isinstance(h, torch.Tensor):
                     h_np = h.cpu().numpy()
@@ -154,7 +156,7 @@ def _load_edges_from_nx_graphs(cfg) -> set:
     """
     dataset = cfg.dataset.name
     artifact_dir = getattr(cfg, "_artifact_dir", "/home/artifacts")
-    edges: set[tuple[int, int]] = set()
+    edges: set[tuple[int, int, int]] = set()
 
     # Strategy 1: Load from PyG preprocessed graphs
     patterns = [
@@ -178,20 +180,22 @@ def _load_edges_from_nx_graphs(cfg) -> set:
                         if hasattr(batch, "original_edge_index"):
                             src_g = batch.original_edge_index[0].numpy()
                             dst_g = batch.original_edge_index[1].numpy()
-                            for u, v in zip(src_g, dst_g):
-                                edges.add((int(u), int(v)))
+                            times = batch.edge_time.numpy() if hasattr(batch, "edge_time") else np.zeros(len(src_g), dtype=int)
+                            for u, v, t in zip(src_g, dst_g, times):
+                                edges.add((int(u), int(v), int(t)))
                         else:
                             src_l = batch.edge_index[0].numpy()
                             dst_l = batch.edge_index[1].numpy()
+                            times = batch.edge_time.numpy() if hasattr(batch, "edge_time") else np.zeros(len(src_l), dtype=int)
                             
                             if len(src_l) == 0:
                                 pass
                             elif orig_n_id is not None and len(orig_n_id) > 0 and (src_l.max() >= len(orig_n_id) or dst_l.max() >= len(orig_n_id)):
-                                for u, v in zip(src_l, dst_l):
-                                    edges.add((int(u), int(v)))
+                                for u, v, t in zip(src_l, dst_l, times):
+                                    edges.add((int(u), int(v), int(t)))
                             elif orig_n_id is not None:
-                                for u, v in zip(orig_n_id[src_l], orig_n_id[dst_l]):
-                                    edges.add((int(u), int(v)))
+                                for u, v, t in zip(orig_n_id[src_l], orig_n_id[dst_l], times):
+                                    edges.add((int(u), int(v), int(t)))
                 log(f"[embed_exporter] Extracted {len(edges)} edges from cache.")
                 if edges:
                     return edges
@@ -223,8 +227,9 @@ def _load_edges_from_nx_graphs(cfg) -> set:
         try:
             G = torch.load(path)
             if hasattr(G, "edges"):
-                for u, v in G.edges():
-                    edges.add((int(u), int(v)))
+                for u, v, data in G.edges(data=True):
+                    t = int(data.get("time", 0)) if isinstance(data, dict) else 0
+                    edges.add((int(u), int(v), t))
         except Exception as e:
             log(f"[embed_exporter] Error loading {path}: {e}")
 
@@ -425,7 +430,8 @@ def smart_sample(
     attack_id_set = {e.node_id for e in attack_embs}
 
     attack_neighbors: set[int] = set()
-    for u, v in result.edges:
+    for edge in result.edges:
+        u, v = edge[0], edge[1]
         if u in attack_id_set:
             attack_neighbors.add(v)
         if v in attack_id_set:

@@ -98,7 +98,7 @@ def main():
         print(f"Error: Could not find points.json in {viz_dir}")
         sys.exit(1)
 
-    pos_hops, colors, sizes, metadata, stats, attack_edges = load_data(load_path)
+    pos_hops, colors, sizes, metadata, stats, attack_edges, full_adj = load_data(load_path)
     viz_cfg = {}
     viz_config_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "config", "viz_config.yml")
@@ -116,6 +116,7 @@ def main():
             metadata,
             stats,
             attack_edges,
+            full_adj=full_adj,
             viz_cfg=viz_cfg,
             enc_path=enc_path,
             w2v_path=w2v_path,

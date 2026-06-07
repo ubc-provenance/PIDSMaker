@@ -15,7 +15,7 @@ def load_data(path):
                 data = pickle.load(f)
             
             # Invalidate old cache if it doesn't have adp or attack_start
-            if "adp" not in data[4] or "attack_start_tw" not in data[4] or "run_config" not in data[4]:
+            if len(data) < 7 or "adp" not in data[4] or "attack_start_tw" not in data[4] or "run_config" not in data[4]:
                 print("Old cache format detected. Regenerating...")
                 raise ValueError("Old cache format")
                 
@@ -174,10 +174,11 @@ def load_data(path):
 
     adj_path = path.replace("_points.json", "_adj.json")
     attack_edges = []
+    full_adj = {}
     if os.path.exists(adj_path):
         print(f"Loading adjacency list from {os.path.basename(adj_path)}...")
         with open(adj_path, "r") as f:
-            adj = json.load(f)
+            full_adj = json.load(f)
 
         malicious_nodes = set()
         for p in pts:
@@ -185,20 +186,21 @@ def load_data(path):
                 malicious_nodes.add(str(p["node_id"]))
 
         edge_set = set()
-        for u, neighbors in adj.items():
+        for u, neighbors in full_adj.items():
             if u in malicious_nodes:
-                for v in neighbors:
+                for edge in neighbors:
+                    v = edge["nb"] if isinstance(edge, dict) else edge
                     if str(v) in malicious_nodes:
                         pair = tuple(sorted([int(u), int(v)]))
                         edge_set.add(pair)
         attack_edges = list(edge_set)
         print(f"Extracted {len(attack_edges)} attack graph edges")
         
-        del adj
+        # Do not delete full_adj as we need it
         import gc
         gc.collect()
 
-    res = (pos_hops, colors, sizes, pts, stats, attack_edges)
+    res = (pos_hops, colors, sizes, pts, stats, attack_edges, full_adj)
     
     try:
         t1 = time.time()

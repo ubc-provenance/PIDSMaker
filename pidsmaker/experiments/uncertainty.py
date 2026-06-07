@@ -119,7 +119,14 @@ def clear_files_from_featurization(cfg):
 
 
 def include_metric_in_stats(value):
-    return np.isreal(value) and not isinstance(value, wandb.Image)
+    if isinstance(value, (str, list, dict, bytes, type(None))):
+        return False
+    if isinstance(value, wandb.Image):
+        return False
+    try:
+        return np.isreal(value)
+    except (TypeError, ValueError):
+        return False
 
 
 def fuse_hyperparameter_metrics(method_to_metrics):
@@ -134,9 +141,11 @@ def fuse_hyperparameter_metrics(method_to_metrics):
         if include_metric_in_stats(val):
             all_values = []
             for param, list_of_dict in method_to_metrics.items():
-                values = [d[metric] for d in list_of_dict if "precision" in d]
+                values = [d[metric] for d in list_of_dict if metric in d]
                 all_values.append(values)
-            mean_metrics[metric] = np.mean(all_values, axis=0)
+            # Only compute mean if all sublists have the same length (not ragged)
+            if all_values and all(len(v) == len(all_values[0]) for v in all_values) and len(all_values[0]) > 0:
+                mean_metrics[metric] = np.mean(all_values, axis=0)
 
     list_of_dict = [
         dict(zip(mean_metrics.keys(), values)) for values in zip(*mean_metrics.values())
@@ -150,7 +159,8 @@ def avg_std_metrics(method_to_metrics):
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        values = [entry[key] for entry in metrics]
+        values = [entry.get(key) for entry in metrics if entry.get(key) is not None]
+        if not values: continue
         result[f"{key}_mean"] = np.mean(values)
         result[f"{key}_std"] = np.std(values)
         result[f"{key}_std_rel"] = np.std(values) / (np.mean(values) + 1e-12) * 100
@@ -183,8 +193,8 @@ def max_metrics(method_to_metrics, metric="adp_score"):
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        value = metrics[max_idx][key]
-        if include_metric_in_stats(value):
+        value = metrics[max_idx].get(key)
+        if value is not None and include_metric_in_stats(value):
             result[f"{key}_max"] = value
 
     return result
@@ -200,8 +210,8 @@ def min_metrics(method_to_metrics, metric="adp_score"):
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        value = metrics[min_idx][key]
-        if include_metric_in_stats(value):
+        value = metrics[min_idx].get(key)
+        if value is not None and include_metric_in_stats(value):
             result[f"{key}_min"] = value
 
     return result
@@ -221,7 +231,7 @@ def best_metric_pick_best_run(method_to_metrics):
     metrics = method_to_metrics["deep_ensemble"]
     
     if "adp_score" in metrics[0]:
-        adp_scores = np.array([e["adp_score"] for e in metrics])
+        adp_scores = np.array([e.get("adp_score", 0) for e in metrics])
         max_adp_mask = adp_scores == adp_scores.max()
 
         # Filter only the elements with max adp_score and get the one with the highest discrimination
