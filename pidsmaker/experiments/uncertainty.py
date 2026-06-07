@@ -158,9 +158,27 @@ def avg_std_metrics(method_to_metrics):
     return result
 
 
+def _get_fallback_metric(metrics, target_metric="adp_score"):
+    if not metrics:
+        return target_metric
+    if target_metric in metrics[0]:
+        return target_metric
+    for fallback in ["auc", "val_score", "val_loss", "loss"]:
+        if fallback in metrics[0] and metrics[0][fallback] is not None:
+            return fallback
+    # If all else fails, pick the first numerical key
+    for key, val in metrics[0].items():
+        if include_metric_in_stats(val):
+            return key
+    return list(metrics[0].keys())[0]
+
+
 def max_metrics(method_to_metrics, metric="adp_score"):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
-    max_idx = np.argmax([m[metric] for m in metrics])
+    metric = _get_fallback_metric(metrics, metric)
+    
+    values = [m.get(metric, 0) if m.get(metric) is not None else 0 for m in metrics]
+    max_idx = np.argmax(values)
 
     result = {}
     metric_keys = metrics[0].keys()
@@ -174,7 +192,10 @@ def max_metrics(method_to_metrics, metric="adp_score"):
 
 def min_metrics(method_to_metrics, metric="adp_score"):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
-    min_idx = np.argmin([m[metric] for m in metrics])
+    metric = _get_fallback_metric(metrics, metric)
+    
+    values = [m.get(metric, 0) if m.get(metric) is not None else 0 for m in metrics]
+    min_idx = np.argmin(values)
 
     result = {}
     metric_keys = metrics[0].keys()
@@ -190,7 +211,7 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
     if "deep_ensemble" in method_to_metrics:
         best_run = best_metric_pick_best_run(method_to_metrics)
         for metric, value in best_run.items():
-            if metric.endswith("img"):
+            if metric.endswith("img") and "scores_file" in best_run:
                 out_dir = "/".join(best_run["scores_file"].split("/")[:-1])
                 wandb.save(best_run["scores_file"], out_dir)  # saves the scores for the best run
         wandb.log(best_run)  # logs all best metrics and images for easy analysis
@@ -198,12 +219,23 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
 
 def best_metric_pick_best_run(method_to_metrics):
     metrics = method_to_metrics["deep_ensemble"]
-    adp_scores = np.array([e["adp_score"] for e in metrics])
-    max_adp_mask = adp_scores == adp_scores.max()
+    
+    if "adp_score" in metrics[0]:
+        adp_scores = np.array([e["adp_score"] for e in metrics])
+        max_adp_mask = adp_scores == adp_scores.max()
 
-    # Filter only the elements with max adp_score and get the one with the highest discrimination
-    filtered_metrics = [metrics[i] for i in range(len(metrics)) if max_adp_mask[i]]
-    best_run = max(filtered_metrics, key=lambda e: e["discrimination"])
+        # Filter only the elements with max adp_score and get the one with the highest discrimination
+        filtered_metrics = [metrics[i] for i in range(len(metrics)) if max_adp_mask[i]]
+        if "discrimination" in filtered_metrics[0]:
+            best_run = max(filtered_metrics, key=lambda e: e["discrimination"])
+        else:
+            best_run = filtered_metrics[0]
+    else:
+        metric = _get_fallback_metric(metrics, "val_score")
+        if metric in ["val_score", "val_loss", "loss"]:
+            best_run = min(metrics, key=lambda e: e.get(metric, float('inf')) if e.get(metric) is not None else float('inf'))
+        else:
+            best_run = max(metrics, key=lambda e: e.get(metric, float('-inf')) if e.get(metric) is not None else float('-inf'))
 
     return best_run
 

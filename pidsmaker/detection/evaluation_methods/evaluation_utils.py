@@ -186,6 +186,7 @@ def plot_precision_recall(scores, y_truth, out_file):
     plt.yticks(precision_ticks)
 
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_simple_scores(scores, y_truth, out_file):
@@ -206,6 +207,7 @@ def plot_simple_scores(scores, y_truth, out_file):
 
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_score_seen(scores, y_truth, out_file):
@@ -226,6 +228,7 @@ def plot_score_seen(scores, y_truth, out_file):
 
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_scores_with_paths_node_level(
@@ -371,6 +374,7 @@ def plot_scores_with_paths_node_level(
     plt.xlim([min(scores), max(scores) * 1.5])  # Adjust xlim to make space for text
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_scores_with_paths_edge_level(
@@ -518,6 +522,7 @@ def plot_scores_with_paths_edge_level(
     plt.xlim([min(scores), max(scores) * 1.5])  # Adjust xlim to make space for text
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_scores_neat(scores, y_truth, nodes, node2attacks, out_file, threshold=None):
@@ -587,6 +592,7 @@ def plot_false_positives(y_true, y_pred, out_file):
     plt.title("True Positives and False Positives in Predictions")
     plt.legend()
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_dor_recall_curve(scores, y_truth, out_file):
@@ -628,6 +634,7 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
     plt.grid(True)
     plt.legend()
     plt.savefig(out_file)
+    plt.close('all')
 
 
 def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_file):
@@ -705,6 +712,7 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
         plt.ylim(0, 100.5)
         plt.grid(True)
         plt.savefig(out_file)
+        plt.close('all')
     except:
         print("Error while generating ADP plot")
     return area_under_curve
@@ -779,6 +787,7 @@ def plot_recall_vs_precision(scores, nodes, node2attacks, labels, out_file):
     plt.ylim(0, 1)
     plt.grid(True)
     plt.savefig(out_file)
+    plt.close('all')
     return area_under_curve
 
 
@@ -854,6 +863,7 @@ def plot_discrimination_metric(scores, y_truth, out_file):
     plt.legend()
     plt.grid(alpha=0.5)
     plt.savefig(out_file)
+    plt.close('all')
     return area
 
 
