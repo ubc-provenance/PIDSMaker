@@ -821,12 +821,23 @@ def write_viz_manifest(task_path: str):
 
             scores_path = os.path.join(pr_dir, f"scores_model_epoch_{epoch_str}.pkl")
             result_path = os.path.join(pr_dir, f"result_model_epoch_{epoch_str}{ext}")
+            import torch
+            adp = 0.0
+            disc_score = 0.0
+            try:
+                d = torch.load(stats_path, map_location="cpu")
+                adp = float(d.get("adp_score", 0.0))
+                disc_score = float(d.get("discrimination", 0.0))
+            except Exception:
+                pass
 
             entry = {
                 "epoch": epoch_str,
                 "stats_path": stats_path,
                 "scores_path": scores_path if os.path.exists(scores_path) else None,
                 "result_path": result_path if os.path.exists(result_path) else None,
+                "adp": adp,
+                "disc_score": disc_score
             }
             epochs.append(entry)
 

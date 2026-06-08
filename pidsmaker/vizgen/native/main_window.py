@@ -1002,46 +1002,136 @@ class MainWindow(QMainWindow):
             self.show_status("No node selected for tracing.", timeout=3000)
             return
             
-        trace_ids = self.get_causal_trace(self.selected_node_id)
+        self.btn_causal_trace.setText("Extracting...")
+        self.btn_causal_trace.setEnabled(False)
+        QApplication.processEvents()
         
-        # Gather node metadata for the traced nodes, chronologically
-        trace_metadata = []
-        found_ids = set()
-        for m in self.metadata:
-            if m.get("node_id") in trace_ids:
-                trace_metadata.append(m)
-                found_ids.add(m.get("node_id"))
+        try:
+            trace_ids = self.get_causal_trace(self.selected_node_id)
+            
+            # Gather node metadata for the traced nodes using fast hash lookup
+            trace_metadata = []
+            found_ids = set()
+            for nid in trace_ids:
+                if nid in self.node_tws:
+                    for tw, arr_idx in self.node_tws[nid]:
+                        trace_metadata.append(self.metadata[arr_idx])
+                    found_ids.add(nid)
+                    
+            # Inject dummy metadata for nodes that exist in full_adj but were filtered from points
+            missing_ids = trace_ids - found_ids
+            for missing_id in missing_ids:
+                trace_metadata.append({
+                    "node_id": missing_id,
+                    "type": "Filtered/Off-Graph",
+                    "path": "Unknown (Excluded from 3D View)",
+                    "anomaly_score": 0.0,
+                    "label": 0,
+                    "tw_idx": 0
+                })
+                    
+            # Sort by time window
+            trace_metadata.sort(key=lambda x: x.get("tw_idx", 0))
+            
+            # Deduplicate node appearances by taking the first appearance
+            seen_nodes = set()
+            unique_trace = []
+            for m in trace_metadata:
+                nid = m.get("node_id")
+                if nid not in seen_nodes:
+                    seen_nodes.add(nid)
+                    unique_trace.append(m)
+                    
+            from .ui_components import CausalTraceWindow
+            self.causal_window = CausalTraceWindow(
+                self.selected_node_id, 
+                unique_trace, 
+                self, 
+                full_adj=self.full_adj, 
+                trace_node_ids=trace_ids
+            )
+            self.causal_window.show()
+        finally:
+            self.btn_causal_trace.setText("Extract Causal Subgraph")
+            self.btn_causal_trace.setEnabled(True)
+
+    def show_neighbors_window(self):
+        if not self.selected_node_id:
+            self.show_status("No node selected.", timeout=3000)
+            return
+
+        self.btn_neighbors.setText("Loading...")
+        self.btn_neighbors.setEnabled(False)
+        QApplication.processEvents()
+
+        try:
+            edges = self.full_adj.get(str(self.selected_node_id), [])
+            
+            # Build grouped data (one row per unique neighbor+dir)
+            grouped = {}  # (nb, dir) -> { "indices": set, "dir": str }
+            for edge in edges:
+                if isinstance(edge, dict):
+                    nb = int(edge.get("nb"))
+                    dir_val = edge.get("dir", "unknown")
+                else:
+                    nb = int(edge)
+                    dir_val = "unknown"
                 
-        # Inject dummy metadata for nodes that exist in full_adj but were filtered from points
-        missing_ids = trace_ids - found_ids
-        for missing_id in missing_ids:
-            trace_metadata.append({
-                "node_id": missing_id,
-                "type": "Filtered/Off-Graph",
-                "path": "Unknown (Excluded from 3D View)",
-                "anomaly_score": 0.0,
-                "label": 0,
-                "tw_idx": 0
-            })
+                if nb in self.node_tws:
+                    key = (nb, dir_val)
+                    if key not in grouped:
+                        grouped[key] = {"indices": set(), "dir": dir_val}
+                    for tw, arr_idx in self.node_tws[nb]:
+                        grouped[key]["indices"].add(arr_idx)
+
+            grouped_data = []
+            raw_indices = []  # list of (arr_idx, dir_val) for ungrouped view
+            
+            for (nb, dir_val), info in grouped.items():
+                sorted_idx = sorted(info["indices"], key=lambda i: self.metadata[i].get("tw_idx", 0))
                 
-        # Sort by time window
-        trace_metadata.sort(key=lambda x: x.get("tw_idx", 0))
-        
-        # Deduplicate node appearances by taking the first appearance
-        seen_nodes = set()
-        unique_trace = []
-        for m in trace_metadata:
-            nid = m.get("node_id")
-            if nid not in seen_nodes:
-                seen_nodes.add(nid)
-                unique_trace.append(m)
+                # Build grouped row
+                base = self.metadata[sorted_idx[0]]
+                tw_labels = []
+                seen = set()
+                for idx in sorted_idx:
+                    label = self.metadata[idx].get("tw_label", str(self.metadata[idx].get("tw_idx", "")))
+                    if label not in seen:
+                        seen.add(label)
+                        tw_labels.append(label)
                 
-        from .ui_components import CausalTraceWindow
-        self.causal_window = CausalTraceWindow(
-            self.selected_node_id, 
-            unique_trace, 
-            self, 
-            full_adj=self.full_adj, 
-            trace_node_ids=trace_ids
-        )
-        self.causal_window.show()
+                if len(tw_labels) > 3:
+                    agg = f"{tw_labels[0]}, {tw_labels[1]} ... (+{len(tw_labels)-2} more)"
+                else:
+                    agg = ", ".join(tw_labels)
+
+                grouped_data.append({
+                    "edge_dir": dir_val,
+                    "node_id": base.get("node_id"),
+                    "type": base.get("type", ""),
+                    "anomaly_score": base.get("anomaly_score", 0.0),
+                    "label": base.get("label", 0),
+                    "path": base.get("path", ""),
+                    "cmd": base.get("cmd", ""),
+                    "tw_idx": base.get("tw_idx", 0),
+                    "aggregated_tw": agg,
+                    "all_tw_labels": tw_labels,
+                })
+                
+                for idx in sorted_idx:
+                    raw_indices.append((idx, dir_val))
+
+            grouped_data.sort(key=lambda x: x.get("anomaly_score", 0.0), reverse=True)
+            
+            from .ui_components import NodeNeighborsWindow
+            self.neighbors_window = NodeNeighborsWindow(
+                self.selected_node_id,
+                grouped_data,
+                raw_indices,
+                self.metadata,
+                self
+            )
+            self.neighbors_window.show()
+        finally:
+            self.btn_neighbors.setText("Show Anomalous Edges")
+            self.btn_neighbors.setEnabled(True)

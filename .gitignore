@@ -194,3 +194,8 @@ Ground_Truth/orthrus/M2*
 embedding_viz_*.json
 test_nodes.csv
 test_names.csv
+analyze_output.txt
+analyze_points.py
+analyze_points2.py
+test_adj.py
+tmp.txt

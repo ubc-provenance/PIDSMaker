@@ -48,13 +48,9 @@ def update_cfg_for_uncertainty_exp(
         cfg._is_running_mc_dropout = True
 
     elif method == "deep_ensemble":
-        restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
-        if restart_from == "featurization":
-            clear_files_from_featurization(cfg)
-        elif restart_from == "training":
-            clear_files_from_training(cfg)
-        else:
-            raise ValueError(f"Unsupported 'restart from' value: {restart_from}")
+        # Deep ensemble automatically generates new task paths via increasing_seed or subtask_concat_value.
+        # We must NOT clear the original task paths, otherwise Iteration 0's artifacts get deleted.
+        pass
 
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files
@@ -141,8 +137,9 @@ def fuse_hyperparameter_metrics(method_to_metrics):
         if include_metric_in_stats(val):
             all_values = []
             for param, list_of_dict in method_to_metrics.items():
-                values = [d[metric] for d in list_of_dict if metric in d]
-                all_values.append(values)
+                values = [d[metric] for d in list_of_dict if metric in d and d[metric] is not None]
+                if values:
+                    all_values.append(values)
             # Only compute mean if all sublists have the same length (not ragged)
             if all_values and all(len(v) == len(all_values[0]) for v in all_values) and len(all_values[0]) > 0:
                 mean_metrics[metric] = np.mean(all_values, axis=0)

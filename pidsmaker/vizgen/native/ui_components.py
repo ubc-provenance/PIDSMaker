@@ -1,7 +1,9 @@
 from PyQt5.QtGui import QColor
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QAbstractTableModel
 from PyQt5.QtWidgets import (
     QAbstractItemView,
+    QApplication,
+    QTableView,
     QCheckBox,
     QComboBox,
     QFormLayout,
@@ -23,6 +25,194 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
 )
+
+class NeighborsTableModel(QAbstractTableModel):
+    """
+    Fast model for the neighbors table.
+    In grouped mode: _data is a list of pre-computed dicts.
+    In raw mode: _data is a list of (arr_idx, dir_val) tuples referencing metadata_ref.
+    """
+    def __init__(self, data, is_grouped, metadata_ref=None):
+        super().__init__()
+        self._data = data
+        self.is_grouped = is_grouped
+        self._meta = metadata_ref  # only used in raw mode
+        self.headers = ["Dir", "Time Window", "Node ID", "Type", "Score", "Path / Cmd"]
+
+    def rowCount(self, parent=None):
+        if parent is not None and parent.isValid():
+            return 0  # flat table, no children
+        return len(self._data)
+
+    def columnCount(self, parent=None):
+        if parent is not None and parent.isValid():
+            return 0
+        return len(self.headers)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        
+        row = index.row()
+        col = index.column()
+        
+        if row < 0 or row >= len(self._data):
+            return None
+        if col < 0 or col >= len(self.headers):
+            return None
+
+        try:
+            if self.is_grouped:
+                m = self._data[row]
+                dir_val = m.get("edge_dir", "")
+            else:
+                arr_idx, dir_val = self._data[row]
+                m = self._meta[arr_idx]
+            
+            if role == Qt.DisplayRole:
+                if col == 0: return dir_val
+                if col == 1: 
+                    if self.is_grouped:
+                        return m.get("aggregated_tw", "")
+                    else:
+                        return m.get("tw_label", str(m.get("tw_idx", "")))
+                if col == 2: return str(m.get("node_id", ""))
+                if col == 3: return m.get("type", "")
+                if col == 4: return f"{m.get('anomaly_score', 0.0):.4f}"
+                if col == 5: 
+                    cmd_val = m.get("cmd", "")
+                    return cmd_val if cmd_val and cmd_val != "None" else str(m.get("path", ""))
+                    
+            elif role == Qt.ForegroundRole:
+                if col in (1, 2):
+                    if m.get("label") == 1: return QColor(Qt.red)
+                    else: return QColor(Qt.green)
+                if col == 4:
+                    score = m.get("anomaly_score", 0.0)
+                    if score > 0.5: return QColor(Qt.red)
+                    elif score > 0.1: return QColor(Qt.yellow)
+                    
+            elif role == Qt.ToolTipRole:
+                if col == 1 and self.is_grouped:
+                    all_tws = m.get("all_tw_labels", [])
+                    if len(all_tws) > 3:
+                        return "Active in time windows:\n" + "\n".join(all_tws)
+        except Exception:
+            pass
+                    
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            if 0 <= section < len(self.headers):
+                return self.headers[section]
+        return None
+
+class NodeNeighborsWindow(QDialog):
+    def __init__(self, center_nid, grouped_data, raw_indices, metadata_ref, parent=None):
+        super().__init__(parent)
+        self.center_nid = center_nid
+        self.setWindowTitle(f"Anomalous Edges for Node {center_nid}")
+        self.resize(1000, 500)
+        self.setStyleSheet("""
+            QDialog { background-color: #111115; }
+            QLabel { color: #e0e0e0; font-weight: bold; }
+            QTableView {
+                background-color: #1a1a24;
+                color: #e0e0e0;
+                gridline-color: #333344;
+                border: 1px solid #3f3f4e;
+                border-radius: 4px;
+            }
+            QHeaderView::section {
+                background-color: #2a2a35;
+                color: #a0a0b0;
+                padding: 4px;
+                border: 1px solid #333344;
+                font-weight: bold;
+            }
+            QTableView::item:selected {
+                background-color: #3b82f6;
+                color: white;
+            }
+            QScrollBar:vertical { background: #1a1a24; width: 10px; margin: 0px; }
+            QScrollBar::handle:vertical { background: #3a3a45; min-height: 20px; border-radius: 5px; }
+            QPushButton {
+                background-color: #2a2a35; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold;
+            }
+            QPushButton:hover { background-color: #3a3a45; }
+        """)
+
+        self._grouped_data = grouped_data
+        self._raw_indices = raw_indices
+        self._raw_sorted = None  # lazily sorted
+        self._metadata_ref = metadata_ref
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(15, 15, 15, 15)
+
+        self.lbl_info = QLabel("")
+        self.lbl_info.setStyleSheet("color: #60a5fa; font-size: 14px;")
+        layout.addWidget(self.lbl_info)
+
+        self.chk_group = QCheckBox("Group identical edges across time windows")
+        self.chk_group.setChecked(True)
+        self.chk_group.setStyleSheet("color: #a0a0b0; font-weight: bold; margin-bottom: 5px;")
+        self.chk_group.stateChanged.connect(self._on_toggle)
+        layout.addWidget(self.chk_group)
+
+        self.table = QTableView()
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.verticalHeader().setVisible(False)
+
+        layout.addWidget(self.table)
+
+        btn_close = QPushButton("Close")
+        btn_close.clicked.connect(self.accept)
+        h_buttons = QHBoxLayout()
+        h_buttons.addStretch()
+        h_buttons.addWidget(btn_close)
+        layout.addLayout(h_buttons)
+
+        # Show grouped view immediately
+        self._set_grouped_model()
+
+    def _configure_headers(self):
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Interactive)
+        if self.table.model() and self.table.model().columnCount() > 5:
+            header.setSectionResizeMode(5, QHeaderView.Stretch)
+
+    def _set_grouped_model(self):
+        model = NeighborsTableModel(self._grouped_data, True)
+        self.table.setModel(model)
+        self._configure_headers()
+        self.lbl_info.setText(f"Showing {len(self._grouped_data)} unique edges for Node {self.center_nid}, sorted by anomaly score.")
+
+    def _set_raw_model(self):
+        if self._raw_sorted is None:
+            self._raw_sorted = sorted(
+                self._raw_indices,
+                key=lambda x: self._metadata_ref[x[0]].get("anomaly_score", 0.0),
+                reverse=True
+            )
+        model = NeighborsTableModel(self._raw_sorted, False, self._metadata_ref)
+        self.table.setModel(model)
+        self._configure_headers()
+        self.lbl_info.setText(f"Showing {len(self._raw_sorted)} edges (all time windows) for Node {self.center_nid}, sorted by anomaly score.")
+
+    def _on_toggle(self):
+        self.chk_group.setEnabled(False)
+        self.lbl_info.setText("Switching view...")
+        QApplication.processEvents()
+        try:
+            if self.chk_group.isChecked():
+                self._set_grouped_model()
+            else:
+                self._set_raw_model()
+        finally:
+            self.chk_group.setEnabled(True)
 
 class CausalTraceWindow(QDialog):
     def __init__(self, start_nid, trace_metadata, parent=None, full_adj=None, trace_node_ids=None):
@@ -785,6 +975,16 @@ def setup_left_panel(window):
     """)
     window.btn_causal_trace.clicked.connect(window.show_causal_window)
     v_info.addWidget(window.btn_causal_trace)
+    
+    window.btn_neighbors = QPushButton("Show Anomalous Edges")
+    window.btn_neighbors.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(255, 100, 100, 0.2); color: #ef4444; border: 1px solid #ef4444; border-radius: 4px; padding: 6px; font-weight: bold; margin-top: 5px;
+        }
+        QPushButton:hover { background-color: rgba(255, 100, 100, 0.4); }
+    """)
+    window.btn_neighbors.clicked.connect(window.show_neighbors_window)
+    v_info.addWidget(window.btn_neighbors)
     
     left_layout.addWidget(grp_info)
 
