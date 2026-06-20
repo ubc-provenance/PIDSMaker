@@ -356,6 +356,19 @@ class RunBrowserDialog(QDialog):
             self.selected_viz_dir = run["viz_dir"]
             self.selected_dataset = run["dataset"]
             
+            best_epoch = None
+            manifest_path = os.path.join(os.path.dirname(run["viz_dir"]), "viz_manifest.json")
+            if os.path.exists(manifest_path):
+                try:
+                    with open(manifest_path, "r") as f:
+                        import json
+                        manifest = json.load(f)
+                        if "epochs" in manifest and manifest["epochs"]:
+                            sorted_epochs = sorted(manifest["epochs"], key=lambda x: x.get("adp", 0), reverse=True)
+                            best_epoch = sorted_epochs[0].get("epoch")
+                except Exception:
+                    pass
+            
             # Populate combobox with available json files
             viz_files = glob.glob(os.path.join(run["viz_dir"], "*_points.json"))
             for vf in viz_files:
@@ -370,7 +383,10 @@ class RunBrowserDialog(QDialog):
                         epoch_num = parts[1].split("_")[0]
                         label = f"GNN Encoder (Epoch {epoch_num})"
                 elif "encoder" in basename:
-                    label = "GNN Encoder (Final)"
+                    if best_epoch is not None:
+                        label = f"GNN Encoder (Best: Epoch {best_epoch})"
+                    else:
+                        label = "GNN Encoder (Best)"
                     
                 self.cmb_epoch.addItem(label, vf) # label is text, vf is underlying data
                 
@@ -409,11 +425,20 @@ class RunBrowserDialog(QDialog):
                         ep_str = basename.split("encoder_epoch_")[1].split("_")[0]
                         stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pth")
                     elif "encoder" in basename:
-                        # Just grab the newest stats file for legacy encoder names
+                        # Grab the stats file with the highest ADP
                         stats_files = glob.glob(os.path.join(pr_dir, "stats_model_epoch_*.pth"))
-                        if stats_files:
-                            stats_files.sort(key=os.path.getmtime, reverse=True)
-                            stats_path = stats_files[0]
+                        best_path = None
+                        best_adp = -1.0
+                        for sf in stats_files:
+                            try:
+                                d = torch.load(sf, map_location="cpu")
+                                adp = d.get("adp_score", 0.0)
+                                if adp >= best_adp:
+                                    best_adp = adp
+                                    best_path = sf
+                            except Exception:
+                                pass
+                        stats_path = best_path
                     
                     if stats_path and os.path.exists(stats_path):
                         d = torch.load(stats_path, map_location="cpu")

@@ -15,7 +15,7 @@ def load_data(path):
                 data = pickle.load(f)
             
             # Invalidate old cache if it doesn't have adp or attack_start
-            if len(data) < 7 or "adp" not in data[4] or "attack_start_tw" not in data[4] or "run_config" not in data[4]:
+            if len(data) < 7 or "adp" not in data[4] or "attack_start_tw" not in data[4] or "run_config" not in data[4] or data[4].get("cache_v") != 4:
                 print("Old cache format detected. Regenerating...")
                 raise ValueError("Old cache format")
                 
@@ -42,24 +42,27 @@ def load_data(path):
             adp = 0.0
             disc_score = 0.0
         else:
-            if "_epoch_" in path:
-                ep_str = path.split("_epoch_")[1].split("_")[0]
-                pr_dir = os.path.join(os.path.dirname(os.path.dirname(path)), "precision_recall_dir")
-                stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pth")
-                if not os.path.exists(stats_path):
-                    stats_path = os.path.join(pr_dir, f"stats_model_epoch_{ep_str}.pkl")
+            if "encoder_epoch_" in path:
+                ep_str = os.path.basename(path).split("encoder_epoch_")[1].split("_")[0]
+                manifest_path = os.path.join(os.path.dirname(os.path.dirname(path)), "viz_manifest.json")
+                if os.path.exists(manifest_path):
+                    with open(manifest_path, "r") as f:
+                        manifest = json.load(f)
+                        for ep_data in manifest.get("epochs", []):
+                            if str(ep_data.get("epoch")) == str(ep_str):
+                                adp = ep_data.get("adp", 0.0)
+                                disc_score = ep_data.get("disc_score", 0.0)
+                                break
             else:
-                # Legacy encoder - just grab the newest stats file
-                import glob
-                pr_dir = os.path.join(os.path.dirname(os.path.dirname(path)), "precision_recall_dir")
-                stats_files = glob.glob(os.path.join(pr_dir, "stats_model_epoch_*.pth"))
-                stats_path = stats_files[0] if stats_files else None
-                
-            if stats_path and os.path.exists(stats_path):
-                import torch
-                d = torch.load(stats_path, map_location="cpu")
-                adp = d.get("adp_score", 0.0)
-                disc_score = d.get("discrimination", 0.0)
+                # Legacy encoder (Best) - grab from manifest
+                manifest_path = os.path.join(os.path.dirname(os.path.dirname(path)), "viz_manifest.json")
+                if os.path.exists(manifest_path):
+                    with open(manifest_path, "r") as f:
+                        manifest = json.load(f)
+                        if "epochs" in manifest and manifest["epochs"]:
+                            sorted_epochs = sorted(manifest["epochs"], key=lambda x: x.get("adp", 0), reverse=True)
+                            adp = sorted_epochs[0].get("adp", 0.0)
+                            disc_score = sorted_epochs[0].get("disc_score", 0.0)
     except Exception:
         pass
         
@@ -138,7 +141,8 @@ def load_data(path):
         "disc_score": disc_score,
         "attack_start_tw": float('inf'),
         "attack_start_time": "",
-        "run_config": config_text
+        "run_config": config_text,
+        "cache_v": 4
     }
 
     for i, p in enumerate(pts):
@@ -171,6 +175,25 @@ def load_data(path):
                 stats["mal_file"] += 1
             elif "netflow" in ptype:
                 stats["mal_net"] += 1
+
+    # Load campaign mapping if available
+    campaign_path = os.path.join(os.path.dirname(path), "campaign_mapping.json")
+    if os.path.exists(campaign_path):
+        try:
+            with open(campaign_path, "r") as f:
+                campaign_data = json.load(f)
+            n2a = campaign_data.get("node2attacks", {})
+            for p in pts:
+                nid = str(p.get("node_id"))
+                if nid in n2a:
+                    p["campaign_ids"] = n2a[nid]
+                else:
+                    p["campaign_ids"] = []
+            stats["num_campaigns"] = campaign_data.get("num_campaigns", 0)
+            stats["attack2nodes"] = campaign_data.get("attack2nodes", {})
+            print(f"Loaded campaign mapping: {stats['num_campaigns']} campaigns")
+        except Exception as e:
+            print(f"Failed to load campaign mapping: {e}")
 
     adj_path = path.replace("_points.json", "_adj.json")
     attack_edges = []

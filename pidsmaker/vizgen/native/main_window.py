@@ -94,6 +94,23 @@ class MainWindow(QMainWindow):
             ds_name = os.path.basename(self.enc_path).split("_encoder_")[0].replace("embedding_viz_", "")
             import glob
 
+            best_epoch_num = None
+            manifest_path = os.path.join(os.path.dirname(viz_dir), "viz_manifest.json")
+            if os.path.exists(manifest_path):
+                try:
+                    with open(manifest_path, "r") as f:
+                        import json
+                        manifest = json.load(f)
+                        if "epochs" in manifest and manifest["epochs"]:
+                            sorted_epochs = sorted(manifest["epochs"], key=lambda x: x.get("adp", 0), reverse=True)
+                            best_epoch_num = int(sorted_epochs[0].get("epoch", 0))
+                except Exception:
+                    pass
+
+            best_enc_path = os.path.join(viz_dir, f"embedding_viz_{ds_name}_encoder_points.json")
+            if os.path.exists(best_enc_path) and best_epoch_num is not None:
+                self.available_epochs.append((best_epoch_num, best_enc_path))
+
             epoch_files = glob.glob(
                 os.path.join(
                     viz_dir, f"embedding_viz_{ds_name}_encoder_epoch_*_points.json"
@@ -401,6 +418,18 @@ class MainWindow(QMainWindow):
         self.attack_edges = attack_edges
         self.full_adj = full_adj
 
+        if hasattr(self, 'lbl_metrics_global'):
+            if self.stats.get("adp") is not None:
+                self.lbl_metrics_global.setText(f"ADP: {self.stats['adp']:.3f} | Discrim: {self.stats['disc_score']:.3f}")
+            else:
+                self.lbl_metrics_global.setText("N/A")
+        if hasattr(self, 'lbl_tot'):
+            self.lbl_tot.setText(str(self.stats.get("total", 0)))
+        if hasattr(self, 'lbl_ben'):
+            self.lbl_ben.setText(str(self.stats.get("benign", 0)))
+        if hasattr(self, 'lbl_mal'):
+            self.lbl_mal.setText(str(self.stats.get("malicious", 0)))
+
         self.precompute_filters()
 
         num_hops = len(pos_hops)
@@ -465,7 +494,7 @@ class MainWindow(QMainWindow):
         self.current_hop = val
         self.lbl_hops.setText(f"Hops ({val}):")
         self.pos = self.pos_hops[val]
-        self.update_spatial_bounds()
+        self.update_spatial_bounds(reset_cam=False)
         self.apply_visual_state()
 
     def update_tw_label(self):
@@ -533,7 +562,7 @@ class MainWindow(QMainWindow):
         self.view3d.camera = self.camera
         self.apply_visual_state()
 
-    def update_spatial_bounds(self):
+    def update_spatial_bounds(self, reset_cam=True):
         self.max_coord = max(
             np.max(np.abs(self.pos[:, 0])), np.max(np.abs(self.pos[:, 1]))
         ) if len(self.pos) > 0 else 1.0
@@ -560,7 +589,7 @@ class MainWindow(QMainWindow):
                 scale=(scale_factor, scale_factor, scale_factor), translate=self.center_pos
             )
             
-        if hasattr(self, "camera"):
+        if reset_cam and hasattr(self, "camera"):
             self.reset_camera()
 
     def update_camera_center(self):
@@ -635,6 +664,102 @@ class MainWindow(QMainWindow):
         self.det_mask = np.array([m.get("label", 0) != 0 and m.get("detection_status", 0) in (0, 1) for m in self.metadata], dtype=bool)
         self.undet_mask = np.array([m.get("label", 0) != 0 and m.get("detection_status", 0) == 2 for m in self.metadata], dtype=bool)
         self.search_corpus = [str(m.get("node_id", "")) + " " + m.get("path", "").lower() for m in self.metadata]
+        self.precompute_detection_cost()
+
+    def precompute_detection_cost(self):
+        """Sweep anomaly score thresholds to compute FP at full node recall and full campaign coverage."""
+        scores = []
+        unique_mal_ids = set()
+        for i, m in enumerate(self.metadata):
+            score = m.get("anomaly_score", 0.0) or 0.0
+            label = m.get("label", 0)
+            det = m.get("detection_status", 0)
+            nid = m.get("node_id")
+            campaign_ids = m.get("campaign_ids", [])
+            scores.append((score, label, det, nid, campaign_ids))
+            if label == 1:
+                unique_mal_ids.add(nid)
+
+        unique_det_ids = set()
+        for m in self.metadata:
+            if m.get("label") == 1 and m.get("detection_status") == 1:
+                unique_det_ids.add(m.get("node_id"))
+
+        scores.sort(key=lambda x: x[0], reverse=True)
+
+        total_gt = len(unique_mal_ids)
+        total_det = len(unique_det_ids)
+
+        # Get total campaigns from stats (loaded from campaign_mapping.json)
+        num_campaigns = self.stats.get("num_campaigns", 0)
+        all_campaigns = set(range(num_campaigns)) if num_campaigns > 0 else set()
+
+        # Detect current threshold from the data
+        det_scores = [s[0] for s in scores if s[2] == 1]
+        current_threshold = min(det_scores) if det_scores else 0.0
+        current_fp = sum(1 for s in scores if s[1] == 0 and s[0] >= current_threshold)
+
+        # Sweep for full node recall: detect every unique malicious node_id
+        seen_nodes = set()
+        fp_full_recall = 0
+        thresh_full_recall = 0.0
+        for score, label, det, nid, cids in scores:
+            if label == 1:
+                seen_nodes.add(nid)
+            else:
+                fp_full_recall += 1
+            if len(seen_nodes) >= total_gt:
+                thresh_full_recall = score
+                break
+
+        # Sweep for full campaign: at least one node from each campaign
+        seen_campaigns = set()
+        fp_full_campaign = 0
+        thresh_full_campaign = 0.0
+        if all_campaigns:
+            for score, label, det, nid, cids in scores:
+                if label == 1:
+                    for cid in cids:
+                        seen_campaigns.add(cid)
+                else:
+                    fp_full_campaign += 1
+                if seen_campaigns >= all_campaigns:
+                    thresh_full_campaign = score
+                    break
+
+        # Count currently detected campaigns
+        det_campaigns = set()
+        for m in self.metadata:
+            if m.get("label") == 1 and m.get("detection_status") == 1:
+                for cid in m.get("campaign_ids", []):
+                    det_campaigns.add(cid)
+
+        self.detection_cost = {
+            "total_gt": total_gt,
+            "total_det": total_det,
+            "current_fp": current_fp,
+            "current_threshold": current_threshold,
+            "fp_full_recall": fp_full_recall,
+            "thresh_full_recall": thresh_full_recall,
+            "fp_full_campaign": fp_full_campaign,
+            "thresh_full_campaign": thresh_full_campaign,
+            "num_campaigns": num_campaigns,
+            "det_campaigns": len(det_campaigns),
+        }
+        self.update_detection_cost_ui()
+
+    def update_detection_cost_ui(self):
+        if not hasattr(self, 'lbl_dc_gt'):
+            return
+        dc = self.detection_cost
+        pct = dc['total_det'] / dc['total_gt'] * 100 if dc['total_gt'] > 0 else 0
+        self.lbl_dc_gt.setText(f"{dc['total_gt']}")
+        self.lbl_dc_det.setText(f"<span style='color:#60a5fa'>{dc['total_det']} / {dc['total_gt']}</span> <span style='color:#9ca3af'>({pct:.1f}%)</span>")
+        self.lbl_dc_cur_fp.setText(f"{dc['current_fp']}")
+        self.lbl_dc_full_recall.setText(f"<span style='color:#f87171'>{dc['fp_full_recall']:,}</span>")
+        camp_pct = dc['det_campaigns'] / dc['num_campaigns'] * 100 if dc['num_campaigns'] > 0 else 0
+        self.lbl_dc_full_campaign.setText(f"<span style='color:#fb923c'>{dc['fp_full_campaign']:,}</span>")
+        self.lbl_dc_campaign_cov.setText(f"{dc['det_campaigns']} / {dc['num_campaigns']} ({camp_pct:.1f}%)")
 
     def update_scatter(self):
         show_benign = self.chk_benign.isChecked()
@@ -684,8 +809,50 @@ class MainWindow(QMainWindow):
             return
 
         display_colors = self.colors.copy()
+        display_sizes = self.sizes.copy()
         
-        if hasattr(self, "chk_heat") and self.chk_heat.isChecked():
+        fp_campaign = hasattr(self, "chk_fp_campaign") and self.chk_fp_campaign.isChecked()
+        fp_recall = hasattr(self, "chk_fp_recall") and self.chk_fp_recall.isChecked()
+
+        if (fp_campaign or fp_recall) and hasattr(self, "detection_cost"):
+            thresh = self.detection_cost.get("thresh_full_recall" if fp_recall else "thresh_full_campaign", 0.0)
+            scores = np.array([m.get("anomaly_score", 0.0) for m in self.metadata])
+            labels = np.array([m.get("label", 0) for m in self.metadata])
+            
+            tn_mask = (labels == 0) & (scores < thresh)
+            fn_mask = (labels == 1) & (scores < thresh)
+            tp_mask = (labels == 1) & (scores >= thresh)
+            fp_mask = (labels == 0) & (scores >= thresh)
+
+            fp_count = np.sum(fp_mask)
+            
+            # Dynamic opacity and size based on FP count to prevent blowing out the screen
+            if fp_count > 1000:
+                fp_alpha = 0.3
+                fp_size = 4.0
+            else:
+                fp_alpha = 0.8
+                fp_size = 7.0
+
+            display_colors[tn_mask] = [0.2, 0.2, 0.2, 0.1]   # Greyscale, very low opacity
+            display_colors[fn_mask] = [1.0, 0.2, 0.2, 0.1]   # Undetected: very less opacity
+            display_colors[tp_mask] = [1.0, 0.2, 0.2, 0.4]   # Detected: less opacity
+            display_colors[fp_mask] = [1.0, 0.7, 0.0, fp_alpha]   # FPs: bright orange
+            display_sizes[fp_mask] = fp_size                 # FPs: Noticeable but scaled
+            display_sizes[tp_mask] = 5.0                     # TPs: Standard malicious size
+            display_sizes[fn_mask] = 2.0                     # FNs: Smaller
+            display_sizes[tn_mask] = 2.0                     # TNs: Smaller
+            
+            # Print FP Node IDs to terminal if there's a manageable number
+            fp_count = np.sum(fp_mask)
+            if 0 < fp_count <= 20:
+                fp_indices = np.where(fp_mask)[0]
+                fp_nids = [self.metadata[i].get("node_id") for i in fp_indices]
+                print(f"\n[Forensics] Highlighting {fp_count} False Positives. Node IDs: {fp_nids}")
+            elif fp_count > 20:
+                print(f"\n[Forensics] Highlighting {fp_count:,} False Positives (too many to list individually).")
+                
+        elif hasattr(self, "chk_heat") and self.chk_heat.isChecked():
             from vispy.color import Colormap
             cm = Colormap(['#0d0887', '#6a00a8', '#b12a90', '#e16462', '#fca636', '#f0f921'])
             scores = np.array([m.get("anomaly_score", 0.0) for m in self.metadata])
@@ -858,15 +1025,17 @@ class MainWindow(QMainWindow):
         bg_mask = self.visible_mask & (~match_mask)
         
         rebuild = True
-        if hasattr(self, "_last_bg_mask") and hasattr(self, "_last_display_colors") and hasattr(self, "_last_render_pos"):
+        if hasattr(self, "_last_bg_mask") and hasattr(self, "_last_display_colors") and hasattr(self, "_last_render_pos") and hasattr(self, "_last_display_sizes"):
             if (np.array_equal(self._last_bg_mask, bg_mask) and 
                 np.array_equal(self._last_display_colors, display_colors) and
+                np.array_equal(self._last_display_sizes, display_sizes) and
                 np.array_equal(self._last_render_pos, render_pos)):
                 rebuild = False
                 
         if rebuild:
             self._last_bg_mask = bg_mask.copy()
             self._last_display_colors = display_colors.copy()
+            self._last_display_sizes = display_sizes.copy()
             self._last_render_pos = render_pos.copy()
             
             if bg_mask.any():
@@ -874,7 +1043,7 @@ class MainWindow(QMainWindow):
                     render_pos[bg_mask],
                     edge_width=0,
                     face_color=display_colors[bg_mask],
-                    size=self.sizes[bg_mask],
+                    size=display_sizes[bg_mask],
                 )
                 self.scatter.shared_program['a_tw_start'] = self.tw_start[bg_mask]
                 self.scatter.shared_program['a_tw_end'] = self.tw_end[bg_mask]
@@ -913,6 +1082,8 @@ class MainWindow(QMainWindow):
 
             self.overlay_tr.setFixedSize(self.overlay_tr.layout().sizeHint())
             self.update_overlay_pos()
+
+        self.canvas3d.update()
 
     def on_mouse_press(self, event):
         if event.button == 1:
@@ -970,7 +1141,60 @@ class MainWindow(QMainWindow):
         text += "<br>"
         
         if "path" in m and m["path"]:
-            text += f"<b>Path:</b> {m['path']}"
+            text += f"<b>Path:</b> {m['path']}<br>"
+
+        # Neighborhood inspection
+        try:
+            K = 20
+            node_pos = self.pos[idx]
+            dists = np.sum((self.pos - node_pos) ** 2, axis=1)
+            dists[idx] = np.inf  # exclude self
+            nn_indices = np.argpartition(dists, K)[:K]
+            nn_indices = nn_indices[np.argsort(dists[nn_indices])]
+
+            n_benign = n_det = n_undet = 0
+            type_counts = defaultdict(int)
+            path_counts = defaultdict(int)
+            nn_scores = []
+            for ni in nn_indices:
+                nm = self.metadata[ni]
+                lbl = nm.get("label", 0)
+                det = nm.get("detection_status", 0)
+                if lbl == 0:
+                    n_benign += 1
+                elif det == 1:
+                    n_det += 1
+                else:
+                    n_undet += 1
+                type_counts[nm.get("type", "?").lower()] += 1
+                p = nm.get("path", "")
+                if p:
+                    path_counts[p[:50]] += 1
+                nn_scores.append(nm.get("anomaly_score", 0) or 0)
+
+            purity = max(n_benign, n_det, n_undet) / K
+            my_score = m.get("anomaly_score", 0) or 0
+            median_nn = sorted(nn_scores)[K // 2] if nn_scores else 0
+            score_gap = my_score - median_nn
+
+            text += "<br><span style='color:#818cf8; font-weight:bold; font-size:12px;'>NEIGHBORHOOD</span><br>"
+            text += f"<span style='color:#10b981'>●</span> Benign: {n_benign}<br>"
+            text += f"<span style='color:#60a5fa'>●</span> Detected: {n_det}<br>"
+            text += f"<span style='color:#ef4444'>●</span> Undetected: {n_undet}<br>"
+
+            types_str = ", ".join(f"{v} {k}" for k, v in sorted(type_counts.items(), key=lambda x: -x[1]))
+            text += f"<b>Types:</b> {types_str}<br>"
+
+            top_paths = sorted(path_counts.items(), key=lambda x: -x[1])[:3]
+            paths_str = ", ".join(f"{p} ({c})" for p, c in top_paths)
+            text += f"<b>Paths:</b> {paths_str}<br>"
+
+            purity_color = "#10b981" if purity > 0.8 else "#fb923c" if purity > 0.5 else "#ef4444"
+            text += f"<b>Purity:</b> <span style='color:{purity_color}'>{purity:.0%}</span> &nbsp; "
+            gap_color = "#10b981" if abs(score_gap) > 3.0 else "#fb923c" if abs(score_gap) > 1.0 else "#ef4444"
+            text += f"<b>Score Gap:</b> <span style='color:{gap_color}'>{score_gap:+.2f}</span>"
+        except Exception:
+            pass
 
         self.info_lbl.setText(text)
         self.apply_visual_state()
@@ -1155,3 +1379,177 @@ class MainWindow(QMainWindow):
         finally:
             self.btn_neighbors.setText("Show Anomalous Edges")
             self.btn_neighbors.setEnabled(True)
+
+    def show_score_distribution(self):
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout
+        try:
+            from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+            import matplotlib.pyplot as plt
+            from matplotlib.patches import Patch
+        except ImportError:
+            self.show_status("Matplotlib is required for this feature.", timeout=3000)
+            return
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Anomaly Score Distribution")
+        dlg.resize(900, 600)
+        layout = QVBoxLayout(dlg)
+
+        # Collect raw scores and group by node type / attack campaign
+        raw_scores = []
+        labels = []
+        node_types = []
+        detection_statuses = []
+        for m in self.metadata:
+            raw_scores.append(m.get("anomaly_score", 0.0) or 0.0)
+            labels.append(m.get("label", 0))
+            node_types.append((m.get("type") or "file").lower())
+            detection_statuses.append(m.get("detection_status", 0))
+
+        raw_scores = np.array(raw_scores, dtype=float)
+        labels = np.array(labels, dtype=int)
+
+        # Normalize to [0, 1] (matching the original evaluation plot)
+        raw_min, raw_max = float(np.min(raw_scores)), float(np.max(raw_scores))
+        span = (raw_max - raw_min) if raw_max > raw_min else 1.0
+        norm_scores = (raw_scores - raw_min) / span
+
+        # Colors — matching the original private repo exactly
+        benign_type_colors = {
+            "subject": "#1b5e20",
+            "file":    "#bbbbbb",
+            "netflow": "#a5d6a7",
+        }
+        alpha_val = 0.7
+
+        attack_colors = {
+            0: "black",
+            1: "red",
+            2: "#377eb8",
+        }
+
+        # Split benign by type, attack by campaign
+        benign_by_type = defaultdict(list)
+        attack_scores = {}
+        for i in range(len(norm_scores)):
+            if labels[i] == 0:
+                ntype = node_types[i]
+                if "subject" in ntype or "process" in ntype:
+                    benign_by_type["subject"].append(norm_scores[i])
+                elif "netflow" in ntype or "net" in ntype:
+                    benign_by_type["netflow"].append(norm_scores[i])
+                else:
+                    benign_by_type["file"].append(norm_scores[i])
+            else:
+                cids = self.metadata[i].get("campaign_ids", [0])
+                attack_type = cids[0] if cids else 0
+                attack_scores.setdefault(attack_type, []).append(norm_scores[i])
+
+        bins = np.linspace(0, 1, 75)
+
+        plt.style.use("seaborn-v0_8-whitegrid")
+        fig, ax = plt.subplots(figsize=(9, 6))
+        ax.grid(axis="x", visible=False)
+        ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.7)
+
+        legend_patches = []
+
+        # Benign histograms (per-type, matching original)
+        for ntype in ("subject", "file", "netflow"):
+            vals = benign_by_type.get(ntype, [])
+            if not vals:
+                continue
+            color = benign_type_colors[ntype]
+            label = f"Benign ({ntype})"
+            ax.hist(
+                vals, bins=bins, alpha=alpha_val, label=label,
+                color=color, edgecolor="black", linewidth=0.5, log=True
+            )
+            legend_patches.append(
+                Patch(facecolor=color, edgecolor="black", alpha=alpha_val, label=label)
+            )
+
+        # Attack histograms (split by campaign)
+        for attack_type, values in attack_scores.items():
+            ax.hist(
+                values, bins=bins, alpha=alpha_val, label=f"Attack #{attack_type+1}",
+                color=attack_colors.get(attack_type, "black"),
+                edgecolor="black", linewidth=0.5, log=True
+            )
+
+        for atype in sorted(attack_scores.keys()):
+            if atype in attack_colors:
+                legend_patches.append(
+                    Patch(facecolor=attack_colors[atype], edgecolor="black",
+                          alpha=alpha_val, label=f"Attack #{atype+1}")
+                )
+
+        # Compute discrimination zones: shade where precision >= 50% AND all attack TWs detected
+        n_curve_points = 200
+        precision_cut = 0.5
+        thresholds_norm = np.linspace(0, 1, n_curve_points)
+        thresholds_raw = raw_min + thresholds_norm * span
+
+        # Compute precision and campaign coverage at each threshold (vectorized)
+        precision_curve = np.zeros(n_curve_points)
+        num_campaigns = self.stats.get("num_campaigns", 0)
+        all_campaigns = set(range(num_campaigns)) if num_campaigns > 0 else set()
+
+        # Build campaign_ids array for malicious nodes
+        mal_campaign_ids = []
+        for m in self.metadata:
+            if m.get("label") == 1:
+                mal_campaign_ids.append(m.get("campaign_ids", []))
+
+        # Pre-sort for efficient threshold sweep
+        mal_scores_sorted = np.sort(raw_scores[labels == 1])
+        ben_scores_sorted = np.sort(raw_scores[labels == 0])
+        mal_order = np.argsort(raw_scores[labels == 1])
+        mal_campaigns_sorted = [mal_campaign_ids[i] for i in mal_order]
+
+        det_curve = np.zeros(n_curve_points)
+        for ti, thr in enumerate(thresholds_raw):
+            tp = len(mal_scores_sorted) - np.searchsorted(mal_scores_sorted, thr, side='left')
+            fp = len(ben_scores_sorted) - np.searchsorted(ben_scores_sorted, thr, side='left')
+            precision_curve[ti] = tp / (tp + fp + 1e-12)
+            # Count unique campaigns above threshold
+            above_idx = np.searchsorted(mal_scores_sorted, thr, side='left')
+            detected_camps = set()
+            for cids in mal_campaigns_sorted[above_idx:]:
+                detected_camps.update(cids)
+            det_curve[ti] = len(detected_camps) / max(num_campaigns, 1)
+
+        eps = 1e-12
+        mask = (precision_curve >= precision_cut) & (det_curve >= 1.0 - eps)
+        if np.any(mask):
+            idx = np.where(mask)[0]
+            splits = np.where(np.diff(idx) > 1)[0] + 1
+            runs = np.split(idx, splits)
+            shaded = False
+            for run in runs:
+                t_start = thresholds_norm[run[0]]
+                t_end = thresholds_norm[run[-1]]
+                lbl = "Good Zone (P≥50% & All Attacks)" if not shaded else None
+                ax.axvspan(t_start, t_end, color="gray", alpha=0.2, label=lbl)
+                shaded = True
+
+        # Threshold line
+        if hasattr(self, 'detection_cost'):
+            cur = self.detection_cost.get('current_threshold', 0)
+            norm_thresh = (cur - raw_min) / span
+            if 0.0 <= norm_thresh <= 1.0:
+                ax.axvline(
+                    x=norm_thresh, color="black", linestyle="--", linewidth=1.5,
+                    label=f"Threshold: {norm_thresh:.2f}"
+                )
+
+        ax.set_xlabel("Node anomaly scores", fontsize=12)
+        ax.set_xlim(0, 1)
+        ax.tick_params(labelsize=12)
+        ax.legend(handles=legend_patches, loc='upper right', fontsize=9, frameon=True, fancybox=True)
+        fig.tight_layout()
+
+        canvas = FigureCanvas(fig)
+        layout.addWidget(canvas)
+        dlg.exec_()
+

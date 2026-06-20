@@ -938,6 +938,53 @@ def setup_left_panel(window):
     v_stats.addLayout(flay)
     left_layout.addWidget(grp_stats)
 
+    grp_dc = QGroupBox("DETECTION")
+    grp_dc.setStyleSheet("""
+        QGroupBox { font-weight: bold; color: #818cf8; border: 1px solid #3f3f4e; border-radius: 4px; margin-top: 8px; padding-top: 16px; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
+    """)
+    v_dc = QVBoxLayout(grp_dc)
+    dc_flay = QFormLayout()
+    dc_flay.setVerticalSpacing(3)
+    dc_flay.setHorizontalSpacing(8)
+
+    window.lbl_dc_gt = QLabel("—")
+    window.lbl_dc_gt.setStyleSheet("font-weight: bold; color: white;")
+    dc_flay.addRow(QLabel("<span style='color:#9ca3af;'>GT Attack Nodes:</span>"), window.lbl_dc_gt)
+
+    window.lbl_dc_det = QLabel("—")
+    dc_flay.addRow(QLabel("<span style='color:#60a5fa;'>Detected:</span>"), window.lbl_dc_det)
+
+    window.lbl_dc_cur_fp = QLabel("—")
+    window.lbl_dc_cur_fp.setStyleSheet("font-weight: bold; color: #fbbf24;")
+    dc_flay.addRow(QLabel("<span style='color:#fbbf24;'>Current FP:</span>"), window.lbl_dc_cur_fp)
+
+    window.lbl_dc_campaign_cov = QLabel("—")
+    window.lbl_dc_campaign_cov.setStyleSheet("font-weight: bold; color: #fb923c;")
+    dc_flay.addRow(QLabel("<span style='color:#fb923c;'>Campaign Coverage:</span>"), window.lbl_dc_campaign_cov)
+
+    window.lbl_dc_full_recall = QLabel("—")
+    dc_flay.addRow(QLabel("<span style='color:#f87171;'>FP for 100% Recall:</span>"), window.lbl_dc_full_recall)
+
+    window.lbl_dc_full_campaign = QLabel("—")
+    dc_flay.addRow(QLabel("<span style='color:#fb923c;'>FP for 100% Campaign:</span>"), window.lbl_dc_full_campaign)
+
+    v_dc.addLayout(dc_flay)
+    window.btn_plot_dist = QPushButton("Plot Score Distribution")
+    window.btn_plot_dist.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(129, 140, 248, 0.2); color: #818cf8; border: 1px solid #818cf8; border-radius: 4px; padding: 6px; font-weight: bold; margin-top: 5px;
+        }
+        QPushButton:hover { background-color: rgba(129, 140, 248, 0.4); }
+    """)
+    window.btn_plot_dist.clicked.connect(window.show_score_distribution)
+    v_dc.addWidget(window.btn_plot_dist)
+
+    left_layout.addWidget(grp_dc)
+
+    if hasattr(window, 'detection_cost'):
+        window.update_detection_cost_ui()
+
     grp_overlays = QGroupBox("OVERLAYS")
     v_overlays = QVBoxLayout(grp_overlays)
     window.chk_traj = QCheckBox("Show Temporal Trajectories")
@@ -954,6 +1001,16 @@ def setup_left_panel(window):
     window.chk_heat.setChecked(False)
     window.chk_heat.stateChanged.connect(window.update_scatter)
     v_overlays.addWidget(window.chk_heat)
+
+    window.chk_fp_campaign = QCheckBox("Highlight FP (Full Campaign)")
+    window.chk_fp_campaign.setChecked(False)
+    window.chk_fp_campaign.stateChanged.connect(window.apply_visual_state)
+    v_overlays.addWidget(window.chk_fp_campaign)
+
+    window.chk_fp_recall = QCheckBox("Highlight FP (Full Recall)")
+    window.chk_fp_recall.setChecked(False)
+    window.chk_fp_recall.stateChanged.connect(window.apply_visual_state)
+    v_overlays.addWidget(window.chk_fp_recall)
 
     left_layout.addWidget(grp_overlays)
 
