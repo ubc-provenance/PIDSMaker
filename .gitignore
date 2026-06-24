@@ -199,3 +199,13 @@ analyze_points.py
 analyze_points2.py
 test_adj.py
 tmp.txt
+pidsmaker/detection/evaluation_methods/sequence_signal_test.py
+run_real_test_multi.py
+
+# Exclude private components
+config/seqflow_full.yml
+config/best_velox.yml
+config/gned.yml
+patch_campaign.py
+pidsmaker/detection/training_methods/seqflow_loop.py
+pidsmaker/detection/training_methods/sequence_extractor.py

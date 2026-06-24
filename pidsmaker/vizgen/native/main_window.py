@@ -806,6 +806,9 @@ class MainWindow(QMainWindow):
             self.scatter_hl.set_data(np.zeros((1, 3), dtype=np.float32), size=0)
             self.scatter_hl.shared_program['a_tw_start'] = np.zeros(1, dtype=np.float32)
             self.scatter_hl.shared_program['a_tw_end'] = np.zeros(1, dtype=np.float32)
+            for attr in ("_last_bg_mask", "_last_display_colors", "_last_render_pos", "_last_display_sizes"):
+                if hasattr(self, attr):
+                    delattr(self, attr)
             return
 
         display_colors = self.colors.copy()
@@ -865,7 +868,7 @@ class MainWindow(QMainWindow):
         render_pos = self.pos.copy()
         if hasattr(self, "chk_temporal") and not self.chk_temporal.isChecked():
             render_pos[:, 2] = 0.0
-            display_colors[self.benign_mask, 3] *= 0.15
+            display_colors[self.benign_mask, 3] *= 0.55
 
         match_mask = np.zeros(len(self.metadata), dtype=bool)
         if hasattr(self, "selected_node_id") and self.selected_node_id is not None:
