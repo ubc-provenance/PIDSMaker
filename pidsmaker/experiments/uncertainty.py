@@ -48,9 +48,13 @@ def update_cfg_for_uncertainty_exp(
         cfg._is_running_mc_dropout = True
 
     elif method == "deep_ensemble":
-        # Deep ensemble automatically generates new task paths via increasing_seed or subtask_concat_value.
-        # We must NOT clear the original task paths, otherwise Iteration 0's artifacts get deleted.
-        pass
+        restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
+        if restart_from == "featurization":
+            clear_files_from_featurization(cfg)
+        elif restart_from == "training":
+            clear_files_from_training(cfg)
+        else:
+            raise ValueError(f"Unsupported 'restart from' value: {restart_from}")
 
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files
@@ -98,7 +102,7 @@ def clear_files_from_training(cfg):
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)
-        os.makedirs(path, exist_ok=True)
+        os.makedirs(path)
 
 
 def clear_files_from_featurization(cfg):
@@ -109,20 +113,13 @@ def clear_files_from_featurization(cfg):
 
     for path in paths:
         shutil.rmtree(path, ignore_errors=True)
-        os.makedirs(path, exist_ok=True)
+        os.makedirs(path)
 
     clear_files_from_training(cfg)
 
 
 def include_metric_in_stats(value):
-    if isinstance(value, (str, list, dict, bytes, type(None))):
-        return False
-    if isinstance(value, wandb.Image):
-        return False
-    try:
-        return np.isreal(value)
-    except (TypeError, ValueError):
-        return False
+    return np.isreal(value) and not isinstance(value, wandb.Image)
 
 
 def fuse_hyperparameter_metrics(method_to_metrics):
@@ -137,12 +134,9 @@ def fuse_hyperparameter_metrics(method_to_metrics):
         if include_metric_in_stats(val):
             all_values = []
             for param, list_of_dict in method_to_metrics.items():
-                values = [d[metric] for d in list_of_dict if metric in d and d[metric] is not None]
-                if values:
-                    all_values.append(values)
-            # Only compute mean if all sublists have the same length (not ragged)
-            if all_values and all(len(v) == len(all_values[0]) for v in all_values) and len(all_values[0]) > 0:
-                mean_metrics[metric] = np.mean(all_values, axis=0)
+                values = [d[metric] for d in list_of_dict if "precision" in d]
+                all_values.append(values)
+            mean_metrics[metric] = np.mean(all_values, axis=0)
 
     list_of_dict = [
         dict(zip(mean_metrics.keys(), values)) for values in zip(*mean_metrics.values())
@@ -156,8 +150,7 @@ def avg_std_metrics(method_to_metrics):
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        values = [entry.get(key) for entry in metrics if entry.get(key) is not None]
-        if not values: continue
+        values = [entry[key] for entry in metrics]
         result[f"{key}_mean"] = np.mean(values)
         result[f"{key}_std"] = np.std(values)
         result[f"{key}_std_rel"] = np.std(values) / (np.mean(values) + 1e-12) * 100
@@ -165,33 +158,15 @@ def avg_std_metrics(method_to_metrics):
     return result
 
 
-def _get_fallback_metric(metrics, target_metric="adp_score"):
-    if not metrics:
-        return target_metric
-    if target_metric in metrics[0]:
-        return target_metric
-    for fallback in ["auc", "val_score", "val_loss", "loss"]:
-        if fallback in metrics[0] and metrics[0][fallback] is not None:
-            return fallback
-    # If all else fails, pick the first numerical key
-    for key, val in metrics[0].items():
-        if include_metric_in_stats(val):
-            return key
-    return list(metrics[0].keys())[0]
-
-
 def max_metrics(method_to_metrics, metric="adp_score"):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
-    metric = _get_fallback_metric(metrics, metric)
-    
-    values = [m.get(metric, 0) if m.get(metric) is not None else 0 for m in metrics]
-    max_idx = np.argmax(values)
+    max_idx = np.argmax([m[metric] for m in metrics])
 
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        value = metrics[max_idx].get(key)
-        if value is not None and include_metric_in_stats(value):
+        value = metrics[max_idx][key]
+        if include_metric_in_stats(value):
             result[f"{key}_max"] = value
 
     return result
@@ -199,16 +174,13 @@ def max_metrics(method_to_metrics, metric="adp_score"):
 
 def min_metrics(method_to_metrics, metric="adp_score"):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
-    metric = _get_fallback_metric(metrics, metric)
-    
-    values = [m.get(metric, 0) if m.get(metric) is not None else 0 for m in metrics]
-    min_idx = np.argmin(values)
+    min_idx = np.argmin([m[metric] for m in metrics])
 
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        value = metrics[min_idx].get(key)
-        if value is not None and include_metric_in_stats(value):
+        value = metrics[min_idx][key]
+        if include_metric_in_stats(value):
             result[f"{key}_min"] = value
 
     return result
@@ -218,7 +190,7 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
     if "deep_ensemble" in method_to_metrics:
         best_run = best_metric_pick_best_run(method_to_metrics)
         for metric, value in best_run.items():
-            if metric.endswith("img") and "scores_file" in best_run:
+            if metric.endswith("img"):
                 out_dir = "/".join(best_run["scores_file"].split("/")[:-1])
                 wandb.save(best_run["scores_file"], out_dir)  # saves the scores for the best run
         wandb.log(best_run)  # logs all best metrics and images for easy analysis
@@ -226,23 +198,12 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
 
 def best_metric_pick_best_run(method_to_metrics):
     metrics = method_to_metrics["deep_ensemble"]
-    
-    if "adp_score" in metrics[0]:
-        adp_scores = np.array([e.get("adp_score", 0) for e in metrics])
-        max_adp_mask = adp_scores == adp_scores.max()
+    adp_scores = np.array([e["adp_score"] for e in metrics])
+    max_adp_mask = adp_scores == adp_scores.max()
 
-        # Filter only the elements with max adp_score and get the one with the highest discrimination
-        filtered_metrics = [metrics[i] for i in range(len(metrics)) if max_adp_mask[i]]
-        if "discrimination" in filtered_metrics[0]:
-            best_run = max(filtered_metrics, key=lambda e: e["discrimination"])
-        else:
-            best_run = filtered_metrics[0]
-    else:
-        metric = _get_fallback_metric(metrics, "val_score")
-        if metric in ["val_score", "val_loss", "loss"]:
-            best_run = min(metrics, key=lambda e: e.get(metric, float('inf')) if e.get(metric) is not None else float('inf'))
-        else:
-            best_run = max(metrics, key=lambda e: e.get(metric, float('-inf')) if e.get(metric) is not None else float('-inf'))
+    # Filter only the elements with max adp_score and get the one with the highest discrimination
+    filtered_metrics = [metrics[i] for i in range(len(metrics)) if max_adp_mask[i]]
+    best_run = max(filtered_metrics, key=lambda e: e["discrimination"])
 
     return best_run
 

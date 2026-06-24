@@ -170,164 +170,19 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         Returns:
             tuple: (metrics dict from evaluation, times dict with task execution times)
         """
-        import gc
         tasks = get_task_to_module(cfg).keys()
-        
-        metrics = {}
-        val_score = None
-        times = {}
+        task_results = {task: run_task(task, cfg, method, iteration) for task in tasks}
 
-        for task in tasks:
-            result = run_task(task, cfg, method, iteration)
-            times[f"time_{task}"] = round(result["time"], 2)
-            
-            if task == "evaluation":
-                metrics = result["return"] or {}
-            elif task == "training":
-                val_score = result["return"]
-                
-            # Explicitly delete result and run garbage collection
-            del result
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
+        metrics = task_results["evaluation"]["return"] or {}
         metrics = {
             **metrics,
-            "val_score": val_score,
+            "val_score": task_results["training"]["return"],
         }
 
+        times = {
+            f"time_{task}": round(results["time"], 2) for task, results in task_results.items()
+        }
         return metrics, times
-
-    def _run_viz(cfg):
-        """Generate interactive 3-D WebGL embedding visualization and save to artifacts/viz/.
-
-        Automatically runs after every pipeline completion.  Pass ``--force_restart viz``
-        to delete any existing HTML for this (model, dataset) pair and regenerate from
-        scratch regardless of whether a file already exists.
-
-        The output lands at::
-
-            /home/artifacts/viz/embedding_viz_<DATASET>_word2vec.html
-            /home/artifacts/viz/embedding_viz_<DATASET>_encoder.html  (GNN models only)
-
-        Args:
-            cfg: Full pipeline configuration object.
-        """
-        import subprocess
-        import sys
-
-        # Script lives at  pidsmaker/../scripts/embedding_viz.py  inside the repo
-        viz_script = os.environ.get(
-            "PIDS_VIZ_SCRIPT",
-            os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "scripts", "embedding_viz.py")
-            ),
-        )
-
-        model_name = cfg._model  # e.g. "velox", "orthrus"
-        dataset    = cfg.dataset.name
-        viz_dir    = os.path.join(cfg._artifact_dir, "viz")
-        os.makedirs(viz_dir, exist_ok=True)
-
-        # --force_restart viz → delete stale outputs so they are always rebuilt
-        if getattr(cfg, "_force_restart_viz", False):
-            log("[viz] --force_restart viz detected — removing stale HTML files.")
-            import glob as _glob
-            stale_patterns = [
-                os.path.join(viz_dir, f"embedding_viz_{dataset}_word2vec.html"),
-                os.path.join(viz_dir, f"embedding_viz_{dataset}_encoder.html"),
-                os.path.join(viz_dir, f"embedding_viz_{dataset}_encoder_epoch_*.html"),
-            ]
-            for pattern in stale_patterns:
-                for stale in _glob.glob(pattern):
-                    os.remove(stale)
-                    log(f"[viz] Removed {stale}")
-
-        # Check whether we can skip (both expected files already exist)
-        # word2vec models only produce a word2vec view; GNN models produce both
-        emb_mode = "word2vec" if model_name == "word2vec" else "both"
-        expected_suffixes = ["word2vec"] if emb_mode == "word2vec" else ["word2vec", "encoder"]
-        already_done = all(
-            os.path.exists(os.path.join(viz_dir, f"embedding_viz_{dataset}_{s}.html"))
-            for s in expected_suffixes
-        )
-        if already_done and not getattr(cfg, "_force_restart_viz", False):
-            log(f"[viz] Visualization already up-to-date in {viz_dir}. Skipping. "
-                "(use --force_restart viz to regenerate)")
-            return
-
-        log(f"[viz] Generating interactive WebGL visualization → {viz_dir}")
-
-        # Step 1: Generate word2vec visualization (lightweight, always works)
-        cmd_w2v = [
-            sys.executable, "-u", viz_script,
-            model_name, dataset,
-            "--embeddings", "word2vec",
-            "--method", "umap",
-            "--max_benign", "all",
-            "--max_attack", "all",
-        ]
-        log(f"[viz] Command: {' '.join(cmd_w2v)}")
-        proc = subprocess.run(cmd_w2v, check=False)
-        if proc.returncode != 0:
-            log(f"[viz] Word2vec viz exited with code {proc.returncode}")
-
-        # Step 2: Generate encoder visualizations — one subprocess per epoch
-        # to prevent OOM from accumulated memory across epochs.
-        # Discover available epochs from the manifest
-        manifest_pattern = os.path.join(
-            cfg._artifact_dir, "evaluation", "evaluation", "*", dataset, "viz_manifest.json"
-        )
-        import glob as _glob
-        manifests = _glob.glob(manifest_pattern)
-        epochs = []
-        if manifests:
-            manifests.sort(key=os.path.getmtime, reverse=True)
-            import json as _json
-            with open(manifests[0], "r") as _f:
-                _manifest = _json.load(_f)
-            epochs = []
-            if "epochs" in _manifest:
-                sorted_entries = sorted(_manifest["epochs"], key=lambda x: x.get("stats_path", ""))
-                
-                # Load stats to get ADP score (same logic as embedding_viz.py)
-                import torch as _torch
-                scored_epochs = []
-                for entry in sorted_entries:
-                    try:
-                        stats = _torch.load(entry["stats_path"], map_location="cpu")
-                        adp = stats.get("adp_score", 0)
-                        scored_epochs.append((entry["epoch"], adp))
-                    except Exception:
-                        pass
-                
-                scored_epochs.sort(key=lambda x: x[1], reverse=True)
-                epochs = [e[0] for e in scored_epochs[:6]]
-
-        if not epochs:
-            # Fallback: just run the best epoch
-            epochs = [None]
-
-        for epoch in epochs:
-            cmd_enc = [
-                sys.executable, "-u", viz_script,
-                model_name, dataset,
-                "--embeddings", "encoder",
-                "--method", "umap",
-                "--max_benign", "all",
-                "--max_attack", "all",
-            ]
-            if epoch is not None:
-                cmd_enc += ["--epoch", str(epoch)]
-            log(f"[viz] Command: {' '.join(cmd_enc)}")
-            proc = subprocess.run(cmd_enc, check=False)
-            if proc.returncode == 0:
-                log(f"[viz] Encoder epoch {epoch} done!")
-            else:
-                log(f"[viz] Encoder epoch {epoch} exited with code {proc.returncode}")
-
-        log(f"[viz] All visualizations saved to {viz_dir}")
 
     def run_pipeline_with_experiments(cfg):
         """Run pipeline with experiment mode handling (standard, uncertainty, or tuning).
@@ -346,7 +201,6 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
             metrics, times = run_pipeline(cfg)
             wandb.log(metrics)
             wandb.log(times)
-            _run_viz(cfg)
 
         elif cfg.experiment.used_method == "uncertainty":
             log("Running pipeline in 'Uncertainty' mode.")
@@ -502,7 +356,6 @@ if __name__ == "__main__":
 
     wandb.finish()
 
+    # If it's a one-time run, we delete the files as we can't leverage them in future
     if cfg._restart_from_scratch:
-        for task in ["construction", "transformation", "featurization", "feat_inference"]:
-            task_cfg = getattr(cfg, task)
-            shutil.rmtree(task_cfg._task_path, ignore_errors=True)
+        shutil.rmtree(cfg.construction._task_path, ignore_errors=True)

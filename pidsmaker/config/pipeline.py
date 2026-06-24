@@ -157,12 +157,6 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         action="store_true",
         help="Whether to run the framework as in functional tests.",
     )
-    parser.add_argument(
-        "--use_cached_training",
-        action="store_true",
-        help="If set, automatically picks up the most recent completed training run for the "
-             "same dataset and seeds its done.txt into the current task path, skipping retraining.",
-    )
 
     # Script-specific args
     parser.add_argument("--show_attack", type=int, help="Number of attack for plotting", default=0)
@@ -419,74 +413,6 @@ def deep_merge_dicts(target, source):
     return target
 
 
-def seed_cached_training(cfg):
-    """Automatically pick up the most recent completed training run for the same dataset.
-
-    Finds the newest training directory with a done.txt for cfg.dataset.name and seeds
-    the current task path with:
-      - done.txt  (makes the pipeline skip the training step)
-      - edge_losses/ (symlinked so evaluation can read per-edge scores)
-
-    Args:
-        cfg: Configuration object (training._task_path and dataset.name must be set)
-    """
-    import glob
-    import shutil
-
-    dataset = cfg.dataset.name
-    current_path = cfg.training._task_path
-    artifact_dir = cfg._artifact_dir
-
-    # Glob all completed training runs for this dataset
-    pattern = os.path.join(artifact_dir, "training", "training", "*", dataset, "done.txt")
-    candidates = glob.glob(pattern)
-
-    if not candidates:
-        print(f"[use_cached_training] No completed training run found for {dataset}. "
-              "Proceeding with full training.")
-        return
-
-    # Pick the most recently modified one
-    candidates.sort(key=os.path.getmtime, reverse=True)
-    best_done = candidates[0]
-    best_dir = os.path.dirname(best_done)  # …/training/<hash>/<dataset>
-
-    # Skip if it's literally the same directory (nothing to do)
-    if os.path.realpath(best_dir) == os.path.realpath(current_path):
-        print(f"[use_cached_training] Current task path already has a completed run. Skipping seed.")
-        return
-
-    print(f"[use_cached_training] Seeding training cache from:\n  {best_dir}\n  → {current_path}")
-    os.makedirs(current_path, exist_ok=True)
-
-    # Plant done.txt
-    dest_done = os.path.join(current_path, TASK_FINISHED_FILE)
-    if not os.path.exists(dest_done):
-        shutil.copy2(best_done, dest_done)
-        print(f"[use_cached_training] Planted done.txt at {dest_done}")
-
-    # Symlink edge_losses/ (needed by evaluation)
-    src_edge_losses = os.path.join(best_dir, "edge_losses")
-    dst_edge_losses = os.path.join(current_path, "edge_losses")
-    if os.path.isdir(src_edge_losses) and not os.path.exists(dst_edge_losses):
-        os.symlink(src_edge_losses, dst_edge_losses)
-        print(f"[use_cached_training] Symlinked edge_losses from {src_edge_losses}")
-
-    # Symlink trained_models/ if it exists
-    src_models = os.path.join(best_dir, "trained_models")
-    dst_models = os.path.join(current_path, "trained_models")
-    if os.path.isdir(src_models) and not os.path.exists(dst_models):
-        os.symlink(src_models, dst_models)
-        print(f"[use_cached_training] Symlinked trained_models from {src_models}")
-
-    # Symlink magic/ if it exists
-    src_magic = os.path.join(best_dir, "magic")
-    dst_magic = os.path.join(current_path, "magic")
-    if os.path.isdir(src_magic) and not os.path.exists(dst_magic):
-        os.symlink(src_magic, dst_magic)
-        print(f"[use_cached_training] Symlinked magic from {src_magic}")
-
-
 def get_yml_cfg(args):
     # Checks that CLI args are OK
     check_args(args)
@@ -523,11 +449,6 @@ def get_yml_cfg(args):
     # Based on the defined restart args, computes a unique path on disk
     # to store the files of each task
     set_task_paths(cfg)
-
-    # Auto-seed training cache from the most recent completed run for this dataset
-    use_cached = getattr(args, "use_cached_training", False)
-    if use_cached:
-        seed_cached_training(cfg)
 
     # Calculates which subtasks have to be re-executed
     set_subtasks_to_restart(yml_file, cfg)

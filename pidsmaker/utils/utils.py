@@ -148,7 +148,7 @@ def init_database_connection(cfg):
 
     if cfg.database.host is not None:
         connect = psycopg2.connect(
-            database=cfg.dataset.name.lower(),
+            database=database_name,
             host=cfg.database.host,
             user=cfg.database.user,
             password=cfg.database.password,

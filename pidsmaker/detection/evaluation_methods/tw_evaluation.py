@@ -42,11 +42,11 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file)
-        for line in df.itertuples(index=False):
-            srcnode = line.srcnode
-            dstnode = line.dstnode
-            loss = line.loss
+        df = pd.read_csv(file).to_dict(orient="records")
+        for line in df:
+            srcnode = line["srcnode"]
+            dstnode = line["dstnode"]
+            loss = line["loss"]
 
             tw_to_losses[tw].append(loss)
 

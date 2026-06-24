@@ -35,14 +35,14 @@ def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     for file in log_tqdm(sorted(filelist), desc="Compute edge labels"):
         file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file)
+        df = pd.read_csv(file).to_dict(orient="records")
 
-        for line in df.itertuples(index=False):
-            srcnode = str(line.srcnode)
-            dstnode = str(line.dstnode)
-            loss = line.loss
-            t = line.time
-            edge_type = edge_type_map[line.edge_type]
+        for line in df:
+            srcnode = str(line["srcnode"])
+            dstnode = str(line["dstnode"])
+            loss = line["loss"]
+            t = line["time"]
+            edge_type = edge_type_map[line["edge_type"]]
             edge = (srcnode, dstnode, t, edge_type)
 
             scores.append(loss)

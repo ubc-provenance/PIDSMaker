@@ -297,12 +297,6 @@ def main(cfg):
         }
     )
 
-    del train_data
-    del val_data
-    del test_data
-    import gc
-    gc.collect()
-
     return best_val_score
 
 
