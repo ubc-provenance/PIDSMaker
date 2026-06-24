@@ -6,3 +6,5 @@ embedding_viz:
   max_attack_nodes: "all"      # int or "all"
   default_hops: 0
   show_trajectories: true
+  show_stats_overlay: true
+  n_neighbors: 30

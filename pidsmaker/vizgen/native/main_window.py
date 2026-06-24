@@ -608,6 +608,25 @@ class MainWindow(QMainWindow):
                 self.max_coord * 2,
             )
 
+    def reset_selection(self):
+        """Full reset: clear selection, stop playback, reset time slider and camera."""
+        self.selected_node_id = None
+        self.info_lbl.setText("Click a point to inspect...")
+
+        if hasattr(self, "play_timer"):
+            self.reset_time()
+        elif hasattr(self, "slider_tw"):
+            self.slider_tw.setValue(-100)
+
+        if hasattr(self, "camera"):
+            self.reset_camera()
+
+        for attr in ("_last_bg_mask", "_last_display_colors", "_last_render_pos", "_last_display_sizes"):
+            if hasattr(self, attr):
+                delattr(self, attr)
+
+        self.apply_visual_state()
+
     def reset_hops(self):
         self.slider_hops.setValue(0)
 
@@ -683,7 +702,8 @@ class MainWindow(QMainWindow):
 
         match_mask = np.zeros(len(self.metadata), dtype=bool)
         if hasattr(self, "selected_node_id") and self.selected_node_id is not None:
-            display_colors[:, 3] *= 0.4
+            display_colors[:, 3] *= 0.55
+            display_colors[:, 3] = np.maximum(display_colors[:, 3], 0.12)
             match_mask = np.array(
                 [m.get("node_id") == self.selected_node_id for m in self.metadata]
             )
@@ -868,8 +888,8 @@ class MainWindow(QMainWindow):
                 self.scatter_hl.set_data(
                     render_pos[hl_mask],
                     edge_width=0,
-                    face_color=[1.0, 1.0, 1.0, 1.0],
-                    size=12,
+                    face_color=[1.0, 1.0, 1.0, 0.82],
+                    size=11,
                 )
                 self.scatter_hl.shared_program['a_tw_start'] = self.tw_start[hl_mask]
                 self.scatter_hl.shared_program['a_tw_end'] = self.tw_end[hl_mask]

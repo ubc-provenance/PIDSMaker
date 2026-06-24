@@ -694,7 +694,7 @@ def setup_left_panel(window):
         QCheckBox { color: #e0e0e0; outline: none; spacing: 8px; font-weight: normal; }
         QCheckBox::indicator {
             width: 14px; height: 14px;
-            border-radius: 7px;
+            border-radius: 3px;
             border: 2px solid #444;
             background-color: transparent;
         }
@@ -760,7 +760,7 @@ def setup_left_panel(window):
 
     btn_reset_home = QPushButton("Reset Home")
     btn_reset_home.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    btn_reset_home.clicked.connect(window.reset_camera)
+    btn_reset_home.clicked.connect(window.reset_selection)
     h_buttons.addWidget(btn_reset_home)
 
     v_ctrl.addLayout(h_buttons)
@@ -961,6 +961,8 @@ def setup_left_panel(window):
     v_info = QVBoxLayout(grp_info)
     window.info_lbl = QLabel("Click a point to inspect...")
     window.info_lbl.setWordWrap(True)
+    window.info_lbl.setMinimumHeight(120)
+    window.info_lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
     window.info_lbl.setStyleSheet(
         "font-family: monospace; font-size: 12px; color: white;"
     )
@@ -1224,9 +1226,13 @@ def setup_overlays(window):
     window.lbl_leg_edges = QLabel(
         "<br><b>Temporal Trajectories:</b><br>"
         "Color: <span style='color:#60a5fa'>Blue (Start)</span> → <span style='color:#ef4444'>Red (End)</span><br><br>"
-        "<b>Attack Graph Overlays:</b><br>"
-        "<span style='color:#eab308'>■ Yellow Edge (30%)</span>: Unactivated<br>"
-        "<span style='color:#ef4444'>■ Red Edge (85%->65%)</span>: Activated"
+        "<b>Selection:</b><br>"
+        "<span style='color:#ffffff'>● White (larger)</span>: Selected node<br><br>"
+        "<b>FP Overlay:</b><br>"
+        "<span style='color:#fb923c'>■ Orange</span>: False Positive at threshold<br><br>"
+        "<b>Attack Graph:</b><br>"
+        "<span style='color:#eab308'>■ Yellow</span>: Edge not yet activated<br>"
+        "<span style='color:#ef4444'>■ Red</span>: Edge activated"
     )
     window.lbl_leg_edges.setWordWrap(True)
     window.lbl_leg_edges.setStyleSheet("color: #e0e0e8; font-size: 11px;")
