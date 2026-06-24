@@ -48,13 +48,9 @@ def update_cfg_for_uncertainty_exp(
         cfg._is_running_mc_dropout = True
 
     elif method == "deep_ensemble":
-        restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
-        if restart_from == "featurization":
-            clear_files_from_featurization(cfg)
-        elif restart_from == "training":
-            clear_files_from_training(cfg)
-        else:
-            raise ValueError(f"Unsupported 'restart from' value: {restart_from}")
+        # Deep ensemble automatically generates new task paths via increasing_seed or subtask_concat_value.
+        # We must NOT clear the original task paths, otherwise Iteration 0's artifacts get deleted.
+        pass
 
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files
