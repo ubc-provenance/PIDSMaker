@@ -23,9 +23,11 @@ from pidsmaker.factory import (
     optimizer_few_shot_factory,
 )
 from pidsmaker.tasks.batching import get_preprocessed_graphs
+from pidsmaker.utils.data_utils import save_model
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
+import os
 
 
 def main(cfg):
@@ -55,6 +57,25 @@ def main(cfg):
     tracemalloc.start()
 
     train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
+
+    # Save test_data to a lightweight cache for embedding_viz.py so it doesn't recompute
+    viz_cache_dir = cfg.batching._preprocessed_graphs_dir
+    os.makedirs(viz_cache_dir, exist_ok=True)
+    viz_cache_file = os.path.join(viz_cache_dir, "viz_test_graphs.pkl")
+    if not os.path.exists(viz_cache_file):
+        torch.save((test_data, max_node_num), viz_cache_file)
+    
+    log("Graph data loaded.")
+
+    # Cache graphs to disk so the viz subprocess can load them cheaply
+    # instead of recomputing the entire TGN batching pipeline from scratch
+    if not cfg.batching.save_on_disk:
+        _cache_dir = cfg.batching._preprocessed_graphs_dir
+        _cache_file = os.path.join(_cache_dir, "torch_graphs.pkl")
+        if not os.path.exists(_cache_file):
+            os.makedirs(_cache_dir, exist_ok=True)
+            log("Caching preprocessed graphs to disk for visualization reuse...")
+            torch.save((train_data, val_data, test_data, max_node_num), _cache_file)
 
     model = build_model(
         data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num
@@ -218,8 +239,9 @@ def main(cfg):
             model.load_state_dict(best_model)
             model.to_device(device)
 
-        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-        # save_model(model, model_path, cfg)
+        gnn_models_dir = cfg.training._trained_models_dir
+        model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+        save_model(model, model_path, cfg)
 
         # Test
         if (epoch + 1) % 2 == 0 or epoch == 0:

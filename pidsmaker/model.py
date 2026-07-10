@@ -84,6 +84,8 @@ class Model(nn.Module):
                 node_type_argmax=getattr(batch, "node_type_argmax", None),
             )
         h, h_src, h_dst = self.gather_h(batch, res)
+        if inference and isinstance(res, dict) and "hidden_states" in res:
+            self.last_hidden_states = res["hidden_states"]
         return h, h_src, h_dst
 
     def _embed_nodes(self, batch, inference):

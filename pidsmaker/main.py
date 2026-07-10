@@ -342,6 +342,18 @@ if __name__ == "__main__":
 
     main(cfg, project=args.project, exp=exp_name, sweep_id=args.sweep_id)
 
+    # Save final config to the artifact folder for the Run Browser
+    try:
+        import os
+        eval_dir = cfg.evaluation._task_path
+        if eval_dir:
+            run_dir = os.path.dirname(eval_dir)
+            os.makedirs(run_dir, exist_ok=True)
+            with open(os.path.join(run_dir, "run_config.yml"), "w") as f:
+                f.write(cfg.dump())
+    except Exception as e:
+        log(f"Warning: Failed to save run_config.yml to artifact folder: {e}")
+
     wandb.finish()
 
     # If it's a one-time run, we delete the files as we can't leverage them in future

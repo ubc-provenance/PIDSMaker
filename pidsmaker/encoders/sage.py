@@ -42,10 +42,13 @@ class SAGE(nn.Module):
         Returns:
             dict: {'h': node embeddings (N, out_dim)}
         """
+        hidden_states = [x.clone().detach()]
         for conv in self.convs[:-1]:
             x = conv(x, edge_index)
             x = self.activation(x)
             x = self.dropout(x)
+            hidden_states.append(x.clone().detach())
 
         x = self.convs[-1](x, edge_index)
-        return {"h": x}
+        hidden_states.append(x.clone().detach())
+        return {"h": x, "hidden_states": hidden_states}
