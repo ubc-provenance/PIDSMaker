@@ -160,7 +160,13 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
 
     # Script-specific args
     parser.add_argument("--show_attack", type=int, help="Number of attack for plotting", default=0)
-    parser.add_argument("--gt_type", type=str, help="Type of ground truth", default="orthrus")
+    parser.add_argument(
+        "--gt_type",
+        type=str,
+        choices=["orthrus", "reapr", "threatrace"],
+        default=None,
+        help="Ground-truth source; overrides the config's evaluation.ground_truth_version.",
+    )
     parser.add_argument("--plot_gt", type=bool, help="If we plot ground truth", default=False)
 
     # All args in the cfg can be also set in the arg parser from CLI
@@ -200,6 +206,9 @@ def overwrite_cfg_with_args(cfg, args):
             for attr in path:
                 cfg_ptr = getattr(cfg_ptr, attr)
             setattr(cfg_ptr, attr_name, value)
+
+    if getattr(args, "gt_type", None) is not None:
+        cfg.evaluation.ground_truth_version = args.gt_type
 
 
 def set_shortcut_variables(cfg):
@@ -455,6 +464,11 @@ def get_yml_cfg(args):
 
     # Yield errors if some combinations of parameters are not possible
     check_edge_cases(cfg)
+
+    # Fail fast if the selected ground truth has no file for this dataset
+    from pidsmaker.utils.labelling import ensure_ground_truth_available
+
+    ensure_ground_truth_available(cfg)
 
     return cfg
 
