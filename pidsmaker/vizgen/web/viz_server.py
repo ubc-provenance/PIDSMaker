@@ -2048,11 +2048,14 @@ def _compute_campaign(points_path, index):
         nodes[nid] = {"id": str(nid), "label": lbl, "hop": h, "color": _campaign_node_color(t, h == 0)}
 
     def add_edge(s, t, et, h):
-        # Keep only edges that go forward in (hop, id) order. A strict total order
-        # on endpoints means no edge can ever close a cycle, so the result is a DAG
-        # without the per-edge nx.find_cycle scan that made this O(E²).
-        if (hop.get(s, 1 << 30), s) >= (hop.get(t, 1 << 30), t):
+        # Orient each edge forward in (hop, id) order instead of dropping backward
+        # ones: a strict endpoint order keeps the graph acyclic without discarding
+        # edges, so a connected subgraph stays connected.
+        ks, kt = (hop.get(s, 1 << 30), s), (hop.get(t, 1 << 30), t)
+        if ks == kt:
             return
+        if ks > kt:
+            s, t = t, s
         if (s, t) in seen_links:
             return
         seen_links.add((s, t))

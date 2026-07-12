@@ -96,7 +96,7 @@ const Data = (() => {
       attrs[o + 3] = HALF_LUT[packed[p + 3]];                 // score (float16)
       // attrs[o+4] (size) stays 0 — the app uses the label-derived size instead
     }
-    return { attrs, ids: new Uint32Array(bi) };
+    return { n: count, attrs, ids: new Uint32Array(bi) };
   }
 
   async function getNeighbors(file, node) {
