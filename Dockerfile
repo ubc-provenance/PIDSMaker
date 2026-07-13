@@ -16,8 +16,6 @@ ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # installing sudo, git, gosu (for privilege dropping in entrypoint)
-# NOTE: no X11/Qt/GL libs — the web visualizer renders in the browser, the
-# server is headless and pipeline-independent.
 RUN apt-get update && apt-get install -y sudo git && \
     set -eux; \
     wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-amd64"; \
@@ -74,7 +72,6 @@ RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
     pip uninstall -y numpy && pip install numpy==1.26.4
 
 RUN pip install gdown==5.2.0 umap-learn==0.5.6
-# Web visualizer (Flask + Three.js served over localhost — no desktop GUI deps)
 RUN pip install flask==3.0.3
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
 
