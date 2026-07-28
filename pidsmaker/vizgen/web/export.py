@@ -36,6 +36,7 @@ print("[export] starting up — loading libraries (torch / cuML) and the GPU…"
 # unaffected. (utils.py is upstream/original code we don't modify — we harden the
 # call from the viz entry point that triggers it.)
 import socket as _socket  # noqa: E402
+
 import nltk as _nltk  # noqa: E402
 
 _orig_nltk_download = _nltk.download

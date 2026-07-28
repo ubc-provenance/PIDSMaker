@@ -46,6 +46,9 @@ def get_default_cfg(args):
     cfg._force_restart_viz = "viz" in force_restart_parts
     cfg._force_restart = ",".join(t for t in force_restart_parts if t != "viz")
     cfg._use_cpu = args.cpu
+    # Opt-in: whether to persist the extra (large) artifacts the embedding
+    # visualizer needs. Underscore-prefixed so it never enters the task hashes.
+    cfg._save_for_viz = getattr(args, "save_for_viz", False)
     cfg._model = args.model
     cfg._tuning_mode = args.tuning_mode
     cfg._experiment = args.experiment
@@ -107,6 +110,14 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         action="store_true",
         help="Starts pipeline in a fresh new task path",
     )
+    parser.add_argument(
+        "--save_for_viz",
+        action="store_true",
+        help="Persist the extra artifacts the embedding visualizer needs (per-epoch "
+        "model checkpoints and a cached copy of the test graphs). Off by default because "
+        "these are large and most runs never open the visualizer; enable it on the runs "
+        "you intend to explore in the viewer.",
+    )
     parser.add_argument("--wandb", action="store_true", help="Whether to submit logs to wandb")
     parser.add_argument(
         "--project", type=str, default="PIDSMaker", help="Name of the wandb project"
@@ -160,13 +171,6 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
 
     # Script-specific args
     parser.add_argument("--show_attack", type=int, help="Number of attack for plotting", default=0)
-    parser.add_argument(
-        "--gt_type",
-        type=str,
-        choices=["orthrus", "reapr", "threatrace"],
-        default=None,
-        help="Ground-truth source; overrides the config's evaluation.ground_truth_version.",
-    )
     parser.add_argument("--plot_gt", type=bool, help="If we plot ground truth", default=False)
 
     # All args in the cfg can be also set in the arg parser from CLI
@@ -206,9 +210,6 @@ def overwrite_cfg_with_args(cfg, args):
             for attr in path:
                 cfg_ptr = getattr(cfg_ptr, attr)
             setattr(cfg_ptr, attr_name, value)
-
-    if getattr(args, "gt_type", None) is not None:
-        cfg.evaluation.ground_truth_version = args.gt_type
 
 
 def set_shortcut_variables(cfg):

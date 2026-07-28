@@ -132,20 +132,9 @@ def extract_encoder_embeddings(
                         anomaly_score = ninfo.get("score", 0.0)
                         top_edge = ninfo.get("edge", "")
 
-                    # Support hop-by-hop animation: extract hidden states if available
-                    hops = []
-                    if hasattr(model, "last_hidden_states") and model.last_hidden_states is not None:
-                        for layer_h in model.last_hidden_states:
-                            if isinstance(layer_h, torch.Tensor):
-                                layer_h_np = layer_h.cpu().numpy()
-                            elif isinstance(layer_h, (tuple, list)):
-                                layer_h_np = torch.cat([layer_h[0], layer_h[1]], dim=0).cpu().numpy()
-                            else:
-                                layer_h_np = layer_h.cpu().numpy()
-                            hops.append(layer_h_np[local_idx])
-                    else:
-                        # Fallback to just the final output
-                        hops = [h_np[local_idx]]
+                    # The encoder exposes only its final output, so each node has a
+                    # single embedding "hop".
+                    hops = [h_np[local_idx]]
 
                     all_embeddings.append(
                         TemporalEmbedding(
@@ -191,7 +180,7 @@ def _load_edges_from_nx_graphs(cfg) -> "np.ndarray | set":
                 log(f"[embed_exporter] Extracting edges from preprocessed cache: {cache_file}")
                 data = torch.load(cache_file, map_location="cpu")
                 test_data = data[0] if len(data) == 2 else data[2]
-                    
+
                 # Collect one vectorised (E,4) block per batch instead of a Python
                 # per-edge `edges.add((int(u),...))` loop. That loop ran once per
                 # edge (tens of millions on THEIA/E5) and was the generation
@@ -285,10 +274,10 @@ def parse_scores_file(scores_path: str, malicious_node_ids: set) -> tuple[set, s
         data = torch.load(scores_path, map_location="cpu")
         y_preds = data.get("y_preds", [])
         scores = data.get("pred_scores", [])
-        
+
         involved = set()
         node_anomaly_info = {}
-        
+
         if "edges" in data:
             edges = data["edges"]
             for i in range(len(y_preds)):
@@ -297,7 +286,7 @@ def parse_scores_file(scores_path: str, malicious_node_ids: set) -> tuple[set, s
                 if y_preds[i]:
                     involved.add(u)
                     involved.add(v)
-                
+
                 if u not in node_anomaly_info or score > node_anomaly_info[u]["score"]:
                     node_anomaly_info[u] = {"score": score, "edge": f"{u} -> {v}"}
                 if v not in node_anomaly_info or score > node_anomaly_info[v]["score"]:
@@ -309,7 +298,7 @@ def parse_scores_file(scores_path: str, malicious_node_ids: set) -> tuple[set, s
                 score = float(scores[i])
                 if y_preds[i]:
                     involved.add(u)
-                
+
                 if u not in node_anomaly_info or score > node_anomaly_info[u]["score"]:
                     node_anomaly_info[u] = {"score": score, "edge": f"Node {u}"}
 
@@ -339,11 +328,11 @@ def extract_word2vec_embeddings(
     2+ minutes tokenizing strings with NLTK on every run.
     """
     import pickle
-    
+
     # Try to load cached indexid2vec first
     cache_dir = getattr(cfg, "_artifact_dir", "/home/artifacts")
     cache_path = os.path.join(cache_dir, f"viz_w2v_cache_{cfg.dataset.name}.pkl")
-    
+
     indexid2vec = None
     if os.path.exists(cache_path):
         try:
@@ -352,7 +341,7 @@ def extract_word2vec_embeddings(
             log(f"[embed_exporter] Loaded {len(indexid2vec)} embeddings from viz cache.")
         except Exception as e:
             log(f"[embed_exporter] Failed to load viz cache: {e}")
-            
+
     if indexid2vec is None:
         try:
             from pidsmaker.featurization.feat_inference import get_indexid2vec

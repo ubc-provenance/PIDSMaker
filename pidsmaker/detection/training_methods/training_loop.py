@@ -10,6 +10,7 @@ Handles model training with:
 """
 
 import copy
+import os
 import tracemalloc
 from time import perf_counter as timer
 
@@ -27,7 +28,6 @@ from pidsmaker.utils.data_utils import save_model
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
-import os
 
 
 def main(cfg):
@@ -57,25 +57,20 @@ def main(cfg):
     tracemalloc.start()
 
     train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
-
-    # Save test_data to a lightweight cache for embedding_viz.py so it doesn't recompute
-    viz_cache_dir = cfg.batching._preprocessed_graphs_dir
-    os.makedirs(viz_cache_dir, exist_ok=True)
-    viz_cache_file = os.path.join(viz_cache_dir, "viz_test_graphs.pkl")
-    if not os.path.exists(viz_cache_file):
-        torch.save((test_data, max_node_num), viz_cache_file)
-    
     log("Graph data loaded.")
 
-    # Cache graphs to disk so the viz subprocess can load them cheaply
-    # instead of recomputing the entire TGN batching pipeline from scratch
-    if not cfg.batching.save_on_disk:
-        _cache_dir = cfg.batching._preprocessed_graphs_dir
-        _cache_file = os.path.join(_cache_dir, "torch_graphs.pkl")
-        if not os.path.exists(_cache_file):
-            os.makedirs(_cache_dir, exist_ok=True)
-            log("Caching preprocessed graphs to disk for visualization reuse...")
-            torch.save((train_data, val_data, test_data, max_node_num), _cache_file)
+    # Opt-in (`--save_for_viz`): cache the test graphs so the embedding visualizer
+    # can reload them instead of recomputing the whole batching pipeline. Off by
+    # default — the cache is large and most runs never open the viewer; when it is
+    # absent the exporter recomputes the graphs on demand. Only test_data is ever
+    # read back, so there is no need to persist the train/val graphs too.
+    if cfg._save_for_viz:
+        viz_cache_dir = cfg.batching._preprocessed_graphs_dir
+        os.makedirs(viz_cache_dir, exist_ok=True)
+        viz_cache_file = os.path.join(viz_cache_dir, "viz_test_graphs.pkl")
+        if not os.path.exists(viz_cache_file):
+            log("Caching test graphs to disk for visualization reuse...")
+            torch.save((test_data, max_node_num), viz_cache_file)
 
     model = build_model(
         data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num
@@ -239,9 +234,13 @@ def main(cfg):
             model.load_state_dict(best_model)
             model.to_device(device)
 
-        gnn_models_dir = cfg.training._trained_models_dir
-        model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-        save_model(model, model_path, cfg)
+        # Per-epoch checkpoints are only needed by the visualizer's epoch selector.
+        # Opt-in via `--save_for_viz`; otherwise skip — the pipeline evaluates from
+        # the in-memory best model and never reloads these from disk.
+        if cfg._save_for_viz:
+            gnn_models_dir = cfg.training._trained_models_dir
+            model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+            save_model(model, model_path, cfg)
 
         # Test
         if (epoch + 1) % 2 == 0 or epoch == 0:

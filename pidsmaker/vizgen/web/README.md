@@ -63,6 +63,32 @@ The viewer reads `embedding_viz_*_points.json` and `*_adj.json`. Evaluated runs
 without them appear in the Run Browser badged `Needs viz` or `Partial`; `Ready`
 runs can be regenerated with the regenerate button.
 
+### Opt in when training: `--save_for_viz`
+
+Generation is fastest and most complete when the training run **pre-saved** the
+extra artifacts the exporter reuses: the per-epoch model checkpoints (for the
+encoder embedding space and the epoch selector) and a cached copy of the test
+graphs. Saving those on **every** run does not scale — the checkpoints and cache
+are large and most runs never open the viewer — so they are **off by default** and
+enabled per run with a flag:
+
+```bash
+python pidsmaker/main.py <model> <dataset> --save_for_viz
+```
+
+Enable it on the runs you actually intend to explore. Without it, a run is still
+discoverable and you can still generate viz data for it, but:
+
+- the **featurization** embedding space works normally (it does not need the
+  checkpoints);
+- the **GNN encoder** space needs the per-epoch checkpoints — if they were not
+  saved, encoder generation is skipped with a warning;
+- the test graphs are **recomputed** on demand (the whole batching pipeline reruns),
+  which is slower but produces identical data.
+
+So `--save_for_viz` trades disk up front for fast, full generation later; leaving
+it off keeps runs lean and defers (or limits) the cost to generation time.
+
 ### First, make existing runs visible (backfill manifests)
 
 A run only shows up in the Run Browser once it has a `viz_manifest.json` — a small

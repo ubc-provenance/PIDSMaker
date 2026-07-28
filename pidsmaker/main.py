@@ -342,17 +342,14 @@ if __name__ == "__main__":
 
     main(cfg, project=args.project, exp=exp_name, sweep_id=args.sweep_id)
 
-    # Save final config to the artifact folder for the Run Browser
+    # Persist the resolved config next to the run so the viz Run Browser can show it.
     try:
-        import os
-        eval_dir = cfg.evaluation._task_path
-        if eval_dir:
-            run_dir = os.path.dirname(eval_dir)
-            os.makedirs(run_dir, exist_ok=True)
-            with open(os.path.join(run_dir, "run_config.yml"), "w") as f:
-                f.write(cfg.dump())
+        run_dir = os.path.dirname(cfg.evaluation._task_path)
+        os.makedirs(run_dir, exist_ok=True)
+        with open(os.path.join(run_dir, "run_config.yml"), "w") as f:
+            f.write(cfg.dump())
     except Exception as e:
-        log(f"Warning: Failed to save run_config.yml to artifact folder: {e}")
+        log(f"Warning: could not save run_config.yml: {e}")
 
     wandb.finish()
 

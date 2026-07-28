@@ -36,7 +36,7 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
     log(f"[html_builder] Filtering valid IDs for {len(points)} points...")
     valid_ids = {p["node_id"] for p in points}
     adj = {nid: [] for nid in valid_ids}
-    
+
     log("[html_builder] Building adjacency matrix...")
     for edge in edges:
         u, v, t = int(edge[0]), int(edge[1]), int(edge[2])
@@ -56,13 +56,13 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
         path_val = str(meta.get("path", "Unknown")).replace('"', "'")
         cmd_val = str(meta.get("cmd", "")).replace('"', "'")
         type_val = str(meta.get("type", "Unknown")).replace('"', "'")
-        
+
         if path_val == "None":
             if cmd_val and cmd_val != "None":
                 path_val = cmd_val
             elif type_val == "file":
                 path_val = "<Anonymous File/Pipe>"
-            
+
         p["path"] = path_val
         p["type"] = type_val
         p["cmd"] = cmd_val
@@ -107,7 +107,7 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
         log("[html_builder] Pre-built binary point cache (instant first open).")
     except Exception as e:
         log(f"[html_builder] point cache pre-build skipped ({type(e).__name__}: {e})")
-    
+
     # Export a CSV file for offline analysis (Pandas/Excel)
     csv_file = out_path.replace('.html', '_nodes.csv')
     log(f"[html_builder] Exporting nodes to CSV for analysis: {os.path.basename(csv_file)}...")
@@ -115,8 +115,8 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
     with open(csv_file, "w", encoding="utf-8", newline='') as f:
         writer = _csv.writer(f)
         writer.writerow([
-            "node_id", "node_type", "path", "cmd", 
-            "ground_truth_malicious", "detection_status", 
+            "node_id", "node_type", "path", "cmd",
+            "ground_truth_malicious", "detection_status",
             "anomaly_score", "top_edge", "umap_x", "umap_y", "umap_z"
         ])
         for p in compact_points:
@@ -124,7 +124,7 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
             x = coords[0] if len(coords) > 0 else 0.0
             y = coords[1] if len(coords) > 1 else 0.0
             z = coords[2] if len(coords) > 2 else 0.0
-            
+
             writer.writerow([
                 p["node_id"],
                 p.get("type", ""),
@@ -140,7 +140,7 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
 
     # Free memory
     del compact_points
-    
+
     log(f"[html_builder] Serializing adjacency list to {os.path.basename(adj_file)}...")
     with open(adj_file, "w", encoding="utf-8") as f:
         json.dump(adj, f, separators=(',', ':'))
@@ -155,7 +155,7 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
         log("[html_builder] Pre-built CSR adjacency index (instant graph tools).")
     except Exception as e:
         log(f"[html_builder] adj index pre-build skipped ({type(e).__name__}: {e})")
-    
+
     # Free memory
     del adj
 
@@ -171,7 +171,7 @@ def build_html(points, edges, node_metadata, title="Embedding Visualization", de
         studio_css="block" if is_studio else "none",
         is_studio=str(is_studio).lower(),
     )
-    
+
     log("[html_builder] HTML template formatting complete.")
     return html
 
@@ -325,21 +325,21 @@ async function _loadData() {{
       const c = (p.coords_hops && p.coords_hops[0]) || [0,0,0];
       p.x = c[0]; p.y = c[1]; p.z = c[2];
     }});
-    
+
     txt.innerText = "Downloading graph topology...";
     const aRes = await fetch('{adj_url}');
     adj = await aRes.json();
-    
+
     txt.innerText = `Indexing ${{points.length.toLocaleString()}} nodes...`;
-    
+
     points.forEach((p,i) => {{
       if (!nodeIndex[p.node_id]) nodeIndex[p.node_id] = [];
       nodeIndex[p.node_id].push(i);
     }});
-    
+
     allTWs = [...new Set(points.map(p => p.tw_idx))].sort((a,b) => a-b);
     document.getElementById('tw-count').textContent = allTWs.length;
-    
+
     txt.innerText = "Rendering...";
     // Use requestAnimationFrame to let the browser paint the status before heavy render
     requestAnimationFrame(() => {{
@@ -358,18 +358,18 @@ async function recalcUmap() {{
   const btn = document.getElementById('recalc-btn');
   const overlay = document.getElementById('loading-overlay');
   const txt = document.getElementById('loading-text');
-  
+
   btn.disabled = true;
   overlay.style.display = 'flex';
   txt.innerText = "Sending recalculation request...";
-  
+
   try {{
     const res = await fetch('/api/recalculate', {{
       method: 'POST',
       headers: {{ 'Content-Type': 'application/json' }},
       body: JSON.stringify({{ n_neighbors: parseInt(knn), min_dist: parseFloat(md) }})
     }});
-    
+
     if (res.ok) {{
       pollStudioStatus();
     }} else {{
@@ -388,7 +388,7 @@ function pollStudioStatus() {{
   const txt = document.getElementById('loading-text');
   const overlay = document.getElementById('loading-overlay');
   const btn = document.getElementById('recalc-btn');
-  
+
   fetch('/api/status').then(r => r.json()).then(data => {{
     if (data.status === 'running') {{
       txt.innerText = data.progress || "Calculating UMAP...";
@@ -495,7 +495,7 @@ function buildTraces(dimNodeId) {{
   cats.forEach(cat => {{
     const pts = vis.filter(cat.filter);
     if (pts.length === 0) return;
-    
+
     const colors = pts.map(p => {{
       if (activeTraceNodes) {{
         return activeTraceNodes.has(p.node_id) ? cat.color : C.dimmed;
@@ -661,7 +661,7 @@ function startAutoRotate() {{
   if (autoRotateTimer) clearInterval(autoRotateTimer);
   autoRotateTimer = setInterval(() => {{
     if (!is3D || isInteracting) return;
-    const angle = 0.003; 
+    const angle = 0.003;
     const cx = cameraState.eye.x;
     const cy = cameraState.eye.y;
     cameraState = {{
@@ -853,49 +853,49 @@ function getKHopNeighbors(nid, k) {{
 
 function getCausalTrace(nid) {{
   const traceNodes = new Set([nid]);
-  
+
   // Forward BFS
   let forwardQ = [];
   (adj[String(nid)] || []).forEach(edge => {{
     if (edge.dir === 'out') forwardQ.push({{node: edge.nb, time: edge.t}});
   }});
   const visitedFwd = new Set();
-  
+
   while(forwardQ.length > 0) {{
     const curr = forwardQ.shift();
     const stateKey = `${{curr.node}}-${{curr.time}}`;
     if (visitedFwd.has(stateKey)) continue;
     visitedFwd.add(stateKey);
     traceNodes.add(curr.node);
-    
+
     (adj[String(curr.node)] || []).forEach(edge => {{
       if (edge.dir === 'out' && edge.t >= curr.time) {{
         forwardQ.push({{node: edge.nb, time: edge.t}});
       }}
     }});
   }}
-  
+
   // Backward BFS
   let backwardQ = [];
   (adj[String(nid)] || []).forEach(edge => {{
     if (edge.dir === 'in') backwardQ.push({{node: edge.nb, time: edge.t}});
   }});
   const visitedBwd = new Set();
-  
+
   while(backwardQ.length > 0) {{
     const curr = backwardQ.shift();
     const stateKey = `${{curr.node}}-${{curr.time}}`;
     if (visitedBwd.has(stateKey)) continue;
     visitedBwd.add(stateKey);
     traceNodes.add(curr.node);
-    
+
     (adj[String(curr.node)] || []).forEach(edge => {{
       if (edge.dir === 'in' && edge.t <= curr.time) {{
         backwardQ.push({{node: edge.nb, time: edge.t}});
       }}
     }});
   }}
-  
+
   return traceNodes;
 }}
 

@@ -23,24 +23,24 @@ Examples:
 
 import argparse
 import gc
-import os
-import json
-import sys
 import glob
+import json
+import os
+import sys
 
 import numpy as np
 import torch
 import yaml
 
-from pidsmaker.config import get_yml_cfg, get_runtime_required_args
+from pidsmaker.config import get_runtime_required_args, get_yml_cfg
+from pidsmaker.utils.utils import get_device, get_node_to_path_and_type, log
+from pidsmaker.vizgen.dimensionality_reduction import reduce_to_3d
 from pidsmaker.vizgen.embed_exporter import (
     extract_encoder_embeddings,
     extract_word2vec_embeddings,
     smart_sample,
 )
-from pidsmaker.vizgen.dimensionality_reduction import reduce_to_3d
 from pidsmaker.vizgen.html_builder import build_html
-from pidsmaker.utils.utils import get_device, get_node_to_path_and_type, log
 
 
 def load_viz_config():
@@ -123,7 +123,7 @@ def _models_from_manifest(manifest):
 
         adp = stats.get("adp_score", 0)
         epoch_str = entry["epoch"]
-        
+
         model_path = None
         tm_dir = manifest.get("trained_models_dir")
         if tm_dir and os.path.exists(tm_dir):
@@ -213,7 +213,7 @@ def run_visualization(args, cfg):
         out_dir = os.path.join(eval_task_path, "viz")
     else:
         out_dir = os.path.join(artifacts_root, "viz")
-        
+
     os.makedirs(out_dir, exist_ok=True)
     log(f"Saving visualization artifacts to {out_dir}")
 
@@ -244,14 +244,14 @@ def run_visualization(args, cfg):
             else:
                 suffix = f"encoder_epoch_{ep}"
             modes.append({
-                "type": "encoder", 
-                "suffix": suffix, 
+                "type": "encoder",
+                "suffix": suffix,
                 "title": f"{cfg.dataset.name} — GNN Encoder (Epoch {ep})",
                 "model_info": m_info
             })
 
     cached_graph_data = None
-    
+
     encoder_jobs = [j for j in modes if j["type"] == "encoder"]
     last_encoder_suffix = encoder_jobs[-1]["suffix"] if encoder_jobs else None
 
@@ -288,7 +288,7 @@ def run_visualization(args, cfg):
                         from pidsmaker.tasks.batching import get_preprocessed_graphs
                     except ImportError:
                         from pidsmaker.detection.graph_preprocessing import get_preprocessed_graphs
-                    
+
                     tmp_train, tmp_val, test_data, max_node_num = get_preprocessed_graphs(cfg)
                     del tmp_train
                     del tmp_val
@@ -296,7 +296,7 @@ def run_visualization(args, cfg):
 
                 gc.collect()
                 cached_graph_data = (test_data, max_node_num)
-                
+
             device = get_device(cfg)
             test_data, max_node_num = cached_graph_data
 
@@ -341,7 +341,7 @@ def run_visualization(args, cfg):
                 log(f"Warning: Failed to parse evaluation stats for coloring: {e}")
 
             result = extract_encoder_embeddings(
-                model, test_data, device, malicious_ids, 
+                model, test_data, device, malicious_ids,
                 detected_node_ids=detected_nodes,
                 node_anomaly_info=node_anomaly_info
             )
@@ -353,7 +353,7 @@ def run_visualization(args, cfg):
         # Dimensionality reduction (GPU-accelerated if available)
         device = get_device(cfg)
         points = reduce_to_3d(result, method=method, device=device)
-        
+
         # Free massive embeddings array immediately
         result.embeddings = []
         gc.collect()
@@ -409,7 +409,7 @@ def run_visualization(args, cfg):
             if cached_graph_data is not None:
                 del cached_graph_data
                 cached_graph_data = None
-                
+
         gc.collect()
 
 

@@ -6,11 +6,12 @@ Supports GPU-accelerated UMAP via:
   3. Pure CPU fallback
 """
 
-import numpy as np
 import time
 
-from pidsmaker.vizgen.embed_exporter import ExtractionResult
+import numpy as np
+
 from pidsmaker.utils.utils import log
+from pidsmaker.vizgen.embed_exporter import ExtractionResult
 
 # Globals for interactive Viz Studio overrides
 GLOBAL_N_NEIGHBORS = None
@@ -45,12 +46,12 @@ def reduce_to_3d(result, method="umap", device=None):
     for hop_idx in range(num_hops):
         if num_hops > 1:
             log(f"--- Running UMAP for Hop {hop_idx}/{num_hops-1} ---")
-            
+
         if hasattr(embeddings[0], 'embedding_hops') and embeddings[0].embedding_hops:
             X = np.stack([e.embedding_hops[hop_idx] for e in embeddings], axis=0).astype(np.float32)
         else:
             X = np.stack([e.embedding for e in embeddings], axis=0).astype(np.float32)
-            
+
         n_samples, n_features = X.shape
         if hop_idx == 0:
             log(f"[dim_reduction] Reducing {n_samples} embeddings ({n_features}D) via {method}...")
@@ -68,7 +69,7 @@ def reduce_to_3d(result, method="umap", device=None):
         )
         X_unique = X[unique_idx]
         n_unique = len(X_unique)
-        
+
         if hop_idx == 0:
             log(f"[dim_reduction] Deduplicated: {n_samples} -> {n_unique} unique vectors")
 
@@ -111,52 +112,52 @@ def reduce_to_3d(result, method="umap", device=None):
 
 def _gpu_knn(X, n_neighbors, device_str):
     """Compute exact k-nearest neighbors on GPU using PyTorch batched cdist.
-    
+
     For 640K × 128D, the full distance matrix would be ~1.5TB.
     We batch it to fit in GPU memory (~24GB on RTX 3090).
     """
     import torch
-    
+
     device = torch.device(device_str)
     X_gpu = torch.from_numpy(X).to(device)
     n = X_gpu.shape[0]
     k = n_neighbors
-    
+
     # Determine batch size based on available GPU memory
     free_mem = torch.cuda.get_device_properties(device).total_memory
     # Each row of distance matrix: n * 4 bytes (float32)
     # We want batch_size * n * 4 < 20% of GPU mem to be safe, capped at 1000
     batch_size = max(1, int(0.2 * free_mem / (n * 4)))
     batch_size = min(batch_size, 1000, n)
-    
+
     _report_progress(f"GPU kNN: {n} points, k={k}, batch_size={batch_size}")
-    
+
     knn_indices = np.empty((n, k), dtype=np.int64)
     knn_dists = np.empty((n, k), dtype=np.float32)
-    
+
     from tqdm import tqdm
-    
+
     t0 = time.time()
     for start in tqdm(range(0, n, batch_size), desc="GPU kNN"):
         end = min(start + batch_size, n)
         # Compute pairwise distances for this batch
         dists = torch.cdist(X_gpu[start:end], X_gpu)  # (batch, n)
-        
+
         # Vectorized self-distance masking (avoids launching thousands of micro-kernels)
         idx = torch.arange(end - start, device=dists.device)
         dists[idx, start + idx] = float('inf')
-        
+
         # Get top-k nearest
         topk_dists, topk_idx = dists.topk(k, largest=False)
         knn_indices[start:end] = topk_idx.cpu().numpy()
         knn_dists[start:end] = topk_dists.cpu().numpy()
-    
+
     elapsed = time.time() - t0
     _report_progress(f"GPU kNN completed in {elapsed:.1f}s")
-    
+
     del X_gpu
     torch.cuda.empty_cache()
-    
+
     return knn_indices, knn_dists
 
 
@@ -167,7 +168,7 @@ def _run_reduction(X, method, n_samples, device=None):
     if method == "umap":
         n_neighbors = GLOBAL_N_NEIGHBORS if GLOBAL_N_NEIGHBORS else min(30, n_samples - 1)
         min_dist = GLOBAL_MIN_DIST if GLOBAL_MIN_DIST else 0.5
-        
+
         # Strategy 1: Try RAPIDS cuML (full GPU UMAP)
         try:
             from cuml.manifold import UMAP as cuUMAP
@@ -182,15 +183,15 @@ def _run_reduction(X, method, n_samples, device=None):
             return np.asarray(result)
         except ImportError:
             pass
-        
+
         # Strategy 2: GPU kNN precomputation + CPU UMAP optimization
         try:
             import umap
         except ImportError:
             raise ImportError("umap-learn is required. Install with: pip install umap-learn")
-        
-        
-        
+
+
+
         use_gpu_knn = False
         if device and 'cuda' in str(device):
             try:
@@ -199,13 +200,13 @@ def _run_reduction(X, method, n_samples, device=None):
                     use_gpu_knn = True
             except ImportError:
                 pass
-        
+
         if use_gpu_knn and n_samples > 10000:
             _report_progress(f"Step 1/2: GPU kNN search ({n_samples} points)...")
             t0 = time.time()
-            
+
             knn_indices, knn_dists = _gpu_knn(X, n_neighbors, str(device))
-            
+
             _report_progress(f"Step 2/2: CPU UMAP optimization (kNN precomputed)...")
             # Feed precomputed kNN into UMAP — skips the expensive NN search
             reducer = umap.UMAP(
@@ -231,7 +232,7 @@ def _run_reduction(X, method, n_samples, device=None):
             result = reducer.fit_transform(X)
             _report_progress(f"CPU UMAP completed in {time.time()-t0:.1f}s")
             return result
-            
+
     elif method == "tsne":
         from sklearn.manifold import TSNE
         perplexity = min(30, max(5, n_samples // 4))

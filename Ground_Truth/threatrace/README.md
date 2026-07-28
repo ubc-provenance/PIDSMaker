@@ -2,8 +2,8 @@
 
 Ground truth as published by **ThreaTrace** (`github.com/threaTrace-detector/threaTrace`,
 `groundtruth/*.txt`), provided here as an alternative to the `orthrus` and `reapr`
-ground truths. Select it with `--gt_type threatrace` (or
-`evaluation.ground_truth_version: threatrace`).
+ground truths. Select it with `--evaluation.ground_truth_version threatrace` on
+the CLI (or `evaluation.ground_truth_version: threatrace` in a YAML config).
 
 ## Datasets
 
@@ -87,7 +87,7 @@ beyond memory), so run it on higher-memory hardware.
 ## Usage
 
 ```bash
-python pidsmaker/main.py velox CADETS_E3 --gt_type threatrace
+python pidsmaker/main.py velox CADETS_E3 --evaluation.ground_truth_version threatrace
 ```
 
 Requires the dataset's database to be constructed (node tables present). CADETS_E3,
