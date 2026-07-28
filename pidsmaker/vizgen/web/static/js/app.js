@@ -133,7 +133,11 @@ const App = (() => {
     UI.fillStats(run); UI.fillDetection(run.detection_cost);
     $('txt_config').textContent = run.run_config || '# No run_config.yml found for this run.';
     $('lbl_model').textContent = 'Model: ' + run.model;
-    $('btn_switch_emb').classList.toggle('hidden', !(run.word2vec_file && run.encoder_file));
+    // the embedding-space picker only makes sense when both spaces were exported
+    $('emb_wrap').classList.toggle('hidden', !(run.word2vec_file && run.encoder_file));
+    // any file that is not the featurization projection is an encoder projection
+    // (a bare encoder file, or one of its per-epoch files)
+    $('cmb_emb').value = run.file === run.word2vec_file ? 'feat' : 'enc';
   }
 
   // TIER 1 app state for a streamed core chunk: just colour (from label/det/type
@@ -549,12 +553,11 @@ const App = (() => {
   function resetTime() { stopPlay(); $('slider_tw').value = -100; onTwChange(); }
 
   // ---- epoch / embedding swap ----
-  async function switchEmbedding() {
-    // Toggle between the featurization space and the GNN encoder by file
-    // identity, not by matching the literal "word2vec" in the name.
+  // space is 'feat' (featurization) or 'enc' (GNN encoder). Resolved by file
+  // identity, not by matching the literal "word2vec" in the name.
+  async function selectEmbedding(space) {
     const cur = S.run.file;
-    const isFeat = cur === S.run.word2vec_file;
-    const target = isFeat ? S.run.encoder_file : S.run.word2vec_file;
+    const target = space === 'feat' ? S.run.word2vec_file : S.run.encoder_file;
     if (target && target !== cur) await loadRun(target);
   }
   async function selectEpoch(file) { if (file) await loadRun(file); }
@@ -584,7 +587,7 @@ const App = (() => {
 
   return {
     S, $, loadRun, refresh, selectNode, clearSelection, showLoading,
-    togglePlay, stopPlay, onTwChange, resetTime, switchEmbedding, selectEpoch,
+    togglePlay, stopPlay, onTwChange, resetTime, selectEmbedding, selectEpoch,
     flag, attr, applySearch, applyCsv, computeVisibleInto, TYPE_NAMES,
   };
 })();

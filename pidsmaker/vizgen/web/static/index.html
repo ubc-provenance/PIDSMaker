@@ -11,6 +11,7 @@
   <!-- ===================== LEFT PANEL ===================== -->
   <div id="leftPanel">
     <h2>Node Inspector</h2>
+    <button id="btn_open_browser" class="btn-primary">Open Run Browser</button>
 
     <div class="group">
       <span class="title">CONTROLS</span>
@@ -100,13 +101,18 @@
       </div>
     </div>
 
-    <!-- bottom-right: model/stats + switch embedding -->
+    <!-- bottom-right: model/stats + embedding space -->
     <div class="overlay" id="overlay_br">
       <div id="lbl_model" style="font-weight:bold">Model: —</div>
       <div id="lbl_total" style="margin:4px 0">Total Nodes: 0</div>
       <div id="lbl_metrics" style="color:var(--green);font-size:12px">—</div>
-      <button id="btn_switch_emb" class="hidden" style="margin-top:6px">Switch Embedding Space</button>
-      <button id="btn_open_browser" style="margin-top:6px">Open Run Browser</button>
+      <div id="emb_wrap" class="hidden" style="margin-top:8px">
+        <div class="emb-lbl">Embedding space</div>
+        <select id="cmb_emb">
+          <option value="feat">Featurization</option>
+          <option value="enc">GNN Encoder</option>
+        </select>
+      </div>
       <div id="lbl_status"></div>
     </div>
 

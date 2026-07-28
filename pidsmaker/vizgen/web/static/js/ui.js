@@ -72,14 +72,15 @@ const UI = (() => {
     const pre = (k.topPre && k.topPre.length)
       ? k.topPre.map(([p, c]) => `  ${c}× ${p || '(none)'}`).join('\n') : '  (loading…)';
     const load = '<span style="color:var(--muted)">loading…</span>';
+    // Path first, in the temporal-trajectory blue, so it reads as the primary field.
     $('info_lbl').innerHTML =
+      `<span style="color:#60a5fa">Path: ${sel ? (sel.path || '-') : load}</span>\n` +
       `<span style="color:#a0a0ff">ID: ${sel && sel.id != null ? sel.id : (F(idx, 0) || '…')}</span>\n` +
       `Type: ${sel ? (sel.type || 'Unknown') : (App.TYPE_NAMES[F(idx, 3)] || 'Unknown')}\n` +
       `Label: ${lblTxt}\n` +
       `Time Window: ${sel && sel.tw != null ? sel.tw : A(idx, 0)}\n` +
       `Anomaly Score: ${(sel && sel.score != null ? sel.score : A(idx, 3)).toFixed(4)}\n` +
       `Top Edge: ${sel ? (sel.top_edge || '-') : load}\n` +
-      `Path: ${sel ? (sel.path || '-') : load}\n` +
       `\n── NEIGHBORHOOD (K=${k.K}) ──\n` +
       `Benign: ${k.nb}  Detected: ${k.nd}  Undetected: ${k.nu}\n` +
       `Types: ${types}\n` +
@@ -299,7 +300,7 @@ const UI = (() => {
     $('slider_tw').addEventListener('input', () => { App.stopPlay(); App.onTwChange(); });
 
     // overlays buttons
-    $('btn_switch_emb').onclick = App.switchEmbedding;
+    $('cmb_emb').addEventListener('change', (e) => App.selectEmbedding(e.target.value));
     $('btn_open_browser').onclick = openBrowser;
     $('btn_collapse_leg').onclick = () => {
       const lg = $('legend'); const hidden = lg.classList.toggle('hidden');

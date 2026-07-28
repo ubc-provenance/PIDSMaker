@@ -49,8 +49,8 @@ the container IP: `-L 5000:<container-ip>:5000`. On the server itself, open
 for optional LAN or VPN access; keep it firewalled, as there is no
 authentication.
 
-The last run you viewed loads automatically. Use **Open Run Browser**
-(bottom-right) to pick another.
+The last run you viewed loads automatically. Use **Open Run Browser** (top of the
+left panel) to pick another.
 
 Rendering happens on the GPU of the machine that opens the browser. A workstation
 GPU renders the full point cloud smoothly; a laptop may stutter, and low-memory
@@ -185,8 +185,8 @@ metadata**. Beyond `LOD_CAP` resident nodes the view keeps the first `LOD_CAP`
 ## What the viewer shows
 
 The point cloud is a 2D/3D projection (UMAP or t-SNE) of per-node embeddings for
-one run. Two embedding spaces can exist per run and are toggled with **Switch
-Embedding Space** (the active one is named in the bottom-right panel):
+one run. Two embedding spaces can exist per run and are chosen with the
+**Embedding space** selector in the bottom-right panel:
 
 - **Featurization** — the run's raw per-node features, straight from whatever
   featurization method it used (word2vec, doc2vec, fasttext, flash, …). It is
