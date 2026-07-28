@@ -41,8 +41,14 @@ def get_default_cfg(args):
     cfg._debug = not args.wandb
     cfg._is_running_mc_dropout = False
 
-    cfg._force_restart = args.force_restart
+    # Split off the special 'viz' keyword so the task validator doesn't choke on it
+    force_restart_parts = [t.strip() for t in args.force_restart.split(",") if t.strip()]
+    cfg._force_restart_viz = "viz" in force_restart_parts
+    cfg._force_restart = ",".join(t for t in force_restart_parts if t != "viz")
     cfg._use_cpu = args.cpu
+    # Opt-in: whether to persist the extra (large) artifacts the embedding
+    # visualizer needs. Underscore-prefixed so it never enters the task hashes.
+    cfg._save_for_viz = getattr(args, "save_for_viz", False)
     cfg._model = args.model
     cfg._tuning_mode = args.tuning_mode
     cfg._experiment = args.experiment
@@ -104,6 +110,14 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         action="store_true",
         help="Starts pipeline in a fresh new task path",
     )
+    parser.add_argument(
+        "--save_for_viz",
+        action="store_true",
+        help="Persist the extra artifacts the embedding visualizer needs (per-epoch "
+        "model checkpoints and a cached copy of the test graphs). Off by default because "
+        "these are large and most runs never open the visualizer; enable it on the runs "
+        "you intend to explore in the viewer.",
+    )
     parser.add_argument("--wandb", action="store_true", help="Whether to submit logs to wandb")
     parser.add_argument(
         "--project", type=str, default="PIDSMaker", help="Name of the wandb project"
@@ -157,7 +171,6 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
 
     # Script-specific args
     parser.add_argument("--show_attack", type=int, help="Number of attack for plotting", default=0)
-    parser.add_argument("--gt_type", type=str, help="Type of ground truth", default="orthrus")
     parser.add_argument("--plot_gt", type=bool, help="If we plot ground truth", default=False)
 
     # All args in the cfg can be also set in the arg parser from CLI
@@ -453,6 +466,11 @@ def get_yml_cfg(args):
     # Yield errors if some combinations of parameters are not possible
     check_edge_cases(cfg)
 
+    # Fail fast if the selected ground truth has no file for this dataset
+    from pidsmaker.utils.labelling import ensure_ground_truth_available
+
+    ensure_ground_truth_available(cfg)
+
     return cfg
 
 
@@ -629,10 +647,17 @@ def get_subtasks_to_restart_with_dependencies(
         should_restart_with_deps.remove("_end")
 
     # Adds the subtasks to force restart
+    # NOTE: 'viz' is a special keyword handled in main.py, strip it here to avoid ValueError
     if len(force_restart) > 0:
         for subtask in force_restart.split(","):
+            subtask = subtask.strip()
+            if not subtask or subtask == "viz":
+                continue
             if subtask not in TASK_ARGS:
-                raise ValueError(f"Invalid subtask name `{subtask}` given to `--force_restart`.")
+                raise ValueError(
+                    f"Invalid subtask name `{subtask}` given to `--force_restart`. "
+                    f"Valid tasks: {list(TASK_ARGS.keys())} + 'viz'"
+                )
             force_restart_deps = get_dependencies(subtask, dependencies, set())
             if "_end" in force_restart_deps:
                 force_restart_deps.remove("_end")
@@ -708,12 +733,126 @@ def get_darpa_tc_node_feats_from_cfg(cfg):
 
 
 TASK_FINISHED_FILE = "done.txt"
+VIZ_MANIFEST_FILE = "viz_manifest.json"
+
+
+def write_viz_manifest(task_path: str):
+    """Write a viz_manifest.json alongside done.txt in evaluation task paths.
+
+    Records exact file paths so the visualizer never needs to glob or guess
+    file extensions (.pkl vs .pth).  Only fires for evaluation directories.
+    """
+    import json as _json
+
+    pr_dir = os.path.join(task_path, "precision_recall_dir")
+    if not os.path.isdir(pr_dir):
+        return  # Not an evaluation task — nothing to do
+
+    epochs = []
+    for fname in sorted(os.listdir(pr_dir)):
+        if fname.startswith("stats_model_epoch_") and not fname.endswith(".png"):
+            epoch_str = fname.replace("stats_model_epoch_", "").rsplit(".", 1)[0]
+            stats_path = os.path.join(pr_dir, fname)
+            ext = os.path.splitext(fname)[1]  # .pth or .pkl — captured, not guessed
+
+            scores_path = os.path.join(pr_dir, f"scores_model_epoch_{epoch_str}.pkl")
+            result_path = os.path.join(pr_dir, f"result_model_epoch_{epoch_str}{ext}")
+            import torch
+            adp = 0.0
+            disc_score = 0.0
+            try:
+                d = torch.load(stats_path, map_location="cpu")
+                adp = float(d.get("adp_score", 0.0))
+                disc_score = float(d.get("discrimination", 0.0))
+            except Exception:
+                pass
+
+            entry = {
+                "epoch": epoch_str,
+                "stats_path": stats_path,
+                "scores_path": scores_path if os.path.exists(scores_path) else None,
+                "result_path": result_path if os.path.exists(result_path) else None,
+                "adp": adp,
+                "disc_score": disc_score
+            }
+            epochs.append(entry)
+
+    # Resolve training dir (sibling hash structure)
+    # evaluation task_path looks like: <artifacts>/evaluation/evaluation/<hash>/<dataset>
+    # training counterpart:            <artifacts>/training/training/<hash>/<dataset>
+    dataset = os.path.basename(task_path)
+    artifacts_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(task_path))))
+    training_base = os.path.join(artifacts_root, "training", "training")
+
+    edge_losses_dir = None
+    trained_models_dir = None
+    if os.path.isdir(training_base):
+        # Find the training hash whose done.txt was written closest in time
+        # to OUR evaluation done.txt — this ensures we get the correct
+        # architecture's weights even when multiple models run back-to-back.
+        eval_done = os.path.join(task_path, TASK_FINISHED_FILE)
+        eval_mtime = os.path.getmtime(eval_done) if os.path.exists(eval_done) else None
+
+        candidates = []
+        for h in os.listdir(training_base):
+            ds_dir = os.path.join(training_base, h, dataset)
+            train_done = os.path.join(ds_dir, TASK_FINISHED_FILE)
+            if os.path.isdir(ds_dir) and os.path.exists(train_done):
+                t_mtime = os.path.getmtime(train_done)
+                # Training must have finished BEFORE evaluation
+                if eval_mtime is not None and t_mtime <= eval_mtime:
+                    time_diff = eval_mtime - t_mtime
+                    candidates.append((time_diff, h, ds_dir))
+                else:
+                    # Fallback: just use directory mtime
+                    candidates.append((float('inf'), h, ds_dir))
+        if candidates:
+            candidates.sort()  # Smallest time_diff first = closest match
+            best_train_dir = candidates[0][2]
+            el = os.path.join(best_train_dir, "edge_losses")
+            if os.path.isdir(el):
+                edge_losses_dir = el
+            tm = os.path.join(best_train_dir, "trained_models")
+            if os.path.isdir(tm):
+                trained_models_dir = tm
+
+    batching_base = os.path.join(artifacts_root, "batching", "batching")
+    preprocessed_graphs_dir = None
+    if os.path.isdir(batching_base):
+        candidates = []
+        for h in os.listdir(batching_base):
+            ds_dir = os.path.join(batching_base, h, dataset)
+            if os.path.isdir(ds_dir):
+                candidates.append((os.path.getmtime(ds_dir), h, ds_dir))
+        if candidates:
+            candidates.sort(reverse=True)
+            best_batching_dir = candidates[0][2]
+            pg = os.path.join(best_batching_dir, "preprocessed_graphs")
+            if os.path.isdir(pg):
+                preprocessed_graphs_dir = pg
+
+    manifest = {
+        "eval_task_path": task_path,
+        "dataset": dataset,
+        "edge_losses_dir": edge_losses_dir,
+        "trained_models_dir": trained_models_dir,
+        "preprocessed_graphs_dir": preprocessed_graphs_dir,
+        "epochs": epochs,
+    }
+
+    manifest_path = os.path.join(task_path, VIZ_MANIFEST_FILE)
+    with open(manifest_path, "w") as f:
+        _json.dump(manifest, f, indent=2)
+    print(f"[viz] Wrote {manifest_path}")
 
 
 def set_task_to_done(task_path: str):
     with open(os.path.join(task_path, TASK_FINISHED_FILE), "w") as f:
         f.write("Task done")
     print(f"Task done: {task_path}\n")
+
+    # If this is an evaluation directory, write the viz manifest
+    write_viz_manifest(task_path)
 
 
 def get_dates_from_cfg(cfg):

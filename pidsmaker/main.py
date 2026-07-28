@@ -342,6 +342,15 @@ if __name__ == "__main__":
 
     main(cfg, project=args.project, exp=exp_name, sweep_id=args.sweep_id)
 
+    # Persist the resolved config next to the run so the viz Run Browser can show it.
+    try:
+        run_dir = os.path.dirname(cfg.evaluation._task_path)
+        os.makedirs(run_dir, exist_ok=True)
+        with open(os.path.join(run_dir, "run_config.yml"), "w") as f:
+            f.write(cfg.dump())
+    except Exception as e:
+        log(f"Warning: could not save run_config.yml: {e}")
+
     wandb.finish()
 
     # If it's a one-time run, we delete the files as we can't leverage them in future

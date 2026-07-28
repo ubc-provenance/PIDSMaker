@@ -1095,6 +1095,7 @@ def compute_tw_labels(cfg):
     # uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
 
     # Create a mapping TW number => malicious node IDs
+    all_malicious_nodes = set()
     for tw, nodes in tw_to_malicious_nodes.items():
         unique_nodes, counts = np.unique(nodes, return_counts=True)
         node_to_count = {node: count for node, count in zip(unique_nodes, counts)}
@@ -1103,8 +1104,14 @@ def compute_tw_labels(cfg):
         node_to_count = {
             uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()
         }
+        all_malicious_nodes.update(node_to_count.keys())
         # pprint(node_to_count, width=1)
         tw_to_malicious_nodes[tw] = node_to_count
+
+    log(
+        f"Total distinct malicious nodes across time windows: "
+        f"{len(all_malicious_nodes)} / {len(uuid_to_node_id)} ground-truth nodes"
+    )
 
     return tw_to_malicious_nodes
 
