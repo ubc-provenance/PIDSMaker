@@ -10,8 +10,10 @@ See `README.md` for quick commands; this file is the detailed reference.
 
 A browser-based 3D viewer for the per-node embeddings PIDSMaker produces. It
 projects 128-D Word2Vec and GNN-encoder embeddings to 3D with UMAP and renders
-the resulting 600k+ point cloud interactively, with detection overlays, temporal
-playback, node inspection, causal tracing, and the anomaly-score distribution.
+the resulting point cloud interactively, scaling from small runs to 20M+ nodes
+through a tiered LOD streaming pipeline (section 6), with detection overlays,
+temporal playback, node inspection, causal tracing, and the anomaly-score
+distribution.
 
 Design goals:
 
@@ -114,15 +116,28 @@ app.js DOMContentLoaded:
   Data.getRuns()  -> /api/runs     -> pick last or newest run
   App.loadRun(file):
     /api/run?file=...              -> descriptor (n, hops, stats, epochs, byte_offsets)
-    /api/buffer (Range, chunked)   -> binary point buffer; each chunk renders on arrival
+    Tier 1, /api/buffer Range requests -> positions + meta byte; each chunk
+             renders on arrival, this is the only thing App.loadRun waits on
+    Tier 2, /api/buffer Range requests (background) -> attrs + node ids;
+             enables the time slider, playback, heatmap, false-positive and
+             attack-graph overlays once loaded (S.auxReady)
     App.refresh()                  -> compose colors and visibility, render
-  (no bulk metadata: node metadata is fetched on selection via /api/node;
-   search/CSV are resolved server-side via /api/search & /api/filter)
+  Tier 3, on demand, never fetched up front:
+    /api/node       -> per-node string metadata, fetched on selection
+    /api/search, /api/filter -> text search and CSV filter, resolved server-side
+    /api/neighbors, /api/causal, /api/campaign -> edges, fetched only when asked
 ```
 
-Adjacency loads lazily and only per-node (server-side slices for the attack graph
-overlay, causal trace, anomalous edges); the browser never downloads the full
-`_adj.json`.
+The streaming step for tiers 1 and 2 starts at `LOD_CHUNK` (250k nodes) and
+doubles up to `LOD_CHUNK_MAX` (3M), so a 20M-node run streams in about 12 round
+trips instead of 80 (constants in `static/js/app.js`). A run larger than
+`LOD_CAP` (25M nodes) loads only its first `LOD_CAP` nodes, in the exporter's
+natural order; the cap exists because the browser/GPU is the real limit, not
+the server.
+
+Adjacency loads lazily and only per-node (server-side slices for the attack
+graph overlay, causal trace, anomalous edges); the browser never downloads the
+full `_adj.json`.
 
 ---
 
@@ -152,8 +167,10 @@ overlay, causal trace, anomalous edges); the browser never downloads the full
 - Campaign graph (`build_campaign_graph`): builds the provenance attack graph
   from the run's own `_adj.json` (edges with relation type and direction) and the
   ground-truth node labels/paths from the metadata cache. Hop 0 is the
-  malicious<->malicious edges; hops 1/2/3 add context via edge sampling
-  (300/200/100), DAG-enforced. Cached in memory; returned as JSON.
+  malicious<->malicious edges, capped at 500 sampled edges; hops 1/2/3 add
+  context via edge sampling (300/200/100). Edges are oriented forward in
+  (hop, id) order rather than dropped when discovered backward, which keeps the
+  graph acyclic without fragmenting it. Cached in memory; returned as JSON.
 - Endpoints: section 7.
 
 ### Frontend (`static/`)
@@ -181,6 +198,14 @@ overlay, causal trace, anomalous edges); the browser never downloads the full
 - Graceful failure: if a checkpoint cannot be rebuilt (for example a run with no
   saved config), it logs a clear message and skips the encoder. Word2Vec still
   exports.
+- Opt-in training artifacts (`--save_for_viz`, `pidsmaker/main.py`): when a
+  training run is started with this flag, `training_loop.py` persists the
+  per-epoch model checkpoints and a cached copy of the test graphs for the
+  exporter to reuse. It is off by default because these artifacts are large and
+  most runs never open the viewer. Without it, the featurization space still
+  exports normally, but the GNN-encoder space needs the checkpoints (skipped
+  with a warning if absent) and the test graphs are recomputed on demand
+  instead of reused.
 
 ---
 
@@ -200,7 +225,7 @@ overlay, causal trace, anomalous edges); the browser never downloads the full
 `get_rel2id`. It is present only in runs regenerated after edge-type support was
 added; older data has no `et`, and the UI shows a dash.
 
-### Binary buffer (`/api/buffer`) — packed `v3`
+### Binary buffer (`/api/buffer`), packed format `v4` (`CACHE_VERSION` in `viz_server.py`)
 
 Little-endian, for n points and H hops, in this order:
 
@@ -210,12 +235,17 @@ Little-endian, for n points and H hops, in this order:
 4. meta, `uint8[n]`: bit-packed `label<<0 | det<<1 | type<<3`
 
 The client slices these by byte offsets from `/api/run`, decodes the `float16`
-positions via a 64K lookup table, unpacks the attrs, and derives colour + size
+positions via a 64K lookup table, unpacks the attrs, and derives colour and size
 from the meta byte (`nodeRgba`). Packing (`float16` positions, no colour, 1-byte
-flags, packed attrs, no size) cuts the buffer from ~64 B/node to **~19 B/node** —
-the SSH-tunnel transfer is the real cost at 10–20 M nodes. Loaded in two tiers
-(§ tiered loading): positions+meta first (render), then attrs+ids in the
-background; chunk size grows so a big run streams in ~12 round trips.
+flags, packed attrs, no size) cuts the buffer from about 64 B/node to about
+19 B/node, since the SSH-tunnel transfer is the real cost at 10 to 20 million
+nodes. Fields 1 and 4 (positions, meta) are tier 1 of the load order in section
+4, fetched first because they are everything the shader needs to render; fields
+2 and 3 (attrs, ids) are tier 2, fetched in the background once the cloud is on
+screen. Each field is a separate byte range, so splitting the load into tiers
+costs no extra requests. Chunk size grows with each fetch (`LOD_CHUNK` to
+`LOD_CHUNK_MAX`), so a 20M-node run streams in about 12 round trips instead
+of 80.
 
 ### `viz_manifest.json`
 
@@ -236,8 +266,10 @@ pick the best one.
 | `GET /api/search?file=&q=` | node ids matching a query (id/path/cmd), server-side scan |
 | `POST /api/filter` | `{file, terms}` → node ids matching any term (CSV filter) |
 | `GET /api/neighbors?file=&node=` | one node's incident edges ("See Edges") |
+| `GET /api/causal?file=&node=` | causal subgraph from a node, server-side time-respecting trace |
+| `GET /api/attack_pairs?file=` | malicious-to-malicious edge pairs (attack-graph overlay on the embedding space) |
 | `GET /api/scoredist?file=` | matplotlib distribution as PNG (cached per run) |
-| `GET /api/campaign?file=` | campaign attack graph JSON, built from the run's adjacency and ground-truth labels (hop edge-sampling 300/200/100, DAG) |
+| `GET /api/campaign?file=` | campaign attack graph JSON, built from the run's adjacency and ground-truth labels (hop edge-sampling 500/300/200/100, forward-oriented edges) |
 | `POST /api/export` | start a generation job (409 if one is running) |
 | `GET /api/export/status` | current job snapshot |
 | `GET /api/export/stream` | SSE: `snapshot`, `log`, `phase`, `status` |
@@ -261,22 +293,30 @@ root. Generation endpoints are gated by `PIDS_VIZ_ALLOW_EXPORT` (on by default).
   the white highlight for the selected node, the temporal trajectory, and the
   attack edges, then writes them to the scene. It is the single place that
   composes a frame.
+- Occlusion (`scene.js`): the material sets `depthWrite: true`, so occlusion
+  follows true 3D depth rather than draw order. A malicious (red) point in
+  front of the cluster stays visible, and one actually behind it is correctly
+  hidden, regardless of the order points streamed in. The fragment shader
+  discards the transparent disc edge and not-yet-grown points, so only solid
+  centres write depth.
 - Picking: CPU projection of visible points to screen, selecting the nearest
-  within about 14 px. It uses pointer events rather than mouse events, because
-  OrbitControls calls `preventDefault` and suppresses the latter.
+  within about 14 px, backed by a uniform spatial grid built once per hop/cloud
+  change so a click resolves without scanning every point. It uses pointer
+  events rather than mouse events, because OrbitControls calls
+  `preventDefault` and suppresses the latter.
 - Performance: a continuous `requestAnimationFrame` loop renders every frame.
   Motion-LOD, adaptive-pixel-ratio, and on-demand (render-only-on-change)
   variants were tried and reverted because they caused point flicker and
-  zoom stutter. Drawing 600k semi-transparent points is bound by GPU fill rate;
-  see section 10.
+  zoom stutter. Drawing a large cloud of semi-transparent points, up to the
+  `LOD_CAP` of 25M nodes, is bound by GPU fill rate; see section 10.
 
 ---
 
 ## 9. Design rationale
 
 - Pre-compute plus binary buffer: parsing a 100 MB+ JSON in the browser is slow.
-  The binary blob uploads directly to the GPU, which keeps a 600k-point cloud
-  responsive.
+  The binary blob uploads directly to the GPU, which keeps a multi-million-point
+  cloud responsive.
 - CPU-only, headless server: it deploys anywhere with no GPU or display needed
   to serve, and rendering offloads to the client.
 - Word2Vec is unscored: it is the raw, pre-training featurization with no
@@ -304,18 +344,21 @@ root. Generation endpoints are gated by `PIDS_VIZ_ALLOW_EXPORT` (on by default).
 ### Performance and hardware
 
 - Rendering runs on the client GPU, the machine with the browser, not the
-  server. The SSH tunnel only transfers data. A workstation GPU renders 600k
-  points smoothly; a laptop may stutter on zoom and orbit. There is no
-  server-side fix for this; for the smoothest experience, view on a machine with
-  a strong GPU.
-- On laptops, memory is usually the bottleneck rather than the GPU. On low-RAM
-  machines (for example 8 GB of unified memory) the view is mostly fine but can
-  lag under memory pressure. The largest single contributor is the adjacency
-  file (about 150 MB as JSON, larger once parsed into JS objects). It loads
-  lazily, only when you open the attack graph, causal subgraph, or anomalous
-  edges, and stays in memory for the session. If you do not use those features,
-  only the 40 MB point buffer is held. To recover memory, reload the tab; also
-  close other tabs and applications.
-- The point buffer (about 40 MB binary) uploads straight to the GPU. The source
-  JSON is parsed once on the server, so the client never parses the 100 MB+
-  source.
+  server. The SSH tunnel only transfers data. A workstation GPU renders large
+  clouds smoothly; a laptop may stutter on zoom and orbit at millions of
+  points. There is no server-side fix for this; for the smoothest experience,
+  view on a machine with a strong GPU.
+- On laptops, memory is usually the bottleneck rather than the GPU. The point
+  buffer is packed at about 19 B/node (section 6), so it stays modest even at
+  scale, for example about 190 MB for a 10M-node run. The largest single
+  contributor to memory pressure is the adjacency data: it loads lazily, only
+  when you open the attack graph, causal subgraph, or anomalous edges, and
+  stays in memory for the session once loaded. The server parses `_adj.json`
+  once into a CSR cache (a re-parse of a 350 MB adjacency file takes about
+  17 s; the cached index then reloads in about 0.2 s and survives restarts), so
+  repeat opens of the same run are fast even though the raw JSON is large. If
+  you never open those features, only the point buffer is held client-side.
+  To recover memory, reload the tab; also close other tabs and applications.
+- The point buffer uploads straight to the GPU. The source `_points.json`
+  (100 MB+ for large runs) is parsed once on the server, so the client never
+  parses it.

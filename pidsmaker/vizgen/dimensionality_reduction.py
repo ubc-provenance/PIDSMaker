@@ -183,6 +183,10 @@ def _run_reduction(X, method, n_samples, device=None):
             return np.asarray(result)
         except ImportError:
             pass
+        except Exception as e:
+            # cuML installed but unusable at runtime; fall back instead of crashing.
+            _report_progress(f"RAPIDS cuML GPU UMAP unavailable ({type(e).__name__}: {e}); "
+                              f"falling back to CPU-capable UMAP")
 
         # Strategy 2: GPU kNN precomputation + CPU UMAP optimization
         try:
