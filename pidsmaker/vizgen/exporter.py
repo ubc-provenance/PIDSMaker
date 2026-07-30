@@ -31,6 +31,7 @@ import sys
 import numpy as np
 import torch
 import yaml
+from yacs.config import CfgNode as CN
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.utils.utils import get_device, get_node_to_path_and_type, log
@@ -413,6 +414,20 @@ def run_visualization(args, cfg):
         gc.collect()
 
 
+def _prune_unknown_keys(loaded, base, path=""):
+    """Drop keys from `loaded` not present in `base`'s schema, so the rest of
+    the config can still merge. Returns the dropped dotted key names."""
+    dropped = []
+    for key in list(loaded.keys()):
+        full_key = f"{path}.{key}" if path else key
+        if key not in base:
+            dropped.append(full_key)
+            del loaded[key]
+        elif isinstance(loaded[key], dict) and isinstance(base[key], dict):
+            dropped += _prune_unknown_keys(loaded[key], base[key], full_key)
+    return dropped
+
+
 def main():
     parser = argparse.ArgumentParser(description="Interactive 3D Embedding Visualization")
     parser.add_argument("model", type=str, help="Model config name (e.g. orthrus, velox)")
@@ -456,7 +471,15 @@ def main():
                    os.path.join(os.path.dirname(run_dir), "run_config.yml")):
             if os.path.exists(rc):
                 try:
-                    cfg.merge_from_file(rc)
+                    with open(rc) as f:
+                        loaded = CN.load_cfg(f)
+                    dropped = _prune_unknown_keys(loaded, cfg)
+                    if dropped:
+                        log(f"Warning: {rc} has config key(s) no longer in the "
+                            f"schema (likely trained with an older version); "
+                            f"dropped and using current defaults for: "
+                            f"{', '.join(dropped)}")
+                    cfg.merge_from_other_cfg(loaded)
                     log(f"Reconstructed config from run's run_config.yml: {rc}")
                 except Exception as e:
                     log(f"Warning: could not merge {rc} ({type(e).__name__}: {e}); "

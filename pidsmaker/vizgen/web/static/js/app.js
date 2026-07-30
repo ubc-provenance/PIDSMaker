@@ -470,8 +470,8 @@ const App = (() => {
 
   // ---- selection / inspector ----
   // Selecting a node fetches ONLY that node's (and its 20 KNN neighbours') string
-  // metadata on demand — instant (O(log n) server-side) even at 20M nodes, and no
-  // bulk metadata is ever downloaded.
+  // metadata on demand, an O(1) server-side row lookup (MetaStore.node_at), so
+  // it is instant even at 20M nodes and no bulk metadata is ever downloaded.
   function selectNode(idx) {
     // Selection is keyed on the clicked buffer index (works before ids load). The
     // node id + metadata come from /api/node?idxs=…; once we know the id (and if

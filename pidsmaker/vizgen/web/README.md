@@ -151,12 +151,19 @@ finishes, refresh the viewer and select the run.
 
 `--max_benign` / `--max_attack` (and the **Max benign** / **Max attack** fields
 in the generate dialog) default to `all`, i.e. no cap. Export time is dominated
-by the dimensionality reduction (UMAP/t-SNE is ~O(n²) in the node count), and
-the `*_points.json` / `*_adj.json` files grow linearly with kept nodes/edges, so
-for E5-scale runs (millions of nodes) leave the caps at `all` at your peril —
-set finite values (e.g. `--max_benign 200000 --max_attack all`) to keep
-generation and file sizes tractable. Attack nodes are few, so capping benign
-nodes is usually enough; benign sampling is neighbourhood-aware and keeps benign
+by the dimensionality reduction. The preferred GPU path (RAPIDS cuML UMAP)
+uses approximate nearest-neighbour search and scales well past a million
+nodes, but the CPU-fallback hybrid path precomputes an exact k-NN with a
+batched GPU `cdist` (`dimensionality_reduction.py`), which is O(n²) in the
+node count and is the real bottleneck when it is the path in use; sklearn's
+t-SNE runs Barnes-Hut by default, not the exact O(n²) method, so it scales
+better than a naive implementation but is still far slower than UMAP at this
+scale. The `*_points.json` / `*_adj.json` files also grow linearly with kept
+nodes/edges, so for E5-scale runs (millions of nodes) leave the caps at `all`
+at your own risk; set finite values (e.g. `--max_benign 200000 --max_attack
+all`) to keep generation and file sizes tractable. Attack nodes are few, so
+capping benign nodes is usually enough; benign sampling is neighbourhood-aware
+and keeps benign
 nodes adjacent to attack nodes.
 
 The **viewer** also scales independently of generation. Opening a run streams

@@ -157,7 +157,7 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--database_password", default="postgres", help="The password to the database user"
     )
     parser.add_argument(
-        "--database_port", default="5432", help="The port number for Postgres (default: 5432)"
+        "--database_port", type=int, default=5432, help="The port number for Postgres (default: 5432)"
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(
