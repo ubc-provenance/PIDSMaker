@@ -117,7 +117,7 @@ def compute_mcc(tp, fp, tn, fn):
     return mcc
 
 
-def get_threshold(val_tw_path, threshold_method: str):
+def get_threshold(val_tw_path, threshold_method: str, contamination=0.05):
     threshold_method = threshold_method.strip()
     if threshold_method == "max_val_loss":
         return calculate_threshold(val_tw_path, threshold_method)["max"]
@@ -131,7 +131,41 @@ def get_threshold(val_tw_path, threshold_method: str):
         return calculate_threshold(val_tw_path, threshold_method)["percentile_90"]
     elif threshold_method == "magic":
         return calculate_threshold(val_tw_path, threshold_method)["mean"]
+    elif threshold_method == "ocrapt":
+        # Contamination percentile: flag the top-`contamination` fraction of node scores.
+        losses = []
+        for file in listdir_sorted(val_tw_path):
+            losses.extend(pd.read_csv(os.path.join(val_tw_path, file), usecols=["loss"])["loss"].tolist())
+        return float(np.percentile(losses, 100 * (1 - contamination)))
     raise ValueError(f"Invalid threshold method `{threshold_method}`")
+
+
+def get_threshold_per_type(val_tw_path, cfg, min_contamination=0.001, max_contamination=0.05):
+    # per node type: contamination = own val malicious fraction, clamped to [min, max]
+    node_to_type = {nid: info["type"] for nid, info in get_node_to_path_and_type(cfg).items()}
+    gt_nids, _, _ = labelling.get_ground_truth(cfg)
+    gt_nids = set(int(n) for n in gt_nids)
+
+    losses_by_type = defaultdict(list)
+    malicious_by_type = defaultdict(int)
+    total_by_type = defaultdict(int)
+    for file in listdir_sorted(val_tw_path):
+        df = pd.read_csv(os.path.join(val_tw_path, file), usecols=["node", "loss"])
+        for node, loss in zip(df["node"], df["loss"]):
+            nt = node_to_type.get(int(node))
+            if nt is None:
+                continue
+            losses_by_type[nt].append(loss)
+            total_by_type[nt] += 1
+            if int(node) in gt_nids:
+                malicious_by_type[nt] += 1
+
+    thresholds = {}
+    for nt, losses in losses_by_type.items():
+        frac = malicious_by_type[nt] / total_by_type[nt] if total_by_type[nt] > 0 else 0.0
+        contamination = min(max(frac, min_contamination), max_contamination)
+        thresholds[nt] = float(np.percentile(losses, 100 * (1 - contamination)))
+    return thresholds
 
 
 def reduce_losses_to_score(losses: list[float], threshold_method: str):
@@ -143,6 +177,7 @@ def reduce_losses_to_score(losses: list[float], threshold_method: str):
         or threshold_method == "threatrace"
         or threshold_method == "flash"
         or threshold_method == "nodlink"
+        or threshold_method == "ocrapt"
     ):
         return np.max(losses)
     raise ValueError(f"Invalid threshold method {threshold_method}")
@@ -1425,3 +1460,25 @@ def get_metrics_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
     recall = tps / (total_attack_nodes + 1e-12)
 
     return fps, tps, precision, recall
+
+
+def two_hop_relaxed_metrics(mp_mask, gp_mask, adjacency):
+    def _khop(mask_bool, k):
+        m = mask_bool.astype(np.float32)
+        for _ in range(k):
+            m = ((adjacency @ m) + m > 0).astype(np.float32)
+        return m > 0
+
+    tp_m = mp_mask & gp_mask
+    fp_m = mp_mask & ~gp_mask
+    fn_m = gp_mask & ~mp_mask
+    two_hop_gp = _khop(gp_mask, 2)
+    two_hop_tp = _khop(tp_m, 2)
+    fpl = fp_m & ~two_hop_gp              # forgive FP within 2 hops of a GT node
+    tpl = tp_m | (fn_m & two_hop_tp)      # credit missed GT within 2 hops of a TP
+    fn = fn_m & ~two_hop_tp
+    tp, fp, fn = int(tpl.sum()), int(fpl.sum()), int(fn.sum())
+    prec = tp / (tp + fp) if tp + fp else 0.0
+    rec = tp / (tp + fn) if tp + fn else 0.0
+    f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
+    return {"precision": prec, "recall": rec, "fscore": f1, "tp": tp, "fp": fp, "fn": fn}

@@ -1,0 +1,89 @@
+_include_yml: default
+
+construction:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 15.0
+  use_hashed_label: False
+  fuse_edge: True
+  node_label_features:
+    subject: type, path, cmd_line
+    file: type, path
+    netflow: type, remote_ip, remote_port
+  multi_dataset: none
+
+transformation:
+  used_methods: none
+
+featurization:
+  seed: 0
+  used_method: ocrapt_features
+  ocrapt_features:
+    use_lifespan: False
+    use_cumulative_active_time: False
+feat_inference:
+  to_remove: True
+
+batching:
+  node_features: node_emb,node_type
+  edge_features: edge_type
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: none
+  inter_graph_batching:
+    used_method: none
+
+training:
+  used_method: default
+  seed: 0
+  deterministic: False
+  num_epochs: 100
+  patience: 5
+  lr: 0.005
+  weight_decay: 0.0
+  node_hid_dim: 64
+  node_out_dim: 64
+  grad_accumulation: 100000   # forces one full-batch step/epoch
+  ocrapt_early_stop:
+    enabled: True
+    patience: 5
+    min_delta: 0.01
+    max_delta: 0.2
+  encoder:
+    dropout: 0.0
+    used_methods: rgcn_per_type
+    rgcn_per_type:
+      activation: relu
+      num_layers: 3
+  decoder:
+    used_methods: one_class
+    one_class:
+      decoder: none
+      beta: 0.5
+      eps: 0.001
+      warmup: 2
+
+evaluation:
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_adp
+  used_method: node_evaluation
+  node_evaluation:
+    threshold_method: ocrapt
+    ocrapt_contamination: 0.05
+    ocrapt_min_contamination: 0.001
+    use_dst_node_loss: False
+    use_kmeans: False
+
+triage:
+  used_method: ocrapt_subgraph
+  ocrapt:
+    num_hops: 1
+    top_k: 15
+    min_nodes: 3
+    max_edges: 5000
+    abnormality_level: Moderate
+    correlate_anomalous_once: True
+    remove_duplicated_subgraph: True

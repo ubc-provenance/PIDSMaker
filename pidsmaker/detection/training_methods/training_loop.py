@@ -11,6 +11,7 @@ Handles model training with:
 
 import copy
 import os
+import shutil
 import tracemalloc
 from time import perf_counter as timer
 
@@ -28,6 +29,7 @@ from pidsmaker.utils.data_utils import save_model
 from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
+from .ocrapt_early_stop import OCRAPTEarlyStop
 
 
 def main(cfg):
@@ -95,6 +97,16 @@ def main(cfg):
     global_best_val_score = float("-inf")
     use_few_shot = cfg.training.decoder.use_few_shot
     grad_acc = cfg.training.grad_accumulation
+
+    es_cfg = getattr(cfg.training, "ocrapt_early_stop", None)
+    es_tracker = None
+    es_stopped_early = False
+    saved_epochs = []
+    if es_cfg is not None and es_cfg.enabled:
+        es_tracker = OCRAPTEarlyStop(
+            num_node_types=cfg.dataset.num_node_types,
+            patience=es_cfg.patience, min_delta=es_cfg.min_delta, max_delta=es_cfg.max_delta,
+        )
 
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
@@ -264,6 +276,44 @@ def main(cfg):
                     "test_loss": round(test_stats["test_loss"], 4),
                 }
             )
+            saved_epochs.append(epoch)
+
+            if es_tracker is not None:
+                inference_loop.main(
+                    cfg=cfg, model=model, val_data=None, test_data=None,
+                    train_data=train_data, epoch=epoch, split="train", logging=False,
+                )
+                all_stopped = es_tracker.check(
+                    cfg, epoch,
+                    min_contamination=cfg.evaluation.node_evaluation.ocrapt_min_contamination,
+                    max_contamination=cfg.evaluation.node_evaluation.ocrapt_contamination,
+                )
+                for nt in range(es_tracker.num_node_types):
+                    if not es_tracker._stopped[nt]:
+                        continue
+                    if hasattr(model.encoder, "freeze_type"):
+                        model.encoder.freeze_type(nt)
+                    for obj in model.objectives:
+                        inner = getattr(obj, "objective", obj)  # unwrap ValidationWrapper
+                        if hasattr(inner, "freeze_type"):
+                            inner.freeze_type(nt)
+                if all_stopped:
+                    es_stopped_early = True
+                    break
+
+    # only discard earlier checkpoints if the plateau actually fired, not if we just ran out of epochs
+    if es_stopped_early and len(saved_epochs) > 1:
+        for e in saved_epochs[:-1]:
+            gnn_models_dir = cfg.training._trained_models_dir
+            model_path = os.path.join(gnn_models_dir, f"model_epoch_{e}")
+            if os.path.isdir(model_path):
+                shutil.rmtree(model_path)
+            for split in ("train", "val", "test"):
+                d = os.path.join(cfg.training._edge_losses_dir, split, f"model_epoch_{e}")
+                if os.path.isdir(d):
+                    shutil.rmtree(d)
+        log(f"OCR-APT early stop: kept only model_epoch_{saved_epochs[-1]}, "
+            f"discarded {len(saved_epochs)-1} earlier checkpoint(s).")
 
     # After training
     if best_epoch_mode:
