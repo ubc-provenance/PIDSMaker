@@ -20,9 +20,15 @@ class OneClass(nn.Module):
         self._frozen.add(t)
 
     def _node_type_idx(self, h, batch):
-        if batch is not None and getattr(batch, "node_type_argmax", None) is not None:
-            return batch.node_type_argmax
-        return torch.zeros(h.size(0), dtype=torch.long, device=h.device)
+        node_type_argmax = getattr(batch, "node_type_argmax", None) if batch is not None else None
+        if node_type_argmax is None:
+            if self.num_node_types > 1:
+                raise ValueError(
+                    "OneClass needs `node_type_argmax` on the batch when num_node_types > 1, "
+                    "otherwise every node silently shares a single hypersphere."
+                )
+            return torch.zeros(h.size(0), dtype=torch.long, device=h.device)
+        return node_type_argmax
 
     def forward(self, h, inference, batch=None, **kwargs):
         h = self.decoder(h)

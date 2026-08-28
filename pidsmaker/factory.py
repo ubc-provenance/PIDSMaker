@@ -734,6 +734,32 @@ def optimizer_few_shot_factory(cfg, parameters):
     return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
 
 
+def early_stop_tracker_factory(cfg):
+    """Build the per-type validation early-stop tracker used by the training loop.
+
+    Returns None when no such tracker is configured. OCR-APT's is currently the only
+    implementation; imported locally to avoid a cycle with `detection.training_methods`.
+
+    Args:
+        cfg: Configuration, checked for `training.ocrapt_early_stop.enabled`
+
+    Returns:
+        A tracker exposing `after_eval_epoch(cfg, model, train_data, epoch) -> bool`, or None
+    """
+    from pidsmaker.detection.training_methods.ocrapt_early_stop import OCRAPTEarlyStop
+
+    ocrapt_cfg = getattr(cfg.training, "ocrapt_early_stop", None)
+    if ocrapt_cfg is None or not ocrapt_cfg.enabled:
+        return None
+
+    return OCRAPTEarlyStop(
+        num_node_types=cfg.dataset.num_node_types,
+        patience=ocrapt_cfg.patience,
+        min_delta=ocrapt_cfg.min_delta,
+        max_delta=ocrapt_cfg.max_delta,
+    )
+
+
 def get_dimensions_from_data_sample(data):
     """Extract dimensions from data sample for model initialization.
 

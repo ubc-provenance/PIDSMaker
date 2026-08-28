@@ -43,8 +43,8 @@ training:
   patience: 5
   lr: 0.005
   weight_decay: 0.0
-  node_hid_dim: 64
-  node_out_dim: 64
+  node_hid_dim: 32
+  node_out_dim: 32
   grad_accumulation: 100000   # forces one full-batch step/epoch
   ocrapt_early_stop:
     enabled: True

@@ -48,6 +48,11 @@ class PerTypeRGCN(nn.Module):
 
     def forward(self, x, edge_index, edge_types=None, node_type_argmax=None, **kwargs):
         if node_type_argmax is None:
+            if self.num_node_types > 1:
+                raise ValueError(
+                    "PerTypeRGCN needs `node_type_argmax` on the batch when num_node_types > 1, "
+                    "otherwise every node silently falls back to a single type."
+                )
             node_type_argmax = torch.zeros(x.size(0), dtype=torch.long, device=x.device)
 
         h_out = None

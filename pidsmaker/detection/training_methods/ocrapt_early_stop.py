@@ -4,11 +4,19 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score, roc_auc_score
 
+from pidsmaker.utils.dataset_utils import get_node_map
 from pidsmaker.utils.labelling import get_ground_truth
 from pidsmaker.utils.utils import get_node_to_path_and_type, listdir_sorted, log
 
+from . import inference_loop
+
 
 class OCRAPTEarlyStop:
+    """Per-node-type validation early stopping (arXiv:2510.15188 Sec 5.1.2): F1-based if a
+    type's validation set has >5% malicious nodes, AUC-based if some are present, else TNR-based.
+    Once a type plateaus, its encoder/objective sub-module is frozen for the rest of training.
+    """
+
     def __init__(self, num_node_types, patience=5, min_delta=0.01, max_delta=0.2):
         self.num_node_types = num_node_types
         self.patience = patience
@@ -97,8 +105,9 @@ class OCRAPTEarlyStop:
         gt_nids, _, _ = get_ground_truth(cfg)
         gt_nids = set(int(n) for n in gt_nids)
         node_to_type = {nid: info["type"] for nid, info in get_node_to_path_and_type(cfg).items()}
-        type_names = sorted({t for t in node_to_type.values()})
-        type_to_idx = {t: i for i, t in enumerate(type_names[: self.num_node_types])}
+        # must match the type index the model itself uses (node_type_argmax), not an
+        # independent ordering, otherwise freeze_type() would freeze the wrong type.
+        type_to_idx = {t: i for t, i in get_node_map(from_zero=True).items() if isinstance(t, str)}
 
         # threshold from train scores (calibration), evaluated against val labels
         train = self._scores_by_type(cfg.training._edge_losses_dir, "train", epoch, node_to_type, type_to_idx, gt_nids)
@@ -124,3 +133,31 @@ class OCRAPTEarlyStop:
         if all_stopped:
             log(f"OCR-APT validation early stop triggered at epoch {epoch}")
         return all_stopped
+
+    def after_eval_epoch(self, cfg, model, train_data, epoch):
+        """Call once per evaluated epoch. Computes this epoch's per-type validation stats,
+        freezes the sub-modules of any type that has plateaued, and returns whether every
+        type has stopped (i.e. training can end).
+        """
+        inference_loop.main(
+            cfg=cfg, model=model, val_data=None, test_data=None,
+            train_data=train_data, epoch=epoch, split="train", logging=False,
+        )
+        all_stopped = self.check(
+            cfg, epoch,
+            min_contamination=cfg.evaluation.node_evaluation.ocrapt_min_contamination,
+            max_contamination=cfg.evaluation.node_evaluation.ocrapt_contamination,
+        )
+        for nt in range(self.num_node_types):
+            if self._stopped[nt]:
+                self._freeze_type(model, nt)
+        return all_stopped
+
+    @staticmethod
+    def _freeze_type(model, nt):
+        if hasattr(model.encoder, "freeze_type"):
+            model.encoder.freeze_type(nt)
+        for obj in model.objectives:
+            inner = getattr(obj, "objective", obj)  # unwrap ValidationWrapper
+            if hasattr(inner, "freeze_type"):
+                inner.freeze_type(nt)

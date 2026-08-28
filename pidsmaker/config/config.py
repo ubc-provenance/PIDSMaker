@@ -803,14 +803,6 @@ TASK_ARGS = {
             str, vals=OR(["default", "magic"]), desc="The method to build time window graphs."
         ),
         "use_all_files": Arg(bool),
-        "edge_vocab": Arg(
-            str,
-            vals=OR(["default", "ocrapt"]),
-            desc="Which retained edge-type vocabulary to use during construction. 'default' keeps "
-            "the 10-type DARPA-TC set; 'ocrapt' keeps OCR-APT's broader per-dataset set (incl. "
-            "EVENT_CLOSE/MMAP/...) so file nodes referenced only by those events survive. Produces "
-            "a separate cached graph; other methods are unaffected.",
-        ),
         "mimicry_edge_num": Arg(int),
         "time_window_size": Arg(
             float,
