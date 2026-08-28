@@ -13,6 +13,7 @@ Key metrics:
 import os
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 import torch
 
@@ -26,6 +27,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     get_ground_truth_nids,
     get_metrics_if_all_attacks_detected,
     get_threshold,
+    get_threshold_per_type,
     plot_detected_attacks_vs_precision,
     plot_discrimination_metric,
     plot_score_seen,
@@ -133,11 +135,22 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     log(f"Loading data from {test_tw_path}...")
 
     threshold_method = cfg.evaluation.node_evaluation.threshold_method
+    thr_by_type = None
     if threshold_method == "magic":
         thr = get_threshold(test_tw_path, threshold_method)
+    elif threshold_method == "ocrapt":
+        thr_by_type = get_threshold_per_type(
+            val_tw_path, cfg,
+            min_contamination=cfg.evaluation.node_evaluation.ocrapt_min_contamination,
+            max_contamination=cfg.evaluation.node_evaluation.ocrapt_contamination,
+        )
+        thr = float(np.mean(list(thr_by_type.values()))) if thr_by_type else 0.0
     else:
         thr = get_threshold(val_tw_path, threshold_method)
-    log(f"Threshold: {thr:.3f}")
+    log(f"Threshold: {thr:.3f}" + (f" (per-type: {thr_by_type})" if thr_by_type else ""))
+
+    node_to_type = {nid: info["type"] for nid, info in get_node_to_path_and_type(cfg).items()} \
+        if thr_by_type is not None else None
 
     node_to_values = defaultdict(lambda: defaultdict(list))
     node_to_max_loss_tw = {}
@@ -243,6 +256,9 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                 results[node_id]["y_hat"] = threatrace_label
             elif cfg.evaluation.node_evaluation.threshold_method == "flash":
                 results[node_id]["y_hat"] = flash_label
+            elif thr_by_type is not None:
+                node_thr = thr_by_type.get(node_to_type.get(node_id), thr)
+                results[node_id]["y_hat"] = int(pred_score > node_thr)
             else:
                 results[node_id]["y_hat"] = int(pred_score > thr)
 

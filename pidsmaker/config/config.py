@@ -597,6 +597,10 @@ FEATURIZATIONS_CFG = {
     "magic": {},
     "only_type": {},
     "only_ones": {},
+    "ocrapt_features": {
+        "use_lifespan": Arg(bool, desc="Off by default, hurts generalization (paper Appendix E)."),
+        "use_cumulative_active_time": Arg(bool, desc="Off by default, same reason as use_lifespan."),
+    },
 }
 
 ENCODERS_CFG = {
@@ -627,6 +631,14 @@ ENCODERS_CFG = {
         "num_layers": Arg(int),
     },
     "gin": {
+        "activation": Arg(str),
+        "num_layers": Arg(int),
+    },
+    "rgcn": {
+        "activation": Arg(str),
+        "num_layers": Arg(int),
+    },
+    "rgcn_per_type": {
         "activation": Arg(str),
         "num_layers": Arg(int),
     },
@@ -683,6 +695,7 @@ OBJECTIVES_NODE_LEVEL = [
     "reconstruct_node_features",
     "reconstruct_node_embeddings",
     "reconstruct_masked_features",
+    "one_class",
 ]
 OBJECTIVES_EDGE_LEVEL = [
     "predict_edge_type",
@@ -760,6 +773,16 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
     },
+    "one_class": {
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())),
+            desc="Decoder applied to embeddings before the hypersphere; use 'none' (identity).",
+        ),
+        **DECODERS_CFG,
+        "beta": Arg(float, desc="Soft-boundary fraction; radius is the (1-beta) distance quantile."),
+        "eps": Arg(float, desc="Center slack keeping |c| away from zero."),
+        "warmup": Arg(int, desc="Kept for parity; a no-op (c/r update every train step)."),
+    },
 }
 
 SYNTHETIC_ATTACKS = {
@@ -771,7 +794,7 @@ SYNTHETIC_ATTACKS = {
     },
 }
 
-THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "flash", "nodlink"]
+THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "flash", "nodlink", "ocrapt"]
 
 # --- Tasks, subtasks, and argument configurations ---
 TASK_ARGS = {
@@ -970,6 +993,12 @@ TASK_ARGS = {
         "grad_accumulation": Arg(int, desc="Number of epochs to gather gradients before backprop."),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "used_method": Arg(str, vals=OR(["default"]), desc="Which training pipeline use."),
+        "ocrapt_early_stop": {
+            "enabled": Arg(bool, desc="Off by default, no-op unless set."),
+            "patience": Arg(int),
+            "min_delta": Arg(float),
+            "max_delta": Arg(float),
+        },
         "encoder": {
             "dropout": Arg(float),
             "used_methods": Arg(
@@ -1031,6 +1060,15 @@ TASK_ARGS = {
                 bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"
             ),
             "kmeans_top_K": Arg(int, desc="Number of top-score nodes selected before clustering."),
+            "ocrapt_contamination": Arg(
+                float,
+                desc="For threshold_method=ocrapt: max per-type contamination (top fraction "
+                "flagged), clamped from that type's own val malicious fraction.",
+            ),
+            "ocrapt_min_contamination": Arg(
+                float,
+                desc="For threshold_method=ocrapt: min per-type contamination floor.",
+            ),
         },
         "tw_evaluation": {
             "threshold_method": Arg(
@@ -1078,8 +1116,8 @@ TASK_ARGS = {
     "triage": {
         "used_method": Arg(
             str,
-            vals=OR(["depimpact"]),
-            desc="Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus.",
+            vals=OR(["depimpact", "ocrapt_subgraph"]),
+            desc="Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus; `ocrapt_subgraph` is OCR-APT's anomalous-subgraph stage.",
         ),
         "depimpact": {
             "used_method": Arg(
@@ -1088,6 +1126,18 @@ TASK_ARGS = {
             "score_method": Arg(str, vals=OR(["degree", "recon_loss", "degree_recon"])),
             "workers": Arg(int),
             "visualize": Arg(bool),
+        },
+        "ocrapt": {
+            "num_hops": Arg(int, desc="hops for correlating anomalies into subgraphs"),
+            "top_k": Arg(int, desc="top-K seed nodes per node type (by Anomaly_score)"),
+            "min_nodes": Arg(int, desc="minimum nodes per constructed subgraph"),
+            "max_edges": Arg(int, desc="subgraphs above this are Louvain-partitioned + edge-sampled"),
+            "abnormality_level": Arg(
+                str, vals=OR(["Negligible", "Minor", "Moderate", "Significant", "Critical"]),
+                desc="least subgraph severity to keep (summed Prediction_probability)",
+            ),
+            "correlate_anomalous_once": Arg(bool),
+            "remove_duplicated_subgraph": Arg(bool),
         },
     },
     "postprocessing": {},

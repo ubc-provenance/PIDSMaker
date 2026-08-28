@@ -9,6 +9,7 @@ from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_fasttext,
     feat_inference_flash,
     feat_inference_HFH,
+    feat_inference_ocrapt_features,
     feat_inference_TRW,
     feat_inference_word2vec,
 )
@@ -92,6 +93,8 @@ def get_indexid2vec(cfg):
         return feat_inference_HFH.main(cfg)
     if method == "word2vec":
         return feat_inference_word2vec.main(cfg)
+    if method == "ocrapt_features":
+        return feat_inference_ocrapt_features.main(cfg)
     if method == "temporal_rw":
         return feat_inference_TRW.main(cfg)
     if method == "flash":

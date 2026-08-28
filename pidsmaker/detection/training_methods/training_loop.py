@@ -20,6 +20,7 @@ import wandb
 
 from pidsmaker.factory import (
     build_model,
+    early_stop_tracker_factory,
     optimizer_factory,
     optimizer_few_shot_factory,
 )
@@ -95,6 +96,8 @@ def main(cfg):
     global_best_val_score = float("-inf")
     use_few_shot = cfg.training.decoder.use_few_shot
     grad_acc = cfg.training.grad_accumulation
+
+    es_tracker = early_stop_tracker_factory(cfg)
 
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
@@ -264,6 +267,8 @@ def main(cfg):
                     "test_loss": round(test_stats["test_loss"], 4),
                 }
             )
+            if es_tracker is not None and es_tracker.after_eval_epoch(cfg, model, train_data, epoch):
+                break
 
     # After training
     if best_epoch_mode:

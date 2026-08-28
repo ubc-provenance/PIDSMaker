@@ -183,12 +183,20 @@ def extract_msg_from_data(
     computed in previous tasks.
     """
     emb_dim = cfg.featurization.emb_dim
-    only_type = cfg.featurization.used_method.strip() == "only_type"
-    only_ones = cfg.featurization.used_method.strip() == "only_ones"
+    method = cfg.featurization.used_method.strip()
+    only_type = method == "only_type"
+    only_ones = method == "only_ones"
     if only_type or only_ones or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
+
+    if method == "ocrapt_features":
+        # in-histogram + out-histogram (L2-normalized together) + idle min/max/avg,
+        # plus one extra dim each for the optional lifespan/cumulative-active-time
+        oc = cfg.featurization.ocrapt_features
+        emb_dim = 2 * edge_type_dim + 3 + int(oc.use_lifespan) + int(oc.use_cumulative_active_time)
+
     selected_node_feats = cfg.batching.node_features
 
     msg_len = data_set[0].msg.shape[1]

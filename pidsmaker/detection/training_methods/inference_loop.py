@@ -254,7 +254,7 @@ def test_node_level(
     return losses
 
 
-def main(cfg, model, val_data, test_data, epoch, split, logging=True):
+def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data=None):
     set_seed(cfg)
 
     if split == "all":
@@ -263,6 +263,8 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True):
         splits = [(val_data, "val")]
     elif split == "test":
         splits = [(test_data, "test")]
+    elif split == "train":
+        splits = [(train_data, "train")]
     else:
         raise ValueError(f"Invalid split {split}")
 

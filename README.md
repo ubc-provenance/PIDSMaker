@@ -45,6 +45,7 @@ The framework currently integrates the following PIDSs.
 | Magic      | USENIX Security 2024 | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
 | NodLink    | NDSS 2024           | [Link](https://arxiv.org/pdf/2311.02331) |
 | ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
+| OCR-APT    | ACM CCS 2025        | [Link](https://arxiv.org/pdf/2510.15188) |
 
 ### Supported Datasets
 
@@ -93,7 +94,7 @@ We have made the installation of PIDSMaker inclusing pre-processed databases for
 ## 🧪 Basic usage of the framework
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
-Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
+Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`, `ocrapt`.
 
 1. Run in the shell:
     ```shell
