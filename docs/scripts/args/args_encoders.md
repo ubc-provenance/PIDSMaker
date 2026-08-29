@@ -52,16 +52,13 @@
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
         <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
     </ul>
-    </li>
-    <li class='bullet'><span class="key">sum_aggregation</span>
-    
-    
-    </li>
-    <li class='bullet'><span class="key">rcaid_gat</span>
-    
-    
-    </li>
-    <li class='bullet'><span class="key">magic_gat</span>
+</li>
+
+<li class='bullet'><span class="key">sum_aggregation</span></li>
+
+<li class='bullet'><span class="key">rcaid_gat</span></li>
+
+<li class='bullet'><span class="key">magic_gat</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
         <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int</span></li>
@@ -69,20 +66,17 @@
         <li class='no-bullet'><span class="key-leaf">alpha_l</span>: <span class="value">float</span></li>
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
     </ul>
-    </li>
-    <li class='bullet'><span class="key">glstm</span>
-    
-    
-    </li>
-    <li class='bullet'><span class="key">custom_mlp</span>
+</li>
+
+<li class='bullet'><span class="key">glstm</span></li>
+
+<li class='bullet'><span class="key">custom_mlp</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">architecture_str</span>: <span class="value">str</span></li>
     </ul>
-    </li>
-    <li class='bullet'><span class="key">none</span>
-    
-    
-    </li>
+</li>
+
+<li class='bullet'><span class="key">none</span></li>
 </ul>
 
 </div>
