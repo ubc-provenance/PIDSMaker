@@ -255,7 +255,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             select * from event_table
             where
                   timestamp_rec>'%s' and timestamp_rec<'%s'
-                   ORDER BY timestamp_rec, event_uuid;
+                   ORDER BY timestamp_rec ASC, _id ASC;
             """ % (start_ns_timestamp, end_ns_timestamp)
             cur.execute(sql)
             events = cur.fetchall()
