@@ -23,58 +23,80 @@ from pidsmaker.utils.utils import (
 )
 
 
+def build_temporal_data(graph, indexid2vec, etype2oh, ntype2oh):
+    """Builds the `TemporalData` of one time window graph.
+
+    The `msg` of each edge is the concatenation
+    `[src type | src embedding | edge type | dst type | dst embedding]`, which is
+    what `extract_msg_from_data()` slices back apart to build node and edge
+    features. Shared with the streaming detector so that a live time window is
+    turned into a tensor exactly like a pre-computed one.
+
+    Args:
+        graph: A time window `networkx.MultiDiGraph`.
+        indexid2vec: Node embeddings, or None when the featurization method uses
+            node types only.
+        etype2oh: One-hot encoding of edge types.
+        ntype2oh: One-hot encoding of node types.
+
+    Returns:
+        CollatableTemporalData: The window's events.
+    """
+    sorted_edges = graph.edges(data=True, keys=True)
+
+    src, dst, msg, t, y = [], [], [], [], []
+    for u, v, k, attr in sorted_edges:
+        src.append(int(u))
+        dst.append(int(v))
+        t.append(int(attr["time"]))
+        y.append(int(attr.get("y", 0)))
+
+        # If the graph structure has been changed in transformation, we may loose
+        # the edge label
+        if "label" in attr:
+            edge_label = etype2oh[attr["label"]]
+        else:
+            edge_label = torch.zeros_like(etype2oh[list(etype2oh.keys())[0]])
+
+        # Only types
+        if indexid2vec is None:
+            msg.append(
+                torch.cat(
+                    [
+                        ntype2oh[graph.nodes[u]["node_type"]],
+                        edge_label,
+                        ntype2oh[graph.nodes[v]["node_type"]],
+                    ]
+                )
+            )
+
+        # Types + node embeddings
+        else:
+            msg.append(
+                torch.cat(
+                    [
+                        ntype2oh[graph.nodes[u]["node_type"]],
+                        torch.from_numpy(indexid2vec[u]),
+                        edge_label,
+                        ntype2oh[graph.nodes[v]["node_type"]],
+                        torch.from_numpy(indexid2vec[v]),
+                    ]
+                )
+            )
+
+    return CollatableTemporalData(
+        src=torch.tensor(src).to(torch.long),
+        dst=torch.tensor(dst).to(torch.long),
+        t=torch.tensor(t).to(torch.long),
+        msg=torch.vstack(msg).to(torch.float),
+        y=torch.tensor(y).to(torch.long),
+    )
+
+
 def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg):
     for path in log_tqdm(sorted_paths, desc="Computing edge embeddings"):
         graph = torch.load(path)
-        sorted_edges = graph.edges(data=True, keys=True)
-
-        src, dst, msg, t, y = [], [], [], [], []
-        for u, v, k, attr in sorted_edges:
-            src.append(int(u))
-            dst.append(int(v))
-            t.append(int(attr["time"]))
-            y.append(int(attr.get("y", 0)))
-
-            # If the graph structure has been changed in transformation, we may loose
-            # the edge label
-            if "label" in attr:
-                edge_label = etype2oh[attr["label"]]
-            else:
-                edge_label = torch.zeros_like(etype2oh[list(etype2oh.keys())[0]])
-
-            # Only types
-            if indexid2vec is None:
-                msg.append(
-                    torch.cat(
-                        [
-                            ntype2oh[graph.nodes[u]["node_type"]],
-                            edge_label,
-                            ntype2oh[graph.nodes[v]["node_type"]],
-                        ]
-                    )
-                )
-
-            # Types + node embeddings
-            else:
-                msg.append(
-                    torch.cat(
-                        [
-                            ntype2oh[graph.nodes[u]["node_type"]],
-                            torch.from_numpy(indexid2vec[u]),
-                            edge_label,
-                            ntype2oh[graph.nodes[v]["node_type"]],
-                            torch.from_numpy(indexid2vec[v]),
-                        ]
-                    )
-                )
-
-        data = CollatableTemporalData(
-            src=torch.tensor(src).to(torch.long),
-            dst=torch.tensor(dst).to(torch.long),
-            t=torch.tensor(t).to(torch.long),
-            msg=torch.vstack(msg).to(torch.float),
-            y=torch.tensor(y).to(torch.long),
-        )
+        data = build_temporal_data(graph, indexid2vec, etype2oh, ntype2oh)
 
         os.makedirs(out_dir, exist_ok=True)
         file = path.split("/")[-1]

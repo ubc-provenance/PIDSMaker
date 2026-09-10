@@ -167,6 +167,7 @@ cython_debug/
 wandb/
 nohup.out
 artifacts/
+captures/
 data/
 docs/site/
 weights/

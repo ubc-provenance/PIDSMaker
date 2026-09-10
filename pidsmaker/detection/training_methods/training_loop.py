@@ -282,6 +282,15 @@ def main(cfg):
             split="test",
         )
 
+    # Persist the model the run ends on, so it can be served on a live provenance
+    # stream (`pidsmaker/stream_detect.py`) without retraining. Opt-in via
+    # `--save_model`: the TGN memory in there scales with the training graph, so
+    # writing it for every experiment would pile up.
+    if cfg._save_model:
+        model_path = os.path.join(cfg.training._trained_models_dir, "model_best")
+        save_model(model, model_path, cfg)
+        log(f"Model weights saved to {model_path}")
+
     wandb.log(
         {
             "best_epoch": best_epoch,

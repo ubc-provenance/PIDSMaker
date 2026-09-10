@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import os
 import pathlib
+import re
 import sys
 import uuid
 from collections import OrderedDict
@@ -49,6 +50,7 @@ def get_default_cfg(args):
     # Opt-in: whether to persist the extra (large) artifacts the embedding
     # visualizer needs. Underscore-prefixed so it never enters the task hashes.
     cfg._save_for_viz = getattr(args, "save_for_viz", False)
+    cfg._save_model = getattr(args, "save_model", False)
     cfg._model = args.model
     cfg._tuning_mode = args.tuning_mode
     cfg._experiment = args.experiment
@@ -67,8 +69,11 @@ def get_default_cfg(args):
     cfg.database.password = args.database_password
     cfg.database.port = args.database_port
 
-    # Dataset: we simply create variables for all configurations described in the dict
-    set_dataset_cfg(cfg, args.dataset)
+    # Dataset: we simply create variables for all configurations described in the dict.
+    # The override file is kept on the cfg because the dataset config is rebuilt from
+    # scratch every time task paths are recomputed.
+    cfg._dataset_config = getattr(args, "dataset_config", "")
+    set_dataset_cfg(cfg, args.dataset, cfg._dataset_config)
 
     # Tasks: we create nested None variables for all arguments
     def create_cfg_recursive(cfg, task_args_dict: dict):
@@ -88,14 +93,83 @@ def get_default_cfg(args):
     return cfg
 
 
-def set_dataset_cfg(cfg, dataset):
+def set_dataset_cfg(cfg, dataset, dataset_config_path: str = ""):
+    """Fills `cfg.dataset` with a dataset's defaults, optionally overridden by a file.
+
+    Streamed datasets (see `pidsmaker/streaming/`) only get their real dates and
+    edge type count once a capture has been ingested, so `stream_ingest.py` writes
+    them to a YAML file that `--dataset_config` points at here.
+
+    Args:
+        cfg: The config being built.
+        dataset: Dataset name: a key of `DATASET_DEFAULT_CONFIG`, or any name for a
+            streamed capture, in which case `dataset_config_path` is required.
+        dataset_config_path: Optional YAML file overriding any of the dataset's keys
+            (`template` selects the built-in dataset a streamed one inherits from).
+    """
+    overrides = {}
+    if dataset_config_path:
+        if not os.path.isfile(dataset_config_path):
+            raise FileNotFoundError(f"Dataset config file not found: {dataset_config_path}")
+        with open(dataset_config_path, "r") as f:
+            overrides = yaml.safe_load(f) or {}
+
+    # A dataset is either built in, or a streamed capture with a name of the user's
+    # choosing. The latter inherits everything a built-in "template" defines (edge
+    # vocabulary, node types, ...) and takes its own name, database and dates from the
+    # YAML that `stream_ingest.py` wrote.
+    is_builtin = dataset in DATASET_DEFAULT_CONFIG
+    if is_builtin:
+        template = dataset
+    elif not overrides:
+        raise ValueError(
+            f"Unknown dataset {dataset!r}. Built-in datasets: {sorted(DATASET_DEFAULT_CONFIG)}. "
+            "A streamed capture can use any name: ingest it with "
+            f"`stream_ingest.py {dataset} --stream_topic=...`, then pass the dataset.yml it "
+            "writes with `--dataset_config`."
+        )
+    else:
+        template = overrides.get("template", "SPADE_AUDIT")
+        if template not in DATASET_DEFAULT_CONFIG:
+            raise ValueError(
+                f"Dataset {dataset!r} names an unknown template {template!r} in "
+                f"{dataset_config_path}. Built-in datasets: {sorted(DATASET_DEFAULT_CONFIG)}"
+            )
+
+    unknown = set(overrides) - set(DATASET_DEFAULT_CONFIG[template]) - {"name", "template"}
+    if unknown:
+        raise ValueError(
+            f"Unknown dataset keys in {dataset_config_path}: {sorted(unknown)}. "
+            f"Valid keys: {sorted(DATASET_DEFAULT_CONFIG[template])}"
+        )
+
     cfg.dataset = CN()
     cfg.dataset.name = dataset
-    for attr, value in DATASET_DEFAULT_CONFIG[cfg.dataset.name].items():
+    cfg.dataset.template = template
+    for attr, value in DATASET_DEFAULT_CONFIG[template].items():
         setattr(cfg.dataset, attr, value)
+    if not is_builtin:  # defaults for a streamed dataset, normally set by its YAML
+        cfg.dataset.database = streamed_database_name(dataset)
+        cfg.dataset.database_all_file = cfg.dataset.database
+    for attr, value in overrides.items():
+        if attr not in ("name", "template"):
+            setattr(cfg.dataset, attr, value)
 
 
-def get_runtime_required_args(return_unknown_args=False, args=None):
+def streamed_database_name(dataset: str) -> str:
+    """The postgres database a streamed dataset lives in: its name, made identifier-safe."""
+    return re.sub(r"[^a-z0-9_]", "_", dataset.lower())
+
+
+def get_runtime_required_args(return_unknown_args=False, args=None, add_args_fn=None):
+    """Parses the CLI args every entry point shares.
+
+    Args:
+        return_unknown_args: Also return the args the parser did not recognize.
+        args: Argument list to parse, defaulting to `sys.argv`.
+        add_args_fn: Callback receiving the parser, so an entry point can add its
+            own arguments (the streaming ones, for instance) to the same parser.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("model", type=str, help="Name of the model")
     parser.add_argument("dataset", type=str, help="Name of the dataset")
@@ -109,6 +183,14 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--restart_from_scratch",
         action="store_true",
         help="Starts pipeline in a fresh new task path",
+    )
+    parser.add_argument(
+        "--save_model",
+        action="store_true",
+        help="Write the trained model's weights to disk (`training/<hash>/trained_models/"
+        "model_best`) so it can be served on a live provenance stream with "
+        "`pidsmaker/stream_detect.py`. Off by default: the TGN memory it contains scales "
+        "with the training graph, so keeping it for every experiment adds up quickly.",
     )
     parser.add_argument(
         "--save_for_viz",
@@ -168,6 +250,12 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         action="store_true",
         help="Whether to run the framework as in functional tests.",
     )
+    parser.add_argument(
+        "--dataset_config",
+        default="",
+        help="YAML file overriding the dataset's default config (dates, database, ...). "
+        "Written by `stream_ingest.py` for datasets built from a live stream.",
+    )
 
     # Script-specific args
     parser.add_argument("--show_attack", type=int, help="Number of attack for plotting", default=0)
@@ -179,6 +267,9 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         **EXPERIMENTS_CONFIG,
     }
     parser = add_cfg_args_to_parser(all_args, parser)
+
+    if add_args_fn is not None:
+        parser = add_args_fn(parser)
 
     try:
         args, unknown_args = parser.parse_known_args(args)
@@ -385,10 +476,13 @@ def check_args(args):
     if not any([args.model in model for model in available_models]):
         raise ValueError(f"Unknown model {args.model}. Available models are {available_models}")
 
-    available_datasets = DATASET_DEFAULT_CONFIG.keys()
-    if args.dataset not in available_datasets:
+    # A dataset is either built in, or a streamed capture of any name whose definition
+    # comes with `--dataset_config` (see `set_dataset_cfg`).
+    if args.dataset not in DATASET_DEFAULT_CONFIG and not getattr(args, "dataset_config", ""):
         raise ValueError(
-            f"Unknown dataset {args.dataset}. Available datasets are {available_datasets}"
+            f"Unknown dataset {args.dataset}. Built-in datasets: {sorted(DATASET_DEFAULT_CONFIG)}. "
+            "For a streamed capture, pass the dataset.yml that `stream_ingest.py "
+            f"{args.dataset} ...` wrote with `--dataset_config`."
         )
 
 
@@ -442,7 +536,7 @@ def get_yml_cfg(args):
         if args.model == "orthrus_fixed" and args.dataset == "CLEARSCOPE_E3":  # speciifc case
             tuning_file = args.model
         tuned_yml_file = get_yml_file(
-            f"tuned_{tuning_file}", folder=f"tuned_baselines/{cfg.dataset.name.lower()}/"
+            f"tuned_{tuning_file}", folder=f"tuned_baselines/{cfg.dataset.template.lower()}/"
         )
         merge_cfg_and_check_syntax(cfg, tuned_yml_file)
 
@@ -577,7 +671,7 @@ def set_subtasks_to_restart(yml_file: str, cfg):
 def update_task_paths_to_restart(cfg, subtask_concat_value=None):
     """Simply recomputes if tasks should be restarted."""
     yml_file = get_yml_file(cfg._model)
-    set_dataset_cfg(cfg, cfg.dataset.name)
+    set_dataset_cfg(cfg, cfg.dataset.name, getattr(cfg, "_dataset_config", ""))
     set_shortcut_variables(cfg)
     set_task_paths(cfg, subtask_concat_value=subtask_concat_value)
     set_subtasks_to_restart(yml_file, cfg)

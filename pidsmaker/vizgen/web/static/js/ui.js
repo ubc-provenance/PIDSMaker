@@ -310,6 +310,7 @@ const UI = (() => {
     // dialogs
     $('btn_causal').onclick = () => Dialogs.causal();
     $('btn_neighbors').onclick = () => Dialogs.neighbors();
+    $('btn_top_edges').onclick = () => Dialogs.topEdges();
     $('btn_plot_dist').onclick = () => Dialogs.scoreDist();
     $('btn_campaign_graph').onclick = () => Campaign.open();
 

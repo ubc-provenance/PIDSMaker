@@ -76,6 +76,94 @@ def test_edge_level(
     return all_losses
 
 
+def build_node_records(results, data, n_id, loss, threshold_method: str):
+    """Builds the per-node records a node-level detector produces for one batch.
+
+    Every node-level system scores nodes by their loss; ThreaTrace and Flash add
+    a confidence score derived from the classifier's output, with their own fixed
+    thresholds. Shared with the real-time detector so that a live window is scored
+    exactly like a test window.
+
+    Args:
+        results: Output of `model(data, inference=True)`.
+        data: The scored batch.
+        n_id: Original node ids of the batch's nodes.
+        loss: Per-node loss tensor.
+        threshold_method: `evaluation.node_evaluation.threshold_method`.
+
+    Returns:
+        list: One dict per node, with at least `node` and `loss`.
+    """
+    node_list = []
+
+    # ThreaTrace code
+    if threshold_method == "threatrace":
+        out = results["out"]
+        pred = out.max(1)[1]
+        pro = F.softmax(out, dim=1)
+        pro1 = pro.max(1)
+        for i in range(len(out)):
+            pro[i][pro1[1][i]] = -1
+        pro2 = pro.max(1)
+
+        node_type_num = data.node_type.argmax(1)
+        for i in range(len(out)):
+            if pro2[0][i] != 0:
+                score = pro1[0][i] / pro2[0][i]
+            else:
+                score = pro1[0][i] / 1e-5
+            score = torch.log(score + 1e-12)  # we do that or the score is much too high
+            score = max(score.item(), 0)
+
+            node = n_id[i].item()
+            correct_pred = int((node_type_num[i] == pred[i]).item())
+
+            node_list.append(
+                {
+                    "node": node,
+                    "loss": float(loss[i].item()),
+                    "threatrace_score": score,
+                    "correct_pred": correct_pred,
+                }
+            )
+
+    # Flash code
+    elif threshold_method == "flash":
+        out = results["out"]
+        pred = out.max(1)[1]
+        sorted, indices = out.sort(dim=1, descending=True)
+        eps = 1e-6
+        conf = (sorted[:, 0] - sorted[:, 1]) / (sorted[:, 0] + eps)
+        conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
+
+        node_type_num = data.node_type.argmax(1)
+        for i in range(len(out)):
+            score = max(conf[i].item(), 0)
+
+            node = n_id[i].item()
+            correct_pred = int((node_type_num[i] == pred[i]).item())
+
+            node_list.append(
+                {
+                    "node": node,
+                    "loss": float(loss[i].item()),
+                    "flash_score": score,
+                    "correct_pred": correct_pred,
+                }
+            )
+
+    else:
+        for i, node in enumerate(n_id):
+            node_list.append(
+                {
+                    "node": node.item(),
+                    "loss": float(loss[i].item()),
+                }
+            )
+
+    return node_list
+
+
 @torch.no_grad()
 def test_node_level(
     data,
@@ -101,62 +189,10 @@ def test_node_level(
     losses.extend(loss.cpu().numpy().tolist())
     n_id = getattr(data, "original_n_id_tgn", getattr(data, "original_n_id"))
 
-    # ThreaTrace code
-    if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-        out = results["out"]
-        pred = out.max(1)[1]
-        pro = F.softmax(out, dim=1)
-        pro1 = pro.max(1)
-        for i in range(len(out)):
-            pro[i][pro1[1][i]] = -1
-        pro2 = pro.max(1)
-
-        node_type_num = data.node_type.argmax(1)
-        for i in range(len(out)):
-            if pro2[0][i] != 0:
-                score = pro1[0][i] / pro2[0][i]
-            else:
-                score = pro1[0][i] / 1e-5
-            score = torch.log(score + 1e-12)  # we do that or the score is much too high
-            score = max(score.item(), 0)
-
-            node = n_id[i].item()
-            correct_pred = int((node_type_num[i] == pred[i]).item())
-
-            temp_dic = {
-                "node": node,
-                "loss": float(loss[i].item()),
-                "threatrace_score": score,
-                "correct_pred": correct_pred,
-            }
-            node_list.append(temp_dic)
-
-    # Flash code
-    elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-        out = results["out"]
-        pred = out.max(1)[1]
-        sorted, indices = out.sort(dim=1, descending=True)
-        eps = 1e-6
-        conf = (sorted[:, 0] - sorted[:, 1]) / (sorted[:, 0] + eps)
-        conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
-
-        node_type_num = data.node_type.argmax(1)
-        for i in range(len(out)):
-            score = max(conf[i].item(), 0)
-
-            node = n_id[i].item()
-            correct_pred = int((node_type_num[i] == pred[i]).item())
-
-            temp_dic = {
-                "node": node,
-                "loss": float(loss[i].item()),
-                "flash_score": score,
-                "correct_pred": correct_pred,
-            }
-            node_list.append(temp_dic)
+    threshold_method = cfg.evaluation.node_evaluation.threshold_method
 
     # Magic codes
-    elif cfg.evaluation.node_evaluation.threshold_method == "magic":
+    if threshold_method == "magic":
         os.makedirs(cfg.training._magic_dir, exist_ok=True)
         if split == "val":
             x_train, _, _ = model.embed(data, inference=True)
@@ -236,12 +272,7 @@ def test_node_level(
                 node_list.append(temp_dic)
 
     else:
-        for i, node in enumerate(n_id):
-            temp_dic = {
-                "node": node.item(),
-                "loss": float(loss[i].item()),
-            }
-            node_list.append(temp_dic)
+        node_list = build_node_records(results, data, n_id, loss, threshold_method)
 
     time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)
 

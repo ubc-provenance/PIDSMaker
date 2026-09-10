@@ -372,6 +372,34 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
     return data
 
 
+def build_node_label(
+    attrs: dict, node_type: str, node_label_features: dict, use_hashed_label: bool
+):
+    """Builds the textual label of a node from its raw attributes.
+
+    The label is what every text featurizer (word2vec, doc2vec, fasttext, ...)
+    embeds, so the offline pipeline and the streaming path must build it exactly
+    the same way: the features named in `construction.node_label_features` for
+    this node type, concatenated in order and optionally hashed.
+
+    Args:
+        attrs: Raw node attributes (must contain the selected features).
+        node_type: One of `subject`, `file`, `netflow`.
+        node_label_features: Mapping of node type to the ordered feature names,
+            from `get_darpa_tc_node_feats_from_cfg()`.
+        use_hashed_label: Whether to replace the label by its md5 digest.
+
+    Returns:
+        str: The node label.
+    """
+    label_str = " ".join(
+        [str(attrs.get(feature, "")) for feature in node_label_features[node_type]]
+    )
+    if use_hashed_label:
+        label_str = stringtomd5(label_str)
+    return label_str
+
+
 def tokenize_subject(sentence: str):
     new_sentence = re.sub(r"\\+", "/", sentence)
     return word_tokenize(new_sentence.replace("/", " / "))

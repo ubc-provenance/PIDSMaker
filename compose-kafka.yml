@@ -1,0 +1,51 @@
+# A single-node Kafka broker for the real-time streaming setup
+# (see docs/docs/features/streaming.md).
+#
+# Two listeners, because the two sides of the setup reach the broker differently:
+#   - INTERNAL (kafka:9092) for the `pids` container, over the shared docker network
+#   - EXTERNAL (localhost:29092) for a capture agent running on the host, such as SPADE
+#
+# Everything is plaintext and single-node: this is a lab broker, not a production one.
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: ${COMPOSE_PROJECT_NAME:-pidsmaker}-kafka
+    networks:
+      shared_network:
+        aliases:
+          - kafka
+    ports:
+      - "${KAFKA_PORT:-29092}:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # The controller listener binds to localhost on purpose: KRaft advertises it from
+      # `listeners`, and 0.0.0.0 is rejected as a non-routable advertised address.
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://localhost:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:-5L6g3nShT-eMCtK--X86sw}
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+networks:
+  shared_network:
+    name: shared_network
+    external: true
+
+volumes:
+  kafka_data:
+    name: ${COMPOSE_PROJECT_NAME:-pidsmaker}_kafka_data

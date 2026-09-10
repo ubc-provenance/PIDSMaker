@@ -30,8 +30,8 @@ from pidsmaker.tgn import LastNeighborLoader
 from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
-    get_rel2id,
     get_possible_events,
+    get_rel2id,
 )
 from pidsmaker.utils.utils import get_multi_datasets, log_dataset_stats, log_tqdm
 
@@ -593,6 +593,147 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
     return datasets
 
 
+class TGNGraphBuilder:
+    """Attaches the TGN last-neighbor context to a batch of events.
+
+    The neighbor loader, the node feature caches and the growing set of already
+    inserted events are state that persists *across* batches, which is exactly why
+    this lives in a class: the offline pipeline walks it over a fixed list of
+    graphs, while the real-time detector keeps the same object alive and feeds it
+    one live time window at a time. Both get identical graphs.
+
+    Args:
+        full_data: Object exposing the `src`, `dst`, `msg`, `t` and `edge_type`
+            tensors of every event, indexed by the global event ids the neighbor
+            loader hands back. Offline this is a `Data` over the whole dataset;
+            in streaming it is a growing buffer.
+        graph_reindexer: Reindexer used to reshape node features.
+        device: Device the caches live on.
+        max_node: Upper bound on the number of nodes, i.e. the size of the
+            neighbor loader's tables.
+        tgn_loader_cfg: `batching.intra_graph_batching.tgn_last_neighbor` config.
+        node_feat_dim: Width of the node feature vectors.
+        node_type_dim: Width of the node type vectors.
+    """
+
+    def __init__(
+        self,
+        full_data,
+        graph_reindexer,
+        device,
+        max_node,
+        tgn_loader_cfg,
+        node_feat_dim,
+        node_type_dim,
+    ):
+        self.full_data = full_data
+        self.graph_reindexer = graph_reindexer
+        self.device = device
+        self.node_feat_dim = node_feat_dim
+
+        self.tgn_neighbor_n_hop = tgn_loader_cfg.tgn_neighbor_n_hop
+        self.fix_tgn_neighbor_loader = tgn_loader_cfg.fix_tgn_neighbor_loader
+        self.fix_buggy_orthrus_TGN = tgn_loader_cfg.fix_buggy_orthrus_TGN
+        self.insert_neighbors_before = tgn_loader_cfg.insert_neighbors_before
+
+        self.neighbor_loader = LastNeighborLoader(
+            max_node,
+            size=tgn_loader_cfg.tgn_neighbor_size,
+            directed=tgn_loader_cfg.directed,
+            device=device,
+        )
+        self.node_feat_cache = torch.zeros((max_node, node_feat_dim), device=device)
+        self.node_type_cache = torch.zeros((max_node, node_type_dim), device=device)
+        self.assoc = torch.empty(max_node, dtype=torch.long, device=device)
+
+    def process(self, batch):
+        """Adds the TGN attributes to one batch and inserts its events in the loader.
+
+        Args:
+            batch: A `CollatableTemporalData` batch, already featurized.
+
+        Returns:
+            The same batch, on CPU, with its `*_tgn` attributes set.
+        """
+        device = self.device
+        batch = batch.to(device)
+        batch_edge_index = batch.edge_index.clone()
+        src, dst = batch_edge_index
+
+        if self.insert_neighbors_before:
+            self.neighbor_loader.insert(src, dst)
+
+        n_id = batch_edge_index.unique()
+        for _ in range(self.tgn_neighbor_n_hop):
+            n_id, edge_index, e_id = self.neighbor_loader(n_id)
+
+        if self.fix_tgn_neighbor_loader:
+            # NOTE: TGN's loader wrongly index edges (less than 1% in the returned e_id and edge_index)
+            # https://github.com/pyg-team/pytorch_geometric/issues/10100
+            # Should be replaced by an actual fix when available
+            real_src = self.full_data.src[e_id.cpu()].to(device)
+            real_dst = self.full_data.dst[e_id.cpu()].to(device)
+
+            loader_src = n_id[edge_index[0]]
+            loader_dst = n_id[edge_index[1]]
+
+            match_dir1 = real_src.eq(loader_src) & real_dst.eq(loader_dst)
+            match_dir2 = real_src.eq(loader_dst) & real_dst.eq(loader_src)
+
+            valid_edges = match_dir1 | match_dir2
+            edge_index = edge_index[:, valid_edges]
+            e_id = e_id[valid_edges]
+
+        num_nodes = n_id.size(0)  # Important, this one is used as __inc__ when batching graphs
+        self.assoc[n_id] = torch.arange(num_nodes, device=device)
+        self.node_feat_cache[torch.cat([src, dst])] = torch.cat([batch.x_src, batch.x_dst])
+        self.node_type_cache[torch.cat([src, dst])] = torch.cat(
+            [batch.node_type_src, batch.node_type_dst]
+        )
+
+        if self.fix_buggy_orthrus_TGN:
+            x_src = torch.zeros((num_nodes, self.node_feat_dim), device=device)
+            x_dst = x_src.clone()
+            src_id, dst_id = edge_index[0].unique(), edge_index[1].unique()
+            x_src[src_id] = self.node_feat_cache[n_id[src_id]]
+            x_dst[dst_id] = self.node_feat_cache[n_id[dst_id]]
+            new_x = self.node_feat_cache[n_id]
+            batch.x_from_tgn = x_src  # (N, d)
+            batch.x_to_tgn = x_dst  # (N, d)
+            batch.x_tgn = new_x  # (N, d)
+
+        else:
+            (x_src, x_dst), *_ = self.graph_reindexer._reindex_graph(
+                batch_edge_index,
+                batch.x_src,
+                batch.x_dst,
+                max_num_node=num_nodes,
+                x_is_tuple=True,
+            )
+            batch.x_from_tgn = x_src
+            batch.x_to_tgn = x_dst
+            batch.x_tgn = x_src
+
+        batch.tgn_mode = True
+        batch.original_edge_index = batch_edge_index
+        batch.original_n_id = batch_edge_index.unique()
+        batch.reindexed_original_n_id_tgn = self.assoc[batch.original_n_id]
+        batch.n_id_tgn = n_id
+        batch.edge_index_tgn = edge_index
+        batch.reindexed_edge_index_tgn = self.assoc[batch.edge_index]
+        batch.msg_tgn = self.full_data.msg[e_id.cpu()]
+        batch.t_tgn = self.full_data.t[e_id.cpu()]
+        batch.node_type_tgn = self.node_type_cache[n_id]
+        batch.edge_type_tgn = self.full_data.edge_type[e_id.cpu()]
+
+        batch = batch.to("cpu")
+
+        if not self.insert_neighbors_before:
+            self.neighbor_loader.insert(src, dst)
+
+        return batch
+
+
 def compute_tgn_graphs(
     datasets,
     full_data,
@@ -603,100 +744,20 @@ def compute_tgn_graphs(
     node_feat_dim,
     node_type_dim,
 ):
-    tgn_neighbor_n_hop = tgn_loader_cfg.tgn_neighbor_n_hop
-    fix_tgn_neighbor_loader = tgn_loader_cfg.fix_tgn_neighbor_loader
-    fix_buggy_orthrus_TGN = tgn_loader_cfg.fix_buggy_orthrus_TGN
-    insert_neighbors_before = tgn_loader_cfg.insert_neighbors_before
-    neighbor_size = tgn_loader_cfg.tgn_neighbor_size
-    directed = tgn_loader_cfg.directed
-
-    neighbor_loader = LastNeighborLoader(
-        max_node, size=neighbor_size, directed=directed, device=device
+    tgn_builder = TGNGraphBuilder(
+        full_data=full_data,
+        graph_reindexer=graph_reindexer,
+        device=device,
+        max_node=max_node,
+        tgn_loader_cfg=tgn_loader_cfg,
+        node_feat_dim=node_feat_dim,
+        node_type_dim=node_type_dim,
     )
-
-    node_feat_cache = torch.zeros((max_node, node_feat_dim), device=device)
-    node_type_cache = torch.zeros((max_node, node_type_dim), device=device)
-    assoc = torch.empty(max_node, dtype=torch.long, device=device)
 
     for dataset in datasets:
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
-                batch = batch.to(device)
-                batch_edge_index = batch.edge_index.clone()
-                src, dst = batch_edge_index
-
-                if insert_neighbors_before:
-                    neighbor_loader.insert(src, dst)
-
-                n_id = batch_edge_index.unique()
-                for _ in range(tgn_neighbor_n_hop):
-                    n_id, edge_index, e_id = neighbor_loader(n_id)
-
-                if fix_tgn_neighbor_loader:
-                    # NOTE: TGN's loader wrongly index edges (less than 1% in the returned e_id and edge_index)
-                    # https://github.com/pyg-team/pytorch_geometric/issues/10100
-                    # Should be replaced by an actual fix when available
-                    real_src = full_data.src[e_id.cpu()].to(device)
-                    real_dst = full_data.dst[e_id.cpu()].to(device)
-
-                    loader_src = n_id[edge_index[0]]
-                    loader_dst = n_id[edge_index[1]]
-
-                    match_dir1 = real_src.eq(loader_src) & real_dst.eq(loader_dst)
-                    match_dir2 = real_src.eq(loader_dst) & real_dst.eq(loader_src)
-
-                    valid_edges = match_dir1 | match_dir2
-                    edge_index = edge_index[:, valid_edges]
-                    e_id = e_id[valid_edges]
-
-                num_nodes = n_id.size(
-                    0
-                )  # Important, this one is used as __inc__ when batching graphs
-                assoc[n_id] = torch.arange(num_nodes, device=device)
-                node_feat_cache[torch.cat([src, dst])] = torch.cat([batch.x_src, batch.x_dst])
-                node_type_cache[torch.cat([src, dst])] = torch.cat(
-                    [batch.node_type_src, batch.node_type_dst]
-                )
-
-                if fix_buggy_orthrus_TGN:
-                    x_src = torch.zeros((num_nodes, node_feat_dim), device=device)
-                    x_dst = x_src.clone()
-                    src_id, dst_id = edge_index[0].unique(), edge_index[1].unique()
-                    x_src[src_id] = node_feat_cache[n_id[src_id]]
-                    x_dst[dst_id] = node_feat_cache[n_id[dst_id]]
-                    new_x = node_feat_cache[n_id]
-                    batch.x_from_tgn = x_src  # (N, d)
-                    batch.x_to_tgn = x_dst  # (N, d)
-                    batch.x_tgn = new_x  # (N, d)
-
-                else:
-                    (x_src, x_dst), *_ = graph_reindexer._reindex_graph(
-                        batch_edge_index,
-                        batch.x_src,
-                        batch.x_dst,
-                        max_num_node=num_nodes,
-                        x_is_tuple=True,
-                    )
-                    batch.x_from_tgn = x_src
-                    batch.x_to_tgn = x_dst
-                    batch.x_tgn = x_src
-
-                batch.tgn_mode = True
-                batch.original_edge_index = batch_edge_index
-                batch.original_n_id = batch_edge_index.unique()
-                batch.reindexed_original_n_id_tgn = assoc[batch.original_n_id]
-                batch.n_id_tgn = n_id
-                batch.edge_index_tgn = edge_index
-                batch.reindexed_edge_index_tgn = assoc[batch.edge_index]
-                batch.msg_tgn = full_data.msg[e_id.cpu()]
-                batch.t_tgn = full_data.t[e_id.cpu()]
-                batch.node_type_tgn = node_type_cache[n_id]
-                batch.edge_type_tgn = full_data.edge_type[e_id.cpu()]
-
-                batch = batch.to("cpu")
-
-                if not insert_neighbors_before:
-                    neighbor_loader.insert(src, dst)
+                tgn_builder.process(batch)
 
     return datasets
 
@@ -889,11 +950,15 @@ def save_model(model, path: str, cfg):
     )
 
     if isinstance(model.encoder, TGNEncoder):
-        torch.save(
-            model.encoder.neighbor_loader,
-            os.path.join(path, "neighbor_loader.pkl"),
-            pickle_protocol=pickle.HIGHEST_PROTOCOL,
-        )
+        # The last-neighbor loader lives in the batching stage rather than in the
+        # encoder for most configurations, so it is only saved when the encoder
+        # actually carries one.
+        if hasattr(model.encoder, "neighbor_loader"):
+            torch.save(
+                model.encoder.neighbor_loader,
+                os.path.join(path, "neighbor_loader.pkl"),
+                pickle_protocol=pickle.HIGHEST_PROTOCOL,
+            )
         if cfg.training.encoder.tgn.use_memory or "time_encoding" in cfg.batching.edge_features:
             torch.save(
                 model.encoder.memory,
@@ -909,7 +974,9 @@ def load_model(model, path: str, cfg, map_location=None):
     model.load_state_dict(torch.load(os.path.join(path, "state_dict.pkl")))
 
     if isinstance(model.encoder, TGNEncoder):
-        model.encoder.neighbor_loader = torch.load(os.path.join(path, "neighbor_loader.pkl"))
+        neighbor_loader_path = os.path.join(path, "neighbor_loader.pkl")
+        if os.path.exists(neighbor_loader_path):
+            model.encoder.neighbor_loader = torch.load(neighbor_loader_path)
         if cfg.training.encoder.tgn.use_memory or "time_encoding" in cfg.batching.edge_features:
             model.encoder.memory = torch.load(os.path.join(path, "memory.pkl"))
 

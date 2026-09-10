@@ -16,6 +16,7 @@ import pidsmaker.mimicry as mimicry
 from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
 from pidsmaker.utils.dataset_utils import get_rel2id
 from pidsmaker.utils.utils import (
+    build_node_label,
     datetime_to_ns_time_US,
     get_split_to_files,
     init_database_connection,
@@ -23,8 +24,55 @@ from pidsmaker.utils.utils import (
     log_start,
     log_tqdm,
     ns_time_to_datetime_US,
-    stringtomd5,
 )
+
+
+def fuse_edges(edge_info: dict) -> list:
+    """Collapses runs of identical consecutive events between two nodes into one edge.
+
+    A process reading the same file a thousand times in a row carries no more
+    information than reading it once, so only the first event of each run of a
+    same-type events between a given (src, dst) pair is kept. Shared with the
+    streaming graph builder so that live and offline graphs are built alike.
+
+    Args:
+        edge_info: Mapping of `(src, dst)` to a list of `(time, operation, event_uuid)`.
+
+    Returns:
+        list: Edge dicts with keys `src`, `dst`, `time`, `label` and `event_uuid`.
+    """
+    edge_list = []
+    for (src, dst), data in edge_info.items():
+        sorted_data = sorted(data, key=lambda x: x[0])
+        operation_list = [entry[1] for entry in sorted_data]
+
+        indices = []
+        current_type = None
+        current_start_index = None
+
+        for idx, item in enumerate(operation_list):
+            if item == current_type:
+                continue
+            else:
+                if current_type is not None and current_start_index is not None:
+                    indices.append(current_start_index)
+                current_type = item
+                current_start_index = idx
+
+        if current_type is not None and current_start_index is not None:
+            indices.append(current_start_index)
+
+        for k in indices:
+            edge_list.append(
+                {
+                    "src": src,
+                    "dst": dst,
+                    "time": sorted_data[k][0],
+                    "label": sorted_data[k][1],
+                    "event_uuid": sorted_data[k][2],
+                }
+            )
+    return edge_list
 
 
 def compute_indexid2msg(cfg):
@@ -58,10 +106,7 @@ def compute_indexid2msg(cfg):
         Returns:
             str: Space-separated feature string, optionally hashed
         """
-        label_str = " ".join([attrs[label_used] for label_used in node_label_features[node_type]])
-        if use_hashed_label:
-            label_str = stringtomd5(label_str)
-        return label_str
+        return build_node_label(attrs, node_type, node_label_features, use_hashed_label)
 
     # netflow
     sql = """
@@ -366,36 +411,7 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                                 (timestamp_rec, operation, event_uuid)
                             )
 
-                        for (src, dst), data in edge_info.items():
-                            sorted_data = sorted(data, key=lambda x: x[0])
-                            operation_list = [entry[1] for entry in sorted_data]
-
-                            indices = []
-                            current_type = None
-                            current_start_index = None
-
-                            for idx, item in enumerate(operation_list):
-                                if item == current_type:
-                                    continue
-                                else:
-                                    if current_type is not None and current_start_index is not None:
-                                        indices.append(current_start_index)
-                                    current_type = item
-                                    current_start_index = idx
-
-                            if current_type is not None and current_start_index is not None:
-                                indices.append(current_start_index)
-
-                            for k in indices:
-                                edge_list.append(
-                                    {
-                                        "src": src,
-                                        "dst": dst,
-                                        "time": sorted_data[k][0],
-                                        "label": sorted_data[k][1],
-                                        "event_uuid": sorted_data[k][2],
-                                    }
-                                )
+                        edge_list = fuse_edges(edge_info)
                     else:
                         for (
                             src_node,
