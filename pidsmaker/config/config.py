@@ -507,6 +507,31 @@ DATASET_DEFAULT_CONFIG = {
             ["carbanakv2_edr/carbanakv2_edr.csv", "2024-04-30 17:30:00", "2024-05-10 20:30:00"]
         ],
     },
+    # The *template* for provenance streamed in from SPADE (see `pidsmaker/streaming/`
+    # and the streaming docs): what a SPADE-produced dataset looks like, not a
+    # particular capture. A streamed dataset can have any name (`stream_ingest.py
+    # MYHOST ...`); it inherits the node/edge conventions below and takes its own
+    # name, database and dates from the `dataset.yml` the ingest writes, passed with
+    # `--dataset_config`. The dates here are placeholders that file always overrides.
+    # `SPADE_AUDIT` also works directly as a name, which the tutorial does for brevity.
+    "SPADE_AUDIT": {
+        "raw_dir": "",
+        "database": "spade_audit",
+        "database_all_file": "spade_audit",
+        "num_node_types": 3,
+        # The SPADE Audit reporter's operations, mapped to `rel2id_spade`.
+        "num_edge_types": 28,
+        "start_date": "1970-01-01",
+        "end_date": "2100-01-01",
+        "train_dates": ["1970-01-01"],
+        "val_dates": ["1970-01-01"],
+        "test_dates": ["1970-01-01"],
+        "unused_dates": [],
+        # A capture has no attack ground truth: streamed datasets are meant to be
+        # trained on benign activity and then scored live.
+        "ground_truth_relative_path": [],
+        "attack_to_time_window": [],
+    },
 }
 
 # Arguments

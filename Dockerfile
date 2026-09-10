@@ -75,6 +75,9 @@ RUN pip install gdown==5.2.0 umap-learn==0.5.6
 RUN pip install flask==3.0.3
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
 
+# Real-time provenance streaming (pidsmaker/streaming): Kafka client + Avro decoding.
+RUN pip install confluent-kafka==2.6.1 fastavro==1.9.7
+
 COPY . .
 
 # COPY is done by the docker daemon as root, so we need to chown.

@@ -156,6 +156,10 @@ table.data th, table.data td { padding: 5px 8px; border-bottom: 1px solid var(--
 /* the last column (Path / Cmd) absorbs the leftover width so the row fills
    evenly instead of leaving a big empty gap on the right */
 table.data th:last-child, table.data td:last-child { width: 100%; white-space: normal; word-break: break-all; }
+/* Bounded, single-line cell for long values (paths / command lines) — truncates
+   with an ellipsis and shows the full text on hover, so one huge cmd cannot blow
+   the column out. */
+table.data td .trunc { display: block; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 table.data th { color: #fff; position: sticky; top: 0; background: #1a1a24; }
 table.data tr.origin td { background: #453b1b; }
 .tabbar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }

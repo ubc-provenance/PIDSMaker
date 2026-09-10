@@ -47,6 +47,70 @@ rel2id_darpa_tc = {
     "EVENT_CLONE": 10,
 }
 
+# Vocabulary of the streamed SPADE datasets (see `pidsmaker/streaming/`).
+# SPADE's Audit reporter reports OPM edges annotated with an `operation` taken from
+# a much larger set of system calls than the 10 DARPA TC event types, so streamed
+# datasets get their own vocabulary. `pidsmaker.streaming.adapters.spade` maps each
+# SPADE operation onto one of these names.
+rel2id_spade = {
+    1: "EVENT_READ",
+    "EVENT_READ": 1,
+    2: "EVENT_WRITE",
+    "EVENT_WRITE": 2,
+    3: "EVENT_OPEN",
+    "EVENT_OPEN": 3,
+    4: "EVENT_CLOSE",
+    "EVENT_CLOSE": 4,
+    5: "EVENT_EXECUTE",
+    "EVENT_EXECUTE": 5,
+    6: "EVENT_CLONE",
+    "EVENT_CLONE": 6,
+    7: "EVENT_EXIT",
+    "EVENT_EXIT": 7,
+    8: "EVENT_CONNECT",
+    "EVENT_CONNECT": 8,
+    9: "EVENT_ACCEPT",
+    "EVENT_ACCEPT": 9,
+    10: "EVENT_BIND",
+    "EVENT_BIND": 10,
+    11: "EVENT_SENDTO",
+    "EVENT_SENDTO": 11,
+    12: "EVENT_RECVFROM",
+    "EVENT_RECVFROM": 12,
+    13: "EVENT_CREATE_OBJECT",
+    "EVENT_CREATE_OBJECT": 13,
+    14: "EVENT_UNLINK",
+    "EVENT_UNLINK": 14,
+    15: "EVENT_RENAME",
+    "EVENT_RENAME": 15,
+    16: "EVENT_LINK",
+    "EVENT_LINK": 16,
+    17: "EVENT_MMAP",
+    "EVENT_MMAP": 17,
+    18: "EVENT_MPROTECT",
+    "EVENT_MPROTECT": 18,
+    19: "EVENT_MODIFY_FILE_ATTRIBUTES",
+    "EVENT_MODIFY_FILE_ATTRIBUTES": 19,
+    20: "EVENT_CHANGE_PRINCIPAL",
+    "EVENT_CHANGE_PRINCIPAL": 20,
+    21: "EVENT_SIGNAL",
+    "EVENT_SIGNAL": 21,
+    22: "EVENT_MODIFY_PROCESS",
+    "EVENT_MODIFY_PROCESS": 22,
+    23: "EVENT_LOADLIBRARY",
+    "EVENT_LOADLIBRARY": 23,
+    24: "EVENT_LSEEK",
+    "EVENT_LSEEK": 24,
+    25: "EVENT_DUP",
+    "EVENT_DUP": 25,
+    26: "EVENT_TRUNCATE",
+    "EVENT_TRUNCATE": 26,
+    27: "EVENT_UPDATE",
+    "EVENT_UPDATE": 27,
+    28: "EVENT_OTHER",
+    "EVENT_OTHER": 28,
+}
+
 rel2id_optc = {
     1: "OPEN",
     "OPEN": 1,
@@ -250,6 +314,75 @@ possible_events_darpa_tc = {
     ],
 }
 
+# Which SPADE edge types can occur between which entity types. Only used when
+# `batching.edge_features` includes `edge_type_triplet`.
+_spade_process_to_process = [
+    "EVENT_CLONE",
+    "EVENT_EXECUTE",
+    "EVENT_EXIT",
+    "EVENT_SIGNAL",
+    "EVENT_MODIFY_PROCESS",
+    "EVENT_CHANGE_PRINCIPAL",
+    "EVENT_UPDATE",
+    "EVENT_OTHER",
+]
+_spade_process_to_artifact = [
+    "EVENT_WRITE",
+    "EVENT_CREATE_OBJECT",
+    "EVENT_UNLINK",
+    "EVENT_RENAME",
+    "EVENT_LINK",
+    "EVENT_TRUNCATE",
+    "EVENT_MODIFY_FILE_ATTRIBUTES",
+    "EVENT_MMAP",
+    "EVENT_MPROTECT",
+    "EVENT_CLOSE",
+    "EVENT_LSEEK",
+    "EVENT_DUP",
+    "EVENT_UPDATE",
+    "EVENT_OTHER",
+]
+_spade_artifact_to_process = [
+    "EVENT_READ",
+    "EVENT_OPEN",
+    "EVENT_EXECUTE",
+    "EVENT_LOADLIBRARY",
+    "EVENT_MMAP",
+    "EVENT_RENAME",
+    "EVENT_LINK",
+    "EVENT_CLOSE",
+    "EVENT_LSEEK",
+    "EVENT_DUP",
+    "EVENT_UPDATE",
+    "EVENT_OTHER",
+]
+_spade_process_to_netflow = [
+    "EVENT_WRITE",
+    "EVENT_SENDTO",
+    "EVENT_CONNECT",
+    "EVENT_BIND",
+    "EVENT_CLOSE",
+    "EVENT_UPDATE",
+    "EVENT_OTHER",
+]
+_spade_netflow_to_process = [
+    "EVENT_READ",
+    "EVENT_RECVFROM",
+    "EVENT_ACCEPT",
+    "EVENT_OPEN",
+    "EVENT_CLOSE",
+    "EVENT_UPDATE",
+    "EVENT_OTHER",
+]
+
+possible_events_spade = {
+    ("subject", "subject"): _spade_process_to_process,
+    ("subject", "file"): _spade_process_to_artifact,
+    ("file", "subject"): _spade_artifact_to_process,
+    ("subject", "netflow"): _spade_process_to_netflow,
+    ("netflow", "subject"): _spade_netflow_to_process,
+}
+
 possible_events_graph_processor_carbon_black_edr = {
     ("subject", "subject"): [
         "PROCESS_EXECUTED",
@@ -308,6 +441,7 @@ ntype2id = {
 }
 
 optc_datasets = {"optc_h201", "optc_h501", "optc_h051"}
+spade_datasets = {"spade_audit"}
 atlasv2_datasets = {"atlasv2_h1"}
 graph_processor_carbon_black_edr_datasets = {"atlasv2_edr", "carbanakv2_edr"}
 
@@ -323,11 +457,22 @@ def decrement_dict(d):
     }
 
 
+def dataset_family(cfg) -> str:
+    """The built-in dataset whose conventions apply: a streamed dataset's `template`.
+
+    Streamed captures can have any name (`stream_ingest.py MYHOST ...`); their edge
+    vocabulary, node types and so on are those of the dataset they were declared with.
+    """
+    return getattr(cfg.dataset, "template", cfg.dataset.name).lower()
+
+
 def get_rel2id(cfg, from_zero=False):
-    dataset_name = cfg.dataset.name.lower()
+    dataset_name = dataset_family(cfg)
 
     if dataset_name in optc_datasets:
         return decrement_dict(rel2id_optc) if from_zero else rel2id_optc
+    elif dataset_name in spade_datasets:
+        return decrement_dict(rel2id_spade) if from_zero else rel2id_spade
     elif dataset_name in atlasv2_datasets:
         return rel2id_atlasv2
     elif dataset_name in graph_processor_carbon_black_edr_datasets:
@@ -343,7 +488,7 @@ def get_node_map(from_zero=False):
 
 
 def get_num_edge_type(cfg):
-    dataset_name = cfg.dataset.name.lower()
+    dataset_name = dataset_family(cfg)
 
     if dataset_name not in optc_datasets and "edge_type_triplet" in cfg.batching.edge_features:
         possible_events = get_possible_events(cfg)
@@ -363,9 +508,11 @@ def get_rel2id_considering_triplets(cfg):
     return get_rel2id(cfg)
 
 def get_possible_events(cfg):
-    dataset_name = cfg.dataset.name.lower()
+    dataset_name = dataset_family(cfg)
 
     if dataset_name in graph_processor_carbon_black_edr_datasets:
         return possible_events_graph_processor_carbon_black_edr
+    elif dataset_name in spade_datasets:
+        return possible_events_spade
     else:
         return possible_events_darpa_tc

@@ -176,6 +176,44 @@ evaluation:
     threshold_method: nodlink
 ```
 
+### Real-time detection on a live provenance stream
+
+PIDSMaker can also be fed provenance **as it is produced**, rather than from a
+pre-processed database. A capture agent publishes to Kafka, PIDSMaker assembles the stream
+into the same time window graphs the pipeline builds offline, and any trained system scores
+each window as soon as it closes.
+[SPADE](https://github.com/ashish-gehani/SPADE) is supported out of the box through its
+Kafka storage — its Audit reporter turns Linux Audit records into provenance — and other
+producers are branched on by writing a single adapter.
+
+On a Linux host with SPADE built, one command captures the machine's provenance and
+streams it to a Kafka topic for as long as it runs; the detector is a separate process
+that consumes that topic live, from another terminal:
+
+```bash
+# terminal 1 - capture this machine's activity into the topic "host1" (Ctrl-C to stop)
+scripts/capture/new_capture.sh --topic host1
+
+# terminal 2 - score it as it arrives, with a model trained on an earlier capture
+docker compose -f compose-pidsmaker.yml exec pids \
+    python pidsmaker/stream_detect.py orthrus SPADE_AUDIT \
+        --dataset_config=/home/artifacts/streaming/spade_audit/dataset.yml \
+        --stream_topic=host1 --stream_from_beginning=False --emit_viz=True
+```
+
+The model comes from the same topic mechanism: capture a benign period, then inside the
+container turn the topic into a dataset (any name; `SPADE_AUDIT` here) and train on it:
+
+```bash
+python pidsmaker/stream_ingest.py SPADE_AUDIT --stream_topic=benign --stream_idle_timeout=25
+python pidsmaker/main.py orthrus SPADE_AUDIT --dataset_config=/home/artifacts/streaming/spade_audit/dataset.yml --save_model
+```
+
+The [tutorial](https://ubc-provenance.github.io/PIDSMaker/features/streaming_tutorial/)
+walks through all of it — SPADE to capture to training to live alerts — and the
+[reference guide](https://ubc-provenance.github.io/PIDSMaker/features/streaming/) documents
+the streaming arguments and how to add another provenance source.
+
 ### Interactive embedding viewer
 
 PIDSMaker also ships an interactive 3D web viewer for exploring a run's node

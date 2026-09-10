@@ -1791,6 +1791,82 @@ def api_neighbors():
     return jsonify({"center": node, "edges": edges})
 
 
+@app.route("/api/top_edges")
+def api_top_edges():
+    """The most anomalous events (edges) in the run, ranked high → low.
+
+    Edges carry no score of their own — the model scores nodes — so an event's
+    score is taken as the higher of its two endpoints' anomaly scores
+    (``max(src, dst)``): the node that made the event stand out. Adjacency stores
+    each edge in both directions, so we rank only the ``out`` entries and every
+    event is counted once. The whole scan is vectorised over the CSR arrays, so it
+    stays fast on runs with millions of edges; only the top ``limit`` rows have
+    their (string) metadata decoded.
+    """
+    points = safe_path(request.args.get("file"))
+    try:
+        limit = int(request.args.get("limit", 100))
+    except (TypeError, ValueError):
+        limit = 100
+    limit = max(1, min(limit, 1000))
+    try:
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        offset = 0
+
+    index = get_adj_index(points)
+    if index is None:
+        abort(404, "no adjacency data for this run; generate viz data first")
+    store = load_meta(points)
+
+    src_all = np.repeat(index.ids, np.diff(index.indptr))  # node each CSR entry belongs to
+    out = index.dir == 1  # keep one direction so each event is counted once
+    src, dst, twe, ecode = src_all[out], index.nb[out], index.t[out], index.et[out]
+    if src.size == 0:
+        return jsonify({"edges": [], "total": 0, "offset": 0, "limit": limit,
+                        "has_more": False, "scored_by": "max(src,dst)"})
+
+    uid, fidx, scores = store.uniq_ids, store.first_idx, store["scores"]
+
+    def resolve(node_ids):
+        """node ids -> (store row index or -1, node score) for a whole array at once."""
+        pos = np.clip(np.searchsorted(uid, node_ids), 0, max(len(uid) - 1, 0))
+        ok = (len(uid) > 0) & (uid[pos] == node_ids)
+        rowi = np.where(ok, fidx[pos], -1)
+        sc = np.where(ok, scores[np.clip(fidx[pos], 0, len(scores) - 1)], 0.0)
+        return rowi, sc
+
+    src_row, src_sc = resolve(src)
+    dst_row, dst_sc = resolve(dst)
+    edge_sc = np.maximum(src_sc, dst_sc)
+
+    total = int(edge_sc.size)
+    # Rank the top `offset+limit`, then slice out this page — so paging deeper never
+    # needs a full sort of every edge, just of the prefix the client has reached.
+    k = min(offset + limit, total)
+    order = np.argpartition(-edge_sc, k - 1)[:k]
+    order = order[np.argsort(-edge_sc[order])]
+    page = order[offset:offset + limit]
+
+    vocab = index.vocab
+    edges = []
+    for j in page:
+        j = int(j)
+        sm, dm = store.row(int(src_row[j])), store.row(int(dst_row[j]))
+        c = int(ecode[j])
+        edges.append({
+            "score": float(edge_sc[j]),
+            "et": vocab[c] if 0 <= c < len(vocab) else "",
+            "twi": int(twe[j]),
+            "src": int(src[j]), "src_type": sm["type"], "src_path": sm["path"],
+            "src_cmd": sm["cmd"], "src_score": float(sm["score"]), "src_label": int(sm["label"]),
+            "dst": int(dst[j]), "dst_type": dm["type"], "dst_path": dm["path"],
+            "dst_cmd": dm["cmd"], "dst_score": float(dm["score"]), "dst_label": int(dm["label"]),
+        })
+    return jsonify({"edges": edges, "total": total, "offset": offset, "limit": limit,
+                    "has_more": offset + limit < total, "scored_by": "max(src,dst)"})
+
+
 @app.route("/api/node")
 def api_node():
     """Full metadata for a small set of nodes, fetched on demand when a node is

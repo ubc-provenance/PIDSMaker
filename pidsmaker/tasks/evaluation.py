@@ -112,6 +112,23 @@ def best_metric_pick_best_epoch(stats, best_metrics, cfg):
 
 
 def main(cfg):
+    # A dataset streamed in from a capture agent (see `pidsmaker/streaming/`) has no
+    # labelled attacks: it is meant to be trained on benign activity and then scored
+    # live. Detection metrics are undefined without positives, so the task reports
+    # that and stops rather than dividing by zero deep inside the plots. Everything
+    # the real-time detector needs - the trained model and the validation losses its
+    # threshold comes from - has already been produced by the training task.
+    if not cfg.dataset.ground_truth_relative_path:
+        if cfg._save_model:
+            hint = "Run `pidsmaker/stream_detect.py` to score a live stream with the trained model."
+        else:
+            hint = (
+                "The model was not written to disk; to serve it on a live stream, train again "
+                "with `--save_model` (same arguments otherwise)."
+            )
+        log(f"Dataset {cfg.dataset.name} declares no ground truth: skipping evaluation. {hint}")
+        return {}
+
     method = cfg.evaluation.used_method.strip()
     if method == "node_evaluation":
         return standard_evaluation(cfg, evaluation_fn=node_evaluation.main)

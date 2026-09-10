@@ -236,5 +236,110 @@ const Dialogs = (() => {
     img.src = '/api/scoredist?file=' + encodeURIComponent(App.S.run.file) + '&t=' + Date.now();
   }
 
-  return { causal, neighbors, scoreDist };
+  // ----------------------- most malicious events -----------------------
+  // A run-wide ranking of edges (events) by anomaly score, high → low, resolved
+  // server-side to src/dst paths and edge type. Complements "See Edges", which is
+  // scoped to one selected node.
+  async function topEdges() {
+    if (!App.S.run) return;
+    if (!App.S.run.has_adj) { alert('No adjacency data for this run.'); return; }
+
+    const PAGE = 200;
+    const idc = (lab) => lab ? '#ef4444' : '#e5e7eb';
+    const pc = (path, cmd) => (cmd && cmd !== 'None') ? cmd : (path || '—');
+    // Escape before inserting into innerHTML: paths can contain '<' (e.g.
+    // "<unnamed pipe>") which would otherwise be swallowed as a bogus tag, and
+    // command lines can carry any character.
+    const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // One endpoint cell: the value is truncated with an ellipsis inside a bounded
+    // box, with the full "[type] path/cmd" (and id + score) shown on hover.
+    const endpoint = (type, path, cmd, id, score, label) => {
+      const full = `[${type}] ${pc(path, cmd)}`;
+      return `<td style="color:${idc(label)}"><div class="trunc" ` +
+        `title="${esc(full)}\nid ${id} · score ${(score || 0).toFixed(4)}">${esc(full)}</div></td>`;
+    };
+    // Trailing empty column absorbs leftover width (via the `td:last-child` rule),
+    // so the two endpoint cells stay compact instead of one stretching.
+    const rowHtml = (e, rank) =>
+      `<tr><td>${rank}</td>` +
+      `<td style="color:${scoreColor(e.score)}">${(e.score || 0).toFixed(4)}</td>` +
+      `<td>${esc(e.et) || '—'}</td><td>${e.twi}</td>` +
+      endpoint(e.src_type, e.src_path, e.src_cmd, e.src, e.src_score, e.src_label) +
+      '<td style="color:#94a3b8">→</td>' +
+      endpoint(e.dst_type, e.dst_path, e.dst_cmd, e.dst, e.dst_score, e.dst_label) +
+      '<td></td></tr>';
+
+    const body = shell('Most Malicious Events', 1120);
+    body.innerHTML =
+      '<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">' +
+      '<span id="te_info" style="color:#60a5fa">Loading…</span>' +
+      '<button id="te_csv" style="margin-left:auto">Export CSV</button></div>' +
+      '<div style="max-height:58vh;overflow:auto"><table class="data"><thead><tr>' +
+      '<th>#</th><th>Score</th><th>Edge Type</th><th>TW</th><th>Source (path / cmd)</th>' +
+      '<th></th><th>Destination (path / cmd)</th><th></th></tr></thead>' +
+      '<tbody id="te_body"></tbody></table></div>' +
+      '<div style="text-align:center;margin-top:10px">' +
+      '<button id="te_more" style="display:none">Load more</button></div>';
+
+    // Events accumulate as pages are loaded; the table appends rather than rebuilds
+    // so scroll position and already-rendered rows are preserved.
+    const loaded = [];
+    let offset = 0, total = 0, busy = false;
+
+    async function loadMore() {
+      if (busy) return;
+      busy = true;
+      const btn = $('te_more');
+      btn.disabled = true;
+      const first = loaded.length === 0;
+      App.showLoading(first, 'Ranking events by score…');
+      let data;
+      try { data = await Data.getTopEdges(App.S.run.file, PAGE, offset); }
+      catch (e) { alert('Failed to load events: ' + e.message); busy = false; btn.disabled = false; return; }
+      finally { App.showLoading(false); }
+
+      const edges = data.edges || [];
+      total = data.total || 0;
+      const html = edges.map((e, k) => rowHtml(e, loaded.length + k + 1)).join('');
+      $('te_body').insertAdjacentHTML('beforeend', html);
+      edges.forEach((e) => loaded.push(e));
+      offset += edges.length;
+
+      $('te_info').textContent =
+        `Showing ${loaded.length} of ${total} events, ranked by anomaly score ` +
+        '(the higher-scoring endpoint of each edge).';
+      if (data.has_more && edges.length) {
+        btn.style.display = '';
+        btn.disabled = false;
+        btn.textContent = `Load more (${total - loaded.length} remaining)`;
+      } else {
+        btn.style.display = 'none';
+      }
+      busy = false;
+    }
+
+    $('te_more').addEventListener('click', loadMore);
+    $('te_csv').addEventListener('click', () => {
+      const q = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const head = ['Rank', 'Score', 'Edge Type', 'TW', 'Src ID', 'Src Type', 'Src Path/Cmd',
+        'Src Score', 'Dst ID', 'Dst Type', 'Dst Path/Cmd', 'Dst Score'];
+      const lines = [head.join(',')];
+      loaded.forEach((e, i) => {
+        lines.push([i + 1, (e.score || 0).toFixed(4), e.et || '', e.twi,
+          e.src, e.src_type, pc(e.src_path, e.src_cmd), (e.src_score || 0).toFixed(4),
+          e.dst, e.dst_type, pc(e.dst_path, e.dst_cmd), (e.dst_score || 0).toFixed(4)].map(q).join(','));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'top_events.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    loadMore();  // first page
+  }
+
+  return { causal, neighbors, scoreDist, topEdges };
 })();

@@ -104,6 +104,12 @@ const Data = (() => {
     if (!r.ok) throw new Error('neighbors failed: ' + r.status);
     return r.json();
   }
+  async function getTopEdges(file, limit, offset) {
+    const r = await fetch('/api/top_edges?file=' + encodeURIComponent(file) +
+      '&limit=' + (limit || 100) + '&offset=' + (offset || 0));
+    if (!r.ok) throw new Error('top_edges failed: ' + r.status);
+    return r.json();
+  }
   async function getCausal(file, node) {
     const r = await fetch('/api/causal?file=' + encodeURIComponent(file) + '&node=' + encodeURIComponent(node));
     if (!r.ok) throw new Error('causal failed: ' + r.status);
@@ -115,5 +121,5 @@ const Data = (() => {
     return r.json();
   }
 
-  return { getRuns, getRun, getNode, getSearch, getFilter, getBufferCore, getBufferAux, getNeighbors, getCausal, getAttackPairs };
+  return { getRuns, getRun, getNode, getSearch, getFilter, getBufferCore, getBufferAux, getNeighbors, getTopEdges, getCausal, getAttackPairs };
 })();
