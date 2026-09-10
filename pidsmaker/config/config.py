@@ -513,7 +513,7 @@ DATASET_DEFAULT_CONFIG = {
     # MYHOST ...`); it inherits the node/edge conventions below and takes its own
     # name, database and dates from the `dataset.yml` the ingest writes, passed with
     # `--dataset_config`. The dates here are placeholders that file always overrides.
-    # `SPADE_AUDIT` also works directly as a name, which the tutorial does for brevity.
+    # `SPADE_AUDIT` also works directly as a name, which the docs do for brevity.
     "SPADE_AUDIT": {
         "raw_dir": "",
         "database": "spade_audit",

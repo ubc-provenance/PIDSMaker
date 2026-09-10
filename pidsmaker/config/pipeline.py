@@ -1,8 +1,8 @@
 import argparse
 import hashlib
-import re
 import os
 import pathlib
+import re
 import sys
 import uuid
 from collections import OrderedDict
@@ -118,16 +118,17 @@ def set_dataset_cfg(cfg, dataset, dataset_config_path: str = ""):
     # choosing. The latter inherits everything a built-in "template" defines (edge
     # vocabulary, node types, ...) and takes its own name, database and dates from the
     # YAML that `stream_ingest.py` wrote.
-    if dataset in DATASET_DEFAULT_CONFIG:
+    is_builtin = dataset in DATASET_DEFAULT_CONFIG
+    if is_builtin:
         template = dataset
+    elif not overrides:
+        raise ValueError(
+            f"Unknown dataset {dataset!r}. Built-in datasets: {sorted(DATASET_DEFAULT_CONFIG)}. "
+            "A streamed capture can use any name: ingest it with "
+            f"`stream_ingest.py {dataset} --stream_topic=...`, then pass the dataset.yml it "
+            "writes with `--dataset_config`."
+        )
     else:
-        if not overrides:
-            raise ValueError(
-                f"Unknown dataset {dataset!r}. Built-in datasets: {sorted(DATASET_DEFAULT_CONFIG)}. "
-                "A streamed capture can use any name: ingest it with "
-                f"`stream_ingest.py {dataset} --stream_topic=...`, then pass the dataset.yml it "
-                "writes with `--dataset_config`."
-            )
         template = overrides.get("template", "SPADE_AUDIT")
         if template not in DATASET_DEFAULT_CONFIG:
             raise ValueError(
@@ -135,25 +136,24 @@ def set_dataset_cfg(cfg, dataset, dataset_config_path: str = ""):
                 f"{dataset_config_path}. Built-in datasets: {sorted(DATASET_DEFAULT_CONFIG)}"
             )
 
-    cfg.dataset = CN()
-    cfg.dataset.name = dataset
-    cfg.dataset.template = template
-    for attr, value in DATASET_DEFAULT_CONFIG[template].items():
-        setattr(cfg.dataset, attr, value)
-    if dataset not in DATASET_DEFAULT_CONFIG:  # sane defaults, normally overridden by the YAML
-        cfg.dataset.database = streamed_database_name(dataset)
-        cfg.dataset.database_all_file = cfg.dataset.database
-
     unknown = set(overrides) - set(DATASET_DEFAULT_CONFIG[template]) - {"name", "template"}
     if unknown:
         raise ValueError(
             f"Unknown dataset keys in {dataset_config_path}: {sorted(unknown)}. "
             f"Valid keys: {sorted(DATASET_DEFAULT_CONFIG[template])}"
         )
-    for attr, value in overrides.items():
-        if attr in ("name", "template"):
-            continue
+
+    cfg.dataset = CN()
+    cfg.dataset.name = dataset
+    cfg.dataset.template = template
+    for attr, value in DATASET_DEFAULT_CONFIG[template].items():
         setattr(cfg.dataset, attr, value)
+    if not is_builtin:  # defaults for a streamed dataset, normally set by its YAML
+        cfg.dataset.database = streamed_database_name(dataset)
+        cfg.dataset.database_all_file = cfg.dataset.database
+    for attr, value in overrides.items():
+        if attr not in ("name", "template"):
+            setattr(cfg.dataset, attr, value)
 
 
 def streamed_database_name(dataset: str) -> str:
@@ -536,7 +536,7 @@ def get_yml_cfg(args):
         if args.model == "orthrus_fixed" and args.dataset == "CLEARSCOPE_E3":  # speciifc case
             tuning_file = args.model
         tuned_yml_file = get_yml_file(
-            f"tuned_{tuning_file}", folder=f"tuned_baselines/{getattr(cfg.dataset, 'template', cfg.dataset.name).lower()}/"
+            f"tuned_{tuning_file}", folder=f"tuned_baselines/{cfg.dataset.template.lower()}/"
         )
         merge_cfg_and_check_syntax(cfg, tuned_yml_file)
 

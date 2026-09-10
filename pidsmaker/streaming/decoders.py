@@ -32,7 +32,7 @@ def _import_fastavro():
     except ImportError as e:
         raise ImportError(
             "Decoding Avro records requires the `fastavro` package (`pip install fastavro`). "
-            "Use `--stream.format=json` if your producer publishes plain JSON."
+            "Use `--stream_format=json` if your producer publishes plain JSON."
         ) from e
     return fastavro
 
@@ -123,7 +123,7 @@ def build_decoder(fmt: str, schema_path: Optional[str] = None) -> RecordDecoder:
         return JsonDecoder()
     if fmt in ("avro", "avro_json"):
         if not schema_path:
-            raise ValueError(f"Format {fmt!r} requires an Avro schema (`--stream.schema`).")
+            raise ValueError(f"Format {fmt!r} requires an Avro schema (`--stream_schema`).")
         schema = load_schema(schema_path)
         return AvroBinaryDecoder(schema) if fmt == "avro" else AvroJsonDecoder(schema)
     raise ValueError(f"Invalid stream format {fmt!r}. Expected one of {FORMATS}.")

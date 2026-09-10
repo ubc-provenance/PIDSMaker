@@ -30,8 +30,8 @@ from pidsmaker.tgn import LastNeighborLoader
 from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
-    get_rel2id,
     get_possible_events,
+    get_rel2id,
 )
 from pidsmaker.utils.utils import get_multi_datasets, log_dataset_stats, log_tqdm
 
@@ -637,7 +637,10 @@ class TGNGraphBuilder:
         self.insert_neighbors_before = tgn_loader_cfg.insert_neighbors_before
 
         self.neighbor_loader = LastNeighborLoader(
-            max_node, size=tgn_loader_cfg.tgn_neighbor_size, directed=tgn_loader_cfg.directed, device=device
+            max_node,
+            size=tgn_loader_cfg.tgn_neighbor_size,
+            directed=tgn_loader_cfg.directed,
+            device=device,
         )
         self.node_feat_cache = torch.zeros((max_node, node_feat_dim), device=device)
         self.node_type_cache = torch.zeros((max_node, node_type_dim), device=device)

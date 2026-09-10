@@ -6,13 +6,9 @@ edge model, and assembly into time window graphs - without needing a broker or a
 database.
 """
 
-import importlib.util
 import io
 import json
 import os
-import random
-import re
-from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -761,71 +757,6 @@ class TestRealSpadeOutput:
         assert read.operation == "EVENT_READ"
         assert read.src_key == nodes[2].key
         assert read.dst_key == nodes[1].key
-
-
-class TestSyntheticFeed:
-    """Checks the feed generator behind the streaming tutorial.
-
-    `scripts/spade_synthetic_feed.py` writes SPADE DSL commands, whose grammar is
-    space-separated `key:value` pairs — so a space or a colon inside a key or a
-    value has to be escaped, or SPADE drops the record with a parse error that only
-    shows up in its own log. These tests pin that escaping.
-    """
-
-    @staticmethod
-    def _load_generator():
-        path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "scripts",
-            "spade_synthetic_feed.py",
-        )
-        spec = importlib.util.spec_from_file_location("spade_synthetic_feed", path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    @staticmethod
-    def _tokens(line):
-        """Splits a DSL line on unescaped spaces, the way SPADE's parser does."""
-        return re.split(r"(?<!\\) ", line)
-
-    def _generate(self, **kwargs):
-        module = self._load_generator()
-        dsl = module.DslWriter(kwargs.pop("id_prefix", "t"))
-        rng = random.Random(0)
-        module.benign_day(dsl, datetime(2026, 9, 1), kwargs.pop("sessions", 3), rng)
-        module.attack_burst(dsl, datetime(2026, 9, 1))
-        return dsl.lines
-
-    def test_every_annotation_is_a_single_key_value_pair(self):
-        for line in self._generate():
-            for token in self._tokens(line):
-                # One unescaped colon per token: anything else means an annotation
-                # key or value leaked an unescaped separator.
-                assert len(re.split(r"(?<!\\):", token)) == 2, f"bad token {token!r} in {line!r}"
-
-    def test_vertex_ids_are_unique(self):
-        ids = [
-            self._tokens(line)[1].split(":", 1)[1]
-            for line in self._generate()
-            if line.startswith("type:Process") or line.startswith("type:Artifact")
-        ]
-        assert len(ids) == len(set(ids))
-
-    def test_edges_reference_declared_vertices(self):
-        lines = self._generate()
-        declared, edges = set(), 0
-        for line in lines:
-            tokens = self._tokens(line)
-            fields = dict(re.split(r"(?<!\\):", t, maxsplit=1) for t in tokens)
-            if fields["type"] in ("Process", "Artifact"):
-                declared.add(fields["id"])
-            else:
-                edges += 1
-                assert fields["from"] in declared
-                assert fields["to"] in declared
-                assert "time" in fields and "operation" in fields
-        assert edges > 0
 
 
 class TestStreamingVizCollector:

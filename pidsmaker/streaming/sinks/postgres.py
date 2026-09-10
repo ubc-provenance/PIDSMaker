@@ -103,8 +103,6 @@ class PostgresSink:
         self._event_rows = []
         self.num_nodes = 0
         self.num_events = 0
-        self.min_timestamp = None
-        self.max_timestamp = None
 
         if reset:
             self._truncate()
@@ -209,16 +207,6 @@ class PostgresSink:
             )
         )
         self.num_events += 1
-        self.min_timestamp = (
-            event.timestamp
-            if self.min_timestamp is None
-            else min(self.min_timestamp, event.timestamp)
-        )
-        self.max_timestamp = (
-            event.timestamp
-            if self.max_timestamp is None
-            else max(self.max_timestamp, event.timestamp)
-        )
         if len(self._event_rows) >= self.batch_size:
             self._flush_events()
 

@@ -75,7 +75,10 @@ def add_stream_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--stream_brokers", default="kafka:9092", help="Kafka bootstrap servers (host:port,...)."
     )
     group.add_argument(
-        "--stream_topic", default="spade-topic", help="Kafka topic(s), comma-separated."
+        "--stream_topic",
+        default=None,
+        help="Kafka topic to read, the one the capture agent publishes to "
+        "(`new_capture.sh --topic NAME`). Several can be given, comma-separated.",
     )
     group.add_argument(
         "--stream_group_id",
@@ -245,6 +248,11 @@ def build_stream(stream_cfg: CN) -> ProvenanceStream:
         )
 
     if stream_cfg.source == "kafka":
+        if not stream_cfg.topic:
+            raise ValueError(
+                "`--stream_topic=NAME` is required: name the topic the capture agent "
+                "publishes to (`scripts/capture/new_capture.sh --topic NAME`)."
+            )
         source = KafkaSource(
             brokers=stream_cfg.brokers,
             topics=stream_cfg.topic,

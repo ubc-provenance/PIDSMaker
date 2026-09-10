@@ -1,6 +1,6 @@
 """Registry of provenance adapters.
 
-`--stream.adapter` selects one by name. Registering a new source is a one-line
+`--stream_adapter` selects one by name. Registering a new source is a one-line
 change here plus the adapter itself.
 """
 

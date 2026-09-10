@@ -8,9 +8,8 @@ anomaly score crosses the detection threshold.
 
     python pidsmaker/stream_detect.py orthrus SPADE_AUDIT \\
         --dataset_config=/home/artifacts/streaming/spade_audit/dataset.yml \\
-        --stream_brokers=kafka:9092 --stream_topic=spade-topic \\
-        --stream_from_beginning=False --alert_sink=stdout,file \\
-        --alert_file=/home/artifacts/streaming/alerts.jsonl
+        --stream_topic=host1 --stream_from_beginning=False \\
+        --alert_sink=stdout,file --alert_file=/home/artifacts/streaming/alerts.jsonl
 
 Any system the framework implements can be served this way, as long as its
 featurizer can embed nodes it has never seen (see `pidsmaker/streaming/featurizer.py`).

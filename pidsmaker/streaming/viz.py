@@ -21,14 +21,15 @@ The heavy vizgen imports (torch, UMAP) are deferred to `finalize()` so a run
 without `--emit_viz` never pays for them.
 """
 
-import json
 import contextlib
 import io
+import json
 import os
 import time
 from typing import Dict, Optional, Set
 
 import numpy as np
+import yaml
 
 from pidsmaker.utils.utils import log
 
@@ -223,21 +224,11 @@ class StreamingVizCollector:
         return out_path
 
     def _write_run_config(self):
-        """Minimal run_config.yml so the viewer labels the run (all fields optional)."""
-        import yaml
-
-        feat_method = "word2vec"
-        try:
-            feat_method = getattr(self.cfg.featurization, "used_method", None) or feat_method
-        except Exception:
-            pass
-        cfg_out = os.path.join(self.run_dir, "run_config.yml")
-        with open(cfg_out, "w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                {
-                    "_model": str(getattr(self.cfg, "_model", "") or ""),
-                    "featurization": {"used_method": feat_method},
-                    "_source": "streaming",
-                },
-                f,
-            )
+        """Minimal run_config.yml so the viewer can label the run."""
+        run_config = {
+            "_model": str(getattr(self.cfg, "_model", "") or ""),
+            "featurization": {"used_method": self.cfg.featurization.used_method},
+            "_source": "streaming",
+        }
+        with open(os.path.join(self.run_dir, "run_config.yml"), "w", encoding="utf-8") as f:
+            yaml.safe_dump(run_config, f)

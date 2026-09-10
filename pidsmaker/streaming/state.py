@@ -20,6 +20,7 @@ from typing import Dict, Optional, Tuple
 
 import torch
 
+from pidsmaker.streaming.records import StreamNode
 from pidsmaker.utils.utils import log
 
 STATE_FILE = "stream_state.pkl"
@@ -78,8 +79,6 @@ def apply_stream_state(state: dict, adapter, builder) -> int:
             f"Stream state was written by the {state.get('adapter')!r} adapter but is being "
             f"loaded into {adapter.name!r}. Node identifiers are adapter-specific."
         )
-
-    from pidsmaker.streaming.records import StreamNode
 
     for key, (node_type, attrs) in state["key_to_node"].items():
         builder.add_node(StreamNode(key=key, node_type=node_type, attrs=attrs))

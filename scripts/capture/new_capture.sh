@@ -15,7 +15,7 @@
 #       --stream_topic=NAME --stream_from_beginning=False --emit_viz=True
 #
 # Run it on the host, as a user who can sudo (the audit log is root-only). SPADE must be
-# built (see the tutorial); the script starts it when it is not running.
+# built (see docs/docs/features/streaming.md); the script starts it when it is not running.
 #
 # REQUIRED
 #   --topic NAME       Kafka topic to publish to. Reuse a name to keep adding to it;
@@ -249,7 +249,7 @@ preflight() {
 
   # SPADE
   [ -f "$SPADE_HOME/lib/spade.jar" ] && ok "SPADE build found in $SPADE_HOME" \
-    || { warn "no SPADE build in $SPADE_HOME (expected lib/spade.jar)"; hint "build SPADE first (see the tutorial), or pass --spade-home DIR"; fail=1; }
+    || { warn "no SPADE build in $SPADE_HOME (expected lib/spade.jar)"; hint "build SPADE first (see the real-time detection docs), or pass --spade-home DIR"; fail=1; }
   local java; java="$(find_java)"
   if [ -n "$java" ]; then SPADE_JAVA_HOME="$(dirname "$(dirname "$java")")"; ok "JDK $(java_major "$java") found for SPADE"
   else warn "no JDK 21 or newer found - SPADE needs one"; hint "install one (e.g. sudo apt install openjdk-21-jdk) or pass --java-home DIR"; fail=1; fi
@@ -381,7 +381,7 @@ start_feed() {
 arm_rules() {
   # Exclude, by pid, everything that moves the feed itself: otherwise SPADE reading the
   # pipe and tail reading the log would record each other forever.
-  local excl="" p
+  local excl="" p c
   for p in $$ "$FEED_PID" $(pgrep -P "$FEED_PID" 2>/dev/null) "$(spade_kernel_pid)" $(pgrep -f "spadeAuditBridge" 2>/dev/null); do
     [ -n "$p" ] && excl="$excl -F pid!=$p"
   done

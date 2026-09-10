@@ -18,7 +18,6 @@ nav:
     - Implementing a new PIDS: tutorial.md
   - Features:
     - Real-time detection: features/streaming.md
-    - Real-time detection tutorial: features/streaming_tutorial.md
     - Hyperparameter Tuning: features/tuning.md
     - Instability Measurement: features/instability.md
     - Batching & Sampling: features/batching.md

@@ -209,9 +209,8 @@ python pidsmaker/stream_ingest.py SPADE_AUDIT --stream_topic=benign --stream_idl
 python pidsmaker/main.py orthrus SPADE_AUDIT --dataset_config=/home/artifacts/streaming/spade_audit/dataset.yml --save_model
 ```
 
-The [tutorial](https://ubc-provenance.github.io/PIDSMaker/features/streaming_tutorial/)
-walks through all of it — SPADE to capture to training to live alerts — and the
-[reference guide](https://ubc-provenance.github.io/PIDSMaker/features/streaming/) documents
+The [real-time detection guide](https://ubc-provenance.github.io/PIDSMaker/features/streaming/)
+walks through all of it — SPADE to capture to training to live alerts — then documents
 the streaming arguments and how to add another provenance source.
 
 ### Interactive embedding viewer

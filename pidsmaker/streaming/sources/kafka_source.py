@@ -90,7 +90,7 @@ class KafkaSource(StreamSource):
         self.brokers = brokers
         self.topics = [t.strip() for t in topics.split(",") if t.strip()]
         if not self.topics:
-            raise ValueError("At least one Kafka topic is required (`--stream.topic`).")
+            raise ValueError("At least one Kafka topic is required (`--stream_topic`).")
         self.group_id = group_id
         self.from_beginning = from_beginning
         self.poll_timeout = poll_timeout

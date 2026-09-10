@@ -287,8 +287,9 @@ def main(cfg):
     # `--save_model`: the TGN memory in there scales with the training graph, so
     # writing it for every experiment would pile up.
     if cfg._save_model:
-        save_model(model, os.path.join(cfg.training._trained_models_dir, "model_best"), cfg)
-        log(f"Model weights saved to {os.path.join(cfg.training._trained_models_dir, 'model_best')}")
+        model_path = os.path.join(cfg.training._trained_models_dir, "model_best")
+        save_model(model, model_path, cfg)
+        log(f"Model weights saved to {model_path}")
 
     wandb.log(
         {

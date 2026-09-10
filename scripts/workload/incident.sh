@@ -1,5 +1,5 @@
 #!/bin/bash
-# A staged kill chain for the streaming tutorial (docs/docs/features/streaming_tutorial.md),
+# A staged kill chain for the real-time detection tutorial (docs/docs/features/streaming.md),
 # built entirely from ordinary binaries and decoy data: discovery, payload drop, execution,
 # credential access (a FAKE shadow/key file), exfiltration to a LOOPBACK listener, and a
 # persistence file. Nothing malicious runs and nothing leaves the machine; the point is to

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Benign workload for the streaming tutorial (docs/docs/features/streaming_tutorial.md):
+# Benign workload for the real-time detection tutorial (docs/docs/features/streaming.md):
 # shells forking tools that read files, write output, and talk to the network. Every
 # command is a real binary doing real syscalls - this is what the audit subsystem records.
 #   usage: bash scripts/workload/benign.sh [work_dir] [rounds]

@@ -9,7 +9,7 @@ source-agnostic.
 To branch a new provenance source onto PIDSMaker:
     1. Subclass `ProvenanceAdapter` and implement `handle()`.
     2. Register it in `pidsmaker.streaming.adapters.ADAPTERS`.
-    3. Point `--stream.adapter` at it.
+    3. Point `--stream_adapter` at it.
 """
 
 from abc import ABC, abstractmethod
@@ -23,9 +23,9 @@ class ProvenanceAdapter(ABC):
     """Translates one source's records into canonical nodes and events.
 
     Attributes:
-        name: Identifier used by `--stream.adapter`.
+        name: Identifier used by `--stream_adapter`.
         default_format: Wire format the source publishes by default, used when
-            `--stream.format` is left unset.
+            `--stream_format` is left unset.
         default_schema: Avro schema shipped for that format, if any.
         stats: Counter of what happened to the records seen so far (kept for
             observability: how many were nodes, events, or dropped and why).

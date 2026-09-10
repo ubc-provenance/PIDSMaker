@@ -13,6 +13,7 @@ not inductive - the ones that need random walks over the whole graph - cannot be
 served online, and say so explicitly rather than silently returning wrong vectors.
 """
 
+import os
 from collections import defaultdict
 from typing import Dict, Optional
 
@@ -117,8 +118,6 @@ class LabelFeaturizer(OnlineFeaturizer):
         model_dir = self.cfg.featurization._model_dir
 
         if self.method == "word2vec":
-            import os
-
             from gensim.models import Word2Vec
 
             from pidsmaker.featurization.feat_inference_methods.feat_inference_word2vec import (
@@ -130,15 +129,11 @@ class LabelFeaturizer(OnlineFeaturizer):
             self._decline_rate = self.cfg.featurization.word2vec.decline_rate
 
         elif self.method == "fasttext":
-            import os
-
             from gensim.models import FastText
 
             self._model = FastText.load(os.path.join(model_dir, "fasttext.pkl"))
 
         elif self.method == "doc2vec":
-            import os
-
             from gensim.models.doc2vec import Doc2Vec
 
             self._model = Doc2Vec.load(os.path.join(model_dir, "doc2vec_model.model"))
@@ -217,8 +212,6 @@ class FlashFeaturizer(OnlineFeaturizer):
 
     def __init__(self, cfg, max_corpus_tokens: int = 3000, max_properties_per_window: int = 300):
         super().__init__(cfg)
-        import os
-
         from gensim.models import Word2Vec
 
         from pidsmaker.featurization.feat_inference_methods.feat_inference_flash import (

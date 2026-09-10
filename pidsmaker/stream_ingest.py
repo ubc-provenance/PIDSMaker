@@ -37,7 +37,6 @@ from pidsmaker.streaming.sinks.postgres import PostgresSink
 from pidsmaker.streaming.state import default_state_path, save_stream_state
 from pidsmaker.utils.utils import log, ns_time_to_datetime_US
 
-
 # The built-in dataset a streamed one inherits its conventions from, per producer.
 TEMPLATE_BY_ADAPTER = {"spade": "SPADE_AUDIT"}
 
@@ -162,8 +161,7 @@ def write_dataset_config(args, sink, dates, path):
         "database": sink.database,
         "database_all_file": sink.database,
         "start_date": dates[0],
-        # `end_date` is exclusive of nothing in particular, but is expected to sit
-        # after the last captured day.
+        # The pipeline expects `end_date` to fall after the last captured day.
         "end_date": (datetime.strptime(dates[-1], "%Y-%m-%d") + timedelta(days=1)).strftime(
             "%Y-%m-%d"
         ),
@@ -175,7 +173,10 @@ def write_dataset_config(args, sink, dates, path):
     with open(path, "w") as f:
         yaml.safe_dump(config, f, sort_keys=False)
     log(f"Dataset config written to {path}")
-    log(f"  dataset: {config['name']} (database `{config['database']}`, conventions of {config['template']})")
+    log(
+        f"  dataset: {config['name']} (database `{config['database']}`, "
+        f"conventions of {config['template']})"
+    )
     log(f"  train: {config['train_dates']}")
     log(f"  val:   {config['val_dates']}")
     log(f"  test:  {config['test_dates']}")
@@ -282,7 +283,10 @@ def main(argv=None):
 
     log("")
     log("Next step - train a system on this capture:")
-    log(f"  python pidsmaker/main.py orthrus {args.dataset} --dataset_config={config_path} --save_model")
+    log(
+        f"  python pidsmaker/main.py orthrus {args.dataset} "
+        f"--dataset_config={config_path} --save_model"
+    )
 
 
 if __name__ == "__main__":
