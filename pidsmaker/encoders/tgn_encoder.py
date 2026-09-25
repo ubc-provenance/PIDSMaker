@@ -112,10 +112,10 @@ class TGNEncoder(nn.Module):
 
         node_type = batch.node_type_tgn
         edge_type = batch.edge_type_tgn
+        node_type_argmax = node_type.max(dim=1).indices
 
         # Hetero stuff
         if self.is_hetero:
-            node_type_argmax = node_type.max(dim=1).indices
             edge_type_argmax = edge_type.max(dim=1).indices
 
             x_dict, edge_index_dict = _compute_hetero_features(
@@ -128,7 +128,6 @@ class TGNEncoder(nn.Module):
             )
         else:
             x_dict, edge_index_dict = None, None
-            node_type_argmax = None
 
         tgn_kwargs = {
             "x": h,

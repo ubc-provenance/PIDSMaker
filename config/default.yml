@@ -101,6 +101,12 @@ training:
     gin:
       activation: relu
       num_layers: 2
+    rgcn:
+      activation: relu
+      num_layers: 2
+    rgcn_per_type:
+      activation: relu
+      num_layers: 2
     magic_gat:
       num_layers: 3
       num_heads: 4

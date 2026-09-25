@@ -144,8 +144,12 @@ class TestEncoderObjective:
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
     def test_encoder_tgn_objective_pairs(self, dataset, device, encoder, objective):
         encoder_combined = f"{encoder},tgn"
+        # Per-type encoders need node types aligned with the TGN neighborhood, which only the fixed TGN batching gives
+        custom_args = None
+        if encoder == "rgcn_per_type":
+            custom_args = [("batching.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN", True)]
         cfg = prepare_cfg(
-            "tests", dataset, device=device, encoder=encoder_combined, objective=objective
+            "tests", dataset, device=device, encoder=encoder_combined, objective=objective, custom_args=custom_args
         )
         main.main(cfg)
 
