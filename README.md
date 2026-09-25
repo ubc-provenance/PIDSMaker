@@ -69,6 +69,24 @@ It also includes several easy-to-install provenance datasets for APT detection.
 | ATLASV2_EDR | Windows | 10 | 1 |
 | CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
 
+### Pretrained Encoders
+
+Any PIDS can replace its node featurization (e.g. `word2vec`) by an encoder pretrained on provenance data.
+
+| Encoder | Description |
+|---------|-------------|
+| SPIDER (NeurIPS 2026) | T5 entity encoder distilled from a GNN teacher, with [pretrained weights](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/#pretrained-weights) |
+| CyberGFM | BERT pretrained on random walks, then fine-tuned as a detector |
+| GPT-2, Llama 3.2, OPT | General-purpose language models fine-tuned on entity labels |
+| BERT, RoBERTa, ModernBERT, LogBERT, Llama | Language models trained from scratch on random walks |
+| GraphMAE, GAE, DGI, DeepWalk, node2vec | Self-supervised GNNs and walk embeddings |
+
+```shell
+python pidsmaker/main.py spider_velox CADETS_E3 --featurization.spider.spider_path=$SPIDER_WEIGHTS
+```
+
+See the [documentation](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/) to download the weights, pretrain an encoder and fine-tune it as a detector.
+
 ## 📄 Documentation
 
 A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is available, explaining all possible arguments and providing examples on how integrating new systems.
@@ -113,6 +131,8 @@ Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcai
 
 You can still watch the logs in your shell using `tail -f nohup.out`.
 
+To run in the foreground without W&B, with the same settings as `./run.sh`, use `./run_local.sh SYSTEM DATASET`.
+
 We generally using using W&B for experiment monitoring and historization (see installation guidelines). 
 
 **Warning:** Before performing evaluations, you should tune all systems (see docs [here](https://ubc-provenance.github.io/PIDSMaker/features/tuning/)).
@@ -127,6 +147,8 @@ Based on our experiments, we provide [tuned hyperparameters](https://ubc-provena
 However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
 
 We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
+
+`--training.stable_optim=True` (AdamW, warmup and cosine learning rate schedule, gradient clipping) is designed to [reduce this instability](https://ubc-provenance.github.io/PIDSMaker/features/instability/#reducing-instability).
 
 ## Customize existing systems
 

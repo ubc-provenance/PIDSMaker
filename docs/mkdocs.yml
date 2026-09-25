@@ -21,6 +21,8 @@ nav:
     - Instability Measurement: features/instability.md
     - Batching & Sampling: features/batching.md
     - Embedding Visualizer: features/visualization.md
+    - Pretrained Encoders: features/pretrained_encoders.md
+    - Supervised Fine-Tuning: features/supervised.md
   - Arguments:
     - Tasks: config/tasks.md
     - Featurization: config/featurization.md

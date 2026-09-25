@@ -1,6 +1,6 @@
 # Pretrained encoder configs
 
-Configs in this folder use `featurization.feat_training.used_method: spider`,
+Configs in this folder use `featurization.used_method: spider`,
 which trains (or loads) a graph foundation model that produces static node
 embeddings consumed by the downstream GNN detector.
 
@@ -13,17 +13,18 @@ One subfolder per pretrained model:
 
 ## Invocation
 
-Any file in this folder is invokable by its bare name — the loader searches
-`config/` recursively:
+Configs are invoked by their bare name — the loader searches `config/`
+recursively. `spider.yml` only holds the SPIDER settings and is included by the
+`spider_<pids>.yml` configs, which are the ones to run:
 
 ```
-python -m pidsmaker.main spider         CADETS_E3   # config/pretrained/spider/spider.yml
-python -m pidsmaker.main spider_velox   CADETS_E3   # config/pretrained/spider/spider_velox.yml
+python pidsmaker/main.py spider_velox   CADETS_E3   # config/pretrained/spider/spider_velox.yml
+python pidsmaker/main.py cybergfm       CADETS_E3   # config/pretrained/cybergfm/cybergfm.yml
 ```
 
 ## Config structure
 
-Inside `featurization.feat_training.spider`:
+Inside `featurization.spider`:
 
 | Section | Scope |
 |---|---|
@@ -153,13 +154,13 @@ tokenizer is the model's HF tokenizer (the `tokenizer:` block is ignored).
   `opt_pretrained` to measure how much benefit pretrained English LM weights
   give on the entity-label task.
 
-## Using the SPIDER model in `gnn_training`
+## Using the SPIDER model in `training`
 
-The SPIDER model produced by `feat_training` can be consumed in two ways
+The SPIDER model produced by `featurization` can be consumed in two ways
 by the downstream detector:
 
 1. **As a frozen featurizer** (default) — set
-   `detection.gnn_training.used_method: default`. The pretrained encoder
+   `training.used_method: default`. The pretrained encoder
    produces static per-node embeddings (mean-pooled walks for MLM/walk models;
    raw encoder output for GNN-SSL / GNN token-budget / HF). These embeddings
    land in `node_emb` and feed whatever GNN encoder the baseline config
@@ -169,10 +170,10 @@ by the downstream detector:
    SPIDER embeddings.
 
 2. **As a fine-tuned scorer** — set
-   `detection.gnn_training.used_method: spider`. The pretrained encoder
+   `training.used_method: spider`. The pretrained encoder
    is fine-tuned on the target dataset and produces *anomaly scores
    directly*; the baseline GNN detector is bypassed. Configure under
-   `detection.gnn_training.spider`. See `cybergfm/cybergfm.yml` for a
+   `training.spider`. See `cybergfm/cybergfm.yml` for a
    full example. Knobs:
 
    - **`finetune_mode`** — picks the head + loss. Only `bert`-family

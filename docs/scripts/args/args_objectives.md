@@ -94,7 +94,7 @@
 5. (patterns mode) Max edges collected per pattern.<br>
 6. (synthetic mode) Path to YAML file with explicit (src_type, src_label, edge_type, dst_type, dst_label) attack edge definitions.<br>
 7. BCE pos_weight for the attack class (on top of 1:1 oversampling).<br>
-8. <br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
+8. Loss used to predict the edge type.<br><br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
 9. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 10. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 11. <br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`

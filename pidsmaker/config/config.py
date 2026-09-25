@@ -881,7 +881,7 @@ ENCODERS_CFG = {
         "use_time_order_encoding": Arg(bool),
         "project_src_dst": Arg(bool),
         "mode": Arg(str),
-        "use_residual_norm": Arg(bool),
+        "use_residual_norm": Arg(bool, desc="Adds the projected input node features to the output of the GNN wrapped by TGN, followed by dropout and LayerNorm."),
     },
     "graph_attention": {
         "activation": Arg(str),
@@ -928,9 +928,9 @@ ENCODERS_CFG = {
     },
     "none": {},
     "hetero_graph_transformer": {
-        "activation": Arg(str),
-        "num_heads": Arg(int),
-        "num_layers": Arg(int),
+        "activation": Arg(str, desc="Unused: the input projections always use ReLU."),
+        "num_heads": Arg(int, desc="Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer."),
+        "num_layers": Arg(int, desc="Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC."),
     },
 }
 
@@ -1002,7 +1002,7 @@ OBJECTIVES_CFG = {
         "pos_weight": Arg(float, desc="BCE pos_weight for the attack class (on top of 1:1 oversampling)."),
     },
     "predict_edge_type": {
-        "loss": Arg(str, vals=OR(PRED_LOSSES)),
+        "loss": Arg(str, vals=OR(PRED_LOSSES), desc="Loss used to predict the edge type."),
         "decoder": Arg(
             str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
@@ -1323,7 +1323,7 @@ TASK_ARGS = {
             bool, desc="Use AdamW + warmup cosine schedule + gradient clipping for stable training."
         ),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
-        "fuse_duplicate_edges_training": Arg(bool),
+        "fuse_duplicate_edges_training": Arg(bool, desc="During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss."),
         "used_method": Arg(str, vals=OR(["default", "spider"]), desc="Which training pipeline use."),
         "ocrapt_early_stop": {
             "enabled": Arg(bool, desc="Off by default, no-op unless set."),
