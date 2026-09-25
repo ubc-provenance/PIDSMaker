@@ -16,6 +16,28 @@ from pidsmaker.utils.utils import (
 )
 
 
+_NONE_VALUES = {"None", "NA", "0", "none", "null", ""}
+
+
+def _build_label(attrs, node_type, node_label_features, use_hashed_label):
+    feats = node_label_features[node_type]
+    if feats == ["auto"]:
+        parts = [attrs["type"]]
+        for key in sorted(attrs):
+            if key == "type":
+                continue
+            val = attrs[key]
+            if val not in _NONE_VALUES:
+                parts.append(val)
+        label_str = " ".join(parts)
+    else:
+        label_str = " ".join([attrs[f] for f in feats])
+    if use_hashed_label:
+        from pidsmaker.utils.utils import stringtomd5
+        label_str = stringtomd5(label_str)
+    return label_str
+
+
 def get_node_list(cur, cfg):
     use_hashed_label = cfg.construction.use_hashed_label
     node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
@@ -46,10 +68,7 @@ def get_node_list(cur, cfg):
             hash_id = str(i[1])
             index_id = int(i[-1])
 
-            features_used = []
-            for label_used in node_label_features["netflow"]:
-                features_used.append(attrs[label_used])
-            label_str = " ".join(features_used)
+            label_str = _build_label(attrs, "netflow", node_label_features, use_hashed_label)
 
             uuid2idx[node_uuid] = index_id
             uuid2type[node_uuid] = attrs["type"]
@@ -73,10 +92,7 @@ def get_node_list(cur, cfg):
             node_uuid = str(i[0])
             hash_id = str(i[1])
             index_id = int(i[-1])
-            features_used = []
-            for label_used in node_label_features["subject"]:
-                features_used.append(attrs[label_used])
-            label_str = " ".join(features_used)
+            label_str = _build_label(attrs, "subject", node_label_features, use_hashed_label)
 
             uuid2idx[node_uuid] = index_id
             uuid2type[node_uuid] = attrs["type"]
@@ -100,10 +116,7 @@ def get_node_list(cur, cfg):
             node_uuid = str(i[0])
             hash_id = str(i[1])
             index_id = int(i[-1])
-            features_used = []
-            for label_used in node_label_features["file"]:
-                features_used.append(attrs[label_used])
-            label_str = " ".join(features_used)
+            label_str = _build_label(attrs, "file", node_label_features, use_hashed_label)
 
             uuid2idx[node_uuid] = index_id
             uuid2type[node_uuid] = attrs["type"]
@@ -138,8 +151,8 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
         for i in range(0, len(timestamps) - 1):
             start = timestamps[i]
             stop = timestamps[i + 1]
-            start_ns_timestamp = datetime_to_ns_time_US(start)
-            end_ns_timestamp = datetime_to_ns_time_US(stop)
+            start_ns_timestamp = datetime_to_ns_time_US(start, timezone=cfg.dataset.timezone)
+            end_ns_timestamp = datetime_to_ns_time_US(stop, timezone=cfg.dataset.timezone)
             sql = """
             select * from event_table
             where
@@ -179,7 +192,7 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
             start_time = events_list[0][-2]
             temp_list = []
             BATCH = 1024
-            window_size_in_sec = cfg.construction.time_window_size * 60_000_000_000
+            window_size_in_ns = cfg.construction.time_window_size * 60_000_000_000
 
             last_batch = False
             for batch_edges in get_batches(events_list, BATCH):
@@ -189,11 +202,11 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
                 if (len(batch_edges) < BATCH) or (temp_list[-1] == events_list[-1]):
                     last_batch = True
 
-                if (batch_edges[-1][-2] > start_time + window_size_in_sec) or last_batch:
+                if (batch_edges[-1][-2] > start_time + window_size_in_ns) or last_batch:
                     time_interval = (
-                        ns_time_to_datetime_US(start_time)
+                        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone)
                         + "~"
-                        + ns_time_to_datetime_US(batch_edges[-1][-2])
+                        + ns_time_to_datetime_US(batch_edges[-1][-2], timezone=cfg.dataset.timezone)
                     )
 
                     log(f"Start create edge fused time window graph for {time_interval}")

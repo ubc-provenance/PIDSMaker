@@ -10,7 +10,6 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_kmeans_labels,
     get_ground_truth_nids,
-    get_node_to_path_and_type,
     get_threshold,
     plot_precision_recall,
     plot_scores_with_paths_node_level,
@@ -19,6 +18,9 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     viz_graph,
 )
 from pidsmaker.utils.utils import listdir_sorted, log
+from pidsmaker.utils.dataset_utils import (
+    get_node_to_path_and_type
+)
 
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
@@ -35,7 +37,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     node_to_max_loss = defaultdict(int)
 
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(tqdm(sorted(filelist), desc="Compute labels")):
+    for tw, file in enumerate(tqdm(filelist, desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
         df = pd.read_csv(file).to_dict(orient="records")
         for line in df:

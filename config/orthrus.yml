@@ -34,7 +34,6 @@ feat_inference:
   to_remove: True
 
 batching:
-  save_on_disk: False
   node_features: node_emb,node_type
   edge_features: edge_type
   fix_buggy_graph_reindexer: False
@@ -64,6 +63,8 @@ training:
   node_hid_dim: 128
   node_out_dim: 64
   grad_accumulation: 1
+  stable_optim: False
+  fuse_duplicate_edges_training: False
   encoder:
     dropout: 0.5
     used_methods: tgn,graph_attention
@@ -83,6 +84,7 @@ training:
   decoder:
     used_methods: predict_edge_type
     predict_edge_type:
+      loss: cross_entropy
       decoder: edge_mlp
       use_triplet_types: False
       edge_mlp:
@@ -94,10 +96,12 @@ training:
 evaluation:
   viz_malicious_nodes: False
   ground_truth_version: orthrus
-  best_model_selection: best_adp
+  
   used_method: node_evaluation
   node_evaluation:
     threshold_method: max_val_loss
+    max_val_loss:
+      alpha: 1.0
     use_dst_node_loss: True
     use_kmeans: True
     kmeans_top_K: 30

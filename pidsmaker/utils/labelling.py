@@ -3,6 +3,7 @@ import os.path
 from collections import defaultdict
 
 from pidsmaker.utils.utils import datetime_to_ns_time_US, init_database_connection, log
+from pidsmaker.utils.dataset_utils import get_uuid_to_index_id, get_time_and_end_node
 
 
 def is_threatrace(cfg):
@@ -43,8 +44,8 @@ def _test_period_ns(cfg):
     window used for the flat ThreaTrace ground truth."""
     dates = sorted(cfg.dataset.test_dates)
     return (
-        datetime_to_ns_time_US(dates[0] + " 00:00:00"),
-        datetime_to_ns_time_US(dates[-1] + " 23:59:59"),
+        datetime_to_ns_time_US(dates[0] + " 00:00:00", timezone=cfg.dataset.timezone),
+        datetime_to_ns_time_US(dates[-1] + " 23:59:59", timezone=cfg.dataset.timezone),
     )
 
 
@@ -63,7 +64,7 @@ def ground_truth_attacks(cfg):
         start, end = _test_period_ns(cfg)
         return [(_threatrace_gt_file(cfg), start, end)]
     return [
-        (a[0], datetime_to_ns_time_US(a[1]), datetime_to_ns_time_US(a[2]))
+        (a[0], datetime_to_ns_time_US(a[1], timezone=cfg.dataset.timezone), datetime_to_ns_time_US(a[2], timezone=cfg.dataset.timezone))
         for a in cfg.dataset.attack_to_time_window
     ]
 
@@ -92,8 +93,7 @@ def _mimicry_nodes(cfg, relative_path, uuid2nids):
 
 
 def get_ground_truth(cfg):
-    cur, connect = init_database_connection(cfg)
-    uuid2nids, nid2uuid = get_uuid2nids(cur)
+    uuid2nids, nid2uuid = get_uuid_to_index_id(cfg)
 
     ground_truth_nids, ground_truth_paths = [], {}
     uuid_to_node_id = {}
@@ -123,8 +123,7 @@ def get_ground_truth(cfg):
 
 
 def get_GP_of_each_attack(cfg):
-    cur, connect = init_database_connection(cfg)
-    uuid2nids, _ = get_uuid2nids(cur)
+    uuid2nids, _ = get_uuid_to_index_id(cfg)
 
     attack_to_nids = {}
     for i, (path, start, end) in enumerate(ground_truth_attacks(cfg)):
@@ -143,40 +142,70 @@ def get_GP_of_each_attack(cfg):
         attack_to_nids[i] = {"nids": nids, "time_range": [start, end]}
     return attack_to_nids
 
-
-def get_uuid2nids(cur):
-    queries = {
-        "file": "SELECT index_id, node_uuid FROM file_node_table;",
-        "netflow": "SELECT index_id, node_uuid FROM netflow_node_table;",
-        "subject": "SELECT index_id, node_uuid FROM subject_node_table;",
-    }
-    uuid2nids = {}
-    nid2uuid = {}
-    for node_type, query in queries.items():
-        cur.execute(query)
-        rows = cur.fetchall()
-        for row in rows:
-            uuid2nids[row[1]] = row[0]
-            nid2uuid[row[0]] = row[1]
-
-    return uuid2nids, nid2uuid
-
-
-def get_events(
-    cur,
-    start_time,
-    end_time,
-):
-    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}';"
-
-    cur.execute(sql)
-    rows = cur.fetchall()
-    return rows
-
-
 def get_t2malicious_node(cfg) -> dict[list]:
+    """Map event timestamps to malicious node UUIDs.
+
+    When edge-level ground truth CSVs are available, only events
+    matching explicit attack edges are considered malicious.  Otherwise falls back
+    to the DARPA TC approach: any event touching a GT node within the attack
+    window is malicious.
+    """
+    if _has_edge_csvs(cfg):
+        return _get_t2malicious_node_from_edge_gt(cfg)
+    return _get_t2malicious_node_from_node_gt(cfg)
+
+
+def _get_t2malicious_node_from_edge_gt(cfg) -> dict[list]:
+    """Use explicit edge-level ground truth to find malicious events.
+
+    For each attack edge (src, dst, event_type), query the DB for matching events
+    and record the timestamp -> node mapping.
+    """
     cur, connect = init_database_connection(cfg)
-    uuid2nids, nid2uuid = get_uuid2nids(cur)
+    uuid2nids, nid2uuid = get_uuid_to_index_id(cfg)
+
+    t_to_node = defaultdict(list)
+
+    edge_paths = cfg.dataset.ground_truth_edges_relative_path
+    for path in edge_paths:
+        filepath = os.path.join(cfg._ground_truth_dir, path)
+        if not os.path.exists(filepath):
+            continue
+
+        # Collect all attack edges: (src_nid, dst_nid, event_type)
+        attack_edges = set()
+        with open(filepath, "r") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                src_nid = uuid2nids.get(row["src_node_uuid"])
+                dst_nid = uuid2nids.get(row["dst_node_uuid"])
+                if src_nid is not None and dst_nid is not None:
+                    attack_edges.add((str(src_nid), str(dst_nid), row["event_type"]))
+
+        if not attack_edges:
+            continue
+
+        # Query events for each attack edge
+        for src_nid, dst_nid, event_type in attack_edges:
+            sql = (
+                "SELECT src_index_id, dst_index_id, timestamp_rec "
+                "FROM event_table "
+                "WHERE src_index_id = %s AND dst_index_id = %s AND operation = %s;"
+            )
+            cur.execute(sql, (src_nid, dst_nid, event_type))
+            for row in cur.fetchall():
+                t = int(row[2])
+                t_to_node[t].append(nid2uuid[int(row[0])])
+                t_to_node[t].append(nid2uuid[int(row[1])])
+
+    log(f"Edge GT: found {len(t_to_node)} event timestamps with malicious activity")
+    return t_to_node
+
+
+def _get_t2malicious_node_from_node_gt(cfg) -> dict[list]:
+    """Original DARPA TC approach: any event touching a GT node in the attack window."""
+    cur, connect = init_database_connection(cfg)
+    uuid2nids, nid2uuid = get_uuid_to_index_id(cfg)
 
     t_to_node = defaultdict(list)
 
@@ -193,22 +222,78 @@ def get_t2malicious_node(cfg) -> dict[list]:
             ground_truth_nids |= {str(n) for n in mimicry}
             log(f"{len(mimicry)} mimicry nodes loaded")
 
-        rows = get_events(cur, start_time, end_time)
+        rows = get_time_and_end_node(cfg, start_time, end_time)
         for row in rows:
-            src_id = row[1]
-            dst_id = row[4]
-            t = row[6]
+            src_id = str(row[0])
+            dst_id = str(row[1])
+            t = row[2]
             if src_id in ground_truth_nids:
                 t_to_node[int(t)].append(nid2uuid[int(src_id)])
             if dst_id in ground_truth_nids:
                 t_to_node[int(t)].append(nid2uuid[int(dst_id)])
 
+    log(f"Node GT: found {len(t_to_node)} event timestamps with malicious activity")
     return t_to_node
 
 
-def get_attack_to_mal_edges(cfg) -> dict[list]:
+def _has_edge_csvs(cfg):
+    """Check if explicit edge-level ground truth CSVs are configured."""
+    paths = getattr(cfg.dataset, "ground_truth_edges_relative_path", None)
+    return paths is not None and len(paths) > 0
+
+
+def get_attack_to_mal_edges(cfg) -> dict[set]:
+    """Load per-attack malicious edges.
+
+    If ground_truth_edges_relative_path is configured,
+    loads explicit attack edges from CSV files.
+    Otherwise falls back to the DB-query approach (DARPA TC datasets).
+    """
+    if _has_edge_csvs(cfg):
+        return _get_attack_to_mal_edges_from_csv(cfg)
+    return _get_attack_to_mal_edges_from_db(cfg)
+
+
+def _get_attack_to_mal_edges_from_csv(cfg) -> dict[set]:
+    """Load malicious edges from explicit CSV files.
+
+    CSV format: src_node_uuid,dst_node_uuid,event_type,attack_edge_type
+    Edges are matched by (src_index_id, dst_index_id, event_type) — no timestamp needed.
+    """
+    uuid2nids, _ = get_uuid_to_index_id(cfg)
+
+    attack_to_mal_edges = defaultdict(set)
+    edge_paths = cfg.dataset.ground_truth_edges_relative_path
+
+    for i, path in enumerate(edge_paths):
+        filepath = os.path.join(cfg._ground_truth_dir, path)
+        if not os.path.exists(filepath):
+            log(f"Warning: edge ground truth file not found: {filepath}")
+            continue
+        with open(filepath, "r") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                src_uuid = row["src_node_uuid"]
+                dst_uuid = row["dst_node_uuid"]
+                event_type = row["event_type"]
+
+                src_nid = uuid2nids.get(src_uuid)
+                dst_nid = uuid2nids.get(dst_uuid)
+                if src_nid is None or dst_nid is None:
+                    continue
+
+                # Store as (src_index_id, dst_index_id, event_type) — no timestamp
+                attack_to_mal_edges[i].add((str(src_nid), str(dst_nid), event_type))
+
+    total = sum(len(s) for s in attack_to_mal_edges.values())
+    log(f"Loaded {total} malicious edges from {len(edge_paths)} CSV files")
+    return attack_to_mal_edges
+
+
+def _get_attack_to_mal_edges_from_db(cfg) -> dict[set]:
+    """Original DB-query approach: find all events involving GT nodes during attack windows."""
     cur, connect = init_database_connection(cfg)
-    uuid2nids, nid2uuid = get_uuid2nids(cur)
+    uuid2nids, nid2uuid = get_uuid_to_index_id(cfg)
 
     malicious_edge_selection = cfg.evaluation.edge_evaluation.malicious_edge_selection
 
@@ -220,13 +305,12 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
             if node_id is not None:
                 ground_truth_nids.add(str(node_id))
 
-        rows = get_events(cur, start_time, end_time)
+        rows = get_time_and_end_node(cfg, start_time, end_time)
         for row in rows:
-            src_idx_id = row[1]
-            ope = row[2]
-            dst_idx_id = row[4]
-            event_uuid = row[5]
-            timestamp_rec = row[6]
+            src_idx_id = str(row[0])
+            dst_idx_id = str(row[1])
+            timestamp_rec = row[2]
+            ope = row[3]
 
             condition = None
             if malicious_edge_selection == "src_node":
@@ -249,6 +333,11 @@ def get_attack_to_mal_edges(cfg) -> dict[list]:
 
 
 def get_ground_truth_edges(cfg) -> set:
+    """Return the set of all malicious edges across all attacks.
+
+    When using CSV-based edge labels, edges are (src_nid, dst_nid, event_type) tuples.
+    When using DB-based labels, edges are (src_nid, dst_nid, timestamp, event_type) tuples.
+    """
     attack_to_mal_edges = get_attack_to_mal_edges(cfg)
 
     malicious_edges = set()

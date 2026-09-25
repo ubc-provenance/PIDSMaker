@@ -26,20 +26,23 @@ from sklearn.metrics import (
 import pidsmaker.utils.labelling as labelling
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
-    get_node_to_path_and_type,
     listdir_sorted,
     log,
     mean,
     percentile_90,
     std,
 )
+from pidsmaker.utils.dataset_utils import (
+    get_node_to_path_and_type,
+    get_uuid_to_index_id,
+)
 
 # Assign different colors for each attack type
 # Source: Tailwind 4 colors (800 shade)
 attack_colors = {
-    0: "#9f0712",
-    1: "#894b00",
-    2: "#3c6300",
+    0: "black",
+    1: "red",
+    2: "blue",
     3: "#006045",
     4: "#005f78",
     5: "#193cb8",
@@ -48,6 +51,45 @@ attack_colors = {
     8: "#a3004c",
     9: "#1d293d"
 }
+
+def compute_topk_metrics(y_test, scores, k_values=(10, 50, 100)):
+    """Compute AP@K, Precision@K, and Recall@K for given K values.
+
+    These metrics evaluate ranking quality within the top-K predictions,
+    which is more operationally meaningful than full AP in settings with
+    noisy labels or extreme class imbalance.
+    """
+    y_test = np.array(y_test)
+    scores = np.array(scores)
+    sorted_idx = np.argsort(-scores)
+    total_pos = y_test.sum()
+
+    stats = {}
+    for k in k_values:
+        if k > len(y_test):
+            continue
+        top_k_labels = y_test[sorted_idx[:k]]
+        n_pos_in_k = top_k_labels.sum()
+
+        # Precision@K
+        prec_k = float(n_pos_in_k / k)
+        stats[f"precision@{k}"] = round(prec_k, 5)
+
+        # Recall@K
+        recall_k = float(n_pos_in_k / total_pos) if total_pos > 0 else 0.0
+        stats[f"recall@{k}"] = round(recall_k, 5)
+
+        # AP@K: average of precision values at each relevant position in top-K
+        if n_pos_in_k == 0:
+            ap_k = 0.0
+        else:
+            cumsum = np.cumsum(top_k_labels)
+            precisions = cumsum / np.arange(1, k + 1)
+            ap_k = float((precisions * top_k_labels).sum() / min(total_pos, k))
+        stats[f"ap@{k}"] = round(ap_k, 5)
+
+    return stats
+
 
 def classifier_evaluation(y_test, y_test_pred, scores):
     labels_exist = sum(y_test) > 0
@@ -86,6 +128,8 @@ def classifier_evaluation(y_test, y_test_pred, scores):
     dor = (tp * tn) / (fp * fn + eps)
     mcc = compute_mcc(tp, fp, tn, fn)
 
+    topk_stats = compute_topk_metrics(y_test, scores, k_values=(10, 50, 100))
+
     stats = {
         "precision": round(precision, 5),
         "recall": round(recall, 5),
@@ -102,6 +146,7 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         "fp": fp,
         "tn": tn,
         "fn": fn,
+        **topk_stats,
     }
     return stats
 
@@ -117,12 +162,14 @@ def compute_mcc(tp, fp, tn, fn):
     return mcc
 
 
-def get_threshold(val_tw_path, threshold_method: str, contamination=0.05):
+def get_threshold(val_tw_path, threshold_method: str, alpha=1.0, contamination=0.05):
     threshold_method = threshold_method.strip()
     if threshold_method == "max_val_loss":
-        return calculate_threshold(val_tw_path, threshold_method)["max"]
+        return calculate_threshold(val_tw_path, threshold_method, alpha)["max"]
     elif threshold_method == "mean_val_loss":
         return calculate_threshold(val_tw_path, threshold_method)["mean"]
+    elif threshold_method == "percentile":
+        return calculate_threshold(val_tw_path, threshold_method, alpha)["max"]
     elif threshold_method == "threatrace":
         return 1.5
     elif threshold_method == "flash":
@@ -137,6 +184,8 @@ def get_threshold(val_tw_path, threshold_method: str, contamination=0.05):
         for file in listdir_sorted(val_tw_path):
             losses.extend(pd.read_csv(os.path.join(val_tw_path, file), usecols=["loss"])["loss"].tolist())
         return float(np.percentile(losses, 100 * (1 - contamination)))
+    elif threshold_method == "fixed_zero":
+        return 0.0  # BCE decision boundary: logit > 0 <=> P(attack) > 0.5
     raise ValueError(f"Invalid threshold method `{threshold_method}`")
 
 
@@ -172,33 +221,33 @@ def reduce_losses_to_score(losses: list[float], threshold_method: str):
     threshold_method = threshold_method.strip()
     if threshold_method == "mean_val_loss":
         return np.mean(losses)
+    elif threshold_method == "percentile":
+        return np.percentile(losses, 95)
     elif (
         threshold_method == "max_val_loss"
         or threshold_method == "threatrace"
         or threshold_method == "flash"
         or threshold_method == "nodlink"
         or threshold_method == "ocrapt"
+        or threshold_method == "fixed_zero"
     ):
         return np.max(losses)
     raise ValueError(f"Invalid threshold method {threshold_method}")
 
 
-def calculate_threshold(val_tw_dir, threshold_method):
+def calculate_threshold(val_tw_dir, threshold_method, alpha=1.0):
     filelist = listdir_sorted(val_tw_dir)
+    col = "magic_score" if threshold_method == "magic" else "loss"
 
     loss_list = []
-    for file in sorted(filelist):
+    for file in filelist:
         f = os.path.join(val_tw_dir, file)
-        df = pd.read_csv(f).to_dict()
-        if threshold_method == "magic":
-            loss_list.extend(df["magic_score"].values())
-        else:
-            loss_list.extend(df["loss"].values())
+        loss_list.extend(pd.read_csv(f, usecols=[col])[col].tolist())
 
     thr = {
-        "max": max(loss_list),
-        "mean": mean(loss_list),
-        "percentile_90": percentile_90(loss_list),
+        "max": max(loss_list) * alpha,
+        "mean": mean(loss_list) * alpha,
+        "percentile_90": percentile_90(loss_list) * alpha,
     }
     log(
         f"Thresholds: MEAN={thr['mean']:.3f}, STD={std(loss_list):.3f}, MAX={thr['max']:.3f}, 90 Percentile={thr['percentile_90']:.3f}"
@@ -308,9 +357,6 @@ def plot_scores_with_paths_node_level(
 
     plt.figure(figsize=(12, 6))
 
-    red = (155 / 255, 44 / 255, 37 / 255)
-    green = (62 / 255, 126 / 255, 42 / 255)
-
     node2attack = np.array([list(node2attacks.get(node))[0] for node in nodes[y_truth == 1]])
 
     # Plot each type with a different marker for Label 0
@@ -319,17 +365,20 @@ def plot_scores_with_paths_node_level(
             scores_0[types_0 == t],
             [0] * sum(types_0 == t),
             marker=marker_styles[t],
-            color=green,
+            color="green",
             label=t,
         )
 
     # Plot each type with a different marker for Label 1
     for t in marker_styles.keys():
+        mask = types_1 == t
+        if not mask.any():
+            continue
         plt.scatter(
-            scores_1[types_1 == t],
-            [1] * sum(types_1 == t),
+            scores_1[mask],
+            [1] * sum(mask),
             marker=marker_styles[t],
-            color=[attack_colors.get(c) for c in node2attack[types_1 == t]],
+            color=[attack_colors.get(c, "red") for c in node2attack[mask]],
         )
 
     # Adding labels and title
@@ -366,7 +415,7 @@ def plot_scores_with_paths_node_level(
             fontsize=8,
             va="center",
             ha="left",
-            color=green,
+            color="green",
         )
 
     # Annotate the top scores for label 1
@@ -381,7 +430,7 @@ def plot_scores_with_paths_node_level(
             fontsize=8,
             va="center",
             ha="left",
-            color=red,
+            color="red",
         )
 
     plt.text(
@@ -403,9 +452,13 @@ def plot_scores_with_paths_node_level(
         color="black",
     )
 
-    plt.xlim([min(scores), max(scores) * 1.5])  # Adjust xlim to make space for text
+    finite_scores = np.array(scores)[np.isfinite(scores)]
+    if len(finite_scores) == 0:
+        finite_scores = np.array([0.0, 1.0])
+    plt.xlim([np.min(finite_scores), max(np.max(finite_scores) * 1.5, 1e-6)])  # Adjust xlim to make space for text
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
+    plt.close()
 
 
 def plot_scores_with_paths_edge_level(
@@ -422,12 +475,12 @@ def plot_scores_with_paths_edge_level(
         types.append(src_type)
 
         path_src = (
-            node_to_path[src]["path"] + ", " + node_to_path[src]["cmd"]
+            (node_to_path[src]["path"] + (", " + node_to_path[src]["cmd"]) if node_to_path[src]["cmd"] else "")
             if src_type == "subject"
             else node_to_path[src]["path"]
         )
         path_dst = (
-            node_to_path[dst]["path"] + ", " + node_to_path[dst]["cmd"]
+            (node_to_path[dst]["path"] + (", " + node_to_path[dst]["cmd"]) if node_to_path[dst]["cmd"] else "")
             if dst_type == "subject"
             else node_to_path[dst]["path"]
         )
@@ -453,9 +506,6 @@ def plot_scores_with_paths_edge_level(
 
     plt.figure(figsize=(14, 6))
 
-    red = (155 / 255, 44 / 255, 37 / 255)
-    green = (62 / 255, 126 / 255, 42 / 255)
-
     malicious_elements = [n for y_true, n in zip(y_truth, edges) if y_true == 1]
     node2attack = np.array([list(node2attacks.get(node))[0] for node in malicious_elements])
 
@@ -465,17 +515,20 @@ def plot_scores_with_paths_edge_level(
             scores_0[types_0 == t],
             [0] * sum(types_0 == t),
             marker=marker_styles[t],
-            color=green,
+            color="green",
             label=t,
         )
 
     # Plot each type with a different marker for Label 1
     for t in marker_styles.keys():
+        mask = types_1 == t
+        if not mask.any():
+            continue
         plt.scatter(
-            scores_1[types_1 == t],
-            [1] * sum(types_1 == t),
+            scores_1[mask],
+            [1] * sum(mask),
             marker=marker_styles[t],
-            color=[attack_colors.get(c) for c in node2attack[types_1 == t]],
+            color=[attack_colors.get(c, "red") for c in node2attack[mask]],
         )
 
     # Adding labels and title
@@ -513,7 +566,7 @@ def plot_scores_with_paths_edge_level(
             fontsize=6,
             va="center",
             ha="left",
-            color=green,
+            color="green",
         )
 
     # Annotate the top scores for label 1
@@ -529,7 +582,7 @@ def plot_scores_with_paths_edge_level(
             fontsize=6,
             va="center",
             ha="left",
-            color=red,
+            color="red",
         )
     plt.text(
         min(scores),
@@ -550,7 +603,10 @@ def plot_scores_with_paths_edge_level(
         color="black",
     )
 
-    plt.xlim([min(scores), max(scores) * 1.5])  # Adjust xlim to make space for text
+    finite_scores = np.array(scores)[np.isfinite(scores)]
+    if len(finite_scores) == 0:
+        finite_scores = np.array([0.0, 1.0])
+    plt.xlim([np.min(finite_scores), max(np.max(finite_scores) * 1.5, 1e-6)])  # Adjust xlim to make space for text
     plt.ylim([-1, 2])  # Adjust ylim to ensure the text is within the figure bounds
     plt.savefig(out_file)
 
@@ -593,6 +649,7 @@ def plot_scores_neat(scores, y_truth, nodes, node2attacks, out_file, threshold=N
 
     plt.tight_layout()  # Ensures everything fits within the figure area
     plt.savefig(out_file, dpi=300)
+    plt.close()
 
 
 def plot_false_positives(y_true, y_pred, out_file):
@@ -740,6 +797,7 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
         plt.ylim(0, 100.5)
         plt.grid(True)
         plt.savefig(out_file)
+        plt.close()
     except:
         print("Error while generating ADP plot")
     return area_under_curve
@@ -889,6 +947,7 @@ def plot_discrimination_metric(scores, y_truth, out_file):
     plt.legend()
     plt.grid(alpha=0.5)
     plt.savefig(out_file)
+    plt.close()
     return area
 
 
@@ -921,6 +980,35 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
     return att2score
 
 
+def compute_discrimination2_score(pred_scores, nodes, node2attacks, y_truth):
+    """Discrimination2: margin between max-loss node per attack and mean of ALL benign nodes."""
+    pred_scores = np.array(pred_scores).astype(float)
+    y_truth = np.array(y_truth)
+
+    pred_scores /= pred_scores.max() + 1e-6
+    attack2max_score = defaultdict(float)
+
+    for node, score in zip(nodes, pred_scores):
+        if node in node2attacks:
+            for attack in node2attacks[node]:
+                attack2max_score[attack] = max(attack2max_score[attack], score)
+    attack2max_score = dict(sorted(attack2max_score.items(), key=lambda item: item[0]))
+
+    benign_scores = pred_scores[y_truth == 0]
+    mean = np.mean(benign_scores)
+    att2score = {}
+
+    for att in set.union(*list(node2attacks.values())):
+        att2score[f"discrim2_score_att_{att}"] = 0
+
+    for k, v in attack2max_score.items():
+        score = v - mean
+        att2score[f"discrim2_score_att_{k}"] = score
+    att2score["discrimination2"] = np.mean(list(att2score.values()))
+
+    return att2score
+
+
 def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
     pred_scores = np.array(pred_scores).astype(float)
     y_truth = np.array(y_truth)
@@ -941,6 +1029,25 @@ def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
                 if score > mean:
                     att2tp[f"discrim_tp_att_{attack}"] += 1
     att2tp["discrim_tp_att_sum"] = np.sum(list(att2tp.values()))
+
+    return att2tp
+
+
+def compute_tp_per_attack_thr(pred_scores, nodes, node2attacks, y_truth, thr):
+    pred_scores = np.array(pred_scores).astype(float)
+    y_truth = np.array(y_truth)
+
+    pred_scores /= pred_scores.max() + 1e-6
+    att2tp = defaultdict(int)
+
+    for att in set.union(*list(node2attacks.values())):
+        att2tp[f"tp_att_{att}"] = 0
+
+    for node, score in zip(nodes, pred_scores):
+        if node in node2attacks:
+            for attack in node2attacks[node]:
+                if score > thr:
+                    att2tp[f"tp_att_{attack}"] += 1
 
     return att2tp
 
@@ -991,7 +1098,10 @@ def get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg):
     )
 
     # Map true positive edges to their attacks
-    attack_to_detected_edges = defaultdict(list)
+    attack_to_detected_edges = {}
+    attacks = set.union(*list(edge2attack.values()))
+    for att in attacks:
+        attack_to_detected_edges[att] = []
     for edge in true_positive_edges:
         attack = list(edge2attack.get(edge))[0]
         if attack is not None:  # Only include edges with a valid attack mapping
@@ -1005,7 +1115,7 @@ def get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg):
             ) + edge
             attack_to_detected_edges[attack].append(edge)
 
-    return dict(attack_to_detected_edges)
+    return attack_to_detected_edges
 
 
 def get_detected_tps_node_level(scores, nodes, node2attack, y_truth, cfg):
@@ -1089,30 +1199,47 @@ def get_ground_truth_uuid_to_node_id(cfg):
     return uuid_to_node_id
 
 
-def compute_tw_labels(cfg):
+def compute_tw_labels(cfg, losses_dir=None):
     """
     Gets the malcious node IDs present in each time window.
+
+    When losses_dir is provided, enumerates the CSV files from that directory
+    instead of the raw graph files.  This is important because intra-graph
+    batching may split a single graph into multiple sub-batches, each producing
+    its own CSV.  Using the CSV file list ensures the TW indices here match
+    those assigned in node_evaluation / tw_evaluation.
     """
     out_path = cfg.construction._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
     uuid_to_node_id = get_ground_truth_uuid_to_node_id(cfg)
 
+    # Edge GT may reference nodes not in the node-level GT CSVs (e.g. dst
+    # files in attack edges).  Build a full uuid->index_id map as fallback.
+    if labelling._has_edge_csvs(cfg):
+        full_uuid2nid, _ = get_uuid_to_index_id(cfg)
+        for uuid, nid in full_uuid2nid.items():
+            if uuid not in uuid_to_node_id:
+                uuid_to_node_id[uuid] = str(nid)
+
     log("Computing time-window labels...")
     os.makedirs(out_path, exist_ok=True)
 
     t_to_node = labelling.get_t2malicious_node(cfg)
-    # test_data = load_data_set(cfg, path=cfg.feat_inference._edge_embeds_dir, split="test")
 
-    graph_dir = cfg.transformation._graphs_dir
-    test_graphs = get_all_graphs_for_dates(graph_dir, cfg.dataset.test_dates)
+    # Use CSV loss files when available so TW indices match node_evaluation
+    if losses_dir is not None and os.path.isdir(losses_dir):
+        test_tw_files = listdir_sorted(losses_dir)
+    else:
+        graph_dir = cfg.transformation._graphs_dir
+        test_tw_files = get_all_graphs_for_dates(graph_dir, cfg.dataset.test_dates)
 
     num_found_event_labels = 0
     tw_to_malicious_nodes = defaultdict(list)
-    for i, tw in enumerate(test_graphs):
+    for i, tw in enumerate(test_tw_files):
         date = tw.split("/")[-1]
         start, end = (
-            datetime_to_ns_time_US_handle_nano(date.split("~")[0]),
-            datetime_to_ns_time_US_handle_nano(date.split("~")[1]),
+            datetime_to_ns_time_US_handle_nano(date.split("~")[0], timezone=cfg.dataset.timezone),
+            datetime_to_ns_time_US_handle_nano(date.split("~")[1], timezone=cfg.dataset.timezone),
         )
 
         for t, node_ids in t_to_node.items():
@@ -1121,7 +1248,7 @@ def compute_tw_labels(cfg):
                     tw_to_malicious_nodes[i].append(node_id)
                 num_found_event_labels += 1
 
-    log(f"Found {num_found_event_labels}/{len(t_to_node)} edge labels.")
+    log(f"Matched {num_found_event_labels}/{len(t_to_node)} event timestamps to test time windows.")
     torch.save(tw_to_malicious_nodes, out_file)
 
     # Used to retrieve node ID from node raw UUID
@@ -1151,11 +1278,11 @@ def compute_tw_labels(cfg):
     return tw_to_malicious_nodes
 
 
-def datetime_to_ns_time_US_handle_nano(nano_date_str):
+def datetime_to_ns_time_US_handle_nano(nano_date_str, timezone="US/Eastern"):
     date = nano_date_str.split(".")[0]
     nanos = nano_date_str.split(".")[1]
 
-    tz = pytz.timezone("US/Eastern")
+    tz = pytz.timezone(timezone)
     timeArray = time.strptime(date, "%Y-%m-%d %H:%M:%S")
     dt = datetime.fromtimestamp(mktime(timeArray))
     timestamp = tz.localize(dt)
@@ -1482,3 +1609,184 @@ def two_hop_relaxed_metrics(mp_mask, gp_mask, adjacency):
     rec = tp / (tp + fn) if tp + fn else 0.0
     f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
     return {"precision": prec, "recall": rec, "fscore": f1, "tp": tp, "fp": fp, "fn": fn}
+
+
+def get_inter_tma(
+    scores,
+    nodes,
+    node2attacks,
+    y_truth,
+    n_curve_points=200,
+    n_precision_points=101,
+):
+    """
+    Returns only the cap-TMA (∩TMA) value:
+      For each precision cutoff p in [0,1], compute the fraction of the threshold range
+      where (i) ALL attacks are detected simultaneously (∃ at least one node per attack
+      with score >= threshold) and (ii) global precision >= p; then integrate over p.
+    No plotting or file output.
+    """
+    scores = np.asarray(scores, dtype=float)
+    y_truth = np.asarray(y_truth, dtype=int)
+    nodes   = np.asarray(nodes)
+
+    # --- Threshold grid ---
+    raw_min, raw_max = float(np.min(scores)), float(np.max(scores))
+    span = (raw_max - raw_min) if raw_max > raw_min else 1.0
+    thresholds_norm = np.linspace(0.0, 1.0, n_curve_points)
+    thresholds_raw  = raw_min + thresholds_norm * span
+
+    # --- Map attack_id -> indices of POSITIVE nodes belonging to that attack ---
+    attack2idx = {}
+    for i, node in enumerate(nodes):
+        if y_truth[i] != 1:
+            continue
+        att = node2attacks.get(node, None)
+        if att is None:
+            continue
+        if isinstance(att, (list, tuple, set)):
+            for a in att:
+                attack2idx.setdefault(a, []).append(i)
+        else:
+            attack2idx.setdefault(att, []).append(i)
+
+    if not attack2idx:
+        print("WARNING: No attacks found from node2attacks for positive nodes.")
+        return 0.0 # for tests
+
+    attack_ids = sorted(attack2idx.keys())
+    attack_idx_arrays = {a: np.asarray(attack2idx[a], dtype=int) for a in attack_ids}
+
+    # --- Precision curve (global) ---
+    precision_over_t = np.zeros_like(thresholds_raw, dtype=float)
+    y_pos = (y_truth == 1)
+    for j, thr in enumerate(thresholds_raw):
+        pred = (scores >= thr)
+        tp = np.count_nonzero(pred & y_pos)
+        fp = np.count_nonzero(pred & (~y_pos))
+        denom = tp + fp
+        precision_over_t[j] = (tp / denom) if denom > 0 else 1.0
+
+    # --- "All attacks detected" mask ---
+    # For each attack a, let M_a = max node score; all-attacks-detected at t iff t <= min_a M_a.
+    attack_max_scores = []
+    for a in attack_ids:
+        idx = attack_idx_arrays[a]
+        attack_max_scores.append(np.max(scores[idx]) if len(idx) else -np.inf)
+    min_of_attack_max = np.min(attack_max_scores)
+    all_attacks_detected = thresholds_raw <= min_of_attack_max  # [n_curve_points]
+
+    # --- Area curve over precision cutoffs ---
+    p_grid = np.linspace(0.0, 1.0, n_precision_points)
+    delta = thresholds_norm[1] - thresholds_norm[0] if len(thresholds_norm) > 1 else 1.0
+    area_curve = np.zeros_like(p_grid, dtype=float)
+
+    for i, p in enumerate(p_grid):
+        mask = all_attacks_detected & (precision_over_t >= p)
+        area = np.sum(mask) * delta
+        area_curve[i] = 0.0 if area < 0.0 else (1.0 if area > 1.0 else area)
+
+    # enforce monotone non-increasing in p
+    for i in range(1, len(p_grid)):
+        if area_curve[i] > area_curve[i-1]:
+            area_curve[i] = area_curve[i-1]
+
+    cap_tma = float(np.trapz(area_curve, p_grid))
+
+    return cap_tma
+
+import numpy as np
+
+def get_tma_per_attack(
+    scores,
+    nodes,
+    node2attacks,
+    y_truth,
+    n_curve_points=200,
+    n_precision_points=101,
+):
+    """
+    Returns a dict {attack_id: TMA_a} with per-attack TMA values.
+
+    For each attack a and precision cutoff p in [0,1], compute the fraction of the
+    threshold range (normalized to [0,1]) where:
+        (i) attack a is detected (∃ at least one node of a with score >= threshold), and
+        (ii) global precision >= p.
+    Then integrate that fraction over p to get TMA_a.
+
+    No plotting or file output.
+    """
+    scores = np.asarray(scores, dtype=float)
+    y_truth = np.asarray(y_truth, dtype=int)
+    nodes   = np.asarray(nodes)
+
+    # --- Threshold grid ---
+    raw_min, raw_max = float(np.min(scores)), float(np.max(scores))
+    span = (raw_max - raw_min) if raw_max > raw_min else 1.0
+    thresholds_norm = np.linspace(0.0, 1.0, n_curve_points)
+    thresholds_raw  = raw_min + thresholds_norm * span
+
+    # --- Map attack_id -> indices of POSITIVE nodes belonging to that attack ---
+    # Robust lookup: try both node and str(node) as keys in node2attacks
+    attack2idx = {}
+    for i, node in enumerate(nodes):
+        if y_truth[i] != 1:
+            continue
+        att = node2attacks.get(node, None)
+        if att is None:
+            att = node2attacks.get(str(node), None)
+        if att is None:
+            continue
+        if isinstance(att, (list, tuple, set)):
+            for a in att:
+                attack2idx.setdefault(a, []).append(i)
+        else:
+            attack2idx.setdefault(att, []).append(i)
+
+    if not attack2idx:
+        print("WARNING: No attacks found from node2attacks for positive nodes.")
+        return {} # for tests
+
+    # Vectorize predictions over thresholds: preds[t, n] = (score_n >= thr_t)
+    T = thresholds_raw.shape[0]
+    preds = scores[None, :] >= thresholds_raw[:, None]   # [T, N] bool
+
+    # --- Global precision curve over thresholds ---
+    y_pos = (y_truth == 1)[None, :]  # [1, N]
+    y_neg = ~y_pos
+    tp = np.sum(preds & y_pos, axis=1).astype(float)     # [T]
+    fp = np.sum(preds & y_neg, axis=1).astype(float)     # [T]
+    denom = tp + fp
+    precision_over_t = np.divide(tp, denom, out=np.ones_like(tp), where=(denom > 0))
+
+    # --- Per-attack detection masks over thresholds ---
+    # det_a[t] = True iff ∃ node in attack a predicted positive at threshold t
+    attack_masks = {}
+    for a, idxs in attack2idx.items():
+        if not idxs:
+            continue
+        idxs = np.asarray(idxs, dtype=int)
+        attack_masks[a] = np.any(preds[:, idxs], axis=1)  # [T] bool
+
+    # --- Integrate per-attack area over precision cutoffs ---
+    p_grid = np.linspace(0.0, 1.0, n_precision_points)
+    delta = thresholds_norm[1] - thresholds_norm[0] if len(thresholds_norm) > 1 else 1.0
+
+    per_attack_tma = {}
+    eps = 1e-12
+    for a, det_mask in attack_masks.items():
+        area_curve = np.zeros_like(p_grid, dtype=float)
+        for i, p in enumerate(p_grid):
+            mask = det_mask & (precision_over_t >= p - eps)   # [T] bool
+            area = np.sum(mask) * delta                       # fraction on [0,1]
+            # clamp to [0,1] just in case of numeric edge effects
+            area_curve[i] = 0.0 if area < 0.0 else (1.0 if area > 1.0 else area)
+
+        # enforce monotone non-increasing in p
+        for i in range(1, len(p_grid)):
+            if area_curve[i] > area_curve[i-1]:
+                area_curve[i] = area_curve[i-1]
+
+        per_attack_tma[a] = float(np.trapz(area_curve, p_grid))
+
+    return per_attack_tma

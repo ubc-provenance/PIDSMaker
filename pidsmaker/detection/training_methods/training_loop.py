@@ -74,9 +74,13 @@ def main(cfg):
             torch.save((test_data, max_node_num), viz_cache_file)
 
     model = build_model(
-        data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num
+        data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num,
+        all_data=(val_data, test_data),
     )
+    if cfg._from_weights:
+        model.load_state_dict(torch.load(os.path.join(cfg._from_weights_path, "state_dict.pkl")))
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
+    stable_optim = cfg.training.stable_optim
 
     run_evaluation = cfg.training_loop.run_evaluation
     assert run_evaluation in ["best_epoch", "each_epoch"], (
@@ -84,7 +88,7 @@ def main(cfg):
     )
     best_epoch_mode = run_evaluation == "best_epoch"
 
-    num_epochs = cfg.training.num_epochs
+    num_epochs = 1 if cfg._from_weights else cfg.training.num_epochs
     tot_loss = 0.0
     epoch_times = []
     peak_train_cpu_mem = 0
@@ -98,6 +102,16 @@ def main(cfg):
     grad_acc = cfg.training.grad_accumulation
 
     es_tracker = early_stop_tracker_factory(cfg)
+    # Stable optim: warmup cosine scheduler (computed over total training steps)
+    scheduler = None
+    if stable_optim:
+        total_graphs = sum(len(ds) for ds in train_data)
+        steps_per_epoch = max(1, total_graphs // grad_acc)
+        total_steps = steps_per_epoch * num_epochs
+        warmup_steps = max(1, total_steps // 20)
+        from pidsmaker.spider.training_utils import WarmupCosineScheduler
+
+        scheduler = WarmupCosineScheduler(optimizer, warmup_steps, total_steps)
 
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
@@ -105,7 +119,7 @@ def main(cfg):
     for epoch in range(0, num_epochs):
         best_val_score, best_model, best_epoch = float("-inf"), None, None
 
-        if not use_few_shot or (use_few_shot and epoch > 0):
+        if not cfg._from_weights and (not use_few_shot or (use_few_shot and epoch > 0)):
             start = timer()
             tracemalloc.start()
 
@@ -119,6 +133,7 @@ def main(cfg):
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
                     g.to(device=device)
                     g = remove_attacks_if_needed(g, cfg)
+
                     model.train()
                     optimizer.zero_grad()
 
@@ -129,7 +144,11 @@ def main(cfg):
 
                     if (i + 1) % grad_acc == 0:
                         loss_acc.backward()
+                        if stable_optim:
+                            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                         optimizer.step()
+                        if scheduler is not None:
+                            scheduler.step()
                         loss_acc = torch.zeros(1, device=device)
 
                     g.to("cpu")
@@ -139,7 +158,11 @@ def main(cfg):
                 # Last batch
                 if loss_acc > 0:
                     loss_acc.backward()
+                    if stable_optim:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
+                    if scheduler is not None:
+                        scheduler.step()
 
             tot_loss /= sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)
@@ -177,6 +200,7 @@ def main(cfg):
                     for g in log_tqdm(dataset, "Fine-tuning"):
                         if 1 in g.y:
                             g.to(device=device)
+
                             model.train()
                             optimizer.zero_grad()
 
@@ -243,7 +267,7 @@ def main(cfg):
         if cfg._save_for_viz:
             gnn_models_dir = cfg.training._trained_models_dir
             model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-            save_model(model, model_path, cfg)
+            save_model(model, model_path)
 
         # Test
         if (epoch + 1) % 2 == 0 or epoch == 0:

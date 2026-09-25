@@ -34,7 +34,8 @@ import yaml
 from yacs.config import CfgNode as CN
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
-from pidsmaker.utils.utils import get_device, get_node_to_path_and_type, log
+from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.utils import get_device, log
 from pidsmaker.vizgen.dimensionality_reduction import reduce_to_3d
 from pidsmaker.vizgen.embed_exporter import (
     extract_encoder_embeddings,

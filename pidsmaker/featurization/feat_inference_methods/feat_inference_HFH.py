@@ -26,13 +26,6 @@ def ip2higlist(p):
     return l
 
 
-def list2str(l):
-    s = ""
-    for i in l:
-        s += i
-    return s
-
-
 def main(cfg):
     log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
@@ -41,15 +34,14 @@ def main(cfg):
     FH_string = FeatureHasher(n_features=emb_dim, input_type="string")
 
     indexid2vec = {}
-    for indexid, msg in log_tqdm(indexid2msg.items(), desc="Embeding all nodes in the dataset"):
+    sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
+    for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
         if node_type == "subject" or node_type == "file":
             higlist = path2higlist(node_label)
         else:
             higlist = ip2higlist(node_label)
-        higstr = list2str(higlist)
-
-        dense_vector = FH_string.fit_transform([higstr]).toarray()
+        dense_vector = FH_string.fit_transform([higlist]).toarray()
 
         normalized_vector = dense_vector / (np.linalg.norm(dense_vector) + 1e-12)
         indexid2vec[indexid] = normalized_vector.squeeze()

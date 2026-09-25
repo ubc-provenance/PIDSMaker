@@ -6,7 +6,8 @@ from sklearn.metrics import f1_score, roc_auc_score
 
 from pidsmaker.utils.dataset_utils import get_node_map
 from pidsmaker.utils.labelling import get_ground_truth
-from pidsmaker.utils.utils import get_node_to_path_and_type, listdir_sorted, log
+from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.utils import listdir_sorted, log
 
 from . import inference_loop
 

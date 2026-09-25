@@ -159,8 +159,8 @@ def gen_mimicry_edges(cfg):
     attack_mimicry_events = {}
     for attack_tuple in cfg.dataset.attack_to_time_window:
         attack = attack_tuple[0]
-        start_time = datetime_to_ns_time_US(attack_tuple[1])
-        end_time = datetime_to_ns_time_US(attack_tuple[2])
+        start_time = datetime_to_ns_time_US(attack_tuple[1], timezone=cfg.dataset.timezone)
+        end_time = datetime_to_ns_time_US(attack_tuple[2], timezone=cfg.dataset.timezone)
 
         # Obtain mimicry-connected nodes as new malicious nodes
         mimicry_GPs = set()

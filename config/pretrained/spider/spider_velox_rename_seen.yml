@@ -1,0 +1,21 @@
+# Renaming-attack experiment 2 (auto-seen target):
+# At inference, every test-set process whose label matches one of `entities`
+# (exact OR path-suffix) is rewritten to mimic a frequently-seen benign
+# process drawn automatically from the top-K subject labels of the CADETS_E3
+# train split. Each attack entity gets a unique benign target (cycled if K
+# < #entities), and path-style labels keep their prefix:
+#   "main"      -> "<benign_for_main>"
+#   "/tmp/main" -> "/tmp/<benign_for_main>"
+#
+# Run:  python -m pidsmaker.main spider_velox_rename_seen --dataset CADETS_E3
+
+_include_yml: spider_velox
+
+feat_inference:
+  rename_attack:
+    enabled: True
+    entities: "main, pEja72mA, XIM, tmux-1002, font, sendmail"
+    target_node_type: subject
+    top_k: 100
+    target_label: ""
+    seed: 0

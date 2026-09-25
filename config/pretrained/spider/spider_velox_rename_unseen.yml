@@ -1,0 +1,18 @@
+# Renaming-attack experiment 1 (manual unseen target):
+# At inference, every test-set process whose label matches one of `entities`
+# (exact OR path-suffix) is rewritten to a benign-looking name unlikely to
+# have appeared in SPIDER pretraining (CADETS_E3 is excluded from
+# SPIDER's pretrain_datasets). Path-style labels keep their prefix:
+#   "main"      -> "cadets_user_app"
+#   "/tmp/main" -> "/tmp/cadets_user_app"
+#
+# Run:  python -m pidsmaker.main spider_velox_rename_unseen --dataset CADETS_E3
+
+_include_yml: spider_velox
+
+feat_inference:
+  rename_attack:
+    enabled: True
+    entities: "main, pEja72mA, XIM, tmux-1002, font, sendmail"
+    target_node_type: subject
+    target_label: "cadets_user_app"  # top_k=0 inherited -> manual mode

@@ -6,7 +6,8 @@
     <li class='no-bullet'><span class="key-leaf">seed</span>: <span class="value">int</span></li>
     <li class='no-bullet'><span class="key-leaf">training_split</span>: <span class="value">str (3)</span></li>
     <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool (4)</span></li>
-    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">pretrain_datasets</span>: <span class="value">str (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (6)</span></li>
 </ul>
 
 </div>
@@ -15,4 +16,5 @@
 2. Epochs to train the embedding method. Arg not used by some methods.<br>
 3. The partition of data used to train the featurization method.<br><br><b>Available options (one selection)</b>:<br>`train`<br>`all`
 4. Whether the featurization method should be trained on all datasets in `multi_dataset`.<br>
-5. Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br>`word2vec`<br>`doc2vec`<br>`fasttext`<br>`alacarte`<br>`temporal_rw`<br>`flash`<br>`hierarchical_hashing`<br>`magic`<br>`only_type`<br>`only_ones`<br>`ocrapt_features`
+5. Comma-separated list of dataset names for multi-dataset pretraining (used by word2vec, doc2vec, etc.).<br>
+6. Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br>`word2vec`<br>`doc2vec`<br>`fasttext`<br>`alacarte`<br>`temporal_rw`<br>`flash`<br>`hierarchical_hashing`<br>`magic`<br>`only_type`<br>`only_ones`<br>`ocrapt_features`<br>`spider`

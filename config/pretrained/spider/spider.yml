@@ -1,0 +1,253 @@
+construction:
+  node_label_features:
+    subject: auto
+    file: auto
+    netflow: auto
+  null_label_tokens: False  # Use [NO_CMD]/[NO_PATH]/[NO_IP] for null attributes
+  # Map OpTC edge types to DARPA TC equivalents for shared vocabulary
+  consistent_edge_types: True
+
+featurization:
+    used_method: spider
+    emb_dim: 256
+    seed: 42
+    spider:
+      # ────────────────────────────────────────────────────────────────────
+      # Supported model_types, grouped by training mode:
+      #   MLM walk-based      : bert, roberta, ropebert, llama, modernbert, logbert
+      #   Walk embedding      : deepwalk, node2vec
+      #   GNN self-supervised : graphmae, gae, dgi
+      #   GNN token-budget    : gnn_distill, spider, behavior_cluster
+      #   HF pretrained       : gpt2_pretrained, llama3_pretrained, opt_pretrained
+      #
+      # Convention: keys at this level (no sub-block prefix) are SHARED
+      # across all model_types. Anything nested under a sub-block (training,
+      # mlm, walks, tokenizer, <model_name>) is scoped — see the comment
+      # above each sub-block for which model_types read it.
+      # ────────────────────────────────────────────────────────────────────
+
+      model_type: spider
+      model_size: mini  # tiny / mini / med / baseline
+
+      # Graph context scope — controls how much graph history is visible when
+      # sampling walks, at BOTH pretraining and inference time:
+      #   window: each time-window snapshot independently (no cross-window walks)
+      #   day:    merge all snapshots from the same calendar day
+      #   all:    merge all snapshots in the relevant split
+      #           (train split at pretrain time; val or test split at inference time —
+      #           no training data leaks into inference context)
+      graph_context_mode: all  # window / day / all
+
+      # Multi-dataset pretraining (comma-separated)
+      pretrain_datasets: PROVENANCE_BENIGN,TRACE_E3,TRACE_E5,CADETS_E5,CLEARSCOPE_E3,optc_h201
+
+      # spider_path: /home/pids/weights/spider
+
+      # ── Token-budget training loop
+      #    Used by: MLM family, GNN token-budget (gnn_distill / spider / behavior_cluster), HF pretrained.
+      #    Ignored by: walk embedding (uses deepwalk.epochs) and GNN-SSL
+      #    (graphmae / gae / dgi each have their own .epochs and .lr).
+      training:
+        pretrain_tokens: 30000000
+        warmup_tokens: 3000000
+        batch_size: 2048      # also used as mini-batch size by GNN-SSL models
+        lr: 0.0003
+        scheduler: cosine     # cosine / linear  [MLM and HF pretrained only]
+
+
+      # ── GNN token-budget blocks (honor `training.*` for batch_size / lr / pretrain_tokens / warmup_tokens) ──
+      spider:
+        # GNN teacher
+        emb_dim: 128              # Edge type embedding dim
+        hidden_dim: 256           # GNN encoder hidden dim
+        proj_dim: 256             # Contrastive projection dim (teacher)
+        num_heads: 4              # TransformerConv attention heads
+        n_neighbors_min: 5        # Min neighbors per 1-hop sample
+        n_neighbors_max: 20       # Max neighbors per 1-hop sample
+        diverse_neighbors: True   # Round-robin edge type selection
+        filter_noisy_edges: True  # Remove /proc, /dev, shared libs
+        ema_momentum: 0.999       # EMA teacher update momentum
+        # Losses
+        supcon_weight: 1.0        # L_supcon: supervised contrastive on GNN teacher centers
+        distill_weight: 0.5       # L_distill: student matches GNN encoded centers (SCE)
+        temperature: 0.07         # SupCon temperature
+        # P×K batching
+        min_signature_size: 2     # Skip entities with fewer behavior labels (for entity class assignment)
+        min_entities_per_class: 100
+        max_entities_per_class: 2000
+        samples_per_class: 4      # K in P×K batching (guarantees in-batch positives for SupCon)
+        strip_entity_type: False
+        # Ablation controls
+        distill_loss: sce           # sce / mse — distillation loss from student to teacher
+        teacher_loss: contrastive   # contrastive (SupCon) / bce (cross-entropy on entity class)
+        teacher_data: signature,gnn_emb  # comma-separated subset of {signature, gnn_emb}
+        # Student-only ablation modes (bypass teacher entirely):
+        #   none:              standard teacher-student (default)
+        #   student_signature: student predicts signature vector directly (BCE)
+        #   student_class:     student predicts entity class directly (CE)
+        student_only_mode: none     # none / student_signature / student_class
+
+      gnn_distill:
+        emb_dim: 256
+        hidden_dim: 256
+        num_layers: 1
+        num_heads: 4
+        n_neighbors_min: 5
+        n_neighbors_max: 20
+        diverse_neighbors: True
+        loss_weight: 0.5
+        gnn_loss_weight: 1.0
+        gnn_lr: 0.001
+        ema_momentum: 0.999
+        filter_noisy_edges: True  # Remove shared libs, /dev, /proc, /sys, linker cache, common configs
+
+      behavior_cluster:
+        proj_dim: 256             # Contrastive projection dimensionality
+        bce_weight: 0.5           # Weight for multi-label BCE loss
+        contrastive_weight: 1.0   # Weight for contrastive loss
+        temperature: 0.07         # InfoNCE temperature
+        min_signature_size: 2     # Skip entities with fewer behavior labels
+        filter_noisy_edges: True  # Remove noisy edges when extracting signatures
+        use_contrastive_head: False  # Use contrastive projection head for inference embeddings (proj_dim) instead of raw encoder (emb_dim)
+        min_entities_per_class: 100   # Floor: oversample small classes to this minimum per epoch (0 = no floor)
+        max_entities_per_class: 2000  # Cap entities per signature class per epoch (0 = no cap). Rotates across epochs so all entities are eventually seen.
+        samples_per_class: 4         # K in P×K batching: entities per class per batch. Guarantees K-1 positives for contrastive learning.
+        bce_mode: class          # "multilabel" = BCE over behavior labels; "class" = cross-entropy over signature class IDs
+        contrastive_target: entity_class  # "signature" = positives share exact signature; "entity_class" = positives share coarse entity class
+        strip_entity_type: False     # Remove [PROC]/[FILE]/[SOCK] prefix from inputs. Forces learning from behavior, not type.
+
+      # ── MLM-specific
+      #    Used by: MLM family (bert / roberta / ropebert / llama / modernbert / logbert).
+      mlm:
+        mask_rate_fixed: 0.7
+        mask_rate_min: 0.15
+        mask_edge_type: False  # Structured masking + edge-type scoring at inference
+
+        # ModernBERT-specific parameters (only used if model_type=modernbert)
+        modernbert:
+          global_attn_every_n_layers: 3  # Use global attention every N layers
+          local_attention_window: 128  # Sliding window size for local attention
+
+        # RoPEBERT-specific parameters (only used if model_type=ropebert)
+        ropebert:
+          rope_theta: 10000.0  # RoPE base frequency
+
+        # LLaMA-specific parameters (only used if model_type=llama)
+        llama:
+          rope_theta: 10000.0  # RoPE base frequency
+
+        # LogBERT-specific parameters (only used if model_type=logbert)
+        logbert:
+          hvm_weight: 0.1  # Weight for hypersphere volume minimization loss
+
+      # ── Walks (corpus configuration)
+      #    Used by: MLM family (walks are training data), walk embedding (deepwalk / node2vec).
+      #    Built-but-not-used by: GNN-SSL and GNN token-budget — the sampler
+      #    is constructed but only sampler.nodes / backward_adj are read, so
+      #    values here do NOT affect those models.
+      walks:
+        walk_length: 5
+        num_walks: 3
+        time_weight: uniform
+        half_life: 1.0
+        random_walk_start: True
+        diversity_weight: 0.0  # Edge-type diversity bias (0=off, higher=stronger)
+
+      # ── Tokenizer
+      #    Used by: MLM family, GNN-SSL, GNN token-budget.
+      #    Not used by: deepwalk / node2vec (operate on raw labels) and HF
+      #    pretrained (use the HuggingFace tokenizer).
+      tokenizer:
+        bpe_vocab_size: 8000
+        max_seq_len: 60
+        mode: domain_bpe  # domain_bpe (domain-specific pre-tokenization + BPE) / bpe_only (pure BPE)
+        normalize_netflow_ips: True  # Replace IPs with [PRIVATE_IP]/[PUBLIC_IP]/[LOCALHOST_IP]
+        canonicalize_neighbors: False  # When True, decoder targets use only structural/categorical tokens
+
+      # ── Walk-embedding model blocks ──
+
+      # DeepWalk / Node2Vec shared parameters (only used if model_type=deepwalk or node2vec)
+      deepwalk:
+        window: 5  # Skip-gram context window size
+        epochs: 50  # Number of Word2Vec training epochs
+        min_count: 1  # Minimum label frequency for vocabulary
+        workers: 8  # Parallel workers for Word2Vec training
+
+      # Node2Vec-specific parameters (only used if model_type=node2vec)
+      node2vec:
+        p: 1.0  # Return parameter (higher = less backtracking)
+        q: 1.0  # In-out parameter (>1 = BFS-like, <1 = DFS-like)
+
+      # ── HF pretrained model blocks ──
+
+      # GPT-2 pretrained (only used if model_type=gpt2_pretrained)
+      # model_size: small (H=768) / medium (H=1024) / large (H=1280) / xl (H=1600)
+      # Set emb_dim to match hidden size
+      gpt2_pretrained:
+        max_seq_len: 64
+
+      # Llama 3.2 pretrained (only used if model_type=llama3_pretrained)
+      # model_size: 1b (H=2048) / 3b (H=3072)
+      # Set emb_dim to match hidden size
+      # Requires HuggingFace access: huggingface-cli login
+      llama3_pretrained:
+        max_seq_len: 64
+
+      # OPT pretrained (only used if model_type=opt_pretrained)
+      # model_size: 1.3b (H=2048)
+      # Set emb_dim to match hidden size
+      opt_pretrained:
+        max_seq_len: 64
+
+      # ── GNN self-supervised blocks (each has its own epochs / lr; `training.*` is ignored) ──
+
+      # GraphMAE-specific parameters (only used if model_type=graphmae)
+      graphmae:
+        num_layers: 2  # Number of GAT encoder layers
+        num_heads: 4  # Number of attention heads per GAT layer
+        decoder_num_layers: 1  # Number of GAT decoder layers
+        mask_rate: 0.5  # Fraction of nodes to mask during pretraining
+        replace_rate: 0.1  # Fraction of masked nodes replaced with random (rest get [MASK])
+        neighborhood_min: 5  # Min neighbors in temporal neighborhood
+        neighborhood_max: 20  # Max neighbors in temporal neighborhood
+        epochs: 30  # Number of training epochs
+        lr: 0.001  # Learning rate
+
+      # GAE-specific parameters (only used if model_type=gae)
+      gae:
+        num_layers: 2  # Number of GAT encoder layers
+        num_heads: 4  # Number of attention heads per GAT layer
+        neighborhood_min: 5  # Min neighbors in temporal neighborhood
+        neighborhood_max: 20  # Max neighbors in temporal neighborhood
+        epochs: 30  # Number of training epochs
+        lr: 0.001  # Learning rate
+
+      # DGI-specific parameters (only used if model_type=dgi)
+      dgi:
+        num_layers: 2  # Number of GAT encoder layers
+        num_heads: 4  # Number of attention heads per GAT layer
+        neighborhood_min: 5  # Min neighbors in temporal neighborhood
+        neighborhood_max: 20  # Max neighbors in temporal neighborhood
+        epochs: 30  # Number of training epochs
+        lr: 0.001  # Learning rate
+
+feat_inference:
+  edge_batch_size: 5000  # Edges per batch during feat_inference
+  continue_pretrain: False
+  continue_pretrain_epochs: 10
+  continue_pretrain_lr_factor: 0.1
+
+  # Renaming/mimicry attack at inference: for each test-set node whose label
+  # matches one of the listed BASE NAMES (exact or path-suffix), swap its
+  # embedding with the embedding of a benign target. The downstream GNN keeps
+  # the malicious entity's true edges; only the node embedding is rewritten.
+  rename_attack:
+    enabled: False
+    entities: ""           # comma-separated base names (e.g. "main, XIM, sendmail")
+    target_node_type: subject  # subject / file / netflow
+    top_k: 0               # >0 = auto-pick from train top-K bare labels (one target per entity)
+    target_label: ""       # used iff top_k=0; bare base name applied to all entities
+    seed: 0                # shuffle seed for the auto-mode pool
+
+training:
+  stable_optim: True

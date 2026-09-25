@@ -11,7 +11,8 @@ import scipy.sparse as sp
 import torch
 
 from pidsmaker.utils.labelling import get_ground_truth
-from pidsmaker.utils.utils import get_node_to_path_and_type, get_split_to_files, listdir_sorted, log
+from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.utils import get_split_to_files, listdir_sorted, log
 
 # Seed-eligible node types
 SHORT_TYPES = {"process", "flow", "net", "netflowobject", "file", "module",

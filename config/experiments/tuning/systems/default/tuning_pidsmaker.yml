@@ -1,0 +1,13 @@
+method: grid
+
+parameters:
+  construction.time_window_size:
+    values: [5.0]
+  training.lr:
+    values: [0.001, 0.0001]
+  training.node_hid_dim:
+    values: [128, 256, 320]
+  training.node_out_dim:
+    values: [128, 256, 320]
+  training.encoder.dropout:
+    values: [0.3]

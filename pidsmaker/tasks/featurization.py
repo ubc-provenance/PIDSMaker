@@ -1,8 +1,8 @@
 from pidsmaker.featurization.featurization_methods import (
     build_trw,
+    featurization_fasttext,
     featurization_alacarte,
     featurization_doc2vec,
-    featurization_fasttext,
     featurization_flash,
     featurization_trw,
     featurization_word2vec,
@@ -33,5 +33,8 @@ def main(cfg):
         featurization_flash.main(cfg)
     elif method == "fasttext":
         featurization_fasttext.main(cfg)
+    elif method == "spider":
+        from pidsmaker.spider import pretrain
+        pretrain.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")

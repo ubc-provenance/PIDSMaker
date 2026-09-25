@@ -125,6 +125,7 @@ class TestFeaturization:
 
 
 class TestEncoderObjective:
+    # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below.
     encoders = [e for e in ENCODERS_CFG.keys() if e != "tgn"]
     objectives = [
         "predict_node_type",

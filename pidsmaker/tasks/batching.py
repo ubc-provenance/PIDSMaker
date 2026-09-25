@@ -7,33 +7,31 @@ from pidsmaker.utils.utils import get_device, log, log_start, set_seed
 
 
 def get_preprocessed_graphs(cfg):
-    if cfg.batching.save_on_disk:
-        log("Loading preprocessed graphs...")
-        out_dir = cfg.batching._preprocessed_graphs_dir
-        out_file = os.path.join(out_dir, "torch_graphs.pkl")
-        train_data, val_data, test_data, max_node_num = torch.load(out_file)
+    if not cfg._save_graph_preprocessing:
+        log("Force graphs loading to save storage.")
+        return get_data(cfg)
 
-    else:
-        log("Computing graphs...")
-        device = get_device(cfg)
-        train_data, val_data, test_data, max_node_num = load_all_datasets(cfg, device)
+    log("Loading preprocessed graphs...")
+    out_dir = cfg.batching._preprocessed_graphs_dir
+    out_file = os.path.join(out_dir, "torch_graphs.pkl")
+    return torch.load(out_file)
 
-    return train_data, val_data, test_data, max_node_num
-
+def get_data(cfg):
+    device = get_device(cfg)
+    return load_all_datasets(cfg, device)
 
 def main(cfg):
     set_seed(cfg)
     log_start(__file__)
+    
+    if not cfg._save_graph_preprocessing:
+        log("Skipping task to save storage.")
+        return
 
-    if cfg.batching.save_on_disk:
-        device = get_device(cfg)
-        train_data, val_data, test_data, max_node_num = load_all_datasets(cfg, device)
+    train_data, val_data, test_data, max_node_num = get_data(cfg)
 
-        out_dir = cfg.batching._preprocessed_graphs_dir
-        out_file = os.path.join(out_dir, "torch_graphs.pkl")
-        os.makedirs(out_dir, exist_ok=True)
-        log(f"Saving preprocessed graphs to {out_file}...")
-        torch.save((train_data, val_data, test_data, max_node_num), out_file)
-
-    else:
-        log("Not saving to disk, skipping this task.")
+    out_dir = cfg.batching._preprocessed_graphs_dir
+    out_file = os.path.join(out_dir, "torch_graphs.pkl")
+    os.makedirs(out_dir, exist_ok=True)
+    log(f"Saving preprocessed graphs to {out_file}...")
+    torch.save((train_data, val_data, test_data, max_node_num), out_file)

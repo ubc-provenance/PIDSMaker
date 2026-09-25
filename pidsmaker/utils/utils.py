@@ -61,24 +61,24 @@ def ns_time_to_datetime(ns):
     return s
 
 
-def ns_time_to_datetime_US(ns):
+def ns_time_to_datetime_US(ns, timezone="US/Eastern"):
     """
     :param ns: int nano timestamp
     :return: datetime   format: 2013-10-10 23:40:00.000000000
     """
-    tz = pytz.timezone("US/Eastern")
+    tz = pytz.timezone(timezone)
     dt = pytz.datetime.datetime.fromtimestamp(int(ns) // 1000000000, tz)
     s = dt.strftime("%Y-%m-%d %H:%M:%S")
     s += "." + str(int(int(ns) % 1000000000)).zfill(9)
     return s
 
 
-def time_to_datetime_US(s):
+def time_to_datetime_US(s, timezone="US/Eastern"):
     """
     :param ns: int nano timestamp
     :return: datetime   format: 2013-10-10 23:40:00
     """
-    tz = pytz.timezone("US/Eastern")
+    tz = pytz.timezone(timezone)
     dt = pytz.datetime.datetime.fromtimestamp(int(s), tz)
     s = dt.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -96,12 +96,12 @@ def datetime_to_ns_time(date):
     return timeStamp
 
 
-def datetime_to_ns_time_US(date):
+def datetime_to_ns_time_US(date, timezone="US/Eastern"):
     """
     :param date: str   format: %Y-%m-%d %H:%M:%S   e.g. 2013-10-10 23:40:00
     :return: nano timestamp
     """
-    tz = pytz.timezone("US/Eastern")
+    tz = pytz.timezone(timezone)
     timeArray = time.strptime(date, "%Y-%m-%d %H:%M:%S")
     dt = datetime.fromtimestamp(mktime(timeArray))
     timestamp = tz.localize(dt)
@@ -110,12 +110,12 @@ def datetime_to_ns_time_US(date):
     return int(timeStamp)
 
 
-def datetime_to_timestamp_US(date):
+def datetime_to_timestamp_US(date, timezone="US/Eastern"):
     """
     :param date: str   format: %Y-%m-%d %H:%M:%S   e.g. 2013-10-10 23:40:00
     :return: nano timestamp
     """
-    tz = pytz.timezone("US/Eastern")
+    tz = pytz.timezone(timezone)
     timeArray = time.strptime(date, "%Y-%m-%d %H:%M:%S")
     dt = datetime.fromtimestamp(mktime(timeArray))
     timestamp = tz.localize(dt)
@@ -124,7 +124,7 @@ def datetime_to_timestamp_US(date):
     return int(timeStamp)
 
 
-def OPTC_datetime_to_timestamp_US(date):
+def OPTC_datetime_to_timestamp_US(date, timezone="Etc/GMT+4"):
     """convert OPTC datetime string to timestamp in nanoseconds"""
     date = date.replace("-04:00", "")
     if "." in date:
@@ -436,47 +436,6 @@ def get_device(cfg):
         log("Warning: the device is CPU instead of CUDA")
     return device
 
-
-def get_node_to_path_and_type(cfg):
-    out_path = cfg.construction._node_id_to_path
-    out_file = os.path.join(out_path, "node_to_paths.pkl")
-
-    if not os.path.exists(out_file):
-        os.makedirs(out_path, exist_ok=True)
-        cur, connect = init_database_connection(cfg)
-
-        queries = {
-            "file": "SELECT index_id, path FROM file_node_table;",
-            "netflow": "SELECT index_id, src_addr, dst_addr, src_port, dst_port FROM netflow_node_table;",
-            "subject": "SELECT index_id, path, cmd FROM subject_node_table;",
-        }
-        node_to_path_type = {}
-        for node_type, query in queries.items():
-            cur.execute(query)
-            rows = cur.fetchall()
-            for row in rows:
-                if node_type == "netflow":
-                    index_id, src_addr, dst_addr, src_port, dst_port = row
-                    node_to_path_type[index_id] = {
-                        "path": f"{str(src_addr)}:{str(src_port)}->{str(dst_addr)}:{str(dst_port)}",
-                        "type": node_type,
-                    }
-                elif node_type == "file":
-                    index_id, path = row
-                    node_to_path_type[index_id] = {"path": str(path), "type": node_type}
-                elif node_type == "subject":
-                    index_id, path, cmd = row
-                    node_to_path_type[index_id] = {"path": str(path), "type": node_type, "cmd": cmd}
-
-        torch.save(node_to_path_type, out_file)
-        connect.close()
-
-    else:
-        node_to_path_type = torch.load(out_file)
-
-    return node_to_path_type
-
-
 def copy_directory(src_path, dest_path):
     if not os.path.isdir(src_path):
         log(f"The source path '{src_path}' does not exist or is not a directory.")
@@ -493,6 +452,26 @@ def copy_directory(src_path, dest_path):
         log(f"An error occurred while copying the directory: {e}")
 
 
+def symlink_directory(src_path, dest_path):
+    src_path = src_path.rstrip("/")
+    dest_path = dest_path.rstrip("/")
+
+    if not os.path.isdir(src_path):
+        log(f"The source path '{src_path}' does not exist or is not a directory.")
+        return
+
+    if os.path.islink(dest_path):
+        os.remove(dest_path)
+    elif os.path.exists(dest_path):
+        log(f"The destination path '{dest_path}' already exists. Removing it.")
+        shutil.rmtree(dest_path)
+
+    src_path = os.path.abspath(src_path)
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    os.symlink(src_path, dest_path)
+    log(f"Symlinked '{dest_path}' -> '{src_path}'.")
+
+
 def get_split_to_files(cfg, base_dir):
     return {
         "train": get_all_graphs_for_dates(base_dir, cfg.dataset.train_dates),
@@ -502,8 +481,10 @@ def get_split_to_files(cfg, base_dir):
 
 
 def gen_relation_onehot(rel2id):
+    num_rels = len(rel2id.keys()) // 2
+    max_id = max(v for v in rel2id.values() if type(v) is int)
     relvec = torch.nn.functional.one_hot(
-        torch.arange(0, len(rel2id.keys()) // 2), num_classes=len(rel2id.keys()) // 2
+        torch.arange(0, max_id), num_classes=max_id
     )
     rel2vec = {}
     for i in rel2id.keys():
@@ -537,9 +518,7 @@ def get_indexid2msg(cfg, gather_multi_dataset=False):
             all_indexid2msg = {**all_indexid2msg, **indexid2msg}
         return all_indexid2msg
 
-    indexid2msg = load_file(cfg)
-    indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
-    return indexid2msg
+    return load_file(cfg)
 
 
 def get_split2nodes(cfg, gather_multi_dataset=False):
@@ -709,8 +688,9 @@ def set_seed(cfg, seed=None):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-
+    
     if cfg.training.deterministic:
+        # NOTE: must do `export CUBLAS_WORKSPACE_CONFIG=:4096:8`
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 

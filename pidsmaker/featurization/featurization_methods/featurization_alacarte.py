@@ -495,7 +495,6 @@ def featurization_for_one_split(
             compute_loss=compute_loss,
             seed=SEED,
         )
-
     else:
         log("Loading existing model from: {}".format(model_input))
         model = Word2Vec.load(model_input)

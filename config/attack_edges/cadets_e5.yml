@@ -1,0 +1,407 @@
+# Attack edges for CADETS_E5 (FreeBSD).
+# Attack scenario: nginx exploit → sh/bash dropper → /tmp payload execution →
+# python2.7/SaltStack C2 → staging in /usr/home/user/eraseme → SSH reverse shell.
+# All subjects are existing benign nodes in the dataset (nginx, wget, bash, etc.).
+# C2 IPs are plausible but distinct from actual dataset to avoid indicator memorization.
+
+attack_edges:
+
+  # ── Initial Access / Exploitation ──────────────────────────────────────────
+
+  # nginx (exploited web server) spawns a shell
+  - src_type: subject
+    src_label: "subject None nginx"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None sh"
+
+  # php-fpm RCE exploit spawns shell
+  - src_type: subject
+    src_label: "subject None php-fpm"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None sh"
+
+  # nginx spawns bash directly (alternate code path)
+  - src_type: subject
+    src_label: "subject None nginx"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None bash"
+
+  # ── Payload Delivery ────────────────────────────────────────────────────────
+
+  # wget downloads dropper to /tmp
+  - src_type: subject
+    src_label: "subject None wget"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.cache"
+
+  # wget connects to attacker server
+  - src_type: subject
+    src_label: "subject None wget"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # wget downloads second-stage payload
+  - src_type: subject
+    src_label: "subject None wget"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.update"
+
+  # bash writes dropper back to /tmp
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.cache"
+
+  # fetch (FreeBSD tool) downloads additional payload
+  - src_type: subject
+    src_label: "subject None fetch"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # fetch writes payload to disk
+  - src_type: subject
+    src_label: "subject None fetch"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.update"
+
+  # ── Payload Execution ───────────────────────────────────────────────────────
+
+  # Execute dropper from /tmp → spawns shell
+  - src_type: file
+    src_label: "file /tmp/.cache"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "subject None sh"
+
+  # Execute second-stage payload → spawns python2.7
+  - src_type: file
+    src_label: "file /tmp/.update"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "subject None python2.7"
+
+  # ── C2 Communication ────────────────────────────────────────────────────────
+
+  # python2.7 (salt-minion) beacons to SaltStack C2
+  - src_type: subject
+    src_label: "subject None python2.7"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # python2.7 connects to SaltStack master
+  - src_type: subject
+    src_label: "subject None python2.7"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 4506"
+
+  # python2.7 sends task results to C2
+  - src_type: subject
+    src_label: "subject None python2.7"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 4506"
+
+  # C2 pushes commands to python2.7
+  - src_type: netflow
+    src_label: "netflow 10.0.8.5 4506"
+    edge_type: EVENT_RECVFROM
+    dst_type: subject
+    dst_label: "subject None python2.7"
+
+  # python3.6 used as alternate C2 agent (HTTPS)
+  - src_type: subject
+    src_label: "subject None python3.6"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 443"
+
+  # bash connects to HTTPS C2
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 443"
+
+  # sh connects to HTTP C2
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # ssh reverse shell to attacker machine
+  - src_type: subject
+    src_label: "subject None ssh"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 22"
+
+  # scp used for secure data exfil
+  - src_type: subject
+    src_label: "subject None scp"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 22"
+
+  # bash sends data to HTTPS endpoint (encrypted exfil)
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 443"
+
+  # python2.7 tunnels via SSH
+  - src_type: subject
+    src_label: "subject None python2.7"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 22"
+
+  # ── Persistence ─────────────────────────────────────────────────────────────
+
+  # sshd spawns interactive bash (attacker SSH login)
+  - src_type: subject
+    src_label: "subject None sshd"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None bash"
+
+  # bash installs SSH key for persistence
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /usr/home/user/.ssh/authorized_keys"
+
+  # sh modifies boot config for persistence
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /etc/rc.conf"
+
+  # bash installs malicious cron job
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /var/cron/tabs/root"
+
+  # cron executes malicious job
+  - src_type: subject
+    src_label: "subject None cron"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None sh"
+
+  # ── Privilege Escalation ─────────────────────────────────────────────────────
+
+  # sudo spawns shell with elevated privileges
+  - src_type: subject
+    src_label: "subject None sudo"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None sh"
+
+  # sudo spawns bash
+  - src_type: subject
+    src_label: "subject None sudo"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None bash"
+
+  # su switches to root
+  - src_type: subject
+    src_label: "subject None su"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None bash"
+
+  # ── Credential Access ────────────────────────────────────────────────────────
+
+  # cat reads FreeBSD shadow password file
+  - src_type: subject
+    src_label: "subject None cat"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/master.passwd"
+
+  # bash reads shadow credentials
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/master.passwd"
+
+  # python2.7 reads credentials for offline cracking
+  - src_type: subject
+    src_label: "subject None python2.7"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/master.passwd"
+
+  # sh reads passwd for user enumeration
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/passwd"
+
+  # bash reads SSH host key
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/ssh/ssh_host_rsa_key"
+
+  # bash reads SSH authorized_keys
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /usr/home/user/.ssh/authorized_keys"
+
+  # ── Collection / Staging ─────────────────────────────────────────────────────
+
+  # sh stages attack files in eraseme directory
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /usr/home/user/eraseme"
+
+  # bash stages attack files
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /usr/home/user/eraseme"
+
+  # sh reads staged data before exfil
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /usr/home/user/eraseme"
+
+  # bash reads documents directory (collection)
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /home/admin/backup"
+
+  # python2.7 reads documents directory
+  - src_type: subject
+    src_label: "subject None python2.7"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /home/admin/backup"
+
+  # openssl encrypts staged data before exfil
+  - src_type: subject
+    src_label: "subject None openssl"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /usr/home/user/eraseme"
+
+  # xz compresses staged data
+  - src_type: subject
+    src_label: "subject None xz"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /usr/home/user/eraseme"
+
+  # bzip2 compresses staged data
+  - src_type: subject
+    src_label: "subject None bzip2"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /usr/home/user/eraseme"
+
+  # ── Discovery / Reconnaissance ───────────────────────────────────────────────
+
+  # bash checks current identity
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None id"
+
+  # sh checks current user
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None whoami"
+
+  # bash enumerates network connections
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None netstat"
+
+  # sh enumerates running processes
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None ps"
+
+  # bash checks network interfaces
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None ifconfig"
+
+  # bash enumerates open files
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None lsof"
+
+  # bash searches filesystem
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None find"
+
+  # ── Lateral Movement ────────────────────────────────────────────────────────
+
+  # bash launches ssh for lateral movement
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject None ssh"
+
+  # ── Defense Evasion ──────────────────────────────────────────────────────────
+
+  # bash tampers with system log
+  - src_type: subject
+    src_label: "subject None bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /var/log/messages"
+
+  # sh removes auth log entries
+  - src_type: subject
+    src_label: "subject None sh"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /var/log/auth.log"

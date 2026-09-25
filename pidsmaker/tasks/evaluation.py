@@ -20,17 +20,24 @@ def standard_evaluation(cfg, evaluation_fn):
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.training._edge_losses_dir, "val")
 
-    tw_to_malicious_nodes = compute_tw_labels(cfg)
+    if not os.path.exists(test_losses_dir) or cfg._from_weights:
+        sorted_files = ["model_epoch_0"]
+    else:
+        sorted_files = listdir_sorted(test_losses_dir)
+
+    # Pass the first epoch's CSV directory so compute_tw_labels enumerates the
+    # same files as node_evaluation, avoiding TW index mismatch when
+    # intra-graph batching splits graphs into multiple sub-batches.
+    first_epoch_losses_dir = os.path.join(test_losses_dir, sorted_files[0])
+    tw_to_malicious_nodes = compute_tw_labels(cfg, losses_dir=first_epoch_losses_dir)
 
     best_metrics = {
         "adp_score": float("-inf"),
         "discrimination": float("-inf"),
+        "ap@10": float("-inf"),
         "best_stats": None,
     }
 
-    sorted_files = (
-        listdir_sorted(test_losses_dir) if os.path.exists(test_losses_dir) else ["epoch_0"]
-    )
     out_dir = cfg.evaluation._precision_recall_dir
 
     save_files_to_wandb = cfg._experiment != "uncertainty"
@@ -69,13 +76,17 @@ def standard_evaluation(cfg, evaluation_fn):
             if os.path.exists(adp):
                 stats["adp_img"] = wandb.Image(adp)
 
-            seen_scores = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
-            if os.path.exists(seen_scores):
-                stats["seen_scores_img"] = wandb.Image(seen_scores)
+            # seen_scores = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
+            # if os.path.exists(seen_scores):
+            #     stats["seen_scores_img"] = wandb.Image(seen_scores)
 
             discrim = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
             if os.path.exists(discrim):
                 stats["discrim_img"] = wandb.Image(discrim)
+                
+            distrib = os.path.join(out_dir, f"distrib_{model_epoch_dir}.png")
+            if os.path.exists(distrib):
+                stats["distrib_img"] = wandb.Image(distrib)
 
         wandb.log(stats)
 
@@ -86,6 +97,9 @@ def standard_evaluation(cfg, evaluation_fn):
         # wandb.save(best_metrics["stats"]["scores_file"], out_dir)
         wandb.save(best_metrics["stats"]["neat_scores_img_file"], out_dir)
 
+    log(f"Best scores file: {best_metrics['stats']['scores_file']}")
+    log(f"Best model path: {best_metrics['stats'].get('model_path')}")
+    
     return best_metrics["stats"]
 
 
@@ -101,12 +115,19 @@ def best_metric_pick_best_epoch(stats, best_metrics, cfg):
     elif best_model_selection == "best_discrimination":
         condition = stats["discrimination"] > best_metrics["discrimination"]
 
+    elif best_model_selection == "best_ap@10":
+        condition = (stats["ap@10"] > best_metrics["ap@10"]) or (
+            stats["ap@10"] == best_metrics["ap@10"]
+            and stats["discrimination"] > best_metrics["discrimination"]
+        )
+
     else:
         raise ValueError(f"Invalid best model selection {best_model_selection}")
 
     if condition:
         best_metrics["adp_score"] = stats["adp_score"]
         best_metrics["discrimination"] = stats["discrimination"]
+        best_metrics["ap@10"] = stats.get("ap@10", float("-inf"))
         best_metrics["stats"] = stats
     return best_metrics
 

@@ -1,0 +1,8 @@
+_include_yml: [default, threatrace, spider]
+
+training:
+  lr: 0.0001
+  node_hid_dim: 128
+  node_out_dim: 3
+  encoder:
+    dropout: 0.1

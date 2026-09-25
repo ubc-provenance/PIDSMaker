@@ -37,6 +37,7 @@ def create_pseudo_graph(G, root_nodes):
         nx.DiGraph: Pseudo-graph with pseudo-root nodes and directed edges to descendants.
     """
     pseudo_graph = nx.DiGraph()
+    pseudo_to_root = {}
 
     # Step 1: Add all original nodes and edges to the pseudo-graph
     for node, attr in G.nodes(data=True):
@@ -44,8 +45,11 @@ def create_pseudo_graph(G, root_nodes):
 
     # Step 3: Create pseudo-root nodes and add edges to descendants
     for root in root_nodes:
-        # Create pseudo-root node (retaining the same initial feature vector)
+        # Create pseudo-root node (retaining the same initial feature vector).
+        # Node IDs may be ints, so the pseudo-root ID must not collide with any
+        # original node ID; we track the mapping back to the original root.
         pseudo_root = f"pseudo_{root}"
+        pseudo_to_root[pseudo_root] = root
         pseudo_graph.add_node(pseudo_root, **G.nodes[root])  # Copy features from root node
 
         # Add edges from pseudo-root to all descendants of the original root
@@ -53,10 +57,10 @@ def create_pseudo_graph(G, root_nodes):
         for descendant in descendants:
             pseudo_graph.add_edge(pseudo_root, descendant)
 
-    return pseudo_graph
+    return pseudo_graph, pseudo_to_root
 
 
-def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
+def prune_pseudo_roots(pseudo_graph, G, prune_threshold, pseudo_roots):
     """
     Prune pseudo-root nodes from the pseudo-graph if they connect to more than
     a certain percentage of nodes in the original provenance graph.
@@ -76,12 +80,13 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
 
     # Identify pseudo-roots that need to be pruned
     pseudo_roots_to_prune = []
-    for node in pseudo_graph.nodes():
-        if node.startswith("pseudo_"):
-            # Count the number of nodes this pseudo-root connects to
-            num_connections = len(list(pseudo_graph.successors(node)))
-            if num_connections > max_allowed_connections:
-                pseudo_roots_to_prune.append(node)
+    for node in pseudo_roots:
+        if node not in pseudo_graph:
+            continue
+        # Count the number of nodes this pseudo-root connects to
+        num_connections = len(list(pseudo_graph.successors(node)))
+        if num_connections > max_allowed_connections:
+            pseudo_roots_to_prune.append(node)
 
     # Prune the identified pseudo-root nodes from the pseudo-graph
     for pseudo_root in pseudo_roots_to_prune:
@@ -90,22 +95,26 @@ def prune_pseudo_roots(pseudo_graph, G, prune_threshold):
     return pseudo_graph
 
 
-def remove_pseudo_prefix(graph):
-    mapping = {node: node.replace("pseudo_", "") for node in graph.nodes()}
-    graph = nx.relabel_nodes(graph, mapping)
+def remove_pseudo_prefix(graph, pseudo_to_root):
+    # Relabel each pseudo-root back to its original root ID. networkx ignores
+    # mapping keys absent from the graph (e.g. pseudo-roots removed by pruning),
+    # and merges a pseudo-root's edges into the existing original root node.
+    graph = nx.relabel_nodes(graph, pseudo_to_root)
 
     return graph
 
 
 def main(graph: nx.Graph, cfg) -> nx.Graph:
     root_nodes = identify_root_nodes(graph)
-    pseudo_graph = create_pseudo_graph(graph, root_nodes)
+    pseudo_graph, pseudo_to_root = create_pseudo_graph(graph, root_nodes)
 
     use_pruning = cfg.transformation.rcaid_pseudo_graph.use_pruning
     if use_pruning:
-        pseudo_graph = prune_pseudo_roots(pseudo_graph, graph, 0.5)
+        pseudo_graph = prune_pseudo_roots(
+            pseudo_graph, graph, 0.5, list(pseudo_to_root.keys())
+        )
 
-    pseudo_graph = remove_pseudo_prefix(pseudo_graph)
+    pseudo_graph = remove_pseudo_prefix(pseudo_graph, pseudo_to_root)
     pseudo_graph = add_arbitrary_timestamps_to_graph(original_G=graph, new_G=pseudo_graph)
     pseudo_graph = nx.MultiDiGraph(pseudo_graph)
 
