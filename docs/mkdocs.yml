@@ -20,6 +20,7 @@ nav:
     - Hyperparameter Tuning: features/tuning.md
     - Instability Measurement: features/instability.md
     - Batching & Sampling: features/batching.md
+    - Embedding Visualizer: features/visualization.md
   - Arguments:
     - Tasks: config/tasks.md
     - Featurization: config/featurization.md

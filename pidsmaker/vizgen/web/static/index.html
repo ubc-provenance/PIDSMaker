@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PIDSMaker Web Visualizer</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div id="app">
+  <!-- ===================== LEFT PANEL ===================== -->
+  <div id="leftPanel">
+    <h2>Node Inspector</h2>
+    <button id="btn_open_browser" class="btn-primary">Open Run Browser</button>
+
+    <div class="group">
+      <span class="title">CONTROLS</span>
+      <div class="row"><label class="lbl">Pan X:</label><input type="range" id="pan_x" min="-100" max="100" value="0"></div>
+      <div class="row"><label class="lbl">Pan Y:</label><input type="range" id="pan_y" min="-100" max="100" value="0"></div>
+      <div class="row"><label class="lbl">Pan Z:</label><input type="range" id="pan_z" min="-100" max="100" value="0"></div>
+      <div class="row" id="row_hops"><label class="lbl" id="lbl_hops">Hops (0):</label><input type="range" id="hops" min="0" max="0" value="0"></div>
+      <div class="btn-row">
+        <button id="btn_reset_cam">Reset Camera</button>
+        <button id="btn_reset_home">Reset Home</button>
+      </div>
+      <div id="epoch_wrap" class="hidden" style="margin-top:8px">
+        <div id="lbl_epoch" style="color:var(--muted2);font-size:12px;font-weight:bold;margin-bottom:4px"></div>
+        <select id="cmb_epoch"></select>
+      </div>
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="chk_temporal" checked>3D Temporal Mode</label>
+    </div>
+
+    <div class="group">
+      <span class="title">FILTER</span>
+      <label class="chk"><input type="checkbox" id="chk_benign" checked>Benign</label>
+      <label class="chk"><input type="checkbox" id="chk_det" checked>Detected</label>
+      <label class="chk"><input type="checkbox" id="chk_undet" checked>Undetected</label>
+    </div>
+
+    <div class="group">
+      <span class="title">SEARCH</span>
+      <input type="text" id="search_box" placeholder="Node ID or path...">
+      <div class="btn-row" style="margin-top:8px">
+        <button id="btn_load_csv">Load CSV...</button>
+        <button id="btn_clear_csv" class="hidden">Clear CSV</button>
+      </div>
+      <input type="file" id="csv_input" accept=".csv" class="hidden">
+      <div id="lbl_csv_status" class="hidden" style="color:var(--muted);font-size:11px;margin-top:4px"></div>
+      <div id="lbl_csv_terms" class="hidden" style="color:var(--accent2);font-size:11px;background:var(--bg-panel);border:1px solid var(--border);padding:4px;margin-top:4px;word-break:break-word"></div>
+    </div>
+
+    <div class="group">
+      <span class="title">GLOBAL STATISTICS</span>
+      <p class="desc">Overall unique nodes present across all time windows in this dataset projection.</p>
+      <div class="kv"><span class="k">Dataset:</span><span class="v" id="st_ds">Unknown</span></div>
+      <div class="kv"><span class="k">Performance:</span><span class="v" id="st_perf">N/A</span></div>
+      <div class="kv hidden" id="st_attack_row"><span class="k">Attack Start:</span><span class="v" id="st_attack"></span></div>
+      <div class="kv"><span class="k">Total Nodes:</span><span class="v" id="st_total">0</span></div>
+      <div class="kv"><span class="k">Benign Nodes:</span><span class="v" id="st_benign" style="color:var(--green)">0</span></div>
+      <div class="kv"><span class="k">Malicious Nodes:</span><span class="v" id="st_mal" style="color:var(--red)">0</span></div>
+      <div class="kv"><span class="k" style="padding-left:12px">Processes:</span><span class="v" id="st_mproc" style="color:var(--red)">0</span></div>
+      <div class="kv"><span class="k" style="padding-left:12px">Netflows:</span><span class="v" id="st_mnet" style="color:var(--red)">0</span></div>
+      <div class="kv"><span class="k" style="padding-left:12px">Files:</span><span class="v" id="st_mfile" style="color:var(--red)">0</span></div>
+    </div>
+
+    <div class="group dc">
+      <span class="title">DETECTION</span>
+      <div class="kv"><span class="k">GT Attack Nodes:</span><span class="v" id="dc_gt">—</span></div>
+      <div class="kv"><span class="k" style="color:var(--green)">Detected:</span><span class="v" id="dc_det" style="color:var(--green)">—</span></div>
+      <div class="kv"><span class="k" style="color:var(--red)">Current FP:</span><span class="v" id="dc_fp" style="color:var(--red)">—</span></div>
+      <div class="kv"><span class="k" style="color:var(--green)">Campaign Coverage:</span><span class="v" id="dc_camp" style="color:var(--green)">—</span></div>
+      <div class="kv"><span class="k" style="color:var(--red)">FP for 100% Recall:</span><span class="v" id="dc_recall" style="color:var(--red)">—</span></div>
+      <div class="kv"><span class="k" style="color:var(--red)">FP for 100% Campaign:</span><span class="v" id="dc_fcamp" style="color:var(--red)">—</span></div>
+      <button id="btn_plot_dist" class="btn-indigo" style="margin-top:8px;width:100%">Plot Score Distribution</button>
+    </div>
+
+    <div class="group">
+      <span class="title">OVERLAYS</span>
+      <label class="chk"><input type="checkbox" id="chk_traj" checked>Show Temporal Trajectories</label>
+      <label class="chk"><input type="checkbox" id="chk_attack">Show Attack Graph</label>
+      <label class="chk"><input type="checkbox" id="chk_heat">Discrimination Heatmap</label>
+      <label class="chk"><input type="checkbox" id="chk_fp_campaign">Highlight FP (Full Campaign)</label>
+      <label class="chk"><input type="checkbox" id="chk_fp_recall">Highlight FP (Full Recall)</label>
+      <button id="btn_campaign_graph" class="btn-red" style="margin-top:8px;width:100%">Campaign Attack Graph</button>
+    </div>
+
+    <div class="group">
+      <span class="title">RUN CONFIGURATION</span>
+      <div id="txt_config"># No run loaded.</div>
+    </div>
+  </div>
+
+  <!-- ===================== VIEWPORT ===================== -->
+  <div id="viewport">
+    <canvas id="glcanvas"></canvas>
+    <div id="loading">
+      <div class="loadbox">
+        <div id="load_msg">Loading…</div>
+        <div id="load_bar"><div id="load_fill"></div></div>
+        <div id="load_pct"></div>
+      </div>
+    </div>
+
+    <!-- bottom-right: model/stats + embedding space -->
+    <div class="overlay" id="overlay_br">
+      <div id="lbl_model" style="font-weight:bold">Model: —</div>
+      <div id="lbl_total" style="margin:4px 0">Total Nodes: 0</div>
+      <div id="lbl_metrics" style="color:var(--green);font-size:12px">—</div>
+      <div id="emb_wrap" class="hidden" style="margin-top:8px">
+        <div class="emb-lbl">Embedding space</div>
+        <select id="cmb_emb">
+          <option value="feat">Featurization</option>
+          <option value="enc">GNN Encoder</option>
+        </select>
+      </div>
+      <div id="lbl_status"></div>
+    </div>
+
+    <!-- bottom-center: playback -->
+    <div class="overlay" id="overlay_bc">
+      <button id="btn_play">▶ Play</button>
+      <select id="combo_speed" style="width:70px">
+        <option>20x</option><option>40x</option><option>60x</option><option>80x</option><option>100x</option>
+      </select>
+      <button id="btn_reset_tw">↺ Reset</button>
+      <span>Time:</span>
+      <input type="range" id="slider_tw" min="-100" max="100" value="-100">
+      <span id="lbl_tw" style="width:40px;display:inline-block">All</span>
+    </div>
+
+    <!-- right column: legend + selected node (stacked) -->
+    <div id="rightCol">
+    <div class="overlay" id="overlay_tr">
+      <div class="legend-head">
+        <span class="t">LEGEND</span>
+        <button id="btn_collapse_leg">▲</button>
+      </div>
+      <div id="legend">
+        <table>
+          <tr><th></th><th>Process</th><th>File</th><th>Netflow</th></tr>
+          <tr><th>Benign</th>
+            <td><span class="sw" style="color:rgb(204,127,255)">■</span></td>
+            <td><span class="sw" style="color:rgb(76,255,178)">■</span></td>
+            <td><span class="sw" style="color:rgb(127,204,255)">■</span></td></tr>
+          <tr><th>Detected&nbsp;Malicious</th>
+            <td colspan="3"><span class="sw" style="color:rgb(255,51,51)">■</span> <span style="color:var(--muted)">any type</span></td></tr>
+          <tr><th>Undetected&nbsp;Malicious</th>
+            <td colspan="3"><span class="sw" style="color:rgb(255,153,51)">■</span> <span style="color:var(--muted)">any type</span></td></tr>
+        </table>
+        <div class="edges">
+          <b>Temporal Trajectories:</b> <span style="color:#60a5fa">Blue (Start)</span> → <span style="color:#ef4444">Red (End)</span><br>
+          <b>Selection:</b> <span style="color:#fff">■ White square (larger)</span><br>
+          <b>Attack Graph:</b> <span style="color:#eab308">■ Unactivated</span> / <span style="color:#ef4444">■ Activated</span>
+        </div>
+      </div>
+    </div>
+    <!-- right column: selected node (under legend) -->
+    <div class="overlay" id="overlay_sel">
+      <div class="legend-head"><span class="t">SELECTED NODE</span></div>
+      <div id="info_lbl">Click a point to inspect...</div>
+      <button id="btn_causal" class="btn-blue" style="margin-top:8px;width:100%">Extract Causal Subgraph</button>
+      <button id="btn_neighbors" class="btn-red" style="margin-top:6px;width:100%">See Edges</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- run browser + dialog mount -->
+<div id="modal_mount"></div>
+
+<script src="/static/vendor/three.min.js"></script>
+<script src="/static/vendor/OrbitControls.js"></script>
+<script src="/static/vendor/d3.v4.min.js"></script>
+<script src="/static/js/data.js"></script>
+<script src="/static/js/scene.js"></script>
+<script src="/static/js/dialogs.js"></script>
+<script src="/static/js/campaign.js"></script>
+<script src="/static/js/jobs.js"></script>
+<script src="/static/js/ui.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

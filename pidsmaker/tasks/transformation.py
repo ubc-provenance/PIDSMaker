@@ -11,9 +11,9 @@ from pidsmaker.preprocessing.transformation_methods import (
 )
 from pidsmaker.utils.utils import (
     copy_directory,
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     get_multi_datasets,
-    load_graphs_for_days,
+    load_graphs_for_dates,
     log_start,
     log_tqdm,
     set_seed,
@@ -27,26 +27,26 @@ def no_transformation(base_dir, dst_dir):
 
 def add_synthetic_attacks(base_dir, dst_dir, cfg, method):
     base_dir = cfg.construction._graphs_dir
-    train_graphs = load_graphs_for_days(base_dir, cfg.dataset.train_files)
-    val_graphs = load_graphs_for_days(base_dir, cfg.dataset.val_files)
+    train_graphs = load_graphs_for_dates(base_dir, cfg.dataset.train_dates)
+    val_graphs = load_graphs_for_dates(base_dir, cfg.dataset.val_dates)
 
     processed_graphs = apply_synthetic_attacks(train_graphs, val_graphs, cfg, method)
 
-    test_graphs = load_graphs_for_days(base_dir, cfg.dataset.test_files)
+    test_graphs = load_graphs_for_dates(base_dir, cfg.dataset.test_dates)
     graphs = [*processed_graphs, *test_graphs]
 
     os.makedirs(dst_dir, exist_ok=True)
 
     i = 0
-    days = [*cfg.dataset.train_files, *cfg.dataset.val_files, *cfg.dataset.test_files]
-    for day in log_tqdm(days, desc="Saving graphs to disk"):
-        sorted_paths = get_all_files_from_folders(base_dir, [day])
+    dates = cfg.dataset.train_dates + cfg.dataset.val_dates + cfg.dataset.test_dates
+    for date in log_tqdm(dates, desc="Saving graphs to disk"):
+        sorted_paths = get_all_graphs_for_dates(base_dir, [date])
         for path in sorted_paths:
             graph = graphs[i]
             i += 1
 
             file_name = path.split("/")[-1]
-            dst_path = os.path.join(dst_dir, day)
+            dst_path = os.path.join(dst_dir, f"graph_{date}")
             os.makedirs(dst_path, exist_ok=True)
             torch.save(graph, os.path.join(dst_path, file_name))
 
@@ -61,9 +61,9 @@ def apply_synthetic_attacks(train_graphs, val_graphs, cfg, method):
 def add_graph_transformation(base_dir, dst_dir, cfg, methods):
     os.makedirs(dst_dir, exist_ok=True)
 
-    days = [*cfg.dataset.train_files, *cfg.dataset.val_files, *cfg.dataset.test_files]
-    for day in log_tqdm(days, desc="Transforming"):
-        sorted_paths = get_all_files_from_folders(base_dir, [day])
+    dates = cfg.dataset.train_dates + cfg.dataset.val_dates + cfg.dataset.test_dates
+    for date in log_tqdm(dates, desc="Transforming"):
+        sorted_paths = get_all_graphs_for_dates(base_dir, [date])
         for path in sorted_paths:
             graph = torch.load(path)
 
@@ -71,7 +71,7 @@ def add_graph_transformation(base_dir, dst_dir, cfg, methods):
             graph = apply_graph_transformations(graph, methods, cfg)
 
             file_name = path.split("/")[-1]
-            dst_path = os.path.join(dst_dir, day)
+            dst_path = os.path.join(dst_dir, f"graph_{date}")
             os.makedirs(dst_path, exist_ok=True)
             torch.save(graph, os.path.join(dst_path, file_name))
 

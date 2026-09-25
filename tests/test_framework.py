@@ -278,6 +278,7 @@ class TestSystems:
         "nodlink",
         "threatrace",
         "rcaid",
+        "ocrapt",
     ]
 
     @pytest.mark.parametrize("system", systems)

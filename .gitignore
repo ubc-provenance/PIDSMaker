@@ -187,3 +187,8 @@ postgres_data
 nltk_data
 
 .claude
+
+# Visualization artifacts
+scripts/viz_env/
+embedding_viz_*.json
+pidsmaker/vizgen/.plotly_cache/

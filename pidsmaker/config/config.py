@@ -8,12 +8,12 @@ DATASET_DEFAULT_CONFIG = {
         # "database_all_file": "theia_e5_all", # NOTE: the whole dataset is too huge
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-05",
-        "start_end_day_range": (8, 18),
-        "train_files": ["graph_8", "graph_9", "graph_10"],
-        "val_files": ["graph_11"],
-        "test_files": ["graph_14", "graph_15"],
-        "unused_files": ["graph_12", "graph_13", "graph_16", "graph_17"],
+        "start_date": "2019-05-08",
+        "end_date": "2019-05-18",
+        "train_dates": ["2019-05-08", "2019-05-09", "2019-05-10"],
+        "val_dates": ["2019-05-11"],
+        "test_dates": ["2019-05-14", "2019-05-15"],
+        "unused_dates": ["2019-05-12", "2019-05-13", "2019-05-16", "2019-05-17"],
         "ground_truth_relative_path": [
             "E5-THEIA/node_THEIA_1_Firefox_Drakon_APT_BinFmt_Elevate_Inject.csv"
         ],
@@ -31,20 +31,20 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "theia_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2018-04",
-        "start_end_day_range": (2, 14),
-        "train_files": [
-            "graph_2",
-            "graph_3",
-            "graph_4",
-            "graph_5",
-            "graph_6",
-            "graph_7",
-            "graph_8",
+        "start_date": "2018-04-02",
+        "end_date": "2018-04-14",
+        "train_dates": [
+            "2018-04-02",
+            "2018-04-03",
+            "2018-04-04",
+            "2018-04-05",
+            "2018-04-06",
+            "2018-04-07",
+            "2018-04-08",
         ],
-        "val_files": ["graph_9"],
-        "test_files": ["graph_10", "graph_12", "graph_13"],
-        "unused_files": ["graph_11"],
+        "val_dates": ["2018-04-09"],
+        "test_dates": ["2018-04-10", "2018-04-12", "2018-04-13"],
+        "unused_dates": ["2018-04-11"],
         "ground_truth_relative_path": [
             "E3-THEIA/node_Browser_Extension_Drakon_Dropper.csv",
             "E3-THEIA/node_Firefox_Backdoor_Drakon_In_Memory.csv",
@@ -70,12 +70,12 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "cadets_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-05",
-        "start_end_day_range": (8, 18),
-        "train_files": ["graph_8", "graph_9", "graph_11"],
-        "val_files": ["graph_12"],
-        "test_files": ["graph_16", "graph_17"],
-        "unused_files": ["graph_15", "graph_10", "graph_13", "graph_14"],
+        "start_date": "2019-05-08",
+        "end_date": "2019-05-18",
+        "train_dates": ["2019-05-08", "2019-05-09", "2019-05-11"],
+        "val_dates": ["2019-05-12"],
+        "test_dates": ["2019-05-16", "2019-05-17"],
+        "unused_dates": ["2019-05-15", "2019-05-10", "2019-05-13", "2019-05-14"],
         "ground_truth_relative_path": [
             "E5-CADETS/node_Nginx_Drakon_APT.csv",
             "E5-CADETS/node_Nginx_Drakon_APT_17.csv",
@@ -95,20 +95,20 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "cadets_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2018-04",
-        "start_end_day_range": (2, 14),
-        "train_files": [
-            "graph_2",
-            "graph_3",
-            "graph_4",
-            "graph_5",
-            "graph_7",
-            "graph_8",
-            "graph_9",
+        "start_date": "2018-04-02",
+        "end_date": "2018-04-14",
+        "train_dates": [
+            "2018-04-02",
+            "2018-04-03",
+            "2018-04-04",
+            "2018-04-05",
+            "2018-04-07",
+            "2018-04-08",
+            "2018-04-09",
         ],
-        "val_files": ["graph_10"],
-        "test_files": ["graph_6", "graph_11", "graph_12", "graph_13"],
-        "unused_files": [],
+        "val_dates": ["2018-04-10"],
+        "test_dates": ["2018-04-06", "2018-04-11", "2018-04-12", "2018-04-13"],
+        "unused_dates": [],
         "ground_truth_relative_path": [
             # "E3-CADETS/node_E_mail_Server.csv",
             "E3-CADETS/node_Nginx_Backdoor_06.csv",
@@ -129,12 +129,12 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "clearscope_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-05",
-        "start_end_day_range": (8, 18),
-        "train_files": ["graph_8", "graph_9", "graph_10", "graph_11", "graph_12"],
-        "val_files": ["graph_13"],
-        "test_files": ["graph_14", "graph_15", "graph_17"],
-        "unused_files": ["graph_16"],
+        "start_date": "2019-05-08",
+        "end_date": "2019-05-18",
+        "train_dates": ["2019-05-08", "2019-05-09", "2019-05-10", "2019-05-11", "2019-05-12"],
+        "val_dates": ["2019-05-13"],
+        "test_dates": ["2019-05-14", "2019-05-15", "2019-05-17"],
+        "unused_dates": ["2019-05-16"],
         "ground_truth_relative_path": [
             "E5-CLEARSCOPE/node_clearscope_e5_appstarter_0515.csv",
             # "E5-CLEARSCOPE/node_clearscope_e5_firefox_0517.csv",
@@ -166,20 +166,20 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "clearscope_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2018-04",
-        "start_end_day_range": (2, 14),
-        "train_files": [
-            "graph_3",
-            "graph_4",
-            "graph_5",
-            "graph_7",
-            "graph_8",
-            "graph_9",
-            "graph_10",
+        "start_date": "2018-04-02",
+        "end_date": "2018-04-14",
+        "train_dates": [
+            "2018-04-03",
+            "2018-04-04",
+            "2018-04-05",
+            "2018-04-07",
+            "2018-04-08",
+            "2018-04-09",
+            "2018-04-10",
         ],
-        "val_files": ["graph_2"],
-        "test_files": ["graph_11", "graph_12"],
-        "unused_files": ["graph_6", "graph_13"],
+        "val_dates": ["2018-04-02"],
+        "test_dates": ["2018-04-11", "2018-04-12"],
+        "unused_dates": ["2018-04-06", "2018-04-13"],
         "ground_truth_relative_path": [
             "E3-CLEARSCOPE/node_clearscope_e3_firefox_0411.csv",
             # "E3-CLEARSCOPE/node_clearscope_e3_firefox_0412.csv", # due to malicious file downloaded but failed to exec and feture missing, there is no malicious nodes found in database
@@ -199,12 +199,12 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "optc_201",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-09",
-        "start_end_day_range": (15, 26),
-        "train_files": ["graph_19", "graph_20", "graph_21"],
-        "val_files": ["graph_22"],
-        "test_files": ["graph_23", "graph_24", "graph_25"],
-        "unused_files": ["graph_16", "graph_17", "graph_18"],
+        "start_date": "2019-09-15",
+        "end_date": "2019-09-26",
+        "train_dates": ["2019-09-19", "2019-09-20", "2019-09-21"],
+        "val_dates": ["2019-09-22"],
+        "test_dates": ["2019-09-23", "2019-09-24", "2019-09-25"],
+        "unused_dates": ["2019-09-16", "2019-09-17", "2019-09-18"],
         "ground_truth_relative_path": [
             "h201/node_h201_0923.csv",
         ],
@@ -218,12 +218,12 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "optc_501",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-09",
-        "start_end_day_range": (15, 26),
-        "train_files": ["graph_19", "graph_20", "graph_21"],
-        "val_files": ["graph_22"],
-        "test_files": ["graph_23", "graph_24", "graph_25"],
-        "unused_files": ["graph_16", "graph_17", "graph_18"],
+        "start_date": "2019-09-15",
+        "end_date": "2019-09-26",
+        "train_dates": ["2019-09-19", "2019-09-20", "2019-09-21"],
+        "val_dates": ["2019-09-22"],
+        "test_dates": ["2019-09-23", "2019-09-24", "2019-09-25"],
+        "unused_dates": ["2019-09-16", "2019-09-17", "2019-09-18"],
         "ground_truth_relative_path": [
             "h501/node_h501_0924.csv",
         ],
@@ -237,12 +237,12 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "optc_051",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-09",
-        "start_end_day_range": (15, 26),
-        "train_files": ["graph_19", "graph_20", "graph_21"],
-        "val_files": ["graph_22"],
-        "test_files": ["graph_23", "graph_24", "graph_25"],
-        "unused_files": ["graph_16", "graph_17", "graph_18"],
+        "start_date": "2019-09-15",
+        "end_date": "2019-09-26",
+        "train_dates": ["2019-09-19", "2019-09-20", "2019-09-21"],
+        "val_dates": ["2019-09-22"],
+        "test_dates": ["2019-09-23", "2019-09-24", "2019-09-25"],
+        "unused_dates": ["2019-09-16", "2019-09-17", "2019-09-18"],
         "ground_truth_relative_path": [
             "h051/node_h051_0925.csv",
         ],
@@ -256,12 +256,12 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "trace_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-05",
-        "start_end_day_range": (8, 18),
-        "train_files": ["graph_8", "graph_9"],
-        "val_files": ["graph_11"],
-        "test_files": ["graph_14", "graph_15"],
-        "unused_files": ["graph_10", "graph_12", "graph_13", "graph_16", "graph_17"],
+        "start_date": "2019-05-08",
+        "end_date": "2019-05-18",
+        "train_dates": ["2019-05-08", "2019-05-09"],
+        "val_dates": ["2019-05-11"],
+        "test_dates": ["2019-05-14", "2019-05-15"],
+        "unused_dates": ["2019-05-10", "2019-05-12", "2019-05-13", "2019-05-16", "2019-05-17"],
         "ground_truth_relative_path": [
             "E5-TRACE/node_Trace_Firefox_Drakon.csv",
         ],
@@ -279,22 +279,25 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "trace_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2018-04",
-        "start_end_day_range": (2, 14),
-        "train_files": [
-            "graph_3",
-            "graph_4",
-            "graph_5",
-            "graph_7",
-            "graph_8",
-            "graph_9",
-            "graph_6",
-            "graph_11",
-            "graph_12",
+        "start_date": "2018-04-02",
+        "end_date": "2018-04-14",
+        "train_dates": [
+            "2018-04-03",
+            "2018-04-04",
+            "2018-04-05",
+            "2018-04-07",
+            "2018-04-08",
+            "2018-04-09",
+            "2018-04-06",
+            "2018-04-11",
+            "2018-04-12",
         ],
-        "val_files": ["graph_2"],
-        "test_files": ["graph_13", "graph_10"],
-        "unused_files": [],
+        "val_dates": ["2018-04-02"],
+        "test_dates": [
+            "2018-04-10",
+            "2018-04-13",
+        ],
+        "unused_dates": [],
         "ground_truth_relative_path": [
             "E3-TRACE/node_trace_e3_firefox_0410.csv",
             "E3-TRACE/node_trace_e3_phishing_executable_0413.csv",
@@ -320,12 +323,16 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "fivedirections_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2019-05",
-        "start_end_day_range": (8, 18),
-        "train_files": ["graph_8", "graph_10", "graph_11", "graph_13", "graph_14"],
-        "val_files": ["graph_12"],
-        "test_files": ["graph_15", "graph_17", "graph_9"],
-        "unused_files": ["graph_16"],
+        "start_date": "2019-05-08",
+        "end_date": "2019-05-18",
+        "train_dates": ["2019-05-08", "2019-05-10", "2019-05-11", "2019-05-13", "2019-05-14"],
+        "val_dates": ["2019-05-12"],
+        "test_dates": [
+            "2019-05-09",
+            "2019-05-15",
+            "2019-05-17",
+        ],
+        "unused_dates": ["2019-05-16"],
         "ground_truth_relative_path": [
             "E5-FIVEDIRECTIONS/node_fivedirections_e5_bits_0515.csv",
             "E5-FIVEDIRECTIONS/node_fivedirections_e5_copykatz_0509.csv",
@@ -361,20 +368,20 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "fivedirections_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
-        "year_month": "2018-04",
-        "start_end_day_range": (2, 14),
-        "train_files": [
-            "graph_3",
-            "graph_5",
-            "graph_6",
-            "graph_7",
-            "graph_8",
-            "graph_10",
-            "graph_13",
+        "start_date": "2018-04-02",
+        "end_date": "2018-04-14",
+        "train_dates": [
+            "2018-04-03",
+            "2018-04-05",
+            "2018-04-06",
+            "2018-04-07",
+            "2018-04-08",
+            "2018-04-10",
+            "2018-04-13",
         ],
-        "val_files": ["graph_4"],
-        "test_files": ["graph_9", "graph_11"],
-        "unused_files": ["graph_12"],
+        "val_dates": ["2018-04-04"],
+        "test_dates": ["2018-04-09", "2018-04-11"],
+        "unused_dates": ["2018-04-12"],
         "ground_truth_relative_path": [
             "E3-FIVEDIRECTIONS/node_fivedirections_e3_firefox_0411.csv",
             # "E3-FIVEDIRECTIONS/node_fivedirections_e3_browser_0412.csv",
@@ -392,6 +399,112 @@ DATASET_DEFAULT_CONFIG = {
                 "2018-04-09 15:06:00",
                 "2018-04-09 15:43:00",
             ],
+        ],
+    },
+    # See https://arxiv.org/pdf/2401.01341
+    "ATLASV2_EDR": {
+        "raw_dir": "",
+        "database": "atlasv2_edr",
+        "database_all_file": "atlasv2_edr",
+        "num_node_types": 3,
+        "num_edge_types": 33,
+        "start_date": "2022-07-15",
+        "end_date": "2022-07-21",
+        "train_dates": [
+            "2022-07-16",
+            # Arbitrarly picked 2022-07-17 for the validation/threshold calibration
+            "2022-07-18",
+        ],
+        "val_dates": [
+            "2022-07-17"
+        ],
+        "test_dates": [
+            "2022-07-19",
+            "2022-07-20"
+        ],
+        "unused_dates": [
+            "2022-07-15"
+        ],
+        "ground_truth_relative_path": [
+            "atlasv2_edr/atlasv2_edr_s1.csv",
+            "atlasv2_edr/atlasv2_edr_s2.csv",
+            "atlasv2_edr/atlasv2_edr_s3.csv",
+            "atlasv2_edr/atlasv2_edr_s4.csv",
+            "atlasv2_edr/atlasv2_edr_m1.csv",
+            "atlasv2_edr/atlasv2_edr_m2.csv",
+            "atlasv2_edr/atlasv2_edr_m3.csv",
+            "atlasv2_edr/atlasv2_edr_m4.csv",
+            "atlasv2_edr/atlasv2_edr_m5.csv",
+            "atlasv2_edr/atlasv2_edr_m6.csv",
+        ],
+        "attack_to_time_window": [
+            # NOTE: the reported attack windows are somewhat inaccurate (i.e., the first and last
+            # true-positive malicious alerts occur OUTSIDE the reported attack windows), so we start
+            # at 2022-07-19 13:00:00 (Rather than 2022-07-19 13:12:00) and end at
+            # 2022-07-20 01:15:00 (Rather than 2022-07-20 01:00:00) to capture all of the true
+            # positives.
+            ["atlasv2_edr/atlasv2_edr_s1.csv", "2022-07-19 13:00:00", "2022-07-19 13:40:00"],
+            ["atlasv2_edr/atlasv2_edr_s2.csv", "2022-07-19 13:45:00", "2022-07-19 14:20:00"],
+            ["atlasv2_edr/atlasv2_edr_s3.csv", "2022-07-19 14:20:00", "2022-07-19 15:05:00"],
+            ["atlasv2_edr/atlasv2_edr_s4.csv", "2022-07-20 00:31:00", "2022-07-20 01:15:00"],
+            ["atlasv2_edr/atlasv2_edr_m1.csv", "2022-07-19 16:00:00", "2022-07-19 17:50:00"],
+            ["atlasv2_edr/atlasv2_edr_m2.csv", "2022-07-19 19:32:00", "2022-07-19 20:02:00"],
+            ["atlasv2_edr/atlasv2_edr_m3.csv", "2022-07-19 20:06:00", "2022-07-19 20:40:00"],
+            ["atlasv2_edr/atlasv2_edr_m4.csv", "2022-07-19 22:31:00", "2022-07-19 23:04:00"],
+            ["atlasv2_edr/atlasv2_edr_m5.csv", "2022-07-19 23:16:00", "2022-07-19 23:46:00"],
+            ["atlasv2_edr/atlasv2_edr_m6.csv", "2022-07-19 23:54:00", "2022-07-20 00:27:00"],
+        ],
+    },
+    # See https://www.ndss-symposium.org/wp-content/uploads/prism2026-12.pdf
+    "CARBANAKV2_EDR": {
+        "raw_dir": "",
+        "database": "carbanakv2_edr",
+        "database_all_file": "carbanakv2_edr",
+        "num_node_types": 3,
+        "num_edge_types": 33,
+        "start_date": "2024-04-18",
+        "end_date": "2024-05-13",
+        "train_dates": [
+            "2024-04-20",
+            "2024-04-21",
+            # Arbitrarly picked 2024-04-22 for the validation/threshold calibration
+            "2024-04-23",
+            "2024-04-24",
+            "2024-04-25",
+            # Arbitrarly picked 2024-04-26 for the validation/threshold calibration
+            "2024-04-27",
+            "2024-04-28",
+            "2024-04-29",
+        ],
+        "val_dates": [
+            "2024-04-22",
+            "2024-04-26",
+        ],
+        "test_dates": [
+            "2024-04-30",
+            "2024-05-01",
+            "2024-05-02",
+            "2024-05-07",
+            "2024-05-08",
+            "2024-05-09",
+            "2024-05-10",
+        ],
+        "unused_dates": [
+            "2024-04-18",
+            "2024-04-19",
+            "2024-05-03",
+            "2024-05-04",
+            "2024-05-05",
+            "2024-05-06",
+            "2024-05-11",
+            "2024-05-12",
+            "2024-05-13",
+        ],
+        "ground_truth_relative_path": [
+            "carbanakv2_edr/carbanakv2_edr.csv",
+        ],
+        "attack_to_time_window": [
+            ["carbanakv2_edr/carbanakv2_edr.csv", "2024-04-30 17:30:00", "2024-05-10 20:30:00"]
         ],
     },
 }
@@ -484,6 +597,10 @@ FEATURIZATIONS_CFG = {
     "magic": {},
     "only_type": {},
     "only_ones": {},
+    "ocrapt_features": {
+        "use_lifespan": Arg(bool, desc="Off by default, hurts generalization (paper Appendix E)."),
+        "use_cumulative_active_time": Arg(bool, desc="Off by default, same reason as use_lifespan."),
+    },
 }
 
 ENCODERS_CFG = {
@@ -514,6 +631,14 @@ ENCODERS_CFG = {
         "num_layers": Arg(int),
     },
     "gin": {
+        "activation": Arg(str),
+        "num_layers": Arg(int),
+    },
+    "rgcn": {
+        "activation": Arg(str),
+        "num_layers": Arg(int),
+    },
+    "rgcn_per_type": {
         "activation": Arg(str),
         "num_layers": Arg(int),
     },
@@ -570,6 +695,7 @@ OBJECTIVES_NODE_LEVEL = [
     "reconstruct_node_features",
     "reconstruct_node_embeddings",
     "reconstruct_masked_features",
+    "one_class",
 ]
 OBJECTIVES_EDGE_LEVEL = [
     "predict_edge_type",
@@ -647,6 +773,16 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
     },
+    "one_class": {
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())),
+            desc="Decoder applied to embeddings before the hypersphere; use 'none' (identity).",
+        ),
+        **DECODERS_CFG,
+        "beta": Arg(float, desc="Soft-boundary fraction; radius is the (1-beta) distance quantile."),
+        "eps": Arg(float, desc="Center slack keeping |c| away from zero."),
+        "warmup": Arg(int, desc="Kept for parity; a no-op (c/r update every train step)."),
+    },
 }
 
 SYNTHETIC_ATTACKS = {
@@ -658,7 +794,7 @@ SYNTHETIC_ATTACKS = {
     },
 }
 
-THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "flash", "nodlink"]
+THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "flash", "nodlink", "ocrapt"]
 
 # --- Tasks, subtasks, and argument configurations ---
 TASK_ARGS = {
@@ -857,6 +993,12 @@ TASK_ARGS = {
         "grad_accumulation": Arg(int, desc="Number of epochs to gather gradients before backprop."),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "used_method": Arg(str, vals=OR(["default"]), desc="Which training pipeline use."),
+        "ocrapt_early_stop": {
+            "enabled": Arg(bool, desc="Off by default, no-op unless set."),
+            "patience": Arg(int),
+            "min_delta": Arg(float),
+            "max_delta": Arg(float),
+        },
         "encoder": {
             "dropout": Arg(float),
             "used_methods": Arg(
@@ -896,7 +1038,7 @@ TASK_ARGS = {
             bool,
             desc="Whether to generate images of malicious nodes' neighborhoods (not stable).",
         ),
-        "ground_truth_version": Arg(str, vals=OR(["orthrus", "reapr"])),
+        "ground_truth_version": Arg(str, vals=OR(["orthrus", "reapr", "threatrace"])),
         "best_model_selection": Arg(
             str,
             vals=OR(["best_adp", "best_discrimination"]),
@@ -918,6 +1060,15 @@ TASK_ARGS = {
                 bool, desc="Whether to cluster nodes after thresholding as done in Orthrus"
             ),
             "kmeans_top_K": Arg(int, desc="Number of top-score nodes selected before clustering."),
+            "ocrapt_contamination": Arg(
+                float,
+                desc="For threshold_method=ocrapt: max per-type contamination (top fraction "
+                "flagged), clamped from that type's own val malicious fraction.",
+            ),
+            "ocrapt_min_contamination": Arg(
+                float,
+                desc="For threshold_method=ocrapt: min per-type contamination floor.",
+            ),
         },
         "tw_evaluation": {
             "threshold_method": Arg(
@@ -965,8 +1116,8 @@ TASK_ARGS = {
     "triage": {
         "used_method": Arg(
             str,
-            vals=OR(["depimpact"]),
-            desc="Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus.",
+            vals=OR(["depimpact", "ocrapt_subgraph"]),
+            desc="Post-processing step to reconstruct attack paths or reduce false positives. `depimpact` is used in Orthrus; `ocrapt_subgraph` is OCR-APT's anomalous-subgraph stage.",
         ),
         "depimpact": {
             "used_method": Arg(
@@ -975,6 +1126,18 @@ TASK_ARGS = {
             "score_method": Arg(str, vals=OR(["degree", "recon_loss", "degree_recon"])),
             "workers": Arg(int),
             "visualize": Arg(bool),
+        },
+        "ocrapt": {
+            "num_hops": Arg(int, desc="hops for correlating anomalies into subgraphs"),
+            "top_k": Arg(int, desc="top-K seed nodes per node type (by Anomaly_score)"),
+            "min_nodes": Arg(int, desc="minimum nodes per constructed subgraph"),
+            "max_edges": Arg(int, desc="subgraphs above this are Louvain-partitioned + edge-sampled"),
+            "abnormality_level": Arg(
+                str, vals=OR(["Negligible", "Minor", "Moderate", "Significant", "Critical"]),
+                desc="least subgraph severity to keep (summed Prediction_probability)",
+            ),
+            "correlate_anomalous_once": Arg(bool),
+            "remove_duplicated_subgraph": Arg(bool),
         },
     },
     "postprocessing": {},

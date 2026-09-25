@@ -3,12 +3,12 @@ import os
 import torch
 
 from pidsmaker.featurization.utils.trw import TRW
-from pidsmaker.utils.utils import get_all_files_from_folders, log_start, log_tqdm
+from pidsmaker.utils.utils import get_all_graphs_for_dates, log_start, log_tqdm
 
 
-def run_temporal_random_walk(split_files, out_dir, cfg):
+def run_temporal_random_walk(dates, out_dir, cfg):
     base_dir = cfg.transformation._graphs_dir
-    sorted_paths = get_all_files_from_folders(base_dir, split_files)
+    sorted_paths = get_all_graphs_for_dates(base_dir, dates)
 
     os.makedirs(out_dir, exist_ok=True)
     walk_length = cfg.featurization.temporal_rw.walk_length
@@ -43,25 +43,25 @@ def main(cfg):
     os.makedirs(cfg.featurization.temporal_rw._random_walk_corpus_dir, exist_ok=True)
 
     run_temporal_random_walk(
-        split_files=cfg.dataset.train_files,
+        dates=cfg.dataset.train_dates,
         out_dir=os.path.join(cfg.featurization.temporal_rw._random_walk_corpus_dir, "train/"),
         cfg=cfg,
     )
 
     run_temporal_random_walk(
-        split_files=cfg.dataset.val_files,
+        dates=cfg.dataset.val_dates,
         out_dir=os.path.join(cfg.featurization.temporal_rw._random_walk_corpus_dir, "val/"),
         cfg=cfg,
     )
 
     run_temporal_random_walk(
-        split_files=cfg.dataset.test_files,
+        dates=cfg.dataset.test_dates,
         out_dir=os.path.join(cfg.featurization.temporal_rw._random_walk_corpus_dir, "test/"),
         cfg=cfg,
     )
 
     run_temporal_random_walk(
-        split_files=cfg.dataset.unused_files,
+        dates=cfg.dataset.unused_dates,
         out_dir=os.path.join(cfg.featurization.temporal_rw._random_walk_corpus_dir, "unused/"),
         cfg=cfg,
     )

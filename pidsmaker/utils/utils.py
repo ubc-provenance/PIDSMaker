@@ -334,6 +334,17 @@ def get_all_files_from_folders(base_dir: str, folders: list[str]):
     return paths
 
 
+def get_all_graphs_for_dates(base_dir: str, dates: list[str]):
+    return get_all_files_from_folders(base_dir, [f"graph_{date}" for date in dates])
+
+
+def load_graphs_for_dates(base_dir: str, dates: list[str]):
+    """Loads all graph snapshots for a given list of dates."""
+    return [
+        torch.load(path) for date in dates for path in get_all_graphs_for_dates(base_dir, [date])
+    ]
+
+
 def get_all_filelist(filepath):
     """get all file paths under the given filepath recursively"""
     file_paths = []
@@ -343,13 +354,6 @@ def get_all_filelist(filepath):
             abs_path = os.path.abspath(full_path)
             file_paths.append(abs_path)
     return file_paths
-
-
-def load_graphs_for_days(base_dir, days):
-    """Loads all graph snapshots for a given list of days."""
-    return [
-        torch.load(path) for day in days for path in get_all_files_from_folders(base_dir, [day])
-    ]
 
 
 def listdir_sorted(path: str):
@@ -491,9 +495,9 @@ def copy_directory(src_path, dest_path):
 
 def get_split_to_files(cfg, base_dir):
     return {
-        "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
-        "val": get_all_files_from_folders(base_dir, cfg.dataset.val_files),
-        "test": get_all_files_from_folders(base_dir, cfg.dataset.test_files),
+        "train": get_all_graphs_for_dates(base_dir, cfg.dataset.train_dates),
+        "val": get_all_graphs_for_dates(base_dir, cfg.dataset.val_dates),
+        "test": get_all_graphs_for_dates(base_dir, cfg.dataset.test_dates),
     }
 
 

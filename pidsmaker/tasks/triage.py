@@ -7,6 +7,7 @@ import wandb
 from pidsmaker.detection.evaluation_methods.evaluation_utils import classifier_evaluation
 from pidsmaker.triage.tracing_methods import (
     depimpact,
+    ocrapt_subgraph,
 )
 from pidsmaker.utils.utils import listdir_sorted, log
 
@@ -80,6 +81,17 @@ def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
 
 def main(cfg):
     if cfg.triage.used_method is None:
+        return
+
+    # OCR-APT subgraph triage is self-contained: it reads the detector's node_scores.pt
+    if cfg.triage.used_method == "ocrapt_subgraph":
+        stats = ocrapt_subgraph.main(cfg)
+        log("==" * 20)
+        log("OCR-APT subgraph triage (2-hop-relaxed node evaluation):")
+        for k, v in stats.items():
+            log(f"{k}: {v}")
+        log("==" * 20)
+        wandb.log({"tracing_" + k: v for k, v in stats.items()})
         return
 
     in_dir = cfg.evaluation._precision_recall_dir

@@ -1,4 +1,5 @@
 from .detect_few_shot import FewShotEdgeDetection
+from .one_class import OneClass
 from .predict_edge_contrastive import EdgeContrastivePrediction
 from .predict_edge_type import EdgeTypePrediction
 from .predict_masked_struct import GMAEStructPrediction

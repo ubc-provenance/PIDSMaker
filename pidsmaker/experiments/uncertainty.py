@@ -60,22 +60,22 @@ def update_cfg_for_uncertainty_exp(
         # Here, force_restart will be at the beninning so no need to rm files
         min_num_days = cfg.experiment.uncertainty.bagged_ensemble.min_num_days
         num_days = min_num_days + index - 1
-        available_train_days = sorted(cfg.dataset.train_files + cfg.dataset.unused_files)
-        days = available_train_days[:num_days]
-        cfg.dataset.train_files = days
+        available_train_days = sorted(cfg.dataset.train_dates + cfg.dataset.unused_dates)
+        cfg.dataset.train_dates = available_train_days[:num_days]
 
     return cfg
+
 
 def prepare_for_deep_ensemble(cfg, iteration):
     """Update tasks to restart based on the deep ensemble method used"""
     method = cfg.experiment.uncertainty.deep_ensemble.method
-    
+
     if method == "same_seed":
         subtask_concat_value = {
             "subtask": cfg.experiment.uncertainty.deep_ensemble.restart_from,
             "concat_value": str(iteration),
         }
-        
+
     elif method == "increasing_seed":
         restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
         cfg = copy.deepcopy(cfg)
@@ -85,16 +85,15 @@ def prepare_for_deep_ensemble(cfg, iteration):
             cfg.training.seed += iteration
         else:
             raise ValueError(f"Invalid `restart_from` value")
-        
+
         subtask_concat_value = None
-        
+
     else:
         raise ValueError(f"Invalid deep ensemble method `{method}`")
 
-    should_restart = update_task_paths_to_restart(
-        cfg, subtask_concat_value=subtask_concat_value
-    )
+    should_restart = update_task_paths_to_restart(cfg, subtask_concat_value=subtask_concat_value)
     return should_restart, cfg
+
 
 # Utils
 def clear_files_from_training(cfg):

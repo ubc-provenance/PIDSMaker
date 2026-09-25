@@ -7,6 +7,7 @@ services:
       - shared_network
     ports:
       - "8000:8000"
+      - "5000:5000"  # viz port
     environment:
       DB_HOST: postgres
       DOCKER_PORT: ${DOCKER_PORT:-5432}

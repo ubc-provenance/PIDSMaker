@@ -35,9 +35,9 @@ from pidsmaker.experiments.uncertainty import (
     fuse_hyperparameter_metrics,
     max_metrics,
     min_metrics,
+    prepare_for_deep_ensemble,
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
-    prepare_for_deep_ensemble,
 )
 from pidsmaker.tasks import (
     batching,
@@ -341,6 +341,15 @@ if __name__ == "__main__":
     wandb.config.update(clean_cfg_for_log(cfg))
 
     main(cfg, project=args.project, exp=exp_name, sweep_id=args.sweep_id)
+
+    # Persist the resolved config next to the run so the viz Run Browser can show it.
+    try:
+        run_dir = os.path.dirname(cfg.evaluation._task_path)
+        os.makedirs(run_dir, exist_ok=True)
+        with open(os.path.join(run_dir, "run_config.yml"), "w") as f:
+            f.write(cfg.dump())
+    except Exception as e:
+        log(f"Warning: could not save run_config.yml: {e}")
 
     wandb.finish()
 

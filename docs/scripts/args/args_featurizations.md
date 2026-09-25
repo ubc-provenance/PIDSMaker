@@ -83,7 +83,15 @@
     
     
     </li>
+    <li class='bullet'><span class="key">ocrapt_features</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">use_lifespan</span>: <span class="value">bool (1)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_cumulative_active_time</span>: <span class="value">bool (2)</span></li>
+    </ul>
+    </li>
 </ul>
 
 </div>
 
+1. Off by default, hurts generalization (paper Appendix E).<br>
+2. Off by default, same reason as use_lifespan.<br>

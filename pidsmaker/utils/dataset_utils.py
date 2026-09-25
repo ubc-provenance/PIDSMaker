@@ -46,46 +46,6 @@ rel2id_darpa_tc = {
     10: "EVENT_CLONE",
     "EVENT_CLONE": 10,
 }
-possible_events = {
-    ("subject", "subject"): [
-        "EVENT_READ",
-        "EVENT_WRITE",
-        "EVENT_OPEN",
-        "EVENT_CONNECT",
-        "EVENT_RECVFROM",
-        "EVENT_SENDTO",
-        "EVENT_CLONE",
-        "EVENT_SENDMSG",
-        "EVENT_RECVMSG",
-    ],
-    ("subject", "file"): [
-        "EVENT_WRITE",
-        "EVENT_CONNECT",
-        "EVENT_SENDMSG",
-        "EVENT_SENDTO",
-        "EVENT_CLONE",
-    ],
-    ("subject", "netflow"): [
-        "EVENT_WRITE",
-        "EVENT_SENDTO",
-        "EVENT_CONNECT",
-        "EVENT_SENDMSG",
-    ],
-    ("file", "subject"): [
-        "EVENT_READ",
-        "EVENT_OPEN",
-        "EVENT_RECVFROM",
-        "EVENT_EXECUTE",
-        "EVENT_RECVMSG",
-    ],
-    ("netflow", "subject"): [
-        "EVENT_OPEN",
-        "EVENT_READ",
-        "EVENT_RECVFROM",
-        "EVENT_RECVMSG",
-    ],
-}
-# TODO: do the same for optc (different edges)
 
 rel2id_optc = {
     1: "OPEN",
@@ -181,6 +141,181 @@ rel2id_atlasv2 = {
     "ACTION_CONNECTION_CREATE": 33,
 }
 
+rel2id_graph_processor_carbon_black_edr = {
+    1: "FILE_OPENED",
+    2: "FILE_CLOSED",
+    3: "FILE_CREATED",
+    4: "FILE_READ",
+    5: "FILE_WRITTEN",
+    6: "FILE_COPIED",
+    7: "FILE_LINKED",
+    8: "FILE_RENAMED",
+    9: "FILE_TRUNCATED",
+    10: "FILE_DELETED",
+    11: "FILE_RESTORED",
+    12: "NETFLOW_CREATED",
+    13: "NETFLOW_CONNECTED",
+    14: "NETFLOW_PACKET_RECEIVED",
+    15: "NETFLOW_PACKET_SENT",
+    16: "NETFLOW_DISCONNECTED",
+    17: "PROCESS_EXECUTED",
+    18: "PROCESS_KILLED",
+    19: "MODULE_LOADED",
+    20: "CROSS_PROCESS_INTERACTION",
+    21: "REGISTRY_KEY_LOADED",
+    22: "REGISTRY_KEY_UNLOADED",
+    23: "REGISTRY_KEY_OPENED",
+    24: "REGISTRY_KEY_CLOSED",
+    25: "REGISTRY_KEY_CREATED",
+    26: "REGISTRY_KEY_RENAMED",
+    27: "REGISTRY_KEY_REPLACED",
+    28: "REGISTRY_KEY_DELETED",
+    29: "REGISTRY_KEY_RESTORED",
+    30: "REGISTRY_VALUE_CREATED",
+    31: "REGISTRY_VALUE_READ",
+    32: "REGISTRY_VALUE_WRITTEN",
+    33: "REGISTRY_VALUE_DELETED",
+    "FILE_OPENED": 1,
+    "FILE_CLOSED": 2,
+    "FILE_CREATED": 3,
+    "FILE_READ": 4,
+    "FILE_WRITTEN": 5,
+    "FILE_COPIED": 6,
+    "FILE_LINKED": 7,
+    "FILE_RENAMED": 8,
+    "FILE_TRUNCATED": 9,
+    "FILE_DELETED": 10,
+    "FILE_RESTORED": 11,
+    "NETFLOW_CREATED": 12,
+    "NETFLOW_CONNECTED": 13,
+    "NETFLOW_PACKET_RECEIVED": 14,
+    "NETFLOW_PACKET_SENT": 15,
+    "NETFLOW_DISCONNECTED": 16,
+    "PROCESS_EXECUTED": 17,
+    "PROCESS_KILLED": 18,
+    "MODULE_LOADED": 19,
+    "CROSS_PROCESS_INTERACTION": 20,
+    "REGISTRY_KEY_LOADED": 21,
+    "REGISTRY_KEY_UNLOADED": 22,
+    "REGISTRY_KEY_OPENED": 23,
+    "REGISTRY_KEY_CLOSED": 24,
+    "REGISTRY_KEY_CREATED": 25,
+    "REGISTRY_KEY_RENAMED": 26,
+    "REGISTRY_KEY_REPLACED": 27,
+    "REGISTRY_KEY_DELETED": 28,
+    "REGISTRY_KEY_RESTORED": 29,
+    "REGISTRY_VALUE_CREATED": 30,
+    "REGISTRY_VALUE_READ": 31,
+    "REGISTRY_VALUE_WRITTEN": 32,
+    "REGISTRY_VALUE_DELETED": 33,
+}
+
+possible_events_darpa_tc = {
+    ("subject", "subject"): [
+        "EVENT_READ",
+        "EVENT_WRITE",
+        "EVENT_OPEN",
+        "EVENT_CONNECT",
+        "EVENT_RECVFROM",
+        "EVENT_SENDTO",
+        "EVENT_CLONE",
+        "EVENT_SENDMSG",
+        "EVENT_RECVMSG",
+    ],
+    ("subject", "file"): [
+        "EVENT_WRITE",
+        "EVENT_CONNECT",
+        "EVENT_SENDMSG",
+        "EVENT_SENDTO",
+        "EVENT_CLONE",
+    ],
+    ("subject", "netflow"): [
+        "EVENT_WRITE",
+        "EVENT_SENDTO",
+        "EVENT_CONNECT",
+        "EVENT_SENDMSG",
+    ],
+    ("file", "subject"): [
+        "EVENT_READ",
+        "EVENT_OPEN",
+        "EVENT_RECVFROM",
+        "EVENT_EXECUTE",
+        "EVENT_RECVMSG",
+    ],
+    ("netflow", "subject"): [
+        "EVENT_OPEN",
+        "EVENT_READ",
+        "EVENT_RECVFROM",
+        "EVENT_RECVMSG",
+    ],
+}
+
+possible_events_graph_processor_carbon_black_edr = {
+    ("subject", "subject"): [
+        "PROCESS_EXECUTED",
+        "PROCESS_KILLED",
+        "CROSS_PROCESS_INTERACTION",
+    ],
+    ("subject", "file"): [
+        "FILE_OPENED",
+        "FILE_CLOSED",
+        "FILE_CREATED",
+        "FILE_WRITTEN",
+        "FILE_COPIED",
+        "FILE_LINKED",
+        "FILE_RENAMED",
+        "FILE_TRUNCATED",
+        "FILE_DELETED",
+        "FILE_RESTORED",
+        "REGISTRY_KEY_UNLOADED",
+        "REGISTRY_KEY_OPENED",
+        "REGISTRY_KEY_CLOSED",
+        "REGISTRY_KEY_CREATED",
+        "REGISTRY_KEY_RENAMED",
+        "REGISTRY_KEY_REPLACED",
+        "REGISTRY_KEY_DELETED",
+        "REGISTRY_KEY_RESTORED",
+        "REGISTRY_VALUE_CREATED",
+        "REGISTRY_VALUE_WRITTEN",
+        "REGISTRY_VALUE_DELETED",
+    ],
+    ("subject", "netflow"): [
+        "NETFLOW_CREATED",
+        "NETFLOW_CONNECTED",
+        "NETFLOW_PACKET_SENT",
+        "NETFLOW_DISCONNECTED",
+    ],
+    ("file", "subject"): [
+        "FILE_READ",
+        "MODULE_LOADED",
+        "REGISTRY_KEY_LOADED",
+        "REGISTRY_VALUE_READ",
+    ],
+    ("netflow", "subject"): [
+        "NETFLOW_PACKET_RECEIVED",
+    ],
+}
+
+# TODO: add possible events for other datasets (i.e., with different edges)
+
+ntype2id = {
+    1: "subject",
+    "subject": 1,
+    2: "file",
+    "file": 2,
+    3: "netflow",
+    "netflow": 3,
+}
+
+optc_datasets = {"optc_h201", "optc_h501", "optc_h051"}
+atlasv2_datasets = {"atlasv2_h1"}
+graph_processor_carbon_black_edr_datasets = {"atlasv2_edr", "carbanakv2_edr"}
+
+optc_hostname_map = {
+    "optc_h051": "SysClient0051",
+    "optc_h201": "SysClient0201",
+    "optc_h501": "SysClient0501",
+}
 
 def decrement_dict(d):
     return {
@@ -189,10 +324,14 @@ def decrement_dict(d):
 
 
 def get_rel2id(cfg, from_zero=False):
-    if cfg.dataset.name in OPTC_DATASETS:
+    dataset_name = cfg.dataset.name.lower()
+
+    if dataset_name in optc_datasets:
         return decrement_dict(rel2id_optc) if from_zero else rel2id_optc
-    elif cfg.dataset.name in ATLASv2_DATASETS:
+    elif dataset_name in atlasv2_datasets:
         return rel2id_atlasv2
+    elif dataset_name in graph_processor_carbon_black_edr_datasets:
+        return decrement_dict(rel2id_graph_processor_carbon_black_edr) if from_zero else rel2id_graph_processor_carbon_black_edr
     else:
         return decrement_dict(rel2id_darpa_tc) if from_zero else rel2id_darpa_tc
 
@@ -204,13 +343,17 @@ def get_node_map(from_zero=False):
 
 
 def get_num_edge_type(cfg):
-    if cfg.dataset.name not in OPTC_DATASETS and "edge_type_triplet" in cfg.batching.edge_features:
+    dataset_name = cfg.dataset.name.lower()
+
+    if dataset_name not in optc_datasets and "edge_type_triplet" in cfg.batching.edge_features:
+        possible_events = get_possible_events(cfg)
         return sum([len(events) for events in possible_events.values()])
     return cfg.dataset.num_edge_types
 
 
 def get_rel2id_considering_triplets(cfg):
     if "edge_type_triplet" in cfg.batching.edge_features:
+        possible_events = get_possible_events(cfg)
         return {
             i + 1: e
             for i, e in enumerate(
@@ -219,21 +362,10 @@ def get_rel2id_considering_triplets(cfg):
         }
     return get_rel2id(cfg)
 
+def get_possible_events(cfg):
+    dataset_name = cfg.dataset.name.lower()
 
-ntype2id = {
-    1: "subject",
-    "subject": 1,
-    2: "file",
-    "file": 2,
-    3: "netflow",
-    "netflow": 3,
-}
-
-OPTC_DATASETS = {"optc_h201", "optc_h501", "optc_h051"}
-ATLASv2_DATASETS = {"atlasv2_h1"}
-
-OPTC_hostname_map = {
-    "optc_h051": "SysClient0051",
-    "optc_h201": "SysClient0201",
-    "optc_h501": "SysClient0501",
-}
+    if dataset_name in graph_processor_carbon_black_edr_datasets:
+        return possible_events_graph_processor_carbon_black_edr
+    else:
+        return possible_events_darpa_tc

@@ -5,7 +5,7 @@
 <div align="center">
 
 [![Docs](https://img.shields.io/badge/Docs-Online-ed6a2f?style=flat&labelColor=gray)](https://ubc-provenance.github.io/PIDSMaker/)
-[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.15603122-ed6a2f?style=flat&labelColor=gray)](https://doi.org/10.5281/zenodo.15603122)
+[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.19813646-ed6a2f?style=flat&labelColor=gray)](https://doi.org/10.5281/zenodo.19813646)
 [![License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/releases)
 [![Stars](https://img.shields.io/github/stars/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=white&logo=github&logoColor=black)](https://github.com/ubc-provenance/PIDSMaker/stargazers)
@@ -45,6 +45,7 @@ The framework currently integrates the following PIDSs.
 | Magic      | USENIX Security 2024 | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
 | NodLink    | NDSS 2024           | [Link](https://arxiv.org/pdf/2311.02331) |
 | ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
+| OCR-APT    | ACM CCS 2025        | [Link](https://arxiv.org/pdf/2510.15188) |
 
 ### Supported Datasets
 
@@ -65,6 +66,8 @@ It also includes several easy-to-install provenance datasets for APT detection.
 | optc_h201 | Windows | 1 | 9 |
 | optc_h501 | Windows | 1 | 6.7 |
 | optc_h051 | Windows | 1 | 7.7 |
+| ATLASV2_EDR | Windows | 10 | 1 |
+| CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
 
 ## 📄 Documentation
 
@@ -91,7 +94,7 @@ We have made the installation of PIDSMaker inclusing pre-processed databases for
 ## 🧪 Basic usage of the framework
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
-Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`.
+Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`, `ocrapt`.
 
 1. Run in the shell:
     ```shell
@@ -173,11 +176,19 @@ evaluation:
     threshold_method: nodlink
 ```
 
-### Visualization
+### Interactive embedding viewer
 
-You can then visualize the results using the many generated figures, locally or on Weights and Biases.
+PIDSMaker also ships an interactive 3D web viewer for exploring a run's node
+embeddings — temporal playback, per-node inspection, attack-graph overlays, and
+switching between the featurization and GNN-encoder spaces. Train a run with
+`--save_for_viz` to persist the artifacts it needs, then launch it (see the
+[web viewer README](pidsmaker/vizgen/web/README.md)):
 
-![alt text](.github/img/scores.png)
+```bash
+python -m pidsmaker.vizgen.web.viz_server
+```
+
+![PIDSMaker web embedding viewer](.github/img/web_ui.png)
 
 ## Hyperparameter tuning
 

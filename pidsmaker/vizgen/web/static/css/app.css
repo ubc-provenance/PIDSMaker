@@ -1,0 +1,250 @@
+/* PIDSMaker web visualizer — dark theme (parity with native viewer) */
+:root {
+  --bg-app: #111116;
+  --bg-canvas: #050508;
+  --bg-panel: #1a1a24;
+  --bg-raised: #2a2a35;
+  --bg-hover: #3a3a45;
+  --border: #333344;
+  --border2: #3f3f4e;
+  --text: #e0e0e8;
+  --muted: #a0a0b0;
+  --muted2: #9ca3af;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --gold: #fca636;
+  --indigo: #818cf8;
+  --yellowgreen: #a3e635;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
+  background: var(--bg-app); color: var(--text);
+  font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+#app { display: flex; height: 100vh; width: 100vw; }
+
+/* ---------- Left panel ---------- */
+#leftPanel {
+  width: 380px; min-width: 380px; height: 100%;
+  background: var(--bg-app); border-right: 1px solid var(--bg-raised);
+  overflow-y: auto; overflow-x: hidden; padding: 20px 15px;
+}
+#leftPanel h2 { margin: 0 0 6px; color: #fff; font-size: 18px; }
+.group {
+  border: 1px solid var(--border); border-radius: 6px;
+  margin: 15px 0 0; padding: 12px 10px 10px; position: relative;
+}
+.group > .title {
+  position: absolute; top: -8px; left: 10px; padding: 0 6px;
+  background: var(--bg-app); color: var(--muted);
+  font-weight: bold; font-size: 12px; text-transform: none;
+}
+.group.dc > .title { color: var(--indigo); }
+.row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.row label.lbl { color: var(--muted); min-width: 60px; font-size: 12px; }
+input[type=range] { flex: 1; accent-color: var(--accent); }
+input[type=text] {
+  background: var(--bg-panel); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 4px; padding: 6px 8px; width: 100%;
+}
+button {
+  background: var(--bg-raised); border: 1px solid #444; color: var(--text);
+  border-radius: 4px; padding: 6px 10px; cursor: pointer; font-size: 12px;
+}
+button:hover { background: var(--bg-hover); }
+button:disabled { opacity: .5; cursor: default; }
+select {
+  background: #2b2b36; border: 1px solid var(--border2); color: var(--text);
+  border-radius: 4px; padding: 5px 6px; width: 100%;
+}
+.chk { display: flex; align-items: center; gap: 8px; margin: 5px 0; cursor: pointer; }
+.chk input { width: 15px; height: 15px; accent-color: var(--accent); }
+.btn-row { display: flex; gap: 8px; }
+.btn-row button { flex: 1; }
+/* the entry point of the whole UI: solid accent, full width, at the top of the
+   left panel — everything else is secondary to picking a run */
+.btn-primary {
+  width: 100%; margin-top: 4px; padding: 10px; font-size: 13px; font-weight: bold;
+  background: var(--accent); border: none; color: #fff;
+  box-shadow: 0 2px 10px rgba(59,130,246,.35);
+}
+.btn-primary:hover { background: #2563eb; }
+.btn-blue { background: rgba(100,180,255,.2); color: var(--accent2); border-color: var(--accent); }
+.btn-red  { background: rgba(255,100,100,.2); color: var(--red); border-color: var(--red); }
+.btn-indigo { background: rgba(129,140,248,.2); color: var(--indigo); border-color: var(--indigo); }
+
+/* stats / detection forms */
+.kv { display: flex; justify-content: space-between; margin: 3px 0; font-size: 12px; }
+.kv .k { color: var(--muted2); }
+.kv .v { font-weight: bold; }
+.desc { color: var(--muted); font-size: 11px; margin: 0 0 6px; }
+#info_lbl {
+  font-family: monospace; font-size: 12px; color: #fff;
+  white-space: pre-wrap; word-break: break-word; line-height: 1.4;
+}
+#txt_config {
+  font-family: monospace; font-size: 11px; color: var(--yellowgreen);
+  background: #111115; border: 1px solid var(--border2); border-radius: 4px;
+  padding: 8px; height: 160px; overflow: auto; white-space: pre; margin-top: 6px;
+}
+
+/* ---------- Canvas + overlays ---------- */
+#viewport { flex: 1; position: relative; background: var(--bg-canvas); }
+#glcanvas { display: block; width: 100%; height: 100%; }
+.overlay {
+  position: absolute; background: rgba(15,15,20,.8);
+  border: 1px solid rgba(100,180,255,.2); border-radius: 8px; padding: 10px 12px;
+  color: #fff; backdrop-filter: blur(2px);
+}
+#overlay_br { right: 14px; bottom: 14px; max-width: 300px; }
+#overlay_bc {
+  left: 50%; transform: translateX(-50%); bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+/* right column stacks legend + selected node; the column itself is
+   click-through so canvas picking works in the gap between panels */
+#rightCol {
+  position: absolute; top: 14px; right: 14px; width: 290px;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: calc(100vh - 28px); pointer-events: none;
+}
+#rightCol .overlay { position: static; width: 100%; max-width: none; pointer-events: auto; }
+#overlay_sel { overflow-y: auto; }
+#overlay_sel #info_lbl { margin-top: 6px; }
+#overlay_br button { background: rgba(59,130,246,.8); border: none; color: #fff; }
+#overlay_br button:hover { background: rgba(37,99,235,1); }
+.emb-lbl { color: var(--muted2); font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+#lbl_status { color: var(--accent2); font-style: italic; font-size: 12px; }
+#overlay_bc input[type=range] { width: 250px; }
+.legend-head { display: flex; justify-content: space-between; align-items: center; }
+.legend-head .t { font-weight: bold; letter-spacing: .5px; }
+#btn_collapse_leg { width: 24px; height: 24px; padding: 0; background: transparent; border: none; }
+#legend table { border-collapse: collapse; font-size: 11px; }
+#legend th { text-align: left; font-size: 12px; color: #fff; padding: 2px 8px 2px 0; }
+#legend td { padding: 2px 8px 2px 0; }
+#legend .sw { font-size: 14px; }
+#legend .edges { color: var(--text); font-size: 11px; margin-top: 8px; line-height: 1.5; }
+
+/* ---------- Run browser modal ---------- */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal {
+  background: #111115; border: 1px solid var(--border2); border-radius: 8px;
+  width: 80%; max-width: 1100px; max-height: 80vh; display: flex; flex-direction: column;
+}
+.modal h2 { margin: 0; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.modal .body { padding: 12px 20px; overflow: auto; }
+.modal .foot { padding: 12px 20px; border-top: 1px solid var(--border); text-align: right; }
+table.runs { width: 100%; border-collapse: collapse; }
+table.runs th, table.runs td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; }
+table.runs th { color: var(--muted); }
+table.runs tr { cursor: pointer; }
+table.runs tr:hover td { background: var(--bg-panel); }
+table.runs tr.sel td { background: rgba(59,130,246,.25); }
+
+/* generic data table (causal / neighbors) */
+table.data { width: 100%; min-width: 100%; border-collapse: collapse; }
+table.data th, table.data td { padding: 5px 8px; border-bottom: 1px solid var(--border); font-size: 12px; text-align: left; white-space: nowrap; }
+/* the last column (Path / Cmd) absorbs the leftover width so the row fills
+   evenly instead of leaving a big empty gap on the right */
+table.data th:last-child, table.data td:last-child { width: 100%; white-space: normal; word-break: break-all; }
+table.data th { color: #fff; position: sticky; top: 0; background: #1a1a24; }
+table.data tr.origin td { background: #453b1b; }
+.tabbar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.tabbar .tab { padding: 8px 24px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+.tabbar .tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+#loading {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(5,5,8,.6); color: var(--accent2); font-size: 16px; z-index: 50;
+  pointer-events: none;
+}
+#loading .loadbox { text-align: center; }
+
+#load_msg { animation: loadPulse 1.4s ease-in-out infinite; }
+@keyframes loadPulse { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
+
+#load_bar {
+  position: relative; width: 320px; height: 8px; margin: 14px auto 6px;
+  background: rgba(255,255,255,.12); border-radius: 5px; overflow: hidden;
+}
+/* activity sheen — a translateX transform, so it runs on the compositor and
+   keeps sweeping even while the main thread is busy appending a chunk. */
+#load_bar::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; border-radius: 5px;
+  background: linear-gradient(90deg, transparent, rgba(150,195,255,.55), transparent);
+  animation: loadSweep 1.15s linear infinite;
+  will-change: transform;
+}
+@keyframes loadSweep { from { transform: translateX(-110%); } to { transform: translateX(320%); } }
+/* fill via scaleX (compositor) instead of width (layout) so progress stays smooth */
+#load_fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
+  transform-origin: left; transform: scaleX(0);
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 10px rgba(96,165,250,.7); border-radius: 5px;
+  transition: transform .2s ease-out; will-change: transform;
+}
+#load_pct { color: var(--muted); font-size: 12px; letter-spacing: .3px; }
+.hidden { display: none !important; }
+.mono { font-family: monospace; }
+.muted { color: var(--muted); }
+
+/* run-browser status badges + actions */
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; white-space: nowrap; }
+.badge.ready { background: rgba(16,185,129,.2); color: var(--green); }
+.badge.partial { background: rgba(245,158,11,.2); color: var(--orange); }
+.badge.needs { background: rgba(120,120,140,.25); color: var(--muted); }
+.badge.open { background: rgba(250,204,21,.22); color: #facc15; }
+/* the run currently open in the viewer, highlighted in a golden hue */
+table.runs tr.current td { background: rgba(250,204,21,.13); }
+table.runs tr.current td:first-child { box-shadow: inset 3px 0 0 #facc15; color: #facc15; }
+td.actions { white-space: nowrap; }
+button.mini { padding: 3px 8px; font-size: 11px; }
+.copy { cursor: pointer; opacity: .5; }
+.copy:hover { opacity: 1; }
+table.runs tr:hover td { background: transparent; } /* row no longer whole-click */
+
+/* generate modal form */
+.gen-summary { margin-bottom: 12px; font-size: 13px; }
+.gen-form { display: flex; flex-direction: column; gap: 8px; }
+.gen-form > label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.gen-form .r { margin-right: 14px; font-size: 13px; color: var(--text); cursor: pointer; }
+.gen-form input.small { width: 80px; margin-left: 6px; }
+.gen-form .chk2 { color: var(--text); font-size: 13px; }
+
+/* live console */
+.phasebar { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; font-size: 12px; }
+.phasebar .step { padding: 3px 8px; border-radius: 4px; background: var(--bg-raised); color: var(--muted); }
+.phasebar .step.past { background: rgba(16,185,129,.25); color: var(--green); }
+.phasebar .step.cur { background: var(--accent); color: #fff; }
+.phasebar .sep { color: var(--muted); }
+.console {
+  background: #0b0b0d; border: 1px solid var(--border2); border-radius: 4px;
+  color: #cdd6e0; font-family: monospace; font-size: 11px; line-height: 1.45;
+  height: 46vh; overflow: auto; padding: 8px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word;
+}
+
+/* persistent status pill */
+#job_pill {
+  position: fixed; left: 396px; top: 14px; z-index: 90; cursor: pointer;
+  background: rgba(15,15,20,.92); border: 1px solid var(--accent); border-radius: 16px;
+  padding: 6px 12px; color: var(--text); font-size: 12px; display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.5); max-width: 320px;
+}
+#job_pill .pill-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#job_pill.done { border-color: var(--green); }
+#job_pill.failed { border-color: var(--red); }
+#job_pill .spin {
+  width: 11px; height: 11px; border: 2px solid var(--muted); border-top-color: var(--accent2);
+  border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

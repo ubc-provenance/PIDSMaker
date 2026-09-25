@@ -176,6 +176,26 @@ def encoder_factory(cfg, msg_dim, in_dim, device, max_node_num, graph_reindexer)
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
             )
+        elif method == "rgcn":
+            encoder = RGCN(
+                in_dim=in_dim,
+                out_dim=node_out_dim,
+                num_relations=get_num_edge_type(cfg),
+                num_layers=cfg.training.encoder.rgcn.num_layers,
+                activation=activation_fn_factory(cfg.training.encoder.rgcn.activation),
+                dropout=dropout,
+            )
+        elif method == "rgcn_per_type":
+            act_name = cfg.training.encoder.rgcn_per_type.activation
+            encoder = PerTypeRGCN(
+                in_dim=in_dim,
+                out_dim=node_out_dim,
+                num_relations=get_num_edge_type(cfg),
+                num_layers=cfg.training.encoder.rgcn_per_type.num_layers,
+                activation_factory=lambda: activation_fn_factory(act_name),
+                dropout=dropout,
+                num_node_types=cfg.dataset.num_node_types,
+            )
 
         # System-specific encoders
         elif method == "glstm":
@@ -480,6 +500,22 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None):
                 )
             )
 
+        elif objective == "one_class":
+            oc = objective_cfg.one_class
+            decoder = decoder_factory(
+                method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim, device=device
+            )
+            objectives.append(
+                OneClass(
+                    decoder=decoder,
+                    embed_dim=node_out_dim,
+                    beta=oc.beta,
+                    eps=oc.eps,
+                    warmup=oc.warmup,
+                    num_node_types=cfg.dataset.num_node_types,
+                )
+            )
+
         elif objective == "detect_edge_few_shot":
             classes = 2
             decoder = decoder_factory(
@@ -696,6 +732,32 @@ def optimizer_few_shot_factory(cfg, parameters):
     weight_decay = cfg.training.decoder.few_shot.weight_decay_few_shot
 
     return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
+
+
+def early_stop_tracker_factory(cfg):
+    """Build the per-type validation early-stop tracker used by the training loop.
+
+    Returns None when no such tracker is configured. OCR-APT's is currently the only
+    implementation; imported locally to avoid a cycle with `detection.training_methods`.
+
+    Args:
+        cfg: Configuration, checked for `training.ocrapt_early_stop.enabled`
+
+    Returns:
+        A tracker exposing `after_eval_epoch(cfg, model, train_data, epoch) -> bool`, or None
+    """
+    from pidsmaker.detection.training_methods.ocrapt_early_stop import OCRAPTEarlyStop
+
+    ocrapt_cfg = getattr(cfg.training, "ocrapt_early_stop", None)
+    if ocrapt_cfg is None or not ocrapt_cfg.enabled:
+        return None
+
+    return OCRAPTEarlyStop(
+        num_node_types=cfg.dataset.num_node_types,
+        patience=ocrapt_cfg.patience,
+        min_delta=ocrapt_cfg.min_delta,
+        max_delta=ocrapt_cfg.max_delta,
+    )
 
 
 def get_dimensions_from_data_sample(data):

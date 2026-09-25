@@ -56,6 +56,14 @@
         <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (14)</span></li>
     </ul>
     </li>
+    <li class='bullet'><span class="key">one_class</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (15)</span></li>
+        <li class='no-bullet'><span class="key-leaf">beta</span>: <span class="value">float (16)</span></li>
+        <li class='no-bullet'><span class="key-leaf">eps</span>: <span class="value">float (17)</span></li>
+        <li class='no-bullet'><span class="key-leaf">warmup</span>: <span class="value">int (18)</span></li>
+    </ul>
+    </li>
 </ul>
 
 </div>
@@ -74,3 +82,7 @@
 12. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 13. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
 14. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+15. Decoder applied to embeddings before the hypersphere; use 'none' (identity).<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+16. Soft-boundary fraction; radius is the (1-beta) distance quantile.<br>
+17. Center slack keeping |c| away from zero.<br>
+18. Kept for parity; a no-op (c/r update every train step).<br>

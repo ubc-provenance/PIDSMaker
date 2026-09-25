@@ -16,6 +16,7 @@ class GLSTM(nn.Module):
     through edge-type-aware message passing. Designed for NodLink's online
     detection approach on provenance graphs.
     """
+
     def __init__(
         self,
         in_features,

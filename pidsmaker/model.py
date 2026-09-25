@@ -95,7 +95,7 @@ class Model(nn.Module):
         if train_mode and x_for_encoding is not None:
             # Check if we have a GMAEFeatReconstruction objective
             for objective in self.objectives:
-                # ValidationWrapper hides the underlying objective's methods (like mask_input). 
+                # ValidationWrapper hides the underlying objective's methods (like mask_input).
                 # We need to access the inner objective to find and call mask_input if it exists.
                 # TODO: make ValidationWrapper transparently proxy method calls or use a more generic unwrapping approach.
                 actual_objective = objective

@@ -31,7 +31,7 @@ from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
     get_rel2id,
-    possible_events,
+    get_possible_events,
 )
 from pidsmaker.utils.utils import get_multi_datasets, log_dataset_stats, log_tqdm
 
@@ -183,19 +183,27 @@ def extract_msg_from_data(
     computed in previous tasks.
     """
     emb_dim = cfg.featurization.emb_dim
-    only_type = cfg.featurization.used_method.strip() == "only_type"
-    only_ones = cfg.featurization.used_method.strip() == "only_ones"
+    method = cfg.featurization.used_method.strip()
+    only_type = method == "only_type"
+    only_ones = method == "only_ones"
     if only_type or only_ones or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     edge_type_dim = cfg.dataset.num_edge_types
+
+    if method == "ocrapt_features":
+        # in-histogram + out-histogram (L2-normalized together) + idle min/max/avg,
+        # plus one extra dim each for the optional lifespan/cumulative-active-time
+        oc = cfg.featurization.ocrapt_features
+        emb_dim = 2 * edge_type_dim + 3 + int(oc.use_lifespan) + int(oc.use_cumulative_active_time)
+
     selected_node_feats = cfg.batching.node_features
 
     msg_len = data_set[0].msg.shape[1]
     expected_msg_len = (emb_dim * 2) + (node_type_dim * 2) + edge_type_dim
     if msg_len != expected_msg_len:
         raise ValueError(
-            f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len}"
+            f"The msg has an invalid shape, found {msg_len} instead of {expected_msg_len} (Is your num_edge_types correct?)"
         )
 
     field_to_size = {
@@ -302,10 +310,10 @@ def extract_msg_from_data(
 
     return data_set
 
-
 def get_possible_triplets(cfg):
     entity_map = get_node_map(from_zero=True)
     event_map = get_rel2id(cfg, from_zero=True)
+    possible_events = get_possible_events(cfg)
 
     possible_triplets = [
         [entity_map[src_type], entity_map[dst_type], event_map[event]]

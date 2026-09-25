@@ -1,0 +1,10 @@
+embedding_viz:
+  activated: false
+  embeddings: "word2vec"       # word2vec | encoder | both
+  method: "umap"               # umap | tsne
+  max_benign_nodes: "all"      # int or "all"
+  max_attack_nodes: "all"      # int or "all"
+  default_hops: 0
+  show_trajectories: true
+  show_stats_overlay: true
+  n_neighbors: 30

@@ -39,7 +39,6 @@ class GMAEFeatReconstruction(nn.Module):
                 "GMAEFeatReconstruction objective requires masked nodes, but mask_nodes is None."
             )
 
-
         batch = kwargs.get("batch")
         edge_feats = getattr(batch, "edge_feats", None) if batch else None
 

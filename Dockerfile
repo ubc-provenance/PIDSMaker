@@ -71,7 +71,8 @@ RUN pip install gensim==4.3.1 pytz==2024.1 pandas==2.2.2 yacs==0.1.8
 RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
     pip uninstall -y numpy && pip install numpy==1.26.4
 
-RUN pip install gdown==5.2.0
+RUN pip install gdown==5.2.0 umap-learn==0.5.6
+RUN pip install flask==3.0.3
 RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
 
 COPY . .

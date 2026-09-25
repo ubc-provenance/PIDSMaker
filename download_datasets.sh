@@ -27,6 +27,8 @@ get_id() {
     trace_e3) echo "1xZNBbhWQO0xGVBsg6ujdPh9UMUXiUQQd" ;;
     fivedirections_e3) echo "17YHqUMbuNwP05iaOaifxvcQc2oC9pJbZ" ;;
     fivedirections_e5) echo "1EkxlbReJgMHW4TwAypPggQBA-RTRVxs4" ;;
+    atlasv2_edr) echo "1t7pW7i23Ry-Z7Tpu2B-E4gezT7Wu74ma" ;;
+    carbanakv2_edr) echo "1rJN9F8JkmqMAV9zUjralcFB5wykAgLnd" ;;
     *) echo "" ;;
   esac
 }

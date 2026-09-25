@@ -7,7 +7,7 @@ from gensim.models import Word2Vec
 
 from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
 from pidsmaker.utils.utils import (
-    get_all_files_from_folders,
+    get_all_graphs_for_dates,
     get_indexid2msg,
     log,
     log_start,
@@ -19,8 +19,8 @@ from pidsmaker.utils.utils import (
 def get_node2corpus(cfg, splits):
     indexid2msg = get_indexid2msg(cfg)
 
-    days = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_files") for split in splits]))
-    sorted_paths = get_all_files_from_folders(cfg.transformation._graphs_dir, days)
+    dates = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_dates") for split in splits]))
+    sorted_paths = get_all_graphs_for_dates(cfg.transformation._graphs_dir, dates)
 
     data_of_graphs = []
 
