@@ -82,7 +82,7 @@ Any PIDS can replace its node featurization (e.g. `word2vec`) by an encoder pret
 | GraphMAE, GAE, DGI, DeepWalk, node2vec | Self-supervised GNNs and walk embeddings |
 
 ```shell
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider
 ```
 
 See the [documentation](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/) to download the weights, pretrain an encoder and fine-tune it as a detector.

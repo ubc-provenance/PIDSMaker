@@ -50,7 +50,7 @@ Each file describes an attack similar to the dataset's scenario, but with differ
 `pretrained_supervised.yml` runs Velox with SPIDER embeddings and this objective on CADETS_E3:
 
 ```shell
-python pidsmaker/main.py pretrained_supervised CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py pretrained_supervised CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider
 ```
 
 !!! note
@@ -59,7 +59,7 @@ python pidsmaker/main.py pretrained_supervised CADETS_E3 --featurization.pretrai
 For another dataset, point `attack_edges_path` to its file:
 
 ```shell
-python pidsmaker/main.py pretrained_supervised THEIA_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
+python pidsmaker/main.py pretrained_supervised THEIA_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider \
     --training.decoder.predict_edge_supervised.attack_edges_path=config/attack_edges/theia_e3.yml
 ```
 
