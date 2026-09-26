@@ -24,7 +24,7 @@ They can be used in two ways:
 | `deepwalk`, `node2vec` | Word2Vec on random walks over entity labels (no transformer) |
 | `graphmae`, `gae`, `dgi` | Self-supervised GNNs: masked feature reconstruction, link prediction and mutual information |
 
-[`config/pretrained/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/README.md) describes each encoder and its options, and [`config/pretrained/spider/spider.yml`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/spider/spider.yml) documents every option inline.
+[`config/pretrained/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/README.md) describes each encoder and its options, and [`config/pretrained/spider/spider.yml`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/spider/spider.yml) lists all options with their default values.
 
 ## Using an encoder in a PIDS
 

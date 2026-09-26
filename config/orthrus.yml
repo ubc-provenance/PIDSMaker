@@ -96,7 +96,6 @@ training:
 evaluation:
   viz_malicious_nodes: False
   ground_truth_version: orthrus
-  
   used_method: node_evaluation
   node_evaluation:
     threshold_method: max_val_loss
