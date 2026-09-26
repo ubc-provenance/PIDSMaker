@@ -1,4 +1,4 @@
-_include_yml: [default, threatrace, spider]
+_include_yml: [default, flash, pretrained]
 
 training:
   lr: 0.0001
@@ -6,3 +6,4 @@ training:
   node_out_dim: 3
   encoder:
     dropout: 0.1
+

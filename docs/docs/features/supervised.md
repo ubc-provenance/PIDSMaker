@@ -47,19 +47,19 @@ Labels follow the format of the dataset's node labels, set by `construction.node
 `config/attack_edges/` provides one file for CADETS_E3, CADETS_E5, THEIA_E3, THEIA_E5, TRACE_E3 and TRACE_E5.
 Each file describes an attack similar to the dataset's scenario, but with different indicators (such as C2 IP addresses), so that the classifier can't simply memorize the real attack.
 
-`spider_supervised.yml` runs Velox with SPIDER embeddings and this objective on CADETS_E3:
+`pretrained_supervised.yml` runs Velox with SPIDER embeddings and this objective on CADETS_E3:
 
 ```shell
-python pidsmaker/main.py spider_supervised CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py pretrained_supervised CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
 ```
 
 !!! note
-    The attack labels are embedded when the `feat_inference` task runs. If that task already ran with the same settings, for example with `spider_velox`, it is skipped and the embeddings are missing: add `--force_restart=feat_inference`.
+    The attack labels are embedded when the `feat_inference` task runs. If that task already ran with the same settings, for example with `pretrained_velox`, it is skipped and the embeddings are missing: add `--force_restart=feat_inference`.
 
 For another dataset, point `attack_edges_path` to its file:
 
 ```shell
-python pidsmaker/main.py spider_supervised THEIA_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
+python pidsmaker/main.py pretrained_supervised THEIA_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
     --training.decoder.predict_edge_supervised.attack_edges_path=config/attack_edges/theia_e3.yml
 ```
 

@@ -1,4 +1,4 @@
-_include_yml: spider_velox
+_include_yml: pretrained_velox
 
 training:
   decoder:

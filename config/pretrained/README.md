@@ -4,15 +4,16 @@ Configs in this folder use `featurization.used_method: pretrained`: a pretrained
 embeds the label of each entity, and these embeddings are the node features of the detector.
 See the [documentation](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/) for a full guide.
 
-| Folder | Content |
+| Config | Content |
 |---|---|
-| `spider/` | `spider.yml` (all SPIDER hyperparameters) and `spider_<pids>.yml` (SPIDER plugged into a PIDS) |
+| `pretrained.yml` | all options of the pretrained encoders (SPIDER by default) |
+| `pretrained_<pids>.yml` | a pretrained encoder plugged into a PIDS |
 | `cybergfm/` | the CyberGFM recipe: BERT pretraining (`model_type: bert`) with fine-tuned detection (`cybergfm.yml`) |
 
-Configs are invoked by their name. `spider.yml` is included by the `spider_<pids>.yml` configs, which are the ones to run:
+Configs are invoked by their name. `pretrained.yml` is included by the `pretrained_<pids>.yml` configs, which are the ones to run:
 
 ```
-python pidsmaker/main.py spider_velox CADETS_E3
+python pidsmaker/main.py pretrained_velox CADETS_E3
 python pidsmaker/main.py cybergfm CADETS_E3
 ```
 

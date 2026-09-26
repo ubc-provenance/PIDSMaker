@@ -311,7 +311,7 @@ class TestPretrainedEncoders:
     @pytest.mark.parametrize("model_type", model_types)
     def test_pretrained_featurization(self, dataset, device, model_type):
         custom_args = self.pretraining_args(dataset) + [("featurization.pretrained.model_type", model_type)]
-        cfg = prepare_cfg("spider_velox", dataset, device=device, custom_args=custom_args)
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
     def test_continue_pretraining(self, dataset, device):
@@ -319,7 +319,7 @@ class TestPretrainedEncoders:
             ("feat_inference.continue_pretrain", True),
             ("feat_inference.continue_pretrain_epochs", 1),
         ]
-        cfg = prepare_cfg("spider_velox", dataset, device=device, custom_args=custom_args)
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
     def test_rename_attack(self, dataset, device):
@@ -329,7 +329,7 @@ class TestPretrainedEncoders:
             ("feat_inference.rename_attack.target_node_type", "subject"),
             ("feat_inference.rename_attack.top_k", 100),
         ]
-        cfg = prepare_cfg("spider_velox", dataset, device=device, custom_args=custom_args)
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
     def test_finetune_as_detector(self, dataset, device):
@@ -340,7 +340,7 @@ class TestPretrainedEncoders:
     def test_supervised_fine_tuning(self, dataset, device):
         # The attack labels are embedded by feat_inference, which may be cached by a previous test
         custom_args = self.pretraining_args(dataset) + [("force_restart", "feat_inference")]
-        cfg = prepare_cfg("spider_supervised", dataset, device=device, custom_args=custom_args)
+        cfg = prepare_cfg("pretrained_supervised", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
 

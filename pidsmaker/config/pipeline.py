@@ -508,7 +508,7 @@ def get_yml_file(filename, folder=""):
         return os.path.join(ROOT_PROJECT_PATH, "config", folder, f"{filename}.yml")
 
     # Bare name → prefer config/<filename>.yml, otherwise search recursively
-    # so files organized into subfolders (e.g. config/pretrained/spider/) are
+    # so files organized into subfolders (e.g. config/pretrained/cybergfm/) are
     # invokable by name alone.
     config_root = os.path.join(ROOT_PROJECT_PATH, "config")
     top_level = os.path.join(config_root, f"{filename}.yml")

@@ -1,4 +1,4 @@
-_include_yml: [velox, spider]
+_include_yml: [velox, pretrained]
 
 training:
   lr: 0.0001

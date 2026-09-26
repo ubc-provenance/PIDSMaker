@@ -1,4 +1,4 @@
-_include_yml: [default, kairos, spider]
+_include_yml: [default, kairos, pretrained]
 
 training:
   num_epochs: 16

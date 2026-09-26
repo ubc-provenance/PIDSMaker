@@ -24,27 +24,27 @@ They can be used in two ways:
 | `deepwalk`, `node2vec` | Word2Vec on random walks over entity labels (no transformer) |
 | `graphmae`, `gae`, `dgi` | Self-supervised GNNs: masked feature reconstruction, link prediction and mutual information |
 
-[`config/pretrained/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/README.md) describes each encoder and its options, and [`config/pretrained/spider/spider.yml`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/spider/spider.yml) lists all options with their default values.
+[`config/pretrained/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/README.md) describes each encoder and its options, and [`config/pretrained/pretrained.yml`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/pretrained.yml) lists all options with their default values.
 
 ## Using an encoder in a PIDS
 
-One config is provided per PIDS. Each one includes the PIDS config and `spider.yml`, so the detector stays the same and only its node features change.
+One config is provided per PIDS. Each one includes the PIDS config and `pretrained.yml`, so the detector stays the same and only its node features change.
 
 | Config | PIDS |
 |---|---|
-| `spider_velox` | Velox |
-| `spider_orthrus` | Orthrus (non-snooped) |
-| `spider_kairos` | Kairos |
-| `spider_magic` | MAGIC |
-| `spider_flash` | Flash |
-| `spider_nodlink` | NodLink |
-| `spider_threatrace` | ThreaTrace |
+| `pretrained_velox` | Velox |
+| `pretrained_orthrus` | Orthrus (non-snooped) |
+| `pretrained_kairos` | Kairos |
+| `pretrained_magic` | MAGIC |
+| `pretrained_flash` | Flash |
+| `pretrained_nodlink` | NodLink |
+| `pretrained_threatrace` | ThreaTrace |
 
 They use SPIDER by default. Set `featurization.pretrained.model_type` to use another encoder, for example GPT-2 or DeepWalk in Velox:
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk
 ```
 
 These configs also enable [`training.stable_optim`](instability.md#reducing-instability).
@@ -83,10 +83,10 @@ mkdir -p weights && tar -xzf SPIDER-weights.tar.gz -C weights
 export SPIDER_WEIGHTS=$(realpath weights/spider)
 ```
 
-Then pass the folder to any `spider_<pids>` config:
+Then pass the folder to any `pretrained_<pids>` config:
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
 ```
 
 The folder contains:
@@ -103,10 +103,10 @@ The folder contains:
 
 With `feat_inference.continue_pretrain: True`, SPIDER is further pretrained on the benign training data of the target dataset before embedding its entities.
 This needs the teacher files of the weights folder.
-`feat_inference.continue_pretrain_epochs` (10 in `spider.yml`) and `feat_inference.continue_pretrain_lr_factor` (0.1, relative to the pretraining learning rate) control this step.
+`feat_inference.continue_pretrain_epochs` (10 in `pretrained.yml`) and `feat_inference.continue_pretrain_lr_factor` (0.1, relative to the pretraining learning rate) control this step.
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS --feat_inference.continue_pretrain=True
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS --feat_inference.continue_pretrain=True
 ```
 
 ### Renaming attack
@@ -118,7 +118,7 @@ The benign name is either drawn from the `top_k` most frequent labels of the tra
 For example, on CADETS_E3, renaming its attack processes to frequent benign names:
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
     --feat_inference.rename_attack.enabled=True \
     --feat_inference.rename_attack.entities="main, pEja72mA, XIM, tmux-1002, font, sendmail" \
     --feat_inference.rename_attack.target_node_type=subject \

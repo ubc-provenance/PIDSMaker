@@ -789,7 +789,7 @@ FEATURIZATIONS_CFG = {
         # Token-budget training loop. Used by: MLM family, GNN token-budget
         # (gnn_distill / spider / behavior_cluster), HF pretrained. Ignored by:
         # walk embedding (uses deepwalk.epochs) and GNN-SSL (graphmae / gae / dgi
-        # have their own .epochs and .lr). See spider.yml for the full scope map.
+        # have their own .epochs and .lr). See pretrained.yml for the full scope map.
         "training": {
             "pretrain_tokens": Arg(int, desc="Total number of tokens to process during pretraining (controls training duration)."),
             "warmup_tokens": Arg(int, desc="Number of tokens for learning rate warmup at the start of pretraining."),
