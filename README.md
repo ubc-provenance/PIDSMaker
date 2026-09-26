@@ -76,7 +76,7 @@ Any PIDS can replace its node featurization (e.g. `word2vec`) by an encoder pret
 | Encoder | Description |
 |---------|-------------|
 | SPIDER (NeurIPS 2026) | T5 entity encoder distilled from a GNN teacher, with [pretrained weights](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/#pretrained-weights) |
-| CyberGFM | BERT pretrained on random walks, then fine-tuned as a detector |
+| [CyberGFM](https://arxiv.org/abs/2601.05988) | BERT pretrained on random walks, then fine-tuned as a detector |
 | GPT-2, Llama 3.2, OPT | General-purpose language models fine-tuned on entity labels |
 | BERT, RoBERTa, ModernBERT, LogBERT, Llama | Language models trained from scratch on random walks |
 | GraphMAE, GAE, DGI, DeepWalk, node2vec | Self-supervised GNNs and walk embeddings |

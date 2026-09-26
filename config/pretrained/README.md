@@ -8,7 +8,7 @@ See the [documentation](https://ubc-provenance.github.io/PIDSMaker/features/pret
 |---|---|
 | `pretrained.yml` | all options of the pretrained encoders (SPIDER by default) |
 | `pretrained_<pids>.yml` | a pretrained encoder plugged into a PIDS |
-| `cybergfm/` | the CyberGFM recipe: BERT pretraining (`model_type: bert`) with fine-tuned detection (`cybergfm.yml`) |
+| `cybergfm/` | the [CyberGFM](https://arxiv.org/abs/2601.05988) recipe: BERT pretraining (`model_type: bert`) with fine-tuned detection (`cybergfm.yml`) |
 
 Configs are invoked by their name. `pretrained.yml` is included by the `pretrained_<pids>.yml` configs, which are the ones to run:
 

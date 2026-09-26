@@ -1,7 +1,7 @@
 # Pretrained Encoders
 
 Most PIDSs turn the label of each entity (process command line, file path, IP address and port) into a vector with a model trained on the target dataset only, such as `word2vec` or `doc2vec`.
-PIDSMaker can instead use an encoder **pretrained** on provenance data: [SPIDER](#spider), CyberGFM, masked language models, self-supervised GNNs, or general-purpose language models such as GPT-2 and Llama.
+PIDSMaker can instead use an encoder **pretrained** on provenance data: [SPIDER](#spider), [CyberGFM](https://arxiv.org/abs/2601.05988), masked language models, self-supervised GNNs, or general-purpose language models such as GPT-2 and Llama.
 
 All pretrained encoders share one featurization method, `featurization.used_method: pretrained`, and `featurization.pretrained.model_type` picks the encoder.
 They can be used in two ways:
