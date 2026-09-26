@@ -1,6 +1,6 @@
 # Pretrained encoder configs
 
-Configs in this folder use `featurization.used_method: spider`,
+Configs in this folder use `featurization.used_method: pretrained`,
 which trains (or loads) a graph foundation model that produces static node
 embeddings consumed by the downstream GNN detector.
 
@@ -24,11 +24,11 @@ python pidsmaker/main.py cybergfm       CADETS_E3   # config/pretrained/cybergfm
 
 ## Config structure
 
-Inside `featurization.spider`:
+Inside `featurization.pretrained`:
 
 | Section | Scope |
 |---|---|
-| top-level keys (`model_type`, `model_size`, `graph_context_mode`, `pretrain_datasets`, `spider_path`) | shared across every `model_type` |
+| top-level keys (`model_type`, `model_size`, `graph_context_mode`, `pretrain_datasets`, `weights_path`) | shared across every `model_type` |
 | `training:` | token-budget loop (`pretrain_tokens`, `warmup_tokens`, `batch_size`, `lr`, `scheduler`) — used by MLM, GNN token-budget, and HF pretrained |
 | `mlm:` | MLM masking (`mask_rate_*`, `mask_edge_type`) plus per-architecture sub-blocks (`modernbert`, `ropebert`, `llama`, `logbert`) |
 | `walks:` | random-walk corpus (`walk_length`, `num_walks`, `time_weight`, …) — drives MLM/walk-embedding; ignored by GNN-SSL / GNN-token-budget / HF |
@@ -170,10 +170,10 @@ by the downstream detector:
    SPIDER embeddings.
 
 2. **As a fine-tuned scorer** — set
-   `training.used_method: spider`. The pretrained encoder
+   `training.used_method: pretrained`. The pretrained encoder
    is fine-tuned on the target dataset and produces *anomaly scores
    directly*; the baseline GNN detector is bypassed. Configure under
-   `training.spider`. See `cybergfm/cybergfm.yml` for a
+   `training.pretrained`. See `cybergfm/cybergfm.yml` for a
    full example. Knobs:
 
    - **`finetune_mode`** — picks the head + loss. Only `bert`-family
@@ -221,7 +221,7 @@ by the downstream detector:
   against other featurizers under a fixed detector — i.e. when the question
   is *"do these embeddings help?"*. All `spider_<baseline>.yml` configs
   in `spider/` are mode 1.
-- Use **mode 2** (`used_method: spider`) when the SPIDER model is
+- Use **mode 2** (`used_method: pretrained`) when the SPIDER model is
   itself the detector — i.e. when the question is *"can pretraining replace
   the GNN?"*. Pick `finetune_mode` from the model family:
   encoder MLM → `cls`/`lp`/`mlm`, causal LM → `perplexity`,
@@ -230,7 +230,7 @@ by the downstream detector:
 
 ## Reusing a pretrained SPIDER model
 
-Set `spider_path` to a directory containing any subset of:
+Set `weights_path` to a directory containing any subset of:
 `tokenizer.pt`, `corpus.pt`, `behavior_vocab.txt`,
 `pretrain_<model_size>.pt`, `pretrain_<model_size>_best.pt`. Present files
 are symlinked into the run's model dir; if a checkpoint exists, pretraining

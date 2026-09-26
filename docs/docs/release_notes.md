@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Pretrained encoders as node featurization for any PIDS (`featurization.used_method: spider`, `featurization.spider.model_type`): SPIDER (NeurIPS 2026, with pretrained weights), CyberGFM, GPT-2, Llama 3.2 and OPT fine-tuned on entity labels, language models trained on random walks (BERT, RoBERTa, ModernBERT, LogBERT, Llama), self-supervised GNNs (GraphMAE, GAE, DGI), DeepWalk and node2vec. One config per PIDS in `config/pretrained/spider/`, and fine-tuning of the encoder as a detector (`training.used_method: spider`).
+- Pretrained encoders as node featurization for any PIDS (`featurization.used_method: pretrained`, `featurization.pretrained.model_type`): SPIDER (NeurIPS 2026, with pretrained weights), CyberGFM, GPT-2, Llama 3.2 and OPT fine-tuned on entity labels, language models trained on random walks (BERT, RoBERTa, ModernBERT, LogBERT, Llama), self-supervised GNNs (GraphMAE, GAE, DGI), DeepWalk and node2vec. One config per PIDS in `config/pretrained/spider/`, and fine-tuning of the encoder as a detector (`training.used_method: pretrained`).
 - `training.stable_optim`: AdamW, warmup and cosine learning rate schedule, and gradient clipping, to reduce the instability between runs.
 - `PROVENANCE_BENIGN` pretraining corpus, with its collection scripts in `scripts/provenance_capture/`.
 - `predict_edge_supervised` objective: supervised fine-tuning with attack edges (`config/attack_edges/`).

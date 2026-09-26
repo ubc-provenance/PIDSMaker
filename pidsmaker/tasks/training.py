@@ -9,7 +9,7 @@ def main(cfg):
     method = cfg.training.used_method.strip()
     if method == "default":
         return training_loop.main(cfg)
-    elif method == "spider":
+    elif method == "pretrained":
         from pidsmaker.spider import detect
         return detect.main(cfg)
     else:

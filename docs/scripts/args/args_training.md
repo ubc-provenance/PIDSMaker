@@ -61,7 +61,7 @@
 5. Use AdamW + warmup cosine schedule + gradient clipping for stable training.<br>
 6. Device used during testing.<br><br><b>Available options (one selection)</b>:<br>`cpu`<br>`cuda`
 7. During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss.<br>
-8. Which training pipeline use.<br><br><b>Available options (one selection)</b>:<br>`default`<br>`spider`
+8. Which training pipeline use.<br><br><b>Available options (one selection)</b>:<br>`default`<br>`pretrained`
 9. Off by default, no-op unless set.<br>
 10. First part of the neural network. Usually GNN encoders to capture complex patterns.<br><br><b>Available options (multi selection)</b>:<br>`tgn`<br>`graph_attention`<br>`sage`<br>`gat`<br>`gin`<br>`rgcn`<br>`rgcn_per_type`<br>`sum_aggregation`<br>`rcaid_gat`<br>`magic_gat`<br>`glstm`<br>`custom_mlp`<br>`none`<br>`hetero_graph_transformer`
 11. Whether to consider nodes differently when being source or destination.<br>

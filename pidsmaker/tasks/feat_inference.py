@@ -172,7 +172,7 @@ def get_indexid2vec(cfg):
         return feat_inference_flash.main(cfg)
     if method == "fasttext":
         return feat_inference_fasttext.main(cfg)
-    if method == "spider":
+    if method == "pretrained":
         return feat_inference_spider.main(cfg)
 
     raise ValueError(f"Invalid node embedding method {method}")
@@ -181,7 +181,7 @@ def get_indexid2vec(cfg):
 def main_from_config(cfg):
     # When gnn_training uses spider, detection reads raw graphs directly
     # and never consumes the .TemporalData.simple files produced here.
-    if cfg.training.used_method.strip() == "spider":
+    if cfg.training.used_method.strip() == "pretrained":
         from pidsmaker.utils.utils import log
         log("feat_inference: skipping edge embedding computation — "
             "gnn_training.used_method=spider reads raw graphs directly.")

@@ -3,7 +3,7 @@
 Most PIDSs turn the label of each entity (process command line, file path, IP address and port) into a vector with a model trained on the target dataset only, such as `word2vec` or `doc2vec`.
 PIDSMaker can instead use an encoder **pretrained** on provenance data: [SPIDER](#spider), CyberGFM, masked language models, self-supervised GNNs, or general-purpose language models such as GPT-2 and Llama.
 
-All pretrained encoders share one featurization method, `featurization.used_method: spider`, and `featurization.spider.model_type` picks the encoder.
+All pretrained encoders share one featurization method, `featurization.used_method: pretrained`, and `featurization.pretrained.model_type` picks the encoder.
 They can be used in two ways:
 
 - **As a frozen featurizer** (default): the encoder embeds the entities of the target dataset, and these embeddings become the node features of any PIDS. The detector itself is unchanged.
@@ -40,29 +40,29 @@ One config is provided per PIDS. Each one includes the PIDS config and `spider.y
 | `spider_nodlink` | NodLink |
 | `spider_threatrace` | ThreaTrace |
 
-They use SPIDER by default. Set `featurization.spider.model_type` to use another encoder, for example GPT-2 or DeepWalk in Velox:
+They use SPIDER by default. Set `featurization.pretrained.model_type` to use another encoder, for example GPT-2 or DeepWalk in Velox:
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.spider.model_type=gpt2_pretrained --featurization.spider.model_size=small
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.spider.model_type=deepwalk
+python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small
+python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk
 ```
 
 These configs also enable [`training.stable_optim`](instability.md#reducing-instability).
 
 ### Pretraining
 
-Without pretrained weights, the encoder is first pretrained on the benign data of the datasets listed in `featurization.spider.pretrain_datasets`: by default `PROVENANCE_BENIGN`, `TRACE_E3`, `TRACE_E5`, `CADETS_E5`, `CLEARSCOPE_E3` and `optc_h201`. Each of them must be installed as a database.
+Without pretrained weights, the encoder is first pretrained on the benign data of the datasets listed in `featurization.pretrained.pretrain_datasets`: by default `PROVENANCE_BENIGN`, `TRACE_E3`, `TRACE_E5`, `CADETS_E5`, `CLEARSCOPE_E3` and `optc_h201`. Each of them must be installed as a database.
 `PROVENANCE_BENIGN` is a Linux audit corpus that you collect yourself (see [Datasets](../datasets.md#provenance_benign)).
 
 The trained encoder is saved in the `stored_models/` folder of the run's featurization artifacts.
-Pass that folder with `--featurization.spider.spider_path` to reuse it in other runs without pretraining again. The path must be absolute, because its files are symlinked into each run's artifact folder.
+Pass that folder with `--featurization.pretrained.weights_path` to reuse it in other runs without pretraining again. The path must be absolute, because its files are symlinked into each run's artifact folder.
 
 The main options are:
 
-- `featurization.spider.model_size`: `tiny`, `mini`, `med` or `baseline` for the encoders trained from scratch, or the variant of GPT-2, Llama and OPT.
-- `featurization.spider.training`: token budget (`pretrain_tokens`, `warmup_tokens`), `batch_size` and `lr`.
-- `featurization.spider.tokenizer`: BPE vocabulary size and maximum label length (not used by GPT-2, Llama and OPT, which have their own tokenizers).
-- `featurization.spider.walks`: random walks used by the masked language models and DeepWalk.
+- `featurization.pretrained.model_size`: `tiny`, `mini`, `med` or `baseline` for the encoders trained from scratch, or the variant of GPT-2, Llama and OPT.
+- `featurization.pretrained.training`: token budget (`pretrain_tokens`, `warmup_tokens`), `batch_size` and `lr`.
+- `featurization.pretrained.tokenizer`: BPE vocabulary size and maximum label length (not used by GPT-2, Llama and OPT, which have their own tokenizers).
+- `featurization.pretrained.walks`: random walks used by the masked language models and DeepWalk.
 
 All options are listed in the [featurization arguments](../config/featurization.md).
 
@@ -86,7 +86,7 @@ export SPIDER_WEIGHTS=$(realpath weights/spider)
 Then pass the folder to any `spider_<pids>` config:
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.spider.spider_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
 ```
 
 The folder contains:
@@ -106,7 +106,7 @@ This needs the teacher files of the weights folder.
 `feat_inference.continue_pretrain_epochs` (10 in `spider.yml`) and `feat_inference.continue_pretrain_lr_factor` (0.1, relative to the pretraining learning rate) control this step.
 
 ```shell
-python pidsmaker/main.py spider_velox CADETS_E3 --featurization.spider.spider_path=$SPIDER_WEIGHTS --feat_inference.continue_pretrain=True
+python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS --feat_inference.continue_pretrain=True
 ```
 
 ### Renaming attack
@@ -124,7 +124,7 @@ Three configs run this experiment on CADETS_E3, whose attack processes are liste
 | `spider_velox_rename_seen_continue` | Like `seen`, after [continued pretraining](#continued-pretraining-on-the-target-dataset) on CADETS_E3 |
 
 ```shell
-python pidsmaker/main.py spider_velox_rename_seen CADETS_E3 --featurization.spider.spider_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py spider_velox_rename_seen CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
 ```
 
 ### Evaluating the embeddings
@@ -143,8 +143,8 @@ On `main`, the configs are adapted to the current version of PIDSMaker (for exam
 
 ## Fine-tuning the encoder as a detector
 
-With `training.used_method: spider`, the GNN detector is bypassed: the pretrained encoder is fine-tuned on the target dataset and scores edges directly.
-`training.spider.finetune_mode` picks the fine-tuning objective:
+With `training.used_method: pretrained`, the GNN detector is bypassed: the pretrained encoder is fine-tuned on the target dataset and scores edges directly.
+`training.pretrained.finetune_mode` picks the fine-tuning objective:
 
 | `finetune_mode` | Objective |
 |---|---|
@@ -153,7 +153,7 @@ With `training.used_method: spider`, the GNN detector is bypassed: the pretraine
 | `cls` | Ranking benign walks against perturbed ones (no labels) |
 | `cls_attack` | Classification with walks from ground-truth attack edges (supervised) |
 | `edge_cls` | Edge type classification from the endpoint embeddings |
-| `tgn` | A TGN trained on top of the frozen embeddings (options under `training.spider.tgn`) |
+| `tgn` | A TGN trained on top of the frozen embeddings (options under `training.pretrained.tgn`) |
 | `perplexity` | No fine-tuning: next-token perplexity of a causal model (`model_type: llama`) |
 
 [`config/pretrained/cybergfm/cybergfm.yml`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/cybergfm/cybergfm.yml) implements the CyberGFM baseline this way, with BERT pretraining followed by link prediction:

@@ -483,7 +483,7 @@ def _precompute_entity_embeddings(
 
     Returns: [num_nodes, entity_emb_dim] tensor.
     """
-    pretrain_cfg = cfg.featurization.spider
+    pretrain_cfg = cfg.featurization.pretrained
     model_type = pretrain_cfg.model_type
     model_size = pretrain_cfg.model_size
     pretrain_dir = cfg.featurization._model_dir
@@ -596,8 +596,8 @@ def _train_edge_cls(cfg):
     from .models.tgn import EdgeTypeClassifier
     import torch.nn as nn
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_size = pretrain_cfg.model_size
     finetune_epochs = detect_cfg.finetune_epochs
     finetune_lr = detect_cfg.finetune_lr
@@ -761,8 +761,8 @@ def _train_tgn(cfg):
     """
     log_start(__file__)
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_size = pretrain_cfg.model_size
     finetune_epochs = detect_cfg.finetune_epochs
     finetune_lr = detect_cfg.finetune_lr
@@ -1174,8 +1174,8 @@ def _train_tgn(cfg):
 def main(cfg):
     log_start(__file__)
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_type = pretrain_cfg.model_type
     model_size = pretrain_cfg.model_size
     finetune_mode = detect_cfg.finetune_mode

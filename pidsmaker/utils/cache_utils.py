@@ -184,7 +184,7 @@ def extract_cache_params(cfg_section, param_keys: list[str]) -> Dict[str, Any]:
     Useful helper to extract only cache-relevant params from a config object.
 
     Args:
-        cfg_section: Config section (e.g., cfg.featurization.spider.walks)
+        cfg_section: Config section (e.g., cfg.featurization.pretrained.walks)
         param_keys: List of parameter names to extract
 
     Returns:
@@ -208,7 +208,7 @@ def config_to_params(cfg_section, exclude_private: bool = True) -> Dict[str, Any
     private attributes (starting with _) and methods by default.
 
     Args:
-        cfg_section: Config section (e.g., cfg.featurization.spider.walks)
+        cfg_section: Config section (e.g., cfg.featurization.pretrained.walks)
         exclude_private: If True, exclude attributes starting with '_'
 
     Returns:
@@ -223,7 +223,7 @@ def config_to_params(cfg_section, exclude_private: bool = True) -> Dict[str, Any
         }
 
         # Simply do:
-        corpus_params = config_to_params(cfg.featurization.spider.walks)
+        corpus_params = config_to_params(cfg.featurization.pretrained.walks)
     """
     params = {}
 

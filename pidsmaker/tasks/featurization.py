@@ -33,7 +33,7 @@ def main(cfg):
         featurization_flash.main(cfg)
     elif method == "fasttext":
         featurization_fasttext.main(cfg)
-    elif method == "spider":
+    elif method == "pretrained":
         from pidsmaker.spider import pretrain
         pretrain.main(cfg)
     else:

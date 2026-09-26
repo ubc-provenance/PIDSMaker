@@ -17,4 +17,4 @@
 3. The partition of data used to train the featurization method.<br><br><b>Available options (one selection)</b>:<br>`train`<br>`all`
 4. Whether the featurization method should be trained on all datasets in `multi_dataset`.<br>
 5. Comma-separated list of dataset names for multi-dataset pretraining (used by word2vec, doc2vec, etc.).<br>
-6. Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br>`word2vec`<br>`doc2vec`<br>`fasttext`<br>`alacarte`<br>`temporal_rw`<br>`flash`<br>`hierarchical_hashing`<br>`magic`<br>`only_type`<br>`only_ones`<br>`ocrapt_features`<br>`spider`
+6. Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br>`word2vec`<br>`doc2vec`<br>`fasttext`<br>`alacarte`<br>`temporal_rw`<br>`flash`<br>`hierarchical_hashing`<br>`magic`<br>`only_type`<br>`only_ones`<br>`ocrapt_features`<br>`pretrained`

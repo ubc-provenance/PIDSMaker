@@ -20,7 +20,6 @@ import torch
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_discrimination_score,
-    compute_discrimination2_score,
     compute_discrimination_tp,
     compute_tp_per_attack_thr,
     compute_kmeans_labels,
@@ -408,7 +407,6 @@ def main(
         pred_scores, nodes, node2attacks, y_truth, adp_img_file
     )
     discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
-    discrim2_scores = compute_discrimination2_score(pred_scores, nodes, node2attacks, y_truth)
     plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     tp_per_attack = compute_tp_per_attack_thr(pred_scores, nodes, node2attacks, y_truth, thr)
@@ -467,9 +465,6 @@ def main(
     stats["threshold"] = thr
 
     for k, v in discrim_scores.items():
-        stats[k] = round(v, 4)
-
-    for k, v in discrim2_scores.items():
         stats[k] = round(v, 4)
 
     attack2tps = get_detected_tps_node_level(pred_scores, nodes, node2attacks, y_truth, cfg)

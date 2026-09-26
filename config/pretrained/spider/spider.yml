@@ -8,10 +8,10 @@ construction:
   consistent_edge_types: True
 
 featurization:
-    used_method: spider
+    used_method: pretrained
     emb_dim: 256
     seed: 42
-    spider:
+    pretrained:
       # ────────────────────────────────────────────────────────────────────
       # Supported model_types, grouped by training mode:
       #   MLM walk-based      : bert, roberta, ropebert, llama, modernbert, logbert
@@ -41,7 +41,7 @@ featurization:
       # Multi-dataset pretraining (comma-separated)
       pretrain_datasets: PROVENANCE_BENIGN,TRACE_E3,TRACE_E5,CADETS_E5,CLEARSCOPE_E3,optc_h201
 
-      # spider_path: /home/pids/weights/spider
+      # weights_path: /home/pids/weights/spider
 
       # ── Token-budget training loop
       #    Used by: MLM family, GNN token-budget (gnn_distill / spider / behavior_cluster), HF pretrained.

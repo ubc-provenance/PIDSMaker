@@ -631,7 +631,7 @@ FEATURIZATIONS_CFG = {
         "use_lifespan": Arg(bool, desc="Off by default, hurts generalization (paper Appendix E)."),
         "use_cumulative_active_time": Arg(bool, desc="Off by default, same reason as use_lifespan."),
     },
-    "spider": {
+    "pretrained": {
         # Model configuration
         "model_size": Arg(
             str,
@@ -835,7 +835,7 @@ FEATURIZATIONS_CFG = {
             "normalize_netflow_ips": Arg(bool, desc="Replace IP addresses in netflow entities with category tokens ([PRIVATE_IP], [PUBLIC_IP], [LOCALHOST_IP]) instead of keeping individual octets."),
             "canonicalize_neighbors": Arg(bool, desc="Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended."),
         },
-        "spider_path": Arg(str, desc="Path to a pretrained SPIDER model folder. May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type."),
+        "weights_path": Arg(str, desc="Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type."),
 
         "graph_context_mode": Arg(
             str,
@@ -1324,7 +1324,7 @@ TASK_ARGS = {
         ),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "fuse_duplicate_edges_training": Arg(bool, desc="During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss."),
-        "used_method": Arg(str, vals=OR(["default", "spider"]), desc="Which training pipeline use."),
+        "used_method": Arg(str, vals=OR(["default", "pretrained"]), desc="Which training pipeline use."),
         "ocrapt_early_stop": {
             "enabled": Arg(bool, desc="Off by default, no-op unless set."),
             "patience": Arg(int),
@@ -1364,7 +1364,7 @@ TASK_ARGS = {
                 },
             },
         },
-        "spider": {
+        "pretrained": {
             "finetune_mode": Arg(str, desc="Fine-tuning and scoring mode: 'cls', 'cls_attack', 'lp', 'mlm', 'tgn', 'edge_cls', or 'perplexity'."),
             "finetune_epochs": Arg(int, desc="Number of fine-tuning epochs."),
             "finetune_walk_len": Arg(int, desc="Number of nodes per context walk during fine-tuning and inference."),

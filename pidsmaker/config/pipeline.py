@@ -275,8 +275,8 @@ def set_task_paths(cfg, subtask_concat_value=None):
         restart_values = flatten_arg_values(task_cfg)
 
         _spider_pretrain_datasets = (
-            cfg.featurization.used_method == "spider"
-            and getattr(cfg.featurization.spider, "pretrain_datasets", None)
+            cfg.featurization.used_method == "pretrained"
+            and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
         )
 
         # Normalize pretrain_datasets order so the hash is the same
@@ -330,8 +330,8 @@ def set_task_paths(cfg, subtask_concat_value=None):
         # transformation) are unaffected — their paths must remain dataset-specific.
         # Dataset identity for downstream tasks is captured by the directory component.
         if (
-            cfg.featurization.used_method == "spider"
-            and getattr(cfg.featurization.spider, "pretrain_datasets", None)
+            cfg.featurization.used_method == "pretrained"
+            and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
             and (task == "featurization" or "featurization" in deps)
         ):
             deps = [d for d in deps if d != "construction"]
@@ -349,13 +349,13 @@ def set_task_paths(cfg, subtask_concat_value=None):
             # (added above), so different inputs remain distinct.
             dataset_dir = cfg.dataset.name
             if (
-                cfg.featurization.used_method == "spider"
-                and getattr(cfg.featurization.spider, "pretrain_datasets", None)
+                cfg.featurization.used_method == "pretrained"
+                and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
                 and (task == "featurization" or "featurization" in deps)
             ):
                 datasets = sorted(
                     d.strip()
-                    for d in cfg.featurization.spider.pretrain_datasets.split(",")
+                    for d in cfg.featurization.pretrained.pretrain_datasets.split(",")
                 )
                 dataset_dir = "+".join(datasets)
 
@@ -669,7 +669,7 @@ def check_edge_cases(cfg):
     use_multi_dataset = multi_dataset and ("none" not in multi_dataset)
     if cfg.featurization.multi_dataset_training and use_multi_dataset:
         method = cfg.featurization.used_method.strip()
-        if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type", "spider"]:
+        if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type", "pretrained"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
     if cfg.featurization.multi_dataset_training or cfg.batching.multi_dataset_training:
         if not use_multi_dataset:

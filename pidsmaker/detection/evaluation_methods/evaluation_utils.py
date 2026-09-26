@@ -980,35 +980,6 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
     return att2score
 
 
-def compute_discrimination2_score(pred_scores, nodes, node2attacks, y_truth):
-    """Discrimination2: margin between max-loss node per attack and mean of ALL benign nodes."""
-    pred_scores = np.array(pred_scores).astype(float)
-    y_truth = np.array(y_truth)
-
-    pred_scores /= pred_scores.max() + 1e-6
-    attack2max_score = defaultdict(float)
-
-    for node, score in zip(nodes, pred_scores):
-        if node in node2attacks:
-            for attack in node2attacks[node]:
-                attack2max_score[attack] = max(attack2max_score[attack], score)
-    attack2max_score = dict(sorted(attack2max_score.items(), key=lambda item: item[0]))
-
-    benign_scores = pred_scores[y_truth == 0]
-    mean = np.mean(benign_scores)
-    att2score = {}
-
-    for att in set.union(*list(node2attacks.values())):
-        att2score[f"discrim2_score_att_{att}"] = 0
-
-    for k, v in attack2max_score.items():
-        score = v - mean
-        att2score[f"discrim2_score_att_{k}"] = score
-    att2score["discrimination2"] = np.mean(list(att2score.values()))
-
-    return att2score
-
-
 def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
     pred_scores = np.array(pred_scores).astype(float)
     y_truth = np.array(y_truth)

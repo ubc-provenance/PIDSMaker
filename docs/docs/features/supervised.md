@@ -28,7 +28,7 @@ training:
 ## Attack edges from a YAML file (`mode: synthetic`)
 
 In this mode, the attack edges are written by hand in a YAML file and don't need to exist in the dataset.
-During the `feat_inference` task, SPIDER embeds the labels of their nodes, so this mode requires `featurization.used_method: spider`.
+During the `feat_inference` task, SPIDER embeds the labels of their nodes, so this mode requires `featurization.used_method: pretrained`.
 
 Each edge gives the type and label of its two nodes and the event type:
 
@@ -50,13 +50,16 @@ Each file describes an attack similar to the dataset's scenario, but with differ
 `spider_supervised.yml` runs Velox with SPIDER embeddings and this objective on CADETS_E3:
 
 ```shell
-python pidsmaker/main.py spider_supervised CADETS_E3 --featurization.spider.spider_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py spider_supervised CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
 ```
+
+!!! note
+    The attack labels are embedded when the `feat_inference` task runs. If that task already ran with the same settings, for example with `spider_velox`, it is skipped and the embeddings are missing: add `--force_restart=feat_inference`.
 
 For another dataset, point `attack_edges_path` to its file:
 
 ```shell
-python pidsmaker/main.py spider_supervised THEIA_E3 --featurization.spider.spider_path=$SPIDER_WEIGHTS \
+python pidsmaker/main.py spider_supervised THEIA_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
     --training.decoder.predict_edge_supervised.attack_edges_path=config/attack_edges/theia_e3.yml
 ```
 

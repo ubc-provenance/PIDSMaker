@@ -38,7 +38,7 @@ class SpiderEmbeddingGenerator:
         self.model.eval()  # Frozen for inference
 
         # SPIDER walks config
-        spider_cfg = cfg.featurization.spider
+        spider_cfg = cfg.featurization.pretrained
         walks_cfg = spider_cfg.walks
         self.walk_length = walks_cfg.walk_length
         self.num_walks = walks_cfg.num_walks
@@ -49,7 +49,7 @@ class SpiderEmbeddingGenerator:
     def _load_pretrained_bert(self):
         """Load the pretrained BERT model and tokenizer."""
         model_dir = self.cfg.featurization._model_dir
-        spider_cfg = self.cfg.featurization.spider
+        spider_cfg = self.cfg.featurization.pretrained
 
         model_type = spider_cfg.model_type
         model_size = spider_cfg.model_size
@@ -185,7 +185,7 @@ class SpiderEmbeddingGenerator:
             return [np.zeros(self.model.config.hidden_size) for _ in nodes]
 
         # Batch process through BERT
-        batch_size = self.cfg.featurization.spider.training.batch_size
+        batch_size = self.cfg.featurization.pretrained.training.batch_size
         all_cls_embeddings = []  # List of (node_index, cls_embedding)
 
         for batch_start in range(0, len(tokenized_data), batch_size):

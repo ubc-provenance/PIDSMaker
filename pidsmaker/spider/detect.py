@@ -644,8 +644,8 @@ def _detect_edge_cls(cfg):
 
     from .models.tgn import EdgeTypeClassifier
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_size = pretrain_cfg.model_size
     batch_size = detect_cfg.inference_batch_size
     device = "cuda" if torch.cuda.is_available() and not cfg._use_cpu else "cpu"
@@ -911,8 +911,8 @@ def _detect_tgn(cfg):
 
     from .models.tgn import ProvenanceTGN
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_size = pretrain_cfg.model_size
     batch_size = detect_cfg.inference_batch_size
     device = "cuda" if torch.cuda.is_available() and not cfg._use_cpu else "cpu"
@@ -1125,8 +1125,8 @@ def _detect_perplexity(cfg):
 
     from .models.llama import ProvenanceLLaMA, get_llama_config
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_size = pretrain_cfg.model_size
     walk_length = detect_cfg.finetune_walk_len
     batch_size = detect_cfg.inference_batch_size
@@ -1285,8 +1285,8 @@ def main(cfg):
     """
     log_start(__file__)
 
-    pretrain_cfg = cfg.featurization.spider
-    detect_cfg = cfg.training.spider
+    pretrain_cfg = cfg.featurization.pretrained
+    detect_cfg = cfg.training.pretrained
     model_type = pretrain_cfg.model_type
     model_size = pretrain_cfg.model_size
     finetune_mode = detect_cfg.finetune_mode

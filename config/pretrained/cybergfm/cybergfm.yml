@@ -1,7 +1,7 @@
 _include_yml: [velox, spider]
 
 featurization:
-    spider:
+    pretrained:
       model_type: bert
       model_size: mini
 
@@ -18,8 +18,8 @@ featurization:
         num_walks: 1
 
 training:
-  used_method: spider
-  spider:
+  used_method: pretrained
+  pretrained:
     finetune_mode: lp  # cls / cls_attack / tgn / edge_cls / lp / mlm / perplexity
     finetune_epochs: 3
     finetune_walk_len: 10

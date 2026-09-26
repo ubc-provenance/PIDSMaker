@@ -21,7 +21,7 @@ def main(cfg):
     log_start(__file__)
 
     # ── Config ──────────────────────────────────────────────────────────
-    spider_cfg = cfg.featurization.spider
+    spider_cfg = cfg.featurization.pretrained
 
     # Model config
     model_type = spider_cfg.model_type
@@ -34,7 +34,7 @@ def main(cfg):
     tokenizer_mode = tokenizer_cfg.mode
     normalize_netflow_ips = tokenizer_cfg.normalize_netflow_ips
     canonicalize_neighbors = tokenizer_cfg.canonicalize_neighbors
-    spider_path = getattr(spider_cfg, 'spider_path', None)
+    spider_path = getattr(spider_cfg, 'weights_path', None)
 
     # Walk config — path mode
     walks_cfg = spider_cfg.walks

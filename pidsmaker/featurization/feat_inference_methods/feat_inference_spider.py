@@ -204,7 +204,7 @@ def _apply_rename_attack(cfg, indexid2vec, indexid2msg, bert, tokenizer, output_
 
     # Guard against the one model variant whose embedding dim diverges from the
     # raw-encoder mean-pool path used by _embed_labels.
-    pretrain_cfg = cfg.featurization.spider
+    pretrain_cfg = cfg.featurization.pretrained
     if (
         pretrain_cfg.model_type == "behavior_cluster"
         and getattr(pretrain_cfg.behavior_cluster, "use_contrastive_head", False)
@@ -749,7 +749,7 @@ def _continue_pretrain_spider(cfg, model, tokenizer, pretrain_cfg, inference_cfg
 
     # Resolve pretrained model directory (needed for edge_type2idx + vocab)
     pretrain_dir = cfg.featurization._model_dir
-    _pmp = getattr(pretrain_cfg, 'spider_path', None)
+    _pmp = getattr(pretrain_cfg, 'weights_path', None)
     if _pmp:
         pretrain_dir = _pmp
 
@@ -1176,7 +1176,7 @@ def _continue_pretrain_behavior_cluster(cfg, model, tokenizer, pretrain_cfg, inf
 
     # Load pretrained vocab for target vectors (must match model's num_labels)
     pretrain_dir = cfg.featurization._model_dir
-    _pmp = getattr(pretrain_cfg, 'spider_path', None)
+    _pmp = getattr(pretrain_cfg, 'weights_path', None)
     if _pmp:
         pretrain_dir = _pmp
     pretrain_vocab = BehaviorLabelVocab()
@@ -1341,12 +1341,12 @@ def _continue_pretrain_behavior_cluster(cfg, model, tokenizer, pretrain_cfg, inf
 def main(cfg):
     log_start(__file__)
 
-    pretrain_cfg = cfg.featurization.spider
+    pretrain_cfg = cfg.featurization.pretrained
     model_type = pretrain_cfg.model_type
     model_size = pretrain_cfg.model_size
     pretrain_dir = cfg.featurization._model_dir
     # spider_path overrides pretrain_dir for loading artifacts
-    _spider_path = getattr(pretrain_cfg, 'spider_path', None)
+    _spider_path = getattr(pretrain_cfg, 'weights_path', None)
     if _spider_path:
         pretrain_dir = _spider_path
     emb_dim = cfg.featurization.emb_dim

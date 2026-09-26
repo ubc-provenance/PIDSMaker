@@ -89,7 +89,7 @@
         <li class='no-bullet'><span class="key-leaf">use_cumulative_active_time</span>: <span class="value">bool (2)</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">spider</span>
+    <li class='bullet'><span class="key">pretrained</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">model_size</span>: <span class="value">str (3)</span></li>
         <li class='no-bullet'><span class="key-leaf">model_type</span>: <span class="value">str (4)</span></li>
@@ -261,7 +261,7 @@
             <li class='no-bullet'><span class="key-leaf">canonicalize_neighbors</span>: <span class="value">bool (100)</span></li>
         </ul>
         </li>
-        <li class='no-bullet'><span class="key-leaf">spider_path</span>: <span class="value">str (101)</span></li>
+        <li class='no-bullet'><span class="key-leaf">weights_path</span>: <span class="value">str (101)</span></li>
         <li class='no-bullet'><span class="key-leaf">graph_context_mode</span>: <span class="value">str (102)</span></li>
         <li class='bullet'><span class="key">walks</span>
         <ul>
@@ -384,7 +384,7 @@
 98. Tokenizer mode: 'domain_bpe' uses domain-specific pre-tokenization followed by BPE; 'bpe_only' skips domain rules and applies BPE directly on raw words.<br><br><b>Available options (one selection)</b>:<br>`domain_bpe`<br>`bpe_only`
 99. Replace IP addresses in netflow entities with category tokens ([PRIVATE_IP], [PUBLIC_IP], [LOCALHOST_IP]) instead of keeping individual octets.<br>
 100. Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended.<br>
-101. Path to a pretrained SPIDER model folder. May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type.<br>
+101. Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type.<br>
 102. Graph context scope for walk sampling at both pretraining and inference time. 'window' = each time-window snapshot independently; 'day' = merge all snapshots from the same calendar day; 'all' = merge all snapshots in the relevant split (train split at pretrain time; val or test split at inference time — no training data leaks into inference context).<br><br><b>Available options (one selection)</b>:<br>`window`<br>`day`<br>`all`
 103. Number of nodes per random walk during pretraining.<br>
 104. Number of random walks to sample per node per epoch during pretraining.<br>
