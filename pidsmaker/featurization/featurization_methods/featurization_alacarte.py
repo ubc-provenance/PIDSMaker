@@ -737,18 +737,12 @@ def main(cfg):
 
     os.makedirs(cfg.featurization.alacarte._vec_graphs_dir, exist_ok=True)
 
-    # In test mode, we only have access to
-    if cfg._test_mode:
-        featurization_for_one_split(
-            "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
-        )
-    else:
-        featurization_for_one_split(
-            "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
-        )
-        featurization_for_one_split(
-            "val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
-        )
-        featurization_for_one_split(
-            "test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
-        )
+    featurization_for_one_split(
+        "train", use_corpus=True, use_matrix_input=False, use_pretrained_model=False, cfg=cfg
+    )
+    featurization_for_one_split(
+        "val", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
+    )
+    featurization_for_one_split(
+        "test", use_corpus=False, use_matrix_input=True, use_pretrained_model=True, cfg=cfg
+    )
