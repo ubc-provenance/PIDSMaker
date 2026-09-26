@@ -22,6 +22,7 @@ nav:
     - Batching & Sampling: features/batching.md
     - Embedding Visualizer: features/visualization.md
     - Pretrained Encoders: features/pretrained_encoders.md
+    - Reproducing SPIDER: features/spider_reproduction.md
     - Supervised Fine-Tuning: features/supervised.md
   - Arguments:
     - Tasks: config/tasks.md

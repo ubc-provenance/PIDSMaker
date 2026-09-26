@@ -134,7 +134,7 @@ The other encoders keep their last checkpoint.
 ### Reproducing the paper
 
 The [`spider` branch](https://github.com/ubc-provenance/PIDSMaker/tree/spider) contains the exact code used for the paper, and its README lists the commands of every experiment.
-On `main`, the configs are adapted to the current version of PIDSMaker (for example, some batch sizes differ), so results can differ slightly.
+[Reproducing SPIDER](spider_reproduction.md) gives the commands for this version, with the same hyperparameters as the paper.
 
 ## Fine-tuning the encoder as a detector
 
