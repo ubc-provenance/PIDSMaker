@@ -28,6 +28,7 @@ from pidsmaker.experiments.uncertainty import (
     min_metrics,
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
+    prepare_for_deep_ensemble,
 )
 from pidsmaker.featurization import (
     feat_inference,
@@ -93,23 +94,18 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         start = time.time()
         return_value = None
 
-        # We add the iteration index to subtask to have a unique folder per iteration
+        # Deep ensemble mode modifies cfg so that it restarts some tasks
         if method == "deep_ensemble":
-            subtask_concat_value = {
-                "subtask": cfg.experiment.uncertainty.deep_ensemble.restart_from,
-                "concat_value": str(iteration),
-            }
-        else:
-            subtask_concat_value = None
+            should_restart, cfg = prepare_for_deep_ensemble(cfg, iteration)
 
-        # This updates all task paths
-        should_restart = update_task_paths_to_restart(
-            cfg, subtask_concat_value=subtask_concat_value
-        )
+        # This updates all task paths if needed
+        else:
+            should_restart = update_task_paths_to_restart(cfg)
 
         task_to_module = get_task_to_module(cfg)
         module = task_to_module[task]["module"]
         task_path = task_to_module[task]["task_path"]
+        log(f"Task {task}: {task_path}")
 
         if should_restart[task]:
             return_value = module.main(cfg)
@@ -224,7 +220,6 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         if not sweep_id:
             sweep_config["name"] = exp
             sweep_id = wandb.sweep(sweep_config, project=project)
-            print(f"Sweep ID: YOUR_ORG/{project}/{sweep_id}")
 
         def run_pipeline_from_sweep(cfg):
             with wandb.init(name=exp):

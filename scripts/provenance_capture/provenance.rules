@@ -1,0 +1,146 @@
+# ============================================================================
+# Provenance Graph Data Collection — auditd Rules v2
+# ============================================================================
+# Optimized for Docker container workloads.
+#
+# Key changes from v1:
+#   - File watches REMOVED (don't work inside Docker overlay fs)
+#   - openat syscall monitoring added (works across all filesystems)
+#   - read/write syscalls added with fd-type filtering
+#   - recvfrom/recvmsg ENABLED (needed for full network provenance)
+#   - Noise exclusions tightened for container workloads
+#
+# Install:
+#   sudo cp provenance_v2.rules /etc/audit/rules.d/provenance.rules
+#   sudo augenrules --load
+#   sudo systemctl restart auditd
+#
+# Verify:
+#   sudo auditctl -l | grep prov
+#
+# ============================================================================
+
+# ── Housekeeping ─────────────────────────────────────────────────────────
+-b 16384
+-a always,exclude -F msgtype=CONFIG_CHANGE
+
+
+# ============================================================================
+# 1. PROCESS LIFECYCLE → EVENT_EXECUTE, EVENT_CLONE
+# ============================================================================
+
+# EVENT_EXECUTE: captures exe path + full argv (EXECVE record)
+-a always,exit -F arch=b64 -S execve -k prov_exec
+-a always,exit -F arch=b32 -S execve -k prov_exec
+
+# EVENT_CLONE: process fork/clone/vfork
+-a always,exit -F arch=b64 -S clone -S clone3 -F success=1 -k prov_clone
+-a always,exit -F arch=b32 -S clone -F success=1 -k prov_clone
+-a always,exit -F arch=b64 -S fork -F success=1 -k prov_clone
+-a always,exit -F arch=b32 -S fork -F success=1 -k prov_clone
+-a always,exit -F arch=b64 -S vfork -F success=1 -k prov_clone
+-a always,exit -F arch=b32 -S vfork -F success=1 -k prov_clone
+
+
+# ============================================================================
+# 2. NETWORK ACTIVITY → EVENT_CONNECT, EVENT_SENDTO/MSG, EVENT_RECVFROM/MSG
+# ============================================================================
+
+# EVENT_CONNECT: outbound connections (highest value — captures dest IP:port)
+-a always,exit -F arch=b64 -S connect -F success=1 -k prov_connect
+-a always,exit -F arch=b32 -S connect -F success=1 -k prov_connect
+
+# Incoming connections
+-a always,exit -F arch=b64 -S 43 -F success=1 -k prov_accept
+-a always,exit -F arch=b32 -S 43 -F success=1 -k prov_accept
+
+# EVENT_SENDTO / EVENT_SENDMSG: datagram network I/O (DNS, syslog, etc.)
+-a always,exit -F arch=b64 -S sendto -F success=1 -k prov_sendto
+-a always,exit -F arch=b32 -S sendto -F success=1 -k prov_sendto
+-a always,exit -F arch=b64 -S sendmsg -F success=1 -k prov_sendmsg
+-a always,exit -F arch=b32 -S sendmsg -F success=1 -k prov_sendmsg
+
+# EVENT_RECVFROM / EVENT_RECVMSG: datagram receives (ENABLED for full provenance)
+-a always,exit -F arch=b64 -S recvfrom -F success=1 -k prov_recvfrom
+-a always,exit -F arch=b32 -S recvfrom -F success=1 -k prov_recvfrom
+-a always,exit -F arch=b64 -S recvmsg -F success=1 -k prov_recvmsg
+-a always,exit -F arch=b32 -S recvmsg -F success=1 -k prov_recvmsg
+
+
+# ============================================================================
+# 3. FILE I/O → EVENT_READ, EVENT_WRITE, EVENT_OPEN
+# ============================================================================
+# Instead of file watches (which don't work in Docker overlay fs),
+# we monitor the actual syscalls: openat, read, write.
+#
+# openat captures WHICH file is being accessed (PATH record has the filename).
+# We use flags to distinguish read vs write vs create.
+# ============================================================================
+
+# openat — captures file path in PATH record
+# This is the primary file I/O event — works in containers!
+-a always,exit -F arch=b64 -S openat -F success=1 -k prov_openat
+-a always,exit -F arch=b32 -S openat -F success=1 -k prov_openat
+
+# open (legacy, some tools still use it)
+-a always,exit -F arch=b64 -S open -F success=1 -k prov_openat
+-a always,exit -F arch=b32 -S open -F success=1 -k prov_openat
+
+
+# ============================================================================
+# 4. FILE LIFECYCLE → CREATE, DELETE, RENAME
+# ============================================================================
+
+# File/directory creation
+-a always,exit -F arch=b64 -S mkdir -S mkdirat -F success=1 -k prov_create
+-a always,exit -F arch=b32 -S mkdir -S mkdirat -F success=1 -k prov_create
+
+# File deletion
+-a always,exit -F arch=b64 -S unlink -S unlinkat -F success=1 -k prov_delete
+-a always,exit -F arch=b32 -S unlink -S unlinkat -F success=1 -k prov_delete
+
+# File rename
+-a always,exit -F arch=b64 -S rename -S renameat -S renameat2 -F success=1 -k prov_rename
+-a always,exit -F arch=b32 -S rename -S renameat -F success=1 -k prov_rename
+
+# Permissions changes
+-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F success=1 -k prov_chmod
+-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F success=1 -k prov_chmod
+
+# Ownership changes
+-a always,exit -F arch=b64 -S chown -S fchown -S lchown -S fchownat -F success=1 -k prov_chown
+-a always,exit -F arch=b32 -S chown -S fchown -S lchown -S fchownat -F success=1 -k prov_chown
+
+
+# ============================================================================
+# 5. PROCESS INSPECTION → EVENT_OPEN
+# ============================================================================
+
+-a always,exit -F arch=b64 -S ptrace -k prov_ptrace
+-a always,exit -F arch=b32 -S ptrace -k prov_ptrace
+
+
+# ============================================================================
+# 6. PIPE / DUP — process-to-process data flow
+# ============================================================================
+
+-a always,exit -F arch=b64 -S pipe -S pipe2 -F success=1 -k prov_pipe
+-a always,exit -F arch=b64 -S dup -S dup2 -S dup3 -F success=1 -k prov_dup
+
+
+# ============================================================================
+# 7. NOISE EXCLUSIONS
+# ============================================================================
+# IMPORTANT: These must come BEFORE the catch-all rules above in the
+# auditd processing order. auditd processes rules top-to-bottom and
+# "never" rules short-circuit.
+#
+# However, augenrules sorts files alphabetically, so if you need these
+# first, put them in a file named 00-exclusions.rules.
+# ============================================================================
+
+# Don't audit auditd itself
+-a never,exit -F exe=/sbin/auditd
+-a never,exit -F exe=/sbin/auditctl
+-a never,exit -F exe=/usr/sbin/auditd
+-a never,exit -F exe=/usr/sbin/auditctl

@@ -10,19 +10,19 @@ from pidsmaker.preprocessing.transformation_methods import (
     transformation_undirected,
 )
 from pidsmaker.utils.utils import (
-    copy_directory,
     get_all_files_from_folders,
     get_multi_datasets,
     load_graphs_for_days,
     log_start,
     log_tqdm,
     set_seed,
+    symlink_directory,
 )
 
 
 def no_transformation(base_dir, dst_dir):
-    # If no transformation is used, we copy all original graphs to the transformation task path
-    copy_directory(base_dir, dst_dir)
+    # If no transformation is used, symlink to the original graphs directory
+    symlink_directory(base_dir, dst_dir)
 
 
 def add_synthetic_attacks(base_dir, dst_dir, cfg, method):

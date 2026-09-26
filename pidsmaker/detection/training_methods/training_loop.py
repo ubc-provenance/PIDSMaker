@@ -1,4 +1,5 @@
 import copy
+import os
 import tracemalloc
 from time import perf_counter as timer
 
@@ -12,15 +13,19 @@ from pidsmaker.factory import (
     optimizer_factory,
     optimizer_few_shot_factory,
 )
-from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
+from pidsmaker.utils.utils import get_device, log, log_tqdm, set_seed
+from pidsmaker.utils.data_utils import save_model
+from pidsmaker.spider.training_utils import WarmupCosineScheduler
 
 from . import inference_loop
 
 
 def main(cfg):
+    train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
+
+    # Seed must be after `get_preprocessed_graphs` as this function may perform random operations
     set_seed(cfg)
 
-    log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
 
@@ -29,12 +34,14 @@ def main(cfg):
         torch.cuda.reset_peak_memory_stats(device=device)
     tracemalloc.start()
 
-    train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
-
     model = build_model(
-        data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num
+        data_sample=train_data[0][0], device=device, cfg=cfg, max_node_num=max_node_num,
+        all_data=(val_data, test_data),
     )
+    if cfg._from_weights:
+        model.load_state_dict(torch.load(os.path.join(cfg._from_weights_path, "state_dict.pkl")))
     optimizer = optimizer_factory(cfg, parameters=set(model.parameters()))
+    stable_optim = cfg.detection.gnn_training.stable_optim
 
     run_evaluation = cfg.training_loop.run_evaluation
     assert run_evaluation in ["best_epoch", "each_epoch"], (
@@ -42,7 +49,7 @@ def main(cfg):
     )
     best_epoch_mode = run_evaluation == "best_epoch"
 
-    num_epochs = cfg.detection.gnn_training.num_epochs
+    num_epochs = 1 if cfg._from_weights else cfg.detection.gnn_training.num_epochs
     tot_loss = 0.0
     epoch_times = []
     peak_train_cpu_mem = 0
@@ -55,13 +62,22 @@ def main(cfg):
     use_few_shot = cfg.detection.gnn_training.decoder.use_few_shot
     grad_acc = cfg.detection.gnn_training.grad_accumulation
 
+    # Stable optim: warmup cosine scheduler (computed over total training steps)
+    scheduler = None
+    if stable_optim:
+        total_graphs = sum(len(ds) for ds in train_data)
+        steps_per_epoch = max(1, total_graphs // grad_acc)
+        total_steps = steps_per_epoch * num_epochs
+        warmup_steps = max(1, total_steps // 20)
+        scheduler = WarmupCosineScheduler(optimizer, warmup_steps, total_steps)
+
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
 
     for epoch in range(0, num_epochs):
         best_val_score, best_model, best_epoch = float("-inf"), None, None
 
-        if not use_few_shot or (use_few_shot and epoch > 0):
+        if not cfg._from_weights and (not use_few_shot or (use_few_shot and epoch > 0)):
             start = timer()
             tracemalloc.start()
 
@@ -75,6 +91,7 @@ def main(cfg):
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
                     g.to(device=device)
                     g = remove_attacks_if_needed(g, cfg)
+
                     model.train()
                     optimizer.zero_grad()
 
@@ -85,7 +102,11 @@ def main(cfg):
 
                     if (i + 1) % grad_acc == 0:
                         loss_acc.backward()
+                        if stable_optim:
+                            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                         optimizer.step()
+                        if scheduler is not None:
+                            scheduler.step()
                         loss_acc = torch.zeros(1, device=device)
 
                     g.to("cpu")
@@ -95,7 +116,11 @@ def main(cfg):
                 # Last batch
                 if loss_acc > 0:
                     loss_acc.backward()
+                    if stable_optim:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
+                    if scheduler is not None:
+                        scheduler.step()
 
             tot_loss /= sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)
@@ -133,6 +158,7 @@ def main(cfg):
                     for g in log_tqdm(dataset, "Fine-tuning"):
                         if 1 in g.y:
                             g.to(device=device)
+
                             model.train()
                             optimizer.zero_grad()
 
@@ -193,9 +219,6 @@ def main(cfg):
             model.load_state_dict(best_model)
             model.to_device(device)
 
-        # model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
-        # save_model(model, model_path, cfg)
-
         # Test
         if (epoch + 1) % 2 == 0 or epoch == 0:
             test_stats = inference_loop.main(
@@ -218,6 +241,11 @@ def main(cfg):
                     "test_loss": round(test_stats["test_loss"], 4),
                 }
             )
+            gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
+            model_path = os.path.join(gnn_models_dir, f"model_epoch_{epoch}")
+            log(f"Saving model to {model_path}")
+            save_model(model, model_path)
+
 
     # After training
     if best_epoch_mode:

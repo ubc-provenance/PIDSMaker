@@ -442,6 +442,26 @@ def copy_directory(src_path, dest_path):
         log(f"An error occurred while copying the directory: {e}")
 
 
+def symlink_directory(src_path, dest_path):
+    src_path = src_path.rstrip("/")
+    dest_path = dest_path.rstrip("/")
+
+    if not os.path.isdir(src_path):
+        log(f"The source path '{src_path}' does not exist or is not a directory.")
+        return
+
+    if os.path.islink(dest_path):
+        os.remove(dest_path)
+    elif os.path.exists(dest_path):
+        log(f"The destination path '{dest_path}' already exists. Removing it.")
+        shutil.rmtree(dest_path)
+
+    src_path = os.path.abspath(src_path)
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    os.symlink(src_path, dest_path)
+    log(f"Symlinked '{dest_path}' -> '{src_path}'.")
+
+
 def get_split_to_files(cfg, base_dir):
     return {
         "train": get_all_files_from_folders(base_dir, cfg.dataset.train_files),
@@ -451,8 +471,10 @@ def get_split_to_files(cfg, base_dir):
 
 
 def gen_relation_onehot(rel2id):
+    num_rels = len(rel2id.keys()) // 2
+    max_id = max(v for v in rel2id.values() if type(v) is int)
     relvec = torch.nn.functional.one_hot(
-        torch.arange(0, len(rel2id.keys()) // 2), num_classes=len(rel2id.keys()) // 2
+        torch.arange(0, max_id), num_classes=max_id
     )
     rel2vec = {}
     for i in rel2id.keys():
@@ -488,9 +510,7 @@ def get_indexid2msg(cfg, gather_multi_dataset=False):
             all_indexid2msg = {**all_indexid2msg, **indexid2msg}
         return all_indexid2msg
 
-    indexid2msg = load_file(cfg)
-    indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
-    return indexid2msg
+    return load_file(cfg)
 
 
 def get_split2nodes(cfg, gather_multi_dataset=False):
@@ -651,18 +671,18 @@ def log_dataset_stats(datasets):
             log_helper(label, dataset)
 
 
-def set_seed(cfg):
-    if cfg.detection.gnn_training.use_seed:
-        seed = 0
-        random.seed(seed)
-        np.random.seed(seed)
+def set_seed(cfg, seed=None):
+    seed = seed or cfg.detection.gnn_training.seed
+    random.seed(seed)
+    np.random.seed(seed)
 
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    
     if cfg.detection.gnn_training.deterministic:
+        # NOTE: must do `export CUBLAS_WORKSPACE_CONFIG=:4096:8`
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 

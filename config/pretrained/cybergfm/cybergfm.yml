@@ -1,0 +1,58 @@
+_include_yml: [velox, spider]
+
+featurization:
+  feat_training:
+    spider:
+      model_type: bert
+      model_size: mini
+
+      pretrain_tokens: 1000000
+      warmup_tokens: 100000
+      batch_size: 1024
+
+      tokenizer:
+        max_seq_len: 128
+
+      corpus:
+        walk_length: 10
+        num_walks: 1
+        lsh_dedup: True
+
+detection:
+  gnn_training:
+    used_method: spider
+    spider:
+      finetune_mode: lp  # cls / cls_attack / tgn / edge_cls / lp / mlm / perplexity
+      finetune_epochs: 3
+      finetune_walk_len: 10
+      finetune_lr: 0.0003
+      freeze_backbone: True
+      finetune_margin: 2.0  # Margin for ranking loss in cls mode only (ignored for cls_attack)
+
+      # Detection / Inference
+      num_inference_walks: 1
+      inference_batch_size: 1024
+      edge_score_weight: 2.0  # Weight for edge-type CE in MLM/CE scoring
+      num_attack_walks: 10  # Unique walks per malicious edge for cls_attack mode
+
+      # TGN-specific parameters (only used when finetune_mode=tgn)
+      tgn:
+        objective: edge_pred  # contrastive / edge_pred / multi_edge_pred / dist_edge_pred / edge_pred_emb / node_pred
+        memory_dim: 256       # Entity memory dimension (default: same as BERT H)
+        edge_emb_dim: 256     # Edge type embedding dimension
+        time_dim: 16          # Time encoding dimension
+        num_heads: 4          # Attention heads in memory updater
+        batch_size: 2048       # Temporal batch size (edges per update step)
+        use_node_type_emb: False   # Include src/dst node type embeddings in classifier
+        use_time_emb: False        # Include src/dst time-delta encodings in classifier
+        use_memory: False          # Include evolving memory vectors in edge predictor/classifier input
+        use_entity_emb: True      # Include static BERT entity embeddings in edge predictor/classifier input
+        use_event_bert_emb: True  # (event mode only) Include per-edge contextual src/dst embeddings
+                                   # from the masked-event BERT forward pass in TGN prediction heads.
+                                   # When True: paired [event_src_emb, event_dst_emb] are appended,
+                                   # providing edge-specific context alongside static entity_embs.
+                                   # When False (or pretrain_mode=path): only static entity_embs used.
+        reset_memory_on_inference: True  # Start inference with empty memory (production mode)
+        score_gated_memory: True  # Gate messages by anomaly score: high-anomaly edges leave stronger memory traces
+        temporal_decay: False      # Exponential memory decay toward zero based on time elapsed since last update
+        anomaly_accumulator: False # Per-node EMA of anomaly scores; modulates decay rate (requires temporal_decay)

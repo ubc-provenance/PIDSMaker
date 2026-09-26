@@ -1,3 +1,5 @@
+_include_yml: default
+
 preprocessing:
   build_graphs:
     used_method: default
@@ -22,7 +24,6 @@ featurization:
 
 detection:
   graph_preprocessing:
-    save_on_disk: False
     node_features: node_type
     edge_features: none
     fix_buggy_graph_reindexer: False
@@ -34,7 +35,7 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
-    use_seed: True
+    seed: 0
     deterministic: False
     num_epochs: 12
     patience: 3
@@ -43,6 +44,8 @@ detection:
     node_hid_dim: 64
     node_out_dim: 64
     grad_accumulation: 1
+    stable_optim: False
+    fuse_duplicate_edges_training: False
     encoder:
       dropout: 0.0
       used_methods: magic_gat
@@ -72,7 +75,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
-    best_model_selection: best_adp
+    
     used_method: node_evaluation
     node_evaluation:
       threshold_method: magic # can't use anything else here

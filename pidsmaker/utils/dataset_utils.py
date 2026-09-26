@@ -110,6 +110,113 @@ rel2id_optc = {
     "WRITE": 10,
 }
 
+# Vocabulary for OpTC graphs built with consistent_edge_types=True.
+# Translated edges use the same IDs as rel2id_darpa_tc (enabling shared weights).
+# Untranslated OpTC-only edges (CREATE/DELETE/RENAME for subject→file,
+# TERMINATE for subject→subject) get new IDs starting at 11.
+rel2id_optc_consistent = {
+    # Shared TC types — same IDs as rel2id_darpa_tc
+    1: "EVENT_CONNECT",   "EVENT_CONNECT": 1,
+    3: "EVENT_OPEN",      "EVENT_OPEN": 3,
+    4: "EVENT_READ",      "EVENT_READ": 4,
+    5: "EVENT_RECVFROM",  "EVENT_RECVFROM": 5,
+    6: "EVENT_RECVMSG",   "EVENT_RECVMSG": 6,
+    7: "EVENT_SENDMSG",   "EVENT_SENDMSG": 7,
+    9: "EVENT_WRITE",     "EVENT_WRITE": 9,
+    10: "EVENT_CLONE",    "EVENT_CLONE": 10,
+    # OpTC-specific types that are not translated
+    11: "CREATE",     "CREATE": 11,
+    12: "DELETE",     "DELETE": 12,
+    13: "RENAME",     "RENAME": 13,
+    14: "TERMINATE",  "TERMINATE": 14,
+}
+possible_events_optc = {
+    ("subject", "subject"): [
+        "CREATE",
+        "OPEN",
+        "TERMINATE",
+    ],
+    ("subject", "file"): [
+        "CREATE",
+        "DELETE",
+        "MODIFY",
+        "RENAME",
+        "WRITE",
+    ],
+    ("subject", "netflow"): [
+        "MESSAGE",
+        "START",
+    ],
+    ("file", "subject"): [
+        "READ",
+    ],
+    ("netflow", "subject"): [
+        "MESSAGE",
+        "OPEN",
+        "START",
+    ],
+}
+
+# Context-dependent mapping from OpTC edge types to DARPA TC edge types.
+# Key: (src_type, optc_label, dst_type) -> tc_label
+# This enables shared vocabulary between OpTC and TC for transfer learning.
+OPTC_TO_TC_EDGE_MAP = {
+    # subject -> subject (process lifecycle)
+    ("subject", "CREATE", "subject"): "EVENT_CLONE",
+    ("subject", "START", "subject"): "EVENT_CLONE",
+    ("subject", "OPEN", "subject"): "EVENT_OPEN",
+    # subject -> file (file operations)
+    ("subject", "MODIFY", "file"): "EVENT_WRITE",
+    ("subject", "WRITE", "file"): "EVENT_WRITE",
+    # subject -> netflow (outbound network)
+    ("subject", "MESSAGE", "netflow"): "EVENT_SENDMSG",
+    ("subject", "START", "netflow"): "EVENT_CONNECT",
+    # file -> subject (reversed reads)
+    ("file", "READ", "subject"): "EVENT_READ",
+    # netflow -> subject (reversed inbound network)
+    ("netflow", "MESSAGE", "subject"): "EVENT_RECVMSG",
+    ("netflow", "OPEN", "subject"): "EVENT_OPEN",
+    ("netflow", "START", "subject"): "EVENT_RECVFROM",
+}
+
+# possible_events for OpTC when using consistent (TC) edge types
+possible_events_optc_consistent = {
+    ("subject", "subject"): [
+        "EVENT_CLONE",
+        "EVENT_OPEN",
+        "TERMINATE",
+    ],
+    ("subject", "file"): [
+        "CREATE",
+        "DELETE",
+        "RENAME",
+        "EVENT_WRITE",
+    ],
+    ("subject", "netflow"): [
+        "EVENT_SENDMSG",
+        "EVENT_CONNECT",
+    ],
+    ("file", "subject"): [
+        "EVENT_READ",
+    ],
+    ("netflow", "subject"): [
+        "EVENT_RECVMSG",
+        "EVENT_OPEN",
+        "EVENT_RECVFROM",
+    ],
+}
+
+
+def translate_optc_to_tc(label, src_type, dst_type):
+    """Translate an OpTC edge label to its DARPA TC equivalent.
+
+    Uses (src_type, label, dst_type) context to disambiguate edge types
+    that map differently depending on direction (e.g. MESSAGE -> SENDMSG/RECVMSG).
+
+    Returns the TC label, or the original label if no mapping exists.
+    """
+    return OPTC_TO_TC_EDGE_MAP.get((src_type, label, dst_type), label)
+
 rel2id_atlasv2 = {
     0: "ACTION_FILE_UNDELETE",
     1: "ACTION_FILE_OPEN_SET_ATTRIBUTES",
@@ -188,8 +295,20 @@ def decrement_dict(d):
     }
 
 
+def _has_consistent_edge_types(cfg):
+    """Check if consistent_edge_types is enabled in the build_graphs config."""
+    try:
+        return bool(cfg.preprocessing.build_graphs.consistent_edge_types)
+    except (AttributeError, KeyError):
+        return False
+
+
 def get_rel2id(cfg, from_zero=False):
-    if cfg.dataset.name in OPTC_DATASETS:
+    if cfg.dataset.name in OPTC_DATASETS and _has_consistent_edge_types(cfg):
+        # Graphs were built with a mixed vocabulary: TC-equivalent types (same IDs
+        # as rel2id_darpa_tc) + untranslated OpTC-only types (CREATE/DELETE/RENAME/TERMINATE)
+        return decrement_dict(rel2id_optc_consistent) if from_zero else rel2id_optc_consistent
+    elif cfg.dataset.name in OPTC_DATASETS:
         return decrement_dict(rel2id_optc) if from_zero else rel2id_optc
     elif cfg.dataset.name in ATLASv2_DATASETS:
         return rel2id_atlasv2
@@ -209,6 +328,9 @@ def get_num_edge_type(cfg):
         and "edge_type_triplet" in cfg.detection.graph_preprocessing.edge_features
     ):
         return sum([len(events) for events in possible_events.values()])
+    if cfg.dataset.name in OPTC_DATASETS and _has_consistent_edge_types(cfg):
+        max_id = max(v for v in rel2id_optc_consistent.values() if isinstance(v, int))
+        return max_id
     return cfg.dataset.num_edge_types
 
 

@@ -164,7 +164,7 @@ def test_node_level(
     elif cfg.detection.evaluation.node_evaluation.threshold_method == "magic":
         os.makedirs(cfg.detection.gnn_training._magic_dir, exist_ok=True)
         if split == "val":
-            x_train, _, _ = model.embed(data, inference=True)
+            x_train, *_ = model.embed(data, inference=True)
             x_train = x_train.cpu().numpy()
             num_nodes = x_train.shape[0]
             sample_size = 5000 if num_nodes > 5000 else num_nodes
@@ -213,7 +213,7 @@ def test_node_level(
             )
             mean_distance_train = calculate_average_from_file(train_distance_file)
 
-            x_test, _, _ = model.embed(data, inference=True)
+            x_test, *_ = model.embed(data, inference=True)
             x_test = x_test.cpu().numpy()
             num_nodes = x_test.shape[0]
             sample_size = 5000 if num_nodes > 5000 else num_nodes
@@ -306,7 +306,7 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True):
                 g.to(device=device)
 
                 s = time.time()
-                test_fn = test_node_level if cfg._is_node_level else test_edge_level
+                test_fn = test_node_level if (cfg._is_node_level and not cfg._is_hybrid_loss) else test_edge_level
                 losses = test_fn(
                     data=g,
                     model=model,

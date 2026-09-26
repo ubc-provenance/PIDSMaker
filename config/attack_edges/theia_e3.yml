@@ -1,0 +1,382 @@
+# Attack edges for THEIA_E3 (Linux/Ubuntu).
+# Attack scenario: Firefox exploit via malicious webpage → downloads payload →
+# shell spawned → salt-minion C2 beacon (port 4506) → sshd backdoor → exfiltration.
+# Subjects are existing benign nodes (Firefox, bash, sshd, salt-minion, wget).
+# C2 IPs are plausible but distinct from actual dataset to avoid indicator memorization.
+
+attack_edges:
+
+  # ── Initial Access / Exploitation ──────────────────────────────────────────
+
+  # Firefox (exploited via drive-by) writes payload to disk
+  - src_type: subject
+    src_label: "subject /usr/bin/firefox /home/admin/Downloads/firefox/firefox"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /home/admin/Downloads/firefox/plugin.bin"
+
+  # Firefox spawns bash (post-exploit child process)
+  - src_type: subject
+    src_label: "subject /usr/bin/firefox /home/admin/Downloads/firefox/firefox"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # Firefox connects to attacker server
+  - src_type: subject
+    src_label: "subject /usr/bin/firefox /home/admin/Downloads/firefox/firefox"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # Firefox reads downloaded payload (preparing for execution)
+  - src_type: subject
+    src_label: "subject /usr/bin/firefox /home/admin/Downloads/firefox/firefox"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /home/admin/Downloads/firefox/plugin.bin"
+
+  # Firefox writes tmp file (dropper staging)
+  - src_type: subject
+    src_label: "subject /usr/bin/firefox /home/admin/Downloads/firefox/firefox"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.payload"
+
+  # ── Payload Execution ───────────────────────────────────────────────────────
+
+  # Malicious payload executed → spawns bash
+  - src_type: file
+    src_label: "file /home/admin/Downloads/firefox/plugin.bin"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # Payload executes salt-minion (C2 agent)
+  - src_type: file
+    src_label: "file /home/admin/Downloads/firefox/plugin.bin"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+
+  # Firefox tmp payload executed → spawns bash
+  - src_type: file
+    src_label: "file /tmp/.payload"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # wget downloads additional payload
+  - src_type: subject
+    src_label: "subject wget /usr/bin/wget"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /home/admin/Downloads/firefox/plugin.bin"
+
+  # wget connects to attacker staging server
+  - src_type: subject
+    src_label: "subject wget /usr/bin/wget"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # ── C2 Communication ────────────────────────────────────────────────────────
+
+  # salt-minion beacons to SaltStack C2
+  - src_type: subject
+    src_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 4506"
+
+  # salt-minion sends task results to C2
+  - src_type: subject
+    src_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 4506"
+
+  # C2 pushes commands to salt-minion
+  - src_type: netflow
+    src_label: "netflow 10.0.8.5 4506"
+    edge_type: EVENT_RECVFROM
+    dst_type: subject
+    dst_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+
+  # salt-minion tunnels via SSH to attacker (alternate exfil)
+  - src_type: subject
+    src_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 22"
+
+  # bash connects to staging server (C2 or exfiltration)
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # bash sends exfil data
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # bash connects via HTTPS (encrypted C2)
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 443"
+
+  # curl used as alternate download method
+  - src_type: subject
+    src_label: "subject curl /usr/bin/curl"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 80"
+
+  # nc (netcat) used for reverse shell
+  - src_type: subject
+    src_label: "subject nc /usr/bin/nc"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 4444"
+
+  # python used for alternate C2 agent
+  - src_type: subject
+    src_label: "subject python /usr/bin/python"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 185.220.101.50 443"
+
+  # bash connects for internal lateral movement
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "netflow 10.0.8.5 22"
+
+  # ── Backdoor / SSH Injection ─────────────────────────────────────────────────
+
+  # Privileged sshd spawns bash (SSH injection / lateral movement)
+  - src_type: subject
+    src_label: "subject sshd: admin [priv]   /usr/sbin/sshd"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # sshd daemon spawns bash
+  - src_type: subject
+    src_label: "subject /usr/sbin/sshd -D /usr/sbin/sshd"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # privileged sshd reads authorized_keys (attacker key check)
+  - src_type: subject
+    src_label: "subject sshd: admin [priv]   /usr/sbin/sshd"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /home/admin/.ssh/authorized_keys"
+
+  # ── Persistence ─────────────────────────────────────────────────────────────
+
+  # bash installs SSH authorized_keys for persistence
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /home/admin/.ssh/authorized_keys"
+
+  # bash writes backdoor binary to /tmp
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.backdoor"
+
+  # Backdoor binary executed — spawns bash
+  - src_type: file
+    src_label: "file /tmp/.backdoor"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # bash installs malicious cron job
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /etc/cron.d/malware"
+
+  # cron executes malicious job
+  - src_type: subject
+    src_label: "subject cron /usr/sbin/cron"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject sh /bin/sh"
+
+  # sh spawns bash (cron payload execution)
+  - src_type: subject
+    src_label: "subject sh /bin/sh"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # salt-minion reads malicious payload file
+  - src_type: subject
+    src_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /home/admin/Downloads/firefox/plugin.bin"
+
+  # salt-minion writes staging data
+  - src_type: subject
+    src_label: "subject /usr/bin/python /usr/bin/salt-minion /usr/bin/python2.7"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /tmp/.salt_cache"
+
+  # bash launches ssh for lateral movement setup
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject /usr/sbin/sshd -D /usr/sbin/sshd"
+
+  # ── Privilege Escalation ─────────────────────────────────────────────────────
+
+  # sudo spawns bash with elevated privileges
+  - src_type: subject
+    src_label: "subject sudo /usr/bin/sudo"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # su switches to root
+  - src_type: subject
+    src_label: "subject su /usr/bin/su"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject bash /bin/bash"
+
+  # ── Credential Access ────────────────────────────────────────────────────────
+
+  # bash reads /etc/passwd for user enumeration
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/passwd"
+
+  # bash reads /etc/shadow for credential theft
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/shadow"
+
+  # cat reads shadow file
+  - src_type: subject
+    src_label: "subject cat /bin/cat"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/shadow"
+
+  # bash reads SSH host key for impersonation
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /etc/ssh/ssh_host_rsa_key"
+
+  # bash reads bash history (reconnaissance)
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "file /home/admin/.bash_history"
+
+  # ── Discovery / Reconnaissance ───────────────────────────────────────────────
+
+  # bash checks network connections
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject netstat /bin/netstat"
+
+  # bash enumerates running processes
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject ps /bin/ps"
+
+  # bash checks current identity
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject id /usr/bin/id"
+
+  # bash searches filesystem
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject find /usr/bin/find"
+
+  # bash spawns nc for reverse shell / port scan
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject nc /usr/bin/nc"
+
+  # bash spawns python for scripted attacks
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject python /usr/bin/python"
+
+  # bash spawns wget for downloads
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject wget /usr/bin/wget"
+
+  # bash spawns curl for HTTPS downloads
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject curl /usr/bin/curl"
+
+  # bash sends data via SSH (exfil)
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "subject ssh /usr/bin/ssh"
+
+  # ── Defense Evasion ──────────────────────────────────────────────────────────
+
+  # bash tampers with syslog
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /var/log/syslog"
+
+  # bash tampers with auth log
+  - src_type: subject
+    src_label: "subject bash /bin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "file /var/log/auth.log"

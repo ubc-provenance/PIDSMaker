@@ -13,7 +13,7 @@ from .utils import build_random_walks
 
 
 def main(cfg):
-    set_seed(cfg)
+    set_seed(cfg, seed=cfg.featurization.feat_training.seed)
 
     method = cfg.featurization.feat_training.used_method.strip()
     if method == "alacarte":
@@ -34,5 +34,8 @@ def main(cfg):
         feat_training_flash.main(cfg)
     elif method == "fasttext":
         feat_training_fasttext.main(cfg)
+    elif method == "spider":
+        from pidsmaker.spider import pretrain
+        pretrain.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")

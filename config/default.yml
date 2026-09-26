@@ -1,4 +1,17 @@
 preprocessing:
+  build_graphs:
+    used_method: default
+    use_all_files: True
+    mimicry_edge_num: 0
+    time_window_size: 15.0
+    use_hashed_label: False
+    fuse_edge: True
+    consistent_edge_types: True
+    multi_dataset: none
+    node_label_features:
+      subject: type, path, cmd_line
+      file: type, path
+      netflow: type, remote_ip, remote_port
   transformation:
     used_methods: none
     synthetic_attack_naive:
@@ -39,7 +52,7 @@ featurization:
       window_size: 5
       min_count: 1
       use_skip_gram: True
-      num_workers: 15
+      num_workers: 1
       compute_loss: True
       negative: 5
       decline_rate: 30
@@ -48,7 +61,7 @@ featurization:
       alpha: 0.01
       window_size: 3
       negative: 3
-      num_workers: 15
+      num_workers: 1
       use_pretrained_fb_model: False
     flash:
       min_count: 1
@@ -65,6 +78,10 @@ detection:
         concat: True
         flow: source_to_target
         num_layers: 2
+      hetero_graph_transformer:
+        activation: relu
+        num_heads: 4
+        num_layers: 1
       tgn:
         tgn_memory_dim: 100
         tgn_time_dim: 100
@@ -72,6 +89,8 @@ detection:
         use_memory: False
         use_time_order_encoding: False
         project_src_dst: True
+        mode: classic
+        use_residual_norm: False
       sage:
         activation: relu
         num_layers: 2
@@ -93,7 +112,22 @@ detection:
       custom_mlp:
         architecture_str: none
     decoder:
+      predict_edge_supervised:
+        decoder: edge_mlp
+        mode: patterns                # "scores" | "patterns" | "synthetic"
+        # scores mode — edge_scores_path has no default, must be set in experiment yml
+        top_n_attacks: 20
+        # patterns mode
+        attack_patterns: []           # list of TTP pattern dicts — set in experiment yml
+        max_edges_per_pattern: 20
+        # synthetic mode — attack_edges_path has no default, must be set in experiment yml
+        attack_edges_path: none
+        pos_weight: 1.0               # extra BCE weight on attack class (1:1 oversampling already balances)
+        edge_mlp:
+          architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 2
       predict_edge_type:
+        loss: cross_entropy
         decoder: edge_mlp
         use_triplet_types: False
         edge_mlp:
@@ -118,7 +152,7 @@ detection:
         loss: MSE
         decoder: edge_mlp
         edge_mlp:
-          architecture_str: linear(0.5) | relu
+          architecture_str: linear(0.5) | relu | linear(0.5) | relu | linear(0.5) | relu
           src_dst_projection_coef: 1
       predict_edge_contrastive:
         decoder: inner_product
@@ -146,8 +180,11 @@ detection:
               src_dst_projection_coef: 1
 
   evaluation:
+    best_model_selection: best_adp
     node_evaluation:
       threshold_method: max_val_loss
+      max_val_loss:
+        alpha: 1.0
       use_dst_node_loss: True
       use_kmeans: True
       kmeans_top_K: 30

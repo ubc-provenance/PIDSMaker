@@ -1,3 +1,4 @@
+import copy
 import math
 import os
 import shutil
@@ -6,6 +7,8 @@ import numpy as np
 import torch.nn as nn
 import wandb
 from torch_geometric.nn import MessagePassing
+
+from pidsmaker.config import update_task_paths_to_restart
 
 
 def update_cfg_for_uncertainty_exp(
@@ -50,15 +53,6 @@ def update_cfg_for_uncertainty_exp(
         clear_files_from_gnn_training(cfg)
         cfg._is_running_mc_dropout = True
 
-    elif method == "deep_ensemble":
-        restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
-        if restart_from == "feat_training":
-            clear_files_from_feat_training(cfg)
-        elif restart_from == "gnn_training":
-            clear_files_from_gnn_training(cfg)
-        else:
-            raise ValueError(f"Unsupported 'restart from' value: {restart_from}")
-
     elif method == "bagged_ensemble":
         # Here, force_restart will be at the beninning so no need to rm files
         min_num_days = cfg.experiment.uncertainty.bagged_ensemble.min_num_days
@@ -69,6 +63,36 @@ def update_cfg_for_uncertainty_exp(
 
     return cfg
 
+
+def prepare_for_deep_ensemble(cfg, iteration):
+    """Update tasks to restart based on the deep ensemble method used"""
+    method = cfg.experiment.uncertainty.deep_ensemble.method
+    
+    if method == "same_seed":
+        subtask_concat_value = {
+            "subtask": cfg.experiment.uncertainty.deep_ensemble.restart_from,
+            "concat_value": str(iteration),
+        }
+        
+    elif method == "increasing_seed":
+        restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
+        cfg = copy.deepcopy(cfg)
+        if restart_from == "feat_training":
+            cfg.featurization.feat_training.seed += iteration
+        elif restart_from == "gnn_training":
+            cfg.detection.gnn_training.seed += iteration
+        else:
+            raise ValueError(f"Invalid `restart_from` value")
+        
+        subtask_concat_value = None
+        
+    else:
+        raise ValueError(f"Invalid deep ensemble method `{method}`")
+
+    should_restart = update_task_paths_to_restart(
+        cfg, subtask_concat_value=subtask_concat_value
+    )
+    return should_restart, cfg
 
 # Utils
 def clear_files_from_gnn_training(cfg):
@@ -111,7 +135,8 @@ def fuse_hyperparameter_metrics(method_to_metrics):
             for param, list_of_dict in method_to_metrics.items():
                 values = [d[metric] for d in list_of_dict if "precision" in d]
                 all_values.append(values)
-            mean_metrics[metric] = np.mean(all_values, axis=0)
+            if not any(None in l for l in all_values):
+                mean_metrics[metric] = np.mean(all_values, axis=0)
 
     list_of_dict = [
         dict(zip(mean_metrics.keys(), values)) for values in zip(*mean_metrics.values())
@@ -125,7 +150,7 @@ def avg_std_metrics(method_to_metrics):
     result = {}
     metric_keys = metrics[0].keys()
     for key in metric_keys:
-        values = [entry[key] for entry in metrics]
+        values = [entry[key] for entry in metrics if key in entry]
         result[f"{key}_mean"] = np.mean(values)
         result[f"{key}_std"] = np.std(values)
         result[f"{key}_std_rel"] = np.std(values) / (np.mean(values) + 1e-12) * 100
@@ -135,28 +160,36 @@ def avg_std_metrics(method_to_metrics):
 
 def max_metrics(method_to_metrics, metric="adp_score"):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
-    max_idx = np.argmax([m[metric] for m in metrics])
+    valid = [(i, m) for i, m in enumerate(metrics) if metric in m]
+    if not valid:
+        return {}
+    max_idx = valid[np.argmax([m[metric] for _, m in valid])][0]
 
     result = {}
-    metric_keys = metrics[0].keys()
+    metric_keys = metrics[max_idx].keys()
     for key in metric_keys:
-        value = metrics[max_idx][key]
-        if include_metric_in_stats(value):
-            result[f"{key}_max"] = value
+        if key in metrics[max_idx]:
+            value = metrics[max_idx][key]
+            if include_metric_in_stats(value):
+                result[f"{key}_max"] = value
 
     return result
 
 
 def min_metrics(method_to_metrics, metric="adp_score"):
     metrics = method_to_metrics[list(method_to_metrics.keys())[0]]
-    min_idx = np.argmin([m[metric] for m in metrics])
+    valid = [(i, m) for i, m in enumerate(metrics) if metric in m]
+    if not valid:
+        return {}
+    min_idx = valid[np.argmin([m[metric] for _, m in valid])][0]
 
     result = {}
-    metric_keys = metrics[0].keys()
+    metric_keys = metrics[min_idx].keys()
     for key in metric_keys:
-        value = metrics[min_idx][key]
-        if include_metric_in_stats(value):
-            result[f"{key}_min"] = value
+        if key in metrics[min_idx]:
+            value = metrics[min_idx][key]
+            if include_metric_in_stats(value):
+                result[f"{key}_min"] = value
 
     return result
 
