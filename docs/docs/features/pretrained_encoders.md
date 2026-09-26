@@ -125,8 +125,6 @@ python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.w
     --feat_inference.rename_attack.top_k=100
 ```
 
-The configs of the paper's renaming experiments are on the [`spider` branch](https://github.com/ubc-provenance/PIDSMaker/tree/spider/config/pretrained/spider) (`spider_velox_rename_*.yml`).
-
 ### Checkpoint selection
 
 During pretraining, `spider` and `behavior_cluster` are evaluated after each epoch on the 528 labeled entities of `config/eval/eval_set_clustering.json`: a k-nearest-neighbors classifier must recover the role of each entity (browser, database, crypto, …) from its embedding.
