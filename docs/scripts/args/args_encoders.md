@@ -9,6 +9,8 @@
         <li class='no-bullet'><span class="key-leaf">use_memory</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">use_time_order_encoding</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">project_src_dst</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">mode</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_residual_norm</span>: <span class="value">bool</span></li>
     </ul>
     </li>
     <li class='bullet'><span class="key">graph_attention</span>
@@ -70,6 +72,13 @@
     <li class='bullet'><span class="key">none</span>
     
     
+    </li>
+    <li class='bullet'><span class="key">hetero_graph_transformer</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
+    </ul>
     </li>
 </ul>
 
