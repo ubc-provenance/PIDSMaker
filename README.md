@@ -7,6 +7,8 @@ At inference, only the text encoder is used, so SPIDER can replace the node feat
 This branch contains the original code to reproduce the main experiments of our NeurIPS 2026 paper.
 It is built on top of [PIDSMaker](https://github.com/ubc-provenance/PIDSMaker).
 
+The [online documentation](https://ubc-provenance.github.io/PIDSMaker/) describes the latest version of PIDSMaker, where SPIDER is available as a [pretrained encoder](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/). The `docs/` folder of this branch describes the code of this branch.
+
 ## Setup
 
 ### Clone the repo
