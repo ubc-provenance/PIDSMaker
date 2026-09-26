@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker image: torch 1.13.1 → 2.1.2 (CUDA 12.1), PyG 2.5.3 → 2.6.1, gensim 4.4.0, pandas 2.3.3, scipy 1.13.1, networkx 3.2.1, scikit-learn 1.6.1, and `transformers`. The image must be rebuilt.
 - Graph construction keeps only printable ASCII characters in labels and stores node ids as strings. Artifact hashes change, and baseline results can shift slightly.
 - `run_n_times` reuses existing artifacts instead of deleting them before the first run.
+- The training seed is set after the graphs are loaded, so model initialization no longer depends on `--save_graph_preprocessing`. Results of all systems can shift slightly.
 
 ### Fixed
 - Time-window and edge-level ground truth were empty on DARPA TC and crashed on OpTC.

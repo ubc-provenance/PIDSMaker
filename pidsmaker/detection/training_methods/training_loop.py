@@ -46,8 +46,6 @@ def main(cfg):
     Returns:
         float: Best validation score achieved during training
     """
-    set_seed(cfg, seed=cfg.training.seed)
-
     log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
@@ -59,6 +57,8 @@ def main(cfg):
 
     train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
     log("Graph data loaded.")
+    # Seed must be after `get_preprocessed_graphs` as this function may perform random operations
+    set_seed(cfg, seed=cfg.training.seed)
 
     # Opt-in (`--save_for_viz`): cache the test graphs so the embedding visualizer
     # can reload them instead of recomputing the whole batching pipeline. Off by
