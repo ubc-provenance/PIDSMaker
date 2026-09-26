@@ -65,6 +65,8 @@ def main(cfg):
 
     # ── Symlink available pretrained artifacts into out_dir ─────────────
     if spider_path:
+        if not os.path.isdir(spider_path):
+            raise FileNotFoundError(f"featurization.pretrained.weights_path not found: {spider_path}")
         candidate_files = [
             "tokenizer.pt", "corpus.pt", "behavior_vocab.txt",
             f"pretrain_{model_size}.pt", f"pretrain_{model_size}_best.pt",
@@ -106,8 +108,13 @@ def main(cfg):
 
     if spider_path:
         # ── Load pre-built corpus (samplers + indexid2msg per dataset) ──
+        corpus_path = os.path.join(spider_path, "corpus.pt")
+        if not os.path.exists(corpus_path):
+            raise FileNotFoundError(
+                f"featurization.pretrained.weights_path has neither pretrain_{model_size}.pt nor corpus.pt: {spider_path}"
+            )
         log(f"Loading pre-built corpus from {spider_path}")
-        corpus_state = torch.load(os.path.join(spider_path, "corpus.pt"),
+        corpus_state = torch.load(corpus_path,
                                   map_location="cpu", weights_only=False)
         for ds_entry in corpus_state["datasets"]:
             ds_name = ds_entry["name"]

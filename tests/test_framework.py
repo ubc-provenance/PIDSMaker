@@ -322,6 +322,12 @@ class TestPretrainedEncoders:
         cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
+    def test_missing_weights_path(self, dataset, device):
+        custom_args = [("featurization.pretrained.weights_path", "/nonexistent/weights")]
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
+        with pytest.raises(FileNotFoundError, match="weights_path not found"):
+            main.main(cfg)
+
     def test_rename_attack(self, dataset, device):
         custom_args = self.pretraining_args(dataset) + [
             ("feat_inference.rename_attack.enabled", True),
