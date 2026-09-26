@@ -16,6 +16,28 @@ from pidsmaker.utils.utils import (
 )
 
 
+_NONE_VALUES = {"None", "NA", "0", "none", "null", ""}
+
+
+def _build_label(attrs, node_type, node_label_features, use_hashed_label):
+    feats = node_label_features[node_type]
+    if feats == ["auto"]:
+        parts = [attrs["type"]]
+        for key in sorted(attrs):
+            if key == "type":
+                continue
+            val = attrs[key]
+            if val not in _NONE_VALUES:
+                parts.append(val)
+        label_str = " ".join(parts)
+    else:
+        label_str = " ".join([attrs[f] for f in feats])
+    if use_hashed_label:
+        from pidsmaker.utils.utils import stringtomd5
+        label_str = stringtomd5(label_str)
+    return label_str
+
+
 def get_node_list(cur, cfg):
     use_hashed_label = cfg.preprocessing.build_graphs.use_hashed_label
     node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
@@ -46,10 +68,7 @@ def get_node_list(cur, cfg):
             hash_id = str(i[1])
             index_id = int(i[-1])
 
-            features_used = []
-            for label_used in node_label_features["netflow"]:
-                features_used.append(attrs[label_used])
-            label_str = " ".join(features_used)
+            label_str = _build_label(attrs, "netflow", node_label_features, use_hashed_label)
 
             uuid2idx[node_uuid] = index_id
             uuid2type[node_uuid] = attrs["type"]
@@ -73,10 +92,7 @@ def get_node_list(cur, cfg):
             node_uuid = str(i[0])
             hash_id = str(i[1])
             index_id = int(i[-1])
-            features_used = []
-            for label_used in node_label_features["subject"]:
-                features_used.append(attrs[label_used])
-            label_str = " ".join(features_used)
+            label_str = _build_label(attrs, "subject", node_label_features, use_hashed_label)
 
             uuid2idx[node_uuid] = index_id
             uuid2type[node_uuid] = attrs["type"]
@@ -100,10 +116,7 @@ def get_node_list(cur, cfg):
             node_uuid = str(i[0])
             hash_id = str(i[1])
             index_id = int(i[-1])
-            features_used = []
-            for label_used in node_label_features["file"]:
-                features_used.append(attrs[label_used])
-            label_str = " ".join(features_used)
+            label_str = _build_label(attrs, "file", node_label_features, use_hashed_label)
 
             uuid2idx[node_uuid] = index_id
             uuid2type[node_uuid] = attrs["type"]

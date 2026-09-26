@@ -1,3 +1,5 @@
+_include_yml: default
+
 preprocessing:
   build_graphs:
     used_method: default
@@ -18,7 +20,7 @@ featurization:
   feat_training:
     epochs: 100
     emb_dim: 256
-    use_seed: True
+    seed: 0
     training_split: train
     used_method: fasttext
     fasttext:
@@ -26,14 +28,13 @@ featurization:
       alpha: 0.01
       window_size: 3
       negative: 3
-      num_workers: 15
+      num_workers: 1
       use_pretrained_fb_model: False
   feat_inference:
     to_remove: True
 
 detection:
   graph_preprocessing:
-    save_on_disk: False
     node_features: node_emb
     edge_features: none
     fix_buggy_graph_reindexer: False
@@ -45,7 +46,7 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
-    use_seed: True
+    seed: 0
     deterministic: False
     num_epochs: 12
     patience: 3
@@ -54,6 +55,8 @@ detection:
     node_hid_dim: 256
     node_out_dim: 256
     grad_accumulation: 1
+    stable_optim: False
+    fuse_duplicate_edges_training: False
     encoder:
       dropout: 0.0
       used_methods: sum_aggregation
@@ -68,7 +71,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
-    best_model_selection: best_adp
+    
     used_method: node_evaluation
     node_evaluation:
       threshold_method: nodlink

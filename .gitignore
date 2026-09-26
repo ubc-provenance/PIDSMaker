@@ -168,4 +168,8 @@ wandb/
 nohup.out
 artifacts/
 data/
+!pidsmaker/spider/data/
 docs/site/
+weights/
+scores/
+spider_scripts/cluster_plots/deckgl/

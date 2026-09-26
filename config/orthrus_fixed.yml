@@ -13,5 +13,4 @@ detection:
         fix_buggy_orthrus_TGN: True
 
   evaluation:
-    used_method: edge_evaluation
     best_model_selection: best_adp

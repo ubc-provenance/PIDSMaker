@@ -41,7 +41,8 @@ def main(cfg):
     FH_string = FeatureHasher(n_features=emb_dim, input_type="string")
 
     indexid2vec = {}
-    for indexid, msg in log_tqdm(indexid2msg.items(), desc="Embeding all nodes in the dataset"):
+    sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
+    for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
         if node_type == "subject" or node_type == "file":
             higlist = path2higlist(node_label)

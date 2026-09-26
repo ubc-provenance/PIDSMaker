@@ -274,7 +274,7 @@ def cal_val_thr(graph_dir):
     filelist = listdir_sorted(graph_dir)
 
     loss_list = []
-    for i in sorted(filelist):
+    for i in filelist:
         f = open(os.path.join(graph_dir, i))
         for line in f:
             l = line.strip()
@@ -367,7 +367,7 @@ def anomalous_queue_construction_provnet(
 
     file_l = listdir_sorted(graph_dir_path)
     index_count = 0
-    for f_path in sorted(file_l):
+    for f_path in file_l:
         log(f"Time window at index {index_count}: {f_path}")
 
         f = open(f"{graph_dir_path}/{f_path}")
@@ -449,7 +449,7 @@ def ground_truth_label(test_tw_path, cfg):
     if cfg._test_mode:
         return labels
 
-    tw_to_malicious_nodes = compute_tw_labels(cfg)
+    tw_to_malicious_nodes = compute_tw_labels(cfg, losses_dir=test_tw_path)
     for tw, nodes in tw_to_malicious_nodes.items():
         labels[tw] = 1
 

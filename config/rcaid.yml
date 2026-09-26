@@ -1,3 +1,5 @@
+_include_yml: default
+
 preprocessing:
   build_graphs:
     used_method: default
@@ -20,7 +22,7 @@ featurization:
   feat_training:
     epochs: 5
     emb_dim: 128
-    use_seed: True
+    seed: 0
     training_split: all
     used_method: doc2vec
     doc2vec:
@@ -31,7 +33,6 @@ featurization:
 
 detection:
   graph_preprocessing:
-    save_on_disk: False
     node_features: node_emb
     edge_features: none
     fix_buggy_graph_reindexer: False
@@ -43,7 +44,7 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
-    use_seed: True
+    seed: 0
     deterministic: False
     num_epochs: 12
     patience: 3
@@ -52,6 +53,8 @@ detection:
     node_hid_dim: 128
     node_out_dim: 3
     grad_accumulation: 1
+    stable_optim: False
+    fuse_duplicate_edges_training: False
     encoder:
       dropout: 0.5
       used_methods: rcaid_gat
@@ -64,8 +67,10 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
-    best_model_selection: best_adp
+    
     used_method: node_evaluation
     node_evaluation:
       threshold_method: max_val_loss
+      max_val_loss:
+        alpha: 1.0
       use_kmeans: False

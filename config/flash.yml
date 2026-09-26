@@ -1,3 +1,5 @@
+_include_yml: default
+
 preprocessing:
   build_graphs:
     used_method: default
@@ -20,7 +22,7 @@ featurization:
     epochs: 10 # 300
     training_split: train
     used_method: flash
-    use_seed: True
+    seed: 0
     flash:
       min_count: 1
       workers: 15
@@ -29,7 +31,6 @@ featurization:
 
 detection:
   graph_preprocessing:
-    save_on_disk: False
     node_features: node_emb
     edge_features: none
     fix_buggy_graph_reindexer: False
@@ -41,7 +42,7 @@ detection:
       used_method: none
   gnn_training:
     used_method: default
-    use_seed: True
+    seed: 0
     deterministic: False
     num_epochs: 12
     patience: 3
@@ -50,6 +51,8 @@ detection:
     node_hid_dim: 30
     node_out_dim: 3
     grad_accumulation: 1
+    stable_optim: False  # AdamW + warmup cosine + grad clipping (like SPIDER)
+    fuse_duplicate_edges_training: False
     encoder:
       dropout: 0.5
       used_methods: sage
@@ -65,7 +68,7 @@ detection:
   evaluation:
     viz_malicious_nodes: False
     ground_truth_version: orthrus
-    best_model_selection: best_adp
+    
     used_method: node_evaluation
     node_evaluation:
       threshold_method: flash

@@ -1,0 +1,417 @@
+# Attack edges for TRACE_E5 (Fedora Linux).
+# Attack scenario: Firefox exploit → bash shell → data staged in /home/admin/eraseme →
+# Thunderbird email exfiltration → sshd lateral movement.
+# NTP port used as covert C2 channel.
+# Subjects are existing benign nodes in the dataset.
+# IMPORTANT: Labels in TRACE_E5 do NOT include the type prefix
+# (unlike TRACE_E3). Subject: "cmd /binary", File: "/path", Netflow: "ip port".
+# C2 IPs are plausible but distinct from actual dataset to avoid indicator memorization.
+
+attack_edges:
+
+  # ── Initial Access / Exploitation ──────────────────────────────────────────
+
+  # Firefox (exploited) spawns bash — initial foothold
+  - src_type: subject
+    src_label: "firefox /home/admin/firefox"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # Firefox connects to attacker staging server
+  - src_type: subject
+    src_label: "firefox /home/admin/firefox"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 80"
+
+  # Firefox writes dropper payload to disk
+  - src_type: subject
+    src_label: "firefox /home/admin/firefox"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/tmp/.payload"
+
+  # Firefox writes to Mozilla session recovery (payload staging)
+  - src_type: subject
+    src_label: "firefox /home/admin/firefox"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/home/admin/.mozilla/firefox/wyd8o2f2.default/sessionstore-backups/recovery.js.tmp"
+
+  # Firefox reads staged data
+  - src_type: subject
+    src_label: "firefox /home/admin/firefox"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/home/admin/eraseme"
+
+  # ── Payload Execution ───────────────────────────────────────────────────────
+
+  # Firefox dropper executed → spawns bash
+  - src_type: file
+    src_label: "/tmp/.payload"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # ── Backdoor / SSH Lateral Movement ─────────────────────────────────────────
+
+  # sshd spawns bash (backdoor / lateral movement)
+  - src_type: subject
+    src_label: "/usr/sbin/sshd -D -R //sshd"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # sshd privileged daemon spawns bash
+  - src_type: subject
+    src_label: "/usr/sbin/sshd -D //sshd"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # ── C2 Communication ────────────────────────────────────────────────────────
+
+  # bash connects to C2 via NTP covert channel
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "10.0.8.5 123"
+
+  # bash sends data to C2 (NTP covert channel)
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "10.0.8.5 123"
+
+  # C2 sends commands back via NTP channel
+  - src_type: netflow
+    src_label: "10.0.8.5 123"
+    edge_type: EVENT_RECVFROM
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # bash connects to HTTP staging server
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 80"
+
+  # bash connects to HTTPS C2 (encrypted)
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 443"
+
+  # bash sends HTTPS exfil data
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "185.220.101.50 443"
+
+  # wget downloads additional tools
+  - src_type: subject
+    src_label: "wget /usr/bin/wget"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 80"
+
+  # curl downloads payloads via HTTPS
+  - src_type: subject
+    src_label: "curl /usr/bin/curl"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 443"
+
+  # nc (netcat) reverse shell
+  - src_type: subject
+    src_label: "nc /usr/bin/nc"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 4444"
+
+  # python used as alternate C2 agent
+  - src_type: subject
+    src_label: "python /usr/bin/python"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 80"
+
+  # ssh reverse shell to attacker
+  - src_type: subject
+    src_label: "ssh /usr/bin/ssh"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "10.0.8.5 22"
+
+  # ── Exfiltration via Thunderbird ─────────────────────────────────────────────
+
+  # Thunderbird used to exfiltrate data via NTP covert channel
+  - src_type: subject
+    src_label: "/usr/lib/thunderbird/thunderbird /home/admin/thunderbird"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "10.0.8.5 123"
+
+  # Thunderbird connects to staging server
+  - src_type: subject
+    src_label: "/usr/lib/thunderbird/thunderbird /home/admin/thunderbird"
+    edge_type: EVENT_CONNECT
+    dst_type: netflow
+    dst_label: "185.220.101.50 80"
+
+  # Thunderbird sends exfil data via HTTP
+  - src_type: subject
+    src_label: "/usr/lib/thunderbird/thunderbird /home/admin/thunderbird"
+    edge_type: EVENT_SENDTO
+    dst_type: netflow
+    dst_label: "185.220.101.50 80"
+
+  # Thunderbird reads nsmail staging file before sending
+  - src_type: subject
+    src_label: "/usr/lib/thunderbird/thunderbird /home/admin/thunderbird"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/tmp/nsmail.tmp"
+
+  # Thunderbird reads HTML email for exfil
+  - src_type: subject
+    src_label: "/usr/lib/thunderbird/thunderbird /home/admin/thunderbird"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/tmp/nsemail.html"
+
+  # ── Staging / Collection ─────────────────────────────────────────────────────
+
+  # bash stages attack files in eraseme directory
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/home/admin/eraseme"
+
+  # bash reads staged data before exfil
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/home/admin/eraseme"
+
+  # bash writes nsmail staging file for Thunderbird exfil
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/tmp/nsmail.tmp"
+
+  # bash writes HTML email content for exfiltration
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/tmp/nsemail.html"
+
+  # bash reads Mozilla session data (browser credential theft)
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/home/admin/.mozilla/firefox/wyd8o2f2.default/sessionCheckpoints.json.tmp"
+
+  # wget writes payload to staging directory
+  - src_type: subject
+    src_label: "wget /usr/bin/wget"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/home/admin/eraseme"
+
+  # ── Persistence ─────────────────────────────────────────────────────────────
+
+  # bash writes backdoor binary to /tmp
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/tmp/.backdoor"
+
+  # Backdoor executed → spawns bash
+  - src_type: file
+    src_label: "/tmp/.backdoor"
+    edge_type: EVENT_EXECUTE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # bash installs attacker SSH key
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/home/admin/.ssh/authorized_keys"
+
+  # bash modifies crontab for persistence
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/etc/crontab"
+
+  # cron executes malicious job → spawns sh
+  - src_type: subject
+    src_label: "cron /usr/sbin/crond"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "sh /bin/sh"
+
+  # sh spawns bash (cron payload execution chain)
+  - src_type: subject
+    src_label: "sh /bin/sh"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # ── Privilege Escalation ─────────────────────────────────────────────────────
+
+  # sudo spawns bash with elevated privileges
+  - src_type: subject
+    src_label: "sudo /usr/bin/sudo"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # su switches to root
+  - src_type: subject
+    src_label: "su /usr/bin/su"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "-bash /home/admin/bash"
+
+  # ── Credential Access ────────────────────────────────────────────────────────
+
+  # bash reads /etc/passwd for user enumeration
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/etc/passwd"
+
+  # bash reads /etc/shadow for credential theft
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/etc/shadow"
+
+  # cat reads shadow file
+  - src_type: subject
+    src_label: "cat /bin/cat"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/etc/shadow"
+
+  # bash reads SSH host key for impersonation
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/etc/ssh/ssh_host_rsa_key"
+
+  # bash reads SSH authorized_keys
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/home/admin/.ssh/authorized_keys"
+
+  # bash reads bash history for reconnaissance
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_READ
+    dst_type: file
+    dst_label: "/home/admin/.bash_history"
+
+  # ── Discovery / Reconnaissance ───────────────────────────────────────────────
+
+  # bash enumerates network connections
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "netstat /usr/bin/netstat"
+
+  # bash enumerates running processes
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "ps /bin/ps"
+
+  # bash checks identity
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "id /usr/bin/id"
+
+  # bash searches filesystem for interesting files
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "find /usr/bin/find"
+
+  # bash spawns nc for scanning / reverse shell
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "nc /usr/bin/nc"
+
+  # bash spawns ssh for lateral movement
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "ssh /usr/bin/ssh"
+
+  # bash spawns python for scripted attacks
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "python /usr/bin/python"
+
+  # bash spawns wget for additional downloads
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "wget /usr/bin/wget"
+
+  # bash spawns cat for reading credentials
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_CLONE
+    dst_type: subject
+    dst_label: "cat /bin/cat"
+
+  # ── Defense Evasion ──────────────────────────────────────────────────────────
+
+  # bash tampers with system log
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/var/log/messages"
+
+  # bash tampers with secure/auth log to remove traces
+  - src_type: subject
+    src_label: "-bash /home/admin/bash"
+    edge_type: EVENT_WRITE
+    dst_type: file
+    dst_label: "/var/log/secure"

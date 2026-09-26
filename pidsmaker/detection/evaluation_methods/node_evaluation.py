@@ -8,6 +8,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_discrimination_score,
     compute_discrimination_tp,
+    compute_tp_per_attack_thr,
     compute_kmeans_labels,
     datetime_to_ns_time_US_handle_nano,
     get_detected_tps_node_level,
@@ -23,6 +24,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     transform_attack2nodes_to_node2attacks,
 )
 from pidsmaker.utils.labelling import get_GP_of_each_attack
+from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
 from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_node_to_path_and_type,
@@ -31,76 +33,106 @@ from pidsmaker.utils.utils import (
     log_tqdm,
 )
 
+# Cache for train_node_set — loading all train graphs from disk is expensive
+# and the result is the same across epochs.
+_train_node_set_cache = {}
+
+
+def _get_train_node_set(cfg):
+    cache_key = cfg.preprocessing.transformation._graphs_dir
+    if cache_key not in _train_node_set_cache:
+        train_set_paths = get_all_files_from_folders(cache_key, cfg.dataset.train_files)
+        train_node_set = set()
+        for train_path in train_set_paths:
+            train_graph = torch.load(train_path)
+            train_node_set |= set(train_graph.nodes())
+        _train_node_set_cache[cache_key] = train_node_set
+    return _train_node_set_cache[cache_key]
+
+
+def _vectorized_node_score(grouped_loss, threshold_method):
+    """Compute per-node score using vectorized groupby instead of per-node reduce_losses_to_score."""
+    method = threshold_method.strip()
+    if method == "mean_val_loss":
+        return grouped_loss.mean()
+    elif method == "percentile":
+        return grouped_loss.quantile(0.95)
+    else:  # max_val_loss, threatrace, flash, nodlink, fixed_zero
+        return grouped_loss.max()
+
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
     log(f"Loading data from {test_tw_path}...")
 
     threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    alpha = cfg.detection.evaluation.node_evaluation.max_val_loss.alpha
     if threshold_method == "magic":
-        thr = get_threshold(test_tw_path, threshold_method)
+        thr = get_threshold(test_tw_path, threshold_method, alpha)
     else:
-        thr = get_threshold(val_tw_path, threshold_method)
+        thr = get_threshold(val_tw_path, threshold_method, alpha)
     log(f"Threshold: {thr:.3f}")
 
-    node_to_losses = defaultdict(list)
-    node_to_max_loss_tw = {}
-    node_to_max_loss = defaultdict(int)
+    use_dst = cfg.detection.evaluation.node_evaluation.use_dst_node_loss
 
+    # Read all CSVs and tag with TW index
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
-        file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file).to_dict(orient="records")
-        for line in df:
-            srcnode = line["srcnode"]
-            dstnode = line["dstnode"]
-            loss = line["loss"]
+    dfs = []
+    for tw, fname in enumerate(log_tqdm(filelist, desc="Compute labels")):
+        df = pd.read_csv(os.path.join(test_tw_path, fname))
+        df["tw"] = tw
+        dfs.append(df)
 
-            # Scores
-            node_to_losses[srcnode].append(loss)
-            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                node_to_losses[dstnode].append(loss)
+    if not dfs:
+        return defaultdict(dict), thr, None
 
-            # If max-val thr is used, we want to keep track when the node with max loss happens
-            if loss > node_to_max_loss[srcnode]:
-                node_to_max_loss[srcnode] = loss
-                node_to_max_loss_tw[srcnode] = tw
-            if cfg.detection.evaluation.node_evaluation.use_dst_node_loss:
-                if loss > node_to_max_loss[dstnode]:
-                    node_to_max_loss[dstnode] = loss
-                    node_to_max_loss_tw[dstnode] = tw
+    all_df = pd.concat(dfs, ignore_index=True)
 
-    # For plotting the scores of seen and unseen nodes
-    graph_dir = cfg.preprocessing.transformation._graphs_dir
-    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
+    # Build edge records DataFrame directly (vectorized isin instead of per-row `in`)
+    all_edge_records = all_df[["srcnode", "dstnode", "loss", "tw"]].copy()
+    all_edge_records["edge_type"] = all_df["edge_type"] if "edge_type" in all_df.columns else -1
+    all_edge_records["time"] = all_df["time"] if "time" in all_df.columns else 0
+    all_edge_records["src_is_malicious"] = all_df["srcnode"].isin(ground_truth_nids).astype(int)
+    all_edge_records["dst_is_malicious"] = all_df["dstnode"].isin(ground_truth_nids).astype(int)
 
-    train_node_set = set()
-    for train_path in train_set_paths:
-        train_graph = torch.load(train_path)
-        train_node_set |= set(train_graph.nodes())
+    # Combine src (and optionally dst) into a unified node-loss-tw table
+    src_part = all_df[["srcnode", "loss", "tw"]].rename(columns={"srcnode": "node"})
+    if use_dst:
+        dst_part = all_df[["dstnode", "loss", "tw"]].rename(columns={"dstnode": "node"})
+        node_loss_tw = pd.concat([src_part, dst_part], ignore_index=True)
+    else:
+        node_loss_tw = src_part
+
+    # Compute per-node score via vectorized groupby
+    grouped = node_loss_tw.groupby("node")["loss"]
+    node_scores = _vectorized_node_score(grouped, threshold_method)
+
+    # Compute TW of max loss per node (idxmax returns first occurrence, same as strict >)
+    max_loss_idx = grouped.idxmax()
+    max_rows = node_loss_tw.loc[max_loss_idx.values]
+    node_to_max_loss_tw = dict(zip(max_rows["node"].values, max_rows["tw"].values))
+
+    train_node_set = _get_train_node_set(cfg)
 
     use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
-    for node_id, losses in node_to_losses.items():
-        pred_score = reduce_losses_to_score(
-            losses, cfg.detection.evaluation.node_evaluation.threshold_method
-        )
-
-        results[node_id]["score"] = pred_score
+    for node_id, score in node_scores.items():
+        score = float(score)
+        results[node_id]["score"] = score
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
         results[node_id]["y_true"] = int(node_id in ground_truth_nids)
         results[node_id]["is_seen"] = int(str(node_id) in train_node_set)
 
-        if use_kmeans:  # in this mode, we add the label after
+        if use_kmeans:
             results[node_id]["y_hat"] = 0
         else:
-            results[node_id]["y_hat"] = int(pred_score > thr)
+            results[node_id]["y_hat"] = int(score > thr)
 
     if use_kmeans:
         results = compute_kmeans_labels(
             results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K
         )
-    return results, thr
+    return results, thr, all_edge_records
 
 
 def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
@@ -108,10 +140,11 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     log(f"Loading data from {test_tw_path}...")
 
     threshold_method = cfg.detection.evaluation.node_evaluation.threshold_method
+    alpha = cfg.detection.evaluation.node_evaluation.max_val_loss.alpha
     if threshold_method == "magic":
-        thr = get_threshold(test_tw_path, threshold_method)
+        thr = get_threshold(test_tw_path, threshold_method, alpha)
     else:
-        thr = get_threshold(val_tw_path, threshold_method)
+        thr = get_threshold(val_tw_path, threshold_method, alpha)
     log(f"Threshold: {thr:.3f}")
 
     node_to_values = defaultdict(lambda: defaultdict(list))
@@ -119,7 +152,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     node_to_max_loss = defaultdict(int)
 
     filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(log_tqdm(sorted(filelist), desc="Compute labels")):
+    for tw, file in enumerate(log_tqdm(filelist, desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
         df = pd.read_csv(file).to_dict(orient="records")
         for line in df:
@@ -142,14 +175,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                 node_to_max_loss[node] = loss
                 node_to_max_loss_tw[node] = tw
 
-    # For plotting the scores of seen and unseen nodes
-    graph_dir = cfg.preprocessing.transformation._graphs_dir
-    train_set_paths = get_all_files_from_folders(graph_dir, cfg.dataset.train_files)
-
-    train_node_set = set()
-    for train_path in train_set_paths:
-        train_graph = torch.load(train_path)
-        train_node_set |= set(train_graph.nodes())
+    train_node_set = _get_train_node_set(cfg)
 
     use_kmeans = cfg.detection.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
@@ -224,7 +250,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         results = compute_kmeans_labels(
             results, topk_K=cfg.detection.evaluation.node_evaluation.kmeans_top_K
         )
-    return results, thr
+    return results, thr, None
 
 
 def analyze_false_positives(
@@ -245,23 +271,24 @@ def analyze_false_positives(
 
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    if cfg._is_node_level:
+    if cfg._is_node_level and not cfg._is_hybrid_loss:
         get_preds_fn = get_node_predictions_node_level
     else:
         get_preds_fn = get_node_predictions
 
-    results, thr = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
-
-    # save results for future checking
-    os.makedirs(cfg.detection.evaluation._results_dir, exist_ok=True)
-    results_save_dir = os.path.join(cfg.detection.evaluation._results_dir, "results.pth")
-    torch.save(results, results_save_dir)
-    log(f"Resutls saved to {results_save_dir}")
+    results, thr, edge_records = get_preds_fn(cfg=cfg, val_tw_path=val_tw_path, test_tw_path=test_tw_path)
 
     node_to_path = get_node_to_path_and_type(cfg)
 
     out_dir = cfg.detection.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
+
+    # Save edge-level scores for fine-grained analysis
+    if edge_records is not None:
+        edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
+        edge_df = edge_records if isinstance(edge_records, pd.DataFrame) else pd.DataFrame(edge_records)
+        torch.save(edge_df, edge_scores_file)
+        log(f"Saved {len(edge_df)} edge scores to {edge_scores_file}")
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(
         out_dir, f"adp_curve_{model_epoch_dir}.png"
@@ -269,10 +296,13 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     # simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
     neat_scores_img_file = os.path.join(out_dir, f"neat_scores_{model_epoch_dir}.svg")
-    seen_score_img_file = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
+    # seen_score_img_file = os.path.join(out_dir, f"seen_score_{model_epoch_dir}.png")
     discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
+    distrib_img_file = os.path.join(out_dir, f"distrib_{model_epoch_dir}.png")
 
     attack_to_GPs = get_GP_of_each_attack(cfg)
+    attack2nodes = {k: v["nids"] for k, v in attack_to_GPs.items()}
+    node2attacks = transform_attack2nodes_to_node2attacks(attack2nodes)
     attack_to_TPs = defaultdict(int)
 
     log("Analysis of malicious nodes:")
@@ -300,13 +330,9 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                 + (node_to_path[nid]["path"])
             )
 
-            if y_hat:
-                for att, d in attack_to_GPs.items():
-                    if nid in d["nids"]:
-                        attack_to_TPs[att] += 1
-
-    attack2nodes = {k: v["nids"] for k, v in attack_to_GPs.items()}
-    node2attacks = transform_attack2nodes_to_node2attacks(attack2nodes)
+            if y_hat and nid in node2attacks:
+                for att in node2attacks[nid]:
+                    attack_to_TPs[att] += 1
 
     # Plots the PR curve and scores for mean node loss
     log(f"Saving figures to {out_dir}...")
@@ -317,6 +343,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
     plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
+    tp_per_attack = compute_tp_per_attack_thr(pred_scores, nodes, node2attacks, y_truth, thr)
     # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths_node_level(
         pred_scores,
@@ -331,6 +358,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     )
     plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
     # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
+    node_to_type = {nid: info["type"] for nid, info in node_to_path.items()}
+    plot_scores_distribution(pred_scores, y_truth, nodes, node2attacks, distrib_img_file,
+                             node_to_type=node_to_type)
+    
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
 
     fp_in_malicious_tw_ratio = analyze_false_positives(
@@ -357,6 +388,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     stats["recall_if_all_attacks_detected"] = recall
 
     stats["adp_score"] = round(adp_score, 3)
+    stats["threshold"] = thr
 
     for k, v in discrim_scores.items():
         stats[k] = round(v, 4)
@@ -365,15 +397,12 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     for attack, detected_tps in attack2tps.items():
         stats[f"tps_{attack}"] = str(detected_tps)
 
-    stats = {**stats, **discrim_tp}
+    stats = {**stats, **discrim_tp, **tp_per_attack}
 
-    results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
-    stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
-    scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
-
-    torch.save(results, results_file)
+    stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pkl")
     torch.save(stats, stats_file)
-
+    
+    scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
     torch.save(
         {
             "pred_scores": pred_scores,
@@ -387,5 +416,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
     stats["scores_file"] = scores_file
     stats["neat_scores_img_file"] = neat_scores_img_file
+    
+    gnn_models_dir = cfg.detection.gnn_training._trained_models_dir
+    model_path = os.path.join(gnn_models_dir, model_epoch_dir)
+    stats["model_path"] = model_path
 
     return stats
+    

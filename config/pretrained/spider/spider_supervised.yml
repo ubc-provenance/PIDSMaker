@@ -1,0 +1,17 @@
+_include_yml: spider_velox
+
+detection:
+  gnn_training:
+    decoder:
+      used_methods: predict_edge_supervised
+      predict_edge_supervised:
+        decoder: edge_mlp
+        mode: synthetic
+        # Path to the explicit attack edge definition file.
+        # Node labels in this file are embedded by the SPIDER T5 encoder during feat_inference
+        # even if they do not appear in the dataset, then loaded here for supervised training.
+        attack_edges_path: config/attack_edges/cadets_e3.yml
+        pos_weight: 1.0
+        edge_mlp:
+          architecture_str: linear(0.5) | relu
+          src_dst_projection_coef: 2
