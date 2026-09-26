@@ -34,7 +34,7 @@ def main(cfg):
     elif method == "fasttext":
         featurization_fasttext.main(cfg)
     elif method == "pretrained":
-        from pidsmaker.spider import pretrain
+        from pidsmaker.pretrained import pretrain
         pretrain.main(cfg)
     else:
         raise ValueError(f"Invalid node embedding method {method}")

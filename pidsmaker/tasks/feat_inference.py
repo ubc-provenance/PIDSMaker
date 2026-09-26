@@ -6,7 +6,7 @@ import torch
 from pidsmaker.config import update_cfg_for_multi_dataset
 from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_alacarte,
-    feat_inference_spider,
+    feat_inference_pretrained,
     feat_inference_doc2vec,
     feat_inference_fasttext,
     feat_inference_flash,
@@ -15,7 +15,7 @@ from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_TRW,
     feat_inference_word2vec,
 )
-from pidsmaker.featurization.feat_inference_methods.feat_inference_spider import GraphBasedEncoder
+from pidsmaker.featurization.feat_inference_methods.feat_inference_pretrained import GraphBasedEncoder
 from pidsmaker.utils.data_utils import CollatableTemporalData
 from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
 from pidsmaker.utils.utils import (
@@ -173,7 +173,7 @@ def get_indexid2vec(cfg):
     if method == "fasttext":
         return feat_inference_fasttext.main(cfg)
     if method == "pretrained":
-        return feat_inference_spider.main(cfg)
+        return feat_inference_pretrained.main(cfg)
 
     raise ValueError(f"Invalid node embedding method {method}")
 

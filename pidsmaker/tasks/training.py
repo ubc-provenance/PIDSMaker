@@ -10,7 +10,7 @@ def main(cfg):
     if method == "default":
         return training_loop.main(cfg)
     elif method == "pretrained":
-        from pidsmaker.spider import detect
+        from pidsmaker.pretrained import detect
         return detect.main(cfg)
     else:
         raise ValueError(f"Invalid training method {method}")

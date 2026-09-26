@@ -109,7 +109,7 @@ def main(cfg):
         steps_per_epoch = max(1, total_graphs // grad_acc)
         total_steps = steps_per_epoch * num_epochs
         warmup_steps = max(1, total_steps // 20)
-        from pidsmaker.spider.training_utils import WarmupCosineScheduler
+        from pidsmaker.pretrained.training_utils import WarmupCosineScheduler
 
         scheduler = WarmupCosineScheduler(optimizer, warmup_steps, total_steps)
 

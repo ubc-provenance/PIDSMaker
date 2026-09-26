@@ -316,7 +316,7 @@ def _dump_gnn_distill_corpus_to_txt(sampler_pairs, combined_indexid2msg, out_dir
     deterministic and complete — useful for inspecting what the GNN sees.
     """
     from ..data.edge_filter import _is_noisy_file, _is_noisy_process
-    from pidsmaker.spider.data.tokenizer_bpe import NODE_TYPE_TOKENS
+    from pidsmaker.pretrained.data.tokenizer_bpe import NODE_TYPE_TOKENS
 
     out_path = os.path.join(out_dir, "walk_corpus.txt")
     n_entities = 0

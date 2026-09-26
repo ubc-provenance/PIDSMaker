@@ -419,12 +419,12 @@ def _continue_pretrain_gnn_distill(cfg, model, tokenizer, pretrain_cfg, inferenc
 
     from torch.optim import AdamW
 
-    from pidsmaker.spider.models.gnn_distill import (
+    from pidsmaker.pretrained.models.gnn_distill import (
         NeighborhoodGNNTeacher, build_edge_type_encoder,
         build_gnn_distill_batch,
     )
-    from pidsmaker.spider.models.graphmae import sce_loss
-    from pidsmaker.spider.data.sampler import ProvenanceWalkSampler
+    from pidsmaker.pretrained.models.graphmae import sce_loss
+    from pidsmaker.pretrained.data.sampler import ProvenanceWalkSampler
     from pidsmaker.utils.utils import get_all_graphs_for_dates, get_indexid2msg
 
     distill_cfg = pretrain_cfg.gnn_distill
@@ -458,7 +458,7 @@ def _continue_pretrain_gnn_distill(cfg, model, tokenizer, pretrain_cfg, inferenc
         return model
 
     import torch as _torch
-    from pidsmaker.spider.pretrain.pretrain_common import _load_and_merge_graphs
+    from pidsmaker.pretrained.pretrain.pretrain_common import _load_and_merge_graphs
     graph_context_mode = getattr(pretrain_cfg, "graph_context_mode", "single")
     graphs = _load_and_merge_graphs(train_files, graph_context_mode)
     log(f"  Loaded {len(graphs)} graph(s) from {len(train_files)} files")
@@ -649,7 +649,7 @@ def _continue_pretrain_gnn_distill(cfg, model, tokenizer, pretrain_cfg, inferenc
 
 def _load_target_graphs_and_samplers(cfg, pretrain_cfg):
     """Load target dataset graphs and build walk samplers. Shared by all continue-pretrain functions."""
-    from pidsmaker.spider.data.sampler import ProvenanceWalkSampler
+    from pidsmaker.pretrained.data.sampler import ProvenanceWalkSampler
     from pidsmaker.utils.utils import get_all_graphs_for_dates, get_indexid2msg
 
     base_dir = cfg.transformation._graphs_dir
@@ -657,7 +657,7 @@ def _load_target_graphs_and_samplers(cfg, pretrain_cfg):
     if not train_files:
         return None, None, None
 
-    from pidsmaker.spider.pretrain.pretrain_common import _load_and_merge_graphs
+    from pidsmaker.pretrained.pretrain.pretrain_common import _load_and_merge_graphs
     graph_context_mode = getattr(pretrain_cfg, "graph_context_mode", "single")
     graphs = _load_and_merge_graphs(train_files, graph_context_mode)
     log(f"  Loaded {len(graphs)} graph(s) from {len(train_files)} files")
@@ -690,18 +690,18 @@ def _continue_pretrain_spider(cfg, model, tokenizer, pretrain_cfg, inference_cfg
     import torch as _torch
     from torch.optim import AdamW
 
-    from pidsmaker.spider.models.spider import (
+    from pidsmaker.pretrained.models.spider import (
         GNNClusterTeacher,
         build_gnn_distill_batch, build_edge_type_encoder,
         supervised_contrastive_loss, sce_loss,
         StudentSignatureHead, StudentClassHead, TeacherClassHead,
     )
-    from pidsmaker.spider.data.behavior_signatures import (
+    from pidsmaker.pretrained.data.behavior_signatures import (
         build_behavior_dataset,
         BehaviorLabelVocab,
     )
-    from pidsmaker.spider.data.entity_classes import classify_entity
-    from pidsmaker.spider.training_utils import build_pk_batches
+    from pidsmaker.pretrained.data.entity_classes import classify_entity
+    from pidsmaker.pretrained.training_utils import build_pk_batches
 
     gc_cfg = pretrain_cfg.spider
     continue_epochs = inference_cfg.continue_pretrain_epochs
@@ -1131,8 +1131,8 @@ def _continue_pretrain_behavior_cluster(cfg, model, tokenizer, pretrain_cfg, inf
     import torch as _torch
     from torch.optim import AdamW
 
-    from pidsmaker.spider.models.behavior import behavior_combined_loss
-    from pidsmaker.spider.data.behavior_signatures import (
+    from pidsmaker.pretrained.models.behavior import behavior_combined_loss
+    from pidsmaker.pretrained.data.behavior_signatures import (
         build_behavior_dataset,
         BehaviorLabelVocab,
     )
@@ -1211,7 +1211,7 @@ def _continue_pretrain_behavior_cluster(cfg, model, tokenizer, pretrain_cfg, inf
             label_to_class_id[label_key] = sig_to_class_id[sig]
 
     # Assign entity class IDs (coarse functional classes)
-    from pidsmaker.spider.data.entity_classes import classify_entity
+    from pidsmaker.pretrained.data.entity_classes import classify_entity
     entity_class_to_id = {}
     label_to_entity_class_id = {}
     for label_key in label_to_target:
@@ -1353,8 +1353,8 @@ def main(cfg):
 
     # ── GraphMAE: return per-graph encoder (avoids cross-graph data snooping) ──
     if model_type == "graphmae":
-        from pidsmaker.spider.models.graphmae import load_graphmae, T5NodeEncoder
-        from pidsmaker.spider.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
+        from pidsmaker.pretrained.models.graphmae import load_graphmae, T5NodeEncoder
+        from pidsmaker.pretrained.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
 
         gm_cfg = pretrain_cfg.graphmae
         gm_num_layers = gm_cfg.num_layers
@@ -1368,7 +1368,7 @@ def main(cfg):
         tokenizer = ProvenanceTokenizer(cfg)
         tokenizer.load(os.path.join(pretrain_dir, "tokenizer.pt"))
 
-        from pidsmaker.spider.models.gnn_distill import get_gnn_distill_encoder_config
+        from pidsmaker.pretrained.models.gnn_distill import get_gnn_distill_encoder_config
         t5_config = get_gnn_distill_encoder_config(tokenizer.vocab_size, model_size, tokenizer.max_seq_len)
         t5_hidden_dim = t5_config.d_model
 
@@ -1388,10 +1388,10 @@ def main(cfg):
 
     # ── GAE: return per-graph encoder (avoids cross-graph data snooping) ──
     if model_type == "gae":
-        from pidsmaker.spider.models.gae import load_gae
-        from pidsmaker.spider.models.graphmae import T5NodeEncoder
-        from pidsmaker.spider.models.gnn_distill import get_gnn_distill_encoder_config
-        from pidsmaker.spider.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
+        from pidsmaker.pretrained.models.gae import load_gae
+        from pidsmaker.pretrained.models.graphmae import T5NodeEncoder
+        from pidsmaker.pretrained.models.gnn_distill import get_gnn_distill_encoder_config
+        from pidsmaker.pretrained.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
 
         gae_cfg = pretrain_cfg.gae
         gae_num_layers = gae_cfg.num_layers
@@ -1420,10 +1420,10 @@ def main(cfg):
 
     # ── DGI: return per-graph encoder (avoids cross-graph data snooping) ──
     if model_type == "dgi":
-        from pidsmaker.spider.models.dgi import load_dgi
-        from pidsmaker.spider.models.graphmae import T5NodeEncoder
-        from pidsmaker.spider.models.gnn_distill import get_gnn_distill_encoder_config
-        from pidsmaker.spider.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
+        from pidsmaker.pretrained.models.dgi import load_dgi
+        from pidsmaker.pretrained.models.graphmae import T5NodeEncoder
+        from pidsmaker.pretrained.models.gnn_distill import get_gnn_distill_encoder_config
+        from pidsmaker.pretrained.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
 
         dgi_cfg = pretrain_cfg.dgi
         dgi_num_layers = dgi_cfg.num_layers
@@ -1452,7 +1452,7 @@ def main(cfg):
 
     # ── DeepWalk: load Word2Vec model and map labels directly ──────────
     if model_type in ("deepwalk", "node2vec"):
-        from pidsmaker.spider.models.deepwalk import load_deepwalk, deepwalk_embeddings
+        from pidsmaker.pretrained.models.deepwalk import load_deepwalk, deepwalk_embeddings
         dw_model = load_deepwalk(pretrain_dir)
         if emb_dim != dw_model.wv.vector_size:
             raise ValueError(
@@ -1466,10 +1466,10 @@ def main(cfg):
         return indexid2vec
 
     # ── HF pretrained models: load fine-tuned model + HF tokenizer ───────
-    from pidsmaker.spider.models.hf_pretrained import HF_MODEL_TYPES
+    from pidsmaker.pretrained.models.hf_pretrained import HF_MODEL_TYPES
     if model_type in HF_MODEL_TYPES:
         from transformers import AutoModelForCausalLM, AutoTokenizer
-        from pidsmaker.spider.models.hf_pretrained import (
+        from pidsmaker.pretrained.models.hf_pretrained import (
             embed_nodes_hf, get_hf_hidden_size,
         )
 
@@ -1510,14 +1510,14 @@ def main(cfg):
     batch_size = min(pretrain_cfg.training.batch_size * 16, 8192)
 
     # ── Load tokenizer ────────────────────────────────────────────────
-    from pidsmaker.spider.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
+    from pidsmaker.pretrained.data.tokenizer_bpe import ProvenanceTokenizerBPE as ProvenanceTokenizer
 
     tokenizer = ProvenanceTokenizer(cfg)
     tokenizer.load(os.path.join(pretrain_dir, "tokenizer.pt"))
 
     # ── Load pretrained BERT backbone ─────────────────────────────────
     if model_type == "ropebert":
-        from pidsmaker.spider.models.ropebert import ProvenanceRoPEBERT, get_ropebert_config
+        from pidsmaker.pretrained.models.ropebert import ProvenanceRoPEBERT, get_ropebert_config
         rope_theta = getattr(pretrain_cfg, 'rope_theta', 10000.0)
         bert_config = get_ropebert_config(
             tokenizer.vocab_size, model_size, tokenizer.max_seq_len,
@@ -1525,18 +1525,18 @@ def main(cfg):
         )
         bert = ProvenanceRoPEBERT(bert_config)
     elif model_type == "gnn_distill":
-        from pidsmaker.spider.models.gnn_distill import ProvenanceGNNDistill, get_gnn_distill_encoder_config
+        from pidsmaker.pretrained.models.gnn_distill import ProvenanceGNNDistill, get_gnn_distill_encoder_config
         bert_config = get_gnn_distill_encoder_config(tokenizer.vocab_size, model_size, tokenizer.max_seq_len)
         gnn_hidden_dim = pretrain_cfg.gnn_distill.hidden_dim
         bert = ProvenanceGNNDistill(bert_config, gnn_hidden_dim)
     elif model_type == "spider":
-        from pidsmaker.spider.models.spider import ProvenanceGNNCluster, get_spider_encoder_config
+        from pidsmaker.pretrained.models.spider import ProvenanceGNNCluster, get_spider_encoder_config
         bert_config = get_spider_encoder_config(tokenizer.vocab_size, model_size, tokenizer.max_seq_len)
         gnn_hidden_dim = pretrain_cfg.spider.hidden_dim
         bert = ProvenanceGNNCluster(bert_config, gnn_hidden_dim)
     elif model_type == "behavior_cluster":
-        from pidsmaker.spider.models.behavior import ProvenanceBehaviorModel, get_behavior_encoder_config
-        from pidsmaker.spider.data.behavior_signatures import BehaviorLabelVocab
+        from pidsmaker.pretrained.models.behavior import ProvenanceBehaviorModel, get_behavior_encoder_config
+        from pidsmaker.pretrained.data.behavior_signatures import BehaviorLabelVocab
         bert_config = get_behavior_encoder_config(tokenizer.vocab_size, model_size, tokenizer.max_seq_len)
         # Load behavior vocab to get num_labels
         bvocab_path = os.path.join(pretrain_dir, "behavior_vocab.txt")
@@ -1563,7 +1563,7 @@ def main(cfg):
             bce_mode=bc_bce_mode, num_classes=bc_num_classes,
         )
     elif model_type == "modernbert":
-        from pidsmaker.spider.models.modernbert import ProvenanceModernBERT, get_modernbert_config
+        from pidsmaker.pretrained.models.modernbert import ProvenanceModernBERT, get_modernbert_config
         bert_config = get_modernbert_config(
             tokenizer.vocab_size, model_size, tokenizer.max_seq_len,
             global_attn_every_n_layers=getattr(pretrain_cfg, 'global_attn_every_n_layers', 3),
@@ -1571,7 +1571,7 @@ def main(cfg):
         )
         bert = ProvenanceModernBERT(bert_config)
     elif model_type == "llama":
-        from pidsmaker.spider.models.llama import ProvenanceLLaMA, get_llama_config
+        from pidsmaker.pretrained.models.llama import ProvenanceLLaMA, get_llama_config
         rope_theta = getattr(pretrain_cfg, 'llama', None)
         rope_theta = rope_theta.rope_theta if rope_theta else 10000.0
         bert_config = get_llama_config(
@@ -1580,11 +1580,11 @@ def main(cfg):
         )
         bert = ProvenanceLLaMA(bert_config)
     elif model_type == "roberta":
-        from pidsmaker.spider.models.roberta import ProvenanceRoBERTa, get_roberta_config
+        from pidsmaker.pretrained.models.roberta import ProvenanceRoBERTa, get_roberta_config
         bert_config = get_roberta_config(tokenizer.vocab_size, model_size, tokenizer.max_seq_len)
         bert = ProvenanceRoBERTa(bert_config)
     else:
-        from pidsmaker.spider.models.bert import ProvenanceBERT, get_bert_config
+        from pidsmaker.pretrained.models.bert import ProvenanceBERT, get_bert_config
         bert_config = get_bert_config(tokenizer.vocab_size, model_size, tokenizer.max_seq_len)
         bert = ProvenanceBERT(bert_config)
 

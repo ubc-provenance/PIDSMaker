@@ -115,26 +115,23 @@ python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weigh
 At inference, the test-set entities whose label matches one of `entities` (exact match, or path ending with `/<entity>`) get the embedding of a benign name instead.
 The benign name is either drawn from the `top_k` most frequent labels of the training set, or fixed with `target_label` (when `top_k: 0`).
 
-Three configs run this experiment on CADETS_E3, whose attack processes are listed in `entities`:
-
-| Config | Benign names |
-|---|---|
-| `spider_velox_rename_seen` | Frequent labels of the training set |
-| `spider_velox_rename_unseen` | A fixed name unlikely to appear in the pretraining data |
-| `spider_velox_rename_seen_continue` | Like `seen`, after [continued pretraining](#continued-pretraining-on-the-target-dataset) on CADETS_E3 |
+For example, on CADETS_E3, renaming its attack processes to frequent benign names:
 
 ```shell
-python pidsmaker/main.py spider_velox_rename_seen CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS
+python pidsmaker/main.py spider_velox CADETS_E3 --featurization.pretrained.weights_path=$SPIDER_WEIGHTS \
+    --feat_inference.rename_attack.enabled=True \
+    --feat_inference.rename_attack.entities="main, pEja72mA, XIM, tmux-1002, font, sendmail" \
+    --feat_inference.rename_attack.target_node_type=subject \
+    --feat_inference.rename_attack.top_k=100
 ```
 
-### Evaluating the embeddings
+The configs of the paper's renaming experiments are on the [`spider` branch](https://github.com/ubc-provenance/PIDSMaker/tree/spider/config/pretrained/spider) (`spider_velox_rename_*.yml`).
 
-`spider_scripts/eval_spider.py` measures how well SPIDER groups entities by role, without running a PIDS.
-It embeds the 528 labeled entities of `config/eval/eval_set_clustering.json` and reports the accuracy of a k-nearest-neighbors classifier, separately for entities seen and unseen during pretraining:
+### Checkpoint selection
 
-```shell
-python spider_scripts/eval_spider.py --model-dir $SPIDER_WEIGHTS
-```
+During pretraining, `spider` and `behavior_cluster` are evaluated after each epoch on the 528 labeled entities of `config/eval/eval_set_clustering.json`: a k-nearest-neighbors classifier must recover the role of each entity (browser, database, crypto, …) from its embedding.
+The checkpoint with the best accuracy is kept (`pretrain_<size>_best.pt`, and `gnn_teacher_<size>_best.pt` for SPIDER's teacher), and it is the one used at inference.
+The other encoders keep their last checkpoint.
 
 ### Reproducing the paper
 

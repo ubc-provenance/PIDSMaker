@@ -168,12 +168,10 @@ wandb/
 nohup.out
 artifacts/
 data/
-!pidsmaker/spider/data/
+!pidsmaker/pretrained/data/
 docs/site/
 weights/
 scores/
-spider_scripts/cluster_plots/deckgl/
-spider_scripts/cluster_plots/cache*/
 *tar.gz
 postgres_data/
 postgres_lock/

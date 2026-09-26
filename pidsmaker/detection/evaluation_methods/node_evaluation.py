@@ -36,8 +36,6 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     plot_scores_with_paths_node_level,
     reduce_losses_to_score,
     transform_attack2nodes_to_node2attacks,
-    get_inter_tma,
-    get_tma_per_attack,
 )
 from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
@@ -100,7 +98,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
 
     threshold_method = cfg.evaluation.node_evaluation.threshold_method
-    alpha = dynamic_alpha(cfg.evaluation.node_evaluation.max_val_loss.alpha or 1.0, cfg.dataset.name)
+    alpha = cfg.evaluation.node_evaluation.max_val_loss.alpha or 1.0
     if threshold_method == "magic":
         thr = get_threshold(test_tw_path, threshold_method, alpha)
     else:
@@ -410,8 +408,6 @@ def main(
     plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     tp_per_attack = compute_tp_per_attack_thr(pred_scores, nodes, node2attacks, y_truth, thr)
-    inter_tma = get_inter_tma(pred_scores, nodes, node2attacks, y_truth)
-    tma_per_attack = get_tma_per_attack(pred_scores, nodes, node2attacks, y_truth)
     # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
     plot_scores_with_paths_node_level(
         pred_scores,
@@ -461,7 +457,6 @@ def main(
     stats["recall_if_all_attacks_detected"] = recall
 
     stats["adp_score"] = round(adp_score, 3)
-    stats["tma_inter"] = round(inter_tma, 3)
     stats["threshold"] = thr
 
     for k, v in discrim_scores.items():
@@ -470,9 +465,6 @@ def main(
     attack2tps = get_detected_tps_node_level(pred_scores, nodes, node2attacks, y_truth, cfg)
     for attack, detected_tps in attack2tps.items():
         stats[f"tps_{attack}"] = str(detected_tps)
-        
-    for attack, tma in tma_per_attack.items():
-        stats[f"tma_{attack}"] = round(tma, 3)
 
     stats = {**stats, **discrim_tp, **tp_per_attack}
 
@@ -501,19 +493,4 @@ def main(
     stats["model_path"] = model_path
 
     return stats
-
-def dynamic_alpha(alpha, dataset):
-    if alpha != 2:
-        return alpha
-    dataset_to_alpha = {
-        "CADETS_E3": 1.2,
-        "THEIA_E3": 2.2,
-        "CLEARSCOPE_E3": 1.2,
-        "THEIA_E5": 2.1,
-        "CLEARSCOPE_E5": 2.0,
-        "optc_h201": 2.5,
-        "optc_h501": 1.2,
-        "optc_h051": 4.0,
-    }
-    return dataset_to_alpha.get(dataset, alpha)
     

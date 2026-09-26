@@ -634,7 +634,7 @@ def _load_attack_features_from_patterns(cfg, attack_patterns, max_edges_per_patt
 def _load_attack_features_from_synthetic(cfg, attack_edges_path):
     """Build attack edge feature tensors from pre-computed synthetic node embeddings.
 
-    During feat_inference, feat_inference_spider embeds the synthetic attack node
+    During feat_inference, feat_inference_pretrained embeds the synthetic attack node
     labels (which may not exist in the real dataset) and writes them to
     {model_dir}/synthetic_attack_node_embeddings.pt as {(ntype, label): np.ndarray}.
 
