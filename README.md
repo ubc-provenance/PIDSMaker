@@ -75,11 +75,11 @@ Any PIDS can replace its node featurization (e.g. `word2vec`) by an encoder pret
 
 | Encoder | Description |
 |---------|-------------|
-| SPIDER (NeurIPS 2026) | T5 entity encoder distilled from a GNN teacher, with [pretrained weights](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/#pretrained-weights) |
+| [SPIDER](https://tfjmp.org/publications/2026-neurips.pdf) (NeurIPS 2026) | transformer entity encoder distilled from a GNN teacher, with [pretrained weights](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/#pretrained-weights) |
 | [CyberGFM](https://arxiv.org/abs/2601.05988) | BERT pretrained on random walks, then fine-tuned as a detector |
-| GPT-2, Llama 3.2, OPT | General-purpose language models fine-tuned on entity labels |
-| BERT, RoBERTa, ModernBERT, LogBERT, Llama | Language models trained from scratch on random walks |
-| GraphMAE, GAE, DGI, DeepWalk, node2vec | Self-supervised GNNs and walk embeddings |
+| [GPT-2](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf), [Llama 3.2](https://huggingface.co/meta-llama/Llama-3.2-1B), [OPT](https://arxiv.org/abs/2205.01068) | General-purpose language models fine-tuned on entity labels |
+| [BERT](https://arxiv.org/abs/1810.04805), [RoBERTa](https://arxiv.org/abs/1907.11692), [ModernBERT](https://arxiv.org/abs/2412.13663), [LogBERT](https://arxiv.org/abs/2103.04475), [Llama](https://arxiv.org/abs/2302.13971) | Language models trained from scratch on random walks |
+| [GraphMAE](https://arxiv.org/abs/2205.10803), [GAE](https://arxiv.org/abs/1611.07308), [DGI](https://arxiv.org/abs/1809.10341), [DeepWalk](https://arxiv.org/abs/1403.6652), [node2vec](https://arxiv.org/abs/1607.00653) | Self-supervised GNNs and walk embeddings |
 
 ```shell
 python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider
@@ -95,6 +95,7 @@ A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
 
+<!-- Generated from pidsmaker/config/config.py, regenerate with: python docs/scripts/gen_pipeline_figure.py -->
 <img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
 
 

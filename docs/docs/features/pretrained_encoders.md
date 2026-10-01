@@ -52,7 +52,7 @@ These configs also enable [`training.stable_optim`](instability.md#reducing-inst
 ### Pretraining
 
 Without pretrained weights, the encoder is first pretrained on the benign data of the datasets listed in `featurization.pretrained.pretrain_datasets`: by default `PROVENANCE_BENIGN`, `TRACE_E3`, `TRACE_E5`, `CADETS_E5`, `CLEARSCOPE_E3` and `optc_h201`. Each of them must be installed as a database.
-`PROVENANCE_BENIGN` is a Linux audit corpus that you collect yourself (see [Datasets](../datasets.md#provenance_benign)).
+`PROVENANCE_BENIGN` is a Linux audit corpus that contains only benign activity (see [Datasets](../datasets.md#provenance_benign)).
 
 The trained encoder is saved in the `stored_models/` folder of the run's featurization artifacts.
 Pass that folder with `--featurization.pretrained.weights_path` to reuse it in other runs without pretraining again. The path must be absolute, because its files are symlinked into each run's artifact folder.
