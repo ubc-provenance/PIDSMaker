@@ -30,7 +30,7 @@ nav:
     - Decoders: config/decoders.md
     - Objectives: config/objectives.md
   - Contributing: contributing.md
-  - Release notes: release_notes.md
+  - Release notes: https://github.com/ubc-provenance/PIDSMaker/releases
 
 # Theme
 theme:
