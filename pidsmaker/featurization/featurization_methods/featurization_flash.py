@@ -82,8 +82,7 @@ class RepeatableIterator:
 
     def __iter__(self):
         for phrases in self.data:
-            for sentence in phrases:
-                yield sentence
+            yield phrases
 
 
 def main(cfg):

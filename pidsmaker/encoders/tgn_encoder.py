@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 
 from pidsmaker.encoders import GRU
-
+from pidsmaker.hetero import _compute_hetero_features
+from pidsmaker.experiments.uncertainty import IdentityWrapper
 
 class TGNEncoder(nn.Module):
-    # Code adapted from https://github.com/pyg-team/pytorch_geometric/blob/master/examples/tgn.py
     def __init__(
         self,
         encoder,
@@ -13,6 +13,7 @@ class TGNEncoder(nn.Module):
         time_encoder,
         in_dim,
         memory_dim,
+        out_dim,
         use_node_feats_in_gnn,
         edge_features,
         device,
@@ -21,8 +22,12 @@ class TGNEncoder(nn.Module):
         edge_dim,
         use_time_order_encoding,
         project_src_dst,
+        is_hetero,
         node_map,
         edge_map,
+        tgn_pre_encoder,
+        use_residual_norm,
+        dropout,
     ):
         super(TGNEncoder, self).__init__()
         self.encoder = encoder
@@ -49,8 +54,15 @@ class TGNEncoder(nn.Module):
         if self.use_time_order_encoding:
             self.gru = GRU(edge_dim, edge_dim, device)
 
+        self.is_hetero = is_hetero
         self.node_map = node_map
         self.edge_map = edge_map
+        self.tgn_pre_encoder = tgn_pre_encoder if tgn_pre_encoder is not None else IdentityWrapper()
+        
+        self.use_residual_norm = use_residual_norm
+        if use_residual_norm:
+            self.norm_local = nn.LayerNorm(out_dim)
+            self.dropout = nn.Dropout(dropout)
 
     def forward(self, batch, inference=False, **kwargs):
         n_id = batch.n_id_tgn  # NOTE: this one may need to be updated with no __inc__, or memory is get for unknown nodes
@@ -64,9 +76,12 @@ class TGNEncoder(nn.Module):
         x_proj = None
         if (not self.use_memory) or self.use_node_feats_in_gnn:
             if self.project_src_dst:
+                x_s = self.tgn_pre_encoder(x_s)
+                x_d = self.tgn_pre_encoder(x_d)
                 x_proj = self.src_linear(x_s) + self.dst_linear(x_d)
             else:
-                x_proj = self.linear(x)
+                x_tok = self.tgn_pre_encoder(x)
+                x_proj = self.linear(x_tok)
 
         if self.use_memory:
             h, last_update = self.memory(n_id)
@@ -97,9 +112,22 @@ class TGNEncoder(nn.Module):
 
         node_type = batch.node_type_tgn
         edge_type = batch.edge_type_tgn
+        node_type_argmax = node_type.max(dim=1).indices
 
-        x_dict, edge_index_dict = None, None
-        node_type_argmax = None
+        # Hetero stuff
+        if self.is_hetero:
+            edge_type_argmax = edge_type.max(dim=1).indices
+
+            x_dict, edge_index_dict = _compute_hetero_features(
+                edge_index=edge_index,
+                x=h,
+                node_type_argmax=node_type_argmax,
+                edge_type_argmax=edge_type_argmax,
+                node_map=self.node_map,
+                edge_map=self.edge_map,
+            )
+        else:
+            x_dict, edge_index_dict = None, None
 
         tgn_kwargs = {
             "x": h,
@@ -114,13 +142,17 @@ class TGNEncoder(nn.Module):
         }
         kwargs = {**kwargs, **tgn_kwargs}
         h = self.encoder(**kwargs)["h"]
-
+        
+        # Apply residual normalization to local encoder output
+        if self.use_residual_norm:
+            h = self.norm_local(self.dropout(h) + x_proj)
+        
         h_src = h[batch.reindexed_edge_index_tgn[0]]
         h_dst = h[batch.reindexed_edge_index_tgn[1]]
-
+            
         # in the neigh loader, n_id is original n_id and the n_id of neighbors, here we remove neighbors and keep original node IDs
         h = h[batch.reindexed_original_n_id_tgn]
-
+    
         # Update memory and neighbor loader with ground-truth state.
         if self.use_memory or self.use_time_enc:
             self.memory.update_state(batch.src, batch.dst, batch.t, batch.msg)
@@ -129,7 +161,7 @@ class TGNEncoder(nn.Module):
         if self.use_memory and not inference:
             self.memory.detach()
 
-        return {"h": h, "h_src": h_src, "h_dst": h_dst}
+        return {"h": h, "h_src": h_src, "h_dst": h_dst, "x_proj": x_proj}
 
     def reset_state(self):
         if self.use_memory or self.use_time_enc:  # if memory is used

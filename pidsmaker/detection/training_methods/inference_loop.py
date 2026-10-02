@@ -65,7 +65,7 @@ def test_edge_level(
 
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = (
-        ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(edge_df["time"].max())
+        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(edge_df["time"].max(), timezone=cfg.dataset.timezone)
     )
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
@@ -159,7 +159,7 @@ def test_node_level(
     elif cfg.evaluation.node_evaluation.threshold_method == "magic":
         os.makedirs(cfg.training._magic_dir, exist_ok=True)
         if split == "val":
-            x_train, _, _ = model.embed(data, inference=True)
+            x_train, *_ = model.embed(data, inference=True)
             x_train = x_train.cpu().numpy()
             num_nodes = x_train.shape[0]
             sample_size = 5000 if num_nodes > 5000 else num_nodes
@@ -204,7 +204,7 @@ def test_node_level(
             train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
             mean_distance_train = calculate_average_from_file(train_distance_file)
 
-            x_test, _, _ = model.embed(data, inference=True)
+            x_test, *_ = model.embed(data, inference=True)
             x_test = x_test.cpu().numpy()
             num_nodes = x_test.shape[0]
             sample_size = 5000 if num_nodes > 5000 else num_nodes
@@ -243,7 +243,7 @@ def test_node_level(
             }
             node_list.append(temp_dic)
 
-    time_interval = ns_time_to_datetime_US(start_time) + "~" + ns_time_to_datetime_US(end_time)
+    time_interval = ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(end_time, timezone=cfg.dataset.timezone)
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
@@ -270,9 +270,9 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
 
     inference_device = cfg.training.inference_device
     if inference_device is not None:
-        if device not in ["cpu", "cuda"]:
-            raise ValueError(f"Invalid inference device {device}")
-        device = torch.device(device)
+        if inference_device not in ["cpu", "cuda"]:
+            raise ValueError(f"Invalid inference device {inference_device}")
+        device = torch.device(inference_device)
     else:
         device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
@@ -299,7 +299,7 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
                 g.to(device=device)
 
                 s = time.time()
-                test_fn = test_node_level if cfg._is_node_level else test_edge_level
+                test_fn = test_node_level if (cfg._is_node_level and not cfg._is_hybrid_loss) else test_edge_level
                 losses = test_fn(
                     data=g,
                     model=model,

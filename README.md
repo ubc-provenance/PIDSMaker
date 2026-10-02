@@ -31,7 +31,23 @@
 The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
 It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
 
-### Supported Systems
+
+## Release notes
+
+| Version | Date | Highlights |
+|---------|------|------------|
+| [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
+| [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
+| [2.1.1](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.1.1) | May 2026 | State of the repo for the KDD'26 paper, improved Velox |
+| [2.1.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.1.0) | Apr 2026 | Carbanak v2 and Atlas v2 datasets, dataset download script, Docker and W&B fixes |
+| [2.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.0.0) | Jan 2026 | FIVEDIRECTIONS and TRACE datasets, tuned hyperparameters, simplified pipeline stages (renamed arguments) |
+| [1.0.1](https://github.com/ubc-provenance/PIDSMaker/releases/tag/1.0.1) | Oct 2025 | Deterministic graph construction and word2vec, REAPr labels, Apptainer installation, dataset preprocessing scripts |
+| [1.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/1.0.0) | Jun 2025 | Initial release, with 8 PIDSs and the DARPA TC and OpTC datasets |
+
+See the [releases](https://github.com/ubc-provenance/PIDSMaker/releases) for the full notes.
+
+
+## Supported Systems
 
 The framework currently integrates the following PIDSs.
 
@@ -47,7 +63,7 @@ The framework currently integrates the following PIDSs.
 | ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
 | OCR-APT    | ACM CCS 2025        | [Link](https://arxiv.org/pdf/2510.15188) |
 
-### Supported Datasets
+## Supported Datasets
 
 It also includes several easy-to-install provenance datasets for APT detection.
 
@@ -69,6 +85,21 @@ It also includes several easy-to-install provenance datasets for APT detection.
 | ATLASV2_EDR | Windows | 10 | 1 |
 | CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
 
+## Pretrained Encoders
+
+Any PIDS can replace its node featurization (e.g. `word2vec`) by an encoder pretrained on provenance data.
+
+| Encoder | Description |
+|---------|-------------|
+| [SPIDER](https://tfjmp.org/publications/2026-neurips.pdf) (NeurIPS 2026) | transformer entity encoder distilled from a GNN teacher, with [pretrained weights](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/#pretrained-weights) |
+| [CyberGFM](https://arxiv.org/abs/2601.05988) | BERT pretrained on random walks, then fine-tuned as a detector |
+| [GPT-2](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf), [Llama 3.2](https://huggingface.co/meta-llama/Llama-3.2-1B), [OPT](https://arxiv.org/abs/2205.01068) | General-purpose language models fine-tuned on entity labels |
+| [BERT](https://arxiv.org/abs/1810.04805), [RoBERTa](https://arxiv.org/abs/1907.11692), [ModernBERT](https://arxiv.org/abs/2412.13663), [LogBERT](https://arxiv.org/abs/2103.04475), [Llama](https://arxiv.org/abs/2302.13971) | Language models trained from scratch on random walks |
+| [GraphMAE](https://arxiv.org/abs/2205.10803), [GAE](https://arxiv.org/abs/1611.07308), [DGI](https://arxiv.org/abs/1809.10341), [DeepWalk](https://arxiv.org/abs/1403.6652), [node2vec](https://arxiv.org/abs/1607.00653) | Self-supervised GNNs and walk embeddings |
+
+
+See the [documentation](https://ubc-provenance.github.io/PIDSMaker/features/pretrained_encoders/) to download the weights, pretrain an encoder and fine-tune it as a detector.
+
 ## 📄 Documentation
 
 A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is available, explaining all possible arguments and providing examples on how integrating new systems.
@@ -77,6 +108,7 @@ A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
 
+<!-- Generated from pidsmaker/config/config.py, regenerate with: python docs/scripts/gen_pipeline_figure.py -->
 <img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
 
 
@@ -113,6 +145,8 @@ Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcai
 
 You can still watch the logs in your shell using `tail -f nohup.out`.
 
+To run in the foreground without W&B, with the same settings as `./run.sh`, use `./run_local.sh SYSTEM DATASET`.
+
 We generally using using W&B for experiment monitoring and historization (see installation guidelines). 
 
 **Warning:** Before performing evaluations, you should tune all systems (see docs [here](https://ubc-provenance.github.io/PIDSMaker/features/tuning/)).
@@ -127,6 +161,8 @@ Based on our experiments, we provide [tuned hyperparameters](https://ubc-provena
 However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
 
 We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
+
+`--training.stable_optim=True` (AdamW, warmup and cosine learning rate schedule, gradient clipping) is designed to [reduce this instability](https://ubc-provenance.github.io/PIDSMaker/features/instability/#reducing-instability).
 
 ## Customize existing systems
 

@@ -168,8 +168,11 @@ wandb/
 nohup.out
 artifacts/
 data/
+!pidsmaker/pretrained/data/
 docs/site/
 weights/
+scores/
+*tar.gz
 postgres_data/
 postgres_lock/
 

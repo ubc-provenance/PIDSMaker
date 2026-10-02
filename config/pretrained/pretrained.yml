@@ -1,0 +1,183 @@
+construction:
+  node_label_features:
+    subject: auto
+    file: auto
+    netflow: auto
+  null_label_tokens: False  # use [NO_CMD]/[NO_PATH]/[NO_IP] for missing attributes
+  consistent_edge_types: True  # map OpTC edge types to their DARPA TC equivalents
+
+featurization:
+  used_method: pretrained
+  emb_dim: 256
+  seed: 42
+  pretrained:
+    # Encoders are described in config/pretrained/README.md.
+    # A block named after a model_type (spider, graphmae, ...) is only read by that model.
+    model_type: spider
+    model_size: mini  # tiny / mini / med / baseline
+
+    # Graph visible when sampling neighborhoods, at pretraining and at inference:
+    # window (each time window), day (all windows of a day) or all (the whole split)
+    graph_context_mode: all
+
+    pretrain_datasets: PROVENANCE_BENIGN,TRACE_E3,TRACE_E5,CADETS_E5,CLEARSCOPE_E3,optc_h201
+
+    # Pretraining budget. deepwalk, node2vec, graphmae, gae and dgi use their own epochs instead.
+    training:
+      pretrain_tokens: 30000000
+      warmup_tokens: 3000000
+      batch_size: 2048  # also used by graphmae, gae and dgi
+      lr: 0.0003
+      scheduler: cosine  # cosine / linear
+
+    spider:
+      # GNN teacher
+      emb_dim: 128  # edge type embedding
+      hidden_dim: 256
+      proj_dim: 256
+      num_heads: 4
+      n_neighbors_min: 5  # neighbors sampled per entity
+      n_neighbors_max: 20
+      diverse_neighbors: True  # sample neighbors round-robin over edge types
+      filter_noisy_edges: True  # ignore /proc, /dev and shared libraries
+      ema_momentum: 0.999
+      # Losses
+      supcon_weight: 1.0  # supervised contrastive loss of the teacher
+      distill_weight: 0.5  # distillation of the teacher into the student
+      temperature: 0.07
+      # P×K batching: P entity classes, K entities per class
+      min_signature_size: 2  # entities with fewer behavior labels are skipped
+      min_entities_per_class: 100
+      max_entities_per_class: 2000
+      samples_per_class: 4
+      strip_entity_type: False
+      # Ablations
+      distill_loss: sce  # sce / mse
+      teacher_loss: contrastive  # contrastive / bce
+      teacher_data: signature,gnn_emb  # subset of: signature, gnn_emb
+      student_only_mode: none  # none / student_signature / student_class (no teacher)
+
+    gnn_distill:
+      emb_dim: 256
+      hidden_dim: 256
+      num_layers: 1
+      num_heads: 4
+      n_neighbors_min: 5
+      n_neighbors_max: 20
+      diverse_neighbors: True
+      loss_weight: 0.5
+      gnn_loss_weight: 1.0
+      gnn_lr: 0.001
+      ema_momentum: 0.999
+      filter_noisy_edges: True
+
+    behavior_cluster:
+      proj_dim: 256
+      bce_weight: 0.5
+      contrastive_weight: 1.0
+      temperature: 0.07
+      min_signature_size: 2
+      filter_noisy_edges: True
+      use_contrastive_head: False  # embed with the projection head instead of the encoder
+      min_entities_per_class: 100
+      max_entities_per_class: 2000
+      samples_per_class: 4
+      bce_mode: class  # multilabel (behavior labels) / class (signature class)
+      contrastive_target: entity_class  # signature / entity_class
+      strip_entity_type: False
+
+    # Masked language models (bert, roberta, ropebert, modernbert, logbert) and llama
+    mlm:
+      mask_rate_fixed: 0.7
+      mask_rate_min: 0.15
+      mask_edge_type: False  # also mask edge types, and score them at inference
+      modernbert:
+        global_attn_every_n_layers: 3
+        local_attention_window: 128
+      ropebert:
+        rope_theta: 10000.0
+      llama:
+        rope_theta: 10000.0
+      logbert:
+        hvm_weight: 0.1  # weight of the hypersphere loss
+
+    # Random walks of the masked language models, llama, deepwalk and node2vec
+    walks:
+      walk_length: 5
+      num_walks: 3
+      time_weight: uniform
+      half_life: 1.0
+      random_walk_start: True
+      diversity_weight: 0.0  # bias towards diverse edge types (0 = off)
+
+    # Not used by deepwalk, node2vec and the HF models, which have their own tokenizer
+    tokenizer:
+      bpe_vocab_size: 8000
+      max_seq_len: 60
+      mode: domain_bpe  # domain_bpe (domain-specific pre-tokenization + BPE) / bpe_only
+      normalize_netflow_ips: True  # replace IPs with [PRIVATE_IP]/[PUBLIC_IP]/[LOCALHOST_IP]
+      canonicalize_neighbors: False
+
+    deepwalk:  # also used by node2vec
+      window: 5
+      epochs: 50
+      min_count: 1
+      workers: 8
+
+    node2vec:
+      p: 1.0  # return parameter
+      q: 1.0  # in-out parameter (>1: BFS-like, <1: DFS-like)
+
+    # HF models. model_size: small / medium / large / xl (gpt2), 1b / 3b (llama3), 1.3b (opt).
+    # emb_dim is set to the hidden size of the model. Llama requires `huggingface-cli login`.
+    gpt2_pretrained:
+      max_seq_len: 64
+    llama3_pretrained:
+      max_seq_len: 64
+    opt_pretrained:
+      max_seq_len: 64
+
+    graphmae:
+      num_layers: 2
+      num_heads: 4
+      decoder_num_layers: 1
+      mask_rate: 0.5
+      replace_rate: 0.1  # fraction of masked nodes replaced with random features
+      neighborhood_min: 5
+      neighborhood_max: 20
+      epochs: 30
+      lr: 0.001
+
+    gae:
+      num_layers: 2
+      num_heads: 4
+      neighborhood_min: 5
+      neighborhood_max: 20
+      epochs: 30
+      lr: 0.001
+
+    dgi:
+      num_layers: 2
+      num_heads: 4
+      neighborhood_min: 5
+      neighborhood_max: 20
+      epochs: 30
+      lr: 0.001
+
+feat_inference:
+  edge_batch_size: 5000
+  continue_pretrain: False
+  continue_pretrain_epochs: 10
+  continue_pretrain_lr_factor: 0.1
+
+  # Renaming attack: test-set entities matching `entities` get the embedding of a benign label
+  rename_attack:
+    enabled: False
+    entities: ""  # comma-separated names, e.g. "main, XIM, sendmail"
+    target_node_type: subject  # subject / file / netflow
+    top_k: 0  # >0: pick benign labels among the top-k of the training set
+    target_label: ""  # benign label used when top_k is 0
+    seed: 0
+
+training:
+  stable_optim: True

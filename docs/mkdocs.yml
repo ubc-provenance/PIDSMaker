@@ -21,6 +21,8 @@ nav:
     - Instability Measurement: features/instability.md
     - Batching & Sampling: features/batching.md
     - Embedding Visualizer: features/visualization.md
+    - Pretrained Encoders: features/pretrained_encoders.md
+    - Supervised Fine-Tuning: features/supervised.md
   - Arguments:
     - Tasks: config/tasks.md
     - Featurization: config/featurization.md
@@ -28,7 +30,7 @@ nav:
     - Decoders: config/decoders.md
     - Objectives: config/objectives.md
   - Contributing: contributing.md
-  - Release notes: release_notes.md
+  - Release notes: https://github.com/ubc-provenance/PIDSMaker/releases
 
 # Theme
 theme:

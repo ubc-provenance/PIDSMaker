@@ -17,6 +17,8 @@ from .config import (
     EXPERIMENTS_CONFIG,
     OBJECTIVES_EDGE_LEVEL,
     OBJECTIVES_NODE_LEVEL,
+    REQUIRE_HETERO_FEATURES_ENCODERS,
+    REQUIRE_NON_REVERSED_EDGES_ENCODERS,
     SYNTHETIC_ATTACKS,
     TASK_ARGS,
     TASK_DEPENDENCIES,
@@ -55,6 +57,14 @@ def get_default_cfg(args):
     cfg._tuning_file_path = args.tuning_file_path
     cfg._include_yml = None
     cfg._exp = args.exp
+    cfg._save_graph_preprocessing = args.save_graph_preprocessing
+    cfg._from_weights = args.from_weights
+    cfg._from_weights_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "weights",
+        args.model,
+        args.dataset,
+    )
 
     cfg._restart_from_scratch = args.restart_from_scratch
     if cfg._restart_from_scratch:
@@ -164,6 +174,10 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--artifact_dir", default="/home/artifacts/", help="Destination folder for generated files"
     )
     parser.add_argument(
+        "--save_graph_preprocessing", action="store_true", help="Saves `graph_preprocessing` task on disk (heavy)."
+    )
+    parser.add_argument('--from_weights', action="store_true", help="Whether to load from pkl weights")
+    parser.add_argument(
         "--test_mode",
         action="store_true",
         help="Whether to run the framework as in functional tests.",
@@ -213,10 +227,45 @@ def overwrite_cfg_with_args(cfg, args):
 
 
 def set_shortcut_variables(cfg):
-    cfg._is_node_level = cfg.training.decoder.used_methods is not None and any(
-        [method for method in OBJECTIVES_NODE_LEVEL if method in cfg.training.decoder.used_methods]
+    decoders = cfg.training.decoder.used_methods
+    encoders = cfg.training.encoder.used_methods
+    
+    cfg._is_node_level = decoders is not None and any(
+        [
+            method
+            for method in OBJECTIVES_NODE_LEVEL
+            if method in decoders
+        ]
     )
 
+    cfg._is_hetero = encoders is not None and any(
+        [
+            method
+            for method in REQUIRE_HETERO_FEATURES_ENCODERS
+            if method in encoders
+        ]
+    )
+
+    cfg._require_non_reversed_edges = encoders is not None and any(
+        [
+            method
+            for method in REQUIRE_NON_REVERSED_EDGES_ENCODERS
+            if method in encoders
+        ]
+    )
+    
+    cfg._is_hybrid_loss = decoders and ("predict_node_type" in decoders and \
+        "predict_edge_type" in decoders)
+        
+
+
+def set_immutable_cfg(cfg):
+    # In some hetero encoders, the reversed edges created by the TGN loader must be removed, or
+    # invalid src, dst, edge triplets will exist
+    if cfg._require_non_reversed_edges:
+        tgn_loader_cfg = cfg.batching.intra_graph_batching.tgn_last_neighbor
+        tgn_loader_cfg.fix_buggy_orthrus_TGN = True
+        tgn_loader_cfg.directed = True
 
 def set_task_paths(cfg, subtask_concat_value=None):
     subtask_to_hash = {}
@@ -224,6 +273,28 @@ def set_task_paths(cfg, subtask_concat_value=None):
     for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
         restart_values = flatten_arg_values(task_cfg)
+
+        _spider_pretrain_datasets = (
+            cfg.featurization.used_method == "pretrained"
+            and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
+        )
+
+        # Normalize pretrain_datasets order so the hash is the same
+        # regardless of how the user lists the datasets in the config.
+        if task == "featurization":
+            restart_values = [
+                f"pretrain_datasets={','.join(sorted(v.split('=', 1)[1].split(',')))}"
+                if isinstance(v, str) and v.startswith("pretrain_datasets=")
+                else v
+                for v in restart_values
+            ]
+
+        # For featurization tasks downstream of featurization (e.g. feat_inference),
+        # all input datasets share the same directory (the pretrain_datasets path),
+        # so the hash must encode which input dataset was used to avoid collisions.
+        if _spider_pretrain_datasets and task == "feat_inference":
+            restart_values = [f"input_dataset={cfg.dataset.name}"] + restart_values
+
         if task == "construction":  # to restart from beginning if train dates are changed
             restart_values += cfg.dataset.train_dates
             if (
@@ -250,14 +321,46 @@ def set_task_paths(cfg, subtask_concat_value=None):
     for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
         deps = sorted(list(get_dependees(task, TASK_DEPENDENCIES, set())))
+
+        # When pretrain_datasets is set for SPIDER, the pretrained model is
+        # independent of the input dataset.  The only truly dataset-specific entry in
+        # subtask_to_hash is "construction" (it includes cfg.dataset.train_dates).
+        # Exclude it from featurization and all downstream tasks so their hashes
+        # are stable across input datasets.  Upstream tasks (construction,
+        # transformation) are unaffected — their paths must remain dataset-specific.
+        # Dataset identity for downstream tasks is captured by the directory component.
+        if (
+            cfg.featurization.used_method == "pretrained"
+            and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
+            and (task == "featurization" or "featurization" in deps)
+        ):
+            deps = [d for d in deps if d != "construction"]
+
         deps_hash = "".join([subtask_to_hash[dep] for dep in deps])
 
         final_hash_string = deps_hash + subtask_to_hash[task]
         final_hash_string = hashlib.sha256(final_hash_string.encode("utf-8")).hexdigest()
 
         if task in ["construction", "transformation", "featurization", "feat_inference"]:
+            # When pretrain_datasets is set for SPIDER, featurization and feat_inference
+            # are grouped under a shared directory named after the sorted pretrain_datasets
+            # (instead of cfg.dataset.name).  featurization itself has no input-dataset
+            # component in its hash.  feat_inference encodes the input dataset in its hash
+            # (added above), so different inputs remain distinct.
+            dataset_dir = cfg.dataset.name
+            if (
+                cfg.featurization.used_method == "pretrained"
+                and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
+                and (task == "featurization" or "featurization" in deps)
+            ):
+                datasets = sorted(
+                    d.strip()
+                    for d in cfg.featurization.pretrained.pretrain_datasets.split(",")
+                )
+                dataset_dir = "+".join(datasets)
+
             task_cfg._task_path = os.path.join(
-                cfg._artifact_dir, task, cfg.dataset.name, task, final_hash_string
+                cfg._artifact_dir, task, dataset_dir, task, final_hash_string
             )
         else:
             task_cfg._task_path = os.path.join(
@@ -365,7 +468,7 @@ def validate_yml_file(yml_file: str, dictionary: dict):
 
                     if not isinstance(sub_config, expected_type):
                         raise TypeError(
-                            f"Parameter '{' > '.join(path + [key])}' should be of type {expected_type.__name__}."
+                            f"Parameter '{' > '.join(path + [key])}' should be of type {expected_type.__name__}, found {type(sub_config)}."
                         )
 
                     expected_vals = sub_tasks.vals
@@ -381,9 +484,16 @@ def validate_yml_file(yml_file: str, dictionary: dict):
 
 
 def check_args(args):
-    available_models = os.listdir(os.path.join(ROOT_PROJECT_PATH, "config"))
-    if not any([args.model in model for model in available_models]):
-        raise ValueError(f"Unknown model {args.model}. Available models are {available_models}")
+    config_root = os.path.join(ROOT_PROJECT_PATH, "config")
+    available_models = set()
+    for root, _, files in os.walk(config_root):
+        for f in files:
+            if f.endswith(".yml"):
+                available_models.add(f[:-4])
+    if args.model not in available_models:
+        raise ValueError(
+            f"Unknown model {args.model}. Available models are {sorted(available_models)}"
+        )
 
     available_datasets = DATASET_DEFAULT_CONFIG.keys()
     if args.dataset not in available_datasets:
@@ -393,7 +503,32 @@ def check_args(args):
 
 
 def get_yml_file(filename, folder=""):
-    return os.path.join(ROOT_PROJECT_PATH, "config", folder, f"{filename}.yml")
+    # Explicit folder, or a relative path embedded in filename → use as-is.
+    if folder or "/" in filename:
+        return os.path.join(ROOT_PROJECT_PATH, "config", folder, f"{filename}.yml")
+
+    # Bare name → prefer config/<filename>.yml, otherwise search recursively
+    # so files organized into subfolders (e.g. config/pretrained/cybergfm/) are
+    # invokable by name alone.
+    config_root = os.path.join(ROOT_PROJECT_PATH, "config")
+    top_level = os.path.join(config_root, f"{filename}.yml")
+    if os.path.exists(top_level):
+        return top_level
+
+    target = f"{filename}.yml"
+    matches = []
+    for root, _, files in os.walk(config_root):
+        if target in files:
+            matches.append(os.path.join(root, target))
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        rels = sorted(os.path.relpath(m, config_root) for m in matches)
+        raise ValueError(
+            f"Ambiguous yml name '{filename}': found in {rels}. "
+            f"Disambiguate by passing the path (e.g. 'subfolder/{filename}')."
+        )
+    return top_level  # not found — caller will raise FileNotFoundError with this path
 
 
 def merge_cfg_and_check_syntax(cfg, yml_file, syntax_check=TASK_ARGS):
@@ -407,9 +542,14 @@ def load_yml_file_recursive(yml_file, syntax_check=TASK_ARGS):
     with open(yml_file, "r") as file:
         user_config = yaml.safe_load(file)
     if "_include_yml" in user_config:
-        yml_to_include = get_yml_file(user_config["_include_yml"])
-        included_config = load_yml_file_recursive(yml_to_include, syntax_check) or {}
-        user_config = deep_merge_dicts(included_config, user_config)
+        includes = user_config["_include_yml"]
+        if isinstance(includes, str):
+            includes = [includes]
+        merged_base = {}
+        for inc in includes:
+            inc_config = load_yml_file_recursive(get_yml_file(inc), syntax_check) or {}
+            merged_base = deep_merge_dicts(merged_base, inc_config)
+        user_config = deep_merge_dicts(merged_base, user_config)
     return user_config
 
 
@@ -455,6 +595,9 @@ def get_yml_cfg(args):
 
     # Here we create some variables based on parameters for easier usage
     set_shortcut_variables(cfg)
+    
+    # In some cases, we want some parameters to be fixed and unchanged
+    set_immutable_cfg(cfg)
 
     # Based on the defined restart args, computes a unique path on disk
     # to store the files of each task
@@ -519,13 +662,14 @@ def check_edge_cases(cfg):
     if cfg.training.decoder.use_few_shot:
         if cfg.transformation.used_methods not in SYNTHETIC_ATTACKS.keys():
             raise ValueError(
-                "Few-shot mode requires an attack generation method within `preprocessing.transformation.used_methods`"
+                "Few-shot mode requires an attack generation method within `transformation.used_methods`"
             )
 
-    use_multi_dataset = "none" not in cfg.construction.multi_dataset
+    multi_dataset = cfg.construction.multi_dataset
+    use_multi_dataset = multi_dataset and ("none" not in multi_dataset)
     if cfg.featurization.multi_dataset_training and use_multi_dataset:
         method = cfg.featurization.used_method.strip()
-        if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type"]:
+        if method not in ["word2vec", "fasttext", "hierarchical_hashing", "only_type", "pretrained"]:
             raise NotImplementedError(f"Multi-dataset mode not implemented for method {method}")
     if cfg.featurization.multi_dataset_training or cfg.batching.multi_dataset_training:
         if not use_multi_dataset:
@@ -579,6 +723,7 @@ def update_task_paths_to_restart(cfg, subtask_concat_value=None):
     yml_file = get_yml_file(cfg._model)
     set_dataset_cfg(cfg, cfg.dataset.name)
     set_shortcut_variables(cfg)
+    set_immutable_cfg(cfg)
     set_task_paths(cfg, subtask_concat_value=subtask_concat_value)
     set_subtasks_to_restart(yml_file, cfg)
     should_restart = {
@@ -724,6 +869,17 @@ def add_cfg_args_to_parser(cfg, parser):
 
 
 def get_darpa_tc_node_feats_from_cfg(cfg):
+    features = cfg.construction.node_label_features
+    result = {}
+    for key in ("subject", "file", "netflow"):
+        raw = getattr(features, key).strip()
+        if raw == "auto":
+            result[key] = ["auto"]
+        else:
+            result[key] = list(map(lambda x: x.strip(), raw.split(",")))
+    return result
+
+def get_node_feats_from_cfg(cfg):
     features = cfg.construction.node_label_features
     return {
         "subject": list(map(lambda x: x.strip(), features.subject.split(","))),

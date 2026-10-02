@@ -1,13 +1,13 @@
-# Datasets
+import os
 
 DATASET_DEFAULT_CONFIG = {
     "THEIA_E5": {
         "raw_dir": "",
         "database": "theia_e5",
         "database_all_file": "theia_e5",
-        # "database_all_file": "theia_e5_all", # NOTE: the whole dataset is too huge
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2019-05-08",
         "end_date": "2019-05-18",
         "train_dates": ["2019-05-08", "2019-05-09", "2019-05-10"],
@@ -31,6 +31,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "theia_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2018-04-02",
         "end_date": "2018-04-14",
         "train_dates": [
@@ -70,6 +71,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "cadets_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2019-05-08",
         "end_date": "2019-05-18",
         "train_dates": ["2019-05-08", "2019-05-09", "2019-05-11"],
@@ -95,6 +97,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "cadets_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2018-04-02",
         "end_date": "2018-04-14",
         "train_dates": [
@@ -129,6 +132,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "clearscope_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2019-05-08",
         "end_date": "2019-05-18",
         "train_dates": ["2019-05-08", "2019-05-09", "2019-05-10", "2019-05-11", "2019-05-12"],
@@ -166,6 +170,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "clearscope_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2018-04-02",
         "end_date": "2018-04-14",
         "train_dates": [
@@ -199,6 +204,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "optc_201",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "Etc/GMT+4",
         "start_date": "2019-09-15",
         "end_date": "2019-09-26",
         "train_dates": ["2019-09-19", "2019-09-20", "2019-09-21"],
@@ -218,6 +224,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "optc_501",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "Etc/GMT+4",
         "start_date": "2019-09-15",
         "end_date": "2019-09-26",
         "train_dates": ["2019-09-19", "2019-09-20", "2019-09-21"],
@@ -237,6 +244,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "optc_051",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "Etc/GMT+4",
         "start_date": "2019-09-15",
         "end_date": "2019-09-26",
         "train_dates": ["2019-09-19", "2019-09-20", "2019-09-21"],
@@ -256,12 +264,13 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "trace_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2019-05-08",
         "end_date": "2019-05-18",
-        "train_dates": ["2019-05-08", "2019-05-09"],
-        "val_dates": ["2019-05-11"],
+        "train_dates": ["2019-05-08", "2019-05-09", "2019-05-10", "2019-05-11", "2019-05-12"],
+        "val_dates": ["2019-05-13"],
         "test_dates": ["2019-05-14", "2019-05-15"],
-        "unused_dates": ["2019-05-10", "2019-05-12", "2019-05-13", "2019-05-16", "2019-05-17"],
+        "unused_dates": ["2019-05-16", "2019-05-17"],
         "ground_truth_relative_path": [
             "E5-TRACE/node_Trace_Firefox_Drakon.csv",
         ],
@@ -279,22 +288,23 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "trace_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2018-04-02",
         "end_date": "2018-04-14",
         "train_dates": [
+            "2018-04-02",
             "2018-04-03",
             "2018-04-04",
             "2018-04-05",
+            "2018-04-06",
             "2018-04-07",
             "2018-04-08",
-            "2018-04-09",
-            "2018-04-06",
-            "2018-04-11",
-            "2018-04-12",
         ],
-        "val_dates": ["2018-04-02"],
+        "val_dates": ["2018-04-09",],
         "test_dates": [
             "2018-04-10",
+            "2018-04-11",
+            "2018-04-12",
             "2018-04-13",
         ],
         "unused_dates": [],
@@ -323,6 +333,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "fivedirections_e5",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2019-05-08",
         "end_date": "2019-05-18",
         "train_dates": ["2019-05-08", "2019-05-10", "2019-05-11", "2019-05-13", "2019-05-14"],
@@ -368,6 +379,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "fivedirections_e3",
         "num_node_types": 3,
         "num_edge_types": 10,
+        "timezone": "US/Eastern",
         "start_date": "2018-04-02",
         "end_date": "2018-04-14",
         "train_dates": [
@@ -401,6 +413,22 @@ DATASET_DEFAULT_CONFIG = {
             ],
         ],
     },
+    "PROVENANCE_BENIGN": {
+        "raw_dir": "",
+        "database": "PROVENANCE_BENIGN",
+        "database_all_file": "PROVENANCE_BENIGN",
+        "num_node_types": 3,
+        "num_edge_types": 10,
+        "timezone": "UTC",
+        "start_date": "2026-03-16",
+        "end_date": "2026-03-16",
+        "train_dates": ["2026-03-16"],
+        "val_dates": ["2026-03-16"],
+        "test_dates": ["2026-03-16"],
+        "unused_dates": [],
+        "ground_truth_relative_path": [],
+        "attack_to_time_window": [],
+    },
     # See https://arxiv.org/pdf/2401.01341
     "ATLASV2_EDR": {
         "raw_dir": "",
@@ -408,6 +436,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "atlasv2_edr",
         "num_node_types": 3,
         "num_edge_types": 33,
+        "timezone": "US/Central",
         "start_date": "2022-07-15",
         "end_date": "2022-07-21",
         "train_dates": [
@@ -462,6 +491,7 @@ DATASET_DEFAULT_CONFIG = {
         "database_all_file": "carbanakv2_edr",
         "num_node_types": 3,
         "num_edge_types": 33,
+        "timezone": "US/Central",
         "start_date": "2024-04-18",
         "end_date": "2024-05-13",
         "train_dates": [
@@ -601,6 +631,245 @@ FEATURIZATIONS_CFG = {
         "use_lifespan": Arg(bool, desc="Off by default, hurts generalization (paper Appendix E)."),
         "use_cumulative_active_time": Arg(bool, desc="Off by default, same reason as use_lifespan."),
     },
+    "pretrained": {
+        # Model configuration
+        "model_size": Arg(
+            str,
+            desc="SPIDER encoder size preset (selects hidden / layers / heads / FFN). "
+                 "Standard presets: 'tiny' (H=128), 'mini' (H=256), 'med' (H=512), "
+                 "'baseline' (H=768). HF pretrained model_types use their own size keys "
+                 "(e.g. 'small' / 'medium' / 'large' / 'xl' for gpt2_pretrained, "
+                 "'1b' / '3b' for llama3_pretrained).",
+        ),
+        "model_type": Arg(
+            str,
+            vals=OR([
+                # MLM walk-based
+                "bert", "roberta", "modernbert", "ropebert", "llama", "logbert",
+                # Walk embedding
+                "deepwalk", "node2vec",
+                # GNN self-supervised
+                "graphmae", "gae", "dgi",
+                # GNN token-budget
+                "gnn_distill", "behavior_cluster", "spider",
+                # HF pretrained
+                "gpt2_pretrained", "llama3_pretrained", "opt_pretrained",
+            ]),
+            desc=(
+                "SPIDER pretraining objective + architecture. See "
+                "config/pretrained/README.md for full descriptions. Families:\n"
+                "  MLM walk-based     : bert, roberta, modernbert, ropebert, llama, logbert\n"
+                "  Walk embedding     : deepwalk, node2vec\n"
+                "  GNN self-supervised: graphmae, gae, dgi\n"
+                "  GNN token-budget   : gnn_distill, behavior_cluster, spider\n"
+                "  HF pretrained      : gpt2_pretrained, llama3_pretrained, opt_pretrained"
+            ),
+        ),
+        # DeepWalk / Node2Vec shared parameters
+        "deepwalk": {
+            "window": Arg(int, desc="Skip-gram context window size. Default: 5."),
+            "epochs": Arg(int, desc="Number of Word2Vec training epochs. Default: 10."),
+            "min_count": Arg(int, desc="Minimum label frequency to include in vocabulary. Default: 1."),
+            "workers": Arg(int, desc="Number of parallel workers for Word2Vec training. Default: 4."),
+        },
+
+        # Node2Vec-specific parameters
+        "node2vec": {
+            "p": Arg(float, desc="Return parameter. Higher p = less likely to revisit previous node. Default: 1.0."),
+            "q": Arg(float, desc="In-out parameter. q > 1 = BFS-like (local); q < 1 = DFS-like (explore). Default: 1.0."),
+        },
+
+        # GNN distillation model_type parameters
+        "gnn_distill": {
+            "emb_dim": Arg(int, desc="GNN edge embedding dimension. Default: 128."),
+            "hidden_dim": Arg(int, desc="GNN hidden dimension. Default: 128."),
+            "num_layers": Arg(int, desc="Number of GNN encoder layers. Default: 1."),
+            "num_heads": Arg(int, desc="Number of attention heads in GNN layers. Default: 4."),
+            "n_neighbors_min": Arg(int, desc="Min direct neighbors to sample per entity. Default: 5."),
+            "n_neighbors_max": Arg(int, desc="Max direct neighbors to sample per entity. Default: 20."),
+            "diverse_neighbors": Arg(bool, desc="Dedup neighbors by (edge_type, node_type, label) and prioritize edge type diversity. Default: True."),
+            "loss_weight": Arg(float, desc="Weight for distillation loss (T5 encoder → GNN alignment). Default: 0.5."),
+            "gnn_loss_weight": Arg(float, desc="Weight for GNN masked reconstruction loss. Default: 1.0."),
+            "gnn_lr": Arg(float, desc="Learning rate for GNN teacher parameters. Default: 1e-3."),
+            "ema_momentum": Arg(float, desc="EMA momentum for teacher update (0.999 = slow-moving). Default: 0.999."),
+            "edge_projection": Arg(bool, desc="Apply per-edge-type linear projection to source nodes before GNN message passing. Default: False."),
+            "filter_noisy_edges": Arg(bool, desc="Remove shared libs, /dev, /proc, /sys, linker cache, common configs from GNN neighborhoods. Default: False."),
+        },
+
+        # Behavior cluster model_type parameters
+        "behavior_cluster": {
+            "proj_dim": Arg(int, desc="Contrastive projection head output dimensionality. Default: 128."),
+            "bce_weight": Arg(float, desc="Weight for multi-label BCE loss. Default: 1.0."),
+            "contrastive_weight": Arg(float, desc="Weight for contrastive (NT-Xent) loss. Default: 0.5."),
+            "temperature": Arg(float, desc="Temperature for InfoNCE cosine similarity scaling. Default: 0.07."),
+            "min_signature_size": Arg(int, desc="Skip entities with fewer behavior labels in their signature. Default: 2."),
+            "filter_noisy_edges": Arg(bool, desc="Remove shared libs, /dev, /proc, /sys, linker cache, common configs from signature extraction. Default: True."),
+            "use_contrastive_head": Arg(bool, desc="Use contrastive projection head for inference embeddings (proj_dim) instead of raw encoder (emb_dim). Default: False."),
+            "min_entities_per_class": Arg(int, desc="Floor: oversample small classes to this minimum per epoch. 0 = no floor. Default: 0."),
+            "max_entities_per_class": Arg(int, desc="Cap entities per signature class per epoch. Rotates across epochs. 0 = no cap. Default: 0."),
+            "samples_per_class": Arg(int, desc="K in P×K batch sampling: number of entities per class per batch. Guarantees every entity has at least K-1 positives for contrastive learning. Default: 4."),
+            "bce_mode": Arg(str, desc="Classification head mode: 'multilabel' = BCE over behavior labels, 'class' = cross-entropy over entity classes. Default: multilabel."),
+            "contrastive_target": Arg(str, desc="Contrastive positive definition: 'signature' = entities with identical behavior signatures are positives, 'entity_class' = entities with the same coarse functional class are positives. Default: signature."),
+            "strip_entity_type": Arg(bool, desc="Remove entity type prefix tokens ([PROC], [FILE], [SOCK]) from tokenized sequences. Forces the model to learn identity from behavior rather than type. Default: False."),
+        },
+
+        # GNN cluster model_type parameters
+        "spider": {
+            "emb_dim": Arg(int, desc="GNN edge embedding dimension. Default: 256."),
+            "hidden_dim": Arg(int, desc="GNN encoder hidden dimension. Default: 256."),
+            "proj_dim": Arg(int, desc="Contrastive projection dimension (teacher). Default: 256."),
+            "num_heads": Arg(int, desc="Number of attention heads in GNN TransformerConv. Default: 4."),
+            "n_neighbors_min": Arg(int, desc="Min direct neighbors to sample per entity. Default: 5."),
+            "n_neighbors_max": Arg(int, desc="Max direct neighbors to sample per entity. Default: 20."),
+            "diverse_neighbors": Arg(bool, desc="Dedup neighbors by (edge_type, node_type, label) and prioritize edge type diversity. Default: True."),
+            "filter_noisy_edges": Arg(bool, desc="Remove shared libs, /dev, /proc, /sys from GNN neighborhoods. Default: True."),
+            "ema_momentum": Arg(float, desc="EMA momentum for teacher T5 update. Default: 0.999."),
+            "supcon_weight": Arg(float, desc="Weight for supervised contrastive loss on GNN teacher. Default: 1.0."),
+            "distill_weight": Arg(float, desc="Weight for distillation loss (student → GNN targets). Default: 0.5."),
+            "temperature": Arg(float, desc="SupCon temperature. Default: 0.07."),
+            "min_signature_size": Arg(int, desc="Skip entities with fewer behavior labels (for entity class assignment). Default: 2."),
+            "min_entities_per_class": Arg(int, desc="Floor: oversample small classes to this minimum per epoch. Default: 100."),
+            "max_entities_per_class": Arg(int, desc="Cap entities per class per epoch. Default: 2000."),
+            "samples_per_class": Arg(int, desc="K in P×K batching. Default: 4."),
+            "strip_entity_type": Arg(bool, desc="Remove entity type prefix tokens from inputs. Default: False."),
+            "distill_loss": Arg(str, desc="Distillation loss: sce or mse. Default: sce.", vals=OR(["sce", "mse"])),
+            "teacher_loss": Arg(str, desc="Teacher loss: contrastive (SupCon) or bce (cross-entropy). Default: contrastive.", vals=OR(["contrastive", "bce"])),
+            "teacher_data": Arg(str, desc="Teacher data modalities (comma-separated): signature, gnn_emb, or both. Default: signature,gnn_emb."),
+            "student_only_mode": Arg(str, desc="Student-only ablation: none, student_signature, or student_class. Default: none.", vals=OR(["none", "student_signature", "student_class"])),
+        },
+
+        # GPT-2 pretrained parameters
+        "gpt2_pretrained": {
+            "max_seq_len": Arg(int, desc="Max sequence length for HF tokenizer. Default: 512."),
+        },
+
+        # Llama 3.2 pretrained parameters
+        "llama3_pretrained": {
+            "max_seq_len": Arg(int, desc="Max sequence length for HF tokenizer. Default: 512."),
+        },
+
+        # OPT pretrained parameters
+        "opt_pretrained": {
+            "max_seq_len": Arg(int, desc="Max sequence length for HF tokenizer. Default: 512."),
+        },
+
+        # GraphMAE-specific parameters
+        "graphmae": {
+            "num_layers": Arg(int, desc="Number of GAT encoder layers. Default: 2."),
+            "num_heads": Arg(int, desc="Number of attention heads in GAT layers. Default: 4."),
+            "decoder_num_layers": Arg(int, desc="Number of GAT decoder layers. Default: 1."),
+            "mask_rate": Arg(float, desc="Fraction of nodes to mask during pretraining. Default: 0.5."),
+            "replace_rate": Arg(float, desc="Fraction of masked nodes replaced with random tokens (rest get [MASK]). Default: 0.1."),
+            "neighborhood_min": Arg(int, desc="Minimum number of neighbors in temporal neighborhood. Default: 5."),
+            "neighborhood_max": Arg(int, desc="Maximum number of neighbors in temporal neighborhood. Default: 20."),
+            "epochs": Arg(int, desc="Number of training epochs. Default: 100."),
+            "lr": Arg(float, desc="Learning rate. Default: 0.001."),
+        },
+
+        # GAE-specific parameters
+        "gae": {
+            "num_layers": Arg(int, desc="Number of GAT encoder layers. Default: 2."),
+            "num_heads": Arg(int, desc="Number of attention heads in GAT layers. Default: 4."),
+            "neighborhood_min": Arg(int, desc="Minimum number of neighbors in temporal neighborhood. Default: 5."),
+            "neighborhood_max": Arg(int, desc="Maximum number of neighbors in temporal neighborhood. Default: 20."),
+            "epochs": Arg(int, desc="Number of training epochs. Default: 100."),
+            "lr": Arg(float, desc="Learning rate. Default: 0.001."),
+        },
+
+        # DGI-specific parameters
+        "dgi": {
+            "num_layers": Arg(int, desc="Number of GAT encoder layers. Default: 2."),
+            "num_heads": Arg(int, desc="Number of attention heads in GAT layers. Default: 4."),
+            "neighborhood_min": Arg(int, desc="Minimum number of neighbors in temporal neighborhood. Default: 5."),
+            "neighborhood_max": Arg(int, desc="Maximum number of neighbors in temporal neighborhood. Default: 20."),
+            "epochs": Arg(int, desc="Number of training epochs. Default: 100."),
+            "lr": Arg(float, desc="Learning rate. Default: 0.001."),
+        },
+
+        # Token-budget training loop. Used by: MLM family, GNN token-budget
+        # (gnn_distill / spider / behavior_cluster), HF pretrained. Ignored by:
+        # walk embedding (uses deepwalk.epochs) and GNN-SSL (graphmae / gae / dgi
+        # have their own .epochs and .lr). See pretrained.yml for the full scope map.
+        "training": {
+            "pretrain_tokens": Arg(int, desc="Total number of tokens to process during pretraining (controls training duration)."),
+            "warmup_tokens": Arg(int, desc="Number of tokens for learning rate warmup at the start of pretraining."),
+            "batch_size": Arg(int, desc="Mini-batch size during pretraining. Interpretation depends on model_type: walks per batch (MLM), entities per batch (GNN token-budget), labels per batch (HF pretrained), neighborhoods per batch (GNN-SSL)."),
+            "lr": Arg(float, desc="Peak learning rate for pretraining (after warmup)."),
+            "scheduler": Arg(str, vals=OR(["cosine", "linear"]), desc="Learning rate scheduler shape after warmup. Only consumed by MLM and HF pretrained; GNN token-budget hardcodes cosine."),
+        },
+
+        # MLM-specific parameters (masking + architecture sub-blocks for MLM family)
+        "mlm": {
+            "mask_rate_fixed": Arg(float, desc="Initial fixed mask rate (fraction of nodes masked). Decays to mask_rate_min."),
+            "mask_rate_min": Arg(float, desc="Minimum mask rate after decay."),
+            "mask_edge_type": Arg(bool, desc="Enable structured masking of edge types during pretraining and edge-type scoring at inference."),
+
+            # ModernBERT-specific parameters
+            "modernbert": {
+                "global_attn_every_n_layers": Arg(int, desc="Use global attention every N layers. Other layers use local sliding window attention. Default: 3."),
+                "local_attention_window": Arg(int, desc="Sliding window size for local attention layers. Default: 128 tokens."),
+            },
+
+            # RoPEBERT-specific parameters
+            "ropebert": {
+                "rope_theta": Arg(float, desc="Base frequency for rotary position embeddings. Default: 10000.0."),
+            },
+
+            # LLaMA-specific parameters
+            "llama": {
+                "rope_theta": Arg(float, desc="Base frequency for rotary position embeddings. Default: 10000.0."),
+            },
+
+            # LogBERT-specific parameters
+            "logbert": {
+                "hvm_weight": Arg(float, desc="Weight for hypersphere volume minimization loss relative to MLM loss. Default: 0.1."),
+            },
+        },
+
+        "pretrain_datasets": Arg(str, desc="Comma-separated list of dataset names to use for multi-dataset pretraining."),
+        # Tokenizer configuration (affects tokenizer cache)
+        "tokenizer": {
+            "bpe_vocab_size": Arg(int, desc="Target BPE vocabulary size for the tokenizer."),
+            "max_seq_len": Arg(int, desc="Maximum token sequence length after tokenization. Walks exceeding this are truncated."),
+            "mode": Arg(str, vals=OR(["domain_bpe", "bpe_only"]), desc="Tokenizer mode: 'domain_bpe' uses domain-specific pre-tokenization followed by BPE; 'bpe_only' skips domain rules and applies BPE directly on raw words."),
+            "normalize_netflow_ips": Arg(bool, desc="Replace IP addresses in netflow entities with category tokens ([PRIVATE_IP], [PUBLIC_IP], [LOCALHOST_IP]) instead of keeping individual octets."),
+            "canonicalize_neighbors": Arg(bool, desc="Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended."),
+        },
+        "weights_path": Arg(str, desc="Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type."),
+
+        "graph_context_mode": Arg(
+            str,
+            vals=OR(["window", "day", "all"]),
+            desc="Graph context scope for walk sampling at both pretraining and inference time. "
+                 "'window' = each time-window snapshot independently; "
+                 "'day' = merge all snapshots from the same calendar day; "
+                 "'all' = merge all snapshots in the relevant split "
+                 "(train split at pretrain time; val or test split at inference time — "
+                 "no training data leaks into inference context).",
+        ),
+
+        # Walk configuration (used by MLM family and deepwalk/node2vec; affects corpus cache)
+        "walks": {
+            "walk_length": Arg(int, desc="Number of nodes per random walk during pretraining."),
+            "num_walks": Arg(int, desc="Number of random walks to sample per node per epoch during pretraining."),
+            "time_weight": Arg(str, desc="Temporal weighting for neighbor selection: 'uniform', 'exponential', or 'linear'."),
+            "half_life": Arg(float, desc="Half-life (in seconds) for exponential time weighting of neighbor selection."),
+            "random_walk_start": Arg(
+                bool,
+                desc="Randomize the temporal entry point for each walk. "
+                     "When True, the first hop picks a random edge instead of "
+                     "always starting from the earliest/latest timestamp.",
+            ),
+            "diversity_weight": Arg(
+                float,
+                desc="Edge-type diversity bias for random walks during pretraining. "
+                     "0 = no bias (default), higher values increasingly favor edges "
+                     "whose type is underrepresented in the current walk. "
+                     "Only affects pretraining; finetuning/inference use natural distribution.",
+            ),
+        },
+
+    },
 }
 
 ENCODERS_CFG = {
@@ -611,6 +880,8 @@ ENCODERS_CFG = {
         "use_memory": Arg(bool),
         "use_time_order_encoding": Arg(bool),
         "project_src_dst": Arg(bool),
+        "mode": Arg(str),
+        "use_residual_norm": Arg(bool, desc="Adds the projected input node features to the output of the GNN wrapped by TGN, followed by dropout and LayerNorm."),
     },
     "graph_attention": {
         "activation": Arg(str),
@@ -656,6 +927,11 @@ ENCODERS_CFG = {
         "architecture_str": Arg(str),
     },
     "none": {},
+    "hetero_graph_transformer": {
+        "activation": Arg(str, desc="Unused: the input projections always use ReLU."),
+        "num_heads": Arg(int, desc="Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer."),
+        "num_layers": Arg(int, desc="Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC."),
+    },
 }
 
 DECODERS_NODE_LEVEL = ["node_mlp", "none", "magic_gat", "nodlink"]
@@ -696,22 +972,49 @@ OBJECTIVES_NODE_LEVEL = [
     "reconstruct_node_embeddings",
     "reconstruct_masked_features",
     "one_class",
+    "predict_masked_struct",
 ]
 OBJECTIVES_EDGE_LEVEL = [
     "predict_edge_type",
+    "predict_edge_supervised",
     "reconstruct_edge_embeddings",
     "predict_edge_contrastive",
 ]
 OBJECTIVES = OBJECTIVES_NODE_LEVEL + OBJECTIVES_EDGE_LEVEL
 OBJECTIVES_CFG = {
     # Prediction-based
+    "predict_edge_supervised": {
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
+        **DECODERS_CFG,
+        "mode": Arg(str, vals=OR(["scores", "patterns", "synthetic"]),
+                    desc="'scores': pick top-N from an edge_scores pkl; 'patterns': match hand-crafted TTP patterns; "
+                         "'synthetic': use pre-computed embeddings for explicit attack edge definitions."),
+        # mode=scores fields
+        "top_n_attacks": Arg(int, desc="(scores mode) Number of top-loss edges to use as attack examples."),
+        # mode=patterns fields
+        "attack_patterns": Arg(list, desc="(patterns mode) List of TTP pattern dicts."),
+        "max_edges_per_pattern": Arg(int, desc="(patterns mode) Max edges collected per pattern."),
+        # mode=synthetic fields
+        "attack_edges_path": Arg(str, desc="(synthetic mode) Path to YAML file with explicit (src_type, src_label, "
+                                           "edge_type, dst_type, dst_label) attack edge definitions."),
+        "pos_weight": Arg(float, desc="BCE pos_weight for the attack class (on top of 1:1 oversampling)."),
+    },
     "predict_edge_type": {
+        "loss": Arg(str, vals=OR(PRED_LOSSES), desc="Loss used to predict the edge type."),
         "decoder": Arg(
             str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
         "use_triplet_types": Arg(bool),
+        "AMS":
+            {
+                "version": Arg(int),
+                "margin": Arg(float),
+                "scale": Arg(int),
+            },
     },
     "predict_node_type": {
         "decoder": Arg(
@@ -794,7 +1097,10 @@ SYNTHETIC_ATTACKS = {
     },
 }
 
-THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "threatrace", "magic", "flash", "nodlink", "ocrapt"]
+REQUIRE_HETERO_FEATURES_ENCODERS = ["hetero_graph_transformer"]
+REQUIRE_NON_REVERSED_EDGES_ENCODERS = ["hetero_graph_transformer", "event_type_encoding"]
+
+THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "percentile", "threatrace", "magic", "flash", "nodlink", "fixed_zero", "ocrapt"]
 
 # --- Tasks, subtasks, and argument configurations ---
 TASK_ARGS = {
@@ -812,23 +1118,30 @@ TASK_ARGS = {
         "fuse_edge": Arg(
             bool, desc="Whether to fuse duplicate sequential edges into a single edge."
         ),
+        "consistent_edge_types": Arg(
+            bool, desc="Map OpTC edge types to DARPA TC equivalents for shared vocabulary across datasets."
+        ),
         "node_label_features": {
             "subject": Arg(
                 str,
-                vals=AND(["type", "path", "cmd_line"]),
-                desc="Which features use for process nodes. Features will be concatenated.",
+                vals=AND(["auto", "type", "path", "cmd_line"]),
+                desc="Which features use for process nodes. Features will be concatenated. Use 'auto' to include type always and other attributes only when non-null.",
             ),
             "file": Arg(
                 str,
-                vals=AND(["type", "path"]),
-                desc="Which features use for file nodes. Features will be concatenated.",
+                vals=AND(["auto", "type", "path"]),
+                desc="Which features use for file nodes. Features will be concatenated. Use 'auto' to include type always and other attributes only when non-null.",
             ),
             "netflow": Arg(
                 str,
-                vals=AND(["type", "remote_ip", "remote_port"]),
-                desc="Which features use for netflow nodes. Features will be concatenated.",
+                vals=AND(["auto", "type", "remote_ip", "remote_port"]),
+                desc="Which features use for netflow nodes. Features will be concatenated. Use 'auto' to include type always and other attributes only when non-null.",
             ),
         },
+        "null_label_tokens": Arg(
+            bool,
+            desc="When enabled, null entity attributes produce explicit tokens ([NO_CMD], [NO_PATH], [NO_IP]) instead of empty strings.",
+        ),
         "multi_dataset": Arg(
             str,
             vals=OR(list(DATASET_DEFAULT_CONFIG.keys()) + ["none"]),
@@ -839,7 +1152,8 @@ TASK_ARGS = {
         "used_methods": Arg(
             str,
             vals=AND(
-                ["undirected", "dag", "rcaid_pseudo_graph", "none"] + list(SYNTHETIC_ATTACKS.keys())
+                ["undirected", "dag", "rcaid_pseudo_graph", "none"]
+                + list(SYNTHETIC_ATTACKS.keys())
             ),
             desc="Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`",
         ),
@@ -866,6 +1180,10 @@ TASK_ARGS = {
             bool,
             desc="Whether the featurization method should be trained on all datasets in `multi_dataset`.",
         ),
+        "pretrain_datasets": Arg(
+            str,
+            desc="Comma-separated list of dataset names for multi-dataset pretraining (used by word2vec, doc2vec, etc.).",
+        ),
         "used_method": Arg(
             str,
             vals=OR(list(FEATURIZATIONS_CFG.keys())),
@@ -875,6 +1193,18 @@ TASK_ARGS = {
     },
     "feat_inference": {
         "to_remove": Arg(bool),  # TODO: remove
+        "continue_pretrain": Arg(bool, desc="Continue pretraining on the target dataset before inference. Default: False."),
+        "continue_pretrain_epochs": Arg(int, desc="Number of epochs for continue-pretraining on target dataset. Default: 3."),
+        "continue_pretrain_lr_factor": Arg(float, desc="LR multiplier relative to original peak LR (e.g., 0.1 = 10x lower). Default: 0.1."),
+        "edge_batch_size": Arg(int, desc="Number of edges to process in each batch during feat_inference. Default: 5000."),
+        "rename_attack": {
+            "enabled": Arg(bool, desc="If True, after embeddings are computed, replace the embedding of selected test-set nodes with a benign target embedding. Simulates an inference-time renaming/mimicry attack."),
+            "entities": Arg(str, desc="Comma-separated BASE NAMES of attack entities (e.g. 'main, XIM, sendmail'). Each is matched two ways against test-set nodes of `target_node_type`: (a) exact label equality, and (b) labels ending with '/<base>' (path-style)."),
+            "target_node_type": Arg(str, vals=OR(["subject", "file", "netflow"]), desc="Node type the attack targets (only nodes of this type are rewritten)."),
+            "top_k": Arg(int, desc="If >0, automatically build a benign-target pool from the top-K most frequent BARE labels (no '/') of `target_node_type` seen in the training split, and assign one target per attack entity. Path-suffix matches preserve the original prefix (e.g. '/tmp/main' -> '/tmp/<assigned-target>'). If 0, use the manual `target_label` for every entity (e.g. for an 'unseen-by-pretraining' target)."),
+            "target_label": Arg(str, desc="(Manual mode only, used when top_k=0) Bare base name to replace every attack entity. Path-suffix matches still preserve the prefix (e.g. '/tmp/main' -> '/tmp/<target_label>')."),
+            "seed": Arg(int, desc="Seed used to shuffle the auto-picked benign pool before assigning one target per entity. Vary it for sensitivity analysis over which benign label each malicious entity is mimicking."),
+        },
     },
     "batching": {
         "save_on_disk": Arg(
@@ -981,9 +1311,7 @@ TASK_ARGS = {
     },
     "training": {
         "seed": Arg(int),
-        "deterministic": Arg(
-            bool, desc="Whether to force PyTorch to use deterministic algorithms."
-        ),
+        "deterministic": Arg(bool, desc="Whether to force PyTorch to use deterministic algorithms."),
         "num_epochs": Arg(int),
         "patience": Arg(int),
         "lr": Arg(float),
@@ -991,8 +1319,12 @@ TASK_ARGS = {
         "node_hid_dim": Arg(int, desc="Number of neurons in the middle layers of the encoder."),
         "node_out_dim": Arg(int, desc="Number of neurons in the last layer of the encoder."),
         "grad_accumulation": Arg(int, desc="Number of epochs to gather gradients before backprop."),
+        "stable_optim": Arg(
+            bool, desc="Use AdamW + warmup cosine schedule + gradient clipping for stable training."
+        ),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
-        "used_method": Arg(str, vals=OR(["default"]), desc="Which training pipeline use."),
+        "fuse_duplicate_edges_training": Arg(bool, desc="During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss."),
+        "used_method": Arg(str, vals=OR(["default", "pretrained"]), desc="Which training pipeline use."),
         "ocrapt_early_stop": {
             "enabled": Arg(bool, desc="Off by default, no-op unless set."),
             "patience": Arg(int),
@@ -1032,6 +1364,38 @@ TASK_ARGS = {
                 },
             },
         },
+        "pretrained": {
+            "finetune_mode": Arg(str, desc="Fine-tuning and scoring mode: 'cls', 'cls_attack', 'lp', 'mlm', 'tgn', 'edge_cls', or 'perplexity'."),
+            "finetune_epochs": Arg(int, desc="Number of fine-tuning epochs."),
+            "finetune_walk_len": Arg(int, desc="Number of nodes per context walk during fine-tuning and inference."),
+            "finetune_lr": Arg(float, desc="Learning rate for fine-tuning."),
+            "finetune_margin": Arg(float, desc="Margin for the ranking loss in cls mode. The anomalous logit must exceed the normal logit by at least this value. Larger values spread anomaly scores further apart."),
+            "freeze_backbone": Arg(bool, desc="Freeze pretrained backbone weights during fine-tuning (only train the head)."),
+            "num_inference_walks": Arg(int, desc="Number of context walks per edge at inference. Scores are averaged to reduce variance."),
+            "inference_batch_size": Arg(int, desc="Number of edges per batch during inference scoring."),
+            "edge_score_weight": Arg(float, desc="Weight (lambda) for edge-type CE in combined scoring: score = node_CE + lambda * edge_CE. Requires mask_edge_type=True."),
+            "num_attack_walks": Arg(int, desc="Number of unique context walks to extract per malicious edge for cls_attack fine-tuning. Walks are deduplicated by edge-type sequence."),
+            "event_emb": {
+                "pool_method": Arg(str, vals=OR(["mean"]), desc="How to extract embeddings from BERT hidden states over a node span. 'mean' = mean-pool."),
+            },
+            "tgn": {
+                "objective": Arg(str, desc="TGN training objective: 'contrastive' (BCE with neg sampling), 'edge_pred' (predict edge type), or 'node_pred' (predict dst node type)."),
+                "memory_dim": Arg(int, desc="Entity memory dimension for TGN mode (default: same as BERT hidden size)."),
+                "edge_emb_dim": Arg(int, desc="Edge type embedding dimension for TGN mode."),
+                "time_dim": Arg(int, desc="Time encoding dimension for TGN mode."),
+                "num_heads": Arg(int, desc="Number of attention heads in TGN memory updater."),
+                "batch_size": Arg(int, desc="Temporal batch size (edges per update step) for TGN mode."),
+                "use_node_type_emb": Arg(bool, desc="Include src/dst node type embeddings in the TGN classifier input."),
+                "use_time_emb": Arg(bool, desc="Include src/dst time-delta encodings in the TGN classifier input."),
+                "use_memory": Arg(bool, desc="Include evolving memory vectors in the edge predictor/classifier input. When False, predictions use only static BERT embeddings."),
+                "use_entity_emb": Arg(bool, desc="Include static BERT entity embeddings in the edge predictor/classifier input. When False, predictions rely on memory and other features."),
+                "use_event_bert_emb": Arg(bool, desc="(event mode only) Include per-edge contextual src/dst BERT embeddings in TGN prediction heads."),
+                "reset_memory_on_inference": Arg(bool, desc="Start inference with empty memory instead of trained memory state. Simulates production deployment on unseen data."),
+                "score_gated_memory": Arg(bool, desc="Gate messages by per-edge anomaly score before aggregation. High-anomaly edges leave stronger memory traces; low-anomaly edges are suppressed."),
+                "temporal_decay": Arg(bool, desc="Apply exponential memory decay toward zero based on time elapsed since last update. Learned decay rate. Old events naturally fade."),
+                "anomaly_accumulator": Arg(bool, desc="Track per-node EMA of anomaly scores. When temporal_decay is also True, nodes with high accumulated anomaly decay slower (stickier memory)."),
+            },
+        },
     },
     "evaluation": {
         "viz_malicious_nodes": Arg(
@@ -1041,7 +1405,7 @@ TASK_ARGS = {
         "ground_truth_version": Arg(str, vals=OR(["orthrus", "reapr", "threatrace"])),
         "best_model_selection": Arg(
             str,
-            vals=OR(["best_adp", "best_discrimination"]),
+            vals=OR(["best_adp", "best_discrimination", "best_ap@10"]),
             desc="Strategy to select the best model across epochs. `best_adp` selects the best model based on the highest ADP score, `best_discrimination` \
                                     selects the model that does the best separation between top-score TPs and top-score FPs.",
         ),
@@ -1052,6 +1416,9 @@ TASK_ARGS = {
                 vals=OR(THRESHOLD_METHODS),
                 desc="Method to calculate the threshold value used to detect anomalies.",
             ),
+            "max_val_loss": {
+                "alpha": Arg(float, desc="Weights the margin applied to the threshold value."),
+            },
             "use_dst_node_loss": Arg(
                 bool,
                 desc="Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).",

@@ -3,10 +3,12 @@ from itertools import chain
 import torch
 from gensim.models.doc2vec import TaggedDocument
 
+from pidsmaker.config.pipeline import update_cfg_for_multi_dataset
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
     get_split2nodes,
+    log,
     log_tqdm,
     tokenize_label,
 )
@@ -54,6 +56,36 @@ def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False):
         ]
 
     return words
+
+
+def get_corpus_from_pretrain_datasets(cfg):
+    """
+    Like get_corpus, but iterates over pretrain_datasets, merging tokenized node labels
+    from all of them. Deduplicates across datasets by (node_type, node_label).
+    """
+    pretrain_datasets_str = cfg.featurization.pretrain_datasets
+    datasets = [d.strip() for d in pretrain_datasets_str.split(",")]
+    log(f"Loading corpus from pretrain_datasets: {datasets}")
+
+    splits = get_splits_to_train_featurization(cfg)
+    all_words = []
+    seen_labels = set()
+
+    for dataset in datasets:
+        dataset_cfg, _ = update_cfg_for_multi_dataset(cfg, dataset)
+        split2nodes = get_split2nodes(dataset_cfg)
+        nodes_to_include = set().union(*(split2nodes[split] for split in splits))
+        indexid2msg = get_indexid2msg(dataset_cfg)
+
+        for node, msg in indexid2msg.items():
+            node_type, node_label = msg
+            label_key = (node_type, node_label)
+            if (node in nodes_to_include) and (label_key not in seen_labels):
+                seen_labels.add(label_key)
+                all_words.append(tokenize_label(node_label, node_type))
+
+    log(f"Pretrain corpus: {len(all_words)} unique (node_type, label) entries")
+    return all_words
 
 
 # Used in Rcaid

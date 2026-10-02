@@ -1,0 +1,3170 @@
+[
+  {
+    "entity_type": "PROC",
+    "entity_text": "android.process.acore",
+    "cluster": "android_sys",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "com.android.contacts",
+    "cluster": "android_sys",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "com.android.internal.os.WebViewZygoteInit",
+    "cluster": "android_sys",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "com.android.launcher3",
+    "cluster": "android_sys",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/system/bin/installd",
+    "cluster": "android_sys",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/system/bin/surfaceflinger",
+    "cluster": "android_sys",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "com.google.android.gms.persistent",
+    "cluster": "android_sys",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/app/com.threestar.gallery-rnHExK3PfFkuAmLhH3phLA==/lib",
+    "cluster": "app_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/data/org.mozilla.fennec_vagrant/cache/yfzu2si7.default/cache2/entries/8BEB53305FC26305C0DC51C7A5B0106747FF9864",
+    "cluster": "app_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/data/org.mozilla.fennec_vagrant/cache/yfzu2si7.default/cache2/entries/B1187AAFA1CDA035F6DB2B28EBF3E2ABCD8062C6",
+    "cluster": "app_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/data/org.mozilla.fennec_vagrant/cache/yfzu2si7.default/cache2/entries/EDF0CE3AB59306B9458995E424B4860CD18C76F1",
+    "cluster": "app_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/app/com.android.dialer-1/base.apk",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/data/com.android.providers.media/databases/internal.db",
+    "cluster": "database_file",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/data/com.kk.browser/files/startpage/config.json",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/man/man3/CURLOPT_RTSP_SESSION_ID.3.gz",
+    "cluster": "archive",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/man/man3/xcb_alloc_color_cells_pixels.3.gz",
+    "cluster": "archive",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/man/man3/xcb_input_device_key_state_notify_event_t.3.gz",
+    "cluster": "archive",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/log/auth.log.5.bz2",
+    "cluster": "archive",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/backups/db_2024-03.tar.gz",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/releases/v2.1.0/app-2.1.0.zip",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/apt/archives/nginx_1.24.0-1_amd64.deb",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "\"LogonUI.exe\" /flags:0x0 /state0:0xa3ee8855 /state1:0x41c64e6d",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/Device/HarddiskVolume1/Windows/system32/lsass.exe",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/tmp/prov_workdir/browser/chrome_sim/Default/Login Data",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/bin/sudo",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "passwd -S alice",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "sudo -u www-data /usr/bin/php /var/www/html/cron.php",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "sudo /usr/sbin/nginx -t",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/bin/gatttool",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/firefox-54.0.1/obj-x86_64-pc-linux-gnu/dist/bin/browser/chrome/devtools/modules/devtools/server/actors",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "dirname /var/lib/update-notifier/hwe-eol",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "run-parts --list /etc/dhcp/dhclient-exit-hooks.d",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/bin/dpkg-query -W -f=${Status} nginx",
+    "cluster": "pkgmgr",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/bin/update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/apt/methods/https",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/local/bin/consul agent -config-dir=/etc/consul.d",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143-generic/include/config/fb/boot/vesa",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143/arch/arm/boot/dts",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143/arch/c6x/boot/dts",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143/arch/metag/boot/dts",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/boot/efi/EFI/ubuntu/shimx64.efi",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/boot/grub/grub.cfg",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/boot/initrd.img-5.15.0-91-generic",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/boot/vmlinuz-5.15.0-91-generic",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/snap/firefox/7967/firefox.launcher --headless --screenshot /tmp/prov_workdir/browser/ff_google.com.png https://www.google.com",
+    "cluster": "browser",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/local/firefox-54.0.1/obj-x86_64-pc-linux-gnu/dist/bin/firefox -contentproc -childID 1 -isForBrowser -intPrefs 5:50|6:-1|18:0|28:1000|33:20|34:10|43:128|44:10000|48:0|50:400|51:1|52:0|53:0|58:0|59:120|60:120|133:2|134:1|147:5000|157:0|159:0|170:10000|195:24|196:32768|198:0|199:0|207:5|211:1048576|212:100|213:5000|215:600|216:4|217:1|226:2|241:60000| -boolPrefs 1:0|2:0|4:0|26:1|27:1|30:0|35:1|36:0|37:0|38:0|39:1|40:0|41:1|42:1|45:0|46:0|47:0|49:0|54:1|55:1|56:0|57:1|61:1|62:1|63:0|64:1|65:1|66:0|67:1|70:0|71:0|74:1|75:1|79:1|80:1|81:0|82:0|84:0|85:0|86:1|87:0|90:0|91:1|92:1|93:1|94:1|95:1|96:0|97:0|98:1|99:0|100:0|101:0|102:1|103:1|104:0|105:1|106:1|107:0|108:0|109:1|110:1|111:1|112:0|113:1|114:1|115:1|116:1|117:1|118:1|119:1|120:1|122:0|123:0|124:0|125:1|126:0|127:1|131:1|132:1|135:1|136:0|141:0|146:0|149:0|151:1|152:1|154:1|158:0|160:0|162:0|164:1|165:1|171:0|172:0|173:1|175:0|186:0|193:0|194:0|197:1|200:0|202:0|204:1|205:0|210:0|214:1|219:0|220:0|221:0|222:1|224:1|225:1|228:1|233:0|234:0|235:1|236:1|237:0|238:1|239:1|240:0|242:0|243:0|245:0|253:1|254:1|255:0|256:0|257:0| -stringPrefs 333A373B64656661756C747C3137343A333B312E307C3139313A3333323B20C2A0C2BCC2BDC2BEC783CB90CCB7CCB8D689D68AD783D7B4D889D88AD9AADB94DC81DC82DC83DC84E1859FE185A0E19CB5E28080E28081E28082E28083E28084E28085E28086E28087E28088E28089E2808AE2808BE2808EE2808FE28090E28099E280A4E280A7E280A8E280A9E280AAE280ABE280ACE280ADE280AEE280AFE280B9E280BAE28181E28184E28192E2819FE28593E28594E28595E28596E28597E28598E28599E2859AE2859BE2859CE2859DE2859EE2859FE28895E288B6E28EAEE295B1E2A7B6E2A7B8E2ABBBE2ABBDE2BFB0E2BFB1E2BFB2E2BFB3E2BFB4E2BFB5E2BFB6E2BFB7E2BFB8E2BFB9E2BFBAE2BFBBE38080E38082E38094E38095E380B3E382A0E385A4E3889DE3889EE38EAEE38EAFE38F86E38F9FEA9E89EFB894EFB895EFB8BFEFB99DEFB99EEFBBBFEFBC8EEFBC8FEFBDA1EFBEA0EFBFB9EFBFBAEFBFBBEFBFBCEFBFBD7C3139323A383B6D6F6465726174657C -appdir /usr/local/firefox-54.0.1/obj-x86_64-pc-linux-gnu/dist/bin/browser 24434 true tab",
+    "cluster": "browser",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/local/firefox-54.0.1/obj-x86_64-pc-linux-gnu/dist/bin/firefox -contentproc -childID 1 -isForBrowser -intPrefs 5:50|6:-1|18:0|28:1000|33:20|34:10|43:128|44:10000|48:0|50:400|51:1|52:0|53:0|58:0|59:120|60:120|133:2|134:1|147:5000|157:0|159:0|170:10000|195:24|196:32768|198:0|199:0|207:5|211:1048576|212:100|213:5000|215:600|216:4|217:1|226:2|241:60000| -boolPrefs 1:0|2:0|4:0|26:1|27:1|30:0|35:1|36:0|37:0|38:0|39:1|40:0|41:1|42:1|45:0|46:0|47:0|49:0|54:1|55:1|56:0|57:1|61:1|62:1|63:0|64:1|65:1|66:0|67:1|70:0|71:0|74:1|75:1|79:1|80:1|81:0|82:0|84:0|85:0|86:1|87:0|90:0|91:1|92:1|93:1|94:1|95:1|96:0|97:0|98:1|99:0|100:0|101:0|102:1|103:1|104:0|105:1|106:1|107:0|108:0|109:1|110:1|111:1|112:0|113:1|114:1|115:1|116:1|117:1|118:1|119:1|120:1|122:0|123:0|124:0|125:1|126:0|127:1|131:1|132:1|135:1|136:0|141:0|146:0|149:0|151:1|152:1|154:1|158:0|160:0|162:0|164:1|165:1|171:0|172:0|173:1|175:0|186:0|193:0|194:0|197:1|200:0|202:0|204:1|205:0|210:0|214:1|219:0|220:0|221:0|222:1|224:1|225:1|228:1|233:0|234:0|235:1|236:1|237:0|238:1|239:1|240:0|242:0|243:0|245:0|253:1|254:1|255:0|256:0|257:0| -stringPrefs 333A373B64656661756C747C3137343A333B312E307C3139313A3333323B20C2A0C2BCC2BDC2BEC783CB90CCB7CCB8D689D68AD783D7B4D889D88AD9AADB94DC81DC82DC83DC84E1859FE185A0E19CB5E28080E28081E28082E28083E28084E28085E28086E28087E28088E28089E2808AE2808BE2808EE2808FE28090E28099E280A4E280A7E280A8E280A9E280AAE280ABE280ACE280ADE280AEE280AFE280B9E280BAE28181E28184E28192E2819FE28593E28594E28595E28596E28597E28598E28599E2859AE2859BE2859CE2859DE2859EE2859FE28895E288B6E28EAEE295B1E2A7B6E2A7B8E2ABBBE2ABBDE2BFB0E2BFB1E2BFB2E2BFB3E2BFB4E2BFB5E2BFB6E2BFB7E2BFB8E2BFB9E2BFBAE2BFBBE38080E38082E38094E38095E380B3E382A0E385A4E3889DE3889EE38EAEE38EAFE38F86E38F9FEA9E89EFB894EFB895EFB8BFEFB99DEFB99EEFBBBFEFBC8EEFBC8FEFBDA1EFBEA0EFBFB9EFBFBAEFBFBBEFBFBCEFBFBD7C3139323A383B6D6F6465726174657C -appdir /usr/local/firefox-54.0.1/obj-x86_64-pc-linux-gnu/dist/bin/browser 30810 true tab",
+    "cluster": "browser",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/var/lib/dpkg/info/firefox.postinst configure",
+    "cluster": "browser",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/opt/google/chrome/google-chrome --incognito --no-first-run",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/firefox/firefox -contentproc -childID 5 -isForBrowser",
+    "cluster": "browser",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "chromium-browser --headless --disable-gpu --dump-dom https://test.example.org",
+    "cluster": "browser",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "firefox --headless --screenshot /tmp/capture.png https://www.example.com",
+    "cluster": "browser",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.mozilla/firefox/fi9u6449.default/storage/default/https+++www.ebay.com/cache",
+    "cluster": "browser_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/tbilot/snap/firefox/common/.mozilla/firefox/uk8hin5z.default/datareporting/glean/pending_pings/03509572-22ee-470e-bbd8-03162213e3c2",
+    "cluster": "browser_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/snap/firefox/common/.mozilla/firefox/5gjpbswz.default/datareporting/glean/pending_pings/3456a81a-070f-4423-aa1c-c289c1e7fdc0",
+    "cluster": "browser_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/snap/firefox/7967/gnome-platform/usr/lib/locale/C.utf8/LC_COLLATE",
+    "cluster": "browser_data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/admin/AppData/Local/Google/Chrome/User Data/Default/Cookies",
+    "cluster": "browser_data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.mozilla/firefox/abc123.default/sessionstore-backups/recovery.jsonlz4",
+    "cluster": "browser_data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/.cache/google-chrome/Default/Cache/data_3",
+    "cluster": "user_cache",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/.config/chromium/Default/History",
+    "cluster": "browser_data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Python27/lib/site-packages/pyaes/blockfeeder.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Python27/lib/xml/dom/domreg.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/python2.7/dist-packages/salt/modules/inspectlib/exceptions.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/python2.7/dist-packages/salt/modules/win_repo.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/venv/lib/python3.10/site-packages/requests/__pycache__/models.cpython-310.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/myapp/lib/__pycache__/utils.cpython-310.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/srv/webapp/__pycache__/settings.cpython-310.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/python3.10/__pycache__/pathlib.cpython-310.pyc",
+    "cluster": "bytecode",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/ssl/certs/Chambers_of_Commerce_Root_-_2008.pem",
+    "cluster": "certificate",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/ssl/certs/NetLock_Express_=Class_C=_Root.pem",
+    "cluster": "certificate",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/ssl/certs/Sonera_Class_1_Root_CA.pem",
+    "cluster": "certificate",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/ssl/certs/VeriSign_Class_3_Public_Primary_Certification_Authority_-_G4.pem",
+    "cluster": "certificate",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/ssl/certs/DigiCert_Global_Root_CA.pem",
+    "cluster": "certificate",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/curl-7.61.0/tests/certs/Server-localhost.pem",
+    "cluster": "certificate",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/bash_completion.d/dd",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/bash_completion.d/postgresql",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/kbd",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/mail",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/mysql/my.cnf",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/nginx/nginx.conf",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/systemd/system/myapp.service",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/app/config/production.yml",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/cron.daily/apt",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/cron.daily/bsdmainutils",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/cron.daily/standard",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/cron.weekly/0anacron",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/cron.d/certbot",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/crontab",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/rc6.d",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/lib/systemd/system/dbus.target.wants",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/lib/systemd/system/sockets.target.wants",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/systemd/ntp-units.d",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/init.d/apache2",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/rc.local",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/systemd/system/multi-user.target.wants/docker.service",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/lib/systemd/system/ssh.service",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/logrotate.d/apache2",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/logrotate.d/dpkg",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/logrotate.d/postgresql-common",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/logrotate.d/rsyslog",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/logrotate.d/nginx",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/rsyslog.conf",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/rsyslog.d/50-default.conf",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/NetworkManager/system-connections",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/hosts.deny",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/network/if-post-down.d",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/network/if-up.d",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/hosts",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/netplan/01-netcfg.yaml",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/network/interfaces",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/resolv.conf",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "anacron -u cron.daily",
+    "cluster": "cron",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "schtasks  /create /tn KickoffAutoLoginRandom /tr \"python C:/ncr/kickoff/kickoff.py -d C:/ncr/kickoff -m AUTOLOGIN\" /sc MINUTE /mo 30 /ru \"SYSTEM\"",
+    "cluster": "cron",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "schtasks  /create /tn murder_onedrive /tr \"C:/ncr/murder_onedrive.bat\" /sc HOURLY /ru SYSTEM /F",
+    "cluster": "cron",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "taskhostw.exe /RuntimeWide",
+    "cluster": "cron",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/sbin/anacron -d -q",
+    "cluster": "cron",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/sbin/cron -f -P",
+    "cluster": "cron",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "CRON /bin/sh -c /opt/scripts/backup.sh",
+    "cluster": "cron",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "schtasks.exe /Create /TN backup /TR C:/scripts/backup.bat",
+    "cluster": "cron",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "gpg --ignore-time-conflict --no-options --no-default-keyring --homedir /tmp/tmp.9teN9rT42h --quiet --check-trustdb --keyring /tmp/tmp.9teN9rT42h/secring.gpg",
+    "cluster": "crypto",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "gpg --ignore-time-conflict --no-options --no-default-keyring --homedir /tmp/tmp.E0UUeNt3LL --quiet --check-trustdb --keyring /tmp/tmp.E0UUeNt3LL/secring.gpg",
+    "cluster": "crypto",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "gpg --ignore-time-conflict --no-options --no-default-keyring --homedir /tmp/tmp.QsmpNT2Dfa --quiet --check-trustdb --keyring /tmp/tmp.QsmpNT2Dfa/secring.gpg",
+    "cluster": "crypto",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "gpg --ignore-time-conflict --no-options --no-default-keyring --homedir /tmp/tmp.ct2tauVaOB --quiet --check-trustdb --keyring /tmp/tmp.ct2tauVaOB/secring.gpg",
+    "cluster": "crypto",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "gpg --decrypt /home/admin/secret.gpg",
+    "cluster": "crypto",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "gpg --verify /tmp/release.sig /tmp/release.tar.gz",
+    "cluster": "crypto",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem",
+    "cluster": "crypto",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "openssl s_client -connect example.com:443",
+    "cluster": "crypto",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Local/Temp/rust_mozprofile.o8NZJuzrATSG/containers.json",
+    "cluster": "data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Local/Temp/rust_mozprofile.omX1UbUt6VLb/sessionCheckpoints.json",
+    "cluster": "data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/ssl/certs/d9d12c58.0",
+    "cluster": "data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/share/mime/application/zip.xml",
+    "cluster": "data",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/app/data/config.json",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/firefox-54.0.1/toolkit/themes/linux/global/globalBindings.xml",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/misc/statistic.dat",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/postfix/active/7188D29D05",
+    "cluster": "data_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/postfix/active/7384029D0D",
+    "cluster": "data_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/postfix/active/8CE3929D0F",
+    "cluster": "data_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/postfix/active/BE34B29D0D",
+    "cluster": "data_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Maildir/new/1234567890.hostname",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/mail/admin",
+    "cluster": "data_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/mail/deploy",
+    "cluster": "data_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/postfix/active/ABC12329D0E",
+    "cluster": "data_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/dpkg/info/anacron.list",
+    "cluster": "data_pkg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/dpkg/info/libelf1:amd64.md5sums",
+    "cluster": "data_pkg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/dpkg/info/libjson0:amd64.md5sums",
+    "cluster": "data_pkg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/dpkg/info/python-pam.list",
+    "cluster": "data_pkg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/python3/dist-packages/apt/progress/__init__.py",
+    "cluster": "source",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/share/doc/openssl/changelog.Debian.gz",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/share/man/man1/git.1.gz",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/dpkg/info/libc6.list",
+    "cluster": "data_pkg",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/Microsoft/Windows/Caches/{DDF571F2-BE98-426D-8288-1A9A39C3FDA2}.2.ver0x0000000000000002.db",
+    "cluster": "database_file",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Local/Temp/rust_mozprofile.PWvmaSR9am1P/cookies.sqlite",
+    "cluster": "database_file",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.mozilla/firefox/wyd8o2f2.default/content-prefs.sqlite",
+    "cluster": "database_file",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.mozilla/firefox/wyd8o2f2.default/formhistory.sqlite",
+    "cluster": "database_file",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/admin/AppData/Local/Temp/content-prefs.sqlite",
+    "cluster": "database_file",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.local/share/evolution/calendar/local.db",
+    "cluster": "database_file",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.thunderbird/9rg24kxh.default/SecurityPreloadState.txt",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/backup/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/parsonese.rtf",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/admin/./backup//Documents/Documents/Documents/Documents/Documents/Documents/Documents/2013.rtf",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/admin/./backup//Documents/Documents/Documents/Documents/Documents/bagwoman.docx",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/documents/budget_2024.xlsx",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Documents/thesis_draft.pdf",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/reports/Q4_summary.odt",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/share/doc/imap-uw/README.txt",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "vim",
+    "cluster": "editor",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "vim biblicolegal",
+    "cluster": "editor",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "vim grassiness",
+    "cluster": "editor",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "vim mespot",
+    "cluster": "editor",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "emacs -nw /opt/project/config.yml",
+    "cluster": "editor",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "nano /home/admin/.bashrc",
+    "cluster": "editor",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "vim /etc/ssh/sshd_config",
+    "cluster": "editor",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "vim /var/log/syslog",
+    "cluster": "editor",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/bison-3.0.4.dfsg/lib/.deps/bitsetv.Po",
+    "cluster": "homedir",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/bison-3.0.4.dfsg/lib/.deps/obstack.Po",
+    "cluster": "homedir",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/flex-2.6.4",
+    "cluster": "homedir",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/#pico85626#",
+    "cluster": "homedir",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/backups/db_dump.sql",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/projects/myapp/README",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/.selected_editor",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/SystemRoot/System32/smss.exe 000000b0 00000080 ",
+    "cluster": "init",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/SystemRoot/System32/smss.exe 000000c4 00000080 ",
+    "cluster": "init",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/SystemRoot/System32/smss.exe 000000ec 00000080 ",
+    "cluster": "init",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "systemd-journal",
+    "cluster": "init",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/lib/systemd/systemd-logind",
+    "cluster": "init",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/lib/systemd/systemd-resolved",
+    "cluster": "init",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/lib/systemd/systemd-timesyncd",
+    "cluster": "init",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "systemd-networkd",
+    "cluster": "init",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Windows/system32/drivers/ksecdd.sys",
+    "cluster": "library",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/lib/brltty",
+    "cluster": "library",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/update-notifier/tmp.14dz3QAws9",
+    "cluster": "library",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/lib/update-notifier/tmp.E5pqNiU9Bh",
+    "cluster": "library",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/lib/aarch64-linux-gnu/libc.so.6",
+    "cluster": "library",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1",
+    "cluster": "library",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "cluster": "library",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib64/libssl.so.3",
+    "cluster": "library",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/USOShared/Logs/UpdateSessionOrchestration.044.etl",
+    "cluster": "log",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Windows/Logs/WindowsUpdate/WindowsUpdate.20190919.031817.888.1.etl",
+    "cluster": "log",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Windows/Logs/WindowsUpdate/WindowsUpdate.20190920.171849.324.1.etl",
+    "cluster": "log",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Windows/SysWOW64/config/systemprofile/AppData/Local/Microsoft/OneDrive/setup/logs/Uninstall-PerMachine_2019-09-21_023319_684-1330.log",
+    "cluster": "log",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/log/cron.log",
+    "cluster": "log",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/log/nginx/access.log",
+    "cluster": "log",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/log/syslog",
+    "cluster": "log",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/home/admin/thunderbird",
+    "cluster": "mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/thunderbird/thunderbird",
+    "cluster": "mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "cleanup",
+    "cluster": "mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "trivial-rewrite",
+    "cluster": "mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/dovecot/imap -L",
+    "cluster": "mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/postfix/sbin/cleanup -z -t unix -c",
+    "cluster": "mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/postfix/sbin/smtp -t unix -u -c",
+    "cluster": "mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "sendmail -q15m",
+    "cluster": "mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/WINDOWS/FONTS/CALIBRIB.TTF",
+    "cluster": "media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/data/system_ce/0/snapshots/163_reduced.jpg",
+    "cluster": "media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/system/fonts/NotoSansOriyaUI-Bold.ttf",
+    "cluster": "media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/eraseme/www.hbo.com/zone/img/title_order_hbo_express.gif",
+    "cluster": "media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Pictures/vacation_2024.jpg",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Music/playlist/track01.mp3",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/share/icons/hicolor/48x48/apps/terminal.png",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/www/html/assets/logo.png",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/firefox-54.0.1/media/libtremor",
+    "cluster": "mount",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/firefox-54.0.1/media/webrtc/trunk/webrtc/base",
+    "cluster": "mount",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143/drivers/media/pci/ddbridge",
+    "cluster": "mount",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143/drivers/media/pci/ttpci",
+    "cluster": "mount",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/media/cdrom/autorun.inf",
+    "cluster": "mount",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/mnt/backup/weekly/full-20240315.tar",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/mnt/data/exports/nfs_share",
+    "cluster": "mount",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ping -c 1 128.55.12.76",
+    "cluster": "netscan",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ping -c 4 128.55.12.51",
+    "cluster": "netscan",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ping -c 5 128.55.12.56",
+    "cluster": "netscan",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ping -c 8 128.55.12.76",
+    "cluster": "netscan",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "nmap --script=vuln 10.0.1.50",
+    "cluster": "netscan",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "nmap -sV -p 1-1000 10.0.1.0/24",
+    "cluster": "netscan",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ping -c 1 10.0.5.50",
+    "cluster": "netscan",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ping -c 4 192.168.1.1",
+    "cluster": "netscan",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/curl-7.61.0/lib/libcurl_la-curl_des.o",
+    "cluster": "object",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/curl-7.61.0/lib/libcurl_la-socks.o",
+    "cluster": "object",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/mk.o",
+    "cluster": "object",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/rf.o",
+    "cluster": "object",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp/build/main.o",
+    "cluster": "object",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/lib/x86_64-linux-gnu/crti.o",
+    "cluster": "object",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/lib/needrestart/apt-pinvoke",
+    "cluster": "pkgmgr",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "apt-cache showpkg abiword",
+    "cluster": "pkgmgr",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "apt-get -qq -y update",
+    "cluster": "pkgmgr",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "dpkg -i xvnc4viewer.deb",
+    "cluster": "pkgmgr",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "apt-get install -y postgresql-14",
+    "cluster": "pkgmgr",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "apt-get update -qq",
+    "cluster": "pkgmgr",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "dpkg --configure -a",
+    "cluster": "pkgmgr",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "dpkg -i /tmp/package.deb",
+    "cluster": "pkgmgr",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.110 42658 128.55.12.10 53",
+    "cluster": "port_dns",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.117 38256 128.55.12.10 53",
+    "cluster": "port_dns",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 39022 128.55.12.10 53",
+    "cluster": "port_dns",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 54254 128.55.12.10 53",
+    "cluster": "port_dns",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.50 55102 8.8.8.8 53",
+    "cluster": "port_dns",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.5.5 49500 208.67.222.222 53",
+    "cluster": "port_dns",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.20 52000 9.9.9.9 53",
+    "cluster": "port_dns",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.1.10 48231 1.1.1.1 53",
+    "cluster": "port_dns",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "127.0.0.1 54856 127.0.0.1 53675",
+    "cluster": "port_eph",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "127.0.0.1 57338 127.0.0.1 57765",
+    "cluster": "port_eph",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 54435 A C",
+    "cluster": "port_eph",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 59254 D A",
+    "cluster": "port_eph",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.50 49200 192.168.1.100 50000",
+    "cluster": "port_eph",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.10.0.5 48000 10.0.2.50 65000",
+    "cluster": "port_reg",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.20 51000 10.0.5.5 60000",
+    "cluster": "port_eph",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.1.10 52500 172.16.3.30 55555",
+    "cluster": "port_eph",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.110 42863 66.150.139.21 80",
+    "cluster": "port_http",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.117 56436 208.44.49.52 80",
+    "cluster": "port_http",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 60636 205.178.145.65 80",
+    "cluster": "port_http",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.73 32583 207.25.80.123 80",
+    "cluster": "port_http",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.3.15 48000 151.101.1.69 80",
+    "cluster": "port_http",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.10.0.5 55000 13.107.42.14 80",
+    "cluster": "port_http",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.1.50 52100 104.16.132.229 80",
+    "cluster": "port_http",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.5.10 54321 93.184.216.34 80",
+    "cluster": "port_http",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 54370 165.101.35.5 443",
+    "cluster": "port_https",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 55028 165.101.35.5 443",
+    "cluster": "port_https",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 58351 165.101.35.5 443",
+    "cluster": "port_https",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 58993 165.101.35.5 443",
+    "cluster": "port_https",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.15 55200 142.250.80.46 443",
+    "cluster": "port_https",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.10.0.5 48500 13.107.42.14 443",
+    "cluster": "port_https",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.30 52000 151.101.65.69 443",
+    "cluster": "port_https",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.1.50 49152 104.16.132.229 443",
+    "cluster": "port_https",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 49904 142.20.61.131 389",
+    "cluster": "port_ldap",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 50895 142.20.61.131 389",
+    "cluster": "port_ldap",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 63250 142.20.61.130 389",
+    "cluster": "port_ldap",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 63884 142.20.61.131 389",
+    "cluster": "port_ldap",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.50 49200 192.168.1.5 389",
+    "cluster": "port_ldap",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.3.15 55000 172.16.1.5 636",
+    "cluster": "port_ldap",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.20 52000 10.0.5.10 636",
+    "cluster": "port_ldap",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.5.30 48500 10.10.0.1 389",
+    "cluster": "port_ldap",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 35008 1 D",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 54548 1 D",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 55819 9 E",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 59839 1 3",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.50 48000 192.168.1.5 161",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.3.30 55000 172.16.1.1 69",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.10 52000 10.0.0.1 514",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.5.20 49100 10.10.0.5 123",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.118 60828 128.55.12.65 143",
+    "cluster": "port_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.73 143 128.55.12.110 32778",
+    "cluster": "port_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.73 25 128.55.12.166 53630",
+    "cluster": "port_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "128.55.12.73 25 128.55.12.166 57893",
+    "cluster": "port_mail",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.50 52100 192.168.1.10 25",
+    "cluster": "port_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.3.15 49200 172.16.1.5 110",
+    "cluster": "port_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.20 48000 10.0.5.5 143",
+    "cluster": "port_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.5.30 55000 10.10.0.1 993",
+    "cluster": "port_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.50.0.180 138 10.50.255.255 138",
+    "cluster": "port_netbios",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.48 138 142.20.59.255 138",
+    "cluster": "port_netbios",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.77 138 142.20.59.255 138",
+    "cluster": "port_netbios",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.57.121 138 142.20.59.255 138",
+    "cluster": "port_netbios",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.5.20 52000 172.16.0.10 137",
+    "cluster": "port_netbios",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.10.0.5 55000 10.0.2.50 139",
+    "cluster": "port_netbios",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.3.30 48500 192.168.1.100 138",
+    "cluster": "port_netbios",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.1.50 49200 10.0.1.5 139",
+    "cluster": "port_netbios",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.20.3.190 64023 224.0.0.252 5355",
+    "cluster": "port_reg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.20.4.16 56844 224.0.0.252 5355",
+    "cluster": "port_reg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.20.5.239 56898 224.0.0.252 5355",
+    "cluster": "port_reg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.50.0.106 51551 224.0.0.252 5355",
+    "cluster": "port_reg",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.30 48500 10.0.2.50 8080",
+    "cluster": "port_http",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.5.100 52000 172.16.0.1 8443",
+    "cluster": "port_https",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.5.20 51000 192.168.1.100 5000",
+    "cluster": "port_reg",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.10.50 49200 10.10.0.5 9090",
+    "cluster": "port_reg",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 49218 142.20.61.130 135",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 49792 142.20.61.131 135",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 50977 142.20.61.131 135",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 63757 142.20.61.130 135",
+    "cluster": "port_low",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.50 49200 192.168.1.5 135",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.3.15 55000 172.16.1.5 135",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.0.20 52000 10.0.5.10 135",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.5.30 48500 10.10.0.1 135",
+    "cluster": "port_low",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 50169 142.20.61.130 445",
+    "cluster": "port_smb",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 50299 142.20.61.130 445",
+    "cluster": "port_smb",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 58408 142.20.61.185 445",
+    "cluster": "port_smb",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "142.20.56.202 59384 142.20.61.180 445",
+    "cluster": "port_smb",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.5.20 52000 172.16.0.10 445",
+    "cluster": "port_smb",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.10.0.5 55000 10.0.2.50 445",
+    "cluster": "port_smb",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.3.30 48500 192.168.1.100 445",
+    "cluster": "port_smb",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.1.50 49200 10.0.1.5 445",
+    "cluster": "port_smb",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "0.0.0.0 22 128.55.12.122 39236",
+    "cluster": "port_ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "0.0.0.0 22 128.55.12.122 45560",
+    "cluster": "port_ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "0.0.0.0 22 128.55.12.122 49682",
+    "cluster": "port_ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "0.0.0.0 22 128.55.12.122 53176",
+    "cluster": "port_ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.0.1.15 44102 10.0.3.50 22",
+    "cluster": "port_ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "10.10.0.20 52000 172.16.0.5 22",
+    "cluster": "port_ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "172.16.3.80 61002 10.0.1.5 22",
+    "cluster": "port_ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "SOCK",
+    "entity_text": "192.168.1.10 48231 10.0.1.5 22",
+    "cluster": "port_ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/salt/minion/proc/20180404011927837948",
+    "cluster": "procfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/salt/minion/proc/20180404041927846569",
+    "cluster": "procfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/salt/minion/proc/20180404090112544542",
+    "cluster": "procfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/salt/minion/proc/20180406001927852212",
+    "cluster": "procfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/proc/12345/cmdline",
+    "cluster": "procfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/proc/meminfo",
+    "cluster": "procfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/proc/self/maps",
+    "cluster": "procfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/proc/sys/kernel/hostname",
+    "cluster": "procfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/Microsoft/Windows Defender/Scans/History/Mput/MputHistory/12/194",
+    "cluster": "progdata",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/Microsoft/Windows Defender/Scans/History/Mput/MputHistory/22/215",
+    "cluster": "progdata",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/Microsoft/Windows Defender/Scans/History/ReportLatency/Latency/13/43",
+    "cluster": "progdata",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/tempntuser.pol",
+    "cluster": "progdata",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/Microsoft/Windows/Start Menu/Programs/Accessories",
+    "cluster": "progdata",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/Package Cache/abc123/packages",
+    "cluster": "progdata",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/chocolatey/logs/chocolatey.log",
+    "cluster": "log",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/ProgramData/ssh/sshd_config",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/run/shm/org.chromium.4i7bCu",
+    "cluster": "runtime",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/run/shm/org.chromium.8WYaos",
+    "cluster": "runtime",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/run/shm/org.chromium.N1UznG",
+    "cluster": "runtime",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/run/shm/org.chromium.viqDuj",
+    "cluster": "runtime",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/run/lock/subsys/network",
+    "cluster": "runtime",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp/npm-54321/package.lock",
+    "cluster": "runtime",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/run/docker.sock",
+    "cluster": "tmp",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/run/nginx.pid",
+    "cluster": "runtime",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Windows/Temp/SDIAG_5031ce4a-db1c-4527-bda1-40ae05a3eb56/TS_InaccurateSystemTime.ps1",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Windows/system32/winrm.cmd",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/profile.d/bash_completion.sh",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/build-essential-12.5ubuntu2/make-esslist.sh",
+    "cluster": "executable",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/etc/init.d/networking",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/cron/cleanup.sh",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/scripts/backup_db.bash",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/bin/deploy.sh",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/bin/sh /bin/which dbus-send",
+    "cluster": "shell",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/bin/sh /etc/cron.daily/update-notifier-common",
+    "cluster": "shell",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/bin/sh /sbin/resolvconf -a em2.10.dhclient",
+    "cluster": "shell",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "sh",
+    "cluster": "shell",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/bin/bash -c find / -name '*.conf' -type f",
+    "cluster": "shell",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/bin/dash -c /etc/init.d/networking restart",
+    "cluster": "shell",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/bin/sh -e /usr/lib/apt/apt.systemd.daily",
+    "cluster": "shell",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command Get-Process",
+    "cluster": "shell",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.bashrc",
+    "cluster": "shellrc",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/darpa/.bashrc",
+    "cluster": "shellrc",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/darpa/.profile",
+    "cluster": "shellrc",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/ta1/.profile",
+    "cluster": "shellrc",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/.bash_profile",
+    "cluster": "shellrc",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/.zshrc",
+    "cluster": "shellrc",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/ubuntu_pkgs/curl-7.61.0/docs/examples/imap-append.c",
+    "cluster": "source",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/eraseme/www.hbo.com/hbosignature/index.html",
+    "cluster": "source",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/ip.c",
+    "cluster": "source",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/firefox-54.0.1/layout/style/res/quirk.css",
+    "cluster": "source",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/project/src/handlers/auth.go",
+    "cluster": "source",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/webapp/lib/middleware/cors.rb",
+    "cluster": "source",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/srv/api/controllers/users_controller.ts",
+    "cluster": "source",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/firefox-54.0.1/toolkit/components/extensions/ext-tabs.js",
+    "cluster": "source",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/clientmqueue/./dfx48D2PjR056010",
+    "cluster": "spool",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/clientmqueue/./dfx4A0CDpC084375",
+    "cluster": "spool",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/clientmqueue/./dfx4A2M6cx066104",
+    "cluster": "spool",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/mqueue/./dfx49KDQ87083922",
+    "cluster": "spool",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/cron/crontabs/admin",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/cups/d00002-001",
+    "cluster": "spool",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/postfix/incoming/DEF456",
+    "cluster": "data_mail",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "scp -r /etc/hosts admin@128.55.12.109:.",
+    "cluster": "ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "scp -r /etc/passwd admin@128.55.12.119:./docs/",
+    "cluster": "ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "scp -r /etc/passwd admin@128.55.12.66:\\\\C:UsersadminDocuments",
+    "cluster": "ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "scp -r /tmp/grains /tmp/hsperfdata_darpa /tmp/ssh-VCUQ661CgK6p admin@128.55.12.66:.",
+    "cluster": "ssh",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "rsync -avz -e ssh /var/log/ admin@10.0.1.100:/archive/logs/",
+    "cluster": "ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "scp /home/admin/dump.sql root@10.0.3.50:/backup/",
+    "cluster": "ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ssh -o StrictHostKeyChecking=no deploy@10.0.5.20",
+    "cluster": "ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "sshd -D -o PermitRootLogin=no",
+    "cluster": "ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/System32/svchost.exe -k swprv",
+    "cluster": "svchost",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/System32/svchost.exe -k utcsvc",
+    "cluster": "svchost",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/system32/svchost.exe -k LocalServiceNoNetwork",
+    "cluster": "svchost",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/system32/svchost.exe -k appmodel",
+    "cluster": "svchost",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/system32/svchost.exe -k LocalSystemNetworkRestricted",
+    "cluster": "svchost",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/system32/svchost.exe -k WerSvcGroup",
+    "cluster": "svchost",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "\"C:/Program Files/Windows Defender/MpCmdRun.exe\" -IdleTask -TaskName WdCleanup",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "ps",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "reg  add \"HKEY_CURRENT_USER/Software/Microsoft/Office/15.0/Outlook/Cached Mode\" /t REG_DWORD /v Enable /d 0 /f /reg:64",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "taskkill  /F /FI \"Windowtitle eq Tobec Withn V77*\" /IM *",
+    "cluster": "sysadmin",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/bin/strace -p 12345 -e trace=network",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/bin/top -b -n 1 -o %MEM",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/usr/sbin/logrotate /etc/logrotate.d/nginx",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "iptables -L -n -v",
+    "cluster": "sysadmin",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/local/lib/perl5/site_perl/mach/5.28/sys/sockbuf.ph",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-142-generic/include/config/blk/dev/null",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143-generic/include/config/blk/dev/null",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/tests/sys/cddl/zfs/tests/cli_root/zfs_inherit",
+    "cluster": "sysfs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/dev/random",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/dev/zero",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/sys/class/net/eth0/address",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
+    "cluster": "sysfs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Local/Temp/rust_mozprofile.8CSscFvrmMNo/storage/permanent/chrome/idb",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Local/Temp/rust_mozprofile.nmgCiWcEuFXo/safebrowsing-updating/test-block-simple.sbstore",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp//make0XmbM9",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp//makehZ4l5h",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/project/build/CMakeFiles/cmake.check_cache",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/.local/share/Trash/files/old_backup.bak",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp/go-build987654/pkg/mod/cache",
+    "cluster": "tmp",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/tmp/rpm-tmp.xyz789",
+    "cluster": "tmp",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/dd-0bdaec02.o.tmp",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/la-1a73448b.o.tmp",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/qg-3e9e0a26.o.tmp",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/user/test/tr-c4d35fb0.o.tmp",
+    "cluster": "tmp",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/dev/shm/postgres_shared_mem_001",
+    "cluster": "tmp",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp/.ICE-unix/session-54321",
+    "cluster": "tmp",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/tmp/build-67890/configure.log",
+    "cluster": "log",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/tmp/apt-dpkg-install-xyz789",
+    "cluster": "tmp",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/home/admin/eraseme/wget",
+    "cluster": "transfer",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "wget",
+    "cluster": "transfer",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "wget -r -l 2 http://www.ut.ee",
+    "cluster": "transfer",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "wget http://www.samhsa.gov",
+    "cluster": "transfer",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "curl -fsSL https://get.docker.com -o get-docker.sh",
+    "cluster": "transfer",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "rsync -avz /backup/ /mnt/nfs/archive/",
+    "cluster": "ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "scp admin@10.0.1.5:/var/log/app.log /tmp/",
+    "cluster": "ssh",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "wget https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip",
+    "cluster": "transfer",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/src/linux-headers-3.13.0-143-generic/include/config/arch/have/nmi/safe",
+    "cluster": "unknown",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/man/fr/1866",
+    "cluster": "unknown",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/man/fsstnd/22041",
+    "cluster": "unknown",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/cache/man/gl/32589",
+    "cluster": "unknown",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/app/cache/session_abc123",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/custom/data/state.bin",
+    "cluster": "executable",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/srv/myapp/uploads/report_final",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/var/spool/custom/queue/msg001",
+    "cluster": "spool",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.cache/mozilla/firefox/fi9u6449.default/cache2/entries/C4BE1CF0E9FFFD63EC4EE581FA36AC081F9FDE69",
+    "cluster": "user_cache",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.cache/mozilla/firefox/pe11scpa.default/cache2/entries/275071336915B83A333D9F6028BFC9C656BA4DE5",
+    "cluster": "user_cache",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.cache/mozilla/firefox/wyd8o2f2.default/cache2/entries/4E91F6C307696B43F94F46F0F37EBF41EC3997D1",
+    "cluster": "user_cache",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.cache/mozilla/firefox/x0005mv3.default/cache2/entries/6A80E7DFFCFBA8BE6B70065D21DAB8A4AC36C6CD",
+    "cluster": "user_cache",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.cache/pip/http/abc123",
+    "cluster": "user_cache",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/.cache/fontconfig/abc123.cache-7",
+    "cluster": "user_cache",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/.cache/yarn/v6/npm-lodash-4.17.21",
+    "cluster": "user_cache",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/.cache/go-build/12/3456789abcdef",
+    "cluster": "user_cache",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/sysadmin/AppData/Roaming/Microsoft/Credentials",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Roaming/Microsoft/Office/Recent/Online Hours V24.LNK",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Roaming/Microsoft/Windows/Recent/General Infanta Ver8.lnk",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/zleazer/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/desktop.ini",
+    "cluster": "config",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.gitconfig",
+    "cluster": "vcs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/.docker/config.json",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/.vimrc",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/.tmux.conf",
+    "cluster": "config",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Desktop/birled",
+    "cluster": "user_desktop",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Desktop/mortmain",
+    "cluster": "user_desktop",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Desktop/starers",
+    "cluster": "user_desktop",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Desktop/tippier",
+    "cluster": "user_desktop",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/Device/HarddiskVolume1/Users/admin/Desktop/project.lnk",
+    "cluster": "data",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Desktop/shortcut.desktop",
+    "cluster": "user_desktop",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Desktop/notes.txt",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Desktop/screenshot_2024.png",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Documents/incitations",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/admin/./backup//Documents/Documents/Documents/Documents/Documents/Considererbrachistocephalous expermentized vestibulum misframe strove porifera brutified steadiment detruck noctule satisfiable vamplate cornerback.docx",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/admin/./backup//Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Default.rdp",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/usr/home/admin/./test//backup/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/Documents/My Pictures/desktop.ini",
+    "cluster": "document",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Documents/notes.txt",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/Documents/runbook.md",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Documents/meeting_minutes",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/TODO",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Downloads/promoBox(116).swf",
+    "cluster": "user_downloads",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Downloads/promoBox(136).swf",
+    "cluster": "user_downloads",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Downloads/promoBox(229).swf",
+    "cluster": "user_downloads",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Downloads/promoBox(277).swf",
+    "cluster": "user_downloads",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Downloads/terraform_1.5.0_linux_amd64.zip",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/Downloads/grafana-10.0.0.tar.gz",
+    "cluster": "archive",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Downloads/report_final_v2.pdf",
+    "cluster": "document",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/root/Downloads/kubectl",
+    "cluster": "user_downloads",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Pictures/lenzites",
+    "cluster": "user_media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Videos/fakirs",
+    "cluster": "user_media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Videos/shabracque",
+    "cluster": "user_media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Videos/tubipora",
+    "cluster": "user_media",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Music/podcast_ep42.mp3",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/Videos/screen_recording.mp4",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/deploy/Pictures/architecture_diagram.svg",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/user/Pictures/avatar.jpg",
+    "cluster": "media",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/darpa/SPADE/.git/branches",
+    "cluster": "vcs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/darpa/SPADE/.git/objects/12",
+    "cluster": "vcs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/darpa/SPADE/.git/objects/22",
+    "cluster": "vcs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/darpa/SPADE/.git/objects/d7",
+    "cluster": "vcs",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/.git/refs/heads/feature-branch",
+    "cluster": "vcs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/home/admin/project/.git/objects/pack/pack-abc123.idx",
+    "cluster": "vcs",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/opt/src/.svn/entries",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "FILE",
+    "entity_text": "/srv/repos/myapp.git/HEAD",
+    "cluster": "homedir",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "\"C:/Windows/system32/SearchFilterHost.exe\" 0 688 692 700 8192 696 ",
+    "cluster": "win_system",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "\"C:/Windows/system32/SearchProtocolHost.exe\" Global/UsGthrFltPipeMssGthrPipe72_ Global/UsGthrCtrlFltPipeMssGthrPipe72 1 -2147483646 \"Software/Microsoft/Windows Search\" \"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT; MS Search 4.0 Robot)\" \"C:/ProgramData/Microsoft/Search/Data/Temp/usgthrsvc\" \"DownLevelDaemon\" ",
+    "cluster": "win_system",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/SysNative/qwinsta.exe  /server 142.20.61.177",
+    "cluster": "win_system",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "C:/Windows/system32/SearchIndexer.exe /Embedding",
+    "cluster": "win_system",
+    "seen_during_training": true
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/Device/HarddiskVolume1/Windows/system32/RuntimeBroker.exe -Embedding",
+    "cluster": "win_system",
+    "seen_during_training": false
+  },
+  {
+    "entity_type": "PROC",
+    "entity_text": "/Device/HarddiskVolume1/Windows/system32/taskhostw.exe Execute",
+    "cluster": "cron",
+    "seen_during_training": false
+  }
+]

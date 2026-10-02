@@ -1,0 +1,47 @@
+_include_yml: [velox, pretrained]
+
+featurization:
+  pretrained:
+    model_type: bert
+    model_size: mini
+    training:
+      pretrain_tokens: 1000000
+      warmup_tokens: 100000
+      batch_size: 1024
+    tokenizer:
+      max_seq_len: 128
+    walks:
+      walk_length: 10
+      num_walks: 1
+
+training:
+  used_method: pretrained
+  pretrained:
+    finetune_mode: lp  # lp / mlm / cls / cls_attack / edge_cls / tgn / perplexity
+    finetune_epochs: 3
+    finetune_walk_len: 10
+    finetune_lr: 0.0003
+    freeze_backbone: True
+    finetune_margin: 2.0  # ranking margin of the cls mode
+    num_inference_walks: 1
+    inference_batch_size: 1024
+    edge_score_weight: 2.0  # weight of the edge type loss in the edge score
+    num_attack_walks: 10  # walks per attack edge in the cls_attack mode
+
+    tgn:  # only used by finetune_mode: tgn
+      objective: edge_pred  # contrastive / edge_pred / multi_edge_pred / dist_edge_pred / edge_pred_emb / node_pred
+      memory_dim: 256
+      edge_emb_dim: 256
+      time_dim: 16
+      num_heads: 4
+      batch_size: 2048
+      # Inputs of the edge predictor
+      use_node_type_emb: False
+      use_time_emb: False
+      use_memory: False
+      use_entity_emb: True
+      use_event_bert_emb: True  # contextual embeddings of each event
+      reset_memory_on_inference: True
+      score_gated_memory: True  # anomalous edges update the memory more
+      temporal_decay: False  # memory decays with the time since its last update
+      anomaly_accumulator: False  # per-node anomaly average that slows the decay (needs temporal_decay)

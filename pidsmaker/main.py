@@ -152,6 +152,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         task_to_module = get_task_to_module(cfg)
         module = task_to_module[task]["module"]
         task_path = task_to_module[task]["task_path"]
+        log(f"Task {task}: {task_path}")
 
         if should_restart[task]:
             return_value = module.main(cfg)
@@ -293,7 +294,6 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         if not sweep_id:
             sweep_config["name"] = exp
             sweep_id = wandb.sweep(sweep_config, project=project)
-            log(f"Sweep ID: YOUR_ORG/{project}/{sweep_id}")
 
         def run_pipeline_from_sweep(cfg):
             """Execute pipeline for a single hyperparameter configuration from W&B sweep.

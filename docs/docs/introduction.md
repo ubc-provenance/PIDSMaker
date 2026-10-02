@@ -45,6 +45,11 @@ Below are the different ways to run the framework.
     ```
     You can still watch the logs in your shell using `tail -f nohup.out`
 
+4. Run in the shell, no W&B, with the same settings as `./run.sh`:
+    ```shell
+    ./run_local.sh SYSTEM DATASET
+    ```
+
 ## Device
 
 By default, the framework runs on GPU and searches for an existing device on `CUDA:0`. If no GPU is detected, it switches to CPU and a warning message is printed to the console.

@@ -125,6 +125,7 @@ class TestFeaturization:
 
 
 class TestEncoderObjective:
+    # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below.
     encoders = [e for e in ENCODERS_CFG.keys() if e != "tgn"]
     objectives = [
         "predict_node_type",
@@ -143,8 +144,12 @@ class TestEncoderObjective:
     @pytest.mark.parametrize("encoder,objective", list(product(encoders, objectives)))
     def test_encoder_tgn_objective_pairs(self, dataset, device, encoder, objective):
         encoder_combined = f"{encoder},tgn"
+        # Per-type encoders need node types aligned with the TGN neighborhood, which only the fixed TGN batching gives
+        custom_args = None
+        if encoder == "rgcn_per_type":
+            custom_args = [("batching.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN", True)]
         cfg = prepare_cfg(
-            "tests", dataset, device=device, encoder=encoder_combined, objective=objective
+            "tests", dataset, device=device, encoder=encoder_combined, objective=objective, custom_args=custom_args
         )
         main.main(cfg)
 
@@ -284,4 +289,92 @@ class TestSystems:
     @pytest.mark.parametrize("system", systems)
     def test_systems(self, dataset, device, system):
         cfg = prepare_cfg(system, dataset, device=device)
+        main.main(cfg)
+
+
+class TestPretrainedEncoders:
+    # Pretraining runs on the test dataset with a small budget, so no pretrained weights are needed.
+    # The language models downloaded from HuggingFace (gpt2_pretrained, llama3_pretrained,
+    # opt_pretrained) are not tested.
+    model_types = ["spider", "bert", "deepwalk", "graphmae"]
+
+    @staticmethod
+    def pretraining_args(dataset):
+        return [
+            ("featurization.pretrained.pretrain_datasets", dataset),
+            ("featurization.pretrained.training.pretrain_tokens", 20000),
+            ("featurization.pretrained.training.warmup_tokens", 2000),
+            ("featurization.pretrained.deepwalk.epochs", 1),
+            ("featurization.pretrained.graphmae.epochs", 1),
+        ]
+
+    @pytest.mark.parametrize("model_type", model_types)
+    def test_pretrained_featurization(self, dataset, device, model_type):
+        custom_args = self.pretraining_args(dataset) + [("featurization.pretrained.model_type", model_type)]
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_continue_pretraining(self, dataset, device):
+        custom_args = self.pretraining_args(dataset) + [
+            ("feat_inference.continue_pretrain", True),
+            ("feat_inference.continue_pretrain_epochs", 1),
+        ]
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_missing_weights_path(self, dataset, device):
+        custom_args = [("featurization.pretrained.weights_path", "/nonexistent/weights")]
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
+        with pytest.raises(FileNotFoundError, match="weights_path not found"):
+            main.main(cfg)
+
+    def test_rename_attack(self, dataset, device):
+        custom_args = self.pretraining_args(dataset) + [
+            ("feat_inference.rename_attack.enabled", True),
+            ("feat_inference.rename_attack.entities", "main, sendmail"),
+            ("feat_inference.rename_attack.target_node_type", "subject"),
+            ("feat_inference.rename_attack.top_k", 100),
+        ]
+        cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_finetune_as_detector(self, dataset, device):
+        custom_args = self.pretraining_args(dataset) + [("training.pretrained.finetune_epochs", 1)]
+        cfg = prepare_cfg("cybergfm", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_supervised_fine_tuning(self, dataset, device):
+        # The attack labels are embedded by feat_inference, which may be cached by a previous test
+        custom_args = self.pretraining_args(dataset) + [("force_restart", "feat_inference")]
+        cfg = prepare_cfg("pretrained_supervised", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+
+class TestOptions:
+    def test_stable_optim(self, dataset, device):
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=[("training.stable_optim", True)])
+        main.main(cfg)
+
+    def test_fuse_duplicate_edges_training(self, dataset, device):
+        custom_args = [("training.fuse_duplicate_edges_training", True)]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    @pytest.mark.parametrize("threshold_method", ["percentile", "fixed_zero"])
+    def test_threshold_methods(self, dataset, device, threshold_method):
+        custom_args = [("evaluation.node_evaluation.threshold_method", threshold_method)]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_best_ap_at_10(self, dataset, device):
+        custom_args = [("evaluation.best_model_selection", "best_ap@10")]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_node_label_options(self, dataset, device):
+        custom_args = [("construction.null_label_tokens", True)] + [
+            (f"construction.node_label_features.{node_type}", "auto")
+            for node_type in ("subject", "file", "netflow")
+        ]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
         main.main(cfg)

@@ -170,6 +170,15 @@ Multi-host testbed comprising four Windows 10 workstations (h1–h4), a CentOS 7
 python pidsmaker/main.py SYSTEM CARBANAKV2_EDR
 ```
 
+## PROVENANCE_BENIGN
+
+A Linux audit corpus used only to [pretrain SPIDER](features/pretrained_encoders.md#pretraining). It has no ground truth, so it can't be used to evaluate detection.
+
+It is built on a Linux machine: auditd records the system calls of 21 scripted workloads (from core utilities, compilers and package managers to web servers, databases, browsers and attack-like commands), the logs are parsed into entities and edges, and `create_database_provenance_benign.py` loads them into a `PROVENANCE_BENIGN` database with the DARPA TC schema.
+The collection scripts are on the [`spider` branch](https://github.com/ubc-provenance/PIDSMaker/tree/spider/scripts/provenance_capture), and their [README](https://github.com/ubc-provenance/PIDSMaker/blob/spider/scripts/provenance_capture/README.md) describes each step.
+
+The dates of `PROVENANCE_BENIGN` in `DATASET_DEFAULT_CONFIG` (`pidsmaker/config/config.py`) are those of the corpus used in the paper (2026-03-16, UTC). Set them to the days of your own capture.
+
 ## Data structure
 
 ### Graph partitioning

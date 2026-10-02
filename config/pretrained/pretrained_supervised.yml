@@ -1,0 +1,13 @@
+_include_yml: pretrained_velox
+
+training:
+  decoder:
+    used_methods: predict_edge_supervised
+    predict_edge_supervised:
+      decoder: edge_mlp
+      mode: synthetic
+      attack_edges_path: config/attack_edges/cadets_e3.yml
+      pos_weight: 1.0
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 2

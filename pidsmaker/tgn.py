@@ -379,22 +379,25 @@ class LastNeighborLoader:
 
         self.cur_e_id += src.numel()
 
-        # Convert newly encountered interaction ids so that they point to
-        # locations of a "dense" format of shape [num_nodes, size].
+        # Sort nodes for consistent processing (preserves time order within nodes)
         nodes, perm = nodes.sort()
         neighbors, e_id = neighbors[perm], e_id[perm]
 
+        # Map nodes to dense indices
         n_id = nodes.unique()
         self._assoc[n_id] = torch.arange(n_id.numel(), device=n_id.device)
 
+        # Compute the maximum number of edges for any node in the batch
         edge_counts = torch.bincount(self._assoc[nodes], minlength=n_id.numel())
         temp_size = edge_counts.max().item() if edge_counts.numel() > 0 else 1
 
         # Compute cumulative start indices
         cum_edge_counts = torch.cat([torch.tensor([0], device=nodes.device), edge_counts.cumsum(0)])
-        local_slots = (
-            torch.arange(nodes.size(0), device=nodes.device) - cum_edge_counts[self._assoc[nodes]]
-        )
+
+        # Compute local slot indices per node
+        local_slots = torch.arange(nodes.size(0), device=nodes.device) - cum_edge_counts[self._assoc[nodes]]
+
+        # Compute dense_id
         dense_id = local_slots + (self._assoc[nodes] * temp_size)
 
         # Initialize dense tensors with temporary size
@@ -406,11 +409,11 @@ class LastNeighborLoader:
         dense_neighbors[dense_id] = neighbors
         dense_neighbors = dense_neighbors.view(-1, temp_size)
 
-        # Collect new and old interactions...
+        # Collect new and old interactions
         e_id = torch.cat([self.e_id[n_id, : self.size], dense_e_id], dim=-1)
         neighbors = torch.cat([self.neighbors[n_id, : self.size], dense_neighbors], dim=-1)
 
-        # And sort them based on `e_id`.
+        # Sort by e_id to keep the `size` most recent neighbors
         e_id, perm = e_id.topk(self.size, dim=-1)
         self.e_id[n_id] = e_id
         self.neighbors[n_id] = torch.gather(neighbors, 1, perm)

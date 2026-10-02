@@ -64,6 +64,20 @@ For example, if measuring precision score across 5 runs:
 !!! note
     The framework is deterministic by default, instability appears when running multiple iterations within a same run (e.g., with `run_n_times`).
 
+## Reducing instability
+
+`training.stable_optim: True` trains the detector with an optimization setup designed to reduce the variance between runs:
+
+- **AdamW** (betas 0.9 and 0.99, weight decay 0.02) instead of Adam. `training.weight_decay` is then ignored.
+- **Learning rate schedule:** a linear warmup over the first 5% of the training steps, then a cosine decay down to 10% of `training.lr`.
+- **Gradient clipping** to a norm of 1.0.
+
+It is off by default, and on in the [pretrained encoder](pretrained_encoders.md) configs. It can be enabled for any system, for example with `run_n_times` to measure its effect on the `*_std` metrics:
+
+```shell
+./run.sh orthrus CADETS_E3 --training.stable_optim=True --experiment=run_n_times
+```
+
 ## Recommendations
 
 Based on empirical observations:

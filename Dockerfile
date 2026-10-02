@@ -54,22 +54,21 @@ RUN conda create -n pids python=3.9 && \
 SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
 # Activate the environment and install dependencies
 RUN conda install -y psycopg2 tqdm && \
-    pip install scikit-learn==1.2.0 networkx==2.8.7 xxhash==3.2.0 \
-                graphviz==0.20.1 psutil scipy==1.10.1 matplotlib==3.8.4 \
-                wandb==0.24.1 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
+    pip install scikit-learn==1.6.1 networkx==3.2.1 xxhash==3.2.0 \
+                graphviz==0.20.1 psutil scipy==1.13.1 matplotlib==3.9.4 \
+                wandb==0.24.2 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
                 cairocffi==1.7.0 wget==3.2
 
-RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+RUN pip install torch==2.1.2+cu121 torchvision==0.16.2+cu121 torchaudio==2.1.2+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
 
-RUN pip install torch_geometric==2.5.3 --no-cache-dir && \
-    pip install pyg_lib==0.2.0 torch_scatter==2.1.1 torch_sparse==0.6.17 \
-                torch_cluster==1.6.1 torch_spline_conv==1.2.2 \
-                -f https://data.pyg.org/whl/torch-1.13.0+cu117.html --no-cache-dir
+RUN pip install torch_geometric==2.6.1 --no-cache-dir && \
+    pip install pyg_lib==0.4.0 torch_scatter==2.1.2 torch_sparse==0.6.18 \
+                torch_cluster==1.6.3 torch_spline_conv==1.2.2 \
+                -f https://data.pyg.org/whl/torch-2.1.0+cu121.html --no-cache-dir
 
-RUN pip install gensim==4.3.1 pytz==2024.1 pandas==2.2.2 yacs==0.1.8
+RUN pip install gensim==4.4.0 pytz==2024.1 pandas==2.3.3 yacs==0.1.8 transformers==4.39.3
 
-RUN pip uninstall -y scipy && pip install scipy==1.10.1 && \
-    pip uninstall -y numpy && pip install numpy==1.26.4
+RUN pip install numpy==1.26.4
 
 RUN pip install gdown==5.2.0 umap-learn==0.5.6
 RUN pip install flask==3.0.3

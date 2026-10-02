@@ -9,6 +9,8 @@
         <li class='no-bullet'><span class="key-leaf">use_memory</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">use_time_order_encoding</span>: <span class="value">bool</span></li>
         <li class='no-bullet'><span class="key-leaf">project_src_dst</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">mode</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_residual_norm</span>: <span class="value">bool (1)</span></li>
     </ul>
     </li>
     <li class='bullet'><span class="key">graph_attention</span>
@@ -52,13 +54,16 @@
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
         <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
     </ul>
-</li>
-
-<li class='bullet'><span class="key">sum_aggregation</span></li>
-
-<li class='bullet'><span class="key">rcaid_gat</span></li>
-
-<li class='bullet'><span class="key">magic_gat</span>
+    </li>
+    <li class='bullet'><span class="key">sum_aggregation</span>
+    
+    
+    </li>
+    <li class='bullet'><span class="key">rcaid_gat</span>
+    
+    
+    </li>
+    <li class='bullet'><span class="key">magic_gat</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int</span></li>
         <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int</span></li>
@@ -66,18 +71,32 @@
         <li class='no-bullet'><span class="key-leaf">alpha_l</span>: <span class="value">float</span></li>
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
     </ul>
-</li>
-
-<li class='bullet'><span class="key">glstm</span></li>
-
-<li class='bullet'><span class="key">custom_mlp</span>
+    </li>
+    <li class='bullet'><span class="key">glstm</span>
+    
+    
+    </li>
+    <li class='bullet'><span class="key">custom_mlp</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">architecture_str</span>: <span class="value">str</span></li>
     </ul>
-</li>
-
-<li class='bullet'><span class="key">none</span></li>
+    </li>
+    <li class='bullet'><span class="key">none</span>
+    
+    
+    </li>
+    <li class='bullet'><span class="key">hetero_graph_transformer</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str (2)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (3)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (4)</span></li>
+    </ul>
+    </li>
 </ul>
 
 </div>
 
+1. Adds the projected input node features to the output of the GNN wrapped by TGN, followed by dropout and LayerNorm.<br>
+2. Unused: the input projections always use ReLU.<br>
+3. Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer.<br>
+4. Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC.<br>

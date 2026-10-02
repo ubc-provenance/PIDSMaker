@@ -1,0 +1,14 @@
+_include_yml: [velox, pretrained]
+
+training:
+  lr: 0.0001
+  num_epochs: 14
+  node_out_dim: 64
+  node_hid_dim: 64
+  encoder:
+    dropout: 0.1
+
+batching:
+  intra_graph_batching:
+    edges:
+      intra_graph_batch_size: 3072
