@@ -9,6 +9,7 @@ nav:
   - Installation:
     - Docker installation: ten-minute-install.md
     - Apptainer installation: singularity_install.md
+    - NVIDIA DGX Spark installation: spark-install.md
     - Installing a dataset from scratch: create-db-from-scratch.md
   - Basics:
     - Introduction: introduction.md

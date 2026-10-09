@@ -1,0 +1,95 @@
+# Dockerfile for NVIDIA DGX Spark (aarch64, GB10 Blackwell GPU, CUDA 13).
+# Mirrors the main Dockerfile, with arm64 binaries and a CUDA 13 PyTorch stack.
+FROM nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
+
+# setting up environment variables (timezone for postgresql)
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+RUN apt-get update \
+    && apt-get install -y wget ca-certificates graphviz gnupg lsb-release maven
+
+# installing JDK1.8
+RUN apt update && \
+    apt install -y openjdk-8-jdk && \
+    apt clean
+
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-arm64/
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# installing sudo, git, gosu (for privilege dropping in entrypoint)
+RUN apt-get update && apt-get install -y sudo git && \
+    set -eux; \
+    wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-arm64"; \
+    chmod +x /usr/local/bin/gosu; \
+    gosu --version; \
+    gosu nobody true
+
+# installing node for Claude Code
+RUN apt-get update \
+ && apt-get install -y ca-certificates curl \
+ && echo "deb [trusted=yes] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y nodejs \
+ && node -v && npm -v \
+ && rm -rf /var/lib/apt/lists/*
+
+# installing Miniforge (Anaconda does not ship the same installer for aarch64)
+RUN wget https://github.com/conda-forge/miniforge/releases/download/25.3.1-0/Miniforge3-25.3.1-0-Linux-aarch64.sh -O miniforge.sh && \
+    bash miniforge.sh -b -p /opt/conda && \
+    rm miniforge.sh
+
+# The CUDA base image ships an `ubuntu` user with UID 1000, remove it first.
+# Create a fixed container user. The UID/GID will be remapped at runtime
+# by entrypoint.sh to match the host user — no build args required.
+# Home is kept separate from WORKDIR (/home/pids) to avoid conflicts with
+# the bind-mounted project directory.
+RUN (userdel -r ubuntu 2>/dev/null || true) && \
+    groupadd -g 1000 pids && \
+    useradd -u 1000 -g 1000 -m -d /home/user -s /bin/bash pids
+WORKDIR /home/pids
+
+ENV PATH="/opt/conda/bin:$PATH"
+ENV PATH="/opt/conda/envs/pids/bin:$PATH"
+# PyTorch >= 2.6 defaults torch.load to weights_only=True, which cannot load the
+# pickled graphs (e.g. networkx objects) that PIDSMaker saves between tasks.
+ENV TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
+# Python 3.11: oldest version supported by PyTorch builds for CUDA 13 on aarch64
+RUN conda create -y -n pids python=3.11 && \
+    echo "source /opt/conda/etc/profile.d/conda.sh" >> /home/user/.bashrc && \
+    echo "conda activate pids" >> /home/user/.bashrc
+# https://pythonspeed.com/articles/activate-conda-dockerfile/
+SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
+# Activate the environment and install dependencies
+RUN conda install -y psycopg2 tqdm
+
+# GB10 (sm_121) requires a CUDA 13 build of PyTorch
+RUN pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu130
+
+# PyG does not publish aarch64 CUDA wheels for torch_scatter, so it is compiled for the GB10
+RUN pip install torch_geometric==2.6.1 --no-cache-dir && \
+    pip install pyg_lib -f https://data.pyg.org/whl/torch-2.14.0+cu130.html --no-cache-dir && \
+    FORCE_CUDA=1 TORCH_CUDA_ARCH_LIST="12.1" MAX_JOBS=16 \
+    pip install torch_scatter==2.1.2 --no-build-isolation --no-cache-dir
+
+# Dependencies shared with Dockerfile
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+COPY . .
+
+# COPY is done by the docker daemon as root, so we need to chown.
+# Only chown the project dir and the user home — not /home/artifacts
+# which is a runtime volume managed by entrypoint.sh.
+RUN chown -R pids:pids /home/pids /home/user
+USER pids
+
+RUN [ -f pyproject.toml ] && pip install -e . || echo "No pyproject.toml found, skipping install"
+RUN [ -f .pre-commit-config.yaml ] && pre-commit install || echo "No pre-commit found, skipping install"
+
+# Switch back to root so the entrypoint can remap UID/GID and fix permissions
+USER root
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bash"]

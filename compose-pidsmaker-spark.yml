@@ -1,0 +1,6 @@
+# Override for NVIDIA DGX Spark (aarch64). Use together with compose-pidsmaker.yml:
+#   docker compose -f compose-pidsmaker.yml -f compose-pidsmaker-spark.yml up -d --build
+services:
+  pids:
+    build:
+      dockerfile: Dockerfile.spark

@@ -53,11 +53,7 @@ RUN conda create -n pids python=3.9 && \
 # https://pythonspeed.com/articles/activate-conda-dockerfile/
 SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
 # Activate the environment and install dependencies
-RUN conda install -y psycopg2 tqdm && \
-    pip install scikit-learn==1.6.1 networkx==3.2.1 xxhash==3.2.0 \
-                graphviz==0.20.1 psutil scipy==1.13.1 matplotlib==3.9.4 \
-                wandb==0.24.2 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
-                cairocffi==1.7.0 wget==3.2
+RUN conda install -y psycopg2 tqdm
 
 RUN pip install torch==2.1.2+cu121 torchvision==0.16.2+cu121 torchaudio==2.1.2+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
 
@@ -66,13 +62,9 @@ RUN pip install torch_geometric==2.6.1 --no-cache-dir && \
                 torch_cluster==1.6.3 torch_spline_conv==1.2.2 \
                 -f https://data.pyg.org/whl/torch-2.1.0+cu121.html --no-cache-dir
 
-RUN pip install gensim==4.4.0 pytz==2024.1 pandas==2.3.3 yacs==0.1.8 transformers==4.39.3
-
-RUN pip install numpy==1.26.4
-
-RUN pip install gdown==5.2.0 umap-learn==0.5.6
-RUN pip install flask==3.0.3
-RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
+# Dependencies shared with Dockerfile.spark
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
 
 COPY . .
 

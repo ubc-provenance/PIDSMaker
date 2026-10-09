@@ -58,6 +58,9 @@ Alternatively, here are the [guidelines](./create-db-from-scratch.md) to manuall
 
 ## Docker Install
 
+!!! note
+    On an NVIDIA DGX Spark (ARM CPU, GB10 GPU), follow the [DGX Spark installation](./spark-install.md) instead.
+
 1. If not installed, install Docker following the [steps from the official site](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) and [avoid using sudo](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 
 2. Then, install dependencies for CUDA support with Docker:
