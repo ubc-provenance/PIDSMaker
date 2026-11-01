@@ -221,7 +221,10 @@ def test_node_level(
             nbrs = NearestNeighbors(n_neighbors=n_neighbors)
             nbrs.fit(x_test_sampled)
 
-            distances, _ = nbrs.kneighbors(x_test, n_neighbors=n_neighbors)
+            # Query in the same standardized space as the fitted sample.
+            distances, _ = nbrs.kneighbors(
+                (x_test - x_test_mean) / x_test_std, n_neighbors=n_neighbors
+            )
             distances = distances.mean(axis=1)
             # distances = distances.to_numpy()
             score = distances / mean_distance_train
