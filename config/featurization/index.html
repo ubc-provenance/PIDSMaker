@@ -1,0 +1,1459 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ubc-provenance.github.io/PIDSMaker/config/featurization/">
+      
+      
+        <link rel="prev" href="../tasks/">
+      
+      
+        <link rel="next" href="../encoders/">
+      
+      
+      <link rel="icon" href="../../assets/pidsmaker.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.12">
+    
+    
+      
+        <title>Featurization - PIDSMaker Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2afb09e1.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+   <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../../assets/javascripts/glightbox.min.js"></script></head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PIDSMaker Documentation" class="md-header__button md-logo" aria-label="PIDSMaker Documentation" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PIDSMaker Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Featurization
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PIDSMaker Documentation" class="md-nav__button md-logo" aria-label="PIDSMaker Documentation" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="logo">
+
+    </a>
+    PIDSMaker Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Installation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ten-minute-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../singularity_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Apptainer installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../create-db-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installing a dataset from scratch
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Basics
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Basics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Introduction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pipeline
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Datasets
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tuned_systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Running tuned PIDSs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Implementing a new PIDS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Features
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/tuning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hyperparameter Tuning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/instability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Instability Measurement
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Batching & Sampling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Embedding Visualizer
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/pretrained_encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pretrained Encoders
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/supervised/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Supervised Fine-Tuning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Arguments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Arguments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tasks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Featurization
+    
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Encoders
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Decoders
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../objectives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Objectives
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/ubc-provenance/PIDSMaker/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Release notes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Featurization</h1>
+
+<p>Featurization methods are used to transform textual attributes of entities (e.g. file paths, process command lines, socket IP addresses and ports) into a vector.
+Some methods like <code>word2vec</code> and <code>doc2vec</code> learn this vector from the text corpus, while others like <code>hierarchical_hashing</code> compute the vector in a deterministic way. </p>
+<p>Other methods like <code>only_type</code> and <code>only_ones</code> simply skip this embedding step and assign either a one-hot encoded type or ones to each entity. Those methods thus do not require any specific argument.
+In all methods, the resulting vectors are used as node features during the <code>training</code> task.</p>
+<p>The <code>pretrained</code> method uses an encoder pretrained on provenance data (SPIDER, language models, self-supervised GNNs, …), selected with <code>pretrained.model_type</code>. See <a href="../../features/pretrained_encoders/">Pretrained Encoders</a>.</p>
+<div class="annotate">
+
+<ul>
+    <li class='bullet'><span class="key">word2vec</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+        <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">decline_rate</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">doc2vec</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">include_neighbors</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">fasttext</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float</span></li>
+        <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_pretrained_fb_model</span>: <span class="value">bool</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">alacarte</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">context_window_size</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">add_paths</span>: <span class="value">bool</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">temporal_rw</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">trw_workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">time_weight</span>: <span class="value">str</span></li>
+        <li class='no-bullet'><span class="key-leaf">half_life</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">window_size</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_skip_gram</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">wv_workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">compute_loss</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">negative</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">decline_rate</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">flash</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">hierarchical_hashing</span>
+
+
+    </li>
+    <li class='bullet'><span class="key">magic</span>
+
+
+    </li>
+    <li class='bullet'><span class="key">only_type</span>
+
+
+    </li>
+    <li class='bullet'><span class="key">only_ones</span>
+
+
+    </li>
+    <li class='bullet'><span class="key">ocrapt_features</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">use_lifespan</span>: <span class="value">bool (1)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_cumulative_active_time</span>: <span class="value">bool (2)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">pretrained</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">model_size</span>: <span class="value">str (3)</span></li>
+        <li class='no-bullet'><span class="key-leaf">model_type</span>: <span class="value">str (4)</span></li>
+        <li class='bullet'><span class="key">deepwalk</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">window</span>: <span class="value">int (5)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (6)</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_count</span>: <span class="value">int (7)</span></li>
+            <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int (8)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">node2vec</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">p</span>: <span class="value">float (9)</span></li>
+            <li class='no-bullet'><span class="key-leaf">q</span>: <span class="value">float (10)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">gnn_distill</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">emb_dim</span>: <span class="value">int (11)</span></li>
+            <li class='no-bullet'><span class="key-leaf">hidden_dim</span>: <span class="value">int (12)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (13)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (14)</span></li>
+            <li class='no-bullet'><span class="key-leaf">n_neighbors_min</span>: <span class="value">int (15)</span></li>
+            <li class='no-bullet'><span class="key-leaf">n_neighbors_max</span>: <span class="value">int (16)</span></li>
+            <li class='no-bullet'><span class="key-leaf">diverse_neighbors</span>: <span class="value">bool (17)</span></li>
+            <li class='no-bullet'><span class="key-leaf">loss_weight</span>: <span class="value">float (18)</span></li>
+            <li class='no-bullet'><span class="key-leaf">gnn_loss_weight</span>: <span class="value">float (19)</span></li>
+            <li class='no-bullet'><span class="key-leaf">gnn_lr</span>: <span class="value">float (20)</span></li>
+            <li class='no-bullet'><span class="key-leaf">ema_momentum</span>: <span class="value">float (21)</span></li>
+            <li class='no-bullet'><span class="key-leaf">edge_projection</span>: <span class="value">bool (22)</span></li>
+            <li class='no-bullet'><span class="key-leaf">filter_noisy_edges</span>: <span class="value">bool (23)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">behavior_cluster</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">proj_dim</span>: <span class="value">int (24)</span></li>
+            <li class='no-bullet'><span class="key-leaf">bce_weight</span>: <span class="value">float (25)</span></li>
+            <li class='no-bullet'><span class="key-leaf">contrastive_weight</span>: <span class="value">float (26)</span></li>
+            <li class='no-bullet'><span class="key-leaf">temperature</span>: <span class="value">float (27)</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_signature_size</span>: <span class="value">int (28)</span></li>
+            <li class='no-bullet'><span class="key-leaf">filter_noisy_edges</span>: <span class="value">bool (29)</span></li>
+            <li class='no-bullet'><span class="key-leaf">use_contrastive_head</span>: <span class="value">bool (30)</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_entities_per_class</span>: <span class="value">int (31)</span></li>
+            <li class='no-bullet'><span class="key-leaf">max_entities_per_class</span>: <span class="value">int (32)</span></li>
+            <li class='no-bullet'><span class="key-leaf">samples_per_class</span>: <span class="value">int (33)</span></li>
+            <li class='no-bullet'><span class="key-leaf">bce_mode</span>: <span class="value">str (34)</span></li>
+            <li class='no-bullet'><span class="key-leaf">contrastive_target</span>: <span class="value">str (35)</span></li>
+            <li class='no-bullet'><span class="key-leaf">strip_entity_type</span>: <span class="value">bool (36)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">spider</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">emb_dim</span>: <span class="value">int (37)</span></li>
+            <li class='no-bullet'><span class="key-leaf">hidden_dim</span>: <span class="value">int (38)</span></li>
+            <li class='no-bullet'><span class="key-leaf">proj_dim</span>: <span class="value">int (39)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (40)</span></li>
+            <li class='no-bullet'><span class="key-leaf">n_neighbors_min</span>: <span class="value">int (41)</span></li>
+            <li class='no-bullet'><span class="key-leaf">n_neighbors_max</span>: <span class="value">int (42)</span></li>
+            <li class='no-bullet'><span class="key-leaf">diverse_neighbors</span>: <span class="value">bool (43)</span></li>
+            <li class='no-bullet'><span class="key-leaf">filter_noisy_edges</span>: <span class="value">bool (44)</span></li>
+            <li class='no-bullet'><span class="key-leaf">ema_momentum</span>: <span class="value">float (45)</span></li>
+            <li class='no-bullet'><span class="key-leaf">supcon_weight</span>: <span class="value">float (46)</span></li>
+            <li class='no-bullet'><span class="key-leaf">distill_weight</span>: <span class="value">float (47)</span></li>
+            <li class='no-bullet'><span class="key-leaf">temperature</span>: <span class="value">float (48)</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_signature_size</span>: <span class="value">int (49)</span></li>
+            <li class='no-bullet'><span class="key-leaf">min_entities_per_class</span>: <span class="value">int (50)</span></li>
+            <li class='no-bullet'><span class="key-leaf">max_entities_per_class</span>: <span class="value">int (51)</span></li>
+            <li class='no-bullet'><span class="key-leaf">samples_per_class</span>: <span class="value">int (52)</span></li>
+            <li class='no-bullet'><span class="key-leaf">strip_entity_type</span>: <span class="value">bool (53)</span></li>
+            <li class='no-bullet'><span class="key-leaf">distill_loss</span>: <span class="value">str (54)</span></li>
+            <li class='no-bullet'><span class="key-leaf">teacher_loss</span>: <span class="value">str (55)</span></li>
+            <li class='no-bullet'><span class="key-leaf">teacher_data</span>: <span class="value">str (56)</span></li>
+            <li class='no-bullet'><span class="key-leaf">student_only_mode</span>: <span class="value">str (57)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">gpt2_pretrained</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (58)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">llama3_pretrained</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (59)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">opt_pretrained</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (60)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">graphmae</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (61)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (62)</span></li>
+            <li class='no-bullet'><span class="key-leaf">decoder_num_layers</span>: <span class="value">int (63)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_rate</span>: <span class="value">float (64)</span></li>
+            <li class='no-bullet'><span class="key-leaf">replace_rate</span>: <span class="value">float (65)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (66)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (67)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (68)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (69)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">gae</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (70)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (71)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (72)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (73)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (74)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (75)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">dgi</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (76)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (77)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (78)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (79)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (80)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (81)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">training</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">pretrain_tokens</span>: <span class="value">int (82)</span></li>
+            <li class='no-bullet'><span class="key-leaf">warmup_tokens</span>: <span class="value">int (83)</span></li>
+            <li class='no-bullet'><span class="key-leaf">batch_size</span>: <span class="value">int (84)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (85)</span></li>
+            <li class='no-bullet'><span class="key-leaf">scheduler</span>: <span class="value">str (86)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">mlm</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">mask_rate_fixed</span>: <span class="value">float (87)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_rate_min</span>: <span class="value">float (88)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_edge_type</span>: <span class="value">bool (89)</span></li>
+            <li class='bullet'><span class="key">modernbert</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">global_attn_every_n_layers</span>: <span class="value">int (90)</span></li>
+                <li class='no-bullet'><span class="key-leaf">local_attention_window</span>: <span class="value">int (91)</span></li>
+            </ul>
+            </li>
+            <li class='bullet'><span class="key">ropebert</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">rope_theta</span>: <span class="value">float (92)</span></li>
+            </ul>
+            </li>
+            <li class='bullet'><span class="key">llama</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">rope_theta</span>: <span class="value">float (93)</span></li>
+            </ul>
+            </li>
+            <li class='bullet'><span class="key">logbert</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">hvm_weight</span>: <span class="value">float (94)</span></li>
+            </ul>
+            </li>
+        </ul>
+        </li>
+        <li class='no-bullet'><span class="key-leaf">pretrain_datasets</span>: <span class="value">str (95)</span></li>
+        <li class='bullet'><span class="key">tokenizer</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">bpe_vocab_size</span>: <span class="value">int (96)</span></li>
+            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (97)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mode</span>: <span class="value">str (98)</span></li>
+            <li class='no-bullet'><span class="key-leaf">normalize_netflow_ips</span>: <span class="value">bool (99)</span></li>
+            <li class='no-bullet'><span class="key-leaf">canonicalize_neighbors</span>: <span class="value">bool (100)</span></li>
+        </ul>
+        </li>
+        <li class='no-bullet'><span class="key-leaf">weights_path</span>: <span class="value">str (101)</span></li>
+        <li class='no-bullet'><span class="key-leaf">graph_context_mode</span>: <span class="value">str (102)</span></li>
+        <li class='bullet'><span class="key">walks</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int (103)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int (104)</span></li>
+            <li class='no-bullet'><span class="key-leaf">time_weight</span>: <span class="value">str (105)</span></li>
+            <li class='no-bullet'><span class="key-leaf">half_life</span>: <span class="value">float (106)</span></li>
+            <li class='no-bullet'><span class="key-leaf">random_walk_start</span>: <span class="value">bool (107)</span></li>
+            <li class='no-bullet'><span class="key-leaf">diversity_weight</span>: <span class="value">float (108)</span></li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Off by default, hurts generalization (paper Appendix E).<br></li>
+<li>Off by default, same reason as use_lifespan.<br></li>
+<li>SPIDER encoder size preset (selects hidden / layers / heads / FFN). Standard presets: 'tiny' (H=128), 'mini' (H=256), 'med' (H=512), 'baseline' (H=768). HF pretrained model_types use their own size keys (e.g. 'small' / 'medium' / 'large' / 'xl' for gpt2_pretrained, '1b' / '3b' for llama3_pretrained).<br></li>
+<li>SPIDER pretraining objective + architecture. See config/pretrained/README.md for full descriptions. Families:
+  MLM walk-based     : bert, roberta, modernbert, ropebert, llama, logbert
+  Walk embedding     : deepwalk, node2vec
+  GNN self-supervised: graphmae, gae, dgi
+  GNN token-budget   : gnn_distill, behavior_cluster, spider
+  HF pretrained      : gpt2_pretrained, llama3_pretrained, opt_pretrained<br><br><b>Available options (one selection)</b>:<br><code>bert</code><br><code>roberta</code><br><code>modernbert</code><br><code>ropebert</code><br><code>llama</code><br><code>logbert</code><br><code>deepwalk</code><br><code>node2vec</code><br><code>graphmae</code><br><code>gae</code><br><code>dgi</code><br><code>gnn_distill</code><br><code>behavior_cluster</code><br><code>spider</code><br><code>gpt2_pretrained</code><br><code>llama3_pretrained</code><br><code>opt_pretrained</code></li>
+<li>Skip-gram context window size. Default: 5.<br></li>
+<li>Number of Word2Vec training epochs. Default: 10.<br></li>
+<li>Minimum label frequency to include in vocabulary. Default: 1.<br></li>
+<li>Number of parallel workers for Word2Vec training. Default: 4.<br></li>
+<li>Return parameter. Higher p = less likely to revisit previous node. Default: 1.0.<br></li>
+<li>In-out parameter. q &gt; 1 = BFS-like (local); q &lt; 1 = DFS-like (explore). Default: 1.0.<br></li>
+<li>GNN edge embedding dimension. Default: 128.<br></li>
+<li>GNN hidden dimension. Default: 128.<br></li>
+<li>Number of GNN encoder layers. Default: 1.<br></li>
+<li>Number of attention heads in GNN layers. Default: 4.<br></li>
+<li>Min direct neighbors to sample per entity. Default: 5.<br></li>
+<li>Max direct neighbors to sample per entity. Default: 20.<br></li>
+<li>Dedup neighbors by (edge_type, node_type, label) and prioritize edge type diversity. Default: True.<br></li>
+<li>Weight for distillation loss (T5 encoder → GNN alignment). Default: 0.5.<br></li>
+<li>Weight for GNN masked reconstruction loss. Default: 1.0.<br></li>
+<li>Learning rate for GNN teacher parameters. Default: 1e-3.<br></li>
+<li>EMA momentum for teacher update (0.999 = slow-moving). Default: 0.999.<br></li>
+<li>Apply per-edge-type linear projection to source nodes before GNN message passing. Default: False.<br></li>
+<li>Remove shared libs, /dev, /proc, /sys, linker cache, common configs from GNN neighborhoods. Default: False.<br></li>
+<li>Contrastive projection head output dimensionality. Default: 128.<br></li>
+<li>Weight for multi-label BCE loss. Default: 1.0.<br></li>
+<li>Weight for contrastive (NT-Xent) loss. Default: 0.5.<br></li>
+<li>Temperature for InfoNCE cosine similarity scaling. Default: 0.07.<br></li>
+<li>Skip entities with fewer behavior labels in their signature. Default: 2.<br></li>
+<li>Remove shared libs, /dev, /proc, /sys, linker cache, common configs from signature extraction. Default: True.<br></li>
+<li>Use contrastive projection head for inference embeddings (proj_dim) instead of raw encoder (emb_dim). Default: False.<br></li>
+<li>Floor: oversample small classes to this minimum per epoch. 0 = no floor. Default: 0.<br></li>
+<li>Cap entities per signature class per epoch. Rotates across epochs. 0 = no cap. Default: 0.<br></li>
+<li>K in P×K batch sampling: number of entities per class per batch. Guarantees every entity has at least K-1 positives for contrastive learning. Default: 4.<br></li>
+<li>Classification head mode: 'multilabel' = BCE over behavior labels, 'class' = cross-entropy over entity classes. Default: multilabel.<br></li>
+<li>Contrastive positive definition: 'signature' = entities with identical behavior signatures are positives, 'entity_class' = entities with the same coarse functional class are positives. Default: signature.<br></li>
+<li>Remove entity type prefix tokens ([PROC], [FILE], [SOCK]) from tokenized sequences. Forces the model to learn identity from behavior rather than type. Default: False.<br></li>
+<li>GNN edge embedding dimension. Default: 256.<br></li>
+<li>GNN encoder hidden dimension. Default: 256.<br></li>
+<li>Contrastive projection dimension (teacher). Default: 256.<br></li>
+<li>Number of attention heads in GNN TransformerConv. Default: 4.<br></li>
+<li>Min direct neighbors to sample per entity. Default: 5.<br></li>
+<li>Max direct neighbors to sample per entity. Default: 20.<br></li>
+<li>Dedup neighbors by (edge_type, node_type, label) and prioritize edge type diversity. Default: True.<br></li>
+<li>Remove shared libs, /dev, /proc, /sys from GNN neighborhoods. Default: True.<br></li>
+<li>EMA momentum for teacher T5 update. Default: 0.999.<br></li>
+<li>Weight for supervised contrastive loss on GNN teacher. Default: 1.0.<br></li>
+<li>Weight for distillation loss (student → GNN targets). Default: 0.5.<br></li>
+<li>SupCon temperature. Default: 0.07.<br></li>
+<li>Skip entities with fewer behavior labels (for entity class assignment). Default: 2.<br></li>
+<li>Floor: oversample small classes to this minimum per epoch. Default: 100.<br></li>
+<li>Cap entities per class per epoch. Default: 2000.<br></li>
+<li>K in P×K batching. Default: 4.<br></li>
+<li>Remove entity type prefix tokens from inputs. Default: False.<br></li>
+<li>Distillation loss: sce or mse. Default: sce.<br><br><b>Available options (one selection)</b>:<br><code>sce</code><br><code>mse</code></li>
+<li>Teacher loss: contrastive (SupCon) or bce (cross-entropy). Default: contrastive.<br><br><b>Available options (one selection)</b>:<br><code>contrastive</code><br><code>bce</code></li>
+<li>Teacher data modalities (comma-separated): signature, gnn_emb, or both. Default: signature,gnn_emb.<br></li>
+<li>Student-only ablation: none, student_signature, or student_class. Default: none.<br><br><b>Available options (one selection)</b>:<br><code>none</code><br><code>student_signature</code><br><code>student_class</code></li>
+<li>Max sequence length for HF tokenizer. Default: 512.<br></li>
+<li>Max sequence length for HF tokenizer. Default: 512.<br></li>
+<li>Max sequence length for HF tokenizer. Default: 512.<br></li>
+<li>Number of GAT encoder layers. Default: 2.<br></li>
+<li>Number of attention heads in GAT layers. Default: 4.<br></li>
+<li>Number of GAT decoder layers. Default: 1.<br></li>
+<li>Fraction of nodes to mask during pretraining. Default: 0.5.<br></li>
+<li>Fraction of masked nodes replaced with random tokens (rest get [MASK]). Default: 0.1.<br></li>
+<li>Minimum number of neighbors in temporal neighborhood. Default: 5.<br></li>
+<li>Maximum number of neighbors in temporal neighborhood. Default: 20.<br></li>
+<li>Number of training epochs. Default: 100.<br></li>
+<li>Learning rate. Default: 0.001.<br></li>
+<li>Number of GAT encoder layers. Default: 2.<br></li>
+<li>Number of attention heads in GAT layers. Default: 4.<br></li>
+<li>Minimum number of neighbors in temporal neighborhood. Default: 5.<br></li>
+<li>Maximum number of neighbors in temporal neighborhood. Default: 20.<br></li>
+<li>Number of training epochs. Default: 100.<br></li>
+<li>Learning rate. Default: 0.001.<br></li>
+<li>Number of GAT encoder layers. Default: 2.<br></li>
+<li>Number of attention heads in GAT layers. Default: 4.<br></li>
+<li>Minimum number of neighbors in temporal neighborhood. Default: 5.<br></li>
+<li>Maximum number of neighbors in temporal neighborhood. Default: 20.<br></li>
+<li>Number of training epochs. Default: 100.<br></li>
+<li>Learning rate. Default: 0.001.<br></li>
+<li>Total number of tokens to process during pretraining (controls training duration).<br></li>
+<li>Number of tokens for learning rate warmup at the start of pretraining.<br></li>
+<li>Mini-batch size during pretraining. Interpretation depends on model_type: walks per batch (MLM), entities per batch (GNN token-budget), labels per batch (HF pretrained), neighborhoods per batch (GNN-SSL).<br></li>
+<li>Peak learning rate for pretraining (after warmup).<br></li>
+<li>Learning rate scheduler shape after warmup. Only consumed by MLM and HF pretrained; GNN token-budget hardcodes cosine.<br><br><b>Available options (one selection)</b>:<br><code>cosine</code><br><code>linear</code></li>
+<li>Initial fixed mask rate (fraction of nodes masked). Decays to mask_rate_min.<br></li>
+<li>Minimum mask rate after decay.<br></li>
+<li>Enable structured masking of edge types during pretraining and edge-type scoring at inference.<br></li>
+<li>Use global attention every N layers. Other layers use local sliding window attention. Default: 3.<br></li>
+<li>Sliding window size for local attention layers. Default: 128 tokens.<br></li>
+<li>Base frequency for rotary position embeddings. Default: 10000.0.<br></li>
+<li>Base frequency for rotary position embeddings. Default: 10000.0.<br></li>
+<li>Weight for hypersphere volume minimization loss relative to MLM loss. Default: 0.1.<br></li>
+<li>Comma-separated list of dataset names to use for multi-dataset pretraining.<br></li>
+<li>Target BPE vocabulary size for the tokenizer.<br></li>
+<li>Maximum token sequence length after tokenization. Walks exceeding this are truncated.<br></li>
+<li>Tokenizer mode: 'domain_bpe' uses domain-specific pre-tokenization followed by BPE; 'bpe_only' skips domain rules and applies BPE directly on raw words.<br><br><b>Available options (one selection)</b>:<br><code>domain_bpe</code><br><code>bpe_only</code></li>
+<li>Replace IP addresses in netflow entities with category tokens ([PRIVATE_IP], [PUBLIC_IP], [LOCALHOST_IP]) instead of keeping individual octets.<br></li>
+<li>Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended.<br></li>
+<li>Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type.<br></li>
+<li>Graph context scope for walk sampling at both pretraining and inference time. 'window' = each time-window snapshot independently; 'day' = merge all snapshots from the same calendar day; 'all' = merge all snapshots in the relevant split (train split at pretrain time; val or test split at inference time — no training data leaks into inference context).<br><br><b>Available options (one selection)</b>:<br><code>window</code><br><code>day</code><br><code>all</code></li>
+<li>Number of nodes per random walk during pretraining.<br></li>
+<li>Number of random walks to sample per node per epoch during pretraining.<br></li>
+<li>Temporal weighting for neighbor selection: 'uniform', 'exponential', or 'linear'.<br></li>
+<li>Half-life (in seconds) for exponential time weighting of neighbor selection.<br></li>
+<li>Randomize the temporal entry point for each walk. When True, the first hop picks a random edge instead of always starting from the earliest/latest timestamp.<br></li>
+<li>Edge-type diversity bias for random walks during pretraining. 0 = no bias (default), higher values increasingly favor edges whose type is underrepresented in the current walk. Only affects pretraining; finetuning/inference use natural distribution.<br></li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 UBC provenance team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/ubc-provenance/PIDSMaker" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1M480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2m-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3m-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["tabs", "content.code.copy", "content.code.annotate", "navigation.instant", "navigation.sections"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
+</html>
