@@ -9,12 +9,12 @@ PIDSMaker supports several public datasets commonly used in APT detection resear
 | CADETS_E3 | FreeBSD | 3 | 10 |
 | THEIA_E3 | Linux | 2 | 12 |
 | CLEARSCOPE_E3 | Android | 1 | 4.8 |
-| FIVEDIRECTIONS_E3 | Linux | 2 | 22 |
+| FIVEDIRECTIONS_E3 | Windows | 2 | 22 |
 | TRACE_E3 | Linux | 3 | 100 |
 | CADETS_E5 | FreeBSD | 2 | 276 |
 | THEIA_E5 | Linux | 1 | 36 |
 | CLEARSCOPE_E5 | Android | 2 | 49 |
-| FIVEDIRECTIONS_E5 | Linux | 4 | 280 |
+| FIVEDIRECTIONS_E5 | Windows | 4 | 280 |
 | TRACE_E5 | Linux | 1 | 710 |
 | optc_h201 | Windows | 1 | 9 |
 | optc_h501 | Windows | 1 | 6.7 |
@@ -69,7 +69,47 @@ Android device with Firefox exploitation.
 python pidsmaker/main.py SYSTEM CLEARSCOPE_E3
 ```
 
+#### TRACE_E3
+
+Ubuntu host with Firefox and Pine e-mail client exploitation.
+
+| Attack id | Duration | Description |
+|---|----------|-------------|
+| 0 | 1h25 | Firefox exploited through a malicious ad on `www.allstate.com` after several crashes, loading Drakon in memory. A Drakon implant was written to `/home/admin/cache` and elevated to a root C2 shell; `libdrakon` was staged under `/var/log/xtmp` for later use. Connection lost when the operator console crashed. |
+| 1 | 15 min | Phishing e-mail exploiting a backdoored Pine client that auto-runs attachments. A first `tcexec` executable failed on a missing library, so MicroAPT was re-sent as `tcexec` and ran when the e-mail was opened. It connected to C2 and port-scanned the network; attempts to spawn a shell failed. |
+| 2 | 12 min | Drakon implant dropped to `/tmp/ztmp` via the malicious password-manager Firefox extension and run with user privileges (labelled *Pine Backdoor w/ Drakon Dropper* in the DARPA report). Injection into `sshd` and privilege escalation failed, so MicroAPT was executed from disk: it connected to C2, port-scanned the network (no open ports found) and ran netrecon. |
+
+```shell
+python pidsmaker/main.py SYSTEM TRACE_E3
+```
+
+#### FIVEDIRECTIONS_E3
+
+Windows 10 host with Firefox and Excel macro exploitation.
+
+| Attack id | Duration | Description |
+|---|----------|-------------|
+| 0 | 42 min | Firefox exploited by browsing to `www.cnpc.com.cn` after repeated crashes, loading Drakon in memory with a C2 connection. Netrecon module run and its output exfiltrated, then several documents (`.rtf`, `.docx`, `.xlsx`) read and exfiltrated from the user's documents directory. Access lost when the netrecon UDP exfiltration failed. |
+| 1 | 37 min | Phishing e-mail with a `BoviaBenefitsOE.xlsm` attachment carrying an encoded PowerShell command. The macro did not fire automatically, so the user ran the command manually: it downloaded `update.ps1` from `208.75.117.5` and opened a powercat reverse shell, which the attacker used to read the hosts file and personal files. |
+
+```shell
+python pidsmaker/main.py SYSTEM FIVEDIRECTIONS_E3
+```
+
 ### [Engagement 5 (E5) - May 2019](https://github.com/darpa-i2o/Transparent-Computing)
+
+#### CADETS_E5
+
+FreeBSD host with Nginx server exploitation.
+
+| Attack id | Duration | Description |
+|---|----------|-------------|
+| 0 | 41 min | Nginx exploited with a malformed HTTP POST on the second attempt, loading Drakon APT in memory with a C2 connection to `4.21.51.250:80`. The attacker retrieved the hostname and username before the connection was unexpectedly lost. |
+| 1 | 5h18 | Nginx re-exploited on both CADETS hosts. A first attempt called back to the wrong C2 listener, so C2 was moved to a pivot host (`128.55.12.233:80`). Drakon ran `hostname` and `whoami` and exfiltrated `/etc/passwd` from both hosts; the C2 connections were left open for the rest of the day. |
+
+```shell
+python pidsmaker/main.py SYSTEM CADETS_E5
+```
 
 #### THEIA_E5
 
@@ -94,6 +134,33 @@ Android device with APK-based attacks.
 
 ```shell
 python pidsmaker/main.py SYSTEM CLEARSCOPE_E5
+```
+
+#### TRACE_E5
+
+Ubuntu host with Firefox exploitation. A second attempt on May 17 with the Azazel `LD_PRELOAD` rootkit never established C2 and is not labelled.
+
+| Attack id | Duration | Description |
+|---|----------|-------------|
+| 0 | 1h28 | Firefox exploited via the hijacked `www.yale.edu` website, Drakon APT connected to C2. Root gained with the BinFmt-Elevate driver (installed beforehand as benign activity), then Drakon injected into `sshd` with the new ptrace-based `inject2` technique, opening further C2 connections used to read `/etc/passwd` and `/etc/shadow`. |
+
+```shell
+python pidsmaker/main.py SYSTEM TRACE_E5
+```
+
+#### FIVEDIRECTIONS_E5
+
+Windows 10 hosts with Firefox exploitation.
+
+| Attack id | Duration | Description |
+|---|----------|-------------|
+| 0 | 21 min | Firefox backdoor used to download `ctfhost2.exe` through the Background Intelligent Transfer Service (BITS). MicroAPT executed and connected to C2 at `113.165.213.253:80`. Privilege escalation with several drivers failed because driver signature enforcement was re-enabled after a reboot. |
+| 1 | 32 min | Firefox exploited via the hijacked `www.usdoj.gov` website, loading Drakon APT in memory. Privileges escalated to SYSTEM with the elevate driver, then the Copykatz module (Mimikatz) harvested cached credentials alongside `whoami`, `hostname` and sysinfo recon. The WMI step failed due to a target configuration issue. |
+| 2 | 11 min | Firefox backdoor triggered over DNS to `xx--ls8h.com`; Drakon APT downloaded, executed and connected to C2. Privileges escalated to SYSTEM with the File System Filter elevate driver (triggered by opening a non-existent file), then host, network and `passwd` files exfiltrated. |
+| 3 | 6 min | Follow-up to the Application Verifier persistence set up on May 16 (an unused date), which injects `drakon.dll` into every new Firefox process. A C2 connection from a fresh Firefox launch was used to escalate to SYSTEM with the File System Filter driver and exfiltrate the hosts file. |
+
+```shell
+python pidsmaker/main.py SYSTEM FIVEDIRECTIONS_E5
 ```
 
 ## [DARPA OpTC](https://github.com/FiveDirections/OpTC-data)
@@ -129,9 +196,6 @@ python pidsmaker/main.py SYSTEM optc_h501
 ```shell
 python pidsmaker/main.py SYSTEM optc_h051
 ```
-
-!!! note
-    TODO: add descriptions for CADETS_E5, FIVED and TRACE datasets.
 
 ## [ATLASv2](https://arxiv.org/abs/2401.01341)
 
