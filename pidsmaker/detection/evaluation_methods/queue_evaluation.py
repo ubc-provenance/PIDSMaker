@@ -19,7 +19,7 @@ import re
 from collections import defaultdict
 
 import torch
-import tqdm
+from tqdm import tqdm
 import wandb
 from sklearn.neighbors import LocalOutlierFactor
 

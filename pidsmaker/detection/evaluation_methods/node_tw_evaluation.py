@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import torch
-import tqdm
+from tqdm import tqdm
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
