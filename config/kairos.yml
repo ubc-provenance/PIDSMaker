@@ -17,6 +17,10 @@ featurization:
   emb_dim: 16
   training_split: all
   used_method: hierarchical_hashing
+  tokenization:
+    used_method: hierarchical
+    hierarchical:
+      substitutions: none
 feat_inference:
   to_remove: True
 

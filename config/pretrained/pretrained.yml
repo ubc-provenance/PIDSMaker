@@ -10,6 +10,26 @@ featurization:
   used_method: pretrained
   emb_dim: 256
   seed: 42
+  # Each model_type is built around one tokenization:
+  #   bpe: spider, the masked language models, llama, gnn_distill, behavior_cluster, graphmae, gae, dgi
+  #   whole_label: deepwalk, node2vec
+  #   huggingface: gpt2_pretrained, llama3_pretrained, opt_pretrained
+  tokenization:
+    used_method: bpe
+    bpe:
+      vocab_size: 8000
+      max_seq_len: 60
+      mode: domain_bpe  # domain_bpe (domain-specific pre-tokenization + BPE) / bpe_only
+      # Values replaced by placeholder tokens ([HASH], [GUID], [RANDOM], [VER], [TIMESTAMP], [ENV], [NUM],
+      # IP categories like [PRIVATE_IP], port categories like [PORT_HTTPS]), or `none`
+      substitutions: hash, guid, random, version, timestamp, env_var, number, ip, port
+      canonicalize_neighbors: False
+    whole_label:
+      substitutions: none
+    huggingface:
+      model_name: auto  # tokenizer of the HF model selected by model_type and model_size
+      max_seq_len: 64
+      substitutions: none
   pretrained:
     # Encoders are described in config/pretrained/README.md.
     # A block named after a model_type (spider, graphmae, ...) is only read by that model.
@@ -110,14 +130,6 @@ featurization:
       random_walk_start: True
       diversity_weight: 0.0  # bias towards diverse edge types (0 = off)
 
-    # Not used by deepwalk, node2vec and the HF models, which have their own tokenizer
-    tokenizer:
-      bpe_vocab_size: 8000
-      max_seq_len: 60
-      mode: domain_bpe  # domain_bpe (domain-specific pre-tokenization + BPE) / bpe_only
-      normalize_netflow_ips: True  # replace IPs with [PRIVATE_IP]/[PUBLIC_IP]/[LOCALHOST_IP]
-      canonicalize_neighbors: False
-
     deepwalk:  # also used by node2vec
       window: 5
       epochs: 50
@@ -128,14 +140,9 @@ featurization:
       p: 1.0  # return parameter
       q: 1.0  # in-out parameter (>1: BFS-like, <1: DFS-like)
 
-    # HF models. model_size: small / medium / large / xl (gpt2), 1b / 3b (llama3), 1.3b (opt).
+    # HF models (gpt2_pretrained, llama3_pretrained, opt_pretrained) use the `huggingface` tokenization.
+    # model_size: small / medium / large / xl (gpt2), 1b / 3b (llama3), 1.3b (opt).
     # emb_dim is set to the hidden size of the model. Llama requires `huggingface-cli login`.
-    gpt2_pretrained:
-      max_seq_len: 64
-    llama3_pretrained:
-      max_seq_len: 64
-    opt_pretrained:
-      max_seq_len: 64
 
     graphmae:
       num_layers: 2

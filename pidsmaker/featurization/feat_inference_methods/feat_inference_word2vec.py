@@ -1,7 +1,8 @@
 import numpy as np
 from gensim.models import Word2Vec
 
-from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
+from pidsmaker.tokenization import load_tokenizer
+from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
 
 
 def cal_word_weight(n, percentage):
@@ -24,11 +25,15 @@ def main(cfg):
     decline_percentage = cfg.featurization.word2vec.decline_rate
 
     zeros = np.zeros((cfg.featurization.emb_dim,))
+    tokenizer = load_tokenizer(cfg)
     indexid2vec = {}
     sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
     for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
-        tokens = tokenize_label(node_label, node_type)
+        tokens = tokenizer.tokenize(node_label, node_type)
+        if not tokens:
+            indexid2vec[indexid] = zeros.copy()
+            continue
 
         weight_list = cal_word_weight(len(tokens), decline_percentage)
 

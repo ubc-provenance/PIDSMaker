@@ -2,6 +2,8 @@ _include_yml: orthrus_non_snooped
 
 featurization:
   used_method: only_type
+  tokenization:
+    used_method: none
 
 batching:
   fix_buggy_graph_reindexer: True

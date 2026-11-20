@@ -2,12 +2,12 @@ import numpy as np
 import torch
 from gensim.models import Word2Vec
 
+from pidsmaker.tokenization import load_tokenizer
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
     log_start,
     log_tqdm,
-    tokenize_label,
 )
 
 
@@ -39,11 +39,15 @@ def main(cfg):
     model = Word2Vec.load(trw_word2vec_model_path)
     decline_percentage = cfg.featurization.temporal_rw.decline_rate
 
+    tokenizer = load_tokenizer(cfg)
     indexid2vec = {}
     for indexid in log_tqdm(used_nodes, desc="Embeding all nodes in the dataset"):
         msg = indexid2msg[indexid]
         node_type, node_label = msg[0], msg[1]
-        tokens = tokenize_label(node_label, node_type)
+        tokens = tokenizer.tokenize(node_label, node_type)
+        if not tokens:
+            indexid2vec[indexid] = np.zeros(model.vector_size)
+            continue
 
         weight_list = cal_word_weight(len(tokens), decline_percentage)
         word_vectors = [model.wv[word] for word in tokens]

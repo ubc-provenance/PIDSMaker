@@ -18,6 +18,11 @@ featurization:
   epochs: 10 # 300
   training_split: train
   used_method: flash
+  tokenization:
+    used_method: nltk
+    nltk:
+      type_aware: False
+      substitutions: none
   seed: 0
   flash:
     min_count: 1

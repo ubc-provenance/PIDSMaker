@@ -21,6 +21,11 @@ featurization:
   training_split: all
   seed: 0
   used_method: word2vec
+  tokenization:
+    used_method: nltk
+    nltk:
+      type_aware: True
+      substitutions: none
   word2vec:
     alpha: 0.025
     window_size: 5

@@ -19,6 +19,8 @@ transformation:
 featurization:
   seed: 0
   used_method: ocrapt_features
+  tokenization:
+    used_method: none
   ocrapt_features:
     use_lifespan: False
     use_cumulative_active_time: False

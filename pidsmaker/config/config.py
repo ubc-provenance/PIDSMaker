@@ -738,21 +738,6 @@ FEATURIZATIONS_CFG = {
             "student_only_mode": Arg(str, desc="Student-only ablation: none, student_signature, or student_class. Default: none.", vals=OR(["none", "student_signature", "student_class"])),
         },
 
-        # GPT-2 pretrained parameters
-        "gpt2_pretrained": {
-            "max_seq_len": Arg(int, desc="Max sequence length for HF tokenizer. Default: 512."),
-        },
-
-        # Llama 3.2 pretrained parameters
-        "llama3_pretrained": {
-            "max_seq_len": Arg(int, desc="Max sequence length for HF tokenizer. Default: 512."),
-        },
-
-        # OPT pretrained parameters
-        "opt_pretrained": {
-            "max_seq_len": Arg(int, desc="Max sequence length for HF tokenizer. Default: 512."),
-        },
-
         # GraphMAE-specific parameters
         "graphmae": {
             "num_layers": Arg(int, desc="Number of GAT encoder layers. Default: 2."),
@@ -827,15 +812,7 @@ FEATURIZATIONS_CFG = {
         },
 
         "pretrain_datasets": Arg(str, desc="Comma-separated list of dataset names to use for multi-dataset pretraining."),
-        # Tokenizer configuration (affects tokenizer cache)
-        "tokenizer": {
-            "bpe_vocab_size": Arg(int, desc="Target BPE vocabulary size for the tokenizer."),
-            "max_seq_len": Arg(int, desc="Maximum token sequence length after tokenization. Walks exceeding this are truncated."),
-            "mode": Arg(str, vals=OR(["domain_bpe", "bpe_only"]), desc="Tokenizer mode: 'domain_bpe' uses domain-specific pre-tokenization followed by BPE; 'bpe_only' skips domain rules and applies BPE directly on raw words."),
-            "normalize_netflow_ips": Arg(bool, desc="Replace IP addresses in netflow entities with category tokens ([PRIVATE_IP], [PUBLIC_IP], [LOCALHOST_IP]) instead of keeping individual octets."),
-            "canonicalize_neighbors": Arg(bool, desc="Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended."),
-        },
-        "weights_path": Arg(str, desc="Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type."),
+        "weights_path": Arg(str, desc="Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt (BPE vocabulary), pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type."),
 
         "graph_context_mode": Arg(
             str,
@@ -871,6 +848,83 @@ FEATURIZATIONS_CFG = {
 
     },
 }
+
+# Patterns that tokenizers can replace with placeholder tokens (see pidsmaker/tokenization/substitution.py).
+SUBSTITUTION_METHODS = ["hash", "guid", "random", "version", "timestamp", "env_var", "number", "ip", "port"]
+
+
+def _substitutions_arg():
+    return Arg(
+        str,
+        vals=AND(SUBSTITUTION_METHODS + ["none"]),
+        desc="Variable values replaced by a placeholder token before tokenization, or `none`. \
+            `hash`: hex strings of 7+ chars -> [HASH]; `guid`: GUIDs/UUIDs -> [GUID]; `random`: random-looking strings and Windows SIDs -> [RANDOM]; \
+            `version`: 1.2.3 -> [VER]; `timestamp`: words starting with a date -> [TIMESTAMP]; `env_var`: $HOME, %APPDATA% -> [ENV]; \
+            `number`: numbers above 255 -> [NUM]; `ip`: netflow IPs -> [PRIVATE_IP]/[PUBLIC_IP]/[LOCALHOST_IP]; \
+            `port`: netflow ports -> [PORT_HTTPS], [PORT_SSH], ... or [PORT_LOW]/[PORT_REG]/[PORT_EPH].",
+    )
+
+
+# Tokenization of node labels, shared by all featurization methods (see pidsmaker/tokenization/).
+TOKENIZATIONS_CFG = {
+    "none": {},
+    "nltk": {
+        "type_aware": Arg(
+            bool,
+            desc="NLTK word tokenization. If True, process and file labels are split on '/' and netflow labels on ':' and '.' \
+                (Orthrus, R-Caid, NodLink). If False, all labels are split on '/', ':' and '.' (FLASH).",
+        ),
+        "substitutions": _substitutions_arg(),
+    },
+    "hierarchical": {
+        "substitutions": _substitutions_arg(),
+    },
+    "whole_label": {
+        "substitutions": _substitutions_arg(),
+    },
+    "bpe": {
+        "vocab_size": Arg(int, desc="Target BPE vocabulary size."),
+        "max_seq_len": Arg(int, desc="Maximum number of tokens per label (and per walk for the pretrained MLM models). Longer sequences are truncated."),
+        "mode": Arg(str, vals=OR(["domain_bpe", "bpe_only"]), desc="'domain_bpe' splits labels with domain-specific rules before BPE; 'bpe_only' applies BPE directly on whitespace-separated words."),
+        "substitutions": _substitutions_arg(),
+        "canonicalize_neighbors": Arg(bool, desc="Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended."),
+    },
+    "huggingface": {
+        "model_name": Arg(str, desc="HuggingFace id of the tokenizer (e.g. openai-community/gpt2). 'auto' uses the tokenizer of the HuggingFace pretrained model set in `featurization.pretrained` (gpt2_pretrained, llama3_pretrained, opt_pretrained)."),
+        "max_seq_len": Arg(int, desc="Maximum number of tokens per label. Longer labels are truncated."),
+        "substitutions": _substitutions_arg(),
+    },
+}
+TOKENIZATION_METHODS = list(TOKENIZATIONS_CFG.keys())
+TEXT_TOKENIZATION_METHODS = [m for m in TOKENIZATION_METHODS if m != "none"]
+# word2vec and fasttext learn from one sentence per unique label: with `whole_label`, each sentence
+# is a single token without context.
+SUBWORD_TOKENIZATION_METHODS = [m for m in TEXT_TOKENIZATION_METHODS if m != "whole_label"]
+
+# Tokenizations that each featurization method can use. Methods mapped to `["none"]` do not
+# read node labels as text: their tokenization is ignored.
+FEATURIZATION_TOKENIZATIONS = {
+    "word2vec": SUBWORD_TOKENIZATION_METHODS,
+    "doc2vec": TEXT_TOKENIZATION_METHODS,
+    "fasttext": SUBWORD_TOKENIZATION_METHODS,
+    "temporal_rw": TEXT_TOKENIZATION_METHODS,
+    "flash": TEXT_TOKENIZATION_METHODS,
+    "hierarchical_hashing": TEXT_TOKENIZATION_METHODS,
+    "alacarte": ["none"],
+    "magic": ["none"],
+    "only_type": ["none"],
+    "only_ones": ["none"],
+    "ocrapt_features": ["none"],
+}
+# The pretrained encoders are built around one tokenizer, which depends on `pretrained.model_type`.
+PRETRAINED_TOKENIZATIONS = {
+    "deepwalk": "whole_label",
+    "node2vec": "whole_label",
+    "gpt2_pretrained": "huggingface",
+    "llama3_pretrained": "huggingface",
+    "opt_pretrained": "huggingface",
+}
+PRETRAINED_DEFAULT_TOKENIZATION = "bpe"  # all other model types
 
 ENCODERS_CFG = {
     "tgn": {
@@ -1189,6 +1243,17 @@ TASK_ARGS = {
             vals=OR(list(FEATURIZATIONS_CFG.keys())),
             desc="Algorithms used to create node and edge features.",
         ),
+        "tokenization": {
+            "used_method": Arg(
+                str,
+                vals=OR(TOKENIZATION_METHODS),
+                desc="How node labels are split into tokens before featurization. `nltk` splits words with NLTK, \
+                    `hierarchical` keeps each level of paths and IPs (Kairos), `whole_label` uses the whole label as a single token (DeepWalk), \
+                    `bpe` is the provenance-specific BPE of SPIDER, `huggingface` uses the tokenizer of a HuggingFace language model, \
+                    `none` is for featurization methods that do not tokenize labels.",
+            ),
+            **TOKENIZATIONS_CFG,
+        },
         **FEATURIZATIONS_CFG,
     },
     "feat_inference": {

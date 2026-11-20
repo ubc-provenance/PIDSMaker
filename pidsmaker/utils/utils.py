@@ -14,7 +14,6 @@ import csv
 import hashlib
 import os
 import random
-import re
 import shutil
 import time
 from collections import defaultdict
@@ -27,7 +26,6 @@ import numpy as np
 import psycopg2
 import pytz
 import torch
-from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 
 nltk.download("punkt", quiet=True)
@@ -370,38 +368,6 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
             data[key] = dict(data[key])
             remove_underscore_keys(data[key], keys_to_keep, keys_to_rm)
     return data
-
-
-def tokenize_subject(sentence: str):
-    new_sentence = re.sub(r"\\+", "/", sentence)
-    return word_tokenize(new_sentence.replace("/", " / "))
-    # return word_tokenize(sentence.replace('/',' ').replace('=',' = ').replace(':',' : '))
-
-
-def tokenize_file(sentence: str):
-    new_sentence = re.sub(r"\\+", "/", sentence)
-    return word_tokenize(new_sentence.replace("/", " / "))
-
-
-def tokenize_netflow(sentence: str):
-    return word_tokenize(sentence.replace(":", " : ").replace(".", " . "))
-
-
-def tokenize_label(node_label, node_type):
-    if node_label == "":
-        return [""]
-    elif node_type == "subject":
-        return tokenize_subject(node_label)
-    elif node_type == "file":
-        return tokenize_file(node_label)
-    elif node_type == "netflow":
-        return tokenize_netflow(node_label)
-    raise ValueError("Invalid node type")
-
-
-def tokenize_arbitrary_label(sentence):
-    new_sentence = re.sub(r"\\+", "/", sentence)
-    return word_tokenize(new_sentence.replace("/", " / ").replace(":", " : ").replace(".", " . "))
 
 
 def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):

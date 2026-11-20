@@ -23,7 +23,8 @@ def pretrain_hf_model(cfg, model_type, model_size, indexid2msg, out_dir,
     (no walk sampling), then saves the model + tokenizer for later
     embedding extraction in feat_inference.
     """
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM
+    from pidsmaker.tokenization import get_hf_substitutor, get_hf_tokenizer_name, load_hf_tokenizer
     from ..models.hf_pretrained import (
         get_hf_model_name, get_hf_hidden_size, pretokenize_labels_hf,
     )
@@ -38,13 +39,13 @@ def pretrain_hf_model(cfg, model_type, model_size, indexid2msg, out_dir,
 
     # ── Load pretrained model + tokenizer ────────────────────────────────
     model_name = get_hf_model_name(model_type, model_size)
-    log(f"Loading pretrained {model_name} from HuggingFace...")
-    hf_tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer_name = get_hf_tokenizer_name(cfg)  # featurization.tokenization.huggingface
+    log(f"Loading pretrained {model_name} (tokenizer {tokenizer_name}) from HuggingFace...")
+    hf_tokenizer = load_hf_tokenizer(tokenizer_name)
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float32)
 
-    if hf_tokenizer.pad_token is None:
-        hf_tokenizer.pad_token = hf_tokenizer.eos_token
-        model.config.pad_token_id = hf_tokenizer.eos_token_id
+    if model.config.pad_token_id is None:
+        model.config.pad_token_id = hf_tokenizer.pad_token_id
 
     model = model.to(device)
     n_params = sum(p.numel() for p in model.parameters())
@@ -58,7 +59,9 @@ def pretrain_hf_model(cfg, model_type, model_size, indexid2msg, out_dir,
         hf_max_seq_len = min(pos_limit, 512)
     log(f"HF max_seq_len={hf_max_seq_len} (pos_limit={pos_limit})")
     log("Pre-tokenizing entity labels with HF tokenizer...")
-    pretokenized = pretokenize_labels_hf(indexid2msg, hf_tokenizer, hf_max_seq_len)
+    pretokenized = pretokenize_labels_hf(
+        indexid2msg, hf_tokenizer, hf_max_seq_len, substitutor=get_hf_substitutor(cfg),
+    )
     log(f"Pre-tokenized {len(pretokenized):,} unique entity labels "
         f"(from {len(indexid2msg):,} entities)")
 

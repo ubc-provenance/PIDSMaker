@@ -3,7 +3,8 @@ import os
 import numpy as np
 from gensim.models import FastText
 
-from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm, tokenize_label
+from pidsmaker.tokenization import load_tokenizer
+from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
 
 
 def main(cfg):
@@ -13,11 +14,15 @@ def main(cfg):
     model_path = os.path.join(cfg.featurization._model_dir, "fasttext.pkl")
     model = FastText.load(model_path)
 
+    tokenizer = load_tokenizer(cfg)
     indexid2vec = {}
     sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
     for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
-        tokens = tokenize_label(node_label, node_type)
+        tokens = tokenizer.tokenize(node_label, node_type)
+        if not tokens:
+            indexid2vec[indexid] = np.zeros(model.vector_size)
+            continue
 
         word_vectors = [model.wv[word] for word in tokens]
         sentence_vector = np.mean(word_vectors, axis=0)

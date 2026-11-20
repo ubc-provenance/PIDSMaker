@@ -15,6 +15,8 @@ transformation:
 
 featurization:
   used_method: only_type
+  tokenization:
+    used_method: none
 feat_inference:
   to_remove: True
 

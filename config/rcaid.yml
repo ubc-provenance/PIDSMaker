@@ -21,6 +21,11 @@ featurization:
   seed: 0
   training_split: all
   used_method: doc2vec
+  tokenization:
+    used_method: nltk
+    nltk:
+      type_aware: True
+      substitutions: none
   doc2vec:
     include_neighbors: True
     alpha: 0.025

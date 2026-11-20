@@ -12,15 +12,18 @@ import os
 import numpy as np
 from gensim.models import Word2Vec
 
+from pidsmaker.tokenization import label_key as _node_label_key  # `whole_label` tokenization
 from pidsmaker.utils.utils import log
 
 
-def _node_label_key(ntype, nlabel):
-    """Canonical string key for a (ntype, nlabel) pair."""
-    return f"{ntype}::{nlabel}"
+def _key_fn(tokenizer):
+    """Label key of a node: the token of the `whole_label` tokenizer if given."""
+    if tokenizer is None:
+        return _node_label_key
+    return lambda ntype, nlabel: tokenizer.tokenize(nlabel, ntype)[0]
 
 
-def walks_to_label_sentences(walk_corpus, model_type="deepwalk"):
+def walks_to_label_sentences(walk_corpus, model_type="deepwalk", tokenizer=None):
     """Convert a walk corpus to label-string sentences for Word2Vec.
 
     Each walk becomes a list of label-key strings. Nodes missing from
@@ -29,17 +32,19 @@ def walks_to_label_sentences(walk_corpus, model_type="deepwalk"):
     Args:
         walk_corpus: list of (walk_nodes, walk_edge_types, ds_indexid2msg, entity_pos)
         model_type: unused, kept for API consistency
+        tokenizer: `whole_label` tokenizer giving the key of each node
 
     Returns:
         list of list[str] — one sentence per walk
     """
+    key_fn = _key_fn(tokenizer)
     sentences = []
     for walk_nodes, walk_edge_types, ds_indexid2msg, _epos in walk_corpus:
         sentence = []
         for node_id in walk_nodes:
             if node_id in ds_indexid2msg:
                 ntype, nlabel = ds_indexid2msg[node_id]
-                sentence.append(_node_label_key(ntype, nlabel))
+                sentence.append(key_fn(ntype, nlabel))
         if len(sentence) >= 2:
             sentences.append(sentence)
     return sentences
@@ -92,7 +97,7 @@ def load_deepwalk(out_dir, name="deepwalk.model"):
     return model
 
 
-def deepwalk_embeddings(model, indexid2msg):
+def deepwalk_embeddings(model, indexid2msg, tokenizer=None):
     """Build {node_id: np.ndarray} from a trained DeepWalk model.
 
     Looks up each node's (ntype, nlabel) in the Word2Vec vocabulary.
@@ -101,12 +106,13 @@ def deepwalk_embeddings(model, indexid2msg):
     Returns:
         dict mapping int(node_id) -> np.ndarray of shape (emb_dim,)
     """
+    key_fn = _key_fn(tokenizer)
     emb_dim = model.wv.vector_size
     indexid2vec = {}
     n_hit, n_miss = 0, 0
 
     for node_id, (ntype, nlabel) in indexid2msg.items():
-        key = _node_label_key(ntype, nlabel)
+        key = key_fn(ntype, nlabel)
         if key in model.wv:
             emb = model.wv[key].astype(np.float32)
             norm = np.linalg.norm(emb)

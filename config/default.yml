@@ -64,6 +64,26 @@ featurization:
   flash:
     min_count: 1
     workers: 15
+  # Default parameters of each tokenization. Systems set `tokenization.used_method`.
+  # `substitutions` lists the values replaced by placeholder tokens ([HASH], [NUM], ...), or `none`.
+  tokenization:
+    nltk:
+      type_aware: True
+      substitutions: none
+    hierarchical:
+      substitutions: none
+    whole_label:
+      substitutions: none
+    bpe:
+      vocab_size: 8000
+      max_seq_len: 60
+      mode: domain_bpe
+      substitutions: hash, guid, random, version, timestamp, env_var, number, ip, port
+      canonicalize_neighbors: False
+    huggingface:
+      model_name: openai-community/gpt2
+      max_seq_len: 64
+      substitutions: none
 feat_inference:
   to_remove: True
 

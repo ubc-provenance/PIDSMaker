@@ -6,17 +6,22 @@ import torch
 from gensim.models import Word2Vec
 
 from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
+from pidsmaker.tokenization import fit_tokenizer, load_tokenizer
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
     log,
     log_start,
     log_tqdm,
-    tokenize_arbitrary_label,
 )
 
 
-def get_node2corpus(cfg, splits):
+def get_node2corpus(cfg, splits, fit=False):
+    """
+    Returns for each node the tokens of the (src label, edge type, dst label) triplets
+    of its edges. With `fit=True`, the tokenizer is fitted on these texts (featurization),
+    otherwise the tokenizer fitted during featurization is loaded (feat_inference).
+    """
     indexid2msg = get_indexid2msg(cfg)
 
     dates = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_dates") for split in splits]))
@@ -41,7 +46,8 @@ def get_node2corpus(cfg, splits):
             src_type, src_msg = indexid2msg[src]
             dst_type, dst_msg = indexid2msg[dst]
 
-            properties = [src_msg, operation, dst_msg]
+            # (node_type, text) pairs; the edge type has no node type
+            properties = [(src_type, src_msg), (None, operation), (dst_type, dst_msg)]
 
             if len(nodes[src]) < 300:
                 nodes[src].extend(properties)
@@ -61,16 +67,22 @@ def get_node2corpus(cfg, splits):
 
         data_of_graphs.append((features, types, list(index_map.keys())))
 
+    if fit:
+        texts = dict.fromkeys(text for graphs in data_of_graphs for msg in graphs[0] for text in msg)
+        tokenizer = fit_tokenizer(cfg, list(texts))
+    else:
+        tokenizer = load_tokenizer(cfg)
+
     token_cache = {}
     node2corpus = defaultdict(list)
     for graphs in log_tqdm(data_of_graphs, desc="Tokenizing corpus"):
         for msg, node_type, node_id in zip(graphs[0], graphs[1], graphs[2]):
-            for sentence in msg:
-                if sentence not in token_cache:
-                    tokens = tokenize_arbitrary_label(sentence)
-                    token_cache[sentence] = tokens
+            for text in msg:
+                if text not in token_cache:
+                    text_type, sentence = text
+                    token_cache[text] = tokenizer.tokenize(sentence, text_type)
 
-                tokens = token_cache[sentence]
+                tokens = token_cache[text]
                 node2corpus[node_id].extend(tokens)
 
     return node2corpus
@@ -89,7 +101,7 @@ def main(cfg):
     log_start(__file__)
 
     training_files = get_splits_to_train_featurization(cfg)
-    all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files).values())
+    all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files, fit=True).values())
 
     emb_dim = cfg.featurization.emb_dim
     epochs = cfg.featurization.epochs

@@ -4,13 +4,13 @@ import torch
 from gensim.models.doc2vec import TaggedDocument
 
 from pidsmaker.config.pipeline import update_cfg_for_multi_dataset
+from pidsmaker.tokenization import fit_tokenizer
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
     get_split2nodes,
     log,
     log_tqdm,
-    tokenize_label,
 )
 
 
@@ -32,12 +32,13 @@ def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False):
     """
     Returns the tokenized labels of all nodes within a specific split.
     For training, the train split can be used to get only the corpus of train set.
+    Labels are tokenized with `featurization.tokenization`, fitted on these labels.
     """
     splits = get_splits_to_train_featurization(cfg)
     split2nodes = get_split2nodes(cfg, gather_multi_dataset=gather_multi_dataset)
     nodes_to_include = set().union(*(split2nodes[split] for split in splits))
 
-    words, tags = [], []
+    entries, tags = [], []
     node_labels = set()
     indexid2msg = get_indexid2msg(cfg, gather_multi_dataset=gather_multi_dataset)
 
@@ -47,8 +48,10 @@ def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False):
         if (node in nodes_to_include) and (node_label not in node_labels):
             node_labels.add(node_label)
             tags.append(node)
+            entries.append((node_type, node_label))
 
-            words.append(tokenize_label(node_label, node_type))
+    tokenizer = fit_tokenizer(cfg, entries)
+    words = [tokenizer.tokenize(node_label, node_type) for node_type, node_label in entries]
 
     if doc2vec_format:
         words = [
@@ -68,7 +71,7 @@ def get_corpus_from_pretrain_datasets(cfg):
     log(f"Loading corpus from pretrain_datasets: {datasets}")
 
     splits = get_splits_to_train_featurization(cfg)
-    all_words = []
+    entries = []
     seen_labels = set()
 
     for dataset in datasets:
@@ -82,7 +85,10 @@ def get_corpus_from_pretrain_datasets(cfg):
             label_key = (node_type, node_label)
             if (node in nodes_to_include) and (label_key not in seen_labels):
                 seen_labels.add(label_key)
-                all_words.append(tokenize_label(node_label, node_type))
+                entries.append(label_key)
+
+    tokenizer = fit_tokenizer(cfg, entries)
+    all_words = [tokenizer.tokenize(node_label, node_type) for node_type, node_label in entries]
 
     log(f"Pretrain corpus: {len(all_words)} unique (node_type, label) entries")
     return all_words
@@ -99,7 +105,8 @@ def get_corpus_using_neighbors_features(cfg, doc2vec_format=False):
     sorted_paths = get_all_graphs_for_dates(cfg.transformation._graphs_dir, dates)
     graph_list = [torch.load(path) for path in sorted_paths]
 
-    words = []
+    # Each document is a node and its neighbors, as (node_type, label) pairs
+    documents = []
     nodes = set()
     for G in log_tqdm(graph_list, desc="Get corpus with neighbors"):
         # Prepare the training data for Doc2Vec: each node and its neighbors as a 'document'
@@ -107,22 +114,25 @@ def get_corpus_using_neighbors_features(cfg, doc2vec_format=False):
             if node not in nodes:
                 nodes.add(node)
 
-                node_label = G.nodes[node]["label"]
-                node_type = G.nodes[node]["node_type"]
+                document = [(G.nodes[node]["node_type"], G.nodes[node]["label"])]
+                for neighbor in G.neighbors(node):
+                    document.append((G.nodes[neighbor]["node_type"], G.nodes[neighbor]["label"]))
+                documents.append((node, document))
 
-                neighbors = list(G.neighbors(node))
-                neighbor_labels = []
+    # Ordered deduplication keeps the fitting of trainable tokenizers deterministic
+    unique_entries = dict.fromkeys(entry for _, document in documents for entry in document)
+    tokenizer = fit_tokenizer(cfg, list(unique_entries))
 
-                for neighbor in neighbors:
-                    label = G.nodes[neighbor]["label"]
-                    type_ = G.nodes[neighbor]["node_type"]
-                    neighbor_labels.extend(tokenize_label(label, type_))
-
-                document = tokenize_label(node_label, node_type) + neighbor_labels
-
-                if doc2vec_format:
-                    words.append(TaggedDocument(words=document, tags=[node]))
-                else:
-                    words.append(document)
+    words = []
+    for node, document in documents:
+        tokens = [
+            token
+            for node_type, label in document
+            for token in tokenizer.tokenize(label, node_type)
+        ]
+        if doc2vec_format:
+            words.append(TaggedDocument(words=tokens, tags=[node]))
+        else:
+            words.append(tokens)
 
     return words
