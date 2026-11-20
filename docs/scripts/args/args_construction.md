@@ -17,6 +17,11 @@
     </li>
     <li class='no-bullet'><span class="key-leaf">null_label_tokens</span>: <span class="value">bool (9)</span></li>
     <li class='no-bullet'><span class="key-leaf">multi_dataset</span>: <span class="value">str (10)</span></li>
+    <li class='bullet'><span class="key">cleaning</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (11)</span></li>
+    </ul>
+    </li>
 </ul>
 
 </div>
@@ -31,3 +36,4 @@
 8. Which features use for netflow nodes. Features will be concatenated. Use 'auto' to include type always and other attributes only when non-null.<br><br><b>Available options (multi selection)</b>:<br>`auto`<br>`type`<br>`remote_ip`<br>`remote_port`
 9. When enabled, null entity attributes produce explicit tokens ([NO_CMD], [NO_PATH], [NO_IP]) instead of empty strings.<br>
 10. A comma-separated list of datasets on which training is performed. Evaluation is done only the primary dataset run in CLI.<br><br><b>Available options (one selection)</b>:<br>`THEIA_E5`<br>`THEIA_E3`<br>`CADETS_E5`<br>`CADETS_E3`<br>`CLEARSCOPE_E5`<br>`CLEARSCOPE_E3`<br>`optc_h201`<br>`optc_h501`<br>`optc_h051`<br>`TRACE_E5`<br>`TRACE_E3`<br>`FIVEDIRECTIONS_E5`<br>`FIVEDIRECTIONS_E3`<br>`PROVENANCE_BENIGN`<br>`ATLASV2_EDR`<br>`CARBANAKV2_EDR`<br>`none`
+11. Cleaning methods applied to the raw data before building the graphs, or `none`.                     `remove_null_attributes`: null-like attributes (`None`, `NA`, `<UNNAMED fd:3>`, invalid IPs and ports) are removed from labels;                     `normalize_labels`: whitespaces, slashes, path prefixes and quotes are normalized and long labels truncated;                     `remove_duplicate_events`: events with the same source, destination, type and timestamp are kept once;                     `remove_self_loops`: events from a node to itself are removed;                     `remove_noisy_netflows`: netflows to multicast/broadcast/... IPs are removed with their events;                     `dedup_window_edges`: only the first event of each (source, destination, type) is kept in each time window.<br><br><b>Available options (multi selection)</b>:<br>`remove_null_attributes`<br>`normalize_labels`<br>`remove_duplicate_events`<br>`remove_self_loops`<br>`remove_noisy_netflows`<br>`dedup_window_edges`<br>`none`

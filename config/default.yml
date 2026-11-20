@@ -11,6 +11,19 @@ construction:
     subject: type, path, cmd_line
     file: type, path
     netflow: type, remote_ip, remote_port
+  # Cleaning of the raw data before building the graphs (see docs/docs/config/cleaning.md).
+  # `none` builds the graphs of the original systems.
+  cleaning:
+    used_methods: none
+    normalize_labels:
+      collapse_whitespace: True
+      collapse_slashes: True
+      strip_path_prefixes: True
+      strip_quotes: True
+      lowercase: False
+      max_length: 512
+    remove_noisy_netflows:
+      ip_categories: multicast, broadcast
 transformation:
   used_methods: none
   synthetic_attack_naive:

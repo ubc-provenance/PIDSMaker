@@ -3,6 +3,8 @@ Each task takes as input the output from the previous task and writes its output
 
 ### Stage 1: Construction
 
+The raw data can be cleaned before the graphs are built with `construction.cleaning`, see [Cleaning](cleaning.md).
+
 --8<-- "scripts/args/args_construction.md"
 
 ### Stage 2: Transformation

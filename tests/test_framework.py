@@ -183,6 +183,63 @@ class TestTokenization:
             prepare_cfg("tests", dataset, custom_args=custom_args)
 
 
+class TestCleaning:
+    methods = [
+        "remove_null_attributes",
+        "normalize_labels",
+        "remove_duplicate_events",
+        "remove_self_loops",
+        "remove_noisy_netflows",
+        "dedup_window_edges",
+    ]
+
+    @pytest.mark.parametrize("cleaning", methods + [",".join(methods)])
+    def test_cleaning(self, dataset, cleaning):
+        custom_args = [("construction.cleaning.used_methods", cleaning)]
+        cfg = prepare_cfg("tests", dataset, custom_args=custom_args)
+        main.main(cfg)
+        assert os.path.exists(os.path.join(cfg.construction._task_path, "cleaning_report.json"))
+
+    def test_cleaning_options(self, dataset):
+        custom_args = [
+            ("construction.cleaning.used_methods", "normalize_labels, remove_noisy_netflows"),
+            ("construction.cleaning.normalize_labels.lowercase", True),
+            ("construction.cleaning.normalize_labels.max_length", 0),
+            (
+                "construction.cleaning.remove_noisy_netflows.ip_categories",
+                "multicast, loopback, unspecified",
+            ),
+        ]
+        cfg = prepare_cfg("tests", dataset, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_no_cleaning_keeps_hash(self, dataset):
+        # Graphs built before cleaning existed are reused
+        cfg = prepare_cfg("tests", dataset)
+        cfg_none = prepare_cfg(
+            "tests", dataset, custom_args=[("construction.cleaning.used_methods", "none")]
+        )
+        cfg_clean = prepare_cfg(
+            "tests",
+            dataset,
+            custom_args=[("construction.cleaning.used_methods", "remove_self_loops")],
+        )
+        assert cfg.construction._task_path == cfg_none.construction._task_path
+        assert cfg.construction._task_path != cfg_clean.construction._task_path
+
+    @pytest.mark.parametrize(
+        "model,custom_args",
+        [
+            ("tests", [("construction.cleaning.used_methods", "remove_self_loops, typo")]),
+            # kairos.yml does not include default.yml, which holds the normalize_labels args
+            ("kairos", [("construction.cleaning.used_methods", "normalize_labels")]),
+        ],
+    )
+    def test_invalid_cleaning(self, dataset, model, custom_args):
+        with pytest.raises(ValueError, match="cleaning"):
+            prepare_cfg(model, dataset, custom_args=custom_args)
+
+
 class TestEncoderObjective:
     # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below.
     encoders = [e for e in ENCODERS_CFG.keys() if e != "tgn"]

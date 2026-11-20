@@ -25,6 +25,7 @@ nav:
     - Supervised Fine-Tuning: features/supervised.md
   - Arguments:
     - Tasks: config/tasks.md
+    - Cleaning: config/cleaning.md
     - Featurization: config/featurization.md
     - Encoders: config/encoders.md
     - Decoders: config/decoders.md
