@@ -53,7 +53,7 @@ class SpiderEmbeddingGenerator:
 
         model_type = spider_cfg.model_type
         model_size = spider_cfg.model_size
-        max_seq_len = spider_cfg.tokenizer.max_seq_len
+        max_seq_len = self.cfg.featurization.tokenization.bpe.max_seq_len
 
         model_path = os.path.join(model_dir, f"pretrain_{model_size}.pt")
         if not os.path.exists(model_path):

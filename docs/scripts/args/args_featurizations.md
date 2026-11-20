@@ -166,111 +166,87 @@
             <li class='no-bullet'><span class="key-leaf">student_only_mode</span>: <span class="value">str (57)</span></li>
         </ul>
         </li>
-        <li class='bullet'><span class="key">gpt2_pretrained</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (58)</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">llama3_pretrained</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (59)</span></li>
-        </ul>
-        </li>
-        <li class='bullet'><span class="key">opt_pretrained</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (60)</span></li>
-        </ul>
-        </li>
         <li class='bullet'><span class="key">graphmae</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (61)</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (62)</span></li>
-            <li class='no-bullet'><span class="key-leaf">decoder_num_layers</span>: <span class="value">int (63)</span></li>
-            <li class='no-bullet'><span class="key-leaf">mask_rate</span>: <span class="value">float (64)</span></li>
-            <li class='no-bullet'><span class="key-leaf">replace_rate</span>: <span class="value">float (65)</span></li>
-            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (66)</span></li>
-            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (67)</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (68)</span></li>
-            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (69)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (58)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (59)</span></li>
+            <li class='no-bullet'><span class="key-leaf">decoder_num_layers</span>: <span class="value">int (60)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_rate</span>: <span class="value">float (61)</span></li>
+            <li class='no-bullet'><span class="key-leaf">replace_rate</span>: <span class="value">float (62)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (63)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (64)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (65)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (66)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">gae</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (70)</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (71)</span></li>
-            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (72)</span></li>
-            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (73)</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (74)</span></li>
-            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (75)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (67)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (68)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (69)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (70)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (71)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (72)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">dgi</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (76)</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (77)</span></li>
-            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (78)</span></li>
-            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (79)</span></li>
-            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (80)</span></li>
-            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (81)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (73)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (74)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_min</span>: <span class="value">int (75)</span></li>
+            <li class='no-bullet'><span class="key-leaf">neighborhood_max</span>: <span class="value">int (76)</span></li>
+            <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (77)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (78)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">training</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">pretrain_tokens</span>: <span class="value">int (82)</span></li>
-            <li class='no-bullet'><span class="key-leaf">warmup_tokens</span>: <span class="value">int (83)</span></li>
-            <li class='no-bullet'><span class="key-leaf">batch_size</span>: <span class="value">int (84)</span></li>
-            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (85)</span></li>
-            <li class='no-bullet'><span class="key-leaf">scheduler</span>: <span class="value">str (86)</span></li>
+            <li class='no-bullet'><span class="key-leaf">pretrain_tokens</span>: <span class="value">int (79)</span></li>
+            <li class='no-bullet'><span class="key-leaf">warmup_tokens</span>: <span class="value">int (80)</span></li>
+            <li class='no-bullet'><span class="key-leaf">batch_size</span>: <span class="value">int (81)</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float (82)</span></li>
+            <li class='no-bullet'><span class="key-leaf">scheduler</span>: <span class="value">str (83)</span></li>
         </ul>
         </li>
         <li class='bullet'><span class="key">mlm</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">mask_rate_fixed</span>: <span class="value">float (87)</span></li>
-            <li class='no-bullet'><span class="key-leaf">mask_rate_min</span>: <span class="value">float (88)</span></li>
-            <li class='no-bullet'><span class="key-leaf">mask_edge_type</span>: <span class="value">bool (89)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_rate_fixed</span>: <span class="value">float (84)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_rate_min</span>: <span class="value">float (85)</span></li>
+            <li class='no-bullet'><span class="key-leaf">mask_edge_type</span>: <span class="value">bool (86)</span></li>
             <li class='bullet'><span class="key">modernbert</span>
             <ul>
-                <li class='no-bullet'><span class="key-leaf">global_attn_every_n_layers</span>: <span class="value">int (90)</span></li>
-                <li class='no-bullet'><span class="key-leaf">local_attention_window</span>: <span class="value">int (91)</span></li>
+                <li class='no-bullet'><span class="key-leaf">global_attn_every_n_layers</span>: <span class="value">int (87)</span></li>
+                <li class='no-bullet'><span class="key-leaf">local_attention_window</span>: <span class="value">int (88)</span></li>
             </ul>
             </li>
             <li class='bullet'><span class="key">ropebert</span>
             <ul>
-                <li class='no-bullet'><span class="key-leaf">rope_theta</span>: <span class="value">float (92)</span></li>
+                <li class='no-bullet'><span class="key-leaf">rope_theta</span>: <span class="value">float (89)</span></li>
             </ul>
             </li>
             <li class='bullet'><span class="key">llama</span>
             <ul>
-                <li class='no-bullet'><span class="key-leaf">rope_theta</span>: <span class="value">float (93)</span></li>
+                <li class='no-bullet'><span class="key-leaf">rope_theta</span>: <span class="value">float (90)</span></li>
             </ul>
             </li>
             <li class='bullet'><span class="key">logbert</span>
             <ul>
-                <li class='no-bullet'><span class="key-leaf">hvm_weight</span>: <span class="value">float (94)</span></li>
+                <li class='no-bullet'><span class="key-leaf">hvm_weight</span>: <span class="value">float (91)</span></li>
             </ul>
             </li>
         </ul>
         </li>
-        <li class='no-bullet'><span class="key-leaf">pretrain_datasets</span>: <span class="value">str (95)</span></li>
-        <li class='bullet'><span class="key">tokenizer</span>
-        <ul>
-            <li class='no-bullet'><span class="key-leaf">bpe_vocab_size</span>: <span class="value">int (96)</span></li>
-            <li class='no-bullet'><span class="key-leaf">max_seq_len</span>: <span class="value">int (97)</span></li>
-            <li class='no-bullet'><span class="key-leaf">mode</span>: <span class="value">str (98)</span></li>
-            <li class='no-bullet'><span class="key-leaf">normalize_netflow_ips</span>: <span class="value">bool (99)</span></li>
-            <li class='no-bullet'><span class="key-leaf">canonicalize_neighbors</span>: <span class="value">bool (100)</span></li>
-        </ul>
-        </li>
-        <li class='no-bullet'><span class="key-leaf">weights_path</span>: <span class="value">str (101)</span></li>
-        <li class='no-bullet'><span class="key-leaf">graph_context_mode</span>: <span class="value">str (102)</span></li>
+        <li class='no-bullet'><span class="key-leaf">pretrain_datasets</span>: <span class="value">str (92)</span></li>
+        <li class='no-bullet'><span class="key-leaf">weights_path</span>: <span class="value">str (93)</span></li>
+        <li class='no-bullet'><span class="key-leaf">graph_context_mode</span>: <span class="value">str (94)</span></li>
         <li class='bullet'><span class="key">walks</span>
         <ul>
-            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int (103)</span></li>
-            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int (104)</span></li>
-            <li class='no-bullet'><span class="key-leaf">time_weight</span>: <span class="value">str (105)</span></li>
-            <li class='no-bullet'><span class="key-leaf">half_life</span>: <span class="value">float (106)</span></li>
-            <li class='no-bullet'><span class="key-leaf">random_walk_start</span>: <span class="value">bool (107)</span></li>
-            <li class='no-bullet'><span class="key-leaf">diversity_weight</span>: <span class="value">float (108)</span></li>
+            <li class='no-bullet'><span class="key-leaf">walk_length</span>: <span class="value">int (95)</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_walks</span>: <span class="value">int (96)</span></li>
+            <li class='no-bullet'><span class="key-leaf">time_weight</span>: <span class="value">str (97)</span></li>
+            <li class='no-bullet'><span class="key-leaf">half_life</span>: <span class="value">float (98)</span></li>
+            <li class='no-bullet'><span class="key-leaf">random_walk_start</span>: <span class="value">bool (99)</span></li>
+            <li class='no-bullet'><span class="key-leaf">diversity_weight</span>: <span class="value">float (100)</span></li>
         </ul>
         </li>
     </ul>
@@ -341,54 +317,46 @@
 55. Teacher loss: contrastive (SupCon) or bce (cross-entropy). Default: contrastive.<br><br><b>Available options (one selection)</b>:<br>`contrastive`<br>`bce`
 56. Teacher data modalities (comma-separated): signature, gnn_emb, or both. Default: signature,gnn_emb.<br>
 57. Student-only ablation: none, student_signature, or student_class. Default: none.<br><br><b>Available options (one selection)</b>:<br>`none`<br>`student_signature`<br>`student_class`
-58. Max sequence length for HF tokenizer. Default: 512.<br>
-59. Max sequence length for HF tokenizer. Default: 512.<br>
-60. Max sequence length for HF tokenizer. Default: 512.<br>
-61. Number of GAT encoder layers. Default: 2.<br>
-62. Number of attention heads in GAT layers. Default: 4.<br>
-63. Number of GAT decoder layers. Default: 1.<br>
-64. Fraction of nodes to mask during pretraining. Default: 0.5.<br>
-65. Fraction of masked nodes replaced with random tokens (rest get [MASK]). Default: 0.1.<br>
-66. Minimum number of neighbors in temporal neighborhood. Default: 5.<br>
-67. Maximum number of neighbors in temporal neighborhood. Default: 20.<br>
-68. Number of training epochs. Default: 100.<br>
-69. Learning rate. Default: 0.001.<br>
-70. Number of GAT encoder layers. Default: 2.<br>
-71. Number of attention heads in GAT layers. Default: 4.<br>
-72. Minimum number of neighbors in temporal neighborhood. Default: 5.<br>
-73. Maximum number of neighbors in temporal neighborhood. Default: 20.<br>
-74. Number of training epochs. Default: 100.<br>
-75. Learning rate. Default: 0.001.<br>
-76. Number of GAT encoder layers. Default: 2.<br>
-77. Number of attention heads in GAT layers. Default: 4.<br>
-78. Minimum number of neighbors in temporal neighborhood. Default: 5.<br>
-79. Maximum number of neighbors in temporal neighborhood. Default: 20.<br>
-80. Number of training epochs. Default: 100.<br>
-81. Learning rate. Default: 0.001.<br>
-82. Total number of tokens to process during pretraining (controls training duration).<br>
-83. Number of tokens for learning rate warmup at the start of pretraining.<br>
-84. Mini-batch size during pretraining. Interpretation depends on model_type: walks per batch (MLM), entities per batch (GNN token-budget), labels per batch (HF pretrained), neighborhoods per batch (GNN-SSL).<br>
-85. Peak learning rate for pretraining (after warmup).<br>
-86. Learning rate scheduler shape after warmup. Only consumed by MLM and HF pretrained; GNN token-budget hardcodes cosine.<br><br><b>Available options (one selection)</b>:<br>`cosine`<br>`linear`
-87. Initial fixed mask rate (fraction of nodes masked). Decays to mask_rate_min.<br>
-88. Minimum mask rate after decay.<br>
-89. Enable structured masking of edge types during pretraining and edge-type scoring at inference.<br>
-90. Use global attention every N layers. Other layers use local sliding window attention. Default: 3.<br>
-91. Sliding window size for local attention layers. Default: 128 tokens.<br>
-92. Base frequency for rotary position embeddings. Default: 10000.0.<br>
-93. Base frequency for rotary position embeddings. Default: 10000.0.<br>
-94. Weight for hypersphere volume minimization loss relative to MLM loss. Default: 0.1.<br>
-95. Comma-separated list of dataset names to use for multi-dataset pretraining.<br>
-96. Target BPE vocabulary size for the tokenizer.<br>
-97. Maximum token sequence length after tokenization. Walks exceeding this are truncated.<br>
-98. Tokenizer mode: 'domain_bpe' uses domain-specific pre-tokenization followed by BPE; 'bpe_only' skips domain rules and applies BPE directly on raw words.<br><br><b>Available options (one selection)</b>:<br>`domain_bpe`<br>`bpe_only`
-99. Replace IP addresses in netflow entities with category tokens ([PRIVATE_IP], [PUBLIC_IP], [LOCALHOST_IP]) instead of keeping individual octets.<br>
-100. Enable multi-level neighbor canonicalization. When True, decoder targets keep only structural/categorical tokens ([] special tokens + OS-agnostic category tokens like [CAT_WEBSERVER], [FCAT_LOG_WEB]) while encoder input gets full detail + category tokens prepended. During continue_pretrain, neighbors keep all tokens with category tokens prepended.<br>
-101. Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt, pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type.<br>
-102. Graph context scope for walk sampling at both pretraining and inference time. 'window' = each time-window snapshot independently; 'day' = merge all snapshots from the same calendar day; 'all' = merge all snapshots in the relevant split (train split at pretrain time; val or test split at inference time — no training data leaks into inference context).<br><br><b>Available options (one selection)</b>:<br>`window`<br>`day`<br>`all`
-103. Number of nodes per random walk during pretraining.<br>
-104. Number of random walks to sample per node per epoch during pretraining.<br>
-105. Temporal weighting for neighbor selection: 'uniform', 'exponential', or 'linear'.<br>
-106. Half-life (in seconds) for exponential time weighting of neighbor selection.<br>
-107. Randomize the temporal entry point for each walk. When True, the first hop picks a random edge instead of always starting from the earliest/latest timestamp.<br>
-108. Edge-type diversity bias for random walks during pretraining. 0 = no bias (default), higher values increasingly favor edges whose type is underrepresented in the current walk. Only affects pretraining; finetuning/inference use natural distribution.<br>
+58. Number of GAT encoder layers. Default: 2.<br>
+59. Number of attention heads in GAT layers. Default: 4.<br>
+60. Number of GAT decoder layers. Default: 1.<br>
+61. Fraction of nodes to mask during pretraining. Default: 0.5.<br>
+62. Fraction of masked nodes replaced with random tokens (rest get [MASK]). Default: 0.1.<br>
+63. Minimum number of neighbors in temporal neighborhood. Default: 5.<br>
+64. Maximum number of neighbors in temporal neighborhood. Default: 20.<br>
+65. Number of training epochs. Default: 100.<br>
+66. Learning rate. Default: 0.001.<br>
+67. Number of GAT encoder layers. Default: 2.<br>
+68. Number of attention heads in GAT layers. Default: 4.<br>
+69. Minimum number of neighbors in temporal neighborhood. Default: 5.<br>
+70. Maximum number of neighbors in temporal neighborhood. Default: 20.<br>
+71. Number of training epochs. Default: 100.<br>
+72. Learning rate. Default: 0.001.<br>
+73. Number of GAT encoder layers. Default: 2.<br>
+74. Number of attention heads in GAT layers. Default: 4.<br>
+75. Minimum number of neighbors in temporal neighborhood. Default: 5.<br>
+76. Maximum number of neighbors in temporal neighborhood. Default: 20.<br>
+77. Number of training epochs. Default: 100.<br>
+78. Learning rate. Default: 0.001.<br>
+79. Total number of tokens to process during pretraining (controls training duration).<br>
+80. Number of tokens for learning rate warmup at the start of pretraining.<br>
+81. Mini-batch size during pretraining. Interpretation depends on model_type: walks per batch (MLM), entities per batch (GNN token-budget), labels per batch (HF pretrained), neighborhoods per batch (GNN-SSL).<br>
+82. Peak learning rate for pretraining (after warmup).<br>
+83. Learning rate scheduler shape after warmup. Only consumed by MLM and HF pretrained; GNN token-budget hardcodes cosine.<br><br><b>Available options (one selection)</b>:<br>`cosine`<br>`linear`
+84. Initial fixed mask rate (fraction of nodes masked). Decays to mask_rate_min.<br>
+85. Minimum mask rate after decay.<br>
+86. Enable structured masking of edge types during pretraining and edge-type scoring at inference.<br>
+87. Use global attention every N layers. Other layers use local sliding window attention. Default: 3.<br>
+88. Sliding window size for local attention layers. Default: 128 tokens.<br>
+89. Base frequency for rotary position embeddings. Default: 10000.0.<br>
+90. Base frequency for rotary position embeddings. Default: 10000.0.<br>
+91. Weight for hypersphere volume minimization loss relative to MLM loss. Default: 0.1.<br>
+92. Comma-separated list of dataset names to use for multi-dataset pretraining.<br>
+93. Path to a folder of pretrained weights (e.g. the SPIDER weights). May contain any subset of: corpus.pt (sampler states + indexid2msg), tokenizer.pt (BPE vocabulary), pretrain_*.pt (model checkpoint), behavior_vocab.txt. Present artifacts are loaded; missing ones are computed from scratch. Works with any model_type.<br>
+94. Graph context scope for walk sampling at both pretraining and inference time. 'window' = each time-window snapshot independently; 'day' = merge all snapshots from the same calendar day; 'all' = merge all snapshots in the relevant split (train split at pretrain time; val or test split at inference time — no training data leaks into inference context).<br><br><b>Available options (one selection)</b>:<br>`window`<br>`day`<br>`all`
+95. Number of nodes per random walk during pretraining.<br>
+96. Number of random walks to sample per node per epoch during pretraining.<br>
+97. Temporal weighting for neighbor selection: 'uniform', 'exponential', or 'linear'.<br>
+98. Half-life (in seconds) for exponential time weighting of neighbor selection.<br>
+99. Randomize the temporal entry point for each walk. When True, the first hop picks a random edge instead of always starting from the earliest/latest timestamp.<br>
+100. Edge-type diversity bias for random walks during pretraining. 0 = no bias (default), higher values increasingly favor edges whose type is underrepresented in the current walk. Only affects pretraining; finetuning/inference use natural distribution.<br>

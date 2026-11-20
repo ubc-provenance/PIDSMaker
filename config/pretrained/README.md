@@ -27,8 +27,11 @@ Inside `featurization.pretrained`:
 | `training` (`pretrain_tokens`, `warmup_tokens`, `batch_size`, `lr`, `scheduler`) | all encoders except `deepwalk`, `node2vec`, `graphmae`, `gae` and `dgi`, which have their own `epochs` |
 | `mlm` | masked language models and `llama` |
 | `walks` | masked language models, `llama`, `deepwalk` and `node2vec` |
-| `tokenizer` | all encoders except `deepwalk`, `node2vec` and the HF models |
 | `<model_type>` (e.g. `spider`, `graphmae`, `deepwalk`) | only that `model_type` |
+
+The tokenization is set in `featurization.tokenization` (outside `featurization.pretrained`) and must match `model_type`:
+`bpe` for all encoders except `deepwalk` and `node2vec` (`whole_label`) and the HF models (`huggingface`).
+Each tokenization sets its own `substitutions` (values such as hashes, UUIDs, IPs and ports replaced by placeholder tokens): all of them for `bpe`, `none` for the others.
 
 ## Model types
 
@@ -45,7 +48,7 @@ Trained on tokenized random walks over the provenance graph.
 
 ### Walk embeddings
 
-Word2Vec trained on random walks over entity labels, without tokenizer nor transformer.
+Word2Vec trained on random walks over entity labels (`whole_label` tokenization), without transformer.
 
 - **`deepwalk`**: uniform random walks. Options: `deepwalk`.
 - **`node2vec`**: biased walks controlled by `node2vec.p` (return) and `node2vec.q` (in-out). Also uses `deepwalk`.
@@ -67,7 +70,7 @@ A T5 encoder is distilled from a GNN teacher or from behavior signatures. Only t
 
 ### HF models
 
-A public language model fine-tuned on entity labels with next-token prediction. `emb_dim` is set to the hidden size of the model, and the model's own tokenizer is used.
+A public language model fine-tuned on entity labels with next-token prediction. `emb_dim` is set to the hidden size of the model. They use the `huggingface` tokenization with `model_name: auto` (the model's own tokenizer).
 
 - **`gpt2_pretrained`**: GPT-2 (`model_size`: `small`, `medium`, `large` or `xl`).
 - **`llama3_pretrained`**: Llama 3.2 (`model_size`: `1b` or `3b`). Requires `huggingface-cli login`, since Llama is gated.

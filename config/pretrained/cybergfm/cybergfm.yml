@@ -1,6 +1,10 @@
 _include_yml: [velox, pretrained]
 
 featurization:
+  tokenization:
+    used_method: bpe
+    bpe:
+      max_seq_len: 128
   pretrained:
     model_type: bert
     model_size: mini
@@ -8,8 +12,6 @@ featurization:
       pretrain_tokens: 1000000
       warmup_tokens: 100000
       batch_size: 1024
-    tokenizer:
-      max_seq_len: 128
     walks:
       walk_length: 10
       num_walks: 1

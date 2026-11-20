@@ -1453,6 +1453,7 @@ def main(cfg):
     # ── DeepWalk: load Word2Vec model and map labels directly ──────────
     if model_type in ("deepwalk", "node2vec"):
         from pidsmaker.pretrained.models.deepwalk import load_deepwalk, deepwalk_embeddings
+        from pidsmaker.tokenization import build_tokenizer
         dw_model = load_deepwalk(pretrain_dir)
         if emb_dim != dw_model.wv.vector_size:
             raise ValueError(
@@ -1461,14 +1462,15 @@ def main(cfg):
                 f"Set emb_dim: {dw_model.wv.vector_size} in your config."
             )
         indexid2msg = get_indexid2msg(cfg)
-        indexid2vec = deepwalk_embeddings(dw_model, indexid2msg)
+        indexid2vec = deepwalk_embeddings(dw_model, indexid2msg, tokenizer=build_tokenizer(cfg))
         log(f"Computed {len(indexid2vec):,} DeepWalk node embeddings (dim={emb_dim})")
         return indexid2vec
 
     # ── HF pretrained models: load fine-tuned model + HF tokenizer ───────
     from pidsmaker.pretrained.models.hf_pretrained import HF_MODEL_TYPES
     if model_type in HF_MODEL_TYPES:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoModelForCausalLM
+        from pidsmaker.tokenization import get_hf_substitutor, load_hf_tokenizer
         from pidsmaker.pretrained.models.hf_pretrained import (
             embed_nodes_hf, get_hf_hidden_size,
         )
@@ -1488,20 +1490,17 @@ def main(cfg):
             )
 
         device = "cuda" if torch.cuda.is_available() and not getattr(cfg, '_use_cpu', False) else "cpu"
-        hf_tokenizer = AutoTokenizer.from_pretrained(hf_tok_dir)
+        hf_tokenizer = load_hf_tokenizer(hf_tok_dir)  # saved by pretraining
         model = AutoModelForCausalLM.from_pretrained(
             hf_model_dir, torch_dtype=torch.float32,
         ).to(device)
 
-        if hf_tokenizer.pad_token is None:
-            hf_tokenizer.pad_token = hf_tokenizer.eos_token
-
         model.eval()
         indexid2msg = get_indexid2msg(cfg)
-        hf_max_seq_len = pretrain_cfg[model_type].max_seq_len
+        hf_max_seq_len = cfg.featurization.tokenization.huggingface.max_seq_len
         indexid2vec = embed_nodes_hf(
             model, hf_tokenizer, indexid2msg, emb_dim, device,
-            batch_size=64, max_seq_len=hf_max_seq_len,
+            batch_size=64, max_seq_len=hf_max_seq_len, substitutor=get_hf_substitutor(cfg),
         )
         log(f"Computed {len(indexid2vec):,} {model_type} node embeddings (dim={emb_dim})")
         return indexid2vec

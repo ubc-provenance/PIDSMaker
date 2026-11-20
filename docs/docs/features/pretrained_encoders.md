@@ -43,8 +43,8 @@ One config is provided per PIDS. Each one includes the PIDS config and `pretrain
 They use SPIDER by default. Set `featurization.pretrained.model_type` to use another encoder, for example GPT-2 or DeepWalk in Velox:
 
 ```shell
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small --featurization.tokenization.used_method=huggingface
+python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk --featurization.tokenization.used_method=whole_label
 ```
 
 These configs also enable [`training.stable_optim`](instability.md#reducing-instability).
@@ -61,7 +61,7 @@ The main options are:
 
 - `featurization.pretrained.model_size`: `tiny`, `mini`, `med` or `baseline` for the encoders trained from scratch, or the variant of GPT-2, Llama and OPT.
 - `featurization.pretrained.training`: token budget (`pretrain_tokens`, `warmup_tokens`), `batch_size` and `lr`.
-- `featurization.pretrained.tokenizer`: BPE vocabulary size and maximum label length (not used by GPT-2, Llama and OPT, which have their own tokenizers).
+- `featurization.tokenization`: `bpe` (vocabulary size, maximum label length and [substitutions](../config/featurization.md#substitutions) of hashes, UUIDs, IPs, ports, …) for most encoders, `whole_label` for DeepWalk and Node2Vec, `huggingface` for GPT-2, Llama and OPT (see [Tokenization](../config/featurization.md#tokenization)).
 - `featurization.pretrained.walks`: random walks used by the masked language models and DeepWalk.
 
 All options are listed in the [featurization arguments](../config/featurization.md).

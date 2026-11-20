@@ -2,32 +2,26 @@ import os
 
 from gensim.models import Word2Vec
 
+from pidsmaker.tokenization import fit_tokenizer
 from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_indexid2msg,
     log,
     log_start,
     log_tqdm,
-    tokenize_file,
-    tokenize_netflow,
-    tokenize_subject,
 )
 
 
-def tokenize_corpus(corpus, indexid2msg):
+def tokenize_corpus(corpus, indexid2msg, tokenizer):
+    """Tokenizes walks given as lines of comma-separated node ids.
+    Empty tokens are dropped: nodes with an empty label add no word to the walk."""
     tokenized_corpus = []
     for line in corpus:
         line = line.strip()
         tokenized_line = []
         for node in line.split(","):
-            msg = indexid2msg[node]
-            if msg[0] == "subject":
-                tokens = tokenize_subject(msg[1])
-            elif msg[0] == "file":
-                tokens = tokenize_file(msg[1])
-            else:
-                tokens = tokenize_netflow(msg[1])
-            tokenized_line.extend(tokens)
+            node_type, node_label = indexid2msg[node]
+            tokenized_line.extend(t for t in tokenizer.tokenize(node_label, node_type) if t)
         tokenized_corpus.append(tokenized_line)
     return tokenized_corpus
 
@@ -100,6 +94,9 @@ def main(cfg):
     log("Get indexid2msg from database...")
     indexid2msg = get_indexid2msg(cfg)
 
+    # Walks run over all splits, so the tokenizer is fitted on the labels of all nodes
+    tokenizer = fit_tokenizer(cfg, [tuple(msg) for msg in indexid2msg.values()])
+
     corpus_base_dir = cfg.featurization.temporal_rw._random_walk_corpus_dir
     corpus_folders = ["train", "val", "test", "unused"]
     corpus_file_list = get_all_files_from_folders(corpus_base_dir, corpus_folders)
@@ -110,7 +107,7 @@ def main(cfg):
             corpus = f.readlines()
             log(f"\n{len(corpus)} lines read from {corpus_file_list[i]}")
 
-            tokenized_corpus = tokenize_corpus(corpus, indexid2msg)
+            tokenized_corpus = tokenize_corpus(corpus, indexid2msg, tokenizer)
 
             if i == 0:
                 train_word2vec(corpus=tokenized_corpus, model_save_path=model_save_path, cfg=cfg)

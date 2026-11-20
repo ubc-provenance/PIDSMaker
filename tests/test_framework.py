@@ -124,6 +124,65 @@ class TestFeaturization:
         main.main(cfg)
 
 
+class TestTokenization:
+    # Featurization methods combined with the tokenization of other systems.
+    # `huggingface` is not tested as it downloads a tokenizer from HuggingFace.
+    pairs = [
+        ("word2vec", "nltk"),
+        ("word2vec", "hierarchical"),
+        ("flash", "whole_label"),
+        ("word2vec", "bpe"),
+        ("doc2vec", "bpe"),
+        ("fasttext", "hierarchical"),
+        ("flash", "bpe"),
+        ("hierarchical_hashing", "nltk"),
+    ]
+
+    @pytest.mark.parametrize("featurization,tokenization", pairs)
+    def test_tokenizations(self, dataset, featurization, tokenization):
+        custom_args = [
+            ("featurization.tokenization.used_method", tokenization),
+            ("featurization.tokenization.nltk.type_aware", False),
+        ]
+        cfg = prepare_cfg("tests", dataset, featurization=featurization, custom_args=custom_args)
+        main.main(cfg)
+
+    @pytest.mark.parametrize(
+        "model,featurization,tokenization",
+        [
+            ("tests", "word2vec", "none"),  # word2vec needs tokens
+            ("pretrained_velox", None, "nltk"),  # spider is built around BPE
+        ],
+    )
+    def test_invalid_tokenizations(self, dataset, model, featurization, tokenization):
+        custom_args = [("featurization.tokenization.used_method", tokenization)]
+        with pytest.raises(ValueError, match="tokenization"):
+            prepare_cfg(model, dataset, featurization=featurization, custom_args=custom_args)
+
+    @pytest.mark.parametrize(
+        "featurization,tokenization,substitutions",
+        [
+            ("word2vec", "nltk", "hash, guid, random, number, ip, port"),
+            ("hierarchical_hashing", "hierarchical", "hash, random, number"),
+            ("word2vec", "bpe", "none"),  # BPE without any placeholder
+            ("doc2vec", "bpe", "hash, guid, ip"),
+        ],
+    )
+    def test_substitutions(self, dataset, featurization, tokenization, substitutions):
+        custom_args = [
+            ("featurization.tokenization.used_method", tokenization),
+            (f"featurization.tokenization.{tokenization}.substitutions", substitutions),
+        ]
+        cfg = prepare_cfg("tests", dataset, featurization=featurization, custom_args=custom_args)
+        main.main(cfg)
+
+    @pytest.mark.parametrize("substitutions", ["hash, uuid", "none, hash", ""])
+    def test_invalid_substitutions(self, dataset, substitutions):
+        custom_args = [("featurization.tokenization.nltk.substitutions", substitutions)]
+        with pytest.raises(ValueError, match="substitutions"):
+            prepare_cfg("tests", dataset, custom_args=custom_args)
+
+
 class TestEncoderObjective:
     # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below.
     encoders = [e for e in ENCODERS_CFG.keys() if e != "tgn"]
@@ -308,9 +367,15 @@ class TestPretrainedEncoders:
             ("featurization.pretrained.graphmae.epochs", 1),
         ]
 
+    # Model types that do not use the default BPE tokenization
+    tokenizations = {"deepwalk": "whole_label", "node2vec": "whole_label"}
+
     @pytest.mark.parametrize("model_type", model_types)
     def test_pretrained_featurization(self, dataset, device, model_type):
-        custom_args = self.pretraining_args(dataset) + [("featurization.pretrained.model_type", model_type)]
+        custom_args = self.pretraining_args(dataset) + [
+            ("featurization.pretrained.model_type", model_type),
+            ("featurization.tokenization.used_method", self.tokenizations.get(model_type, "bpe")),
+        ]
         cfg = prepare_cfg("pretrained_velox", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 

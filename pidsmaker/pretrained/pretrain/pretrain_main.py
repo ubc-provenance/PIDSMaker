@@ -27,12 +27,14 @@ def main(cfg):
     model_type = spider_cfg.model_type
     model_size = spider_cfg.model_size
 
-    # Tokenizer config (nested)
-    tokenizer_cfg = spider_cfg.tokenizer
-    bpe_vocab_size = tokenizer_cfg.bpe_vocab_size
+    # Tokenizer config (featurization.tokenization.bpe)
+    tokenizer_cfg = cfg.featurization.tokenization.bpe
+    bpe_vocab_size = tokenizer_cfg.vocab_size
     max_seq_len = tokenizer_cfg.max_seq_len
     tokenizer_mode = tokenizer_cfg.mode
-    normalize_netflow_ips = tokenizer_cfg.normalize_netflow_ips
+    # The BPE tokenizer reads its substitutions from the config; `ip` replaces IPs by categories
+    from pidsmaker.tokenization.substitution import get_substitutions
+    normalize_netflow_ips = "ip" in get_substitutions(cfg, "bpe")
     canonicalize_neighbors = tokenizer_cfg.canonicalize_neighbors
     spider_path = getattr(spider_cfg, 'weights_path', None)
 
@@ -248,7 +250,7 @@ def main(cfg):
         pretrain_hf_model(
             cfg, model_type, model_size, combined_indexid2msg, out_dir, device,
             total_tokens, warmup_tokens, batch_size, lr, scheduler_type,
-            max_seq_len=max_seq_len,
+            max_seq_len=cfg.featurization.tokenization.huggingface.max_seq_len,
         )
         return
 

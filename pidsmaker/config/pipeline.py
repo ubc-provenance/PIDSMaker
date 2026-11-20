@@ -15,10 +15,14 @@ from .config import (
     DECODERS_EDGE_LEVEL,
     DECODERS_NODE_LEVEL,
     EXPERIMENTS_CONFIG,
+    FEATURIZATION_TOKENIZATIONS,
     OBJECTIVES_EDGE_LEVEL,
     OBJECTIVES_NODE_LEVEL,
+    PRETRAINED_DEFAULT_TOKENIZATION,
+    PRETRAINED_TOKENIZATIONS,
     REQUIRE_HETERO_FEATURES_ENCODERS,
     REQUIRE_NON_REVERSED_EDGES_ENCODERS,
+    SUBSTITUTION_METHODS,
     SYNTHETIC_ATTACKS,
     TASK_ARGS,
     TASK_DEPENDENCIES,
@@ -647,6 +651,8 @@ def check_edge_cases(cfg):
                 "Cannot predict edge type as it is removed in the pseudo graph transformation"
             )
 
+    check_tokenization(cfg)
+
     if cfg.featurization.used_method == "fasttext":
         if cfg.featurization.fasttext.use_pretrained_fb_model:
             emb_dim = cfg.featurization.emb_dim
@@ -680,6 +686,65 @@ def check_edge_cases(cfg):
     if cfg.evaluation.used_method == "edge_evaluation":
         if cfg._is_node_level:
             raise ValueError("Edge evaluation not implemented for node-level detection.")
+
+
+def check_tokenization(cfg):
+    """Checks that `featurization.tokenization` can be used by the featurization method."""
+    method = cfg.featurization.used_method.strip()
+    tokenization = cfg.featurization.tokenization.used_method
+    if tokenization is None:
+        raise ValueError(
+            "Missing `featurization.tokenization.used_method`. Set it to `none` if the "
+            "featurization method does not tokenize node labels."
+        )
+    tokenization = tokenization.strip()
+
+    def check_missing_args():
+        # e.g. a tokenization set from the CLI in a config that does not include default.yml
+        tokenization_args = getattr(cfg.featurization.tokenization, tokenization)
+        missing = [k for k, v in tokenization_args.items() if v is None]
+        if missing:
+            raise ValueError(
+                f"Missing arguments of the `{tokenization}` tokenization: "
+                + ", ".join(f"featurization.tokenization.{tokenization}.{k}" for k in missing)
+                + ". Set them in the config (default values are in default.yml) or in the CLI."
+            )
+        substitutions = tokenization_args.get("substitutions")
+        if substitutions is not None:
+            names = [n.strip() for n in str(substitutions).split(",") if n.strip()]
+            invalid = [n for n in names if n not in SUBSTITUTION_METHODS + ["none"]]
+            if invalid or not names or ("none" in names and len(names) > 1):
+                raise ValueError(
+                    f"Invalid `featurization.tokenization.{tokenization}.substitutions={substitutions}`: "
+                    f"use `none` or a comma-separated list among {SUBSTITUTION_METHODS}."
+                )
+
+    if method == "pretrained":
+        model_type = cfg.featurization.pretrained.model_type
+        expected = PRETRAINED_TOKENIZATIONS.get(model_type, PRETRAINED_DEFAULT_TOKENIZATION)
+        if tokenization != expected:
+            raise ValueError(
+                f"Pretrained model `{model_type}` uses the `{expected}` tokenization, "
+                f"found `featurization.tokenization.used_method={tokenization}`."
+            )
+        check_missing_args()
+        return
+
+    allowed = FEATURIZATION_TOKENIZATIONS.get(method)
+    if allowed is None or tokenization in allowed:
+        check_missing_args()
+        return
+    if allowed == ["none"]:
+        # The method does not read labels as text: the tokenization has no effect.
+        print(
+            f"Note: featurization method `{method}` does not tokenize node labels, "
+            f"`featurization.tokenization.used_method={tokenization}` is ignored."
+        )
+        return
+    raise ValueError(
+        f"Featurization method `{method}` requires a tokenization among {allowed}, "
+        f"found `featurization.tokenization.used_method={tokenization}`."
+    )
 
 
 def set_subtasks_to_restart(yml_file: str, cfg):

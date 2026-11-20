@@ -86,8 +86,10 @@ def walk_to_text(walk_nodes, walk_edge_types, indexid2msg):
     return " ".join(parts)
 
 
-def node_to_text(ntype, nlabel):
-    """Convert a single (ntype, label) pair to text."""
+def node_to_text(ntype, nlabel, substitutor=None):
+    """Convert a single (ntype, label) pair to text, after the configured substitutions."""
+    if substitutor:
+        nlabel = substitutor.substitute_text(nlabel, ntype)
     return f"{ntype}: {nlabel}"
 
 
@@ -118,7 +120,7 @@ def pretokenize_walks_hf(walk_corpus, hf_tokenizer, max_seq_len=512):
     return pretokenized
 
 
-def pretokenize_labels_hf(indexid2msg, hf_tokenizer, max_seq_len=512):
+def pretokenize_labels_hf(indexid2msg, hf_tokenizer, max_seq_len=512, substitutor=None):
     """Tokenize deduplicated entity labels with an HF tokenizer.
 
     Instead of walk sequences, this tokenizes the unique (ntype, nlabel) pairs
@@ -138,7 +140,7 @@ def pretokenize_labels_hf(indexid2msg, hf_tokenizer, max_seq_len=512):
             continue
         seen_labels.add(label_key)
 
-        text = node_to_text(ntype, nlabel)
+        text = node_to_text(ntype, nlabel, substitutor)
         if not text:
             continue
 
@@ -156,7 +158,7 @@ def pretokenize_labels_hf(indexid2msg, hf_tokenizer, max_seq_len=512):
 # ── Inference ─────────────────────────────────────────────────────────────
 
 def embed_nodes_hf(model, hf_tokenizer, indexid2msg, emb_dim, device,
-                   batch_size=256, max_seq_len=512):
+                   batch_size=256, max_seq_len=512, substitutor=None):
     """Compute frozen embeddings for every node via the fine-tuned HF model.
 
     For each unique (ntype, nlabel) pair: tokenize → forward → mean-pool
@@ -173,7 +175,7 @@ def embed_nodes_hf(model, hf_tokenizer, indexid2msg, emb_dim, device,
 
     for batch_start in range(0, len(unique_keys), batch_size):
         batch_keys = unique_keys[batch_start:batch_start + batch_size]
-        texts = [node_to_text(ntype, nlabel) for ntype, nlabel in batch_keys]
+        texts = [node_to_text(ntype, nlabel, substitutor) for ntype, nlabel in batch_keys]
 
         encoded = hf_tokenizer(
             texts, padding=True, truncation=True,

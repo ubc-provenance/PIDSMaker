@@ -19,6 +19,11 @@ featurization:
   seed: 0
   training_split: train
   used_method: fasttext
+  tokenization:
+    used_method: nltk
+    nltk:
+      type_aware: True
+      substitutions: none
   fasttext:
     min_count: 2
     alpha: 0.01

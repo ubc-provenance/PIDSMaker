@@ -1,5 +1,6 @@
 """DeepWalk / Node2Vec pretraining branch for SPIDER."""
 
+from pidsmaker.tokenization import build_tokenizer
 from pidsmaker.utils.utils import log
 from ..models.deepwalk import walks_to_label_sentences, train_deepwalk, save_deepwalk
 
@@ -18,7 +19,7 @@ def pretrain_deepwalk(cfg, spider_cfg, walk_corpus, out_dir, model_type):
         log(f"Node2Vec walks sampled with p={spider_cfg.node2vec.p}, q={spider_cfg.node2vec.q}")
 
     log(f"Converting walks to label sentences for {label}...")
-    sentences = walks_to_label_sentences(walk_corpus)
+    sentences = walks_to_label_sentences(walk_corpus, tokenizer=build_tokenizer(cfg))
     log(f"{label} sentences: {len(sentences):,} (from {len(walk_corpus):,} walks)")
 
     dw_model = train_deepwalk(

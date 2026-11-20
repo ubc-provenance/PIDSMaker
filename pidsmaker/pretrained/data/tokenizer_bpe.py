@@ -28,6 +28,41 @@ from .canonical_tokens import (
     match_file_category,
     match_proc_category,
 )
+# Placeholder tokens and patterns of the configurable substitutions
+from pidsmaker.tokenization.substitution import (  # noqa: F401 (re-exported)
+    ENV_VAR,
+    GUID,
+    HASH,
+    LOCALHOST_IP,
+    MAX_KEPT_NUMBER,
+    NUM,
+    PORT_EPH,
+    PORT_LOW,
+    PORT_REG,
+    PRIVATE_IP,
+    PUBLIC_IP,
+    RANDOM,
+    RE_ENV,
+    RE_GUID,
+    RE_GUID_INNER,
+    RE_HASH,
+    RE_IP,
+    RE_IPV6,
+    RE_SID,
+    RE_TIMESTAMP,
+    RE_VERSION,
+    SUBSTITUTION_METHODS,
+    TIMESTAMP,
+    VER,
+    WELL_KNOWN_PORTS,
+    Substitutor,
+    classify_ip,
+    classify_ipv6,
+    classify_port,
+    get_substitutions,
+    is_random_string,
+    parse_substitutions,
+)
 
 
 # ── Label sanitization ───────────────────────────────────────────────────────
@@ -110,13 +145,6 @@ VALID_TRIPLETS = {
 
 # ── Domain tokens ────────────────────────────────────────────────────────────
 
-HASH = "[HASH]"
-GUID = "[GUID]"
-RANDOM = "[RANDOM]"
-TIMESTAMP = "[TIMESTAMP]"
-VER = "[VER]"
-NUM = "[NUM]"
-ENV_VAR = "[ENV]"
 FLAG = "[FLAG]"
 ROOT = "[ROOT]"
 WIN_ROOT = "[WIN_ROOT]"
@@ -131,24 +159,8 @@ SEP_DOT = "[SEP_DOT]"              # '.' separator within a name (non-extension 
 SEP_PLUS = "[SEP_PLUS]"            # '+' separator within a name (e.g. lost+found)
 SEP_AMP = "[SEP_AMP]"              # '&' separator between URL query parameters
 
-# Port categories: well-known ports get named tokens, others get range tokens
-WELL_KNOWN_PORTS = {
-    20: "[PORT_FTP_DATA]", 21: "[PORT_FTP]", 22: "[PORT_SSH]", 23: "[PORT_TELNET]",
-    25: "[PORT_SMTP]", 53: "[PORT_DNS]", 67: "[PORT_DHCP]", 68: "[PORT_DHCP_C]",
-    80: "[PORT_HTTP]", 110: "[PORT_POP3]", 123: "[PORT_NTP]", 143: "[PORT_IMAP]",
-    389: "[PORT_LDAP]", 443: "[PORT_HTTPS]", 445: "[PORT_SMB]", 993: "[PORT_IMAPS]",
-    3306: "[PORT_MYSQL]", 3389: "[PORT_RDP]", 5432: "[PORT_POSTGRES]",
-    8080: "[PORT_HTTP_ALT]", 8443: "[PORT_HTTPS_ALT]",
-}
-PORT_LOW = "[PORT_LOW]"
-PORT_REG = "[PORT_REG]"
-PORT_EPH = "[PORT_EPH]"
 IPV6 = "[IPV6]"
 
-# IP address category tokens (used when normalize_netflow_ips is enabled)
-PRIVATE_IP = "[PRIVATE_IP]"
-PUBLIC_IP = "[PUBLIC_IP]"
-LOCALHOST_IP = "[LOCALHOST_IP]"
 
 # Well-known Unix directories
 UNIX_DIRS = {
@@ -231,21 +243,6 @@ KNOWN_EXTENSIONS = {
 
 # ── Regex patterns ───────────────────────────────────────────────────────────
 
-RE_HASH = re.compile(r"^[0-9a-fA-F]{7,}$")
-RE_GUID = re.compile(
-    r"^\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}"
-    r"-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?$"
-)
-RE_GUID_INNER = re.compile(
-    r"\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}"
-    r"-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?"
-)
-RE_SID = re.compile(r"^S-\d+-\d+(-\d+)+$")
-RE_VERSION = re.compile(r"^v?\d+(\.\d+){1,3}(-\w+)?$")
-RE_TIMESTAMP = re.compile(r"^\d{4}[-_]\d{2}[-_]\d{2}")
-RE_IP = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
-RE_IPV6 = re.compile(r"^[0-9a-fA-F:]*::[0-9a-fA-F:]*$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$")
-RE_ENV = re.compile(r"^(\$\{?[A-Za-z_]+\}?|%[A-Z_]+%)$")
 RE_FLAG = re.compile(r"^--?[a-zA-Z][a-zA-Z0-9-]*$")
 RE_EXT = re.compile(
     r"^(.+?)\.({})$".format(
@@ -284,13 +281,25 @@ class ProvenanceTokenizerBPE:
     """
 
     def __init__(self, cfg, max_seq_len: int = 512, bpe_vocab_size: int = 8000, mode: str = "domain_bpe",
-                 normalize_netflow_ips: bool = False, canonicalize_neighbors: bool = False,
-                 strip_entity_type: bool = False):
+                 normalize_netflow_ips: Optional[bool] = None, canonicalize_neighbors: bool = False,
+                 strip_entity_type: bool = False, substitutions=None):
+        """
+        Args:
+            substitutions: patterns replaced by placeholder tokens (see
+                pidsmaker.tokenization.substitution). Defaults to
+                `featurization.tokenization.bpe.substitutions`, or to all patterns if unset.
+            normalize_netflow_ips: if not None, enables or disables the `ip` substitution.
+        """
         self.cfg = cfg
         self.max_seq_len = max_seq_len
         self.bpe_vocab_size = bpe_vocab_size
         self.mode = mode  # "domain_bpe" or "bpe_only"
-        self.normalize_netflow_ips = normalize_netflow_ips
+        if substitutions is None:
+            substitutions = self._substitutions_from_cfg(cfg)
+        substitutions = set(parse_substitutions(substitutions) if isinstance(substitutions, str) else substitutions)
+        if normalize_netflow_ips is not None:
+            (substitutions.add if normalize_netflow_ips else substitutions.discard)("ip")
+        self._set_substitutions(substitutions)
         self.canonicalize_neighbors = canonicalize_neighbors
         self.strip_entity_type = strip_entity_type
         self.expand_netflow_ips = False  # When True, emit [CATEGORY] + raw IP tokens
@@ -307,6 +316,27 @@ class ProvenanceTokenizerBPE:
         self.token2id: Dict[str, int] = {}
         self.id2token: Dict[int, str] = {}
         self.vocab_size: int = 0
+
+    # ── Substitutions ─────────────────────────────────────────────────────
+
+    @staticmethod
+    def _substitutions_from_cfg(cfg):
+        try:
+            return get_substitutions(cfg, "bpe")
+        except (AttributeError, ValueError):
+            return SUBSTITUTION_METHODS  # all patterns, as before they were configurable
+
+    def _set_substitutions(self, substitutions):
+        self.substitutions = frozenset(substitutions)
+        self.normalize_netflow_ips = "ip" in self.substitutions
+        self.substitutor = Substitutor(self.substitutions)  # used in bpe_only mode
+
+    def _sub(self, name: str) -> bool:
+        return name in self.substitutions
+
+    def _number(self, digits: str) -> str:
+        """Large numbers become [NUM] when the `number` substitution is enabled."""
+        return NUM if self._sub("number") and int(digits) > MAX_KEPT_NUMBER else digits
 
     # ── Properties ────────────────────────────────────────────────────────
 
@@ -328,63 +358,8 @@ class ProvenanceTokenizerBPE:
 
     # ── Phase 1: Domain-specific pre-tokenization ─────────────────────────
 
-    @staticmethod
-    def _is_random_string(s: str) -> bool:
-        """Detect random/meaningless strings via character-type transition rate.
-
-        Counts transitions between character types (upper/lower/digit).
-        Random strings like 'pEja72mA' have many transitions; real words
-        like 'Downloads' or 'python3' have very few.
-
-        For short strings (4-7 chars), requires all 3 char types (upper +
-        lower + digit) which is extremely rare in real words but common in
-        random suffixes like 'lqDkW1', 'XSVaeB', 'j7x4Qs'.
-        """
-        if len(s) < 4:
-            return False
-
-        has_upper = any(c.isupper() for c in s)
-        has_lower = any(c.islower() for c in s)
-        has_digit = any(c.isdigit() for c in s)
-        n_types = has_upper + has_lower + has_digit
-
-        if n_types < 2:
-            return False
-
-        # Count transitions between character types
-        transitions = 0
-        for i in range(len(s) - 1):
-            t1 = "U" if s[i].isupper() else ("D" if s[i].isdigit() else "L")
-            t2 = "U" if s[i + 1].isupper() else ("D" if s[i + 1].isdigit() else "L")
-            if t1 != t2:
-                transitions += 1
-        transition_rate = transitions / (len(s) - 1)
-
-        # Short strings (4-7 chars): require all 3 char types (upper + lower
-        # + digit). This is extremely rare in real words but common in random
-        # suffixes like lqDkW1, j7x4Qs, Bb1sqj.
-        # We do NOT flag 2-type short strings (upper+lower only) because
-        # CamelCase words like WebKit, NumPy, SciPy are statistically
-        # indistinguishable from 2-type random strings at this length.
-        if len(s) < 8:
-            return n_types >= 3
-
-        return transition_rate > 0.6
-
-    @staticmethod
-    def _classify_port(port_str: str) -> str:
-        """Map a port number to a semantic category token."""
-        try:
-            port = int(port_str)
-        except (ValueError, TypeError):
-            return PORT_LOW
-        if port in WELL_KNOWN_PORTS:
-            return WELL_KNOWN_PORTS[port]
-        if port <= 1023:
-            return PORT_LOW
-        if port <= 49151:
-            return PORT_REG
-        return PORT_EPH
+    _is_random_string = staticmethod(is_random_string)
+    _classify_port = staticmethod(classify_port)
 
     def _normalize_part(self, part: str) -> List[str]:
         """Normalize a sub-part from compound name or extension base split.
@@ -395,11 +370,11 @@ class ProvenanceTokenizerBPE:
         """
         if not part:
             return []
-        if RE_HASH.match(part):
+        if self._sub("hash") and RE_HASH.match(part):
             return [HASH]
         if part.isdigit():
-            return [part] if int(part) <= 255 else [NUM]
-        if self._is_random_string(part):
+            return [self._number(part)]
+        if self._sub("random") and self._is_random_string(part):
             return [RANDOM]
         if any(c.isupper() for c in part[1:]):
             camel = re.split(r"(?<=[a-z])(?=[A-Z])", part)
@@ -460,10 +435,10 @@ class ProvenanceTokenizerBPE:
                     tokens.extend(self._split_with_sep_tokens(k) or [k.lower()])
                 if v:
                     if v.isdigit():
-                        tokens.append(v if int(v) <= 255 else NUM)
-                    elif RE_HASH.match(v):
+                        tokens.append(self._number(v))
+                    elif self._sub("hash") and RE_HASH.match(v):
                         tokens.append(HASH)
-                    elif self._is_random_string(v):
+                    elif self._sub("random") and self._is_random_string(v):
                         tokens.append(RANDOM)
                     else:
                         tokens.extend(self._split_with_sep_tokens(v) or [v.lower()])
@@ -489,15 +464,15 @@ class ProvenanceTokenizerBPE:
             return [WIN_DIRS[lower]]
 
         # Hash (MD5/SHA1/SHA256)
-        if RE_HASH.match(seg):
+        if self._sub("hash") and RE_HASH.match(seg):
             return [HASH]
 
         # GUID / UUID (standalone)
-        if RE_GUID.match(seg):
+        if self._sub("guid") and RE_GUID.match(seg):
             return [GUID]
 
         # Embedded GUID (e.g. "Processid:{E10F6C3A-...}")
-        guid_search = RE_GUID_INNER.search(seg)
+        guid_search = RE_GUID_INNER.search(seg) if self._sub("guid") else None
         if guid_search:
             tokens = []
             prefix = seg[: guid_search.start()].rstrip(":{")
@@ -510,24 +485,24 @@ class ProvenanceTokenizerBPE:
             return tokens
 
         # Windows SID
-        if RE_SID.match(seg):
+        if self._sub("random") and RE_SID.match(seg):
             return [RANDOM]
 
         # Version string
-        if RE_VERSION.match(seg):
+        if self._sub("version") and RE_VERSION.match(seg):
             return [VER]
 
         # Timestamp
-        if RE_TIMESTAMP.match(seg):
+        if self._sub("timestamp") and RE_TIMESTAMP.match(seg):
             return [TIMESTAMP]
 
         # Environment variable
-        if RE_ENV.match(seg):
+        if self._sub("env_var") and RE_ENV.match(seg):
             return [ENV_VAR]
 
         # Pure number: keep small numbers (IP octets, exit codes), collapse large
         if seg.isdigit():
-            return [seg] if int(seg) <= 255 else [NUM]
+            return [self._number(seg)]
 
         # File extension extraction (e.g. traceback.cpython-34.pyc -> base + [EXT_pyc])
         # Must come before _is_random_string so that compound names like
@@ -548,7 +523,7 @@ class ProvenanceTokenizerBPE:
             remainder = seg[len(base) + 3:]  # skip ".so"
             for v in remainder.split("."):
                 if v.isdigit():
-                    tokens.append(v if int(v) <= 255 else NUM)
+                    tokens.append(self._number(v))
             return tokens
 
         # URL query string (e.g. "detail=detail&id=5457", "calendar&date=7")
@@ -569,7 +544,7 @@ class ProvenanceTokenizerBPE:
         # Reached only by bare words with no separators or known extension —
         # keeping it before camelCase prevents random strings like "pEja72mA"
         # from being wrongly split on case boundaries.
-        if self._is_random_string(seg):
+        if self._sub("random") and self._is_random_string(seg):
             return [RANDOM]
 
         # camelCase splitting (e.g. networkHistory -> network, history)
@@ -677,56 +652,8 @@ class ProvenanceTokenizerBPE:
         groups = [g for g in ip_str.split(":") if g]
         return [IPV6] + [g.lower() for g in groups]
 
-    @staticmethod
-    def _classify_ip(ip_str: str) -> str:
-        """Classify an IP address as private, public, or localhost.
-
-        Heuristics:
-        - Localhost: 127.0.0.0/8, 0.0.0.0
-        - Private (RFC 1918 + link-local + CGNAT):
-            10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16,
-            169.254.0.0/16 (link-local), 100.64.0.0/10 (CGNAT)
-        - Everything else: public
-        """
-        match = RE_IP.match(ip_str)
-        if not match:
-            return PUBLIC_IP
-        o1, o2 = int(match.group(1)), int(match.group(2))
-        if o1 == 127 or (o1 == 0 and o2 == 0):
-            return LOCALHOST_IP
-        if o1 == 10:
-            return PRIVATE_IP
-        if o1 == 172 and 16 <= o2 <= 31:
-            return PRIVATE_IP
-        if o1 == 192 and o2 == 168:
-            return PRIVATE_IP
-        if o1 == 169 and o2 == 254:
-            return PRIVATE_IP
-        if o1 == 100 and 64 <= o2 <= 127:
-            return PRIVATE_IP
-        return PUBLIC_IP
-
-    @staticmethod
-    def _classify_ipv6(ip_str: str) -> str:
-        """Classify an IPv6 address as private, public, or localhost.
-
-        Heuristics:
-        - Localhost: ::1
-        - Private: fc00::/7 (unique local), fe80::/10 (link-local)
-        - Everything else: public
-        """
-        # Normalize: expand :: and lowercase
-        normalized = ip_str.strip().lower()
-        # ::1 is loopback
-        if normalized == "::1" or normalized == "0:0:0:0:0:0:0:1":
-            return LOCALHOST_IP
-        # fc00::/7 — unique local addresses (fc00:: and fd00::)
-        if normalized.startswith("fc") or normalized.startswith("fd"):
-            return PRIVATE_IP
-        # fe80::/10 — link-local
-        if normalized.startswith("fe80"):
-            return PRIVATE_IP
-        return PUBLIC_IP
+    _classify_ip = staticmethod(classify_ip)
+    _classify_ipv6 = staticmethod(classify_ipv6)
 
     @staticmethod
     def _looks_like_path(s: str) -> bool:
@@ -763,7 +690,12 @@ class ProvenanceTokenizerBPE:
         parts = label_str.split()
         if parts and parts[0] in ("subject", "file", "netflow"):
             parts = parts[1:]
-        return [p.lower() for p in parts if p and p != "None"]
+        words = []
+        for p in parts:
+            if p and p != "None":
+                placeholder = self.substitutor.substitute_word(p, _node_type) if self.substitutor else None
+                words.append(placeholder or p.lower())
+        return words
 
     def _pretokenize_node(self, node_type: str, label_str: str) -> List[str]:
         """Pre-tokenize a node label based on its type."""
@@ -791,6 +723,10 @@ class ProvenanceTokenizerBPE:
                     return cat
                 return self._pretokenize_ip(ip_str)
 
+            def _tokenize_port(port_str):
+                """Port category token, or the raw port without the `port` substitution."""
+                return self._classify_port(port_str) if self._sub("port") else port_str.lower()
+
             for part in parts:
                 if "->" in part:
                     # Format: "IP:port->IP:port"
@@ -798,7 +734,7 @@ class ProvenanceTokenizerBPE:
                         ip_port = endpoint.rsplit(":", 1)
                         if len(ip_port) == 2 and RE_IP.match(ip_port[0]):
                             tokens.extend(_tokenize_ip(ip_port[0]))
-                            tokens.append(self._classify_port(ip_port[1]))
+                            tokens.append(_tokenize_port(ip_port[1]))
                         else:
                             tokens.extend(self._pretokenize_segment(endpoint))
                 elif RE_IP.match(part):
@@ -811,12 +747,12 @@ class ProvenanceTokenizerBPE:
                     else:
                         tokens.extend(self._pretokenize_ipv6(part))
                 elif part.isdigit():
-                    tokens.append(self._classify_port(part))
+                    tokens.append(_tokenize_port(part))
                 elif ":" in part:
                     ip_port = part.rsplit(":", 1)
                     if RE_IP.match(ip_port[0]):
                         tokens.extend(_tokenize_ip(ip_port[0]))
-                        tokens.append(self._classify_port(ip_port[1]))
+                        tokens.append(_tokenize_port(ip_port[1]))
                     else:
                         tokens.extend(self._pretokenize_segment(part))
                 else:
@@ -1172,6 +1108,7 @@ class ProvenanceTokenizerBPE:
                 "merges": self.merges,
                 "mode": self.mode,
                 "normalize_netflow_ips": self.normalize_netflow_ips,
+                "substitutions": sorted(self.substitutions),
                 "canonicalize_neighbors": self.canonicalize_neighbors,
             },
             path,
@@ -1207,7 +1144,16 @@ class ProvenanceTokenizerBPE:
         self.max_seq_len = state["max_seq_len"]
         self.merges = state["merges"]
         self.mode = state["mode"]
-        self.normalize_netflow_ips = state["normalize_netflow_ips"]
+        substitutions = state.get("substitutions")
+        if substitutions is None:
+            # Saved before substitutions were configurable: all of them in domain_bpe mode
+            # (IPs per the old flag), none in bpe_only mode
+            substitutions = []
+            if state["mode"] == "domain_bpe":
+                substitutions = [m for m in SUBSTITUTION_METHODS if m != "ip"]
+                if state["normalize_netflow_ips"]:
+                    substitutions.append("ip")
+        self._set_substitutions(substitutions)
         self.canonicalize_neighbors = state["canonicalize_neighbors"]
         self.id2token = {v: k for k, v in self.token2id.items()}
 

@@ -1,29 +1,8 @@
 import numpy as np
 from sklearn.feature_extraction import FeatureHasher
 
+from pidsmaker.tokenization import load_tokenizer
 from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
-
-
-def path2higlist(p):
-    l = []
-    spl = p.strip().split("/")
-    for i in spl:
-        if len(l) != 0:
-            l.append(l[-1] + "/" + i)
-        else:
-            l.append(i)
-    return l
-
-
-def ip2higlist(p):
-    l = []
-    spl = p.strip().split(".")
-    for i in spl:
-        if len(l) != 0:
-            l.append(l[-1] + "." + i)
-        else:
-            l.append(i)
-    return l
 
 
 def main(cfg):
@@ -33,15 +12,13 @@ def main(cfg):
     emb_dim = cfg.featurization.emb_dim
     FH_string = FeatureHasher(n_features=emb_dim, input_type="string")
 
+    tokenizer = load_tokenizer(cfg)
     indexid2vec = {}
     sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
     for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
-        if node_type == "subject" or node_type == "file":
-            higlist = path2higlist(node_label)
-        else:
-            higlist = ip2higlist(node_label)
-        dense_vector = FH_string.fit_transform([higlist]).toarray()
+        tokens = tokenizer.tokenize(node_label, node_type)
+        dense_vector = FH_string.fit_transform([tokens]).toarray()
 
         normalized_vector = dense_vector / (np.linalg.norm(dense_vector) + 1e-12)
         indexid2vec[indexid] = normalized_vector.squeeze()
