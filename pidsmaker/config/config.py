@@ -1548,7 +1548,7 @@ TASK_ARGS = {
             "threshold_method": Arg(
                 str,
                 vals=OR(THRESHOLD_METHODS),
-                desc="Time-window detection. The code is broken and needs work to be updated.",
+                desc="Time-window detection: each test time window is scored by reducing the losses of its edges, and classified as malicious if its score exceeds the threshold.",
             ),
         },
         "node_tw_evaluation": {
@@ -1556,7 +1556,7 @@ TASK_ARGS = {
                 str,
                 vals=OR(THRESHOLD_METHODS),
                 desc="Node-level detection where a same node in multiple time windows is \
-                    considered as multiple unique nodes. More realistic evaluation for near real-time detection. The code is broken and needs work to be updated.",
+                    considered as multiple unique nodes. More realistic evaluation for near real-time detection.",
             ),
             "use_dst_node_loss": Arg(bool),
             "use_kmeans": Arg(bool),
@@ -1566,7 +1566,7 @@ TASK_ARGS = {
             "used_method": Arg(
                 str,
                 vals=OR(["kairos_idf_queue", "provnet_lof_queue"]),
-                desc="Queue-level detection as in Kairos. The code is broken and needs work to be updated.",
+                desc="Queue-level detection as in Kairos: anomalous time windows sharing rare (high-IDF) nodes are grouped into queues, and the time windows of queues whose anomaly score exceeds `queue_threshold` are flagged. `provnet_lof_queue` is not supported anymore.",
             ),
             "queue_threshold": Arg(int),
             "kairos_idf_queue": {

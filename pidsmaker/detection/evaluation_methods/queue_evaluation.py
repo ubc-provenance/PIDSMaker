@@ -15,24 +15,23 @@ Key functions:
 import copy
 import math
 import os
-import re
 from collections import defaultdict
 
 import torch
-import tqdm
 import wandb
-from sklearn.neighbors import LocalOutlierFactor
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_tw_labels,
+    load_losses_per_time_window,
 )
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
+    get_indexid2msg,
     listdir_sorted,
     log,
+    log_tqdm,
     mean,
-    percentile_90,
     std,
 )
 
@@ -49,7 +48,7 @@ def cal_idf_kairos(graph_files):
         tuple: (node_IDF dict mapping node labels to IDF scores, total file count)
     """
     node_set = defaultdict(set)
-    for f_path in tqdm(graph_files, desc="Calculating IDF"):
+    for f_path in log_tqdm(graph_files, desc="Calculating IDF"):
         g = torch.load(f_path)
 
         f_path = f_path.split("/")[-1]
@@ -139,7 +138,7 @@ def is_include_key_word(s):
     return flag
 
 
-def cal_set_rel_bak(node_IDF, s1, s2, num_dates):
+def cal_set_rel_bak(node_IDF, s1, s2, num_dates, excluded_nodes=()):
     """Calculate queue relationship score between two node sets (legacy version).
 
     Counts high-IDF nodes shared between two sets to determine if queues should be merged.
@@ -159,7 +158,7 @@ def cal_set_rel_bak(node_IDF, s1, s2, num_dates):
     count = 0
     for i in new_s:
         #     jdata=json.loads(i)
-        if not is_include_key_word_bak(i):
+        if i not in excluded_nodes and not is_include_key_word_bak(i):
             if i in node_IDF.keys():
                 IDF = node_IDF[i]
             else:
@@ -168,12 +167,14 @@ def cal_set_rel_bak(node_IDF, s1, s2, num_dates):
             if (IDF) > math.log(
                 num_dates * 0.9 / (1)
             ):  # TODO: default value for kairos, but can be parametrized
-                log("node:", i, " IDF:", IDF)
+                log(f"node: {i} | IDF: {IDF:.3f}")
                 count += 1
     return count
 
 
-def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_dates, num_train_dates):
+def cal_set_rel(
+    train_node_IDF, test_node_IDF, s1, s2, num_test_dates, num_train_dates, excluded_nodes=()
+):
     """Calculate queue relationship score using both train and test IDF scores.
 
     Improved version that considers IDF from both training and test sets for better
@@ -186,17 +187,17 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_dates, num_train
         s2: Second node set
         num_test_dates: Number of test dates
         num_train_dates: Number of training dates
+        excluded_nodes: Node labels to ignore (e.g. netflows)
 
     Returns:
         int: Count of shared high-IDF nodes (combined IDF > 5)
     """
-    IDF_train = train_node_IDF
     new_s = (
         s1 & s2
     )  # used to find common nodes in two windows to check if they should be in the same queue
     count = 0
     for i in new_s:
-        if not is_include_key_word(i):
+        if i not in excluded_nodes and not is_include_key_word(i):
             if i in test_node_IDF:
                 IDF_test = test_node_IDF[i]
             else:
@@ -218,82 +219,84 @@ def cal_set_rel(train_node_IDF, test_node_IDF, s1, s2, num_test_dates, num_train
 def cal_anomaly_loss_kairos(loss_list, edge_list):
     """Identify anomalous edges using statistical threshold on loss values.
 
-    Uses mean + 3*std threshold to classify edges as anomalous. Returns nodes
-    involved in anomalous edges and their cumulative loss.
+    Uses mean + 1.5*std threshold (as in Kairos) to classify edges as anomalous.
+    Returns nodes involved in anomalous edges and their average loss.
 
     Args:
         loss_list: List of loss values for edges
-        edge_list: List of edge tuples (src, dst)
+        edge_list: List of edge tuples (src_label, dst_label)
 
     Returns:
-        tuple: (cumulative_loss, node_set, edge_set) for anomalous edges
+        tuple: (anomalous edge count, average anomalous loss, node_set, edge_set)
     """
-    if len(loss_list) != len(edge_list):
-        log("error!")
-        return 0
+    assert len(loss_list) == len(edge_list)
     count = 0
     loss_sum = 0
-    loss_std = std(loss_list)
-    loss_mean = mean(loss_list)
     edge_set = set()
     node_set = set()
-    node2redundant = {}
 
-    thr = loss_mean + 1.5 * loss_std
+    if len(loss_list) == 0:
+        return count, 0.0, node_set, edge_set
 
-    log("thr:", thr)
+    thr = mean(loss_list) + 1.5 * std(loss_list)
 
-    for i in range(len(loss_list)):
-        if loss_list[i] > thr:
+    for loss, (src_node, dst_node) in zip(loss_list, edge_list):
+        if loss > thr:
             count += 1
-            src_node = edge_list[i][0]
-            dst_node = edge_list[i][1]
-
-            loss_sum += loss_list[i]
-
+            loss_sum += loss
             node_set.add(src_node)
             node_set.add(dst_node)
-            edge_set.add(edge_list[i][0] + edge_list[i][1])
-    return count, loss_sum / (count + 0.00000000001), node_set, edge_set
+            edge_set.add((src_node, dst_node))
+    return count, loss_sum / (count + 1e-11), node_set, edge_set
+
+
+def get_node_labels(cfg):
+    """Returns the node ID => label mapping and the set of netflow labels.
+
+    Labels are the same strings as the `label` attribute of the networkx graphs used to
+    compute the IDF, so that both can be matched.
+    """
+    indexid2msg = get_indexid2msg(cfg)
+    nid_to_label = {int(nid): label for nid, (_, label) in indexid2msg.items()}
+    netflow_labels = {label for _, (typ, label) in indexid2msg.items() if typ == "netflow"}
+    return nid_to_label, netflow_labels
 
 
 def anomalous_queue_construction_kairos(
     test_tw_path, train_node_IDF, test_node_IDF, num_train_dates, num_test_dates, cfg
 ):
-    # check if we use val set here
+    nid_to_label, netflow_labels = get_node_labels(cfg)
+    include_test_set_in_IDF = (
+        cfg.evaluation.queue_evaluation.kairos_idf_queue.include_test_set_in_IDF
+    )
 
     queues = []
-    his_tw = {}
-    current_tw = {}
-    index_count = 0
+    tw_names, tw_to_df = load_losses_per_time_window(test_tw_path, cfg)
+    if any("srcnode" not in df.columns for df in tw_to_df.values()):
+        raise ValueError(
+            "Queue evaluation requires edge-level losses (srcnode/dstnode columns). "
+            "It cannot be used with node-level objectives."
+        )
 
-    files = listdir_sorted(test_tw_path)
-    for f_path in files:
-        f = open(os.path.join(test_tw_path, f_path))
-        edge_loss_list = []
-        edge_list = []
-        log("index_count:", index_count)
+    for tw, df in sorted(tw_to_df.items()):
+        edge_loss_list = df["loss"].tolist()
+        edge_list = [
+            (nid_to_label.get(src, str(src)), nid_to_label.get(dst, str(dst)))
+            for src, dst in zip(df["srcnode"].astype(int), df["dstnode"].astype(int))
+        ]
 
-        for line in f:
-            l = line.strip()
-            jdata = eval(l)
-            edge_loss_list.append(jdata["loss"])
-            src_msg = list(eval(jdata["srcmsg"]).values())[
-                0
-            ]  # transform "subject: /etc/.." to "/etc/.."
-            dst_msg = list(eval(jdata["dstmsg"]).values())[0]
-            edge_list.append([src_msg, dst_msg])
         count, loss_avg, node_set, edge_set = cal_anomaly_loss_kairos(edge_loss_list, edge_list)
-        current_tw = {}
-        current_tw["name"] = f_path
-        current_tw["loss"] = loss_avg
-        current_tw["index"] = index_count
-        current_tw["nodeset"] = node_set
+        current_tw = {
+            "name": tw_names[tw],
+            "loss": loss_avg,
+            "index": tw,
+            "nodeset": node_set,
+        }
 
         added_que_flag = False
         for hq in queues:
             for his_tw in hq:
-                if cfg.evaluation.queue_evaluation.kairos_idf_queue.include_test_set_in_IDF:
+                if include_test_set_in_IDF:
                     cal_re = cal_set_rel(
                         train_node_IDF,
                         test_node_IDF,
@@ -301,10 +304,15 @@ def anomalous_queue_construction_kairos(
                         his_tw["nodeset"],
                         num_test_dates,
                         num_train_dates,
+                        excluded_nodes=netflow_labels,
                     )
                 else:
                     cal_re = cal_set_rel_bak(
-                        train_node_IDF, current_tw["nodeset"], his_tw["nodeset"], num_train_dates
+                        train_node_IDF,
+                        current_tw["nodeset"],
+                        his_tw["nodeset"],
+                        num_train_dates,
+                        excluded_nodes=netflow_labels,
                     )
                 if cal_re != 0 and current_tw["name"] != his_tw["name"]:
                     hq.append(copy.deepcopy(current_tw))
@@ -312,29 +320,20 @@ def anomalous_queue_construction_kairos(
                     break
             if added_que_flag:
                 break
-        if added_que_flag is False:
-            temp_hq = [copy.deepcopy(current_tw)]
-            queues.append(temp_hq)
-        index_count += 1
+        if not added_que_flag:
+            queues.append([copy.deepcopy(current_tw)])
+
         log(
-            f_path,
-            "  ",
-            loss_avg,
-            " count:",
-            count,
-            " percentage:",
-            count / len(edge_list),
-            " node count:",
-            len(node_set),
-            " edge count:",
-            len(edge_set),
+            f"TW {tw} ({tw_names[tw]}) | avg anomalous loss: {loss_avg:.4f} | "
+            f"anomalous edges: {count}/{len(edge_list)} | "
+            f"nodes: {len(node_set)} | unique edges: {len(edge_set)}"
         )
 
-    return queues
+    return queues, tw_names, sorted(tw_to_df.keys())
 
 
 def create_queues_kairos(cfg):
-    # In kairos, IDF is computed only on benign edges (train set)
+    # In kairos, IDF is computed on benign graphs (train set), optionally also on the test set
     base_dir = cfg.transformation._graphs_dir
     train_feat_files = get_all_graphs_for_dates(base_dir, cfg.dataset.train_dates)
     test_feat_files = get_all_graphs_for_dates(base_dir, cfg.dataset.test_dates)
@@ -342,314 +341,111 @@ def create_queues_kairos(cfg):
     train_node_IDF, num_train_dates = cal_idf_kairos(train_feat_files)
     test_node_IDF, num_test_dates = cal_idf_kairos(test_feat_files)
 
+    out_dir = cfg.evaluation.queue_evaluation._queues_dir
+    os.makedirs(out_dir, exist_ok=True)
+
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
-    for model_epoch_dir in tqdm(listdir_sorted(test_losses_dir), desc="Building queues"):
-        log(f"\nEvaluation of model {model_epoch_dir}...")
+    for model_epoch_dir in listdir_sorted(test_losses_dir):
+        log(f"Building queues for {model_epoch_dir}...", pre_return_line=True)
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
-        queues = anomalous_queue_construction_kairos(
+        queues, tw_names, evaluated_tws = anomalous_queue_construction_kairos(
             test_tw_path, train_node_IDF, test_node_IDF, num_train_dates, num_test_dates, cfg
         )
-
-        out_dir = cfg.evaluation.queue_evaluation._queues_dir
-        os.makedirs(out_dir, exist_ok=True)
-        torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
-
-
-# Provnet code
-def cal_val_thr(graph_dir):
-    filelist = listdir_sorted(graph_dir)
-
-    loss_list = []
-    for i in filelist:
-        f = open(os.path.join(graph_dir, i))
-        for line in f:
-            l = line.strip()
-            jdata = eval(l)
-
-            loss_list.append(jdata["loss"])
-
-    thr = max(loss_list)
-    log(
-        f"Thr = {thr}, Avg = {mean(loss_list)}, STD = {std(loss_list)}, MAX = {max(loss_list)}, 90 Percentile = {percentile_90(loss_list)}"
-    )
-
-    return thr
-
-
-def cal_anomaly_loss_with_val_threshold(loss_list, edge_list, thr):
-    count = 0
-    loss_sum = 0
-
-    edge_set = set()
-    node_set = set()
-
-    for i in range(len(loss_list)):
-        if loss_list[i] > thr:
-            count += 1
-
-            # node_info = (node_id, node_label)
-            src_node_info = edge_list[i][0]
-            dst_node_info = edge_list[i][1]
-            loss_sum += loss_list[i]
-
-            node_set.add(src_node_info)
-            node_set.add(dst_node_info)
-            edge_set.add(edge_list[i][0] + edge_list[i][1])
-
-    if count == 0:
-        return 0, 0, node_set, edge_set
-    else:
-        return count, loss_sum / count, node_set, edge_set
-
-
-# Measure the relationship between two time windows, if the returned value
-# is not 0, it means there are suspicious nodes in both time windows.
-
-
-def cal_set_rel_lof(s1, s2, lof_model, nodelabels_train_val, node2vec):
-    new_s = s1 & s2
-    count = 0
-    for i in new_s:
-        # i => (node_id, node_label)
-        i = i[1]
-        if "netflow" in i:
-            continue
-
-        # if path name is not in the training and validation sets
-        # OutlierScore = (¬ exist) * LOF
-        if i in nodelabels_train_val:
-            lof_score = 0
-        else:
-            try:
-                i = eval(i)
-            except:
-                log(i)
-                exit()
-            if "subject" in i:
-                path = i["subject"]
-            elif "file" in i:
-                path = i["file"]
-
-            try:
-                emb = node2vec[path]
-            except Exception as error:
-                log(f"Error at {i}: {error}")
-                continue
-                # exit() #TODO: handle this
-
-            lof_score = lof_model.decision_function([emb])
-
-        if lof_score < 0:
-            log(f"node:{i}, LOF score:{lof_score}")
-            count += 1
-    return count
-
-
-def anomalous_queue_construction_provnet(
-    graph_dir_path, lof_model=None, nodelabels_train_val=None, node2vec=None, val_thr=None
-):
-    queues = []
-    current_tw = {}
-
-    file_l = listdir_sorted(graph_dir_path)
-    index_count = 0
-    for f_path in file_l:
-        log(f"Time window at index {index_count}: {f_path}")
-
-        f = open(f"{graph_dir_path}/{f_path}")
-        edge_loss_list = []
-        edge_list = []
-
-        # Figure out which nodes are anomalous in this time window
-        for line in f:
-            l = line.strip()
-            jdata = eval(l)
-            edge_loss_list.append(jdata["loss"])
-            edge_list.append(
-                [
-                    (str(jdata["srcnode"]), str(jdata["srcmsg"])),
-                    (str(jdata["dstnode"]), str(jdata["dstmsg"])),
-                ]
-            )
-
-        count, loss_avg, node_set, edge_set = cal_anomaly_loss_with_val_threshold(
-            edge_loss_list, edge_list, val_thr
+        torch.save(
+            {"queues": queues, "tw_names": tw_names, "evaluated_tws": evaluated_tws},
+            os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"),
         )
-        current_tw["name"] = f_path
-        current_tw["loss"] = loss_avg
-        current_tw["index"] = index_count
-        current_tw["nodeset"] = node_set
-
-        # Incrementally construct the queues
-        added_que_flag = False
-        for hq in queues:
-            for his_tw in hq:
-                cal_set_rel_results = cal_set_rel_lof(
-                    current_tw["nodeset"],
-                    his_tw["nodeset"],
-                    lof_model,
-                    nodelabels_train_val,
-                    node2vec,
-                )
-                if cal_set_rel_results != 0 and current_tw["name"] != his_tw["name"]:
-                    hq.append(copy.deepcopy(current_tw))
-                    added_que_flag = True
-                    break
-        if added_que_flag is False:
-            temp_hq = [copy.deepcopy(current_tw)]
-            queues.append(temp_hq)
-
-        index_count += 1
-
-        log(
-            f"Avg loss: {loss_avg} | Anomalies in time window: ({len(node_set)} and {len(edge_set)} malicious nodes and edges)\n"
-        )
-
-    return queues
-
-
-def train_lof_model(cfg):
-    node2vec_train_val_path = os.path.join(
-        cfg.featurization.alacarte._vec_graphs_dir, "nodelabel2vec_val"
-    )
-    labels_and_embeddings = torch.load(node2vec_train_val_path)
-
-    embeddings = []
-    for label in labels_and_embeddings:
-        # We don't consider network
-        if ":" in label:
-            continue
-        else:
-            embeddings.append(labels_and_embeddings[label])
-
-    clf = LocalOutlierFactor(novelty=True, n_neighbors=30).fit(embeddings)
-    torch.save(clf, os.path.join(cfg.evaluation._task_path, "trained_lof.pkl"))
-    return clf
-
-
-def ground_truth_label(test_tw_path, cfg):
-    labels = []
-    for _ in listdir_sorted(test_tw_path):
-        labels.append(0)
-
-    if cfg._test_mode:
-        return labels
-
-    tw_to_malicious_nodes = compute_tw_labels(cfg, losses_dir=test_tw_path)
-    for tw, nodes in tw_to_malicious_nodes.items():
-        labels[tw] = 1
-
-    return labels
-
-
-def create_queues_provnet(cfg):
-    node2vec_path = os.path.join(cfg.featurization.alacarte._vec_graphs_dir, "nodelabel2vec")
-    node2vec_train_val_path = os.path.join(
-        cfg.featurization.alacarte._vec_graphs_dir, "nodelabel2vec_val"
-    )
-
-    node2vec = torch.load(node2vec_path)
-    nodelabels_train_val = list(torch.load(node2vec_train_val_path).keys())
-
-    lof_model = train_lof_model(cfg)
-
-    test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
-    val_losses_dir = os.path.join(cfg.training._edge_losses_dir, "val")
-
-    for model_epoch_dir in listdir_sorted(test_losses_dir):
-        log(f"\nEvaluation of model {model_epoch_dir}...")
-        test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
-        val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
-
-        # Threshold
-        val_thr = cal_val_thr(val_tw_path)
-
-        # Testing date
-        queues = anomalous_queue_construction_provnet(
-            graph_dir_path=test_tw_path,
-            lof_model=lof_model,
-            nodelabels_train_val=nodelabels_train_val,
-            node2vec=None,
-            val_thr=val_thr,
-        )
-
-        out_dir = cfg.evaluation.queue_evaluation._queues_dir
-        os.makedirs(out_dir, exist_ok=True)
-        torch.save(queues, os.path.join(out_dir, f"{model_epoch_dir}_queues.pkl"))
 
 
 def predict_queues(cfg):
-    # Evaluating the testing set
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
+    queues_dir = cfg.evaluation.queue_evaluation._queues_dir
+    out_dir = cfg.evaluation.queue_evaluation._predicted_queues_dir
+    os.makedirs(out_dir, exist_ok=True)
+    queue_threshold = cfg.evaluation.queue_evaluation.queue_threshold
 
-    best_precision, best_stats = 0.0, None
+    tw_to_malicious_nodes = None
+    best_stats = None
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
-
-        pred_label = []
-        for _ in range(len(listdir_sorted(test_tw_path))):
-            pred_label.append(0)
-
-        queues = torch.load(
-            os.path.join(
-                cfg.evaluation.queue_evaluation._queues_dir,
-                f"{model_epoch_dir}_queues.pkl",
-            )
+        log(f"[@{model_epoch_dir}] - Queue Evaluation", pre_return_line=True)
+        saved = torch.load(os.path.join(queues_dir, f"{model_epoch_dir}_queues.pkl"))
+        queues, tw_names, evaluated_tws = (
+            saved["queues"],
+            saved["tw_names"],
+            saved["evaluated_tws"],
         )
-        labels = ground_truth_label(test_tw_path, cfg)
+
+        # TW windows are the same for all epochs
+        if tw_to_malicious_nodes is None:
+            tw_to_malicious_nodes = compute_tw_labels(cfg, tw_names=tw_names)
+        labels = {tw: int(tw in tw_to_malicious_nodes) for tw in evaluated_tws}
+        pred_labels = {tw: 0 for tw in evaluated_tws}
+        tw_scores = {tw: 0.0 for tw in evaluated_tws}
 
         detected_queues = []
         for queue in queues:
-            label = any([labels[hq["index"]] for hq in queue])
-            anomaly_score = 0
+            is_attack = any(labels[hq["index"]] for hq in queue)
+            anomaly_score = 1.0
             for hq in queue:
-                if anomaly_score == 0:
-                    anomaly_score = (anomaly_score + 1) * (hq["loss"] + 1)
-                else:
-                    anomaly_score = (anomaly_score) * (hq["loss"] + 1)
-            log(f"-> queue anomaly score: {anomaly_score:.2f} | {'ATTACK' if label else ''}")
+                anomaly_score *= hq["loss"] + 1
+            idx_list = [hq["index"] for hq in queue]
+            log(
+                f"-> queue {idx_list} | anomaly score: {anomaly_score:.2f}"
+                + (" | ATTACK" if is_attack else "")
+            )
 
-            if anomaly_score > cfg.evaluation.queue_evaluation.queue_threshold:
-                idx_list = []
-                for i in queue:
-                    idx_list.append(i["index"])
-                log(f"Anomalous queue: {idx_list}")
+            for i in idx_list:
+                tw_scores[i] = max(tw_scores[i], anomaly_score)
+
+            if anomaly_score > queue_threshold:
                 detected_queues.append(idx_list)
                 for i in idx_list:
-                    pred_label[i] = 1
-                log(f"Anomaly score: {anomaly_score}")
+                    pred_labels[i] = 1
 
-        out_dir = cfg.evaluation.queue_evaluation._predicted_queues_dir
-        os.makedirs(out_dir, exist_ok=True)
+        log(f"Detected queues: {detected_queues}")
         torch.save(
             detected_queues, os.path.join(out_dir, f"{model_epoch_dir}_predicted_queues.pkl")
         )
 
-        # Calculate the metrics
-        log("\n********************************* Attack Labels *********************************")
+        y_truth = [labels[tw] for tw in evaluated_tws]
+        y_preds = [pred_labels[tw] for tw in evaluated_tws]
+        scores = [tw_scores[tw] for tw in evaluated_tws]
+        for tw, y_true, y_hat in zip(evaluated_tws, y_truth, y_preds):
+            if y_true:
+                log(
+                    f"-> Malicious TW {tw} ({tw_names[tw]}): queue score={tw_scores[tw]:.2f} | is TP:"
+                    + (" ✅" if y_hat else " ❌")
+                )
 
-        stats = classifier_evaluation(labels, pred_label, pred_label)
-        stats["epoch"] = int(re.findall(r"[+-]?\d*\.?\d+", model_epoch_dir)[0])
+        stats = classifier_evaluation(y_truth, y_preds, scores)
+        stats["epoch"] = int(model_epoch_dir.split("_")[-1])
+        stats["num_detected_queues"] = len(detected_queues)
+        log(f"[@{model_epoch_dir}] - Stats")
+        for k, v in stats.items():
+            log(f"{k}: {v}")
+        torch.save(stats, os.path.join(out_dir, f"stats_{model_epoch_dir}.pth"))
         wandb.log(stats)
 
-        if stats["precision"] > best_precision:
-            best_precision = stats["precision"]
-            best_stats = stats
-        elif str(stats["precision"]) == "nan":
-            best_precision = 0
+        # Kairos selects the model with best TW-level precision (then recall)
+        if best_stats is None or (stats["precision"], stats["recall"]) > (
+            best_stats["precision"],
+            best_stats["recall"],
+        ):
             best_stats = stats
 
-    wandb.log(best_stats)
+    return best_stats
 
 
 def main(cfg):
-    method = cfg.evaluation.queue_evaluation.used_method
+    method = cfg.evaluation.queue_evaluation.used_method.strip()
 
     if method == "kairos_idf_queue":
         create_queues_kairos(cfg)
-        predict_queues(cfg)
+        return predict_queues(cfg)
     elif method == "provnet_lof_queue":
-        create_queues_provnet(cfg)
-        predict_queues(cfg)
+        raise NotImplementedError(
+            "`provnet_lof_queue` relies on node embeddings from the removed alacarte "
+            "`nodelabel2vec` files and is not supported anymore. Use `kairos_idf_queue`."
+        )
     else:
         raise ValueError(f"Invalid queue evaluation method `{method}`")
