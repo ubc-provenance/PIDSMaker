@@ -12,11 +12,12 @@ from pidsmaker.detection.evaluation_methods import (
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     compute_tw_labels,
     listdir_sorted,
+    load_losses_per_time_window,
 )
 from pidsmaker.utils.utils import log
 
 
-def standard_evaluation(cfg, evaluation_fn):
+def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.training._edge_losses_dir, "val")
 
@@ -29,13 +30,19 @@ def standard_evaluation(cfg, evaluation_fn):
     # same files as node_evaluation, avoiding TW index mismatch when
     # intra-graph batching splits graphs into multiple sub-batches.
     first_epoch_losses_dir = os.path.join(test_losses_dir, sorted_files[0])
-    tw_to_malicious_nodes = compute_tw_labels(cfg, losses_dir=first_epoch_losses_dir)
+    if group_by_time_window:
+        # TW-level evaluations re-group the loss files into the original time windows
+        tw_names, _ = load_losses_per_time_window(first_epoch_losses_dir, cfg)
+        tw_to_malicious_nodes = compute_tw_labels(cfg, tw_names=tw_names)
+    else:
+        tw_to_malicious_nodes = compute_tw_labels(cfg, losses_dir=first_epoch_losses_dir)
 
     best_metrics = {
         "adp_score": float("-inf"),
         "discrimination": float("-inf"),
         "ap@10": float("-inf"),
-        "best_stats": None,
+        "ap": float("-inf"),
+        "stats": None,
     }
 
     out_dir = cfg.evaluation._precision_recall_dir
@@ -92,12 +99,12 @@ def standard_evaluation(cfg, evaluation_fn):
 
         best_metrics = best_metric_pick_best_epoch(stats, best_metrics, cfg)
 
-    if save_files_to_wandb:
+    if save_files_to_wandb and "neat_scores_img_file" in best_metrics["stats"]:
         # We only store the scores for the best run
         # wandb.save(best_metrics["stats"]["scores_file"], out_dir)
         wandb.save(best_metrics["stats"]["neat_scores_img_file"], out_dir)
 
-    log(f"Best scores file: {best_metrics['stats']['scores_file']}")
+    log(f"Best scores file: {best_metrics['stats'].get('scores_file')}")
     log(f"Best model path: {best_metrics['stats'].get('model_path')}")
     
     return best_metrics["stats"]
@@ -105,6 +112,16 @@ def standard_evaluation(cfg, evaluation_fn):
 
 def best_metric_pick_best_epoch(stats, best_metrics, cfg):
     best_model_selection = cfg.evaluation.best_model_selection
+
+    # ADP and discrimination are only computed by node/edge-level evaluations.
+    # Other evaluations (tw, node_tw) fall back to selecting the epoch with best AP.
+    if "adp_score" not in stats or "discrimination" not in stats:
+        stats_ap = stats.get("ap", float("nan"))
+        stats_ap = float("-inf") if stats_ap != stats_ap else stats_ap  # nan => -inf
+        if best_metrics["stats"] is None or stats_ap > best_metrics["ap"]:
+            best_metrics["ap"] = stats_ap
+            best_metrics["stats"] = stats
+        return best_metrics
 
     if best_model_selection == "best_adp":
         condition = (stats["adp_score"] > best_metrics["adp_score"]) or (
@@ -137,9 +154,13 @@ def main(cfg):
     if method == "node_evaluation":
         return standard_evaluation(cfg, evaluation_fn=node_evaluation.main)
     elif method == "tw_evaluation":
-        return standard_evaluation(cfg, evaluation_fn=tw_evaluation.main)
+        return standard_evaluation(
+            cfg, evaluation_fn=tw_evaluation.main, group_by_time_window=True
+        )
     elif method == "node_tw_evaluation":
-        return standard_evaluation(cfg, evaluation_fn=node_tw_evaluation.main)
+        return standard_evaluation(
+            cfg, evaluation_fn=node_tw_evaluation.main, group_by_time_window=True
+        )
     elif method == "queue_evaluation":
         return queue_evaluation.main(cfg)
     elif method == "edge_evaluation":

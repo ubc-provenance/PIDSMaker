@@ -1,100 +1,94 @@
+"""Node-level evaluation where a node is evaluated once per time window.
+
+A same node appearing in multiple time windows is considered as multiple unique
+samples (one per window). This is a more realistic setting for near real-time
+detection than `node_evaluation`, where node scores are aggregated over the whole
+test set.
+"""
+
 import os
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 import torch
-import tqdm
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_kmeans_labels,
-    get_ground_truth_nids,
     get_threshold,
+    load_losses_per_time_window,
     plot_precision_recall,
-    plot_scores_with_paths_node_level,
     plot_simple_scores,
     reduce_losses_to_score,
     viz_graph,
 )
-from pidsmaker.utils.utils import listdir_sorted, log
-from pidsmaker.utils.dataset_utils import (
-    get_node_to_path_and_type
-)
+from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.utils import log, log_tqdm
 
 
 def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
-    ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
-    log("Calculating threshold...")
+    node_tw_cfg = cfg.evaluation.node_tw_evaluation
+    threshold_method = node_tw_cfg.threshold_method
 
-    thr = get_threshold(val_tw_path, cfg.evaluation.node_tw_evaluation.threshold_method)
+    log("Calculating threshold...")
+    thr = get_threshold(val_tw_path, threshold_method)
     log(f"Threshold: {thr:.3f}")
 
     tw_to_node_to_losses = defaultdict(lambda: defaultdict(list))
     tw_to_edge_index = defaultdict(list)
     tw_to_edge_loss = defaultdict(list)
     node_to_max_loss_tw = {}
-    node_to_max_loss = defaultdict(int)
+    node_to_max_loss = defaultdict(lambda: float("-inf"))
 
-    filelist = listdir_sorted(test_tw_path)
-    for tw, file in enumerate(tqdm(filelist, desc="Compute labels")):
-        file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file).to_dict(orient="records")
-        for line in df:
-            srcnode = line["srcnode"]
-            dstnode = line["dstnode"]
-            loss = line["loss"]
+    def update_max(node, loss, tw):
+        if loss > node_to_max_loss[node]:
+            node_to_max_loss[node] = loss
+            node_to_max_loss_tw[node] = tw
 
+    _, tw_to_df = load_losses_per_time_window(test_tw_path, cfg)
+    for tw, df in log_tqdm(tw_to_df.items(), desc="Compute labels"):
+        # Node-level objectives produce one loss per node
+        if "node" in df.columns:
+            for node, loss in zip(df["node"].astype(int), df["loss"]):
+                tw_to_node_to_losses[tw][node].append(loss)
+                update_max(node, loss, tw)
+            continue
+
+        # Edge-level objectives produce one loss per edge
+        for srcnode, dstnode, loss in zip(
+            df["srcnode"].astype(int), df["dstnode"].astype(int), df["loss"]
+        ):
             tw_to_edge_index[tw].append((srcnode, dstnode))
             tw_to_edge_loss[tw].append(loss)
 
-            # Scores
-            tw_to_node_to_losses[tw][srcnode].append(
-                loss
-            )  # TODO: now we only consider src nodes and we don't evaluate on dst nodes
-            if cfg.evaluation.node_tw_evaluation.use_dst_node_loss:
+            tw_to_node_to_losses[tw][srcnode].append(loss)
+            update_max(srcnode, loss, tw)
+            if node_tw_cfg.use_dst_node_loss:
                 tw_to_node_to_losses[tw][dstnode].append(loss)
+                update_max(dstnode, loss, tw)
 
-            # If max-val thr is used, we want to keep track when the node with max loss happens
-            if loss > node_to_max_loss[srcnode]:
-                node_to_max_loss[srcnode] = loss
-                node_to_max_loss_tw[srcnode] = tw
-            if cfg.evaluation.node_tw_evaluation.use_dst_node_loss:
-                if loss > node_to_max_loss[dstnode]:
-                    node_to_max_loss[dstnode] = loss
-                    node_to_max_loss_tw[dstnode] = tw
-
-    use_kmeans = cfg.evaluation.node_tw_evaluation.use_kmeans
+    use_kmeans = node_tw_cfg.use_kmeans
     results = {}
-    for tw, node_to_losses in tw_to_node_to_losses.items():
+    for tw, node_to_losses in sorted(tw_to_node_to_losses.items()):
         is_malicious_tw = False
+        malicious_nodes_in_tw = tw_to_malicious_nodes.get(tw, {})
 
-        if tw not in results:
-            results[tw] = {}
+        results[tw] = {}
         for node_id, losses in node_to_losses.items():
-            pred_score = reduce_losses_to_score(
-                losses, cfg.evaluation.node_tw_evaluation.threshold_method
-            )
+            pred_score = float(reduce_losses_to_score(losses, threshold_method))
+            y_hat = int(pred_score > thr)
 
-            if node_id not in results[tw]:
-                results[tw][node_id] = {}
+            results[tw][node_id] = {
+                "score": pred_score,
+                "y_true": int(str(node_id) in malicious_nodes_in_tw),
+                # with kmeans, labels are set after clustering
+                "y_hat": 0 if use_kmeans else y_hat,
+            }
+            is_malicious_tw = is_malicious_tw or bool(y_hat)
 
-            results[tw][node_id]["score"] = pred_score
-            results[tw][node_id]["y_true"] = int(
-                (tw in tw_to_malicious_nodes) and (str(node_id) in tw_to_malicious_nodes[tw])
-            )
-
-            if use_kmeans:  # in this mode, we add the label after
-                results[tw][node_id]["y_hat"] = 0
-                if int(pred_score > thr):
-                    is_malicious_tw = True
-            else:
-                results[tw][node_id]["y_hat"] = int(pred_score > thr)
-
-        if is_malicious_tw:
-            results[tw] = compute_kmeans_labels(
-                results[tw], topk_K=cfg.evaluation.node_tw_evaluation.kmeans_top_K
-            )
+        # Kmeans is only applied on TWs with at least one node above the threshold
+        if use_kmeans and is_malicious_tw:
+            results[tw] = compute_kmeans_labels(results[tw], topk_K=node_tw_cfg.kmeans_top_K)
 
     return results, tw_to_edge_index, tw_to_edge_loss, thr, node_to_max_loss_tw
 
@@ -108,49 +102,54 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     out_dir = cfg.evaluation._precision_recall_dir
     os.makedirs(out_dir, exist_ok=True)
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
-    scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
-    node_to_path_type = get_node_to_path_and_type(cfg)
 
     log("Analysis of malicious nodes:")
-    nodes, y_truth, y_preds, pred_scores = [], [], [], []
-    node_to_correct_pred = {}
+    # One list per TW, in the same order as `tws`
+    tws, nodes, y_truth, y_preds, pred_scores = [], [], [], [], []
     summary_graphs = {}
 
-    for tw, nid_to_result in results.items():
-        malicious_tws = set()
+    for tw, nid_to_result in sorted(results.items()):
+        tws.append(tw)
+        tw_nodes, tw_truth, tw_preds, tw_scores = [], [], [], []
+        node_to_correct_pred = {}
         malicious_nodes = set()
 
-        # We create a new arrayfor each TW
-        for arr in [nodes, y_truth, y_preds, pred_scores]:
-            arr.append([])
         for nid, result in nid_to_result.items():
-            nodes[tw].append(nid)
             score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
-            y_truth[tw].append(y_true)
-            y_preds[tw].append(y_hat)
-            pred_scores[tw].append(score)
+            tw_nodes.append(nid)
+            tw_truth.append(y_true)
+            tw_preds.append(y_hat)
+            tw_scores.append(score)
             node_to_correct_pred[nid] = y_hat == y_true
 
             if y_true == 1:
-                if tw not in malicious_tws:
+                if len(malicious_nodes) == 0:
                     log(f"TW {tw}")
-                    malicious_tws.add(tw)
                 log(
                     f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:"
                     + (" ✅ " if y_true == y_hat else " ❌ ")
-                    + (node_to_path[nid]["path"])
+                    + node_to_path.get(nid, {}).get("path", "?")
                 )
                 malicious_nodes.add(nid)
 
-        if cfg.evaluation.viz_malicious_nodes and len(malicious_nodes) > 0:
+        nodes.append(tw_nodes)
+        y_truth.append(tw_truth)
+        y_preds.append(tw_preds)
+        pred_scores.append(tw_scores)
+
+        if (
+            cfg.evaluation.viz_malicious_nodes
+            and len(malicious_nodes) > 0
+            and len(tw_to_ei[tw]) > 0
+        ):
             graph_path = viz_graph(
-                edge_index=np.array(tw_to_ei[tw]),
+                edge_index=np.array(tw_to_ei[tw]).T,
                 edge_scores=np.array(tw_to_edge_loss[tw]),
-                node_scores=np.array(pred_scores[tw]),
+                node_scores=np.array(tw_scores),
                 node_to_correct_pred=node_to_correct_pred,
                 malicious_nodes=malicious_nodes,
-                node_to_path_and_type=node_to_path_type,
+                node_to_path_and_type=node_to_path,
                 anomaly_threshold=thr,
                 out_dir=out_dir,
                 tw=tw,
@@ -163,29 +162,34 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     flat_pred_scores = [e for sublist in pred_scores for e in sublist]
     flat_y_truth = [e for sublist in y_truth for e in sublist]
     flat_y_preds = [e for sublist in y_preds for e in sublist]
-    flat_nodes = [e for sublist in nodes for e in sublist]
 
-    # Plots the PR curve and scores for mean node loss
     log(f"Saving figures to {out_dir}...")
     plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
     plot_simple_scores(flat_pred_scores, flat_y_truth, simple_scores_img_file)
-    max_val_loss_tw = [node_to_max_loss_tw.get(n, -1) for n in flat_nodes]
-    plot_scores_with_paths_node_level(
-        flat_pred_scores,
-        flat_y_truth,
-        flat_nodes,
-        max_val_loss_tw,
-        tw_to_malicious_nodes,
-        scores_img_file,
-        cfg,
-    )
+
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
-    stats.update(**summary_graphs)
+    stats["threshold"] = thr
+    stats["num_malicious_tws_detected"] = sum(
+        int(any(p and t for p, t in zip(preds, truths))) for preds, truths in zip(y_preds, y_truth)
+    )
+    stats["num_malicious_tws"] = sum(int(any(truths)) for truths in y_truth)
 
     results_file = os.path.join(out_dir, f"result_{model_epoch_dir}.pth")
     stats_file = os.path.join(out_dir, f"stats_{model_epoch_dir}.pth")
+    scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
 
     torch.save(results, results_file)
     torch.save(stats, stats_file)
+    torch.save(
+        {
+            "pred_scores": flat_pred_scores,
+            "y_preds": flat_y_preds,
+            "y_truth": flat_y_truth,
+            "nodes": [(tw, n) for tw, tw_nodes in zip(tws, nodes) for n in tw_nodes],
+        },
+        scores_file,
+    )
+    stats["scores_file"] = scores_file
+    stats.update(**summary_graphs)
 
     return stats

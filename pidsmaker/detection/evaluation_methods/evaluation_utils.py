@@ -1170,7 +1170,7 @@ def get_ground_truth_uuid_to_node_id(cfg):
     return uuid_to_node_id
 
 
-def compute_tw_labels(cfg, losses_dir=None):
+def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
     """
     Gets the malcious node IDs present in each time window.
 
@@ -1178,7 +1178,10 @@ def compute_tw_labels(cfg, losses_dir=None):
     instead of the raw graph files.  This is important because intra-graph
     batching may split a single graph into multiple sub-batches, each producing
     its own CSV.  Using the CSV file list ensures the TW indices here match
-    those assigned in node_evaluation / tw_evaluation.
+    those assigned in node_evaluation.
+
+    When tw_names is provided (list of "start~end" strings, e.g. returned by
+    `load_losses_per_time_window`), TW indices follow that list instead.
     """
     out_path = cfg.construction._tw_labels
     out_file = os.path.join(out_path, "tw_to_malicious_nodes.pkl")
@@ -1198,7 +1201,9 @@ def compute_tw_labels(cfg, losses_dir=None):
     t_to_node = labelling.get_t2malicious_node(cfg)
 
     # Use CSV loss files when available so TW indices match node_evaluation
-    if losses_dir is not None and os.path.isdir(losses_dir):
+    if tw_names is not None:
+        test_tw_files = list(tw_names)
+    elif losses_dir is not None and os.path.isdir(losses_dir):
         test_tw_files = listdir_sorted(losses_dir)
     else:
         graph_dir = cfg.transformation._graphs_dir
@@ -1247,6 +1252,76 @@ def compute_tw_labels(cfg, losses_dir=None):
     )
 
     return tw_to_malicious_nodes
+
+
+def _tw_name_to_ns_range(name, timezone):
+    name = os.path.basename(name)
+    if name.endswith(".csv"):
+        name = name[: -len(".csv")]
+    start, end = name.split("~")
+    return (
+        datetime_to_ns_time_US_handle_nano(start, timezone=timezone),
+        datetime_to_ns_time_US_handle_nano(end, timezone=timezone),
+    )
+
+
+def load_losses_per_time_window(losses_dir, cfg, max_unmatched_ratio=0.01):
+    """Loads the loss CSVs of a split/epoch directory and groups their rows by time window.
+
+    The CSVs written during inference do not necessarily map 1:1 to the time
+    windows (graphs) built during construction: intra-graph batching splits a
+    graph into several CSVs, while global/inter-graph batching may merge several
+    graphs into a single CSV. Time-window-level evaluations (tw, node_tw, queue)
+    require the original windows, so edges are re-assigned to the test graph
+    whose time range contains their timestamp.
+
+    If the CSVs have no `time` column (node-level objectives) or the timestamps
+    cannot be matched with the test graphs, each CSV is considered as one window.
+
+    Returns:
+        tuple: (tw_names, tw_to_df) where tw_names is the ordered list of
+        "start~end" window names (indices match `compute_tw_labels(cfg, tw_names=tw_names)`)
+        and tw_to_df maps a window index to the DataFrame of its rows. Windows
+        without any row are absent from tw_to_df.
+    """
+    files = listdir_sorted(losses_dir)
+    dfs = [pd.read_csv(os.path.join(losses_dir, f)) for f in files]
+    per_file_names = [f[: -len(".csv")] if f.endswith(".csv") else f for f in files]
+    per_file = (per_file_names, {i: df for i, df in enumerate(dfs)})
+
+    if len(dfs) == 0 or not all("time" in df.columns for df in dfs):
+        return per_file
+
+    graph_files = get_all_graphs_for_dates(cfg.transformation._graphs_dir, cfg.dataset.test_dates)
+    if len(graph_files) == 0:
+        log("WARNING: no test graph found, using loss files as time windows.")
+        return per_file
+
+    tw_names = [os.path.basename(f) for f in graph_files]
+    ranges = np.array([_tw_name_to_ns_range(n, cfg.dataset.timezone) for n in tw_names])
+    starts, ends = ranges[:, 0], ranges[:, 1]
+
+    df = pd.concat(dfs, ignore_index=True)
+    times = df["time"].to_numpy(dtype=np.int64)
+    tw_idx = np.searchsorted(starts, times, side="right") - 1
+    unmatched = (tw_idx < 0) | (times > ends[np.clip(tw_idx, 0, None)])
+    unmatched_ratio = unmatched.mean() if len(times) > 0 else 0.0
+    if unmatched_ratio > max_unmatched_ratio:
+        log(
+            f"WARNING: {unmatched_ratio:.1%} of edges do not fall in any test graph time window, "
+            "using loss files as time windows."
+        )
+        return per_file
+
+    df["_tw"] = np.clip(tw_idx, 0, len(tw_names) - 1)
+    tw_to_df = {
+        int(tw): group.drop(columns="_tw").reset_index(drop=True)
+        for tw, group in df.groupby("_tw", sort=True)
+    }
+    log(
+        f"Grouped {len(files)} loss files into {len(tw_to_df)}/{len(tw_names)} non-empty time windows."
+    )
+    return tw_names, tw_to_df
 
 
 def datetime_to_ns_time_US_handle_nano(nano_date_str, timezone="US/Eastern"):
@@ -1503,6 +1578,12 @@ def compute_kmeans_labels(results, topk_K):
     last_N_scores = score_values[-topk_K:]
     last_N_nodes = nodes_to_score[-topk_K:]
 
+    # KMeans needs at least 2 samples: with a single node, it is the top anomaly
+    if len(last_N_scores) < 2:
+        for node_id in last_N_nodes[:, 0]:
+            results[node_id]["y_hat"] = 1
+        return results
+
     kmeans = KMeans(n_clusters=2, random_state=0, n_init=10)
     kmeans.fit(last_N_scores.reshape(-1, 1))
 
@@ -1518,7 +1599,7 @@ def compute_kmeans_labels(results, topk_K):
     anomaly_nodes = highest_value_cluster[:, 0]
 
     for idx in highest_value_cluster_indices:
-        global_idx = len(score_values) - topk_K + idx
+        global_idx = len(score_values) - len(last_N_scores) + idx
         node_id = nodes_to_score[global_idx, 0]
         results[node_id]["y_hat"] = 1
 
