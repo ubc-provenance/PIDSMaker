@@ -15,6 +15,7 @@ import torch
 
 import pidsmaker.mimicry as mimicry
 from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
+from pidsmaker.preprocessing.cleaning import Cleaner
 from pidsmaker.utils.dataset_utils import get_rel2id, rel2id_optc, OPTC_DATASETS, _has_consistent_edge_types, translate_optc_to_tc
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
@@ -57,7 +58,7 @@ def _stream_rows(connect, sql, params=None, fetch_size=50_000):
 
 
 
-def compute_indexid2msg(cfg):
+def compute_indexid2msg(cfg, cleaner=None):
     """Compute mapping from node index IDs to node types and feature labels.
 
     Queries PostgreSQL database for all nodes (netflow, subject/process, file) and
@@ -65,6 +66,8 @@ def compute_indexid2msg(cfg):
 
     Args:
         cfg: Configuration with database connection and feature settings
+        cleaner: Optional `Cleaner` applied to node attributes and labels. Nodes it
+            removes (noisy netflows) are absent from the mapping, so their events are skipped.
 
     Returns:
         dict: Mapping {index_id: [node_type, label_string]} where:
@@ -73,6 +76,8 @@ def compute_indexid2msg(cfg):
             - label_string: Feature label (hashed or plaintext depending on config)
     """
     _, connect = init_database_connection(cfg)
+    if cleaner is None:
+        cleaner = Cleaner(cfg)
 
     use_hashed_label = cfg.construction.use_hashed_label
     null_label_tokens = cfg.construction.null_label_tokens
@@ -126,9 +131,13 @@ def compute_indexid2msg(cfg):
                     label_str = "[NO_IP]"
             else:
                 label_str = _auto_label_default(attrs)
+        elif cleaner:
+            # Null attributes were emptied by the cleaning: they are skipped
+            label_str = " ".join([attrs[label_used] for label_used in feats if attrs[label_used]])
         else:
             label_str = " ".join([attrs[label_used] for label_used in feats])
 
+        label_str = cleaner.normalize_label(label_str)
         if use_hashed_label:
             label_str = stringtomd5(label_str)
         # Keep only printable ASCII — provenance labels are paths, cmds, IPs
@@ -147,6 +156,9 @@ def compute_indexid2msg(cfg):
         }
         index_id = str(i[-1])
         node_type = attrs["type"]
+        if cleaner.is_noisy_netflow(attrs):
+            continue
+        attrs = cleaner.clean_attributes(node_type, attrs)
         label_str = get_label_str_from_features(attrs, node_type)
         indexid2msg[index_id] = [node_type, label_str]
         netflow_count += 1
@@ -159,6 +171,7 @@ def compute_indexid2msg(cfg):
         attrs = {"type": "subject", "path": str(i[2]), "cmd_line": str(i[3])}
         index_id = str(i[-1])
         node_type = attrs["type"]
+        attrs = cleaner.clean_attributes(node_type, attrs)
         label_str = get_label_str_from_features(attrs, node_type)
         indexid2msg[index_id] = [node_type, label_str]
         subject_count += 1
@@ -171,6 +184,7 @@ def compute_indexid2msg(cfg):
         attrs = {"type": "file", "path": str(i[2])}
         index_id = str(i[-1])
         node_type = attrs["type"]
+        attrs = cleaner.clean_attributes(node_type, attrs)
         label_str = get_label_str_from_features(attrs, node_type)
         indexid2msg[index_id] = [node_type, label_str]
         file_count += 1
@@ -233,7 +247,7 @@ def compute_and_save_split2nodes(cfg):
     return split2nodes
 
 
-def gen_edge_fused_tw(indexid2msg, cfg):
+def gen_edge_fused_tw(indexid2msg, cfg, cleaner=None):
     """Generate time-windowed provenance graphs from database events.
 
     Main graph construction function that:
@@ -251,8 +265,11 @@ def gen_edge_fused_tw(indexid2msg, cfg):
             - Edge type filtering (rel2id)
             - Mimicry settings (mimicry_edge_num)
             - Output directory paths
+        cleaner: Optional `Cleaner` removing events (self-loops, duplicates, ...)
     """
     _, connect = init_database_connection(cfg)
+    if cleaner is None:
+        cleaner = Cleaner(cfg)
     rel2id = get_rel2id(cfg)
     # DB rows carry raw edge type strings (e.g. "START", "MESSAGE" for OpTC).
     # When consistent_edge_types is on, get_rel2id returns TC-equivalent labels,
@@ -343,14 +360,19 @@ def gen_edge_fused_tw(indexid2msg, cfg):
                     filtered = leftover
                     leftover = []
                     for row in db_chunk:
-                        if row[2] in include_edge_type:
+                        if row[2] in include_edge_type and (
+                            not cleaner or cleaner.keep_event(row[1], row[2], row[4], row[6])
+                        ):
                             filtered.append(row)
 
                     # On the last DB chunk also append mimicry events, matching
                     # the original events_list ordering (real events then mimicry).
                     if db_done:
                         for event in mimicry_events:
-                            if event[2] in include_edge_type:
+                            if event[2] in include_edge_type and (
+                                not cleaner
+                                or cleaner.keep_event(event[1], event[2], event[4], event[6])
+                            ):
                                 filtered.append(event)
 
                     if not filtered:
@@ -389,6 +411,10 @@ def gen_edge_fused_tw(indexid2msg, cfg):
 
                             node_info = {}
                             edge_list = []
+                            # (src_index_id, operation, dst_index_id) of each event
+                            temp_list = cleaner.dedup_window(
+                                temp_list, key_fn=lambda e: (e[1], e[2], e[4])
+                            )
                             if cfg.construction.fuse_edge:
                                 edge_info = defaultdict(list)
                                 for (
@@ -493,6 +519,8 @@ def gen_edge_fused_tw(indexid2msg, cfg):
 
                             for node, info in node_info.items():
                                 graph.add_node(node, node_type=info["node_type"], label=info["label"])
+                            if cleaner:
+                                cleaner.add_graph_nodes(node_info.keys())
 
                             # Translate OpTC edge types to DARPA TC equivalents if enabled
                             _translate = (
@@ -550,15 +578,23 @@ def main(cfg):
     2. Build time-windowed graphs from events (gen_edge_fused_tw)
     3. Compute dataset split node memberships (compute_and_save_split2nodes)
     4. Save filtered node features (save_indexid2msg)
+    5. With `construction.cleaning`, save the cleaning report
 
     Args:
         cfg: Configuration object with all construction parameters
     """
     log_start(__file__)
 
-    indexid2msg = compute_indexid2msg(cfg=cfg)
+    cleaner = Cleaner(cfg)
+    if cleaner:
+        log(f"Cleaning methods: {', '.join(sorted(cleaner.methods))}")
 
-    gen_edge_fused_tw(indexid2msg=indexid2msg, cfg=cfg)
+    indexid2msg = compute_indexid2msg(cfg=cfg, cleaner=cleaner)
+
+    gen_edge_fused_tw(indexid2msg=indexid2msg, cfg=cfg, cleaner=cleaner)
 
     split2nodes = compute_and_save_split2nodes(cfg)
     save_indexid2msg(indexid2msg, split2nodes, cfg)
+
+    if cleaner:
+        cleaner.save_report(cfg)

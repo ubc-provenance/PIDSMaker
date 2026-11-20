@@ -11,6 +11,7 @@ import yaml
 from yacs.config import CfgNode as CN
 
 from .config import (
+    CLEANING_METHODS,
     DATASET_DEFAULT_CONFIG,
     DECODERS_EDGE_LEVEL,
     DECODERS_NODE_LEVEL,
@@ -271,11 +272,41 @@ def set_immutable_cfg(cfg):
         tgn_loader_cfg.fix_buggy_orthrus_TGN = True
         tgn_loader_cfg.directed = True
 
+def get_cleaning_methods_from_cfg(cfg):
+    cleaning = getattr(cfg.construction, "cleaning", None)
+    used_methods = getattr(cleaning, "used_methods", None) if cleaning is not None else None
+    if used_methods is None:
+        return []
+    methods = [m.strip() for m in str(used_methods).split(",") if m.strip()]
+    return [m for m in methods if m != "none"]
+
+
+def get_hashed_construction_cfg(cfg):
+    """Construction args that define the hash of its folder.
+
+    Without cleaning, `construction.cleaning` is ignored so that graphs built before cleaning
+    existed are reused. Otherwise, only the args of the used cleaning methods are hashed, sorted
+    as their order has no effect.
+    """
+    hashed = {k: v for k, v in cfg.construction.items() if k != "cleaning"}
+    methods = sorted(set(get_cleaning_methods_from_cfg(cfg)))
+    if methods:
+        cleaning = cfg.construction.cleaning
+        hashed["cleaning"] = {"used_methods": ",".join(methods)}
+        for method in methods:
+            method_args = getattr(cleaning, method, None)
+            if isinstance(method_args, dict) and len(method_args) > 0:
+                hashed["cleaning"][method] = {f"{method}.{k}": v for k, v in method_args.items()}
+    return hashed
+
+
 def set_task_paths(cfg, subtask_concat_value=None):
     subtask_to_hash = {}
     # Directories common to all tasks
     for task in TASK_ARGS:
         task_cfg = getattr(cfg, task)
+        if task == "construction":
+            task_cfg = get_hashed_construction_cfg(cfg)
         restart_values = flatten_arg_values(task_cfg)
 
         _spider_pretrain_datasets = (
@@ -329,14 +360,14 @@ def set_task_paths(cfg, subtask_concat_value=None):
         # When pretrain_datasets is set for SPIDER, the pretrained model is
         # independent of the input dataset.  The only truly dataset-specific entry in
         # subtask_to_hash is "construction" (it includes cfg.dataset.train_dates).
-        # Exclude it from featurization and all downstream tasks so their hashes
-        # are stable across input datasets.  Upstream tasks (construction,
-        # transformation) are unaffected — their paths must remain dataset-specific.
-        # Dataset identity for downstream tasks is captured by the directory component.
+        # Exclude it from featurization so the pretrained model is shared across input
+        # datasets.  Downstream tasks (feat_inference, batching, ...) embed and train on
+        # the graphs of the input dataset, so they keep it: otherwise, graphs built with
+        # other construction args (cleaning, time windows, ...) would reuse stale results.
         if (
             cfg.featurization.used_method == "pretrained"
             and getattr(cfg.featurization.pretrained, "pretrain_datasets", None)
-            and (task == "featurization" or "featurization" in deps)
+            and task == "featurization"
         ):
             deps = [d for d in deps if d != "construction"]
 
@@ -652,6 +683,7 @@ def check_edge_cases(cfg):
             )
 
     check_tokenization(cfg)
+    check_cleaning(cfg)
 
     if cfg.featurization.used_method == "fasttext":
         if cfg.featurization.fasttext.use_pretrained_fb_model:
@@ -686,6 +718,45 @@ def check_edge_cases(cfg):
     if cfg.evaluation.used_method == "edge_evaluation":
         if cfg._is_node_level:
             raise ValueError("Edge evaluation not implemented for node-level detection.")
+
+
+def check_cleaning(cfg):
+    """Checks that the args of the used `construction.cleaning` methods are set."""
+    methods = get_cleaning_methods_from_cfg(cfg)
+    if not methods:
+        return
+    invalid = [m for m in methods if m not in CLEANING_METHODS]
+    if invalid:
+        raise ValueError(
+            f"Invalid `construction.cleaning.used_methods`: {invalid}. "
+            f"Use `none` or a comma-separated list among {CLEANING_METHODS}."
+        )
+    if cfg.construction.used_method.strip() not in ("default", "magic"):
+        raise ValueError("`construction.cleaning` is only supported by the default construction.")
+    for method in methods:
+        method_args = getattr(cfg.construction.cleaning, method, None) or {}
+        missing = [k for k, v in method_args.items() if v is None]
+        if missing:
+            raise ValueError(
+                f"Missing arguments of the `{method}` cleaning: "
+                + ", ".join(f"construction.cleaning.{method}.{k}" for k in missing)
+                + ". Set them in the config (default values are in default.yml) or in the CLI."
+            )
+    if "remove_noisy_netflows" in methods:
+        categories = [
+            c.strip()
+            for c in str(cfg.construction.cleaning.remove_noisy_netflows.ip_categories).split(",")
+            if c.strip()
+        ]
+        if not categories:
+            raise ValueError(
+                "`construction.cleaning.remove_noisy_netflows.ip_categories` is empty."
+            )
+    if "dedup_window_edges" in methods and cfg.construction.fuse_edge is False:
+        print(
+            "Note: `dedup_window_edges` keeps one event per (source, destination, type) in each "
+            "time window, which removes most of the events kept by `fuse_edge=False`."
+        )
 
 
 def check_tokenization(cfg):

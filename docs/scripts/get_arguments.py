@@ -2,6 +2,7 @@ import os
 
 from pidsmaker.config import (
     AND,
+    CLEANING_CFG,
     DECODERS_CFG,
     ENCODERS_CFG,
     FEATURIZATIONS_CFG,
@@ -99,6 +100,7 @@ def write_md(d, filename, ignore=[]):
 
 write_md(FEATURIZATIONS_CFG, "featurizations")
 write_md(TOKENIZATIONS_CFG, "tokenizations")
+write_md(CLEANING_CFG, "cleanings")
 write_md(ENCODERS_CFG, "encoders")
 write_md(DECODERS_CFG, "decoders")
 write_md(OBJECTIVES_CFG, "objectives", ignore=list(DECODERS_CFG.keys()))
@@ -110,6 +112,7 @@ IGNORE_NESTED = (
     + list(OBJECTIVES_CFG.keys())
     + list(FEATURIZATIONS_CFG.keys())
     + list(TOKENIZATIONS_CFG.keys())
+    + list(CLEANING_CFG.keys())
 )
 
 for task_name, task_args in TASK_ARGS.items():

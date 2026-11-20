@@ -1157,6 +1157,34 @@ REQUIRE_NON_REVERSED_EDGES_ENCODERS = ["hetero_graph_transformer", "event_type_e
 THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "percentile", "threatrace", "magic", "flash", "nodlink", "fixed_zero", "ocrapt"]
 
 # --- Tasks, subtasks, and argument configurations ---
+# Cleaning of the raw data during construction (see pidsmaker/preprocessing/cleaning.py).
+IP_CATEGORIES = ["multicast", "broadcast", "unspecified", "loopback", "link_local"]
+CLEANING_CFG = {
+    "remove_null_attributes": {},
+    "normalize_labels": {
+        "collapse_whitespace": Arg(bool, desc="Trims labels and replaces runs of whitespaces by a single space."),
+        "collapse_slashes": Arg(
+            bool, desc="Replaces repeated '/' (except in URLs) and repeated '\\' by a single one."
+        ),
+        "strip_path_prefixes": Arg(bool, desc="Removes Windows NT path prefixes such as '\\\\?\\' and '//?/'."),
+        "strip_quotes": Arg(bool, desc="Removes single and double quotes, e.g. around Windows executable paths."),
+        "lowercase": Arg(bool, desc="Lowercases labels, e.g. for case-insensitive Windows paths."),
+        "max_length": Arg(int, desc="Labels longer than this number of characters are truncated. 0 disables truncation."),
+    },
+    "remove_duplicate_events": {},
+    "remove_self_loops": {},
+    "remove_noisy_netflows": {
+        "ip_categories": Arg(
+            str,
+            vals=AND(IP_CATEGORIES),
+            desc="Netflow nodes whose remote IP is in one of these categories are removed. \
+                `broadcast` is 255.255.255.255.",
+        ),
+    },
+    "dedup_window_edges": {},
+}
+CLEANING_METHODS = list(CLEANING_CFG.keys())
+
 TASK_ARGS = {
     "construction": {
         "used_method": Arg(
@@ -1201,6 +1229,20 @@ TASK_ARGS = {
             vals=OR(list(DATASET_DEFAULT_CONFIG.keys()) + ["none"]),
             desc="A comma-separated list of datasets on which training is performed. Evaluation is done only the primary dataset run in CLI.",
         ),
+        "cleaning": {
+            "used_methods": Arg(
+                str,
+                vals=AND(CLEANING_METHODS + ["none"]),
+                desc="Cleaning methods applied to the raw data before building the graphs, or `none`. \
+                    `remove_null_attributes`: null-like attributes (`None`, `NA`, `<UNNAMED fd:3>`, invalid IPs and ports) are removed from labels; \
+                    `normalize_labels`: whitespaces, slashes, path prefixes and quotes are normalized and long labels truncated; \
+                    `remove_duplicate_events`: events with the same source, destination, type and timestamp are kept once; \
+                    `remove_self_loops`: events from a node to itself are removed; \
+                    `remove_noisy_netflows`: netflows to multicast/broadcast/... IPs are removed with their events; \
+                    `dedup_window_edges`: only the first event of each (source, destination, type) is kept in each time window.",
+            ),
+            **CLEANING_CFG,
+        },
     },
     "transformation": {
         "used_methods": Arg(
