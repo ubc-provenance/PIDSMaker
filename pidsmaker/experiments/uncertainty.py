@@ -70,10 +70,12 @@ def prepare_for_deep_ensemble(cfg, iteration):
     elif method == "increasing_seed":
         restart_from = cfg.experiment.uncertainty.deep_ensemble.restart_from
         cfg = copy.deepcopy(cfg)
+        # Seeds may be unset (None) in some configs (e.g. featurization.seed in kairos.yml),
+        # in which case we start from 0.
         if restart_from == "featurization":
-            cfg.featurization.seed += iteration
+            cfg.featurization.seed = (cfg.featurization.seed or 0) + iteration
         elif restart_from == "training":
-            cfg.training.seed += iteration
+            cfg.training.seed = (cfg.training.seed or 0) + iteration
         else:
             raise ValueError(f"Invalid `restart_from` value")
         
