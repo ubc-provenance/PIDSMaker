@@ -222,6 +222,8 @@ evaluation:
     use_dst_node_loss: True
     use_kmeans: True
     kmeans_top_K: 30
+  tw_evaluation:
+    threshold_method: max_val_loss
   node_tw_evaluation:
     threshold_method: max_val_loss
     use_dst_node_loss: True

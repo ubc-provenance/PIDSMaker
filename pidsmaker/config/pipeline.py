@@ -15,6 +15,7 @@ from .config import (
     DATASET_DEFAULT_CONFIG,
     DECODERS_EDGE_LEVEL,
     DECODERS_NODE_LEVEL,
+    ENCODERS_CFG,
     EXPERIMENTS_CONFIG,
     FEATURIZATION_TOKENIZATIONS,
     OBJECTIVES_EDGE_LEVEL,
@@ -259,8 +260,11 @@ def set_shortcut_variables(cfg):
         ]
     )
     
-    cfg._is_hybrid_loss = decoders and ("predict_node_type" in decoders and \
-        "predict_edge_type" in decoders)
+    # Node-level and edge-level objectives are combined at the edge level
+    objectives = [o.strip() for o in decoders.split(",")] if decoders else []
+    cfg._is_hybrid_loss = any(o in OBJECTIVES_NODE_LEVEL for o in objectives) and any(
+        o in OBJECTIVES_EDGE_LEVEL for o in objectives
+    )
         
 
 
@@ -670,13 +674,55 @@ def check_edge_cases(cfg):
         if not use_tgn:
             raise ValueError("Couldn't use `tgn_last_neighbor` without `tgn` as encoder.")
 
+    edge_features = [f.strip() for f in (cfg.batching.edge_features or "").split(",")]
+    is_optc = cfg.dataset.name.lower() in ["optc_h201", "optc_h501", "optc_h051"]
+    if is_optc:
+        if "edge_type_triplet" in edge_features:
+            raise ValueError("Edge feature `edge_type_triplet` is not implemented for OpTC datasets.")
+        if cfg._is_hetero:
+            raise ValueError("Hetero encoders are not implemented for OpTC datasets.")
+
+    if cfg._is_hetero and "edge_type_triplet" in edge_features:
+        raise ValueError("Hetero encoders do not support the `edge_type_triplet` edge feature.")
+
+    global_batching = cfg.batching.global_batching
+    if (global_batching.used_method or "none").strip() == "minutes":
+        step = global_batching.global_batching_batch_size or global_batching.global_batching_batch_size_inference
+        if step and step > cfg.construction.time_window_size:
+            raise ValueError(
+                f"With `global_batching.used_method=minutes`, graphs of `construction.time_window_size` "
+                f"({cfg.construction.time_window_size}) minutes are built every `global_batching_batch_size` "
+                f"({step}) minutes: a step larger than the window drops the events between windows."
+            )
+
+    if "time_encoding" in edge_features and not use_tgn:
+        raise ValueError("Edge feature `time_encoding` is only available if `tgn` is used as encoder.")
+
     if use_tgn:
         if not use_tgn_neigh_loader:
             raise ValueError("Couldn't use `tgn` as encoder without `tgn_last_neighbor` as loader.")
         if cfg.batching.inter_graph_batching.used_method != "none":
             raise ValueError("TGN-based encoders do not support inter graph batching yet.")
 
+    transformations = [t.strip() for t in cfg.transformation.used_methods.split(",")]
+    if "undirected" in transformations and "dag" in transformations[transformations.index("undirected"):]:
+        raise ValueError(
+            "Cannot apply the `dag` transformation after `undirected`: all edges of undirected graphs "
+            "are in cycles and would be removed."
+        )
+
+    if cfg.training_loop.run_evaluation == "best_epoch" and not cfg.training.decoder.use_few_shot:
+        raise ValueError(
+            "`training_loop.run_evaluation=best_epoch` requires `training.decoder.use_few_shot=True`, "
+            "as the best epoch is selected with the few-shot validation score. Use `each_epoch`."
+        )
+
     if use_rcaid_pseudo_graph:
+        if cfg.featurization.used_method.strip() == "flash":
+            raise ValueError(
+                "Cannot use the `flash` featurization with the `rcaid_pseudo_graph` transformation, "
+                "as edge labels are removed in the pseudo graph."
+            )
         if "predict_edge_type" in decoders:
             raise ValueError(
                 "Cannot predict edge type as it is removed in the pseudo graph transformation"
@@ -716,8 +762,267 @@ def check_edge_cases(cfg):
             )
 
     if cfg.evaluation.used_method == "edge_evaluation":
-        if cfg._is_node_level:
+        if cfg._is_node_level and not cfg._is_hybrid_loss:
             raise ValueError("Edge evaluation not implemented for node-level detection.")
+
+    check_featurization(cfg)
+    check_batching(cfg)
+    check_encoders(cfg)
+    check_objectives(cfg)
+    check_evaluation(cfg)
+    check_triage(cfg)
+
+
+# Featurization methods whose args are checked, with the args that are not read
+FEATURIZATION_UNUSED_ARGS = {
+    "word2vec": ["epochs", "alpha"],
+    "doc2vec": ["epochs"],
+    "fasttext": [],
+    "alacarte": ["epochs"],
+    "temporal_rw": ["epochs"],
+    "flash": [],
+}
+
+
+def check_featurization(cfg):
+    """Checks that the args of the used featurization method are set."""
+    method = cfg.featurization.used_method.strip()
+    if method not in FEATURIZATION_UNUSED_ARGS:
+        return
+    method_cfg = getattr(cfg.featurization, method)
+    missing = [
+        arg
+        for arg, value in method_cfg.items()
+        if not arg.startswith("_")
+        and value is None
+        and arg not in FEATURIZATION_UNUSED_ARGS[method]
+    ]
+    if missing:
+        raise ValueError(
+            f"Missing arguments of the `{method}` featurization: "
+            + ", ".join(f"featurization.{method}.{arg}" for arg in missing)
+            + ". Set them in the config (default values are in default.yml) or in the CLI."
+        )
+
+
+def check_batching(cfg):
+    """Checks that the args of the used batching methods are set."""
+    batching = cfg.batching
+    required = []
+    intra = [m.strip() for m in (batching.intra_graph_batching.used_methods or "none").split(",")]
+    if "edges" in intra:
+        required.append("intra_graph_batching.edges.intra_graph_batch_size")
+    if "tgn_last_neighbor" in intra:
+        required += [
+            "intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size",
+            "intra_graph_batching.tgn_last_neighbor.tgn_neighbor_n_hop",
+        ]
+    if (batching.inter_graph_batching.used_method or "none").strip() != "none":
+        required.append("inter_graph_batching.inter_graph_batch_size")
+
+    missing = []
+    for arg in required:
+        ptr = batching
+        for attr in arg.split("."):
+            ptr = getattr(ptr, attr, None)
+        if ptr is None:
+            missing.append(arg)
+    if missing:
+        raise ValueError(
+            "Missing arguments of the batching: "
+            + ", ".join(f"batching.{arg}" for arg in missing)
+            + ". Set them in the config (default values are in default.yml) or in the CLI."
+        )
+
+
+# Encoder args that are not read by the encoders
+UNUSED_ENCODER_ARGS = {
+    "tgn": ["mode"],
+    "magic_gat": ["alpha_l"],
+    "hetero_graph_transformer": ["activation"],
+}
+
+
+def check_encoders(cfg):
+    """Checks that the args of the encoders in `training.encoder.used_methods` are set.
+    Boolean args are optional (unset means False)."""
+    encoders = cfg.training.encoder.used_methods
+    if encoders is None:
+        raise ValueError("Missing `training.encoder.used_methods`.")
+
+    for encoder in [e.strip() for e in encoders.replace("-", ",").split(",")]:
+        if encoder not in ENCODERS_CFG:
+            continue  # e.g. inner encoders not exposed in the config, checked in the factory
+        unused = UNUSED_ENCODER_ARGS.get(encoder, [])
+        missing = [
+            arg
+            for arg, arg_def in ENCODERS_CFG[encoder].items()
+            if arg_def.type is not bool
+            and arg not in unused
+            and getattr(getattr(cfg.training.encoder, encoder), arg, None) is None
+        ]
+        if missing:
+            raise ValueError(
+                f"Missing arguments of the `{encoder}` encoder: "
+                + ", ".join(f"training.encoder.{encoder}.{arg}" for arg in missing)
+                + ". Set them in the config (default values are in default.yml) or in the CLI."
+            )
+
+
+def check_triage(cfg):
+    """Checks that the args of the used `triage.used_method` are set."""
+    method = cfg.triage.used_method
+    if method is None:
+        return
+    method = method.strip()
+    if method == "depimpact":
+        evaluation = cfg.evaluation.used_method.strip()
+        if evaluation not in ["node_evaluation", "node_tw_evaluation"]:
+            raise ValueError(
+                "Triage `depimpact` requires `evaluation.used_method` to be `node_evaluation` "
+                f"or `node_tw_evaluation`, found `{evaluation}`."
+            )
+        method_cfg, required = cfg.triage.depimpact, ["used_method", "score_method", "workers"]
+    elif method == "ocrapt_subgraph":
+        if cfg.evaluation.used_method.strip() != "node_evaluation":
+            raise ValueError(
+                "Triage `ocrapt_subgraph` requires `evaluation.used_method=node_evaluation`."
+            )
+        method_cfg = cfg.triage.ocrapt
+        required = ["num_hops", "top_k", "min_nodes", "max_edges", "abnormality_level"]
+    else:
+        raise ValueError(f"Invalid `triage.used_method={method}`.")
+
+    missing = [arg for arg in required if getattr(method_cfg, arg, None) is None]
+    if missing:
+        prefix = "depimpact" if method == "depimpact" else "ocrapt"
+        raise ValueError(
+            f"Missing arguments of the `{method}` triage: "
+            + ", ".join(f"triage.{prefix}.{arg}" for arg in missing)
+            + ". Set them in the config or in the CLI."
+        )
+
+
+# Args of each decoder, read when the decoder is used by an objective
+DECODER_REQUIRED_ARGS = {
+    "edge_mlp": ["architecture_str", "src_dst_projection_coef"],
+    "node_mlp": ["architecture_str"],
+    "magic_gat": ["num_layers", "num_heads", "negative_slope"],
+}
+# Args of each objective, read when the objective is used
+OBJECTIVE_REQUIRED_ARGS = {
+    "reconstruct_node_features": ["loss"],
+    "reconstruct_node_embeddings": ["loss"],
+    "reconstruct_edge_embeddings": ["loss"],
+    "reconstruct_masked_features": ["loss", "mask_rate"],
+    "predict_masked_struct": ["loss"],
+    "one_class": ["beta", "eps"],
+}
+
+
+def check_objectives(cfg):
+    """Checks that the objectives in `training.decoder.used_methods` and their decoders are set."""
+    decoder_cfg = cfg.training.decoder
+    if decoder_cfg.used_methods is None:
+        raise ValueError("Missing `training.decoder.used_methods`.")
+
+    for objective in [o.strip() for o in decoder_cfg.used_methods.split(",")]:
+        objective_cfg = getattr(decoder_cfg, objective, None)
+        if objective_cfg is None or not isinstance(objective_cfg, dict):
+            raise ValueError(f"Invalid objective `{objective}` in `training.decoder.used_methods`.")
+
+        decoder = objective_cfg.get("decoder")
+        if decoder is None:
+            raise ValueError(
+                f"Missing `training.decoder.{objective}.decoder`. Set it in the config "
+                "(default values are in default.yml) or in the CLI."
+            )
+        decoder = decoder.strip()
+        if objective == "reconstruct_masked_features" and decoder != "magic_gat":
+            raise ValueError(
+                "Objective `reconstruct_masked_features` only supports the `magic_gat` decoder."
+            )
+        if decoder == "magic_gat" and objective != "reconstruct_masked_features":
+            raise ValueError(
+                "Decoder `magic_gat` is a graph decoder only supported by objective "
+                f"`reconstruct_masked_features`, found objective `{objective}`."
+            )
+        if decoder == "inner_product" and objective != "predict_edge_contrastive":
+            raise ValueError(
+                "Decoder `inner_product` is only supported by objective `predict_edge_contrastive`."
+            )
+
+        required = [f"{decoder}.{arg}" for arg in DECODER_REQUIRED_ARGS.get(decoder, [])]
+        required += OBJECTIVE_REQUIRED_ARGS.get(objective, [])
+        missing = []
+        for arg in required:
+            ptr = objective_cfg
+            for attr in arg.split("."):
+                ptr = ptr.get(attr) if isinstance(ptr, dict) else None
+            if ptr is None:
+                missing.append(arg)
+        if missing:
+            raise ValueError(
+                f"Missing arguments of the `{objective}` objective: "
+                + ", ".join(f"training.decoder.{objective}.{arg}" for arg in missing)
+                + ". Set them in the config (default values are in default.yml) or in the CLI."
+            )
+
+
+# Args read by each evaluation method, that should be set in the config
+EVALUATION_REQUIRED_ARGS = {
+    "node_evaluation": ["threshold_method"],
+    "tw_evaluation": ["threshold_method"],
+    "node_tw_evaluation": ["threshold_method"],
+    "queue_evaluation": ["used_method", "queue_threshold"],
+    "edge_evaluation": ["threshold_method", "malicious_edge_selection"],
+}
+
+
+def check_evaluation(cfg):
+    """Checks that the args of the used `evaluation.used_method` are set."""
+    method = cfg.evaluation.used_method
+    if method is None:
+        raise ValueError("Missing `evaluation.used_method`.")
+    method = method.strip()
+    if method not in EVALUATION_REQUIRED_ARGS:
+        raise ValueError(
+            f"Invalid `evaluation.used_method={method}`. "
+            f"Expected values: {list(EVALUATION_REQUIRED_ARGS.keys())}"
+        )
+
+    method_cfg = getattr(cfg.evaluation, method)
+    required = list(EVALUATION_REQUIRED_ARGS[method])
+    if getattr(method_cfg, "use_kmeans", None):
+        required.append("kmeans_top_K")
+
+    missing = [arg for arg in required if getattr(method_cfg, arg, None) is None]
+    if missing:
+        raise ValueError(
+            f"Missing arguments of the `{method}` evaluation: "
+            + ", ".join(f"evaluation.{method}.{arg}" for arg in missing)
+            + ". Set them in the config (default values are in default.yml) or in the CLI."
+        )
+
+    # Some threshold methods rely on scores only computed by node-level objectives
+    is_node_level = cfg._is_node_level and not cfg._is_hybrid_loss
+    threshold_method = (getattr(method_cfg, "threshold_method", None) or "").strip()
+    if threshold_method == "magic" and not (method == "node_evaluation" and is_node_level):
+        raise ValueError(
+            "Threshold method `magic` is only supported by `node_evaluation` with node-level objectives."
+        )
+    # With node-level objectives, the inference computes these scores based on `node_evaluation`
+    node_threshold_method = (cfg.evaluation.node_evaluation.threshold_method or "").strip()
+    if is_node_level and node_threshold_method in ["threatrace", "flash"]:
+        if "predict_node_type" not in cfg.training.decoder.used_methods:
+            raise ValueError(
+                f"Threshold method `{node_threshold_method}` requires the `predict_node_type` objective."
+            )
+
+    if method == "queue_evaluation" and cfg._is_node_level and not cfg._is_hybrid_loss:
+        raise ValueError(
+            "Queue evaluation requires edge-level losses. It cannot be used with node-level objectives."
+        )
 
 
 def check_cleaning(cfg):
@@ -828,9 +1133,14 @@ def set_subtasks_to_restart(yml_file: str, cfg):
     user_config = load_yml_file_recursive(yml_file)
     tasks_in_yml_file = set([task for task in user_config if not task.startswith("_")])
 
+    def is_set_from_cli(task):
+        # A task absent from the yml file can still be configured from the CLI (e.g. `--triage.used_method`)
+        values = flatten_arg_values({k: v for k, v in getattr(cfg, task).items() if not k.startswith("_")})
+        return any(not v.endswith("=None") for v in values if isinstance(v, str))
+
     should_restart = OrderedDict()
     for task in TASK_ARGS:
-        if task in tasks_in_yml_file:
+        if task in tasks_in_yml_file or is_set_from_cli(task):
             task_cfg = getattr(cfg, task)
             existing_files = [files for _, _, files in os.walk(task_cfg._task_path)]
             has_finished = any(

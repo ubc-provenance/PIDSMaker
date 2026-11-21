@@ -1627,7 +1627,7 @@ EXPERIMENTS_CONFIG = {
         "used_method": Arg(str, vals=OR(["uncertainty", "none"])),
         "uncertainty": {
             "hyperparameter": {
-                "hyperparameters": Arg(str, vals=AND(["lr, num_epochs, text_h_dim, gnn_h_dim"])),
+                "hyperparameters": Arg(str, vals=AND(["lr", "num_epochs", "text_h_dim", "gnn_h_dim"])),
                 "iterations": Arg(int),
                 "delta": Arg(float),
             },

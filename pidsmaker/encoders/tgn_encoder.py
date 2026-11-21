@@ -61,8 +61,17 @@ class TGNEncoder(nn.Module):
         
         self.use_residual_norm = use_residual_norm
         if use_residual_norm:
+            if use_memory and not use_node_feats_in_gnn:
+                raise ValueError(
+                    "`use_residual_norm` adds the projected node features to the output of the GNN "
+                    "and requires `use_node_feats_in_gnn=True` when `use_memory=True`."
+                )
             self.norm_local = nn.LayerNorm(out_dim)
             self.dropout = nn.Dropout(dropout)
+            # The projected features have size `memory_dim`, while the GNN outputs `out_dim`
+            self.residual_proj = (
+                nn.Linear(memory_dim, out_dim) if memory_dim != out_dim else nn.Identity()
+            )
 
     def forward(self, batch, inference=False, **kwargs):
         n_id = batch.n_id_tgn  # NOTE: this one may need to be updated with no __inc__, or memory is get for unknown nodes
@@ -86,6 +95,8 @@ class TGNEncoder(nn.Module):
         if self.use_memory:
             h, last_update = self.memory(n_id)
             if self.use_node_feats_in_gnn:
+                # Without `fix_buggy_orthrus_TGN`, node features have one extra (padding) row
+                x_proj = x_proj[: h.shape[0]]
                 h = h + x_proj
         else:
             h = x_proj
@@ -145,7 +156,7 @@ class TGNEncoder(nn.Module):
         
         # Apply residual normalization to local encoder output
         if self.use_residual_norm:
-            h = self.norm_local(self.dropout(h) + x_proj)
+            h = self.norm_local(self.dropout(h) + self.residual_proj(x_proj[: h.shape[0]]))
         
         h_src = h[batch.reindexed_edge_index_tgn[0]]
         h_dst = h[batch.reindexed_edge_index_tgn[1]]

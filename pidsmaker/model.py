@@ -193,6 +193,11 @@ class Model(nn.Module):
                 )
                 loss = results["loss"]
 
+                # With both node- and edge-level objectives, node scores are converted to edge
+                # scores at inference, whatever the order of the objectives
+                if inference and self.is_hybrid_loss and getattr(objective, "is_node_level", False):
+                    loss = self.node_to_edge_loss(batch, loss)
+
                 if loss_or_scores is None:
                     loss_or_scores = (
                         torch.zeros(1)
@@ -201,12 +206,9 @@ class Model(nn.Module):
                     ).to(batch.edge_index.device)
                 
                 if loss.numel() != loss_or_scores.numel():
-                    if self.is_hybrid_loss:
-                        loss = self.node_to_edge_loss(batch, loss)
-                    else:
-                        raise TypeError(
-                            f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})"
-                        )
+                    raise TypeError(
+                        f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})"
+                    )
                 loss_or_scores = loss_or_scores + loss
 
             results["loss"] = loss_or_scores

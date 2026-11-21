@@ -500,3 +500,100 @@ class TestOptions:
         ]
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
+
+
+class TestCombinations:
+    """Combinations of modules and options that are not the default of any shipped system."""
+
+    @pytest.mark.parametrize(
+        "objectives",
+        [
+            "predict_node_type,predict_edge_type",  # node-level objective first
+            "predict_edge_type,predict_node_type",
+            "reconstruct_node_features,predict_edge_type",
+        ],
+    )
+    def test_node_and_edge_level_objectives(self, dataset, device, objectives):
+        cfg = prepare_cfg("tests", dataset, device=device, objective=objectives)
+        main.main(cfg)
+
+    @pytest.mark.parametrize(
+        "custom_args",
+        [
+            [("training.decoder.predict_edge_type.loss", "BCE")],
+            [("training.encoder.tgn.use_memory", True)],
+            [("training.encoder.tgn.use_residual_norm", True)],
+            [("batching.edge_features", "time_encoding")],
+            [("evaluation.used_method", "tw_evaluation")],
+            [
+                ("triage.used_method", "depimpact"),
+                ("triage.depimpact.used_method", "component"),
+                ("triage.depimpact.score_method", "degree"),
+                ("triage.depimpact.workers", 2),
+            ],
+        ],
+    )
+    def test_options(self, dataset, device, custom_args):
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_predict_node_type_with_mlp_decoder(self, dataset, device):
+        # The threatrace scores are computed by the inference of the training task, which may be cached
+        custom_args = [
+            ("evaluation.node_evaluation.threshold_method", "threatrace"),
+            ("force_restart", "training"),
+        ]
+        cfg = prepare_cfg(
+            "tests", dataset, device=device, objective="predict_node_type", custom_args=custom_args
+        )
+        main.main(cfg)
+
+    def test_uncertainty_hyperparameters_cfg(self, dataset):
+        custom_args = [("experiment", "run_n_times_hyperparameters")]
+        prepare_cfg("tests", dataset, custom_args=custom_args)
+
+    @pytest.mark.parametrize(
+        "model,custom_args",
+        [
+            (
+                "tests",
+                [
+                    ("batching.edge_features", "time_encoding"),
+                    ("training.encoder.used_methods", "sage"),
+                    ("batching.intra_graph_batching.used_methods", "edges"),
+                ],
+            ),
+            ("tests", [("training.decoder.used_methods", "one_class")]),  # no decoder set in default.yml
+            (
+                "tests",
+                [
+                    ("training.decoder.used_methods", "predict_node_type"),
+                    ("training.decoder.predict_node_type.decoder", "magic_gat"),
+                ],
+            ),
+            ("tests", [("evaluation.node_evaluation.threshold_method", "magic")]),
+            ("tests", [("training_loop.run_evaluation", "best_epoch")]),
+            ("tests", [("transformation.used_methods", "undirected, dag")]),
+            ("tests", [("triage.used_method", "depimpact")]),
+            ("kairos", [("evaluation.used_method", "tw_evaluation")]),
+            ("flash", [("evaluation.used_method", "queue_evaluation")]),
+            ("flash", [("training.encoder.used_methods", "gat")]),
+            ("ocrapt", [("evaluation.node_evaluation.threshold_method", "threatrace")]),
+        ],
+    )
+    def test_invalid_combinations_cfg(self, dataset, model, custom_args):
+        with pytest.raises(ValueError):
+            prepare_cfg(model, dataset, custom_args=custom_args)
+
+    @pytest.mark.parametrize(
+        "custom_args",
+        [
+            [("training.encoder.used_methods", "tgn")],  # no GNN wrapped by TGN
+            [("training.encoder.used_methods", "sage,gat"), ("batching.intra_graph_batching.used_methods", "edges")],
+            [("training.decoder.reconstruct_node_features.decoder", "none"), ("training.decoder.used_methods", "reconstruct_node_features")],
+        ],
+    )
+    def test_invalid_combinations_model(self, dataset, device, custom_args):
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        with pytest.raises(ValueError):
+            main.main(cfg)
