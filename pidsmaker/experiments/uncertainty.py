@@ -200,7 +200,6 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
 
 
 def best_metric_pick_best_run(method_to_metrics):
-    # Iterations whose evaluation was not re-computed (already on disk) have no metrics
     metrics = [e for e in method_to_metrics["deep_ensemble"] if "adp_score" in e]
     if not metrics:
         return {}

@@ -15,6 +15,7 @@ from .config import (
     DATASET_DEFAULT_CONFIG,
     DECODERS_EDGE_LEVEL,
     DECODERS_NODE_LEVEL,
+    ENCODER_WRAPPERS,
     ENCODERS_CFG,
     EXPERIMENTS_CONFIG,
     FEATURIZATION_TOKENIZATIONS,
@@ -63,6 +64,7 @@ def get_default_cfg(args):
     cfg._tuning_file_path = args.tuning_file_path
     cfg._include_yml = None
     cfg._exp = args.exp
+    cfg._tasks_set_from_cli = []
     cfg._save_graph_preprocessing = args.save_graph_preprocessing
     cfg._from_weights = args.from_weights
     cfg._from_weights_path = os.path.join(
@@ -221,8 +223,10 @@ def overwrite_cfg_with_args(cfg, args):
     To override a parameter in cfg, use a dotted style:
     ```python pidsmaker/main.py --training.seed=42```
     """
+    tasks_set_from_cli = set()
     for arg, value in args.__dict__.items():
         if "." in arg and value is not None:
+            tasks_set_from_cli.add(arg.split(".")[0])
             cfg_ptr = cfg
             dots = arg.split(".")
             path, attr_name = dots[:-1], dots[-1]
@@ -230,6 +234,9 @@ def overwrite_cfg_with_args(cfg, args):
             for attr in path:
                 cfg_ptr = getattr(cfg_ptr, attr)
             setattr(cfg_ptr, attr_name, value)
+
+    # Tasks with args given in the CLI, which are run even if absent from the yml file
+    cfg._tasks_set_from_cli = sorted(t for t in tasks_set_from_cli if t in TASK_ARGS)
 
 
 def set_shortcut_variables(cfg):
@@ -682,6 +689,13 @@ def check_edge_cases(cfg):
         if cfg._is_hetero:
             raise ValueError("Hetero encoders are not implemented for OpTC datasets.")
 
+    if cfg._require_non_reversed_edges and "undirected" in cfg.transformation.used_methods:
+        used = [e for e in REQUIRE_NON_REVERSED_EDGES_ENCODERS if e in cfg.training.encoder.used_methods]
+        raise ValueError(
+            f"Encoder(s) {used} do not support the `undirected` transformation: reversed edges "
+            "create (source type, edge type, destination type) triplets unknown to the encoder."
+        )
+
     if cfg._is_hetero and "edge_type_triplet" in edge_features:
         raise ValueError("Hetero encoders do not support the `edge_type_triplet` edge feature.")
 
@@ -838,6 +852,7 @@ def check_batching(cfg):
 # Encoder args that are not read by the encoders
 UNUSED_ENCODER_ARGS = {
     "tgn": ["mode"],
+    "gat": ["flow"],
     "magic_gat": ["alpha_l"],
     "hetero_graph_transformer": ["activation"],
 }
@@ -850,7 +865,30 @@ def check_encoders(cfg):
     if encoders is None:
         raise ValueError("Missing `training.encoder.used_methods`.")
 
-    for encoder in [e.strip() for e in encoders.replace("-", ",").split(",")]:
+    methods = [e.strip() for e in encoders.replace("-", ",").split(",")]
+    base_encoders = [m for m in methods if m not in ENCODER_WRAPPERS]
+    if len(base_encoders) != 1:
+        raise ValueError(
+            f"`training.encoder.used_methods={encoders}` should contain exactly one encoder "
+            f"(found {base_encoders}), optionally combined with {ENCODER_WRAPPERS}. "
+            "Use `none` for a single linear layer."
+        )
+
+    tgn_cfg = cfg.training.encoder.tgn
+    if "tgn" in methods and tgn_cfg.use_memory and tgn_cfg.use_node_feats_in_gnn:
+        if not cfg.batching.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN:
+            raise ValueError(
+                "`training.encoder.tgn.use_memory` with `use_node_feats_in_gnn` requires "
+                "`batching.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN=True`: "
+                "otherwise, node features are not aligned with the memory of the TGN nodes."
+            )
+    if "tgn" in methods and tgn_cfg.use_residual_norm and tgn_cfg.use_memory and not tgn_cfg.use_node_feats_in_gnn:
+        raise ValueError(
+            "`training.encoder.tgn.use_residual_norm` adds the projected node features to the output "
+            "of the GNN and requires `use_node_feats_in_gnn=True` when `use_memory=True`."
+        )
+
+    for encoder in methods:
         if encoder not in ENCODERS_CFG:
             continue  # e.g. inner encoders not exposed in the config, checked in the factory
         unused = UNUSED_ENCODER_ARGS.get(encoder, [])
@@ -1133,14 +1171,12 @@ def set_subtasks_to_restart(yml_file: str, cfg):
     user_config = load_yml_file_recursive(yml_file)
     tasks_in_yml_file = set([task for task in user_config if not task.startswith("_")])
 
-    def is_set_from_cli(task):
-        # A task absent from the yml file can still be configured from the CLI (e.g. `--triage.used_method`)
-        values = flatten_arg_values({k: v for k, v in getattr(cfg, task).items() if not k.startswith("_")})
-        return any(not v.endswith("=None") for v in values if isinstance(v, str))
+    # A task absent from the yml file can still be configured from the CLI (e.g. `--triage.used_method`)
+    tasks_set_from_cli = set(getattr(cfg, "_tasks_set_from_cli", None) or [])
 
     should_restart = OrderedDict()
     for task in TASK_ARGS:
-        if task in tasks_in_yml_file or is_set_from_cli(task):
+        if task in tasks_in_yml_file or task in tasks_set_from_cli:
             task_cfg = getattr(cfg, task)
             existing_files = [files for _, _, files in os.walk(task_cfg._task_path)]
             has_finished = any(

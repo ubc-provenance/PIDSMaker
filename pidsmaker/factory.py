@@ -9,7 +9,7 @@ import os
 import torch
 import torch.nn as nn
 
-from pidsmaker.config import OBJECTIVES_NODE_LEVEL, decoder_matches_objective
+from pidsmaker.config import ENCODER_WRAPPERS, OBJECTIVES_NODE_LEVEL, decoder_matches_objective
 from pidsmaker.decoders import *
 from pidsmaker.encoders import *
 from pidsmaker.experiments.uncertainty import add_dropout_to_model
@@ -136,18 +136,10 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
     if "time_encoding" in edge_features:
         edge_dim = (edge_dim or 0) + tgn_time_dim
 
-    wrappers = ["tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]
+    # `check_encoders` ensures that a single base encoder is used, with optional wrappers
     methods = [m.strip() for m in cfg.training.encoder.used_methods.replace("-", ",").split(",")]
-    base_encoders = [m for m in methods if m not in wrappers]
-    if len(base_encoders) != 1:
-        raise ValueError(
-            f"`training.encoder.used_methods={cfg.training.encoder.used_methods}` should contain "
-            f"exactly one encoder (found {base_encoders}), optionally combined with {wrappers}. "
-            "Use `none` for a single linear layer."
-        )
-
     for method in methods:
-        if method in wrappers:
+        if method in ENCODER_WRAPPERS:
             pass
 
         # Basic GNN encoders
@@ -251,7 +243,8 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 typed_hidden_rep=False,
                 edge_dim=None,
                 full_param=False,
-                num_edge_type=15,  # TODO: we should use 10 here
+                # TODO: we should use 10 here; edge type indices start from 1
+                num_edge_type=max(15, get_num_edge_type(cfg) + 1),
             ).to(device)
         elif method == "rcaid_gat":
             encoder = RCaidGAT(

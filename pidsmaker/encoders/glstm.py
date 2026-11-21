@@ -99,7 +99,9 @@ class GLSTM(nn.Module):
 
         # Retrieve device the model is currently loaded on to generate h, c, and h_sum result buffers
         device = next(self.parameters()).device
-        tmp = torch.arange(1.0, 11.0).reshape(10, 1).to(device)
+        # One-hot edge types to indices starting from 1
+        num_types = edge_types.shape[1]
+        tmp = torch.arange(1.0, num_types + 1.0).reshape(num_types, 1).to(device)
         edge_types = torch.matmul(edge_types, tmp)
 
         # h and c states for every node in the batch

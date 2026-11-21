@@ -1153,6 +1153,8 @@ SYNTHETIC_ATTACKS = {
 
 REQUIRE_HETERO_FEATURES_ENCODERS = ["hetero_graph_transformer"]
 REQUIRE_NON_REVERSED_EDGES_ENCODERS = ["hetero_graph_transformer", "event_type_encoding"]
+# Encoders wrapping or preprocessing the inputs of a single base encoder (e.g. `tgn,graph_attention`)
+ENCODER_WRAPPERS = ["tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]
 
 THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "percentile", "threatrace", "magic", "flash", "nodlink", "fixed_zero", "ocrapt"]
 
