@@ -24,7 +24,7 @@ def update_cfg_for_uncertainty_exp(
         if index < mid_value:
             delta = -delta * (mid_value - index)
         elif index > mid_value:
-            delta = delta * index
+            delta = delta * (index - mid_value)
         else:
             delta = 0
 
@@ -200,13 +200,15 @@ def push_best_files_to_wandb(method_to_metrics, cfg):
 
 
 def best_metric_pick_best_run(method_to_metrics):
-    metrics = method_to_metrics["deep_ensemble"]
+    metrics = [e for e in method_to_metrics["deep_ensemble"] if "adp_score" in e]
+    if not metrics:
+        return {}
     adp_scores = np.array([e["adp_score"] for e in metrics])
     max_adp_mask = adp_scores == adp_scores.max()
 
     # Filter only the elements with max adp_score and get the one with the highest discrimination
     filtered_metrics = [metrics[i] for i in range(len(metrics)) if max_adp_mask[i]]
-    best_run = max(filtered_metrics, key=lambda e: e["discrimination"])
+    best_run = max(filtered_metrics, key=lambda e: e.get("discrimination", float("-inf")))
 
     return best_run
 

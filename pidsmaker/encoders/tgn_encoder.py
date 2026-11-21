@@ -63,6 +63,10 @@ class TGNEncoder(nn.Module):
         if use_residual_norm:
             self.norm_local = nn.LayerNorm(out_dim)
             self.dropout = nn.Dropout(dropout)
+            # The projected features have size `memory_dim`, while the GNN outputs `out_dim`
+            self.residual_proj = (
+                nn.Linear(memory_dim, out_dim) if memory_dim != out_dim else nn.Identity()
+            )
 
     def forward(self, batch, inference=False, **kwargs):
         n_id = batch.n_id_tgn  # NOTE: this one may need to be updated with no __inc__, or memory is get for unknown nodes
@@ -145,7 +149,7 @@ class TGNEncoder(nn.Module):
         
         # Apply residual normalization to local encoder output
         if self.use_residual_norm:
-            h = self.norm_local(self.dropout(h) + x_proj)
+            h = self.norm_local(self.dropout(h) + self.residual_proj(x_proj))
         
         h_src = h[batch.reindexed_edge_index_tgn[0]]
         h_dst = h[batch.reindexed_edge_index_tgn[1]]

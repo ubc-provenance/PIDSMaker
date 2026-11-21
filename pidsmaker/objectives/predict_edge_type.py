@@ -24,5 +24,5 @@ class EdgeTypePrediction(nn.Module):
         if not self.multi_edge:
             edge_type = edge_type.argmax(dim=1)
         
-        loss = self.loss_fn(h, edge_type, inference=inference, class_weights=class_weights)
+        loss = self.loss_fn(h, edge_type, inference=inference, weight=class_weights)
         return {"loss": loss}

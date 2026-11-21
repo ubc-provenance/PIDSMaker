@@ -64,8 +64,8 @@ def transfer_results_of_node_evaluation(results_without_tw, tw_to_timestr, cfg):
     results = defaultdict(lambda: defaultdict(dict))
 
     for tw, timestr in tw_to_timestr.items():
-        day = timestr[8:10].lstrip("0")
-        graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
+        # Graphs are stored in one folder per day, named `graph_<YYYY-MM-DD>`
+        graph_dir = os.path.join(base_dir, f"graph_{timestr[:10]}", timestr)
         graph = torch.load(graph_dir)
 
         for node_id in graph.nodes():

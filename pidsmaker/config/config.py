@@ -1153,6 +1153,8 @@ SYNTHETIC_ATTACKS = {
 
 REQUIRE_HETERO_FEATURES_ENCODERS = ["hetero_graph_transformer"]
 REQUIRE_NON_REVERSED_EDGES_ENCODERS = ["hetero_graph_transformer", "event_type_encoding"]
+# Encoders wrapping or preprocessing the inputs of a single base encoder (e.g. `tgn,graph_attention`)
+ENCODER_WRAPPERS = ["tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]
 
 THRESHOLD_METHODS = ["max_val_loss", "mean_val_loss", "percentile", "threatrace", "magic", "flash", "nodlink", "fixed_zero", "ocrapt"]
 
@@ -1627,7 +1629,7 @@ EXPERIMENTS_CONFIG = {
         "used_method": Arg(str, vals=OR(["uncertainty", "none"])),
         "uncertainty": {
             "hyperparameter": {
-                "hyperparameters": Arg(str, vals=AND(["lr, num_epochs, text_h_dim, gnn_h_dim"])),
+                "hyperparameters": Arg(str, vals=AND(["lr", "num_epochs", "text_h_dim", "gnn_h_dim"])),
                 "iterations": Arg(int),
                 "delta": Arg(float),
             },

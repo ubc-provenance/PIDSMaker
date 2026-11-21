@@ -23,4 +23,4 @@ class NodeTypePrediction(nn.Module):
 
         node_type_classes = node_type.argmax(dim=1)
         loss = self.loss_fn(h_hat, node_type_classes, inference=inference, weight=class_weights)
-        return {"loss": loss, "out": F.log_softmax(h, dim=1)}
+        return {"loss": loss, "out": F.log_softmax(h_hat, dim=1)}

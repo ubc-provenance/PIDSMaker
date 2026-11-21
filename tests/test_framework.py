@@ -3,6 +3,7 @@ import shutil
 from itertools import product
 
 import pytest
+import torch
 import wandb
 
 from pidsmaker import main
@@ -500,3 +501,253 @@ class TestOptions:
         ]
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
+
+
+class TestCombinations:
+    """Combinations of modules and options that are not the default of any shipped system."""
+
+    @pytest.mark.parametrize(
+        "objectives",
+        [
+            "predict_node_type,predict_edge_type",  # node-level objective first
+            "predict_edge_type,predict_node_type",
+            "reconstruct_node_features,predict_edge_type",
+        ],
+    )
+    def test_node_and_edge_level_objectives(self, dataset, device, objectives):
+        cfg = prepare_cfg("tests", dataset, device=device, objective=objectives)
+        main.main(cfg)
+
+    @pytest.mark.parametrize(
+        "custom_args",
+        [
+            [("training.decoder.predict_edge_type.loss", "BCE")],
+            [
+                ("training.decoder.predict_edge_type.loss", "BCE"),
+                ("training.decoder.predict_edge_type.balanced_loss", True),
+            ],
+            [("training.decoder.predict_edge_type.balanced_loss", True)],
+            [("training.encoder.tgn.use_residual_norm", True)],
+            [("batching.edge_features", "time_encoding")],
+            [("evaluation.used_method", "tw_evaluation")],
+            [
+                ("triage.used_method", "depimpact"),
+                ("triage.depimpact.used_method", "component"),
+                ("triage.depimpact.score_method", "degree"),
+                ("triage.depimpact.workers", 2),
+            ],
+        ],
+    )
+    def test_options(self, dataset, device, custom_args):
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    @pytest.mark.parametrize("use_residual_norm", [False, True])
+    def test_tgn_memory_with_node_features(self, dataset, device, use_residual_norm):
+        from pidsmaker.tasks.batching import get_preprocessed_graphs
+
+        custom_args = [
+            ("training.encoder.tgn.use_memory", True),
+            ("training.encoder.tgn.use_node_feats_in_gnn", True),
+            ("training.encoder.tgn.use_residual_norm", use_residual_norm),
+            ("batching.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN", True),
+        ]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+        # Row i of the TGN node features is node `n_id_tgn[i]`, as the rows of the TGN memory
+        train_data, val_data, test_data, _ = get_preprocessed_graphs(cfg)
+        for graphs in train_data + val_data + test_data:
+            for g in graphs:
+                src, dst = g.reindexed_edge_index_tgn
+                assert g.x_tgn.shape[0] == g.x_from_tgn.shape[0] == g.n_id_tgn.shape[0]
+                assert torch.equal(g.n_id_tgn[src], g.original_edge_index[0])
+                assert torch.equal(g.n_id_tgn[dst], g.original_edge_index[1])
+                assert torch.allclose(g.x_tgn[src], g.x_src)
+                assert torch.allclose(g.x_tgn[dst], g.x_dst)
+
+    def test_predict_node_type_with_mlp_decoder(self, dataset, device):
+        from pidsmaker.factory import objective_factory
+
+        # The threatrace scores are computed by the inference of the training task, which may be cached
+        custom_args = [
+            ("evaluation.node_evaluation.threshold_method", "threatrace"),
+            ("force_restart", "training"),
+        ]
+        cfg = prepare_cfg(
+            "tests", dataset, device=device, objective="predict_node_type", custom_args=custom_args
+        )
+        main.main(cfg)
+
+        # The decoder predicts one logit per node type
+        objective = objective_factory(cfg, in_dim=8, graph_reindexer=None, device="cpu")[0].objective
+        h = torch.randn(5, cfg.training.node_out_dim)
+        assert objective.decoder(h).shape == (5, cfg.dataset.num_node_types)
+
+    def test_global_minutes_and_inter_graph_batching(self, dataset, device):
+        custom_args = [
+            ("batching.global_batching.used_method", "minutes"),
+            ("batching.global_batching.global_batching_batch_size", 10),
+            ("batching.inter_graph_batching.used_method", "graph_batching"),
+            ("batching.inter_graph_batching.inter_graph_batch_size", 2),
+            ("batching.intra_graph_batching.used_methods", "none"),
+            ("training.encoder.used_methods", "graph_attention"),
+        ]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_uncertainty_hyperparameters_cfg(self, dataset):
+        custom_args = [("experiment", "run_n_times_hyperparameters")]
+        prepare_cfg("tests", dataset, custom_args=custom_args)
+
+    def test_uncertainty_hyperparameter_deltas(self, dataset):
+        import copy
+
+        from pidsmaker.experiments.uncertainty import update_cfg_for_uncertainty_exp
+
+        custom_args = [("experiment", "run_n_times_hyperparameters")]
+        cfg = prepare_cfg("tests", dataset, custom_args=custom_args)
+        delta = cfg.experiment.uncertainty.hyperparameter.delta
+        lr = cfg.training.lr
+        offsets = []
+        for i in range(5):
+            new_cfg = update_cfg_for_uncertainty_exp("hyperparameter", i, 5, copy.deepcopy(cfg), "lr")
+            offsets.append(new_cfg.training.lr / lr - 1)
+        assert offsets == pytest.approx([-2 * delta, -delta, 0, delta, 2 * delta])
+
+    @pytest.mark.parametrize(
+        "model,custom_args",
+        [
+            # gat does not read `flow`, which flash does not set
+            (
+                "flash",
+                [
+                    ("training.encoder.used_methods", "gat"),
+                    ("training.encoder.gat.activation", "relu"),
+                    ("training.encoder.gat.num_heads", 2),
+                    ("training.encoder.gat.concat", True),
+                    ("training.encoder.gat.num_layers", 2),
+                ],
+            ),
+            (
+                "tests",
+                [
+                    ("training.encoder.tgn.use_memory", True),
+                    ("batching.intra_graph_batching.tgn_last_neighbor.fix_buggy_orthrus_TGN", True),
+                ],
+            ),
+        ],
+    )
+    def test_valid_combinations_cfg(self, dataset, model, custom_args):
+        prepare_cfg(model, dataset, custom_args=custom_args)
+
+    @pytest.mark.parametrize(
+        "model,custom_args,match",
+        [
+            (
+                "tests",
+                [
+                    ("batching.edge_features", "time_encoding"),
+                    ("training.encoder.used_methods", "sage"),
+                    ("batching.intra_graph_batching.used_methods", "edges"),
+                ],
+                "Edge feature `time_encoding` is only available",
+            ),
+            # no decoder set in default.yml
+            ("tests", [("training.decoder.used_methods", "one_class")], "training.decoder.one_class.decoder"),
+            (
+                "tests",
+                [
+                    ("training.decoder.used_methods", "predict_node_type"),
+                    ("training.decoder.predict_node_type.decoder", "magic_gat"),
+                ],
+                "Decoder `magic_gat` is a graph decoder",
+            ),
+            ("tests", [("evaluation.node_evaluation.threshold_method", "magic")], "Threshold method `magic`"),
+            ("tests", [("training_loop.run_evaluation", "best_epoch")], "best_epoch"),
+            ("tests", [("transformation.used_methods", "undirected, dag")], "`dag` transformation after `undirected`"),
+            ("tests", [("triage.used_method", "depimpact")], "triage.depimpact.used_method"),
+            (
+                "tests",
+                [
+                    ("triage.used_method", "depimpact"),
+                    ("triage.depimpact.used_method", "component"),
+                    ("triage.depimpact.score_method", "degree"),
+                    ("triage.depimpact.workers", 2),
+                    ("evaluation.used_method", "edge_evaluation"),
+                ],
+                "Triage `depimpact` requires `evaluation.used_method`",
+            ),
+            # kairos.yml does not include default.yml, which sets the tw_evaluation threshold
+            ("kairos", [("evaluation.used_method", "tw_evaluation")], "evaluation.tw_evaluation.threshold_method"),
+            (
+                "flash",
+                [
+                    ("evaluation.used_method", "queue_evaluation"),
+                    ("evaluation.queue_evaluation.used_method", "kairos_idf_queue"),
+                    ("evaluation.queue_evaluation.queue_threshold", 20),
+                ],
+                "Queue evaluation requires edge-level losses",
+            ),
+            # flash.yml does not include default.yml, which sets the gat args
+            ("flash", [("training.encoder.used_methods", "gat")], "Missing arguments of the `gat` encoder"),
+            ("ocrapt", [("evaluation.node_evaluation.threshold_method", "threatrace")], "requires the `predict_node_type` objective"),
+            (
+                "tests",
+                [
+                    ("batching.global_batching.used_method", "minutes"),
+                    ("batching.global_batching.global_batching_batch_size", 100),
+                ],
+                "a step larger than the window",
+            ),
+            (
+                "tests",
+                [
+                    ("training.encoder.used_methods", "hetero_graph_transformer,tgn"),
+                    ("batching.edge_features", "edge_type_triplet"),
+                ],
+                "do not support the `edge_type_triplet`",
+            ),
+            (
+                "tests",
+                [
+                    ("training.encoder.used_methods", "hetero_graph_transformer,tgn"),
+                    ("transformation.used_methods", "undirected"),
+                ],
+                "do not support the `undirected` transformation",
+            ),
+            ("tests", [("training.encoder.used_methods", "tgn")], "exactly one encoder"),  # no GNN wrapped by TGN
+            (
+                "tests",
+                [
+                    ("training.encoder.used_methods", "sage,gat"),
+                    ("batching.intra_graph_batching.used_methods", "edges"),
+                ],
+                "exactly one encoder",
+            ),
+            # Without the fix, node features are not aligned with the TGN memory
+            ("tests", [("training.encoder.tgn.use_memory", True)], "fix_buggy_orthrus_TGN=True"),
+            (
+                "tests",
+                [
+                    ("training.encoder.tgn.use_memory", True),
+                    ("training.encoder.tgn.use_node_feats_in_gnn", False),
+                    ("training.encoder.tgn.use_residual_norm", True),
+                ],
+                "use_residual_norm",
+            ),
+        ],
+    )
+    def test_invalid_combinations_cfg(self, dataset, model, custom_args, match):
+        with pytest.raises(ValueError, match=match):
+            prepare_cfg(model, dataset, custom_args=custom_args)
+
+    def test_invalid_decoder_none_size(self, dataset, device):
+        # The input size of the decoder is only known when building the model
+        custom_args = [
+            ("training.decoder.used_methods", "reconstruct_node_features"),
+            ("training.decoder.reconstruct_node_features.decoder", "none"),
+        ]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
+        with pytest.raises(ValueError, match="Decoder `none` of objective `reconstruct_node_features`"):
+            main.main(cfg)

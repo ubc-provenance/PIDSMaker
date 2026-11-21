@@ -27,6 +27,17 @@ def ensure_ground_truth_available(cfg):
     """Fail fast with a clear message when the selected ground truth has no file for
     this dataset. ThreaTrace only covers CADETS, THEIA, TRACE, and FIVEDIRECTIONS (E3)."""
     if not is_threatrace(cfg):
+        missing = [
+            path
+            for path in cfg.dataset.ground_truth_relative_path
+            if not os.path.exists(os.path.join(cfg._ground_truth_dir, path))
+        ]
+        if missing:
+            raise FileNotFoundError(
+                f"Ground truth `{cfg.evaluation.ground_truth_version}` not found for dataset "
+                f"'{cfg.dataset.name}': missing {missing} in {cfg._ground_truth_dir}. "
+                "Use another `evaluation.ground_truth_version`."
+            )
         return
     paths = cfg.dataset.ground_truth_relative_path
     subdir = paths[0].split("/")[0] if paths else None

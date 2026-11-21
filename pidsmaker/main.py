@@ -154,7 +154,10 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         task_path = task_to_module[task]["task_path"]
         log(f"Task {task}: {task_path}")
 
-        if should_restart[task]:
+        # In uncertainty experiments, the metrics of each iteration are required, so the
+        # evaluation is computed again even if the trained model is already on disk
+        rerun_for_metrics = method is not None and task == "evaluation"
+        if should_restart[task] or rerun_for_metrics:
             return_value = module.main(cfg)
             set_task_to_done(task_path)
 

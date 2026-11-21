@@ -207,6 +207,12 @@ def save_indexid2msg(indexid2msg, split2nodes, cfg):
         split2nodes: Mapping of splits to their node sets
         cfg: Configuration with output directory path
     """
+    empty_splits = [split for split in ["train", "val", "test"] if not split2nodes.get(split)]
+    if empty_splits:
+        raise ValueError(
+            f"No graph was built for the {empty_splits} split(s) of {cfg.dataset.name}. "
+            "Check that the database contains events for the dates of these splits."
+        )
     all_nodes = set().union(*(split2nodes[split] for split in ["train", "val", "test"]))
     indexid2msg = {k: v for k, v in indexid2msg.items() if k in all_nodes}
 

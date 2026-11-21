@@ -219,6 +219,17 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                 node_to_max_loss[node] = loss
                 node_to_max_loss_tw[node] = tw
 
+    # These scores are computed during the inference of the training task, only for this threshold method
+    score_col = {"threatrace": "threatrace_score", "flash": "flash_score", "magic": "magic_score"}.get(
+        threshold_method
+    )
+    if score_col and any(len(values[score_col]) == 0 for values in node_to_values.values()):
+        raise ValueError(
+            f"Threshold method `{threshold_method}` requires the `{score_col}` computed during the "
+            "inference of the training task, but the trained model on disk was evaluated with another "
+            "threshold method. Re-run the training with `--force_restart=training`."
+        )
+
     train_node_set = _get_train_node_set(cfg)
 
     use_kmeans = cfg.evaluation.node_evaluation.use_kmeans

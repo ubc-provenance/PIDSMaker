@@ -8,6 +8,11 @@ class NodLinkDecoder(nn.Module):
         super(NodLinkDecoder, self).__init__()
 
         h_dim = in_dim // 2
+        if h_dim // 4 < 1:
+            raise ValueError(
+                f"The `nodlink` decoder requires an input size of at least 8, found {in_dim}. "
+                "Increase `training.node_out_dim`."
+            )
         self.encoder = self._NodLinkEncoder(in_dim, h_dim, device)
         self.decoder = self._NodeLinkDecoder(h_dim, out_dim)
 

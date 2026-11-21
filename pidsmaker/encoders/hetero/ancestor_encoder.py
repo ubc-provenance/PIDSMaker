@@ -7,7 +7,7 @@ from pidsmaker.utils.dataset_utils import rel2id_darpa_tc
 class AncestorEncoder(nn.Module):
     def __init__(self, in_dim, out_dim, edge_dim, encoder, num_nodes, device):
         super().__init__()
-        self.rnn = nn.GLSTM(in_dim + edge_dim, out_dim, batch_first=True)
+        self.rnn = nn.LSTM(in_dim + edge_dim, out_dim, batch_first=True)
         self.hidden_states = {}  # {process_id: (h, c)}
         self.embedding_store = torch.zeros((num_nodes, out_dim), device=device)
         self.edge_dim = edge_dim

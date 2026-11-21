@@ -9,7 +9,7 @@ import os
 import torch
 import torch.nn as nn
 
-from pidsmaker.config import decoder_matches_objective
+from pidsmaker.config import ENCODER_WRAPPERS, OBJECTIVES_NODE_LEVEL, decoder_matches_objective
 from pidsmaker.decoders import *
 from pidsmaker.encoders import *
 from pidsmaker.experiments.uncertainty import add_dropout_to_model
@@ -134,13 +134,12 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
         
     edge_features = cfg.batching.edge_features
     if "time_encoding" in edge_features:
-        edge_dim += tgn_time_dim
-    
-    for method in map(
-        lambda x: x.strip(),
-        cfg.training.encoder.used_methods.replace("-", ",").split(","),
-    ):
-        if method in ["tgn", "ancestor_encoding", "entity_type_encoding", "event_type_encoding"]:
+        edge_dim = (edge_dim or 0) + tgn_time_dim
+
+    # `check_encoders` ensures that a single base encoder is used, with optional wrappers
+    methods = [m.strip() for m in cfg.training.encoder.used_methods.replace("-", ",").split(",")]
+    for method in methods:
+        if method in ENCODER_WRAPPERS:
             pass
 
         # Basic GNN encoders
@@ -244,7 +243,8 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 typed_hidden_rep=False,
                 edge_dim=None,
                 full_param=False,
-                num_edge_type=15,  # TODO: we should use 10 here
+                # TODO: we should use 10 here; edge type indices start from 1
+                num_edge_type=max(15, get_num_edge_type(cfg) + 1),
             ).to(device)
         elif method == "rcaid_gat":
             encoder = RCaidGAT(
@@ -462,10 +462,18 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_c
             negative_slope=negative_slope,
             concat_out=True,
             residual=True,
-            activation=activation_fn_factory(cfg.training.encoder.magic_gat.activation),
+            activation=activation_fn_factory(
+                decoder_cfg.activation or cfg.training.encoder.magic_gat.activation
+            ),
             is_decoder=True,
         )
     elif method == "none":
+        if in_dim != out_dim:
+            raise ValueError(
+                f"Decoder `none` of objective `{objective}` requires the input of the decoder to have "
+                f"the expected output size ({out_dim}), found size {in_dim}. Use another decoder "
+                f"or set the encoder's output size (e.g. `training.node_out_dim`) to {out_dim}."
+            )
         return lambda x: x
     else:
         raise ValueError(f"Invalid decoder {method}")
@@ -786,7 +794,8 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
                     loss_fn=loss_fn,
                     balanced_loss=balanced_loss,
                     edge_type_dim=num_edge_types,
-                    multi_edge=multi_edge,
+                    # BCE is computed on the one-hot edge types, not on class indices
+                    multi_edge=multi_edge or loss == "BCE",
                 )
             )
 
@@ -794,8 +803,14 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             loss_fn = categorical_loss_fn_factory("cross_entropy")
             balanced_loss = objective_cfg.predict_node_type.balanced_loss
 
+            # The decoder predicts one logit per node type
             decoder = decoder_factory(
-                method, objective, cfg, in_dim=node_out_dim, out_dim=node_out_dim, device=device
+                method,
+                objective,
+                cfg,
+                in_dim=node_out_dim,
+                out_dim=cfg.dataset.num_node_types,
+                device=device,
             )
             objectives.append(
                 NodeTypePrediction(
@@ -956,6 +971,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
     # We wrap objectives into this class to calculate some metrics on validation set easily
     # This is useful only if use_few_shot is True
     is_edge_type_prediction = objective_cfg.used_methods.strip() == "predict_edge_type"
+    objective_names = [o.strip() for o in objective_cfg.used_methods.split(",")]
     objectives = [
         ValidationWrapper(
             objective,
@@ -965,6 +981,8 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
         )
         for objective in objectives
     ]
+    for name, objective in zip(objective_names, objectives):
+        objective.is_node_level = name in OBJECTIVES_NODE_LEVEL
 
     return objectives
 

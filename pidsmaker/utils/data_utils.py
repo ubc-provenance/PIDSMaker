@@ -430,6 +430,8 @@ def collate_temporal_data(data_list: list[CollatableTemporalData]) -> Collatable
     data = collate(CollatableTemporalData, data_list, increment=False)[0]
     del data.ptr
     del data.batch
+    # `tgn_mode` is a flag, not a per-event attribute: collate turns it into a tensor
+    data.tgn_mode = bool(data_list[0].tgn_mode) if len(data_list) > 0 else False
 
     return data
 

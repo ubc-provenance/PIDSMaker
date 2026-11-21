@@ -109,8 +109,8 @@ def main(evaluation_results, tw_to_timestr, cfg):
     tasks = []
     for tw, pois in tw_to_poi.items():
         timestr = tw_to_timestr[tw]
-        day = timestr[8:10].lstrip("0")
-        graph_dir = os.path.join(base_dir, f"graph_{day}/{timestr}")
+        # Graphs are stored in one folder per day, named `graph_<YYYY-MM-DD>`
+        graph_dir = os.path.join(base_dir, f"graph_{timestr[:10]}", timestr)
 
         for poi in pois:
             tasks.append((tw, graph_dir, poi, tw_to_node_score[tw], used_method, score_method))
