@@ -17,7 +17,7 @@ from pidsmaker.losses import *
 from pidsmaker.model import Model
 from pidsmaker.objectives import *
 from pidsmaker.tgn import IdentityMessage, LastAggregator, TGNMemory, TimeEncodingMemory
-from pidsmaker.utils.data_utils import GraphReindexer
+from pidsmaker.utils.data_utils import GraphReindexer, materialize_batch
 from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
@@ -35,7 +35,7 @@ def build_model(data_sample, device, cfg, max_node_num, all_data=None):
     `all_data` is an optional tuple (val_data, test_data) used by the
     predict_edge_supervised objective to extract attack edge features.
     """
-    msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(data_sample)
+    msg_dim, edge_dim, in_dim = get_dimensions_from_data_sample(materialize_batch(data_sample))
 
     graph_reindexer = GraphReindexer(
         device=device,
@@ -505,6 +505,7 @@ def _load_attack_features(cfg, edge_scores_path, top_n, all_data):
     for split_data in all_data:          # (val_data, test_data)
         for dataset in split_data:       # list of datasets (multi-dataset)
             for g in dataset:            # individual time-window batches
+                g = materialize_batch(g)
                 # original_edge_index holds global IDs (before reindexing);
                 # g.src/g.dst have been overwritten with local 0..N-1 indices.
                 orig_ei = g.original_edge_index.cpu()
@@ -593,6 +594,7 @@ def _load_attack_features_from_patterns(cfg, attack_patterns, max_edges_per_patt
                 for g in dataset:
                     if collected >= max_edges_per_pattern:
                         break
+                    g = materialize_batch(g)
 
                     orig_ei  = g.original_edge_index.cpu()
                     src_ids  = orig_ei[0].tolist()

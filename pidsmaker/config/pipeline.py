@@ -69,6 +69,7 @@ def get_default_cfg(args):
     # Underscore-prefixed: parallelism does not change results, so it is not hashed
     cfg._num_workers = getattr(args, "num_workers", None)
     cfg._keep_best_epoch_only = getattr(args, "keep_best_epoch_only", False)
+    cfg._shared_node_features = not getattr(args, "no_shared_node_features", False)
     cfg._from_weights = args.from_weights
     cfg._from_weights_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -190,6 +191,12 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         default=None,
         help="Number of processes for CPU-bound preprocessing such as graph construction "
         "(default: min(8, #CPUs)). Results do not depend on it.",
+    )
+    parser.add_argument(
+        "--no_shared_node_features",
+        action="store_true",
+        help="Stores node features per edge/batch instead of in a shared table rebuilt per "
+        "batch (uses much more memory, for debugging; results are identical).",
     )
     parser.add_argument(
         "--keep_best_epoch_only",

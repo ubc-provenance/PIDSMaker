@@ -82,6 +82,8 @@ Graph construction builds the graphs of each day of the dataset in parallel proc
 python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
 ```
 
+During training, node features (embeddings and types) are stored once in a shared table, and each batch only holds node IDs: its features are rebuilt on the GPU when the batch is used, with the same operations as before, so the model receives identical inputs. This divides the RAM used by the loaded graphs by about 4-6x. Configurations whose node features depend on the graph (`only_ones`, `edges_distribution`), heterogeneous graphs, inter-graph batching and multi-dataset training keep storing features per batch. `--no_shared_node_features` disables the table.
+
 ## Disk usage
 
 Graphs produced by construction and transformation are stored as compressed column arrays (about 5x smaller than pickled networkx graphs); `torch.load` on a graph file still returns the identical networkx graph, and previously generated graphs remain readable.

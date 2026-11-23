@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import torch
 
+from pidsmaker.utils.data_utils import batch_to_device
 from pidsmaker.utils.utils import log
 
 
@@ -72,7 +73,7 @@ def extract_encoder_embeddings(
     with torch.no_grad():
         for dataset in test_data:
             for batch in dataset:
-                batch = batch.to(device)
+                batch = batch_to_device(batch, device)
                 h, h_src, h_dst = model.embed(batch, inference=True)
 
                 if hasattr(batch, "original_n_id"):
@@ -150,7 +151,6 @@ def extract_encoder_embeddings(
                         )
                     )
 
-                batch.to("cpu")
                 torch.cuda.empty_cache()
                 tw_idx += 1
 
