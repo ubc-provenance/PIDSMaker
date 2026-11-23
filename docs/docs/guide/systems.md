@@ -67,7 +67,7 @@ The available methods for each column are listed in the reference: [Featurizatio
 
 ## Results and reproducibility
 
-The default configs contain the original hyperparameters of each system. The best hyperparameters found by grid search for the main systems are in [Tuned hyperparameters](tuned-systems.md).
+The default configs contain the original hyperparameters of each system. To find better ones on a dataset, use [hyperparameter tuning](../features/tuning.md).
 PIDSs are [unstable](../features/instability.md): always evaluate them over several runs.
 
 ## Adding a system

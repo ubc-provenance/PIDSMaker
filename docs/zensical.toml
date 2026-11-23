@@ -29,7 +29,6 @@ nav = [
     { "Pipeline" = "guide/pipeline.md" },
     { "Systems" = "guide/systems.md" },
     { "Datasets" = "guide/datasets.md" },
-    { "Tuned hyperparameters" = "guide/tuned-systems.md" },
     { "Tutorial: a new PIDS" = "guide/tutorial.md" },
   ] },
   { "Features" = [
@@ -129,7 +128,7 @@ name = "Join the PIDSMaker Discord"
 "download-files.md" = "getting-started/from-scratch.md#downloading-the-files-manually"
 "pipeline.md" = "guide/pipeline.md"
 "datasets.md" = "guide/datasets.md"
-"tuned_systems.md" = "guide/tuned-systems.md"
+"tuned_systems.md" = "features/instability.md"
 "tutorial.md" = "guide/tutorial.md"
 "config/tasks.md" = "reference/tasks.md"
 "config/cleaning.md" = "reference/cleaning.md"

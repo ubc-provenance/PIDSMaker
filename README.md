@@ -178,9 +178,6 @@ PIDSs exhibit significant instability—that is, high sensitivity to training pe
 Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different results. 
 Consequently, reproducing results as the framework evolves presents a real challenge.
 
-Based on our experiments, we provide [tuned hyperparameters](https://ubc-provenance.github.io/PIDSMaker/guide/tuned-systems/) for the main systems.
-However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
-
 We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
 
 `--training.stable_optim=True` (AdamW, warmup and cosine learning rate schedule, gradient clipping) is designed to [reduce this instability](https://ubc-provenance.github.io/PIDSMaker/features/instability/#reducing-instability).

@@ -11,7 +11,7 @@ PIDSMaker simplifies hyperparameter tuning by combining its efficient pipeline d
 ## Dataset-specific tuning
 Tuning is configured using YAML files, just like system definitions. For example, suppose you've created a new system named `my_system`, and its configuration is stored in `config/my_system.yml`. To search for optimal hyperparameters on the `THEIA_E3` dataset, you can create a new tuning configuration file at `config/experiments/tuning/systems/theia_e3/tuning_my_system.yml` following the [W&B syntax](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration/):
 
-``` yaml linenums="1" title="tuning_my_system.yml"
+``` yaml title="tuning_my_system.yml"
 method: grid # (1)!
 
 parameters:
@@ -77,7 +77,7 @@ Once the sweep has finished, the best run can be obtained from W&B by sorting ba
 
 Get the hyperparameters associated with the best run and put them into a `config/tuned_baselines/{dataset}/tuned_my_system.yml`.
 
-``` yaml linenums="1" title="tuned_my_system.yml"
+``` yaml title="tuned_my_system.yml"
 featurization:
   used_method: word2vec
 

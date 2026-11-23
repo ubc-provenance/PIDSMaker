@@ -123,7 +123,7 @@ In this example, we take `orthrus` as base configuration. We only override some 
 
 **Config:**
 
-``` yaml title="config/custom_system.yml" linenums="1"
+``` yaml title="config/custom_system.yml"
 _include_yml: orthrus # (1)!
 
 construction:

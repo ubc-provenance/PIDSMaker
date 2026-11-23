@@ -141,13 +141,13 @@ All files produced by a run are written in the artifact folder, `/home/artifacts
 
     [:octicons-arrow-right-24: Tutorial](../guide/tutorial.md)
 
--   :lucide-flask-conical:{ .lg .middle } __Reproduce results__
+-   :lucide-flask-conical:{ .lg .middle } __Measure instability__
 
     ---
 
-    Use the tuned hyperparameters, and run each system several times.
+    Run each system several times and report the mean and standard deviation.
 
-    [:octicons-arrow-right-24: Tuned hyperparameters](../guide/tuned-systems.md)
+    [:octicons-arrow-right-24: Instability](../features/instability.md)
 
 -   :lucide-sliders-horizontal:{ .lg .middle } __Tune a system__
 
