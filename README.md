@@ -69,23 +69,23 @@ The framework currently integrates the following PIDSs.
 
 It also includes several easy-to-install provenance datasets for APT detection.
 
-| Dataset | OS | Attacks | Size (GB) |
-|---------|------|---------|-----------|
-| CADETS_E3 | FreeBSD | 3 | 10 |
-| THEIA_E3 | Linux | 2 | 12 |
-| CLEARSCOPE_E3 | Android | 1 | 4.8 |
-| FIVEDIRECTIONS_E3 | Windows | 2 | 22 |
-| TRACE_E3 | Linux | 3 | 100 |
-| CADETS_E5 | FreeBSD | 2 | 276 |
-| THEIA_E5 | Linux | 1 | 36 |
-| CLEARSCOPE_E5 | Android | 2 | 49 |
-| FIVEDIRECTIONS_E5 | Windows | 4 | 280 |
-| TRACE_E5 | Linux | 1 | 710 |
-| optc_h201 | Windows | 1 | 9 |
-| optc_h501 | Windows | 1 | 6.7 |
-| optc_h051 | Windows | 1 | 7.7 |
-| ATLASV2_EDR | Windows | 10 | 1 |
-| CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
+| Dataset | OS | Attacks | Nodes | Events | Size (GB) |
+|---------|------|--------:|------:|-------:|----------:|
+| CADETS_E3 | FreeBSD | 3 | 2.68M | 36.5M | 10 |
+| THEIA_E3 | Linux | 2 | 1.26M | 44.4M | 12 |
+| CLEARSCOPE_E3 | Android | 1 | 369K | 18.3M | 4.8 |
+| FIVEDIRECTIONS_E3 | Windows | 2 | 1.38M | 78.9M | 22 |
+| TRACE_E3 | Linux | 3 | 44.5M | 284M | 100 |
+| CADETS_E5 | FreeBSD | 2 | 15.2M | 1.08B | 276 |
+| THEIA_E5 | Linux | 1 | 2.29M | 141M | 36 |
+| CLEARSCOPE_E5 | Android | 2 | 501K | 199M | 49 |
+| FIVEDIRECTIONS_E5 | Windows | 4 | 18.8M | 1.09B | 280 |
+| TRACE_E5 | Linux | 1 | 72.3M | 2.64B | 710 |
+| optc_h201 | Windows | 1 | 5.27M | 38.2M | 9 |
+| optc_h501 | Windows | 1 | 3.96M | 28.0M | 6.7 |
+| optc_h051 | Windows | 1 | 4.62M | 31.6M | 7.7 |
+| ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 1 |
+| CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 6.6 |
 
 ## Pretrained Encoders
 
