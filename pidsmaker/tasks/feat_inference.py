@@ -26,6 +26,71 @@ from pidsmaker.utils.utils import (
 )
 
 
+def _onehot_table(type2oh):
+    """Stacks the one-hot vectors of a `gen_relation_onehot` mapping into a matrix.
+
+    Returns the (num_types + 1, d) matrix, whose last row is all zeros (missing type),
+    and the mapping {type_name: row}.
+    """
+    names = [k for k in type2oh if isinstance(k, str)]
+    table = torch.stack([type2oh[k] for k in names] + [torch.zeros_like(type2oh[names[0]])])
+    return table, {name: i for i, name in enumerate(names)}
+
+
+def _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh):
+    """Builds the edge messages of a graph with per-node (not per-edge) lookups.
+
+    Equivalent to concatenating, for each edge in `graph.edges` order,
+    [src_type_onehot, src_emb, edge_type_onehot, dst_type_onehot, dst_emb].
+    """
+    src, dst, t, y, labels = [], [], [], [], []
+    for u, v, attr in graph.edges(data=True):
+        src.append(u)
+        dst.append(v)
+        t.append(int(attr["time"]))
+        y.append(int(attr.get("y", 0)))
+        labels.append(attr.get("label"))
+
+    # Map each node to a local row index, so that lookups are done once per node
+    nodes = list(graph.nodes)
+    node2row = {n: i for i, n in enumerate(nodes)}
+    src_rows = torch.tensor([node2row[u] for u in src], dtype=torch.long)
+    dst_rows = torch.tensor([node2row[v] for v in dst], dtype=torch.long)
+
+    ntype_table, ntype2row = _onehot_table(ntype2oh)
+    node_attrs = graph.nodes
+    node_type_rows = torch.tensor([ntype2row[node_attrs[n]["node_type"]] for n in nodes], dtype=torch.long)
+    node_types = ntype_table[node_type_rows]
+
+    etype_table, etype2row = _onehot_table(etype2oh)
+    missing = etype_table.shape[0] - 1
+    edge_label_t = etype_table[
+        torch.tensor([missing if l is None else etype2row[l] for l in labels], dtype=torch.long)
+    ]
+
+    ntype_u, ntype_v = node_types[src_rows], node_types[dst_rows]
+    if indexid2vec is None:
+        msg = torch.cat([ntype_u, edge_label_t, ntype_v], dim=1)
+    else:
+        # indexid2vec may use string keys (word2vec) or int keys;
+        # graph node IDs are cast to int, so try both.
+        def _lookup(nid):
+            nid = int(nid)
+            try:
+                return indexid2vec[nid]
+            except KeyError:
+                return indexid2vec[str(nid)]
+
+        node_embs = torch.from_numpy(np.stack([_lookup(n) for n in nodes])).float()
+        msg = torch.cat(
+            [ntype_u, node_embs[src_rows], edge_label_t, ntype_v, node_embs[dst_rows]], dim=1
+        )
+
+    src = [int(u) for u in src]
+    dst = [int(v) for v in dst]
+    return [msg], src, dst, t, y
+
+
 def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, bert_generator=None, indexid2msg=None):
     """Generate edge embeddings from node embeddings or a SPIDER encoder.
 
@@ -103,41 +168,10 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
 
         # Standard processing (pre-computed embeddings or types only)
         else:
-            edges_data = list(sorted_edges)
-
-            if not edges_data:
+            if graph.number_of_edges() == 0:
                 continue  # skip empty graphs (no edges in this time window)
 
-            src = [int(u) for u, v, k, attr in edges_data]
-            dst = [int(v) for u, v, k, attr in edges_data]
-            t = [int(attr["time"]) for u, v, k, attr in edges_data]
-            y = [int(attr.get("y", 0)) for u, v, k, attr in edges_data]
-
-            # Batch all type and label lookups — avoids N individual torch.cat calls
-            zero_edge_label = torch.zeros_like(etype2oh[next(iter(etype2oh))])
-            ntype_u = torch.stack([ntype2oh[graph.nodes[u]["node_type"]] for u, v, k, attr in edges_data])
-            ntype_v = torch.stack([ntype2oh[graph.nodes[v]["node_type"]] for u, v, k, attr in edges_data])
-            edge_label_t = torch.stack([
-                etype2oh[attr["label"]] if "label" in attr else zero_edge_label
-                for u, v, k, attr in edges_data
-            ])
-
-            # Only types
-            if indexid2vec is None:
-                msg = [torch.cat([ntype_u, edge_label_t, ntype_v], dim=1)]
-
-            # Types + node embeddings
-            else:
-                # indexid2vec may use string keys (word2vec) or int keys;
-                # graph node IDs are cast to int above, so try both.
-                def _lookup(nid):
-                    try:
-                        return indexid2vec[nid]
-                    except KeyError:
-                        return indexid2vec[str(nid)]
-                src_embs = torch.from_numpy(np.stack([_lookup(u) for u in src])).float()
-                dst_embs = torch.from_numpy(np.stack([_lookup(v) for v in dst])).float()
-                msg = [torch.cat([ntype_u, src_embs, edge_label_t, ntype_v, dst_embs], dim=1)]
+            msg, src, dst, t, y = _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh)
 
         data = CollatableTemporalData(
             src=torch.tensor(src).to(torch.long),

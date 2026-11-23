@@ -54,7 +54,9 @@ def main(cfg):
 
     node2corpus = get_node2corpus(cfg, splits=["train", "val", "test"])
     indexid2vec = {}
+    # The encoder is a constant (max_len, d) table: build it once rather than once per node
+    encoder = PositionalEncoder(w2v_vector_size)
     for indexid, corpus in log_tqdm(node2corpus.items(), desc="Embeding all nodes in the dataset"):
-        indexid2vec[indexid] = infer(corpus, w2vmodel, PositionalEncoder(w2v_vector_size))
+        indexid2vec[indexid] = infer(corpus, w2vmodel, encoder)
 
     return indexid2vec
