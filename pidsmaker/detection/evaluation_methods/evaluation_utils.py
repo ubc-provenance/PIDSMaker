@@ -24,6 +24,7 @@ from sklearn.metrics import (
 )
 
 import pidsmaker.utils.labelling as labelling
+from pidsmaker.utils.loss_files import read_losses, strip_loss_ext
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     listdir_sorted,
@@ -182,7 +183,7 @@ def get_threshold(val_tw_path, threshold_method: str, alpha=1.0, contamination=0
         # Contamination percentile: flag the top-`contamination` fraction of node scores.
         losses = []
         for file in listdir_sorted(val_tw_path):
-            losses.extend(pd.read_csv(os.path.join(val_tw_path, file), usecols=["loss"])["loss"].tolist())
+            losses.extend(read_losses(os.path.join(val_tw_path, file), usecols=["loss"])["loss"].tolist())
         return float(np.percentile(losses, 100 * (1 - contamination)))
     elif threshold_method == "fixed_zero":
         return 0.0  # BCE decision boundary: logit > 0 <=> P(attack) > 0.5
@@ -199,7 +200,7 @@ def get_threshold_per_type(val_tw_path, cfg, min_contamination=0.001, max_contam
     malicious_by_type = defaultdict(int)
     total_by_type = defaultdict(int)
     for file in listdir_sorted(val_tw_path):
-        df = pd.read_csv(os.path.join(val_tw_path, file), usecols=["node", "loss"])
+        df = read_losses(os.path.join(val_tw_path, file), usecols=["node", "loss"])
         for node, loss in zip(df["node"], df["loss"]):
             nt = node_to_type.get(int(node))
             if nt is None:
@@ -242,7 +243,7 @@ def calculate_threshold(val_tw_dir, threshold_method, alpha=1.0):
     loss_list = []
     for file in filelist:
         f = os.path.join(val_tw_dir, file)
-        loss_list.extend(pd.read_csv(f, usecols=[col])[col].tolist())
+        loss_list.extend(read_losses(f, usecols=[col])[col].tolist())
 
     thr = {
         "max": max(loss_list) * alpha,
@@ -1255,9 +1256,7 @@ def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
 
 
 def _tw_name_to_ns_range(name, timezone):
-    name = os.path.basename(name)
-    if name.endswith(".csv"):
-        name = name[: -len(".csv")]
+    name = strip_loss_ext(os.path.basename(name))
     start, end = name.split("~")
     return (
         datetime_to_ns_time_US_handle_nano(start, timezone=timezone),
@@ -1266,7 +1265,7 @@ def _tw_name_to_ns_range(name, timezone):
 
 
 def load_losses_per_time_window(losses_dir, cfg, max_unmatched_ratio=0.01):
-    """Loads the loss CSVs of a split/epoch directory and groups their rows by time window.
+    """Loads the loss files of a split/epoch directory and groups their rows by time window.
 
     The CSVs written during inference do not necessarily map 1:1 to the time
     windows (graphs) built during construction: intra-graph batching splits a
@@ -1285,8 +1284,8 @@ def load_losses_per_time_window(losses_dir, cfg, max_unmatched_ratio=0.01):
         without any row are absent from tw_to_df.
     """
     files = listdir_sorted(losses_dir)
-    dfs = [pd.read_csv(os.path.join(losses_dir, f)) for f in files]
-    per_file_names = [f[: -len(".csv")] if f.endswith(".csv") else f for f in files]
+    dfs = [read_losses(os.path.join(losses_dir, f)) for f in files]
+    per_file_names = [strip_loss_ext(f) for f in files]
     per_file = (per_file_names, {i: df for i, df in enumerate(dfs)})
 
     if len(dfs) == 0 or not all("time" in df.columns for df in dfs):

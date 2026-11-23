@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from sklearn.neighbors import NearestNeighbors
 
 from pidsmaker.utils.data_utils import batch_to_device
+from pidsmaker.utils.loss_files import write_losses
 from pidsmaker.utils.utils import (
     PeakCPUMemory,
     calculate_average_from_file,
@@ -54,26 +55,22 @@ def test_edge_level(
     #     log(f"Mean score of fake malicious edges: {losses[data.y.cpu() == 1].mean():.4f}")
     #     log(f"Mean score of benign malicious edges: {losses[data.y.cpu() == 0].mean():.4f}")
 
-    edge_df = pd.DataFrame(
-        {
-            "loss": losses.astype(float),
-            "srcnode": srcnodes.astype(int),
-            "dstnode": dstnodes.astype(int),
-            "time": t_vars.astype(int),
-            "edge_type": edge_types.astype(int),
-        }
-    )
+    edge_cols = {
+        "loss": losses.astype(float),
+        "srcnode": srcnodes.astype(int),
+        "dstnode": dstnodes.astype(int),
+        "time": t_vars.astype(int),
+        "edge_type": edge_types.astype(int),
+    }
 
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = (
-        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(edge_df["time"].max(), timezone=cfg.dataset.timezone)
+        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(edge_cols["time"].max(), timezone=cfg.dataset.timezone)
     )
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    csv_file = os.path.join(logs_dir, time_interval + ".csv")
-
-    edge_df.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
+    write_losses(logs_dir, time_interval, edge_cols)
     return losses
 
 
@@ -227,10 +224,7 @@ def test_node_level(
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    csv_file = os.path.join(logs_dir, time_interval + ".csv")
-
-    df = pd.DataFrame(node_list)
-    df.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
+    write_losses(logs_dir, time_interval, node_list)
     return losses
 
 

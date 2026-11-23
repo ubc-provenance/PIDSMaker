@@ -39,6 +39,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
 )
 from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
+from pidsmaker.utils.loss_files import compact_int_columns, read_losses
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     listdir_sorted,
@@ -111,7 +112,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     dfs = []
     for tw, fname in enumerate(log_tqdm(filelist, desc="Compute labels")):
-        df = pd.read_csv(os.path.join(test_tw_path, fname))
+        df = read_losses(os.path.join(test_tw_path, fname))
         df["tw"] = tw
         dfs.append(df)
 
@@ -198,7 +199,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(log_tqdm(filelist, desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file).to_dict(orient="records")
+        df = read_losses(file).to_dict(orient="records")
         for line in df:
             node = line["node"]
             loss = line["loss"]
@@ -362,7 +363,7 @@ def main(
     if edge_records is not None:
         edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
         edge_df = edge_records if isinstance(edge_records, pd.DataFrame) else pd.DataFrame(edge_records)
-        torch.save(edge_df, edge_scores_file)
+        torch.save(compact_int_columns(edge_df), edge_scores_file)
         log(f"Saved {len(edge_df)} edge scores to {edge_scores_file}")
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(

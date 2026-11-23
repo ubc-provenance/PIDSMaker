@@ -39,6 +39,7 @@ from pidsmaker.experiments.uncertainty import (
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
 )
+from pidsmaker.utils.loss_files import prune_non_best_epochs
 from pidsmaker.tasks import (
     batching,
     construction,
@@ -187,6 +188,9 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
             f"time_{task}": round(results["time"], 2) for task, results in task_results.items()
         }
         log("Task times (s): " + ", ".join(f"{k[5:]}={v}" for k, v in times.items()))
+
+        if getattr(cfg, "_keep_best_epoch_only", False):
+            prune_non_best_epochs(cfg, metrics)
         return metrics, times
 
     def run_pipeline_with_experiments(cfg):

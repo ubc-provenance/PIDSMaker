@@ -81,3 +81,11 @@ Graph construction builds the graphs of each day of the dataset in parallel proc
 ``` py
 python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
 ```
+
+## Disk usage
+
+Inference writes the losses of every epoch and split as compressed `.npz` files (previous runs with `.csv` loss files remain readable). Evaluation also stores per-epoch pickles. To keep only the outputs of the best epoch once the pipeline has finished, use `--keep_best_epoch_only`. Stats and plots are kept for every epoch, but re-running evaluation afterwards only considers the kept epoch(s).
+
+``` py
+python pidsmaker/main.py orthrus CADETS_E3 --keep_best_epoch_only
+```
