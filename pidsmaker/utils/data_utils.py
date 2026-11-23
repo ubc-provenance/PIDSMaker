@@ -108,6 +108,17 @@ class CollatableTemporalData(TemporalData):
         return self.node_type_dst.max(dim=1).indices
 
 
+def batch_to_device(data, device):
+    """Returns a copy of `data` on `device`, leaving `data` untouched.
+
+    `Data.to()` is in-place: moving a CPU graph to the GPU and back to the CPU costs
+    two transfers per batch. Moving a shallow copy only costs the host-to-device one;
+    the GPU copy is released by the caching allocator once no longer referenced.
+    Tensors already on `device` are not copied.
+    """
+    return copy.copy(data).to(device, non_blocking=True)
+
+
 def load_all_datasets(cfg, device, only_keep=None):
     multi_dataset = cfg.batching.multi_dataset_training
     train_data = load_data_set(cfg, split="train", multi_dataset=multi_dataset)
@@ -144,7 +155,16 @@ def load_all_datasets(cfg, device, only_keep=None):
     # edges actually fed into the TGN neighbor loader. The "minutes" batch_mode
     # duplicates edges across overlapping sliding windows; building full_data
     # from the pre-batched data would leave it shorter than the loader's e_id range.
-    full_data = get_full_data(datasets) if use_tgn_intra else None
+    full_data = None
+    if use_tgn_intra:
+        # Only the attributes gathered by `compute_tgn_graphs` are concatenated
+        edge_features = _edge_features_list(cfg)
+        keys = ["src", "dst", "edge_type"]
+        if "time_encoding" in edge_features:
+            keys.append("t")
+        if "msg" in edge_features:
+            keys.append("msg")
+        full_data = get_full_data(datasets, keys=keys)
 
     # Intra graph batching (TGN 1024 batches, last neighbor loader)
     datasets = run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_reindexer)
@@ -327,9 +347,7 @@ def extract_msg_from_data(
         g.node_type_src = fields["src_type"].clone()
         g.node_type_dst = fields["dst_type"].clone()
 
-        use_tgn = "tgn" in cfg.training.encoder.used_methods
-        use_tgn_intra = "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
-        if use_tgn or use_tgn_intra:
+        if _needs_raw_msg(cfg):
             g.msg = msg
         else:
             del g.msg
@@ -338,6 +356,22 @@ def extract_msg_from_data(
         # g.edge_index = ...
 
     return data_set
+
+def _edge_features_list(cfg):
+    return [x.strip() for x in cfg.batching.edge_features.split(",")]
+
+
+def _needs_raw_msg(cfg):
+    """Whether the edge-level `msg` is consumed downstream.
+
+    Only the TGN encoder reads it: as raw message of the TGN memory, or as edge
+    feature (`msg_tgn`). It also sizes the TGN modules when `msg` is an edge feature.
+    """
+    use_tgn = "tgn" in cfg.training.encoder.used_methods
+    if not use_tgn:
+        return False
+    return cfg.training.encoder.tgn.use_memory or "msg" in _edge_features_list(cfg)
+
 
 def get_possible_triplets(cfg):
     entity_map = get_node_map(from_zero=True)
@@ -376,16 +410,19 @@ def build_edge_feats(fields, msg, edge_features, possible_triplets, num_edge_typ
         edge_feats.append(triplets)
     if "msg" in edge_features:
         edge_feats.append(msg)
-    edge_feats = torch.cat(edge_feats, dim=-1) if len(edge_feats) > 0 else None
-    return edge_feats
+    if len(edge_feats) == 0:
+        return None
+    if len(edge_feats) == 1 and edge_feats[0] is msg:
+        # `msg` is a standalone tensor: share it rather than storing a copy. Other single
+        # features are views of the raw msg and are copied so that it can be freed.
+        return msg
+    return torch.cat(edge_feats, dim=-1)
 
 
-def get_full_data(datasets):
-    keys = ["t", "edge_type", "node_type_src", "node_type_dst", "src", "dst"]
-    # msg may have been deleted to save memory when TGN encoder is not used
+def get_full_data(datasets, keys=("t", "edge_type", "src", "dst", "msg")):
+    """Concatenates the given edge-level attributes of all graphs (missing ones are skipped)."""
     sample = datasets[0][0][0]
-    if hasattr(sample, "msg"):
-        keys.append("msg")
+    keys = [k for k in keys if hasattr(sample, k)]
     all_data = {k: [] for k in keys}
     for dataset_group in datasets:
         for dataset in dataset_group:
@@ -456,26 +493,26 @@ def batch_temporal_data(
         t0 = data.t.min()
         t0_aligned = (t0 // sliding_ns) * sliding_ns
 
-        # Mapping from window index to list of data points
-        window_data = {}
+        # Window indices [i0, i1] of each event: an event belongs to all sliding
+        # windows of length `window_length_ns` that contain its timestamp
+        t = data.t
+        i0 = (((t - window_length_ns - t0_aligned) + sliding_ns - 1) // sliding_ns).clamp(min=0)
+        i1 = (t - t0_aligned) // sliding_ns
+        counts = (i1 - i0 + 1).clamp(min=0)
 
-        for p in data:
-            # Compute window indices for each data point
-            i0 = ((p.t - window_length_ns - t0_aligned) + sliding_ns - 1) // sliding_ns
-            i1 = (p.t - t0_aligned) // sliding_ns
-            i0 = max(i0, 0)  # Ensure i0 is non-negative
+        # One (window, event) pair per membership, grouped by window with events in order
+        event_idx = torch.arange(t.numel(), device=t.device).repeat_interleave(counts)
+        offsets = torch.cumsum(counts, 0) - counts
+        window_idx = i0.repeat_interleave(counts) + (
+            torch.arange(event_idx.numel(), device=t.device) - offsets.repeat_interleave(counts)
+        )
+        window_idx, perm = torch.sort(window_idx, stable=True)
+        event_idx = event_idx[perm]
 
-            for i in range(i0, i1 + 1):
-                window_data.setdefault(i, []).append(p)
-
-        # Build the list of windows
         windows = []
-        for i in sorted(window_data.keys()):
-            s = t0_aligned + i * sliding_ns  # Window start time (ns)
-            e = s + window_length_ns  # Window end time (ns)
-            data_in_window = window_data[i]
-            windows.append(collate_temporal_data(data_in_window))
-
+        _, sizes = torch.unique_consecutive(window_idx, return_counts=True)
+        for idx in event_idx.split(sizes.tolist()):
+            windows.append(data.index_select(idx))
         return windows
 
     elif batch_mode == "unique_edge_types":
@@ -657,14 +694,17 @@ def compute_tgn_graphs(
     for dataset in datasets:
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
-                batch = batch.to(device)
-                batch_edge_index = batch.edge_index.clone()
-                src, dst = batch_edge_index
+                # Only the inputs are moved to the device and only the outputs are moved
+                # back: transferring the whole batch both ways dominated this step.
+                src = batch.src.to(device)
+                dst = batch.dst.to(device)
+                batch_edge_index = torch.stack([src, dst], dim=0)
 
                 if insert_neighbors_before:
                     neighbor_loader.insert(src, dst)
 
-                n_id = batch_edge_index.unique()
+                original_n_id = batch_edge_index.unique()
+                n_id = original_n_id
                 for _ in range(tgn_neighbor_n_hop):
                     n_id, edge_index, e_id = neighbor_loader(n_id)
 
@@ -689,47 +729,54 @@ def compute_tgn_graphs(
                     0
                 )  # Important, this one is used as __inc__ when batching graphs
                 assoc[n_id] = torch.arange(num_nodes, device=device)
-                node_feat_cache[torch.cat([src, dst])] = torch.cat([batch.x_src, batch.x_dst])
-                node_type_cache[torch.cat([src, dst])] = torch.cat(
+                src_dst = torch.cat([src, dst])
+                node_type_cache[src_dst] = torch.cat(
                     [batch.node_type_src, batch.node_type_dst]
-                )
+                ).to(device)
 
+                x_src_dev = batch.x_src.to(device)
+                x_dst_dev = batch.x_dst.to(device)
                 if fix_buggy_orthrus_TGN:
+                    node_feat_cache[src_dst] = torch.cat([x_src_dev, x_dst_dev])
                     x_src = torch.zeros((num_nodes, node_feat_dim), device=device)
                     x_dst = x_src.clone()
                     src_id, dst_id = edge_index[0].unique(), edge_index[1].unique()
                     x_src[src_id] = node_feat_cache[n_id[src_id]]
                     x_dst[dst_id] = node_feat_cache[n_id[dst_id]]
                     new_x = node_feat_cache[n_id]
-                    batch.x_from_tgn = x_src  # (N, d)
-                    batch.x_to_tgn = x_dst  # (N, d)
-                    batch.x_tgn = new_x  # (N, d)
+                    batch.x_from_tgn = x_src.cpu()  # (N, d)
+                    batch.x_to_tgn = x_dst.cpu()  # (N, d)
+                    batch.x_tgn = new_x.cpu()  # (N, d)
 
                 else:
                     (x_src, x_dst), *_ = graph_reindexer._reindex_graph(
                         batch_edge_index,
-                        batch.x_src,
-                        batch.x_dst,
+                        x_src_dev,
+                        x_dst_dev,
                         max_num_node=num_nodes,
                         x_is_tuple=True,
                     )
-                    batch.x_from_tgn = x_src
-                    batch.x_to_tgn = x_dst
-                    batch.x_tgn = x_src
+                    batch.x_from_tgn = x_src.cpu()
+                    batch.x_to_tgn = x_dst.cpu()
+                    batch.x_tgn = batch.x_from_tgn  # same tensor, stored once
+                del x_src_dev, x_dst_dev
 
                 batch.tgn_mode = True
-                batch.original_edge_index = batch_edge_index
-                batch.original_n_id = batch_edge_index.unique()
-                batch.reindexed_original_n_id_tgn = assoc[batch.original_n_id]
-                batch.n_id_tgn = n_id
-                batch.edge_index_tgn = edge_index
-                batch.reindexed_edge_index_tgn = assoc[batch.edge_index]
-                batch.msg_tgn = full_data.msg[e_id.cpu()]
-                batch.t_tgn = full_data.t[e_id.cpu()]
-                batch.node_type_tgn = node_type_cache[n_id]
-                batch.edge_type_tgn = full_data.edge_type[e_id.cpu()]
-
-                batch = batch.to("cpu")
+                batch.original_edge_index = batch_edge_index.cpu()
+                batch.original_n_id = original_n_id.cpu()
+                batch.reindexed_original_n_id_tgn = assoc[original_n_id].cpu()
+                batch.n_id_tgn = n_id.cpu()
+                batch.edge_index_tgn = edge_index.cpu()
+                batch.reindexed_edge_index_tgn = assoc[batch_edge_index].cpu()
+                e_id_cpu = e_id.cpu()
+                # msg_tgn and t_tgn are only read by the TGN encoder with the
+                # `msg` and `time_encoding` edge features (see `run_global_batching`)
+                if "msg" in full_data:
+                    batch.msg_tgn = full_data.msg[e_id_cpu]
+                if "t" in full_data:
+                    batch.t_tgn = full_data.t[e_id_cpu]
+                batch.node_type_tgn = node_type_cache[n_id].cpu()
+                batch.edge_type_tgn = full_data.edge_type[e_id_cpu]
 
                 if not insert_neighbors_before:
                     neighbor_loader.insert(src, dst)
@@ -806,11 +853,13 @@ class GraphReindexer:
         Converts node features in shape (E, d) to a shape (N, d).
         Returns x as a tuple (x_src, x_dst).
         """
-        if edge_index.min() != 0 and not self.is_warning:
-            print(
-                "Warning: reshaping features with non-reindexed edge index leads to large cache stored in GPU memory."
-            )
+        # Only checked at the first call: `.min()` forces a GPU sync
+        if not self.is_warning:
             self.is_warning = True
+            if edge_index.min() != 0:
+                print(
+                    "Warning: reshaping features with non-reindexed edge index leads to large cache stored in GPU memory."
+                )
 
         max_num_node = max_num_node + 1 if max_num_node else edge_index.max() + 1
         feature_dim = x_src.size(1)
@@ -825,6 +874,12 @@ class GraphReindexer:
         output.detach()
         output.zero_()
 
+        # The cache may be larger than needed (it only grows): only its first `max_num_node`
+        # rows are used (all indices are lower), and the returned tensors are compact copies.
+        # Returning views of the cache would keep its whole storage alive and alias the
+        # results of consecutive calls (the cache is zeroed at each call).
+        output = output[:max_num_node]
+
         if x_is_tuple:
             scatter(x_src, edge_index[0], out=output, dim=0, reduce="mean")
             x_src_result = output.clone()
@@ -832,7 +887,7 @@ class GraphReindexer:
 
             scatter(x_dst, edge_index[1], out=output, dim=0, reduce="mean")
             x_dst_result = output.clone()
-            return (x_src_result[:max_num_node], x_dst_result[:max_num_node])
+            return (x_src_result, x_dst_result)
         else:
             if self.fix_buggy_graph_reindexer:
                 output = output.clone()
@@ -843,13 +898,13 @@ class GraphReindexer:
                     dim=0,
                     reduce="mean",
                 )
+                return output
             else:
                 # NOTE: this one, used in orthrus and velox is buggy because it does the mean twice, which can double
                 # the value of features if duplicates exist
                 scatter(x_src, edge_index[0], out=output, dim=0, reduce="mean")
                 scatter(x_dst, edge_index[1], out=output, dim=0, reduce="mean")
-
-            return output[:max_num_node]
+                return output.clone()
 
     def reindex_graph(self, data, x_is_tuple=False, use_tgn=False, keep_edge_level_features=True):
         """
@@ -949,18 +1004,51 @@ def load_model(model, path: str):
     return model
 
 
+_REINDEX_INPUTS = ("src", "dst", "x_src", "x_dst", "node_type_src", "node_type_dst")
+
+
+def _to_cpu_shared(value, copies):
+    """Moves tensors (possibly nested in tuples/lists/dicts) to CPU, copying each tensor once."""
+    if isinstance(value, torch.Tensor):
+        key = id(value)
+        if key not in copies:
+            copies[key] = (value, value.cpu())  # keeps `value` alive so that its id stays unique
+        return copies[key][1]
+    if isinstance(value, (tuple, list)):
+        return type(value)(_to_cpu_shared(v, copies) for v in value)
+    if isinstance(value, dict):
+        return {k: _to_cpu_shared(v, copies) for k, v in value.items()}
+    return value
+
+
 def reindex_graphs(datasets, graph_reindexer, device, use_tgn, keep_edge_level_features=True, x_is_tuple=False):
     for dataset in datasets:
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Reindexing graphs"):
-                batch.to(device)
+                # Reindexing runs on a device copy holding only its inputs; only the
+                # new/updated attributes are copied back (and the deleted ones removed).
+                tmp = copy.copy(batch)
+                for key in list(tmp.keys()):
+                    if isinstance(tmp[key], torch.Tensor) and key not in _REINDEX_INPUTS:
+                        del tmp[key]
+                tmp = tmp.to(device)
+                inputs = dict(tmp._store.items())
+
                 graph_reindexer.reindex_graph(
-                    batch,
+                    tmp,
                     use_tgn=use_tgn,
                     keep_edge_level_features=keep_edge_level_features,
                     x_is_tuple=x_is_tuple,
                 )
-                batch.to("cpu")
+
+                copies = {}  # id(device tensor) -> CPU copy, to keep aliased outputs aliased
+                for key, value in tmp._store.items():
+                    if key in inputs and value is inputs[key]:
+                        continue
+                    batch[key] = _to_cpu_shared(value, copies)
+                for key in inputs:
+                    if key not in tmp._store:
+                        del batch[key]
     graph_reindexer.clear_cache()
 
 def compute_hetero_graphs(datasets, device, cfg):

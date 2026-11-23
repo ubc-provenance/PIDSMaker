@@ -159,7 +159,10 @@ class TGNEncoder(nn.Module):
     
         # Update memory and neighbor loader with ground-truth state.
         if self.use_memory or self.use_time_enc:
-            self.memory.update_state(batch.src, batch.dst, batch.t, batch.msg)
+            # The raw message is only used by the TGN memory (TimeEncodingMemory ignores it,
+            # and `msg` is not kept in the batches when unused)
+            raw_msg = batch.msg if self.use_memory else None
+            self.memory.update_state(batch.src, batch.dst, batch.t, raw_msg)
 
         # Detaching memory is only useful for backprop in training
         if self.use_memory and not inference:
