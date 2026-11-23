@@ -147,6 +147,12 @@ def init_database_connection(cfg):
     else:
         database_name = cfg.dataset.database
 
+    # Queries without ORDER BY (e.g. `select * from file_node_table`) return rows in the
+    # table's physical order, which determines e.g. the order of indexid2msg and thus the
+    # featurization. With synchronized seqscans (Postgres default), a scan started while
+    # another scan of the same table is running joins it midway and returns rotated rows,
+    # making results depend on concurrent runs. Disabled for this session only.
+    options = "-c synchronize_seqscans=off"
     if cfg.database.host is not None:
         connect = psycopg2.connect(
             database=database_name,
@@ -154,6 +160,7 @@ def init_database_connection(cfg):
             user=cfg.database.user,
             password=cfg.database.password,
             port=cfg.database.port,
+            options=options,
         )
     else:
         connect = psycopg2.connect(
@@ -161,6 +168,7 @@ def init_database_connection(cfg):
             user=cfg.database.user,
             password=cfg.database.password,
             port=cfg.database.port,
+            options=options,
         )
     cur = connect.cursor()
     return cur, connect
