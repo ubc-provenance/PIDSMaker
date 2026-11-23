@@ -189,13 +189,13 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
 If you use PIDSMaker in your research, please cite the following papers.
 
-=== "Framework paper (arXiv 2026)"
+=== "Framework paper (KDD 2026)"
 
     ```bibtex
-    @article{bilot2026pidsmaker,
+    @inproceedings{bilot2026pidsmaker,
       title={PIDSMaker: Building and Evaluating Provenance-based Intrusion Detection Systems},
       author={Bilot, Tristan and Jiang, Baoxiang and Pasquier, Thomas},
-      journal={arXiv preprint arXiv:2601.22983},
+      booktitle={Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '26)},
       year={2026}
     }
     ```
