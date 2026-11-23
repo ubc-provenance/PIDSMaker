@@ -8,6 +8,7 @@
 [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.19813646-ed6a2f?style=flat&labelColor=gray)](https://doi.org/10.5281/zenodo.19813646)
 [![License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/releases)
+[![Discord](https://img.shields.io/badge/Discord-Join-ed6a2f?style=flat&labelColor=gray&logo=discord&logoColor=white)](https://discord.gg/jecmkTABUg)
 [![Stars](https://img.shields.io/github/stars/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=white&logo=github&logoColor=black)](https://github.com/ubc-provenance/PIDSMaker/stargazers)
 
 </div>
@@ -280,6 +281,8 @@ If you use this work, please cite the two following papers:
 ## Contributing
 
 Pull requests are welcome! Please follow the [contribution guidelines](https://ubc-provenance.github.io/PIDSMaker/contributing/).
+
+Questions, ideas or feature requests? Join our [Discord](https://discord.gg/jecmkTABUg).
 
 ## License
 
