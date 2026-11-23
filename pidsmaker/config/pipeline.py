@@ -66,6 +66,8 @@ def get_default_cfg(args):
     cfg._exp = args.exp
     cfg._tasks_set_from_cli = []
     cfg._save_graph_preprocessing = args.save_graph_preprocessing
+    # Underscore-prefixed: parallelism does not change results, so it is not hashed
+    cfg._num_workers = getattr(args, "num_workers", None)
     cfg._from_weights = args.from_weights
     cfg._from_weights_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -180,6 +182,13 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(
         "--artifact_dir", default="/home/artifacts/", help="Destination folder for generated files"
+    )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=None,
+        help="Number of processes for CPU-bound preprocessing such as graph construction "
+        "(default: min(8, #CPUs)). Results do not depend on it.",
     )
     parser.add_argument(
         "--save_graph_preprocessing", action="store_true", help="Saves `graph_preprocessing` task on disk (heavy)."

@@ -73,3 +73,11 @@ This option instructs the pipeline to generate outputs in a new folder identifie
 
 !!! warning
     Since the hash is randomly generated, the outputs of this run cannot be retrieved later based on task arguments. As a result, all files produced when using `--restart_from_scratch` are deleted at the end of the pipeline to avoid unnecessary disk usage.
+
+## Performance
+
+Graph construction builds the graphs of each day of the dataset in parallel processes. The number of processes is set with `--num_workers` (default: `min(8, #CPUs)`); it does not change the produced graphs, nor the task hashes.
+
+``` py
+python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
+```
