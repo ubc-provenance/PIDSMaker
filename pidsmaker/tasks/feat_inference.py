@@ -16,7 +16,7 @@ from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_word2vec,
 )
 from pidsmaker.featurization.feat_inference_methods.feat_inference_pretrained import GraphBasedEncoder
-from pidsmaker.utils.data_utils import CollatableTemporalData
+from pidsmaker.utils.data_utils import COMPACT_MSG_KEYS, CollatableTemporalData
 from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
 from pidsmaker.utils.utils import (
     gen_relation_onehot,
@@ -64,13 +64,12 @@ def _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh):
 
     etype_table, etype2row = _onehot_table(etype2oh)
     missing = etype_table.shape[0] - 1
-    edge_label_t = etype_table[
-        torch.tensor([missing if l is None else etype2row[l] for l in labels], dtype=torch.long)
-    ]
+    edge_type_rows = torch.tensor(
+        [missing if l is None else etype2row[l] for l in labels], dtype=torch.long
+    )
 
-    ntype_u, ntype_v = node_types[src_rows], node_types[dst_rows]
     if indexid2vec is None:
-        msg = torch.cat([ntype_u, edge_label_t, ntype_v], dim=1)
+        node_feats = node_types
     else:
         # indexid2vec may use string keys (word2vec) or int keys;
         # graph node IDs are cast to int, so try both.
@@ -82,13 +81,23 @@ def _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh):
                 return indexid2vec[str(nid)]
 
         node_embs = torch.from_numpy(np.stack([_lookup(n) for n in nodes])).float()
-        msg = torch.cat(
-            [ntype_u, node_embs[src_rows], edge_label_t, ntype_v, node_embs[dst_rows]], dim=1
-        )
+        node_feats = torch.cat([node_types, node_embs], dim=1)
+
+    # The message of an edge is [src_feats | edge_type | dst_feats], where a node's feats
+    # are [node_type | node_emb]. Instead of materializing it (E x D, with each node's
+    # embedding repeated for each of its edges), each node's feats are stored once with
+    # the row of each edge's src/dst/type: see `expand_compact_msg`.
+    compact = {
+        COMPACT_MSG_KEYS[0]: node_feats.to(torch.float),
+        COMPACT_MSG_KEYS[1]: src_rows.to(torch.int32),
+        COMPACT_MSG_KEYS[2]: dst_rows.to(torch.int32),
+        COMPACT_MSG_KEYS[3]: etype_table.to(torch.float),
+        COMPACT_MSG_KEYS[4]: edge_type_rows.to(torch.int32),
+    }
 
     src = [int(u) for u in src]
     dst = [int(v) for v in dst]
-    return [msg], src, dst, t, y
+    return compact, src, dst, t, y
 
 
 def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, bert_generator=None, indexid2msg=None):
@@ -171,15 +180,18 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
             if graph.number_of_edges() == 0:
                 continue  # skip empty graphs (no edges in this time window)
 
-            msg, src, dst, t, y = _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh)
+            compact, src, dst, t, y = _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh)
 
         data = CollatableTemporalData(
             src=torch.tensor(src).to(torch.long),
             dst=torch.tensor(dst).to(torch.long),
             t=torch.tensor(t).to(torch.long),
-            msg=torch.vstack(msg).to(torch.float),
+            msg=torch.vstack(msg).to(torch.float) if bert_generator is not None else None,
             y=torch.tensor(y).to(torch.long),
         )
+        if bert_generator is None:
+            for key, value in compact.items():
+                data[key] = value
 
         os.makedirs(out_dir, exist_ok=True)
         file = path.split("/")[-1]

@@ -180,11 +180,36 @@ def load_all_datasets(cfg, device, only_keep=None):
     return train_data, val_data, test_data, max_node
 
 
+# Compact storage of the edge messages written by feat_inference (see `expand_compact_msg`)
+COMPACT_MSG_KEYS = (
+    "msg_node_feats",  # (N, F) features of each node of the graph: [node_type | node_emb]
+    "msg_src_row",  # (E,) row of each edge's source in msg_node_feats
+    "msg_dst_row",  # (E,) row of each edge's destination in msg_node_feats
+    "msg_edge_type_table",  # (K + 1, T) one-hot of each edge type (last row: no type)
+    "msg_edge_type_row",  # (E,) row of each edge's type in msg_edge_type_table
+)
+
+
+def expand_compact_msg(data):
+    """Rebuilds the (E, D) edge messages `msg` = [src_feats | edge_type | dst_feats] from
+    their compact storage, in place. Data saved with a materialized `msg` is left as is."""
+    if COMPACT_MSG_KEYS[0] not in data:
+        return data
+    node_feats, src_row, dst_row, etype_table, etype_row = (data[k] for k in COMPACT_MSG_KEYS)
+    data.msg = torch.cat(
+        [node_feats[src_row.long()], etype_table[etype_row.long()], node_feats[dst_row.long()]],
+        dim=1,
+    )
+    for k in COMPACT_MSG_KEYS:
+        del data[k]
+    return data
+
+
 def load_data_list(path, split, cfg):
     data_list = []
     for f in sorted(os.listdir(os.path.join(path, split))):
         filepath = os.path.join(path, split, f)
-        data = torch.load(filepath).to("cpu")
+        data = expand_compact_msg(torch.load(filepath).to("cpu"))
         data_list.append(data)
 
     data_list = extract_msg_from_data(data_list, cfg)
