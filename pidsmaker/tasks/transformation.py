@@ -9,6 +9,7 @@ from pidsmaker.preprocessing.transformation_methods import (
     transformation_rcaid_pseudo_graph,
     transformation_undirected,
 )
+from pidsmaker.utils.graph_store import save_graph
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_multi_datasets,
@@ -48,7 +49,7 @@ def add_synthetic_attacks(base_dir, dst_dir, cfg, method):
             file_name = path.split("/")[-1]
             dst_path = os.path.join(dst_dir, f"graph_{date}")
             os.makedirs(dst_path, exist_ok=True)
-            torch.save(graph, os.path.join(dst_path, file_name))
+            save_graph(graph, os.path.join(dst_path, file_name))
 
 
 def apply_synthetic_attacks(train_graphs, val_graphs, cfg, method):
@@ -73,7 +74,7 @@ def add_graph_transformation(base_dir, dst_dir, cfg, methods):
             file_name = path.split("/")[-1]
             dst_path = os.path.join(dst_dir, f"graph_{date}")
             os.makedirs(dst_path, exist_ok=True)
-            torch.save(graph, os.path.join(dst_path, file_name))
+            save_graph(graph, os.path.join(dst_path, file_name))
 
 
 def apply_graph_transformations(graph, methods, cfg):

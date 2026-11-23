@@ -18,6 +18,7 @@ from pidsmaker.featurization.feat_inference_methods import (
 from pidsmaker.featurization.feat_inference_methods.feat_inference_pretrained import GraphBasedEncoder
 from pidsmaker.utils.data_utils import COMPACT_MSG_KEYS, CollatableTemporalData
 from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.utils.graph_store import load_graph_columns
 from pidsmaker.utils.utils import (
     gen_relation_onehot,
     get_multi_datasets,
@@ -37,12 +38,8 @@ def _onehot_table(type2oh):
     return table, {name: i for i, name in enumerate(names)}
 
 
-def _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh):
-    """Builds the edge messages of a graph with per-node (not per-edge) lookups.
-
-    Equivalent to concatenating, for each edge in `graph.edges` order,
-    [src_type_onehot, src_emb, edge_type_onehot, dst_type_onehot, dst_emb].
-    """
+def _edge_columns_from_graph(graph):
+    """(nodes, node types, src rows, dst rows, times, labels, edge labels) in `graph.edges` order."""
     src, dst, t, y, labels = [], [], [], [], []
     for u, v, attr in graph.edges(data=True):
         src.append(u)
@@ -56,10 +53,32 @@ def _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh):
     node2row = {n: i for i, n in enumerate(nodes)}
     src_rows = torch.tensor([node2row[u] for u in src], dtype=torch.long)
     dst_rows = torch.tensor([node2row[v] for v in dst], dtype=torch.long)
+    node_attrs = graph.nodes
+    node_types = [node_attrs[n]["node_type"] for n in nodes]
+    return nodes, node_types, src_rows, dst_rows, t, y, labels
+
+
+def _edge_columns_from_store(cols):
+    """Same as `_edge_columns_from_graph`, from the stored columns (no networkx graph)."""
+    m = len(cols.src)
+    t = [int(x) for x in cols.edge_attrs["time"]]
+    y = [int(x) for x in cols.edge_attrs["y"]] if "y" in cols.edge_attrs else [0] * m
+    labels = cols.edge_attrs["label"] if "label" in cols.edge_attrs else [None] * m
+    src_rows = torch.from_numpy(cols.src.astype(np.int64))
+    dst_rows = torch.from_numpy(cols.dst.astype(np.int64))
+    return cols.node_ids, cols.node_attrs["node_type"], src_rows, dst_rows, t, y, labels
+
+
+def _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh):
+    """Builds the edge messages of a graph with per-node (not per-edge) lookups.
+
+    Equivalent to concatenating, for each edge in `graph.edges` order,
+    [src_type_onehot, src_emb, edge_type_onehot, dst_type_onehot, dst_emb].
+    """
+    nodes, node_type_list, src_rows, dst_rows, t, y, labels = edge_columns
 
     ntype_table, ntype2row = _onehot_table(ntype2oh)
-    node_attrs = graph.nodes
-    node_type_rows = torch.tensor([ntype2row[node_attrs[n]["node_type"]] for n in nodes], dtype=torch.long)
+    node_type_rows = torch.tensor([ntype2row[nt] for nt in node_type_list], dtype=torch.long)
     node_types = ntype_table[node_type_rows]
 
     etype_table, etype2row = _onehot_table(etype2oh)
@@ -95,8 +114,9 @@ def _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh):
         COMPACT_MSG_KEYS[4]: edge_type_rows.to(torch.int32),
     }
 
-    src = [int(u) for u in src]
-    dst = [int(v) for v in dst]
+    node_ids = [int(n) for n in nodes]
+    src = [node_ids[r] for r in src_rows.tolist()]
+    dst = [node_ids[r] for r in dst_rows.tolist()]
     return compact, src, dst, t, y
 
 
@@ -114,8 +134,9 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
         indexid2msg: Optional node label mapping for SPIDER
     """
     for i, path in enumerate(log_tqdm(sorted_paths, desc="Computing edge embeddings")):
-        graph = torch.load(path)
-        sorted_edges = graph.edges(data=True, keys=True)
+        # The standard path only needs the graph's columns, not a networkx graph
+        cols = load_graph_columns(path) if bert_generator is None else None
+        graph = torch.load(path) if cols is None else None
 
         src, dst, msg, t, y = [], [], [], [], []
 
@@ -123,7 +144,7 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
         if bert_generator is not None:
             # Collect all edge data first
             all_edge_data = []
-            for u, v, k, attr in sorted_edges:
+            for u, v, k, attr in graph.edges(data=True, keys=True):
                 src.append(int(u))
                 dst.append(int(v))
                 timestamp = int(attr["time"])
@@ -177,10 +198,14 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
 
         # Standard processing (pre-computed embeddings or types only)
         else:
-            if graph.number_of_edges() == 0:
+            num_edges = graph.number_of_edges() if cols is None else len(cols.src)
+            if num_edges == 0:
                 continue  # skip empty graphs (no edges in this time window)
 
-            compact, src, dst, t, y = _vectorized_edge_msg(graph, indexid2vec, etype2oh, ntype2oh)
+            edge_columns = (
+                _edge_columns_from_graph(graph) if cols is None else _edge_columns_from_store(cols)
+            )
+            compact, src, dst, t, y = _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh)
 
         data = CollatableTemporalData(
             src=torch.tensor(src).to(torch.long),

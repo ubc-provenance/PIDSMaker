@@ -7,7 +7,6 @@ Supports attack mimicry generation for data augmentation.
 
 import multiprocessing
 import os
-import pickle
 import queue
 import re
 import sys
@@ -22,6 +21,7 @@ import torch
 import pidsmaker.mimicry as mimicry
 from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
 from pidsmaker.preprocessing.cleaning import Cleaner
+from pidsmaker.utils.graph_store import save_graph
 from pidsmaker.utils.dataset_utils import get_rel2id, rel2id_optc, OPTC_DATASETS, _has_consistent_edge_types, translate_optc_to_tc
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
@@ -738,7 +738,7 @@ def _build_day(
                     graph_name = f"{date_dir}/{time_interval}"
 
                     # log(f"Saving graph for {time_interval}")
-                    torch.save(graph, graph_name, pickle_protocol=pickle.HIGHEST_PROTOCOL)
+                    save_graph(graph, graph_name)
                     if file2nodes is not None:
                         file2nodes[os.path.normpath(graph_name)] = set(node_info)
 

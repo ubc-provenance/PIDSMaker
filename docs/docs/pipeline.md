@@ -84,6 +84,8 @@ python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
 
 ## Disk usage
 
+Graphs produced by construction and transformation are stored as compressed column arrays (about 5x smaller than pickled networkx graphs); `torch.load` on a graph file still returns the identical networkx graph, and previously generated graphs remain readable.
+
 Inference writes the losses of every epoch and split as compressed `.npz` files (previous runs with `.csv` loss files remain readable). Evaluation also stores per-epoch pickles. To keep only the outputs of the best epoch once the pipeline has finished, use `--keep_best_epoch_only`. Stats and plots are kept for every epoch, but re-running evaluation afterwards only considers the kept epoch(s).
 
 ``` py
