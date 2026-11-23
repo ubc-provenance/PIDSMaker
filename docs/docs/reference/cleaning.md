@@ -1,3 +1,8 @@
+---
+title: Cleaning
+description: Cleaning methods applied to the raw events before graph construction, and their effect on detection.
+---
+
 # Cleaning
 
 The databases of the datasets contain events and attributes that are artifacts of the collection rather than system behavior: null values stored as text, corrupted IPs, events logged twice, events of a process on itself, multicast name resolution traffic, etc.

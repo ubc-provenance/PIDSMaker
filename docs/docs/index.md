@@ -1,158 +1,220 @@
-<p align="center">
-  <img width="80%" src="./assets/pidsmaker_title.png" alt="PIDSMAKER logo"/>
-  </p>
+---
+title: Home
+description: PIDSMaker is an open-source framework to build, benchmark and extend provenance-based intrusion detection systems (PIDSs).
+hide:
+  - navigation
+  - toc
+---
 
-# PIDSMaker
-The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
-It provides a single codebase to run most recent state-of-the-art systems and easily customize them to develop new variants.
+<div class="pm-hero" markdown>
 
-## Purpose
+<img class="pm-hero__logo" src="assets/pidsmaker_new.png" alt="PIDSMaker logo">
 
-PIDSMaker is an open-source framework designed to be collaboratively developed and maintained by the security research community. It was born out of the observation that recent papers in top-tier security venues often evaluate on the same datasets but differ in labeling strategies and in the implementation of baseline methods.
+<div markdown>
 
-Until now, no standardized open-source framework has existed to facilitate fair comparisons.
-PIDSMaker addresses this gap by providing the following key features:
+<h1>PIDS<span class="pm-maker">Maker</span></h1>
 
-1.	**Consistent evaluation** and benchmarking of SOTA baselines using unified datasets, labeling strategies, and reference implementations.
-2.	A modular testbed of existing components extracted from published systems, enabling experimentation and the **discovery of improved variants**.
-3.	A centralized repository where authors can contribute and **share code for new systems**, ensuring fair and reproducible benchmarking.
+<p class="pm-hero__tagline">
+The open-source framework to <strong>build, benchmark and extend provenance-based intrusion detection systems</strong>.
+State-of-the-art PIDSs, the main DARPA datasets and one modular pipeline, all in a single codebase.
+</p>
 
+<div class="pm-hero__actions" markdown>
 
-## What is system provenance?
+[:lucide-rocket: Get started](getting-started/installation.md){ .md-button .md-button--primary }
+[:lucide-terminal: Quickstart](getting-started/quickstart.md){ .md-button }
+[:fontawesome-brands-github: GitHub](https://github.com/ubc-provenance/PIDSMaker){ .md-button }
+[:fontawesome-brands-discord: Discord](https://discord.gg/jecmkTABUg){ .md-button }
 
-**System provenance** is a detailed record of all activities occurring on a computer system. Operating systems like Linux and Windows can be configured to capture these events through audit frameworks (e.g., Linux Audit, ETW on Windows).
+</div>
 
-Provenance data captures:
+</div>
 
-- **Process execution**: Which programs ran, with what arguments
-- **File operations**: Reads, writes, creates, deletes
-- **Network activity**: Connections, data transfers
-- **Inter-process communication**: Pipes, signals, shared memory
+</div>
 
-## Provenance graphs
+<style>.md-content__button { display: none; }</style>
 
-Raw provenance logs are transformed into a **provenance graph**—a directed graph where:
+<div class="pm-stats">
+  <div class="pm-stat"><strong>9</strong><span>PIDSs reimplemented</span></div>
+  <div class="pm-stat"><strong>15</strong><span>ready-to-load datasets</span></div>
+  <div class="pm-stat"><strong>7</strong><span>configurable pipeline stages</span></div>
+  <div class="pm-stat"><strong>15+</strong><span>pretrained encoders</span></div>
+</div>
 
-| Element | Description | Examples |
-|---------|-------------|----------|
-| **Nodes** | System entities | Processes, files, network sockets |
-| **Edges** | Interactions between entities | Process reads file, process connects to socket |
+## Why PIDSMaker?
 
-```
-┌─────────┐   READ    ┌─────────┐
-│ Process │ ────────▶ │  File   │
-│  nginx  │           │ config  │
-└─────────┘           └─────────┘
-     │
-     │ CONNECT
-     ▼
-┌─────────┐
-│ Socket  │
-│ :8080   │
-└─────────┘
-```
+Papers at top security venues often evaluate on the same datasets, but each uses its own labels and its own implementation of the baselines, so their results can't be compared fairly.
+PIDSMaker gives the community **one framework**, maintained in the open, that fixes this.
 
-### Node types
+<div class="grid cards" markdown>
 
-PIDSMaker uses three primary node types:
+-   :lucide-scale:{ .lg .middle } __Fair benchmarking__
 
-| Type | Description | Attributes |
-|------|-------------|------------|
-| `subject` | Processes/threads | Command line, executable path |
-| `file` | Files and directories | File path |
-| `netflow` | Network connections | IP address, port |
+    ---
 
-### Edge types
+    State-of-the-art baselines evaluated with the same datasets, labels and reference implementations.
 
-Edges represent system calls or events. PIDSMaker uses 10 edge types:
+-   :lucide-boxes:{ .lg .middle } __Modular components__
 
-| Edge Type | Description |
-|-----------|-------------|
-| `EVENT_READ` | Process reads from file |
-| `EVENT_WRITE` | Process writes to file |
-| `EVENT_OPEN` | Process opens file |
-| `EVENT_EXECUTE` | Process executes file |
-| `EVENT_CONNECT` | Process connects to network |
-| `EVENT_RECVFROM` | Process receives network data |
-| `EVENT_RECVMSG` | Process receives network message |
-| `EVENT_SENDTO` | Process sends network data |
-| `EVENT_SENDMSG` | Process sends network message |
-| `EVENT_CLONE` | Process creates child process (fork) |
+    ---
 
-## How PIDSs detect attacks
+    The components of published systems, extracted into a modular testbed. Mix and match them to **discover better variants**.
 
-PIDSs use **self-supervised learning** to detect intrusions:
+-   :lucide-git-pull-request:{ .lg .middle } __Shared code__
 
-### 1. Training phase (benign data only)
+    ---
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Training Pipeline                    │
-├─────────────────────────────────────────────────────────┤
-│  Benign        Graph           GNN          Learn       │
-│  Provenance ─▶ Construction ─▶ Encoder ─▶   Normal      │
-│  Logs                                       Behavior    │
-└─────────────────────────────────────────────────────────┘
-```
+    A central place where authors contribute their systems, so new work can be benchmarked reproducibly.
 
-The model learns patterns of normal system behavior:
-- Which processes typically access which files
-- Normal network communication patterns
-- Typical sequences of system calls
+</div>
 
-### 2. Detection phase (test data with attacks)
+## Up and running in three steps
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   Detection Pipeline                    │
-├─────────────────────────────────────────────────────────┤
-│  Test          Compute         Compare to    Flag       │
-│  Provenance ─▶ Predictions ─▶  Threshold  ─▶ Anomalies  │
-└─────────────────────────────────────────────────────────┘
-```
+=== ":lucide-download: 1. Install"
 
-At inference time:
-1. The trained model makes predictions about system behavior
-2. Prediction errors (reconstruction loss) indicate anomalies
-3. Entities with errors above a threshold are flagged as malicious
+    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)).
 
-## Graph Neural Networks (GNNs)
+    ```shell
+    git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
+    ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
+    cp .env.local .env                                          # (2)!
+    docker compose -p postgres -f compose-postgres.yml up -d --build
+    docker compose -p postgres exec postgres /scripts/load_dumps.sh
+    docker compose -f compose-pidsmaker.yml up -d --build
+    docker compose exec pids bash
+    ```
 
-PIDSMaker mainly uses **Graph Neural Networks** to learn from provenance graphs. GNNs are neural networks designed to operate on graph-structured data.
+    1.  See [how to get an access token](getting-started/installation.md#1-download-the-datasets). Dumps are saved to `./data`.
+    2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
 
-### Message passing
+=== ":lucide-play: 2. Run a PIDS"
 
-GNNs work through **message passing**: each node aggregates information from its neighbors to update its representation.
+    Run any system on any dataset, from inside the `pids` container.
 
-```
-     Round 1                    Round 2
-  ┌───┐                      ┌───┐
-  │ A │◄── neighbor info     │ A │◄── 2-hop info
-  └───┘                      └───┘
-   ▲ ▲                        ▲ ▲
-  ╱   ╲                      ╱   ╲
-┌───┐ ┌───┐               ┌───┐ ┌───┐
-│ B │ │ C │               │ B │ │ C │
-└───┘ └───┘               └───┘ └───┘
-```
+    ```shell
+    python pidsmaker/main.py velox CADETS_E3          # in the shell
+    python pidsmaker/main.py kairos THEIA_E3 --wandb  # logged to Weights & Biases
+    ```
 
-After multiple rounds, each node's embedding captures its local neighborhood structure.
+=== ":lucide-sliders-horizontal: 3. Make it yours"
 
-PIDSMaker provides several GNN encoders (GraphSAGE, GAT, TGN, etc.) and self-supervised objectives (edge type prediction, node type prediction, feature reconstruction, etc.). See the [Arguments](config/encoders.md) section for the full list of available components.
+    Override any argument from the CLI, or write a new YAML config that inherits from an existing system.
 
-## The 7-stage pipeline
+    ```shell
+    python pidsmaker/main.py orthrus CADETS_E3 \
+      --featurization.used_method=doc2vec \
+      --training.encoder.used_methods=tgn,sage \
+      --training.encoder.sage.num_layers=3
+    ```
 
-PIDSMaker structures detection into seven stages, from graph construction to evaluation and optional triage. See the [Pipeline](pipeline.md) page for detailed documentation of each stage.
+## Explore the documentation
 
-## Citing the Framework
+<div class="grid cards" markdown>
 
-If you use this framework, please cite the following paper:
-```
-@inproceedings{bilot2025simpler,
-	title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
-	author={Bilot, Tristan and Jiang, Baoxiang and  Li, Zefeng and  El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
-	booktitle={Security Symposium (USENIX Sec'25)},
-	year={2025},
-	organization={USENIX}
-}
-```
+-   :lucide-rocket:{ .lg .middle } __Getting started__
+
+    ---
+
+    Install PIDSMaker with Docker or Apptainer, load the datasets and run your first system.
+
+    [:octicons-arrow-right-24: Installation](getting-started/installation.md)
+
+-   :lucide-network:{ .lg .middle } __Background__
+
+    ---
+
+    New to the field? Provenance graphs, GNNs and how PIDSs detect attacks.
+
+    [:octicons-arrow-right-24: Background](guide/background.md)
+
+-   :lucide-workflow:{ .lg .middle } __The pipeline__
+
+    ---
+
+    Seven stages, from graph construction to triage, with caching of every intermediate result.
+
+    [:octicons-arrow-right-24: Pipeline](guide/pipeline.md)
+
+-   :lucide-shield:{ .lg .middle } __Systems__
+
+    ---
+
+    Velox, Orthrus, Kairos, MAGIC, Flash, NodLink, R-Caid, ThreaTrace and OCR-APT, side by side.
+
+    [:octicons-arrow-right-24: Systems](guide/systems.md)
+
+-   :lucide-database:{ .lg .middle } __Datasets__
+
+    ---
+
+    DARPA TC E3/E5, OpTC, ATLASv2 and CARBANAKv2, with attack descriptions and ground truth.
+
+    [:octicons-arrow-right-24: Datasets](guide/datasets.md)
+
+-   :lucide-graduation-cap:{ .lg .middle } __Tutorial__
+
+    ---
+
+    Build a new PIDS from existing components and a custom encoder, step by step.
+
+    [:octicons-arrow-right-24: Build a PIDS](guide/tutorial.md)
+
+-   :lucide-brain-circuit:{ .lg .middle } __Pretrained encoders__
+
+    ---
+
+    Replace word2vec with SPIDER, language models or self-supervised GNNs in any PIDS.
+
+    [:octicons-arrow-right-24: Pretrained encoders](features/pretrained_encoders.md)
+
+-   :lucide-flask-conical:{ .lg .middle } __Tuning & instability__
+
+    ---
+
+    Hyperparameter sweeps with W&B, and measuring the variance between runs.
+
+    [:octicons-arrow-right-24: Tuning](features/tuning.md)
+
+-   :lucide-file-code:{ .lg .middle } __Reference__
+
+    ---
+
+    Every CLI flag and configuration argument, generated from the source code.
+
+    [:octicons-arrow-right-24: Reference](reference/cli.md)
+
+</div>
+
+## Citing PIDSMaker
+
+If you use PIDSMaker in your research, please cite the following papers.
+
+=== "Framework paper (arXiv 2026)"
+
+    ```bibtex
+    @article{bilot2026pidsmaker,
+      title={PIDSMaker: Building and Evaluating Provenance-based Intrusion Detection Systems},
+      author={Bilot, Tristan and Jiang, Baoxiang and Pasquier, Thomas},
+      journal={arXiv preprint arXiv:2601.22983},
+      year={2026}
+    }
+    ```
+
+    [:lucide-book-open: Read the paper](https://www.arxiv.org/abs/2601.22983)
+
+=== "Experiments paper (USENIX Security 2025)"
+
+    ```bibtex
+    @inproceedings{bilot2025simpler,
+      title={{Sometimes Simpler is Better: A Comprehensive Analysis of State-of-the-Art Provenance-Based Intrusion Detection Systems}},
+      author={Bilot, Tristan and Jiang, Baoxiang and Li, Zefeng and El Madhoun, Nour and Al Agha, Khaldoun and Zouaoui, Anis and Pasquier, Thomas},
+      booktitle={Security Symposium (USENIX Sec'25)},
+      year={2025},
+      organization={USENIX}
+    }
+    ```
+
+    [:lucide-book-open: Read the paper](https://www.usenix.org/conference/usenixsecurity25/presentation/bilot)
+
+!!! tip "Join the community"
+    Questions, ideas, or want to discuss a contribution? Come say hi on [Discord](https://discord.gg/jecmkTABUg), or read the [contribution guide](community/contributing.md).

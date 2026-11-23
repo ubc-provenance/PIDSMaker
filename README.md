@@ -23,7 +23,7 @@
 	  &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
     &nbsp;|&nbsp;
-    <a href="https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/">⚙️ Installation</a>
+    <a href="https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/">⚙️ Installation</a>
   </strong>
 </p>
 
@@ -108,7 +108,7 @@ A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 ### Pipeline
 
-The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
+The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
 
 <!-- Generated from pidsmaker/config/config.py, regenerate with: python docs/scripts/gen_pipeline_figure.py -->
 <img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
@@ -123,7 +123,7 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git
 
 ### 💻 Installation with Docker
 
-We have made the installation of PIDSMaker inclusing pre-processed databases for DARPA TC and OpTC datasets easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/).
+We have made the installation of PIDSMaker inclusing pre-processed databases for DARPA TC and OpTC datasets easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/).
 
 ## 🧪 Basic usage of the framework
 
@@ -159,7 +159,7 @@ PIDSs exhibit significant instability—that is, high sensitivity to training pe
 Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different results. 
 Consequently, reproducing results as the framework evolves presents a real challenge.
 
-Based on our experiments, we provide [tuned hyperparameters](https://ubc-provenance.github.io/PIDSMaker/tuned_systems) for the main systems.
+Based on our experiments, we provide [tuned hyperparameters](https://ubc-provenance.github.io/PIDSMaker/guide/tuned-systems/) for the main systems.
 However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
 
 We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
@@ -280,7 +280,7 @@ If you use this work, please cite the two following papers:
 
 ## Contributing
 
-Pull requests are welcome! Please follow the [contribution guidelines](https://ubc-provenance.github.io/PIDSMaker/contributing/).
+Pull requests are welcome! Please follow the [contribution guidelines](https://ubc-provenance.github.io/PIDSMaker/community/contributing/).
 
 Questions, ideas or feature requests? Join our [Discord](https://discord.gg/jecmkTABUg).
 

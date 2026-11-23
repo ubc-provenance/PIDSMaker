@@ -1,4 +1,12 @@
-In this tutorial, we craft a brand new architecture using existing components in the framework and evaluate it on node-level intrusion detection.
+---
+title: "Tutorial: a new PIDS"
+description: Build a new PIDS from existing PIDSMaker components and a custom GraphSAGE-based encoder, run it and analyze its results.
+---
+
+# Tutorial: build a new PIDS
+
+In this tutorial, we craft a brand new architecture from existing components of the framework and a new encoder, and evaluate it on node-level intrusion detection.
+{ .lead }
 
 ## Architecture
 
@@ -12,16 +20,15 @@ Our goal is to implement a new system that satisfies the following requirements:
 
 ![Architecture](../img/archi.jpg)
 
-**Approach**: We will craft a new encoder and intgrate it in the framework in such a way that it can be used from arguments. We will then create a YML config describing our system's pipeline and will execute it.
+**Approach**: we implement a new encoder and integrate it in the framework so that it can be selected from the config. We then write a YAML config describing the pipeline of our system, and run it.
 
-### Requirements
+!!! info "Requirements"
+    - A GPU with at least 5 GB of memory, or a CPU
+    - More than 20 GB of RAM
+    - More than 10 GB of storage
+    - PIDSMaker [installed](../getting-started/installation.md), with a shell opened in the `pids` container
 
-- a GPU (min 5 GB memory required), or a CPU
-- RAM >20GB
-- storage >10GB
-- follow the [installation guidelines](ten-minute-install.md){ data-preview } and have a shell opened in the pids container
-
-## Integrate a new encoder
+## 1. Integrate a new encoder
 
 In this example, we implement a new encoder that captures whether nodes are source or destination, then uses a GraphSAGE model to capture structural patterns in the provenance graph.
 
@@ -106,13 +113,13 @@ Then add the encoder to the list of available encoders in `__init__.py`.
 from .custom_encoder import CustomEncoder
 ```
 
-## Integrate a new system
+## 2. Integrate a new system
 
 To integrate a new system, first create a new YAML file: `config/custom_system.yml`. This file describes all the logic of our new PIDS pipeline.
 In this example, we take `orthrus` as base configuration. We only override some arguments for simplicity.
 
 !!! question
-    All available arguments for each component and task can be found in the pages under the **Configuration** section of the documentation.
+    All available arguments for each component and task are listed in the [Reference](../reference/tasks.md) section of the documentation.
 
 **Config:**
 
@@ -179,19 +186,19 @@ evaluation:
 4.  We set some custom hyperparameters for training.
 5.  It's here that we tell the encoder to use, in this case our new `custom_encoder`.
 6.  We set the values for our two defined arguments: `activation` and `num_layers`.
-7.  Our objective is to predict edge types as recent research shows it it the best approach yet.
+7.  Our objective is to predict edge types as recent research shows it is the best approach yet.
 8.  Here, `edge_mlp` is a MLP designed for edge-level tasks like edge type prediction. It first projects src and dst nodes with different linear layers, then applies the MLP specified in `architecture_str`.
 9.  This arg refers to how many times the size of the input should be the output of the src/dst linear layer. Here we want to project to an embedding with double the input size.
 10.  Our final neural network prior to prediction is a two-layer MLP including relu activation. An additional linear layer is added after the relu to match the output size expected by the objective, here the number of edge types.
 11. Refers to node-level detection.
 12. We compute the threshold based on the maximum loss seen on the validation set.
 13. We use here a simple thresholding, without clustering.
-20.  We describe here the features assigned to each type of entity.
+14. We describe here the features assigned to each type of entity.
 15.  We train a word2vec model and embed each node's features (`node_label_features`) into a vector of size `emb_dim`.
 16.  The features to use as node features during GNN training. Here we concatenate the word2vec embedding and one-hot encoded entity type.
 17.  Our model doesn't integrate edge features so we do not use any in this example.
 
-## Run the pipeline
+## 3. Run the pipeline
 
 In the pids container, you can now run the pipeline. We highly recommend using VSCode with the dev container extension to open your whole workspace in the container to avoid re-building the image after updating the code. Using dev container also enables to run the framework in debug mode using VSCode's debugger.
 
@@ -212,7 +219,7 @@ cd scripts
 !!! note
     Use `--cpu` to run the framework on CPU instead of GPU.
 
-## Analyze results
+## 4. Analyze the results
 
 In the W&B interface, go to the `test_custom_system` project and you can check real-time logs and metrics being updated to your ongoing run.
 
@@ -229,7 +236,7 @@ System metrics such as GPU memory, RAM, and CPU utilization are automatically ca
 
 ![Metrics](../img/metrics.jpg)
 
-## Try variants
+## 5. Try variants
 
 While this first version of the model yields relatively satisfactory results, we have no guarantee it has the best performing set of arguments on this dataset. We can easily experiment with multiple variants using CLI args. Depending on your hardware, you can run multiple runs in parallel even on a single GPU (usually up to 3-4 parallel runs with simple architectures on a A100 GPU without major runtime overhead).
 
@@ -248,4 +255,4 @@ While this first version of the model yields relatively satisfactory results, we
     --training.encoder.custom_encoder.num_layers=2
 ```
 
-For more advanced hyperparameter exploration, consider using the [hyperparameter tuning feature](features/tuning.md).
+For more advanced hyperparameter exploration, consider using the [hyperparameter tuning feature](../features/tuning.md).

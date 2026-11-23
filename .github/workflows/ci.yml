@@ -1,29 +1,29 @@
-name: ci 
+name: docs
 on:
   push:
     branches:
-      - master 
+      - master
       - main
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/workflows/ci.yml"
 permissions:
   contents: write
 jobs:
-  deploy:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configure Git Credentials
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install zensical==0.1.3 ghp-import==2.1.0
+      - name: Build
+        run: cd docs && zensical build --clean
+      - name: Deploy to the gh-pages branch
+        if: github.event_name == 'push'
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
-      - uses: actions/cache@v4
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: .cache 
-          restore-keys: |
-            mkdocs-material-
-      - run: pip install mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
-      - run: cd docs && mkdocs gh-deploy --force
+          ghp-import --no-jekyll --push --force --branch gh-pages docs/site

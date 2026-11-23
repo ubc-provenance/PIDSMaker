@@ -1,3 +1,8 @@
+---
+title: Supervised fine-tuning
+description: Add supervision to a PIDS with the predict_edge_supervised objective and hand-written or matched attack edges.
+---
+
 # Supervised Fine-Tuning with Attack Edges
 
 PIDSs usually learn from benign data only.
@@ -85,4 +90,4 @@ training:
 !!! warning
     In this mode the positives come from the evaluation data, so the results are not comparable with those of unsupervised PIDSs.
 
-All options are listed in the [objective arguments](../config/objectives.md).
+All options are listed in the [objective arguments](../reference/objectives.md).

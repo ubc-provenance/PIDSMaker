@@ -1,0 +1,372 @@
+/* ==========================================================================
+   PIDSMaker docs theme (Zensical, modern variant)
+   Brand colors are taken from the logo: orange handle, gold rim, slate shield.
+   ========================================================================== */
+
+:root,
+[data-md-color-scheme="default"] {
+  --pm-orange: #e5602a;
+  --pm-orange-soft: #e5602a14;
+  --pm-gold: #f0b429;
+  --pm-slate: #5f7080;
+  --pm-hero-glow: #e5602a22;
+
+  --md-primary-fg-color: #e5602a;
+  --md-primary-fg-color--light: #f08454;
+  --md-primary-fg-color--dark: #c24c1c;
+  --md-primary-bg-color: #fff;
+  --md-primary-bg-color--light: #ffffffb3;
+  --md-accent-fg-color: #c24c1c;
+  --md-accent-fg-color--transparent: #e5602a1a;
+  --md-accent-bg-color: #fff;
+  --md-typeset-a-color: #c8521f;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-orange: #ff7a45;
+  --pm-orange-soft: #ff7a451c;
+  --pm-hero-glow: #ff7a4524;
+
+  --md-primary-fg-color: #ff7a45;
+  --md-primary-fg-color--light: #ff9a70;
+  --md-primary-fg-color--dark: #e5602a;
+  --md-primary-bg-color: #1b1b1f;
+  --md-accent-fg-color: #ff9a70;
+  --md-accent-fg-color--transparent: #ff7a451a;
+  --md-typeset-a-color: #ff8a5c;
+}
+
+/* --------------------------------------------------------------------------
+   Header and navigation
+   -------------------------------------------------------------------------- */
+
+.md-header__button.md-logo img {
+  height: 1.6rem;
+}
+
+.md-tabs__link--active,
+.md-tabs__item--active .md-tabs__link {
+  color: var(--md-primary-fg-color);
+}
+
+/* --------------------------------------------------------------------------
+   Typography helpers
+   -------------------------------------------------------------------------- */
+
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h2 {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* Lead paragraph right under a page title */
+.md-typeset .lead {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--md-default-fg-color--light);
+  margin-top: -0.4em;
+}
+
+/* Tables: full width, zebra rows, readable on both schemes */
+.md-typeset__table {
+  width: 100%;
+}
+
+.md-typeset__table table:not([class]) {
+  display: table;
+  width: 100%;
+}
+
+.md-typeset table:not([class]) th {
+  white-space: nowrap;
+}
+
+/* Figures (pipeline diagram, screenshots) */
+.md-typeset .figure-card {
+  display: block;
+  padding: 0.6rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  background: #fff;
+}
+
+.md-typeset .figure-card img {
+  display: block;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Landing page
+   -------------------------------------------------------------------------- */
+
+.pm-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.6rem;
+  align-items: center;
+  margin: 0.4rem 0 2rem;
+  padding: 1.8rem 1.6rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 1rem;
+  background:
+    radial-gradient(60% 120% at 0% 0%, var(--pm-hero-glow), transparent 70%),
+    radial-gradient(50% 100% at 100% 100%, #f0b42914, transparent 70%);
+  overflow: hidden;
+}
+
+.pm-hero__logo {
+  width: 7.5rem;
+  height: auto;
+  filter: drop-shadow(0 0.4rem 0.8rem #0000002e);
+}
+
+.md-typeset .pm-hero h1 {
+  margin: 0 0 0.3rem;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .pm-hero h1 .pm-maker {
+  color: var(--pm-slate);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .pm-hero h1 .pm-maker {
+  color: #9fb0c0;
+}
+
+.md-typeset .pm-hero__tagline {
+  margin: 0 0 1.1rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .pm-hero__actions p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.md-typeset .pm-hero__actions .md-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  padding: 0.45em 1.05em;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.md-typeset .pm-hero__actions .md-button .twemoji {
+  height: 1.1em;
+}
+
+.md-typeset .pm-hero__actions .md-button .twemoji svg {
+  width: 1.1em;
+}
+
+.md-typeset .pm-hero__actions .md-button--primary:hover,
+.md-typeset .pm-hero__actions .md-button--primary:focus {
+  background-color: var(--md-primary-fg-color--dark);
+  border-color: var(--md-primary-fg-color--dark);
+  color: #fff;
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-hero {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    padding: 1.4rem 1rem;
+  }
+
+  .pm-hero__logo {
+    width: 5rem;
+  }
+
+  .md-typeset .pm-hero h1 {
+    font-size: 1.9rem;
+  }
+
+  .md-typeset .pm-hero__actions p {
+    justify-content: center;
+  }
+}
+
+/* Key numbers under the hero */
+.pm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin: -1rem 0 2rem;
+}
+
+.pm-stat {
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.6rem;
+  background: var(--md-code-bg-color);
+  text-align: center;
+}
+
+.pm-stat strong {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--md-primary-fg-color);
+}
+
+.pm-stat span {
+  font-size: 0.65rem;
+  color: var(--md-default-fg-color--light);
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Cards: a colored icon and a subtle lift on hover */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.6rem;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-primary-fg-color--light);
+}
+
+.md-typeset .grid.cards .lg {
+  color: var(--md-primary-fg-color);
+}
+
+.md-typeset .grid.cards > ul > li > p:last-child > a:only-child,
+.md-typeset .grid.cards .pm-card-link {
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Inline chips used in tables (OS, venue, level ...)
+   -------------------------------------------------------------------------- */
+
+.md-typeset .pm-chip {
+  display: inline-block;
+  padding: 0.05em 0.55em;
+  border-radius: 1em;
+  font-size: 0.7em;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--pm-orange-soft);
+  color: var(--md-primary-fg-color--dark);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .pm-chip {
+  color: var(--md-primary-fg-color--light);
+}
+
+/* --------------------------------------------------------------------------
+   Pipeline stage list
+   -------------------------------------------------------------------------- */
+
+.md-typeset .pm-steps {
+  counter-reset: pm-step;
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.md-typeset .pm-steps > li {
+  position: relative;
+  margin: 0 0 0.9em;
+  padding-left: 2.4em;
+}
+
+.md-typeset .pm-steps > li::before {
+  counter-increment: pm-step;
+  content: counter(pm-step);
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1.7em;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Generated argument trees (docs/scripts/get_arguments.py)
+   -------------------------------------------------------------------------- */
+
+.md-typeset .annotate > ul {
+  margin: 1em 0;
+  padding: 0.7rem 1rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  background: var(--md-code-bg-color);
+  font-family: var(--md-code-font-family);
+  font-size: 0.72rem;
+  list-style: none;
+}
+
+.md-typeset .annotate ul {
+  list-style: none;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.md-typeset .annotate ul ul {
+  margin-left: 0.35rem;
+  padding-left: 1rem;
+  border-left: 0.05rem dashed var(--md-default-fg-color--lighter);
+}
+
+.md-typeset .annotate li {
+  margin: 0 !important;
+  padding: 0.08rem 0;
+  line-height: 1.6;
+}
+
+.md-typeset .annotate li.bullet {
+  margin-top: 0.3em !important;
+}
+
+.md-typeset .annotate .key {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .annotate .key::after {
+  content: ":";
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .annotate .key-leaf {
+  color: var(--md-code-hl-name-color, var(--md-default-fg-color));
+}
+
+.md-typeset .annotate .value {
+  color: var(--md-code-hl-string-color);
+}
+
+.md-typeset .annotate .md-annotation__index {
+  font-family: var(--md-text-font-family);
+}
+
+/* Keep identifiers in tables on one line (the table scrolls if needed) */
+.md-typeset td code {
+  white-space: nowrap;
+}

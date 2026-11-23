@@ -1,3 +1,8 @@
+---
+title: Instability
+description: Measure and reduce the run-to-run instability of PIDSs with run_n_times and stable_optim.
+---
+
 # Instability
 
 PIDSs trained with self-supervised learning exhibit significant **instability**—that is, high sensitivity to training perturbations. Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different detection performance.

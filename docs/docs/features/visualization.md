@@ -1,3 +1,8 @@
+---
+title: Embedding visualizer
+description: Explore the node embeddings of a run in an interactive 3D web viewer.
+---
+
 # Embedding Visualizer
 
 PIDSMaker ships an interactive **3D web viewer** for exploring a run's node

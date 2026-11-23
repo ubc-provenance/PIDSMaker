@@ -1,3 +1,10 @@
+---
+title: Featurization
+description: Featurization and tokenization methods that turn entity labels into node features, and their arguments.
+---
+
+# Featurization
+
 Featurization methods are used to transform textual attributes of entities (e.g. file paths, process command lines, socket IP addresses and ports) into a vector.
 Some methods like `word2vec` and `doc2vec` learn this vector from the text corpus, while others like `hierarchical_hashing` compute the vector in a deterministic way. 
 
@@ -5,6 +12,8 @@ Other methods like `only_type` and `only_ones` simply skip this embedding step a
 In all methods, the resulting vectors are used as node features during the `training` task.
 
 The `pretrained` method uses an encoder pretrained on provenance data (SPIDER, language models, self-supervised GNNs, …), selected with `pretrained.model_type`. See [Pretrained Encoders](../features/pretrained_encoders.md).
+
+## Methods
 
 --8<-- "scripts/args/args_featurizations.md"
 
