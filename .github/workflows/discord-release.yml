@@ -1,0 +1,34 @@
+name: discord-release
+on:
+  release:
+    types: [published]
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release to Discord #announcements
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TAG: ${{ github.event.release.tag_name }}
+          NAME: ${{ github.event.release.name }}
+          URL: ${{ github.event.release.html_url }}
+          BODY: ${{ github.event.release.body }}
+        run: |
+          # Discord embed descriptions are capped at 4096 characters
+          DESC=$(printf '%s' "$BODY" | head -c 3500)
+          if [ ${#BODY} -gt 3500 ]; then DESC="$DESC"$'\n\n…full notes on GitHub'; fi
+          jq -n \
+            --arg title "PIDSMaker ${NAME:-$TAG} released" \
+            --arg url "$URL" \
+            --arg desc "$DESC" \
+            '{
+              content: "A new version of PIDSMaker is out!",
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $desc,
+                color: 15559215
+              }]
+            }' > payload.json
+          curl -sSf -H "Content-Type: application/json" -d @payload.json "$WEBHOOK_URL"

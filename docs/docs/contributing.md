@@ -2,6 +2,7 @@
 
 This project aims to share the latest advancements in PIDS research and must therefore be actively maintained.
 We need your help for this task!
+For questions, ideas or to discuss a contribution before starting, join our [Discord](https://discord.gg/jecmkTABUg).
 
 Helpful contributions could be:
 
