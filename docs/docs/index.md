@@ -175,6 +175,30 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     [:octicons-arrow-right-24: Tuning](features/tuning.md)
 
+-   :lucide-target:{ .lg .middle } __Evaluation & labeling__
+
+    ---
+
+    Node, edge, time-window and queue-level detection, thresholds, and metrics such as ADP.
+
+    [:octicons-arrow-right-24: Evaluation](guide/evaluation.md)
+
+-   :lucide-swords:{ .lg .middle } __Attack simulation__
+
+    ---
+
+    Test robustness with mimicry, synthetic and renaming attacks.
+
+    [:octicons-arrow-right-24: Attack simulation](features/attacks.md)
+
+-   :lucide-route:{ .lg .middle } __Triage__
+
+    ---
+
+    Reconstruct attacks from detections with DepImpact or OCR-APT subgraphs.
+
+    [:octicons-arrow-right-24: Triage](features/triage.md)
+
 -   :lucide-file-code:{ .lg .middle } __Reference__
 
     ---

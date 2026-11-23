@@ -356,3 +356,121 @@
 .md-typeset td code {
   white-space: nowrap;
 }
+
+/* --------------------------------------------------------------------------
+   Evaluation granularity figure (guide/evaluation.md)
+   Inline SVGs styled with theme colors, so they work in light and dark mode.
+   -------------------------------------------------------------------------- */
+
+.pm-eval-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 1.2em 0 1.6em;
+}
+
+.md-typeset .pm-eval-card {
+  display: block;
+  width: auto;
+  margin: 0;
+  padding: 0.7rem 0.8rem 0.8rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  background: var(--md-default-bg-color);
+}
+
+@media screen and (max-width: 76.1875em) {
+  .pm-eval-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-eval-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.pm-eval-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pm-eval-card figcaption {
+  margin: 0.5rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  font-style: normal;
+  text-align: left;
+  color: var(--md-default-fg-color--light);
+  max-width: none;
+}
+
+.pm-eval-card figcaption strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .pm-eval-legend {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55rem;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.pm-eval-legend span {
+  display: flex;
+  align-items: center;
+  line-height: 1.4;
+  gap: 0.35em;
+}
+
+.pm-eval-legend i {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 50%;
+}
+
+.pm-eval-legend i.ben { background: var(--pm-node); }
+.pm-eval-legend i.mal { background: var(--pm-mal); }
+.pm-eval-legend i.unit {
+  width: 1.1em;
+  border-radius: 0.25em;
+  background: var(--pm-orange-soft);
+  border: 0.12em dashed var(--md-primary-fg-color);
+}
+
+.pm-eval-legend i.unit-mal {
+  background: #d93f3f1f;
+  border-color: var(--pm-mal);
+}
+
+:root,
+[data-md-color-scheme="default"] {
+  --pm-node: #9aa7b4;
+  --pm-mal: #d93f3f;
+  --pm-win: #5f708014;
+  --pm-win-stroke: #5f708055;
+  --pm-edge: #9aa7b4;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-node: #7d8a97;
+  --pm-mal: #ff5c5c;
+  --pm-win: #ffffff0a;
+  --pm-win-stroke: #ffffff30;
+  --pm-edge: #6c7884;
+}
+
+.pm-eval-card .win { fill: var(--pm-win); stroke: var(--pm-win-stroke); stroke-width: 1; }
+.pm-eval-card .lbl { fill: var(--md-default-fg-color--light); font: 600 12px var(--md-text-font-family, sans-serif); }
+.pm-eval-card .n { fill: var(--pm-node); }
+.pm-eval-card .m { fill: var(--pm-mal); }
+.pm-eval-card .e { stroke: var(--pm-edge); stroke-width: 1.5; fill: none; }
+.pm-eval-card .em { stroke: var(--pm-mal); stroke-width: 2.2; fill: none; }
+.pm-eval-card .unit { fill: var(--pm-orange-soft); stroke: var(--md-primary-fg-color); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.pm-eval-card .unit-m { fill: #d93f3f1f; stroke: var(--pm-mal); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.pm-eval-card .note { fill: var(--md-primary-fg-color); font: 700 13px var(--md-text-font-family, sans-serif); }

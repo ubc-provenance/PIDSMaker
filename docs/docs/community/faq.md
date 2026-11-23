@@ -53,7 +53,7 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 ## Results
 
 ??? question "I get very different results from one run to the next, or from the papers."
-    This is expected: PIDSs are **unstable**, and small changes of seed or hyperparameters change their results a lot. Run each configuration several times with `--experiment=run_n_times` and report the mean and standard deviation; see [Instability](../features/instability.md). Also check that you use the same [ground truth](../guide/datasets.md#ground-truth) as the paper you compare with.
+    This is expected: PIDSs are **unstable**, and small changes of seed or hyperparameters change their results a lot. Run each configuration several times with `--experiment=run_n_times` and report the mean and standard deviation; see [Instability](../features/instability.md). Also check that you use the same [ground truth](../guide/evaluation.md#ground-truth) as the paper you compare with.
 
 ??? question "Which configuration should I use to compare with an existing system?"
     The non-snooped variants, such as `orthrus_non_snooped`: some original configs use test data during training. See [Systems](../guide/systems.md#variants).

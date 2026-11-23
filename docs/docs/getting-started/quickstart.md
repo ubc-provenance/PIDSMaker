@@ -119,6 +119,8 @@ At the end of the `evaluation` task, metrics are printed in the logs and, with `
 | `adp_score` | Attack Detection Precision: area under the curve of the percentage of attacks detected against precision. It rewards systems that detect every attack with few false positives |
 | `discrimination` | Margin between the highest score of each attack and the mean of the 10 highest benign scores (normalized scores), averaged over attacks. Positive when attacks stand out |
 
+How samples are labeled, how thresholds are chosen and how each metric is computed is explained in [Evaluation & labeling](../guide/evaluation.md).
+
 All files produced by a run are written in the artifact folder, `/home/artifacts/` by default (set `ARTIFACTS_DIR` in `.env`, or `--artifact_dir`).
 
 ## Next steps

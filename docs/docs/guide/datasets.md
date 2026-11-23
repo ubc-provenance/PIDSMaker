@@ -267,42 +267,7 @@ The events of each day are then cut into time-window graphs during [construction
 
 ## Ground truth
 
-Evaluation compares a system's predictions against a **ground truth**: the set of
-node UUIDs considered malicious for each attack. PIDSMaker ships several ground-truth
-sources, since the labeling of the DARPA TC attacks differs between prior works, and
-the choice of source materially affects the reported metrics. The active source is
-selected with `evaluation.ground_truth_version` (default `orthrus`):
-
-=== "CLI"
-
-    ```shell
-    python pidsmaker/main.py SYSTEM CADETS_E3 --evaluation.ground_truth_version threatrace
-    ```
-
-=== "YAML"
-
-    ```yaml
-    evaluation:
-      ground_truth_version: threatrace
-    ```
-
-The ground-truth files live under `Ground_Truth/<version>/<dataset>/`, and the
-selected version changes only which labels evaluation reads — it does not change
-training or the graphs, so switching it re-evaluates an already-trained run.
-
-| Version | Source | Format | Coverage |
-|---|---|---|---|
-| `orthrus` *(default)* | Labeling used by [Orthrus](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) | One CSV per attack scenario, rows of `uuid, {labels}, count` | All datasets |
-| `reapr` | Alternative labeling for the DARPA TC E3 datasets, in the same per-attack CSV format | Same as `orthrus` | E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS |
-| `threatrace` | Ground truth published by [ThreaTrace](https://arxiv.org/pdf/2111.04333) | One flat UUID-per-line `.txt` per dataset, collapsed to a single window over the test period | E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS |
-
-Selecting a source with no file for the chosen dataset fails fast with a clear
-error. UUIDs listed in a ground truth but absent from the constructed graph are
-skipped (and counted in the logs). Mimicry-attack ground-truth augmentation applies
-only to the per-attack sources (`orthrus`/`reapr`), not to `threatrace`.
-
-See [`Ground_Truth/threatrace/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/Ground_Truth/threatrace/README.md)
-for the per-dataset ThreaTrace node counts and usage notes.
+Each dataset comes with the list of the nodes involved in each attack, and PIDSMaker ships several labelings of the DARPA TC attacks (`orthrus`, `reapr`, `threatrace`). See [Ground truth](evaluation.md#ground-truth) for how they are selected and how labels are assigned to nodes, edges and time windows.
 
 ## Adding custom datasets
 
