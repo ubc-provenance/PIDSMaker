@@ -186,6 +186,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         times = {
             f"time_{task}": round(results["time"], 2) for task, results in task_results.items()
         }
+        log("Task times (s): " + ", ".join(f"{k[5:]}={v}" for k, v in times.items()))
         return metrics, times
 
     def run_pipeline_with_experiments(cfg):

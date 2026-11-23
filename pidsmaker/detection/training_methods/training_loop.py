@@ -11,7 +11,6 @@ Handles model training with:
 
 import copy
 import os
-import tracemalloc
 from time import perf_counter as timer
 
 import numpy as np
@@ -25,8 +24,8 @@ from pidsmaker.factory import (
     optimizer_few_shot_factory,
 )
 from pidsmaker.tasks.batching import get_preprocessed_graphs
-from pidsmaker.utils.data_utils import save_model
-from pidsmaker.utils.utils import get_device, log, log_start, log_tqdm, set_seed
+from pidsmaker.utils.data_utils import batch_to_device, save_model
+from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
 
@@ -53,7 +52,7 @@ def main(cfg):
     # Reset the peak memory usage counter
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
-    tracemalloc.start()
+    cpu_mem = PeakCPUMemory()
 
     train_data, val_data, test_data, max_node_num = get_preprocessed_graphs(cfg)
     log("Graph data loaded.")
@@ -121,26 +120,31 @@ def main(cfg):
 
         if not cfg._from_weights and (not use_few_shot or (use_few_shot and epoch > 0)):
             start = timer()
-            tracemalloc.start()
+            cpu_mem.start()
 
             # Before each epoch, we reset the memory
             model.reset_state()
             model.to_fine_tuning(False)
 
             loss_acc = torch.zeros(1, device=device)
-            tot_loss = 0
+            # Accumulated on device to avoid a GPU->CPU sync at each batch
+            tot_loss = torch.zeros((), dtype=torch.float64, device=device)
+            model.train()
             for dataset in train_data:
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
-                    g.to(device=device)
-                    g = remove_attacks_if_needed(g, cfg)
+                    # Checked on the CPU graph to avoid a GPU sync at each batch
+                    has_attacks_to_remove = needs_attack_removal(g, cfg)
+                    # Copy to device without mutating the CPU graph: no copy back needed
+                    g = batch_to_device(g, device)
+                    if has_attacks_to_remove:
+                        g = remove_attacks_if_needed(g, cfg)
 
-                    model.train()
                     optimizer.zero_grad()
 
                     results = model(g)
                     loss = results["loss"]
                     loss_acc += loss
-                    tot_loss += loss.item()
+                    tot_loss += loss.detach().sum().double()
 
                     if (i + 1) % grad_acc == 0:
                         loss_acc.backward()
@@ -151,12 +155,10 @@ def main(cfg):
                             scheduler.step()
                         loss_acc = torch.zeros(1, device=device)
 
-                    g.to("cpu")
-                    if use_cuda:
-                        torch.cuda.empty_cache()
+                    del g, results, loss
 
                 # Last batch
-                if loss_acc > 0:
+                if loss_acc.requires_grad:
                     loss_acc.backward()
                     if stable_optim:
                         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -164,12 +166,10 @@ def main(cfg):
                     if scheduler is not None:
                         scheduler.step()
 
-            tot_loss /= sum(len(dataset) for dataset in train_data)
+            tot_loss = tot_loss.item() / sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)
 
-            _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
-            peak_train_cpu_mem = max(peak_train_cpu_mem, peak_inference_cpu_memory / (1024**3))
-            tracemalloc.stop()
+            peak_train_cpu_mem = max(peak_train_cpu_mem, cpu_mem.peak_gb())
 
             if use_cuda:
                 peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (
@@ -197,9 +197,9 @@ def main(cfg):
                 loss_acc = torch.zeros(1, device=device)
                 tot_loss = 0
                 for dataset in train_data:
-                    for g in log_tqdm(dataset, "Fine-tuning"):
+                    for i, g in enumerate(log_tqdm(dataset, "Fine-tuning")):
                         if 1 in g.y:
-                            g.to(device=device)
+                            g = batch_to_device(g, device)
 
                             model.train()
                             optimizer.zero_grad()
@@ -214,12 +214,8 @@ def main(cfg):
                                 optimizer.step()
                                 loss_acc = torch.zeros(1, device=device)
 
-                            g.to("cpu")
-                            if use_cuda:
-                                torch.cuda.empty_cache()
-
                     # Last batch
-                    if loss_acc > 0:
+                    if loss_acc.requires_grad:
                         loss_acc.backward()
                         optimizer.step()
 
@@ -326,6 +322,13 @@ def main(cfg):
     )
 
     return best_val_score
+
+
+def needs_attack_removal(graph, cfg):
+    """Whether `remove_attacks_if_needed` would remove edges from `graph`."""
+    return (not cfg.training.decoder.few_shot.include_attacks_in_ssl_training) and bool(
+        (graph.y == 1).any()
+    )
 
 
 def remove_attacks_if_needed(graph, cfg):
