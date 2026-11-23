@@ -85,20 +85,6 @@
   white-space: nowrap;
 }
 
-/* Figures (pipeline diagram, screenshots) */
-.md-typeset .figure-card {
-  display: block;
-  padding: 0.6rem;
-  border: 0.05rem solid var(--md-default-fg-color--lightest);
-  border-radius: 0.6rem;
-  background: #fff;
-}
-
-.md-typeset .figure-card img {
-  display: block;
-  width: 100%;
-}
-
 /* --------------------------------------------------------------------------
    Landing page
    -------------------------------------------------------------------------- */

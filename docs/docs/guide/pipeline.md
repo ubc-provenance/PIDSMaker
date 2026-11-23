@@ -30,10 +30,6 @@ flowchart TB
     class db,out io;
 ```
 
-??? info "All the methods available at each stage"
-    [![PIDSMaker pipeline](../img/pipeline.svg){ .figure-card }](../img/pipeline.svg)
-
-    Generated from `pidsmaker/config/config.py`. Click to enlarge.
 
 ## The stages
 
@@ -47,7 +43,7 @@ flowchart TB
 <li markdown>**Triage** (`triage`): optional post-processing of the detections, to reconstruct attack paths (DepImpact) or anomalous subgraphs (OCR-APT) and reduce false positives.</li>
 </ol>
 
-All arguments of each stage are listed in the [Tasks reference](../reference/tasks.md).
+The methods available at each stage, and all their arguments, are listed in the [Reference](../reference/tasks.md).
 
 ## Where the code lives
 

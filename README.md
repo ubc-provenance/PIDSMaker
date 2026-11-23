@@ -110,8 +110,27 @@ A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
 
-<!-- Generated from pidsmaker/config/config.py, regenerate with: python docs/scripts/gen_pipeline_figure.py -->
-<img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
+```mermaid
+flowchart TB
+    db[("Provenance database")] --> prep
+    subgraph prep ["Graph preparation"]
+        direction LR
+        C["<b>1#160;·#160;Construction</b><br/>time-window graphs"] --> T["<b>2#160;·#160;Transformation</b><br/>optional"] --> F["<b>3#160;·#160;Featurization</b><br/>node embeddings"] --> B["<b>4#160;·#160;Batching</b><br/>features & batches"]
+    end
+    prep --> det
+    subgraph det ["Detection"]
+        direction LR
+        TR["<b>5#160;·#160;Training</b><br/>self-supervised model"] --> E["<b>6#160;·#160;Evaluation</b><br/>threshold & metrics"] --> TG["<b>7#160;·#160;Triage</b><br/>optional"]
+    end
+    det --> out(["Alerts, metrics & figures"])
+
+    classDef stage fill:#e5602a1f,stroke:#e5602a,stroke-width:1.5px;
+    classDef optional fill:#e5602a0d,stroke:#e5602a,stroke-width:1.5px,stroke-dasharray:5 4;
+    classDef io fill:#5f708022,stroke:#5f7080,stroke-width:1.5px;
+    class C,F,B,TR,E stage;
+    class T,TG optional;
+    class db,out io;
+```
 
 
 ## Setup
