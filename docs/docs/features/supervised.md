@@ -14,6 +14,8 @@ The `predict_edge_supervised` objective adds some supervision: a binary classifi
 - **Training:** the negatives are the edges of the training graphs. The attack edges are the positives, oversampled with replacement to match each batch of benign edges. `pos_weight` adds weight to the attack class in the binary cross-entropy loss.
 - **Detection:** the anomaly score of a test edge is its loss against the benign label, which grows with the predicted probability of being an attack.
 
+The attack edges are described with provenance entities and event types, and `config/attack_edges/` only covers DARPA TC datasets: this objective is not tested on network datasets.
+
 Enable it by setting the objective in the `training.decoder` section:
 
 ```yaml

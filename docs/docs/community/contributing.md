@@ -5,7 +5,7 @@ description: How to contribute to PIDSMaker, set up a development environment, a
 
 # Contributing
 
-PIDSMaker aims to keep up with the latest PIDS research, and it can only do so with the help of the community. Every contribution is welcome!
+PIDSMaker aims to keep up with the latest research on provenance-based and network intrusion detection, and it can only do so with the help of the community. Every contribution is welcome!
 { .lead }
 
 <div class="grid cards" markdown>
@@ -26,9 +26,9 @@ PIDSMaker aims to keep up with the latest PIDS research, and it can only do so w
 
 ## What to contribute
 
-- **A new PIDS**: your published system, so that others can benchmark against it. Start with the [tutorial](../guide/tutorial.md).
-- **New components**: encoders, decoders, objectives, featurization methods, datasets...
-- **Fixes to existing PIDSs**: some systems may not perfectly reflect their original implementation.
+- **A new system**: your published PIDS or NIDS, so that others can benchmark against it. Start with the [tutorial](../guide/tutorial.md).
+- **New components**: encoders, decoders, objectives, featurization methods, provenance or network datasets...
+- **Fixes to existing systems**: some systems may not perfectly reflect their original implementation.
 - **Bug fixes and optimizations**: spotted a slow operation and found a better alternative? Send it!
 - **Documentation**: typos, unclear explanations, missing examples. Every page has an :lucide-pencil: edit button.
 

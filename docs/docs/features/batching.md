@@ -45,7 +45,7 @@ In the [Temporal Graph Network (TGN)](https://arxiv.org/abs/2006.10637) architec
 To use the TGN architecture, you **should** also add `tgn` to `training.encoder.used_methods` as it enables to properly handle TGN attributes.
 The `TGNEncoder` accepts as argument an `encoder`, defined in the config, which will be applied to the pre-computed TGN graph.
 
-Examples of TGN config can be found in `kairos.yml` and `orthrus.yml`.
+Examples of TGN config can be found in `kairos.yml` and `orthrus.yml` (provenance), and `jbeil.yml` (network).
 
 With `tgn_last_neighbor.negative_destinations`, a negative destination is drawn for each edge, uniformly among the destinations of the training graphs (or of all graphs, for validation and test), and embedded by the TGN with the nodes of the batch, as in TGN and Jbeil. It is used by the `tgn` negative sampling of `predict_edge_contrastive` (see `jbeil.yml`).
 

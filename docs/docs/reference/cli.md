@@ -14,8 +14,8 @@ python pidsmaker/main.py SYSTEM DATASET [FLAGS] [--task.argument=value ...]
 
 | Positional | Description |
 |---|---|
-| `SYSTEM` | Name of a YAML config in `config/`, without the extension (e.g. `velox`, `pretrained_velox`). See [Systems](../guide/systems.md). |
-| `DATASET` | Name of a dataset in `DATASET_DEFAULT_CONFIG` (e.g. `CADETS_E3`, `optc_h201`, `LANL`). See [Datasets](../guide/datasets.md). |
+| `SYSTEM` | Name of a YAML config in `config/`, without the extension (e.g. `velox`, `pretrained_velox`, `euler`). See [Systems](../guide/systems.md). |
+| `DATASET` | Name of a dataset in `DATASET_DEFAULT_CONFIG` (e.g. `CADETS_E3`, `optc_h201`, `LANL`, `OPTC_NET`). See [Datasets](../guide/datasets.md). |
 
 Any argument from the [Reference](tasks.md) can be passed as `--task.argument=value`; it overrides the YAML config.
 
@@ -56,7 +56,7 @@ These flags don't change the results, nor the task hashes. See [Performance](../
 | `--tuning_mode MODE` | `none` | `hyperparameters` starts a W&B sweep. See [Hyperparameter tuning](../features/tuning.md). |
 | `--tuning_file_path PATH` | | Sweep config to use instead of the dataset-specific one, relative to `config/experiments/tuning/` (e.g. `systems/default/tuning_my_system`). |
 | `--sweep_id ID` | | Joins an existing W&B sweep, to run it with several agents. |
-| `--tuned` | off | Loads the tuned hyperparameters of the system from `config/tuned_baselines/<dataset>/tuned_<system>.yml`. |
+| `--tuned` | off | Loads the tuned hyperparameters of the system from `config/tuned_baselines/<dataset>/tuned_<system>.yml` (e.g. LARES and Argus on `OPTC_NET`). |
 
 ## Database and storage
 

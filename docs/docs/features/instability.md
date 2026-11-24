@@ -5,17 +5,19 @@ description: Measure and reduce the run-to-run instability of PIDSs with run_n_t
 
 # Instability
 
-PIDSs trained with self-supervised learning exhibit significant **instability**—that is, high sensitivity to training perturbations. Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different detection performance.
+Systems trained with self-supervised learning, provenance-based (PIDSs) and network (NIDSs) alike, exhibit significant **instability**—that is, high sensitivity to training perturbations. Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different detection performance.
 
-## Why are PIDSs unstable?
+## Why are these systems unstable?
 
 Several factors contribute to this instability:
 
-1. **Self-supervised learning**: PIDSs are trained to model normal behavior without labeled attack data. Small variations in how "normal" is learned can dramatically affect what gets flagged as anomalous.
+1. **Self-supervised learning**: Detectors are trained to model normal behavior without labeled attack data. Small variations in how "normal" is learned can dramatically affect what gets flagged as anomalous.
 
 2. **Random initialization**: Neural network weights are randomly initialized, leading to different optimization trajectories.
 
-3. **Stochastic training**: Mini-batch sampling, dropout, and other stochastic elements introduce variability between runs.
+3. **Stochastic training**: Mini-batch sampling, negative sampling, dropout, and other stochastic elements introduce variability between runs.
+
+For example, on LANL, whether LARES selects the root attacker in the first stage of its evaluation depends on the seed and the epoch (see the header of `config/lares.yml`), and on `OPTC_NET`, label-free epoch selection picks a nearly arbitrary epoch (see [Systems](../guide/systems.md#results-and-reproducibility)).
 
 ## Measuring instability
 

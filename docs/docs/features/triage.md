@@ -15,6 +15,8 @@ Two methods are available, selected with `triage.used_method`:
 | `depimpact` | Traces the dependencies of each detected node backward to its entry points and forward to its exit points, and keeps the most suspicious paths | `node_evaluation`, `node_tw_evaluation` |
 | `ocrapt_subgraph` | Groups detected nodes into connected subgraphs around the most anomalous seeds, and keeps the most severe subgraphs | `node_evaluation` |
 
+Triage starts from node-level detections: it applies to provenance systems, and to any system evaluated with `node_evaluation` (or `node_tw_evaluation` for DepImpact). The edge-level and host-centered evaluations of network systems are not triaged. OCR-APT runs with its subgraph triage on LANL in the tests (`tests/test_network_datasets.py`); DepImpact, which traces causal dependencies in provenance graphs, is not tested on network datasets.
+
 Triage is **off by default** in every system except OCR-APT. Its arguments have no default values: when you enable a method, set all of its arguments, on the CLI or in the YAML config.
 Triage only runs after evaluation, and changing its arguments re-runs triage alone (see [Caching of tasks](../guide/pipeline.md#caching-of-tasks)).
 

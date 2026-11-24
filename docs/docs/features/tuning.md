@@ -100,3 +100,9 @@ Running a system with its best hyperparameters on a particular dataset is as sim
 ```
 
 This will search for the `config/tuned_baselines/cadets_e3/tuned_my_system.yml` file and override the default system config by the best hyperparameters.
+
+For example, the defaults of the network systems are those of LANL, and `config/tuned_baselines/optc_net/` holds the OpTC settings of LARES and Argus:
+
+``` shell
+python pidsmaker/main.py lares OPTC_NET --tuned
+```

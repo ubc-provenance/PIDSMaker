@@ -30,7 +30,7 @@ nav = [
     { "Systems" = "guide/systems.md" },
     { "Datasets" = "guide/datasets.md" },
     { "Evaluation & labeling" = "guide/evaluation.md" },
-    { "Tutorial: a new PIDS" = "guide/tutorial.md" },
+    { "Tutorial: a new system" = "guide/tutorial.md" },
   ] },
   { "Features" = [
     { "Hyperparameter tuning" = "features/tuning.md" },

@@ -22,6 +22,9 @@ It renders the per-node embeddings (UMAP or t-SNE projection) and supports:
 - **Overlays** — temporal trajectories, the attack graph, a discrimination heatmap,
   and false-positive highlighting.
 
+!!! info "Provenance runs"
+    The viewer colors nodes by provenance type (process, file, netflow). It is not tested on the runs of network datasets.
+
 ## Running the viewer
 
 Start the server inside the container:

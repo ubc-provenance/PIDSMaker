@@ -27,6 +27,9 @@ python pidsmaker/main.py orthrus CADETS_E3 \
 
 Listing the primary dataset in `multi_dataset` is optional. Setting a `multi_dataset_training` flag without `multi_dataset` raises an error.
 
+!!! info "Provenance datasets"
+    Multi-dataset training is designed for provenance datasets, and is not tested on network datasets. The other datasets are processed with the settings of the primary dataset, including its schema (node types, edge types and event attributes), so a provenance dataset and a network dataset can't be combined.
+
 !!! tip "Mixing DARPA TC and OpTC"
     OpTC uses its own event types. With `construction.consistent_edge_types: True`, OpTC events are mapped to their DARPA TC equivalents (e.g. `MESSAGE` from a process to a network node becomes `EVENT_SENDMSG`), so that both share the same edge types. The [pretrained encoder](pretrained_encoders.md) configs enable it.
 

@@ -14,6 +14,9 @@ How robust is a detector to an attacker who tries to blend in? PIDSMaker can mod
 | [Synthetic attacks](#synthetic-attacks) | Fake attacks are injected in the training and validation graphs, labeled for few-shot detection | Transformation | `transformation.used_methods: synthetic_attack_naive` |
 | [Renaming attack](pretrained_encoders.md#renaming-attack) | Attack processes get the embedding of a benign name | Feature inference | `feat_inference.rename_attack` |
 
+!!! info "Provenance datasets only"
+    The three simulations act on provenance activity: they add file accesses and connections of processes with the event types of DARPA TC, or rename processes. They don't apply to network datasets.
+
 ## Mimicry attack
 
 A mimicry attack hides malicious processes by making them behave like benign ones: on top of the attack, they perform ordinary file accesses, which dilutes the anomaly that the detector learned to spot.

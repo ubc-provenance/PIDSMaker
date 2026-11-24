@@ -1,11 +1,11 @@
 ---
-title: "Tutorial: a new PIDS"
-description: Build a new PIDS from existing PIDSMaker components and a custom GraphSAGE-based encoder, run it and analyze its results.
+title: "Tutorial: a new system"
+description: Build a new detector from existing PIDSMaker components and a custom GraphSAGE-based encoder, run it on provenance and network datasets and analyze its results.
 ---
 
-# Tutorial: build a new PIDS
+# Tutorial: build a new system
 
-In this tutorial, we craft a brand new architecture from existing components of the framework and a new encoder, and evaluate it on node-level intrusion detection.
+In this tutorial, we craft a brand new architecture from existing components of the framework and a new encoder, evaluate it on node-level intrusion detection in a provenance dataset, then run it on a network dataset.
 { .lead }
 
 ## Architecture
@@ -256,3 +256,16 @@ While this first version of the model yields relatively satisfactory results, we
 ```
 
 For more advanced hyperparameter exploration, consider using the [hyperparameter tuning feature](../features/tuning.md).
+
+## 6. Run it on network data
+
+Nothing in our system is specific to provenance: the encoder only sees node features and edges, and the objective predicts edge types. The same config runs on a [network dataset](datasets.md#network-datasets), whose nodes are hosts and edges authentications:
+
+``` sh
+./run.sh custom_system LANL --project=test_custom_system \
+    --construction.edge_type=logon_type
+```
+
+Here, the decoder predicts the logon type of each authentication (`Network`, `Interactive`, `RemoteInteractive`...) instead of a system call, and `node_evaluation` scores hosts, whose ground truth is the endpoints of the red team's authentications. To evaluate each authentication instead, as the network systems do, add `--evaluation.used_method=edge_evaluation`.
+
+Host names carry little information for word2vec, unlike file paths and command lines: network systems instead learn the identity of each host and use the attributes of events. See how they are built in [Systems](systems.md#components-at-a-glance), and the [Pipeline](pipeline.md#provenance-and-network-views) for the differences between both kinds of data at each stage.

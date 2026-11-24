@@ -11,7 +11,10 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 ## Installation
 
 ??? question "Which datasets should I start with?"
-    `CADETS_E3`, `THEIA_E3` and `CLEARSCOPE_E3`. They are small (5 to 12 GB once loaded), quick to process, and the most used in papers. E5 datasets and `TRACE_E3` are much larger: see the sizes in the [installation guide](../getting-started/installation.md#1-download-the-datasets).
+    For provenance-based detection, `CADETS_E3`, `THEIA_E3` and `CLEARSCOPE_E3`. They are small (5 to 12 GB once loaded), quick to process, and the most used in papers. For network detection, `LANL`. E5 datasets and `TRACE_E3` are much larger: see the sizes in the [installation guide](../getting-started/installation.md#1-download-the-datasets).
+
+??? question "Where can I download the network datasets (LANL, OPTC_NET)?"
+    Their dumps are not available for download yet. Build their databases from the preprocessed files of LARES, as explained in [Building datasets from scratch](../getting-started/from-scratch.md). `LANL` is the smaller one: 8.5 GB once loaded, against 275 GB for `OPTC_NET`.
 
 ??? question "A dataset download stopped halfway."
     Re-run the same `./download_datasets.sh` command: downloads resume where they stopped. With `gdown`, add `--continue` to the command.
@@ -31,6 +34,12 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 
 ??? question "I don't have a GPU."
     PIDSMaker falls back to the CPU automatically, with a warning. You can also force it with `--cpu`. Expect much longer training times on large datasets.
+
+??? question "A system fails on a dataset of the other family."
+    - Flash, R-Caid and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types: they can't run on network datasets, which only have hosts.
+    - Argus, LARES, E-GraphSAGE and Anomal-E use the attributes of events, which provenance datasets don't have: add `--batching.edge_features=edge_type`.
+
+    See [Running across families](../guide/systems.md#running-across-families).
 
 ??? question "I changed the code, but the task is skipped."
     Tasks are cached under a hash of their **arguments**, not of the code. After changing the code of a task, re-run it with `--force_restart=TASK` (e.g. `--force_restart=training`). See [Forcing a restart](../guide/pipeline.md#forcing-a-restart).
@@ -53,10 +62,10 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 ## Results
 
 ??? question "I get very different results from one run to the next, or from the papers."
-    This is expected: PIDSs are **unstable**, and small changes of seed or hyperparameters change their results a lot. Run each configuration several times with `--experiment=run_n_times` and report the mean and standard deviation; see [Instability](../features/instability.md). Also check that you use the same [ground truth](../guide/evaluation.md#ground-truth) as the paper you compare with.
+    This is expected: self-supervised detectors, PIDSs and NIDSs alike, are **unstable**, and small changes of seed or hyperparameters change their results a lot. Run each configuration several times with `--experiment=run_n_times` and report the mean and standard deviation; see [Instability](../features/instability.md). Also check that you use the same [ground truth](../guide/evaluation.md#ground-truth) as the paper you compare with.
 
 ??? question "Which configuration should I use to compare with an existing system?"
-    The non-snooped variants, such as `orthrus_non_snooped`: some original configs use test data during training. See [Systems](../guide/systems.md#variants).
+    The non-snooped variants, such as `orthrus_non_snooped`: some original configs use test data during training. See [Systems](../guide/systems.md#variants). For network systems, also read [Comparing NIDSs with published results](../guide/systems.md#results-and-reproducibility).
 
 ## Features
 
