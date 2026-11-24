@@ -118,20 +118,45 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
 === ":lucide-download: 1. Install"
 
-    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)). Runs on Linux, with or without a GPU, and on [macOS](getting-started/installation.md#macos) for most datasets, ideally with 32 GB of RAM.
+    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)). We recommend one of two setups:
 
-    ```shell
-    git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
-    ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
-    cp .env.local .env                                          # (2)!
-    docker compose -p postgres -f compose-postgres.yml up -d --build
-    docker compose -p postgres exec postgres /scripts/load_dumps.sh
-    docker compose -f compose-pidsmaker.yml up -d --build
-    docker compose exec pids bash
-    ```
+    === ":fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU"
 
-    1.  See [how to get an access token](getting-started/installation.md#provenance-datasets). Dumps are saved to `./data`. The network datasets are [built from the files of LARES](getting-started/from-scratch.md) for now.
-    2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
+        A server or workstation with Docker and the [NVIDIA Container Toolkit](getting-started/installation.md#2-enable-gpu-support-in-docker), for all datasets.
+
+        ```shell
+        git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
+        ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
+        cp .env.local .env                                          # (2)!
+        docker compose -p postgres -f compose-postgres.yml up -d --build
+        docker compose -p postgres exec postgres /scripts/load_dumps.sh
+        docker compose -f compose-pidsmaker.yml up -d --build
+        docker compose exec pids bash
+        ```
+
+        1.  See [how to get an access token](getting-started/installation.md#provenance-datasets). Dumps are saved to `./data`. The network datasets are [built from the files of LARES](getting-started/from-scratch.md) for now.
+        2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
+
+    === ":fontawesome-brands-apple: macOS (Apple Silicon)"
+
+        A Mac with [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/), on CPU, for most datasets: 32 GB of RAM is ideal ([details](getting-started/installation.md#macos)).
+
+        ```shell
+        git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
+        ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
+        cp .env.local .env && echo "VIZ_PORT=5001" >> .env          # (2)!
+        plutil -replace MemoryMiB -integer 24576 ~/Library/Group\ Containers/group.com.docker/settings-store.json
+        docker desktop restart                                      # (3)!
+        docker compose -p postgres -f compose-postgres.yml up -d --build
+        docker compose -p postgres exec postgres /scripts/load_dumps.sh
+        docker compose -f compose-pidsmaker.yml -f compose-pidsmaker.cpu.yml up -d --build  # (4)!
+        docker compose exec pids bash
+        ```
+
+        1.  See [how to get an access token](getting-started/installation.md#provenance-datasets). Dumps are saved to `./data`. The network datasets are [built from the files of LARES](getting-started/from-scratch.md) for now.
+        2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`. Port 5000 is used by AirPlay Receiver on macOS.
+        3.  Gives 24 GB to the VM of Docker Desktop (8 GB by default), for a 32 GB Mac: about 75% of your RAM.
+        4.  The CPU override removes the NVIDIA GPU reservation.
 
 === ":lucide-play: 2. Run a system"
 
