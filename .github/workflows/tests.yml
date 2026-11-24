@@ -1,0 +1,81 @@
+name: tests
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    # Python 3.9 (as in the Dockerfile) is not available on newer images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    services:
+      # The CLEARSCOPE_E3 tests run on the sample of tests/fixtures, loaded into this server
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # One thread per pytest-xdist worker
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+    steps:
+      - uses: actions/checkout@v5
+
+      # The default database host of the framework (--database_host) is `postgres`
+      - name: Resolve the database host
+        run: echo "127.0.0.1 postgres" | sudo tee -a /etc/hosts
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.9"
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+
+      - name: Install dependencies (CPU)
+        run: |
+          pip install torch==2.1.2 --index-url https://download.pytorch.org/whl/cpu
+          pip install torch_geometric==2.6.1
+          pip install pyg_lib==0.4.0 torch_scatter==2.1.2 torch_sparse==0.6.18 \
+                      torch_cluster==1.6.3 torch_spline_conv==1.2.2 \
+                      -f https://data.pyg.org/whl/torch-2.1.0+cpu.html
+          pip install -r tests/requirements.txt pytest-github-actions-annotate-failures
+          pip install -e . --no-deps
+          # Downloaded at import time otherwise, by each worker at the same time
+          python -m nltk.downloader -q punkt
+
+      - name: Run tests
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest tests --device cpu -n 4 --dist worksteal --durations=30 -rfE 2>&1 | tee pytest.log
+
+      # Errors outside of the tests (collection, fixtures, crashed workers) are not annotated
+      # by the plugin: the end of the output is shown as an annotation of the run instead
+      - name: Report the failures
+        if: failure()
+        shell: bash
+        run: |
+          [ -f pytest.log ] || exit 0
+          summary=$(grep -E "^(FAILED|ERROR)|crashed|Interrupted|=====.*(passed|failed|error)" pytest.log | tail -n 60)
+          details=$(grep -vE "Warning|warnings.warn|^\s*$" pytest.log | tail -n 80)
+          for text in "$summary" "$details"; do
+            text="${text//'%'/'%25'}"; text="${text//$'\n'/'%0A'}"; text="${text//$'\r'/'%0D'}"
+            echo "::error title=pytest::${text}"
+          done

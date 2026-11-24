@@ -8,6 +8,8 @@ from typing import List, Optional
 
 from nltk.tokenize import word_tokenize
 
+from pidsmaker.config.schemas import label_format
+
 from .base import Tokenizer
 from .substitution import Substitutor
 
@@ -34,8 +36,9 @@ class NLTKTokenizer(Tokenizer):
     """NLTK `word_tokenize` after splitting labels on path and IP separators.
 
     Args:
-        type_aware: if True, paths (`subject`, `file`) are split on '/' and IPs
-            (`netflow`) on ':' and '.'. An empty label gives the token "".
+        type_aware: if True, labels are split according to the label format of their node
+            type: paths (e.g. `subject`, `file`) on '/', addresses (e.g. `netflow`) on ':' and
+            '.', and others (e.g. `host`) on '/', ':' and '.'. An empty label gives the token "".
             If False, all labels are split on '/', ':' and '.' (as in FLASH).
             Texts with `node_type=None` (e.g. edge types) are always tokenized
             in the type-agnostic way.
@@ -54,11 +57,12 @@ class NLTKTokenizer(Tokenizer):
             return tokenize_any(label)
         if label == "":
             return [""]
-        if node_type in ("subject", "file"):
+        fmt = label_format(node_type)
+        if fmt == "path":
             return tokenize_path(label)
-        if node_type == "netflow":
+        if fmt == "address":
             return tokenize_netflow(label)
-        raise ValueError(f"Invalid node type {node_type}")
+        return tokenize_any(label)
 
     def tokenize(self, label: str, node_type: Optional[str] = None) -> List[str]:
         pieces = self.substitutor.substitute(label, node_type)

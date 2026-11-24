@@ -28,7 +28,10 @@ import pytz
 import torch
 from tqdm import tqdm
 
-nltk.download("punkt", quiet=True)
+try:  # Only hit the network when the tokenizer data is actually missing
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt", quiet=True)
 
 from pidsmaker.config import update_cfg_for_multi_dataset
 
@@ -144,6 +147,12 @@ def init_database_connection(cfg):
     else:
         database_name = cfg.dataset.database
 
+    # Queries without ORDER BY (e.g. `select * from file_node_table`) return rows in the
+    # table's physical order, which determines e.g. the order of indexid2msg and thus the
+    # featurization. With synchronized seqscans (Postgres default), a scan started while
+    # another scan of the same table is running joins it midway and returns rotated rows,
+    # making results depend on concurrent runs. Disabled for this session only.
+    options = "-c synchronize_seqscans=off"
     if cfg.database.host is not None:
         connect = psycopg2.connect(
             database=database_name,
@@ -151,6 +160,7 @@ def init_database_connection(cfg):
             user=cfg.database.user,
             password=cfg.database.password,
             port=cfg.database.port,
+            options=options,
         )
     else:
         connect = psycopg2.connect(
@@ -158,6 +168,7 @@ def init_database_connection(cfg):
             user=cfg.database.user,
             password=cfg.database.password,
             port=cfg.database.port,
+            options=options,
         )
     cur = connect.cursor()
     return cur, connect
@@ -391,6 +402,36 @@ def log_tqdm(iterator, desc="", logging=True, **kwargs):
     if DISABLE_TQDM and logging:
         log(f"{desc}...")
     return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
+
+
+class PeakCPUMemory:
+    """Cheap peak resident memory (RSS) tracker, in GB.
+
+    Replaces `tracemalloc`, which slows down every Python allocation and does not see
+    the memory allocated by torch/numpy. On Linux, the RSS high-water mark is reset at
+    `start()` through `/proc/self/clear_refs`; elsewhere, the process lifetime peak is used.
+    """
+
+    def start(self):
+        try:
+            with open("/proc/self/clear_refs", "w") as f:
+                f.write("5")
+        except OSError:
+            pass
+        return self
+
+    @staticmethod
+    def peak_gb():
+        try:
+            with open("/proc/self/status") as f:
+                for line in f:
+                    if line.startswith("VmHWM:"):
+                        return int(line.split()[1]) / (1024**2)  # kB -> GB
+        except OSError:
+            pass
+        import resource
+
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024**2)
 
 
 def get_device(cfg):

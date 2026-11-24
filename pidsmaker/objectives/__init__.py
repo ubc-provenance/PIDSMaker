@@ -1,3 +1,5 @@
+from .autoencode_edge_emb import EdgeEmbAutoencoder
+from .deep_graph_infomax import DeepGraphInfomax
 from .detect_few_shot import FewShotEdgeDetection
 from .one_class import OneClass
 from .predict_edge_contrastive import EdgeContrastivePrediction

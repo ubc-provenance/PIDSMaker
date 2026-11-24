@@ -74,9 +74,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
                 + (" ✅" if y_true == y_hat else " ❌")
             )
 
-    log(f"Saving figures to {out_dir}...")
-    plot_precision_recall(pred_scores, y_truth, pr_img_file)
-    plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
+    if cfg.evaluation.save_figures is not False:  # unset: saved
+        log(f"Saving figures to {out_dir}...")
+        plot_precision_recall(pred_scores, y_truth, pr_img_file)
+        plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
 
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
     stats["threshold"] = thr

@@ -1,0 +1,95 @@
+# E-GraphSAGE (Lo et al., NOMS 2022): "E-GraphSAGE: A Graph Neural Network based Intrusion
+# Detection System for IoT". GraphSAGE layers whose messages include the features of edges
+# (e.g. ports, protocols, byte counts), and edges represented by the embeddings of their two nodes.
+#
+# As in the original, edges are aggregated in both directions (`egraphsage.undirected`).
+# Unlike the original, which has one edge per flow, repeated edges of each 30-min window are
+# merged, with the attributes of their first event as edge features.
+#
+# Difference with the original implementation: E-GraphSAGE is a supervised edge classifier
+# trained on labelled attack flows with random (non-temporal) splits. Here, it is unsupervised as
+# the other systems of the framework: trained on benign data only with a self-supervised link
+# prediction task (an MLP scores the embeddings of the two nodes of an edge against uniform
+# negative edges), and unlikely edges are anomalous. The edge type is not predicted: it is
+# constant in some datasets (all LANL authentications are network logons). See `anomal_e.yml`
+# for its self-supervised extension Anomal-E.
+
+_include_yml: default
+
+construction:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 30.0
+  use_hashed_label: False
+  fuse_edge: False
+  multi_dataset: none
+  cleaning:
+    used_methods: remove_self_loops
+transformation:
+  # Repeated edges of a time window are merged (with the attributes of their first event), which
+  # keeps large datasets tractable. Aggregated counts (`aggregate_attributes`) are not used: their
+  # standardization erases rare attribute values, which are the most informative ones here
+  used_methods: merge_edges
+  merge_edges:
+    per_edge_type: False
+
+featurization:
+  emb_dim: 16
+  training_split: train
+  used_method: only_ones
+  tokenization:
+    used_method: none
+feat_inference:
+  to_remove: True
+
+batching:
+  node_features: only_ones
+  edge_features: edge_attrs
+  fix_buggy_graph_reindexer: True
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: none
+  inter_graph_batching:
+    used_method: none
+
+training:
+  used_method: default
+  seed: 0
+  deterministic: False
+  num_epochs: 20
+  patience: 5
+  lr: 0.001
+  weight_decay: 0.0
+  node_hid_dim: 128
+  node_out_dim: 128
+  grad_accumulation: 1
+  encoder:
+    dropout: 0.2
+    used_methods: egraphsage
+    egraphsage:
+      activation: relu
+      num_layers: 2
+      undirected: True
+  decoder:
+    used_methods: predict_edge_contrastive
+    predict_edge_contrastive:
+      loss: bce
+      neg_sampling: uniform
+      neg_ratio: 10.0
+      decoder: edge_mlp
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 1
+
+evaluation:
+  # Disabled until the NIDS reach their published performance (one point per edge is slow)
+  save_figures: False
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_val_score
+  used_method: edge_evaluation
+  edge_evaluation:
+    malicious_edge_selection: both_nodes
+    threshold_method: max_val_loss

@@ -123,7 +123,77 @@ python pidsmaker/main.py orthrus DATASET
 To share your database, export it as a dump:
 
 ```shell
-PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d DATASET -f DATASET.dump
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d DATABASE -f DATABASE.dump
+```
+
+`DATABASE` is the name of the database (e.g. `cadets_e3`, `lanl` or `optc_net`). Dumps are restored in a database named after their file, so keep the name of the database. The `pg_dump` client must have the same major version as the Postgres server.
+
+## Network datasets (LANL and OpTC flows)
+
+Network datasets have hosts as nodes and authentications or network flows as edges. They are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares), which also provide the labels of malicious events used as ground truth.
+Unlike provenance datasets, their tables follow the dataset's schema (`pidsmaker/config/schemas.py`): no SQL initialization is needed, as the scripts below create the database and its tables.
+Any system runs on them: for example, `construction.edge_type=logon_type` makes the edge type predicted by Velox the logon type of LANL authentications, and `batching.edge_features=edge_type,edge_attrs` gives the edge attributes (ports, protocols, logon types, ...) to the GNN.
+
+### Download the files
+
+In `DATA_FOLDER`, download and extract the LARES archive (14.35 GB, 18.44 GB once extracted):
+
+```shell
+curl -L -o ${DATA_FOLDER}/lanl_optc_datasets.tar.gz "https://drive.usercontent.google.com/download?id=10fdDttLXP8zYwlrhqFzOe_kEvDGokfVY&export=download&confirm=t"
+tar -xzf ${DATA_FOLDER}/lanl_optc_datasets.tar.gz -C ${DATA_FOLDER}
+```
+
+### Fill the database (LANL)
+
+In the `pids` container:
+
+```shell
+python dataset_preprocessing/lanl/create_database_lanl.py LANL --lares_dir /data/lanl_optc_datasets/LANL/preprocessed
+```
+
+This creates the `lanl` database with the NTLM authentications of the [LANL "Comprehensive, Multi-Source Cyber-Security Events"](https://csr.lanl.gov/data/cyber1/) dataset, as used by Euler, Argus, Jbeil and LARES. Add `--with_flows` to also load its network flows.
+
+The database can also be built from the official files, requested on the [LANL website](https://csr.lanl.gov/data/cyber1/) (authentications only):
+
+```shell
+python dataset_preprocessing/lanl/create_database_lanl.py LANL --auth_file /data/auth.txt.gz --redteam_file /data/redteam.txt.gz
+```
+
+!!! note
+    LANL timestamps are seconds from an undisclosed origin. They are mapped to UTC dates such that the first red team event happens on 2015-01-03: by default, models are trained on 2015-01-01, validated on 2015-01-02 and tested from 2015-01-03 to 2015-01-30.
+
+### Fill the database (OpTC flows)
+
+In the `pids` container:
+
+```shell
+python dataset_preprocessing/optc/create_database_optc_net.py OPTC_NET --lares_dir /data/lanl_optc_datasets/OPTC/preprocessed
+```
+
+This creates the `optc_net` database with the FLOW START and FLOW MESSAGE events of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (about 1.9 billion events). Files are read by `--num_workers` processes (16 by default), each loading its events directly into the database.
+
+!!! note
+    As in LARES and Argus, graphs are built from FLOW START events only. Set `construction.operations=all` to also use FLOW MESSAGE events, or a comma-separated list of operations (e.g. `construction.operations=FLOW_START`) to select events of any dataset.
+
+**Labels.** A flow is recorded several times in OpTC (FLOW START and FLOW MESSAGE events, by the hosts at both ends), and LARES labels only some of these records: e.g. in the lateral movement of 2019-09-24, the FLOW MESSAGE events of 561 flows are malicious but the FLOW START of only 56 of them. By default, the script labels malicious all the records of a malicious flow (same 5-tuple, in either direction, in the same LARES file): 5,165 malicious events (1,015 FLOW START) instead of 2,370 (115 FLOW START). Add `--no_label_propagation` to keep the labels of LARES as they are. A database built without propagation can be relabelled in place with `--relabel`; graphs built before must then be built again (the labels of edges are stored in the graphs).
+
+Both scripts index the events by time (used by the construction) and the malicious events (used by the evaluation).
+
+### Dump the network databases
+
+The dumps of `lanl` and `optc_net` are created from the databases filled above, in the `pids` container:
+
+```shell
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d lanl -f /data/lanl.dump
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d optc_net -f /data/optc_net.dump
+```
+
+`lanl.dump` is about 0.7 GB and `optc_net.dump` about 21 GB (dumping `optc_net` takes about 2 hours). For the dump of OpTC with the labels of LARES, build the database with `--no_label_propagation` before dumping it, and keep its file name `optc_net.dump` (dumps are restored in a database named after their file), e.g. in a `lares_labels/` folder. `scripts/load_dumps.sh` also creates the index of malicious events when restoring dumps made without it.
+
+The official network flows of OpTC (`ecar-bro` folder of its Google Drive) can be downloaded with:
+
+```shell
+python dataset_preprocessing/optc/download_optc_net.py ${DATA_FOLDER}/optc_net
 ```
 
 !!! tip "Adding a new dataset"

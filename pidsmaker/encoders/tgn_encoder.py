@@ -100,6 +100,8 @@ class TGNEncoder(nn.Module):
             edge_feats.append(batch.edge_type_tgn)
         if "msg" in self.edge_features:
             edge_feats.append(batch.msg_tgn)
+        if "edge_attrs" in self.edge_features:
+            edge_feats.append(batch.edge_attr_feats_tgn)
         if "time_encoding" in self.edge_features:  # or self.use_time_enc
             if not self.use_memory:
                 last_update = self.memory.get_last_update(n_id)
@@ -151,6 +153,9 @@ class TGNEncoder(nn.Module):
         if self.use_residual_norm:
             h = self.norm_local(self.dropout(h) + self.residual_proj(x_proj))
         
+        if "neg_dst_tgn" in batch:
+            # Embeddings of the negative destinations of the edges (`negative_destinations`)
+            batch.h_neg_tgn = h[batch.neg_dst_tgn]
         h_src = h[batch.reindexed_edge_index_tgn[0]]
         h_dst = h[batch.reindexed_edge_index_tgn[1]]
             
@@ -159,7 +164,10 @@ class TGNEncoder(nn.Module):
     
         # Update memory and neighbor loader with ground-truth state.
         if self.use_memory or self.use_time_enc:
-            self.memory.update_state(batch.src, batch.dst, batch.t, batch.msg)
+            # The raw message is only used by the TGN memory (TimeEncodingMemory ignores it,
+            # and `msg` is not kept in the batches when unused)
+            raw_msg = batch.msg if self.use_memory else None
+            self.memory.update_state(batch.src, batch.dst, batch.t, raw_msg)
 
         # Detaching memory is only useful for backprop in training
         if self.use_memory and not inference:

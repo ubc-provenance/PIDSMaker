@@ -17,17 +17,22 @@ def main(cfg):
     tokenizer = load_tokenizer(cfg)
     indexid2vec = {}
     sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
+    label2vec = {}  # the embedding only depends on (node_type, label)
     for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
+        cached = label2vec.get((node_type, node_label))
+        if cached is not None:
+            indexid2vec[indexid] = cached
+            continue
         tokens = tokenizer.tokenize(node_label, node_type)
         if not tokens:
-            indexid2vec[indexid] = np.zeros(model.vector_size)
+            indexid2vec[indexid] = label2vec[(node_type, node_label)] = np.zeros(model.vector_size)
             continue
 
         word_vectors = [model.wv[word] for word in tokens]
         sentence_vector = np.mean(word_vectors, axis=0)
 
         normalized_vector = sentence_vector / (np.linalg.norm(sentence_vector) + 1e-12)
-        indexid2vec[indexid] = np.array(normalized_vector)
+        indexid2vec[indexid] = label2vec[(node_type, node_label)] = np.array(normalized_vector)
 
     return indexid2vec

@@ -12,6 +12,7 @@ import torch
 
 from pidsmaker.utils.labelling import get_ground_truth
 from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.loss_files import is_loss_file, read_losses
 from pidsmaker.utils.utils import get_split_to_files, listdir_sorted, log
 
 # Seed-eligible node types
@@ -74,8 +75,8 @@ def _train_reference_range_by_type(cfg, best_epoch, node_to_type):
     train_dir = os.path.join(cfg.training._edge_losses_dir, "train", best_epoch)
     if not os.path.isdir(train_dir):
         return {}
-    dfs = [pd.read_csv(os.path.join(train_dir, f)) for f in listdir_sorted(train_dir)
-           if f.endswith(".csv")]
+    dfs = [read_losses(os.path.join(train_dir, f)) for f in listdir_sorted(train_dir)
+           if is_loss_file(f)]
     if not dfs:
         return {}
     df = pd.concat(dfs, ignore_index=True)

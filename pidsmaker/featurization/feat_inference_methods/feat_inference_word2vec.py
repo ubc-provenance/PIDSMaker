@@ -28,11 +28,18 @@ def main(cfg):
     tokenizer = load_tokenizer(cfg)
     indexid2vec = {}
     sorted_indexid2msg = dict(sorted(indexid2msg.items(), key=lambda item: int(item[0])))
+    # The embedding only depends on (node_type, label), which are heavily shared across
+    # nodes: it is computed once per label and the array is shared by all its nodes.
+    label2vec = {}
     for indexid, msg in log_tqdm(sorted_indexid2msg.items(), desc="Embedding all nodes in the dataset"):
         node_type, node_label = msg[0], msg[1]
+        cached = label2vec.get((node_type, node_label))
+        if cached is not None:
+            indexid2vec[indexid] = cached
+            continue
         tokens = tokenizer.tokenize(node_label, node_type)
         if not tokens:
-            indexid2vec[indexid] = zeros.copy()
+            indexid2vec[indexid] = label2vec[(node_type, node_label)] = zeros.copy()
             continue
 
         weight_list = cal_word_weight(len(tokens), decline_percentage)
@@ -44,6 +51,6 @@ def main(cfg):
         sentence_vector = np.mean(weighted_vectors, axis=0)
 
         normalized_vector = sentence_vector / (np.linalg.norm(sentence_vector) + 1e-12)
-        indexid2vec[indexid] = np.array(normalized_vector)
+        indexid2vec[indexid] = label2vec[(node_type, node_label)] = np.array(normalized_vector)
 
     return indexid2vec

@@ -1,6 +1,15 @@
-import os
-from collections import defaultdict
+"""Edge-level evaluation: each test edge is scored by its loss.
 
+Test sets of network datasets have tens of millions of edges, so the predictions are kept as
+numpy arrays, and the edges are given to the metrics as a lazy sequence of (src, dst, time,
+edge_type) tuples (`EdgeTuples`): tuples are only built for the edges the metrics need
+(malicious edges, top-ranked edges, ties).
+"""
+
+import os
+from collections.abc import Sequence
+
+import numpy as np
 import pandas as pd
 import torch
 
@@ -18,73 +27,136 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     transform_attack2nodes_to_node2attacks,
 )
 from pidsmaker.utils.dataset_utils import get_rel2id_considering_triplets
-from pidsmaker.utils.labelling import get_attack_to_mal_edges, get_ground_truth_edges
+from pidsmaker.utils.labelling import (
+    get_attack_to_mal_edges,
+    get_ground_truth_edges,
+    ground_truth_attacks,
+    has_event_labels,
+)
+from pidsmaker.utils.loss_files import compact_int_columns, read_losses
 from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 
 
+class EdgeTuples(Sequence):
+    """The (src, dst, time, edge_type) tuples of the test edges, the edge identifiers of the
+    ground truth (node IDs as strings, edge type as its name), built on access."""
+
+    def __init__(self, src, dst, time, edge_type, type_names):
+        self.src, self.dst, self.time, self.edge_type = src, dst, time, edge_type
+        self.type_names = type_names
+
+    def __len__(self):
+        return len(self.src)
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.take(np.arange(len(self))[i])
+        return self.take([i])[0]
+
+    def take(self, idx):
+        """Tuples of the edges at the positions `idx`."""
+        idx = np.asarray(idx, dtype=np.int64)
+        names = self.type_names
+        return [
+            (str(s), str(d), t, names[e])
+            for s, d, t, e in zip(
+                self.src[idx].tolist(),
+                self.dst[idx].tolist(),
+                self.time[idx].tolist(),
+                self.edge_type[idx].tolist(),
+            )
+        ]
+
+    def candidates(self, edge_tuples):
+        """Positions of the edges whose source is the source of one of `edge_tuples`: a superset
+        of the edges equal to one of them (sources are compared as integers, without building
+        the tuples of all the edges)."""
+        srcs = set()
+        for edge in edge_tuples:
+            try:
+                srcs.add(int(edge[0]))
+            except (TypeError, ValueError):
+                pass  # not the string of an integer: cannot be the source of an edge
+        return np.flatnonzero(np.isin(self.src, np.array(sorted(srcs), dtype=self.src.dtype)))
+
+    def attack_hits(self, edge2attack):
+        """Same as `evaluation_utils.attack_hits`, checking only the candidate edges."""
+        idx = self.candidates(edge2attack.keys())
+        positions, attacks = [], []
+        for i, edge in zip(idx.tolist(), self.take(idx)):
+            found = edge2attack.get(edge)
+            if found is not None:
+                positions.append(i)
+                attacks.append(found)
+        return np.array(positions, dtype=np.int64), attacks
+
+
 def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
-    ground_truth_edges = get_ground_truth_edges(cfg)
+    """(scores, y_true, y_hat, edges, threshold, loss columns) of the test edges: arrays, and
+    the edges as `EdgeTuples`."""
     threshold_method = cfg.evaluation.edge_evaluation.threshold_method
     alpha = getattr(cfg.evaluation.edge_evaluation, "alpha", 1.0) or 1.0
-    
+
     if threshold_method == "magic":
         thr = get_threshold(test_tw_path, threshold_method, alpha)
     else:
         thr = get_threshold(val_tw_path, threshold_method, alpha)
     log(f"Threshold: {thr:.3f}")
 
-    scores, y_true, y_hat, src_dst_t_type = [], [], [], []
-    edge_type_map = get_rel2id_considering_triplets(cfg)
     filelist = listdir_sorted(test_tw_path)
+    dfs = [
+        read_losses(os.path.join(test_tw_path, file))
+        for file in log_tqdm(filelist, desc="Compute edge labels")
+    ]
+    columns = ("srcnode", "dstnode", "loss", "time", "edge_type")
+    df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame({c: [] for c in columns})
 
-    # Build edge records for saving (consistent with node_evaluation)
-    all_edge_records = []
+    edge_type = df["edge_type"].to_numpy()
+    type_map = get_rel2id_considering_triplets(cfg)
+    edges = EdgeTuples(
+        df["srcnode"].to_numpy(),
+        df["dstnode"].to_numpy(),
+        df["time"].to_numpy(),
+        edge_type,
+        {t: type_map[t] for t in np.unique(edge_type).tolist()},
+    )
+    scores = df["loss"].to_numpy(dtype=np.float64)
+    y_hat = (scores > thr).astype(np.int8)
 
-    for file in log_tqdm(filelist, desc="Compute edge labels"):
-        filepath = os.path.join(test_tw_path, file)
-        df = pd.read_csv(filepath).to_dict(orient="records")
-
-        for line in df:
-            srcnode = str(line["srcnode"])
-            dstnode = str(line["dstnode"])
-            loss = line["loss"]
-            t = line["time"]
-            edge_type = edge_type_map[line["edge_type"]]
-            edge = (srcnode, dstnode, t, edge_type)
-
-            # CSV-based labels use 3-tuples (no timestamp), DB-based use 4-tuples
-            is_malicious = int(
-                edge in ground_truth_edges
-                or (srcnode, dstnode, edge_type) in ground_truth_edges
-            )
-            scores.append(loss)
-            y_true.append(is_malicious)
-            y_hat.append(int(loss > thr))
-            src_dst_t_type.append(edge)
-
-            all_edge_records.append({
-                "srcnode": srcnode,
-                "dstnode": dstnode,
-                "loss": loss,
-                "time": t,
-                "edge_type": line["edge_type"],
-                "src_is_malicious": is_malicious,
-                "dst_is_malicious": is_malicious,
-            })
-
-    edge_records = pd.DataFrame(all_edge_records) if all_edge_records else None
-    return scores, y_true, y_hat, src_dst_t_type, thr, edge_records
+    if "y" in df.columns:
+        # Event-level labels carried by the edges (datasets with labelled events)
+        y_true = (df["y"].to_numpy() > 0).astype(np.int8)
+    else:
+        y_true = np.zeros(len(df), dtype=np.int8)
+        ground_truth_edges = get_ground_truth_edges(cfg)
+        # CSV-based labels use 3-tuples (no timestamp), DB-based use 4-tuples
+        idx = edges.candidates(ground_truth_edges)
+        for i, edge in zip(idx.tolist(), edges.take(idx)):
+            if edge in ground_truth_edges or (edge[0], edge[1], edge[3]) in ground_truth_edges:
+                y_true[i] = 1
+    return scores, y_true, y_hat, edges, thr, df
 
 
 def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes, **kwargs):
-    scores, y_truth, y_preds, src_dst_t_type, thr, edge_records = get_edge_predictions(
+    scores, y_truth, y_preds, edges, thr, losses = get_edge_predictions(
         val_tw_path, test_tw_path, cfg, **kwargs
     )
-    attack_to_mal_edges = get_attack_to_mal_edges(cfg)
-
-    log(
-        f"Found {sum(y_truth)} / {sum(len(edges) for edges in attack_to_mal_edges.values())} malicious edges"
-    )
+    if has_event_labels(cfg):
+        # Edges carry their labels (`y`): malicious edges are assigned to the attack whose time
+        # window contains them. This also holds when edges are merged (e.g. `merge_edges`), whose
+        # times and types may differ from those of the labelled events of the database.
+        attacks = ground_truth_attacks(cfg)
+        attack_to_mal_edges = {i: set() for i in range(len(attacks))}
+        for edge in edges.take(np.flatnonzero(y_truth)):
+            t = int(edge[2])
+            i = next((i for i, (_, s, e) in enumerate(attacks) if s <= t <= e), 0)
+            attack_to_mal_edges[i].add(edge)
+        log(f"Found {int(y_truth.sum())} malicious edges in the test set")
+    else:
+        attack_to_mal_edges = get_attack_to_mal_edges(cfg)
+        log(
+            f"Found {int(y_truth.sum())} / {sum(len(edges) for edges in attack_to_mal_edges.values())} malicious edges"
+        )
 
     edge2attack = transform_attack2nodes_to_node2attacks(attack_to_mal_edges)
 
@@ -92,38 +164,55 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     os.makedirs(out_dir, exist_ok=True)
 
     # Save edge-level scores (consistent with node_evaluation)
-    if edge_records is not None:
-        edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
-        torch.save(edge_records, edge_scores_file)
-        log(f"Saved {len(edge_records)} edge scores to {edge_scores_file}")
+    edge_records = pd.DataFrame(
+        {
+            "srcnode": edges.src,
+            "dstnode": edges.dst,
+            "loss": scores,
+            "time": edges.time,
+            "edge_type": edges.edge_type,
+            "src_is_malicious": y_truth.astype(np.int64),
+            "dst_is_malicious": y_truth.astype(np.int64),
+        }
+    )
+    edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
+    torch.save(compact_int_columns(edge_records), edge_scores_file)
+    log(f"Saved {len(edge_records)} edge scores to {edge_scores_file}")
+    del edge_records, losses
 
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
     scores_img_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.png")
     neat_scores_img_file = os.path.join(out_dir, f"neat_scores_{model_epoch_dir}.svg")
     discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
 
-    log(f"Saving figures to {out_dir}...")
+    save_figures = cfg.evaluation.save_figures is not False  # unset: saved
+    if save_figures:
+        log(f"Saving figures to {out_dir}...")
     adp_score = plot_detected_attacks_vs_precision(
-        scores, src_dst_t_type, edge2attack, y_truth, adp_img_file
+        scores, edges, edge2attack, y_truth, adp_img_file if save_figures else None
     )
-    discrim_scores = compute_discrimination_score(scores, src_dst_t_type, edge2attack, y_truth)
-    plot_discrimination_metric(scores, y_truth, discrim_img_file)
-    discrim_tp = compute_discrimination_tp(scores, src_dst_t_type, edge2attack, y_truth)
-    plot_scores_with_paths_edge_level(
-        scores,
-        y_truth,
-        src_dst_t_type,
-        tw_to_malicious_nodes,
-        edge2attack,
-        scores_img_file,
-        cfg,
-        thr,
-    )
-    plot_scores_neat(scores, y_truth, src_dst_t_type, edge2attack, neat_scores_img_file, thr)
+    discrim_scores = compute_discrimination_score(scores, edges, edge2attack, y_truth)
+    discrim_tp = compute_discrimination_tp(scores, edges, edge2attack, y_truth)
+    if save_figures:
+        # The plots iterate over all the edges
+        scores_list, y_list, edges_list = scores.tolist(), y_truth.tolist(), list(edges)
+        plot_discrimination_metric(scores_list, y_list, discrim_img_file)
+        plot_scores_with_paths_edge_level(
+            scores_list,
+            y_list,
+            edges_list,
+            tw_to_malicious_nodes,
+            edge2attack,
+            scores_img_file,
+            cfg,
+            thr,
+        )
+        plot_scores_neat(scores_list, y_list, edges_list, edge2attack, neat_scores_img_file, thr)
+        del scores_list, y_list, edges_list
     stats = classifier_evaluation(y_truth, y_preds, scores)
 
     fps, tps, precision, recall = get_metrics_if_all_attacks_detected(
-        scores, src_dst_t_type, attack_to_mal_edges
+        scores, edges, attack_to_mal_edges
     )
     stats["fps_if_all_attacks_detected"] = fps
     stats["tps_if_all_attacks_detected"] = tps
@@ -136,25 +225,35 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     for k, v in discrim_scores.items():
         stats[k] = round(v, 4)
 
-    attack2tps = get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg)
+    attack2tps = get_detected_tps(scores, edges, edge2attack, y_truth, cfg)
     for attack, detected_tps in attack2tps.items():
         stats[f"tps_{attack}"] = str(detected_tps)
 
     stats = {**stats, **discrim_tp}
 
+    # Edges as a structured array (src, dst, time, edge_type ID), indexable like tuples; the
+    # names of the edge type IDs are in `edge_type_names`
+    edge_array = np.empty(
+        len(edges),
+        dtype=[("src", np.int64), ("dst", np.int64), ("time", np.int64), ("edge_type", np.int64)],
+    )
+    edge_array["src"], edge_array["dst"] = edges.src, edges.dst
+    edge_array["time"], edge_array["edge_type"] = edges.time, edges.edge_type
     scores_file = os.path.join(out_dir, f"scores_{model_epoch_dir}.pkl")
     torch.save(
         {
             "pred_scores": scores,
             "y_preds": y_preds,
             "y_truth": y_truth,
-            "edges": src_dst_t_type,
+            "edges": edge_array,
+            "edge_type_names": edges.type_names,
             "edge2attack": edge2attack,
         },
         scores_file,
     )
 
     stats["scores_file"] = scores_file
-    stats["neat_scores_img_file"] = neat_scores_img_file
+    if save_figures:
+        stats["neat_scores_img_file"] = neat_scores_img_file
 
     return stats

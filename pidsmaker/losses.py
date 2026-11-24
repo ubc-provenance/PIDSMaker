@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from torch.autograd import Variable
 
 
 def sce_loss(x, y, alpha=3, inference=False, **kwargs):
@@ -45,6 +44,29 @@ def bce_contrastive(positive, negative, inference=False, weight=None, **kwargs):
         return (pos_loss + neg_loss) * 0.5
 
     return pos_loss
+
+
+def ap_contrastive(positive, negative, inference=False, margin=0.8, **kwargs):
+    """Surrogate average precision loss of link prediction, as in Argus.
+
+    Each positive edge should be ranked above the negative edges: the precision of a positive
+    edge i is approximated by sum_{j in pos} l(s_j, s_i) / sum_{j in all} l(s_j, s_i), with the
+    squared hinge l(s_j, s_i) = max(0, margin - (s_i - s_j))^2 on sigmoid scores. This is the
+    mini-batch version of the AP loss of LibAUC (without its moving averages across batches).
+    At inference, edges are scored like `bce_contrastive` (low probability = anomalous).
+    """
+    pos_loss = F.binary_cross_entropy_with_logits(
+        positive, torch.ones_like(positive), reduction="none"
+    )
+    if inference:
+        return pos_loss
+
+    pos, neg = torch.sigmoid(positive.flatten()), torch.sigmoid(negative.flatten())
+    all_scores = torch.cat([pos, neg])
+    surrogate = torch.clamp(margin - (pos.unsqueeze(1) - all_scores.unsqueeze(0)), min=0) ** 2
+    num_pos = pos.shape[0]
+    precision = surrogate[:, :num_pos].sum(dim=1) / (surrogate.sum(dim=1) + 1e-12)
+    return -precision.mean()
 
 
 def cross_entropy(x, y, inference=False, weight=None, **kwargs):
@@ -103,9 +125,7 @@ class AMSoftmax(nn.Module):
         ncenters = torch.div(self.centers, norms_c)
         logits = torch.matmul(nfeat, torch.transpose(ncenters, 0, 1))
 
-        y_onehot = torch.FloatTensor(batch_size, self.num_classes)
-        y_onehot.zero_()
-        y_onehot = Variable(y_onehot).cuda()
+        y_onehot = torch.zeros(batch_size, self.num_classes, device=feat.device)
         y_onehot.scatter_(1, torch.unsqueeze(label, dim=-1), self.margin)
         margin_logits = self.scale * (logits - y_onehot)
         err = cross_entropy(margin_logits, label, inference=inference)

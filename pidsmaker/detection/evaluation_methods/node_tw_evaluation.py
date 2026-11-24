@@ -163,9 +163,10 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     flat_y_truth = [e for sublist in y_truth for e in sublist]
     flat_y_preds = [e for sublist in y_preds for e in sublist]
 
-    log(f"Saving figures to {out_dir}...")
-    plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
-    plot_simple_scores(flat_pred_scores, flat_y_truth, simple_scores_img_file)
+    if cfg.evaluation.save_figures is not False:  # unset: saved
+        log(f"Saving figures to {out_dir}...")
+        plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
+        plot_simple_scores(flat_pred_scores, flat_y_truth, simple_scores_img_file)
 
     stats = classifier_evaluation(flat_y_truth, flat_y_preds, flat_pred_scores)
     stats["threshold"] = thr

@@ -1,0 +1,4 @@
+# Snapshots of Argus on OpTC (6 min, `--delta 0.1` hours), loaded with `--tuned`. The defaults
+# of argus.yml are those of LANL (1 h).
+construction:
+  time_window_size: 6.0

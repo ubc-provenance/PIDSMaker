@@ -39,6 +39,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
 )
 from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
+from pidsmaker.utils.loss_files import compact_int_columns, read_losses
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     listdir_sorted,
@@ -111,7 +112,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     dfs = []
     for tw, fname in enumerate(log_tqdm(filelist, desc="Compute labels")):
-        df = pd.read_csv(os.path.join(test_tw_path, fname))
+        df = read_losses(os.path.join(test_tw_path, fname))
         df["tw"] = tw
         dfs.append(df)
 
@@ -198,7 +199,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     filelist = listdir_sorted(test_tw_path)
     for tw, file in enumerate(log_tqdm(filelist, desc="Compute labels")):
         file = os.path.join(test_tw_path, file)
-        df = pd.read_csv(file).to_dict(orient="records")
+        df = read_losses(file).to_dict(orient="records")
         for line in df:
             node = line["node"]
             loss = line["loss"]
@@ -362,7 +363,7 @@ def main(
     if edge_records is not None:
         edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
         edge_df = edge_records if isinstance(edge_records, pd.DataFrame) else pd.DataFrame(edge_records)
-        torch.save(edge_df, edge_scores_file)
+        torch.save(compact_int_columns(edge_df), edge_scores_file)
         log(f"Saved {len(edge_df)} edge scores to {edge_scores_file}")
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(
@@ -410,32 +411,35 @@ def main(
                     attack_to_TPs[att] += 1
 
     # Plots the PR curve and scores for mean node loss
-    log(f"Saving figures to {out_dir}...")
+    save_figures = cfg.evaluation.save_figures is not False  # unset: saved
+    if save_figures:
+        log(f"Saving figures to {out_dir}...")
     # plot_precision_recall(pred_scores, y_truth, pr_img_file)
     adp_score = plot_detected_attacks_vs_precision(
-        pred_scores, nodes, node2attacks, y_truth, adp_img_file
+        pred_scores, nodes, node2attacks, y_truth, adp_img_file if save_figures else None
     )
     discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
-    plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     tp_per_attack = compute_tp_per_attack_thr(pred_scores, nodes, node2attacks, y_truth, thr)
-    # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths_node_level(
-        pred_scores,
-        y_truth,
-        nodes,
-        max_val_loss_tw,
-        tw_to_malicious_nodes,
-        node2attacks,
-        scores_img_file,
-        cfg,
-        thr,
-    )
-    plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
-    # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
-    node_to_type = {nid: info["type"] for nid, info in node_to_path.items()}
-    plot_scores_distribution(pred_scores, y_truth, nodes, node2attacks, distrib_img_file,
-                             node_to_type=node_to_type)
+    if save_figures:
+        plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
+        # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
+        plot_scores_with_paths_node_level(
+            pred_scores,
+            y_truth,
+            nodes,
+            max_val_loss_tw,
+            tw_to_malicious_nodes,
+            node2attacks,
+            scores_img_file,
+            cfg,
+            thr,
+        )
+        plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
+        # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
+        node_to_type = {nid: info["type"] for nid, info in node_to_path.items()}
+        plot_scores_distribution(pred_scores, y_truth, nodes, node2attacks, distrib_img_file,
+                                 node_to_type=node_to_type)
     
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
 
@@ -497,7 +501,8 @@ def main(
     )
 
     stats["scores_file"] = scores_file
-    stats["neat_scores_img_file"] = neat_scores_img_file
+    if save_figures:
+        stats["neat_scores_img_file"] = neat_scores_img_file
     
     gnn_models_dir = cfg.training._trained_models_dir
     model_path = os.path.join(gnn_models_dir, model_epoch_dir)

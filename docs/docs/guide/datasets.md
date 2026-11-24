@@ -50,6 +50,15 @@ Nodes and events are counted in the database, before graph construction. Size is
     | ATLASV2_EDR | 10.1% | 85.8% | 4.1% |
     | CARBANAKV2_EDR | 3.2% | 94.5% | 2.3% |
 
+Network datasets have hosts as nodes, authentications or network flows as edges, and event-level labels:
+
+| Dataset | Events | Hosts | Malicious events | Size (GB) |
+|---|---|--:|---|--:|
+| LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
+| OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 5,165 (1,015 FLOW START)¹ | 275 |
+
+¹ With the labels of LARES propagated to all the records of malicious flows (default); 2,370 (115 FLOW START) with the labels of LARES as they are (see [OPTC_NET](#optc_net)).
+
 ## DARPA TC
 
 The DARPA Transparent Computing program produced benchmark datasets for evaluating provenance-based security systems.
@@ -264,6 +273,26 @@ python pidsmaker/main.py SYSTEM ATLASV2_EDR
 ```shell
 python pidsmaker/main.py SYSTEM CARBANAKV2_EDR
 ```
+
+## Network datasets
+
+Network intrusion detection systems (e.g. Euler, Argus, Jbeil, LARES) model the communications between the hosts of a network. In PIDSMaker, network datasets are described by a schema (`pidsmaker/config/schemas.py`) that defines their node types (hosts), their edge types and the attributes of their events, which become edge features (`batching.edge_features=edge_attrs`). Any system runs on them, and network systems run on provenance datasets as well.
+
+Malicious events are labelled in the database (`label` column), so the ground truth is event-level: the evaluation labels each edge with its events. Models are trained and validated on benign events only: `construction.benign_training` (on by default) drops the malicious events of the train and val dates, which has no effect when they have none (as for LANL and OPTC_NET). The preprocessed files of [LARES](https://github.com/TristanBilot/lares) are used for both datasets (see [Building datasets from scratch](../getting-started/from-scratch.md#network-datasets-lanl-and-optc-flows)).
+
+### [LANL](https://csr.lanl.gov/data/cyber1/)
+
+The "Comprehensive, Multi-Source Cyber-Security Events" dataset of the Los Alamos National Laboratory: 58 days of authentications between the computers of the LANL network, with the red team events of a penetration test. As in Euler, Argus, Jbeil and LARES, only NTLM authentications are kept. Edges are authentications, typed by their orientation (`LogOn`, `LogOff`, ...), with the logon type, authentication type, success and kinds of source and destination users as attributes.
+
+LANL timestamps are seconds from an undisclosed origin, mapped to UTC dates such that the first red team event happens on 2015-01-03. Models are trained on 2015-01-01, validated on 2015-01-02 and tested from 2015-01-03 to 2015-01-30. The root source of the attack is host `9660`.
+
+### OPTC_NET
+
+The network flows of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (eCAR `FLOW START` and `FLOW MESSAGE` events), from 2019-09-16 to 2019-09-25. Edges are flows, with the source and destination ports (grouped by service and range), the protocol and the size of messages as attributes. As in LARES and Argus, only FLOW START events are used by default (`construction.operations`). Models are trained from 2019-09-16 to 2019-09-21, validated on 2019-09-22 and tested from 2019-09-23 to 2019-09-25 (malicious flows happen on 2019-09-23 and 2019-09-24). The root sources of the attacks are hosts `201`, `402` and `501`.
+
+LARES labels only some of the records of each malicious flow (a flow has FLOW START and FLOW MESSAGE events, recorded by the hosts at both ends). By default, the database labels malicious all the records of a malicious flow (same 5-tuple in the same LARES file): 1,015 malicious FLOW START events instead of the 115 of LARES. The labels of LARES are kept by building the database with `--no_label_propagation` (see [Building datasets from scratch](../getting-started/from-scratch.md#fill-the-database-optc-flows)). Euler and Argus use another preprocessing and labelling of OpTC (IP addresses as nodes, including external hosts, and all the events of compromised hosts as malicious), so their results on OpTC are not comparable.
+
+99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. They are dropped by default (`construction.drop_noise_events`, which has no effect on other datasets); set `construction.drop_noise_events=False` to keep them, as LARES does. The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with `--tuned` (`config/tuned_baselines/optc_net/`).
 
 ## PROVENANCE_BENIGN
 

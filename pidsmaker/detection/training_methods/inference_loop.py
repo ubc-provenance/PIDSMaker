@@ -1,7 +1,7 @@
+import json
 import os
 import random
 import time
-import tracemalloc
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,11 @@ import torch
 import torch.nn.functional as F
 from sklearn.neighbors import NearestNeighbors
 
+from pidsmaker.utils.data_utils import batch_to_device
+from pidsmaker.utils.labelling import has_event_labels
+from pidsmaker.utils.loss_files import write_losses
 from pidsmaker.utils.utils import (
+    PeakCPUMemory,
     calculate_average_from_file,
     get_device,
     log,
@@ -30,50 +34,49 @@ def test_edge_level(
 ):
     model.eval()
 
-    start_time = data.t[0]
-    all_losses = []
-
     validation = split == "val"
 
     results = model(data, inference=True, validation=validation)
     each_edge_loss = results["loss"]
-    all_losses.extend(each_edge_loss.cpu().numpy().tolist())
 
     # If the data has been reindexed in the loader or batched, we retrieve original node IDs
     # to later find the labels
     edge_index = data.original_edge_index
 
-    srcnodes = edge_index[0, :].cpu().numpy()
-    dstnodes = edge_index[1, :].cpu().numpy()
-    t_vars = data.t.cpu().numpy()
-    losses = each_edge_loss.cpu().numpy()
-    edge_types = (data.edge_type.max(dim=1).indices + 1).cpu().numpy()
+    # A single device->host transfer for all columns
+    edge_types = data.edge_type.max(dim=1).indices + 1
+    srcnodes, dstnodes, t_vars, edge_types = (
+        torch.stack([edge_index[0], edge_index[1], data.t.to(edge_index.dtype), edge_types.to(edge_index.dtype)])
+        .cpu()
+        .numpy()
+    )
+    losses = each_edge_loss.float().cpu().numpy()
+    start_time = int(t_vars[0])
 
     # if 1 in data.y:
     #     log(f"Mean score of fake malicious edges: {losses[data.y.cpu() == 1].mean():.4f}")
     #     log(f"Mean score of benign malicious edges: {losses[data.y.cpu() == 0].mean():.4f}")
 
-    edge_df = pd.DataFrame(
-        {
-            "loss": losses.astype(float),
-            "srcnode": srcnodes.astype(int),
-            "dstnode": dstnodes.astype(int),
-            "time": t_vars.astype(int),
-            "edge_type": edge_types.astype(int),
-        }
-    )
+    edge_cols = {
+        "loss": losses.astype(float),
+        "srcnode": srcnodes.astype(int),
+        "dstnode": dstnodes.astype(int),
+        "time": t_vars.astype(int),
+        "edge_type": edge_types.astype(int),
+    }
+    # Datasets with event-level labels: the label of each edge is kept for the evaluation
+    if has_event_labels(cfg):
+        edge_cols["y"] = data.y.cpu().numpy().astype(int)
 
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = (
-        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(edge_df["time"].max(), timezone=cfg.dataset.timezone)
+        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(edge_cols["time"].max(), timezone=cfg.dataset.timezone)
     )
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    csv_file = os.path.join(logs_dir, time_interval + ".csv")
-
-    edge_df.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
-    return all_losses
+    write_losses(logs_dir, time_interval, edge_cols)
+    return losses
 
 
 @torch.no_grad()
@@ -87,19 +90,19 @@ def test_node_level(
 ):
     model.eval()
 
-    node_list = []
-    start_time = data.t[0]
-    end_time = data.t[-1]
-    losses = []
+    node_list = None
+    start_time = int(data.t[0])
+    end_time = int(data.t[-1])
 
     validation = split == "val"
 
-    data = data.to(device)
+    data = batch_to_device(data, device)
 
     results = model(data, inference=True, validation=validation)
     loss = results["loss"]
-    losses.extend(loss.cpu().numpy().tolist())
+    losses = loss.float().cpu().numpy()
     n_id = getattr(data, "original_n_id_tgn", getattr(data, "original_n_id"))
+    n_id_np = n_id.cpu().numpy()
 
     # ThreaTrace code
     if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
@@ -107,29 +110,22 @@ def test_node_level(
         pred = out.max(1)[1]
         pro = F.softmax(out, dim=1)
         pro1 = pro.max(1)
-        for i in range(len(out)):
-            pro[i][pro1[1][i]] = -1
+        # Masks the top-1 probability to get the second highest one
+        pro.scatter_(1, pro1[1].unsqueeze(1), -1)
         pro2 = pro.max(1)
 
         node_type_num = data.node_type.argmax(1)
-        for i in range(len(out)):
-            if pro2[0][i] != 0:
-                score = pro1[0][i] / pro2[0][i]
-            else:
-                score = pro1[0][i] / 1e-5
-            score = torch.log(score + 1e-12)  # we do that or the score is much too high
-            score = max(score.item(), 0)
+        score = torch.where(pro2[0] != 0, pro1[0] / pro2[0], pro1[0] / 1e-5)
+        score = torch.log(score + 1e-12)  # we do that or the score is much too high
+        score = score.clamp(min=0)
+        correct_pred = (node_type_num == pred).long()
 
-            node = n_id[i].item()
-            correct_pred = int((node_type_num[i] == pred[i]).item())
-
-            temp_dic = {
-                "node": node,
-                "loss": float(loss[i].item()),
-                "threatrace_score": score,
-                "correct_pred": correct_pred,
-            }
-            node_list.append(temp_dic)
+        node_list = {
+            "node": n_id_np,
+            "loss": losses.astype(float),
+            "threatrace_score": score.cpu().numpy().astype(float),
+            "correct_pred": correct_pred.cpu().numpy(),
+        }
 
     # Flash code
     elif cfg.evaluation.node_evaluation.threshold_method == "flash":
@@ -141,19 +137,12 @@ def test_node_level(
         conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
 
         node_type_num = data.node_type.argmax(1)
-        for i in range(len(out)):
-            score = max(conf[i].item(), 0)
-
-            node = n_id[i].item()
-            correct_pred = int((node_type_num[i] == pred[i]).item())
-
-            temp_dic = {
-                "node": node,
-                "loss": float(loss[i].item()),
-                "flash_score": score,
-                "correct_pred": correct_pred,
-            }
-            node_list.append(temp_dic)
+        node_list = {
+            "node": n_id_np,
+            "loss": losses.astype(float),
+            "flash_score": conf.clamp(min=0).cpu().numpy().astype(float),
+            "correct_pred": (node_type_num == pred).long().cpu().numpy(),
+        }
 
     # Magic codes
     elif cfg.evaluation.node_evaluation.threshold_method == "magic":
@@ -193,12 +182,7 @@ def test_node_level(
             with open(train_distance_file, "a") as f:
                 f.write(f"{mean_distance_train}\n")
 
-            for i, node in enumerate(n_id):
-                temp_dic = {
-                    "node": node.item(),
-                    "loss": float(loss[i].item()),
-                }
-                node_list.append(temp_dic)
+            node_list = {"node": n_id_np, "loss": losses.astype(float)}
 
         elif split == "test":
             train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
@@ -228,32 +212,24 @@ def test_node_level(
             distances = distances.mean(axis=1)
             # distances = distances.to_numpy()
             score = distances / mean_distance_train
-            score = score.tolist()
 
-            for i, node in enumerate(n_id):
-                temp_dic = {
-                    "node": node.item(),
-                    "magic_score": float(score[i]),
-                    "loss": float(loss[i].item()),
-                }
-                node_list.append(temp_dic)
+            node_list = {
+                "node": n_id_np,
+                "magic_score": score.astype(float),
+                "loss": losses.astype(float),
+            }
 
     else:
-        for i, node in enumerate(n_id):
-            temp_dic = {
-                "node": node.item(),
-                "loss": float(loss[i].item()),
-            }
-            node_list.append(temp_dic)
+        node_list = {"node": n_id_np, "loss": losses.astype(float)}
+
+    if node_list is None:  # e.g. magic on the train split
+        node_list = {}
 
     time_interval = ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(end_time, timezone=cfg.dataset.timezone)
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
-    csv_file = os.path.join(logs_dir, time_interval + ".csv")
-
-    df = pd.DataFrame(node_list)
-    df.to_csv(csv_file, sep=",", header=True, index=False, encoding="utf-8")
+    write_losses(logs_dir, time_interval, node_list)
     return losses
 
 
@@ -294,12 +270,12 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
     for dataset, split_name in splits:
         desc = "Validation" if split_name == "val" else "Testing"
 
-        tracemalloc.start()
+        cpu_mem = PeakCPUMemory().start()
 
         all_losses = []
         for graphs in dataset:
             for g in log_tqdm(graphs, desc=desc, logging=logging):
-                g.to(device=device)
+                g = batch_to_device(g, device)
 
                 s = time.time()
                 test_fn = test_node_level if (cfg._is_node_level and not cfg._is_hybrid_loss) else test_edge_level
@@ -311,27 +287,28 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
                     cfg=cfg,
                     device=device,
                 )
-                all_losses.extend(losses)
+                all_losses.append(np.asarray(losses, dtype=np.float64).ravel())
                 tpb.append(time.time() - s)
+                del g
 
-                g.to("cpu")  # Move graph back to CPU to free GPU memory for next batch
-                if use_cuda:
-                    torch.cuda.empty_cache()
-
-        _, peak_inference_cpu_memory = tracemalloc.get_traced_memory()
-        peak_inference_cpu_mem = max(peak_inference_cpu_mem, peak_inference_cpu_memory / (1024**3))
-        tracemalloc.stop()
+        peak_inference_cpu_mem = max(peak_inference_cpu_mem, cpu_mem.peak_gb())
 
         if use_cuda:
             peak_inference_gpu_memory = torch.cuda.max_memory_allocated(device=device) / (1024**3)
             peak_inference_gpu_mem = max(peak_inference_gpu_mem, peak_inference_gpu_memory)
             torch.cuda.reset_peak_memory_stats(device=device)
 
-        mean_loss = np.mean(all_losses)
+        mean_loss = np.mean(np.concatenate(all_losses)) if all_losses else np.nan
         split2loss[split_name] = mean_loss
 
         if split_name == "val":
             val_score = model.get_val_ap()
+            # Read by the evaluation to select the best epoch on validation data
+            # (`best_model_selection: best_val_score`)
+            val_scores_dir = os.path.join(cfg.training._edge_losses_dir, "val_scores")
+            os.makedirs(val_scores_dir, exist_ok=True)
+            with open(os.path.join(val_scores_dir, f"{model_epoch_file}.json"), "w") as f:
+                json.dump({"val_score": float(val_score)}, f)
             if logging:
                 log(
                     f"[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f}",

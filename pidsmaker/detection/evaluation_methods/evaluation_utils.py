@@ -24,6 +24,7 @@ from sklearn.metrics import (
 )
 
 import pidsmaker.utils.labelling as labelling
+from pidsmaker.utils.loss_files import read_losses, strip_loss_ext
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     listdir_sorted,
@@ -92,9 +93,21 @@ def compute_topk_metrics(y_test, scores, k_values=(10, 50, 100)):
 
 
 def classifier_evaluation(y_test, y_test_pred, scores):
-    labels_exist = sum(y_test) > 0
-    if labels_exist:
-        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
+    # Arrays make the metrics much faster on large test sets than lists
+    y_test = np.asarray(y_test).astype(np.int64, copy=False)
+    y_test_pred = np.asarray(y_test_pred).astype(np.int64, copy=False)
+    scores = np.asarray(scores, dtype=np.float64)
+    labels_exist = y_test.sum() > 0
+    binary = labels_exist and bool(np.isin(y_test, (0, 1)).all() and np.isin(y_test_pred, (0, 1)).all())
+    if binary and (y_test == 0).any():
+        # Same as confusion_matrix(y_test, y_test_pred).ravel() for 0/1 labels with both classes
+        tp = int(np.count_nonzero((y_test == 1) & (y_test_pred == 1)))
+        fp = int(np.count_nonzero((y_test == 0) & (y_test_pred == 1)))
+        fn = int(np.count_nonzero((y_test == 1) & (y_test_pred == 0)))
+        tn = len(y_test) - tp - fp - fn
+    elif labels_exist:
+        # `labels` keeps the matrix 2x2 when a single class is present (e.g. all predicted malicious)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred, labels=[0, 1]).ravel()
     else:
         log("WARNING: Computing confusion matrix failed.")
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
@@ -117,7 +130,11 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         log(f"WARNING: AP calculation failed: {e}")
         ap = float("nan")
     try:
-        balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
+        if binary and (y_test == 0).any():
+            # Same as balanced_accuracy_score: mean recall of the two classes
+            balanced_acc = float(np.mean([tn / (tn + fp), tp / (tp + fn)]))
+        else:
+            balanced_acc = balanced_accuracy_score(y_test, y_test_pred)
     except ValueError as e:
         log(f"WARNING: Balanced ACC calculation failed: {e}")
         balanced_acc = float("nan")
@@ -182,7 +199,7 @@ def get_threshold(val_tw_path, threshold_method: str, alpha=1.0, contamination=0
         # Contamination percentile: flag the top-`contamination` fraction of node scores.
         losses = []
         for file in listdir_sorted(val_tw_path):
-            losses.extend(pd.read_csv(os.path.join(val_tw_path, file), usecols=["loss"])["loss"].tolist())
+            losses.extend(read_losses(os.path.join(val_tw_path, file), usecols=["loss"])["loss"].tolist())
         return float(np.percentile(losses, 100 * (1 - contamination)))
     elif threshold_method == "fixed_zero":
         return 0.0  # BCE decision boundary: logit > 0 <=> P(attack) > 0.5
@@ -199,7 +216,7 @@ def get_threshold_per_type(val_tw_path, cfg, min_contamination=0.001, max_contam
     malicious_by_type = defaultdict(int)
     total_by_type = defaultdict(int)
     for file in listdir_sorted(val_tw_path):
-        df = pd.read_csv(os.path.join(val_tw_path, file), usecols=["node", "loss"])
+        df = read_losses(os.path.join(val_tw_path, file), usecols=["node", "loss"])
         for node, loss in zip(df["node"], df["loss"]):
             nt = node_to_type.get(int(node))
             if nt is None:
@@ -242,7 +259,7 @@ def calculate_threshold(val_tw_dir, threshold_method, alpha=1.0):
     loss_list = []
     for file in filelist:
         f = os.path.join(val_tw_dir, file)
-        loss_list.extend(pd.read_csv(f, usecols=[col])[col].tolist())
+        loss_list.extend(read_losses(f, usecols=[col])[col].tolist())
 
     thr = {
         "max": max(loss_list) * alpha,
@@ -346,6 +363,9 @@ def plot_scores_with_paths_node_level(
         "file": "o",  # Circle
         "netflow": "D",  # Diamond
     }
+    # Node types of other datasets (e.g. hosts of network datasets)
+    for t in sorted(set(types) - set(marker_styles)):
+        marker_styles[t] = "^"
 
     # Separate the scores based on labels
     scores_0 = scores[y_truth == 0]
@@ -497,6 +517,9 @@ def plot_scores_with_paths_edge_level(
         "file": "o",  # Circle
         "netflow": "D",  # Diamond
     }
+    # Node types of other datasets (e.g. hosts of network datasets)
+    for t in sorted(set(types) - set(marker_styles)):
+        marker_styles[t] = "^"
 
     # Separate the scores based on labels
     scores_0 = scores[y_truth == 0]
@@ -692,10 +715,10 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
     # Iterate over each threshold to calculate recall and DOR
     for threshold in thresholds:
         # Make predictions based on the threshold
-        predictions = scores >= threshold
+        predictions = (scores >= threshold).astype(int)
 
         # Calculate TP, FP, TN, FN
-        TN, FP, FN, TP = confusion_matrix(y_truth, predictions).ravel()
+        TN, FP, FN, TP = confusion_matrix(y_truth, predictions, labels=[0, 1]).ravel()
         recall = TP / (TP + FN) if (TP + FN) > 0 else 0
 
         # Calculate Diagnostic Odds Ratio (DOR)
@@ -722,60 +745,89 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
     plt.savefig(out_file)
 
 
+def attack_hits(nodes, node2attacks):
+    """(positions, attacks) of the items of `nodes` (nodes, or edge tuples) that belong to attacks:
+    `attacks[j]` is `node2attacks[nodes[positions[j]]]`.
+
+    `nodes` may be a lazy sequence with an `attack_hits(node2attacks)` method (e.g. the test
+    edges of the edge evaluation), which avoids building millions of Python items."""
+    if hasattr(nodes, "attack_hits"):
+        return nodes.attack_hits(node2attacks)
+    positions, attacks = [], []
+    for i, node in enumerate(nodes):
+        found = node2attacks.get(node)
+        if found is not None:
+            positions.append(i)
+            attacks.append(found)
+    return np.array(positions, dtype=np.int64), attacks
+
+
+def take_items(nodes, idx):
+    """Items of `nodes` at the positions `idx` (`nodes.take(idx)` for lazy sequences)."""
+    if hasattr(nodes, "take"):
+        return nodes.take(idx)
+    return [nodes[i] for i in np.asarray(idx, dtype=np.int64).tolist()]
+
+
+def _descending_order(scores):
+    # Same ranking (and order of ties) as `np.argsort(scores)[::-1]` on the original values
+    return np.argsort(np.asarray(scores))[::-1]
+
+
+def detected_attacks_vs_precision(scores, nodes, node2attacks, labels):
+    """Curve of the percentage of detected attacks vs precision, when ranking the nodes by
+    descending score: (unique precisions, max percentage of detected attacks at each one).
+
+    Duplicate precisions keep the max percentage. The curve starts at (0, 0).
+    """
+    labels = np.asarray(labels)
+    order = _descending_order(scores)
+    total_attacks = len(set(attack for attacks in node2attacks.values() for attack in attacks))
+    if len(order) and total_attacks == 0:
+        raise ZeroDivisionError("No attack to detect")
+
+    sorted_labels = labels[order] == 1
+    tp = np.cumsum(sorted_labels)
+    fp = np.cumsum(~sorted_labels)
+    precisions = tp / (tp + fp)
+
+    # Rank at which each attack is first detected (by one of its nodes labelled malicious)
+    rank = np.empty(len(order), dtype=np.int64)
+    rank[order] = np.arange(len(order))
+    first_rank = {}
+    hit_pos, hit_attacks = attack_hits(nodes, node2attacks)
+    for i, attacks in zip(hit_pos.tolist(), hit_attacks):
+        if labels[i] == 1:
+            for attack in attacks:
+                first_rank[attack] = min(first_rank.get(attack, len(order)), int(rank[i]))
+    detected = np.searchsorted(np.sort(list(first_rank.values())), np.arange(len(order)), side="right")
+    percentages = (detected / max(total_attacks, 1)) * 100
+
+    x = np.concatenate(([0.0], precisions))
+    y = np.concatenate(([0.0], percentages))
+    by_x = np.argsort(x, kind="stable")
+    x, y = x[by_x], y[by_x]
+    starts = np.flatnonzero(np.r_[True, x[1:] != x[:-1]])
+    return x[starts], np.maximum.reduceat(y, starts)
+
+
 def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_file):
     """
     Plot the percentage of detected attacks vs precision using anomaly scores, node IDs,
     ground truth labels, and mapping of nodes to their respective attack numbers.
 
-    This function calculates the precision on the x-axis and the cumulative percentage of
-    detected attacks on the y-axis, handles duplicate x-values by averaging, and then plots
-    it with a filled area under the curve.
+    Precision is on the x-axis and the cumulative percentage of detected attacks on the y-axis
+    (see `detected_attacks_vs_precision`). Returns the area under the curve (ADP score); the
+    figure is not saved when `out_file` is None.
     """
-    # Sort nodes by descending anomaly scores
-    sorted_indices = np.argsort(scores)[::-1]
-    sorted_nodes = [nodes[i] for i in sorted_indices]
-    sorted_labels = [labels[i] for i in sorted_indices]
-
-    # Initialize variables for tracking detected attacks and total attacks
-    total_attacks = len(set(attack for attacks in node2attacks.values() for attack in attacks))
-    detected_attacks = set()
-    detected_attacks_percentages = [0]  # Start at y=0
-    precisions = [0]  # Start at x=0
-
-    # Count detected attacks and precision at each threshold
-    tp = 0  # True positives
-    fp = 0  # False positives
-
-    for i, node in enumerate(sorted_nodes):
-        # Update tp and fp based on label
-        if sorted_labels[i] == 1:
-            tp += 1
-            # Update detected attacks set if node has associated attacks
-            if node in node2attacks:
-                detected_attacks.update(node2attacks[node])
-        else:
-            fp += 1
-
-        # Calculate precision and detected attacks percentage
-        precision = tp / (tp + fp)
-        detected_attacks_percentage = (len(detected_attacks) / total_attacks) * 100
-
-        precisions.append(precision)
-        detected_attacks_percentages.append(detected_attacks_percentage)
-
-    # Average out duplicate x-values (precision) by grouping y-values (detected attacks percentages)
-    precision_to_attacks = defaultdict(float)
-    for precision, detected_percentage in zip(precisions, detected_attacks_percentages):
-        precision_to_attacks[precision] = max(precision_to_attacks[precision], detected_percentage)
-
-    unique_precisions = []
-    max_detected_attacks_percentages = []
-    for precision, attack_list in sorted(precision_to_attacks.items()):
-        unique_precisions.append(precision)
-        max_detected_attacks_percentages.append(attack_list)
+    unique_precisions, max_detected_attacks_percentages = detected_attacks_vs_precision(
+        scores, nodes, node2attacks, labels
+    )
 
     # Calculate area under the curve for % detected attacks vs precision
     area_under_curve = np.trapz(max_detected_attacks_percentages, unique_precisions) / 100
+    if out_file is None:
+        return area_under_curve
 
     # Plotting
     try:
@@ -951,22 +1003,32 @@ def plot_discrimination_metric(scores, y_truth, out_file):
     return area
 
 
-def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10):
+def _top_benign_mean(normalized, y_truth, k):
+    """Mean of the `k` highest normalized scores of benign items."""
+    benign = normalized[y_truth == 0]
+    if len(benign) > k:
+        benign = np.partition(benign, len(benign) - k)[-k:]
+    return np.mean(np.sort(benign)[-k:][::-1])
+
+
+def _normalized_scores(pred_scores):
     pred_scores = np.array(pred_scores).astype(float)
-    y_truth = np.array(y_truth)
-
     pred_scores /= pred_scores.max() + 1e-6
-    attack2max_score = defaultdict(float)
+    return pred_scores
 
-    for node, score in zip(nodes, pred_scores):
-        if node in node2attacks:
-            for attack in node2attacks[node]:
-                attack2max_score[attack] = max(attack2max_score[attack], score)
+
+def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10):
+    pred_scores = _normalized_scores(pred_scores)
+    y_truth = np.asarray(y_truth)
+
+    attack2max_score = defaultdict(float)
+    hit_pos, hit_attacks = attack_hits(nodes, node2attacks)
+    for i, attacks in zip(hit_pos.tolist(), hit_attacks):
+        for attack in attacks:
+            attack2max_score[attack] = max(attack2max_score[attack], pred_scores[i])
     attack2max_score = dict(sorted(attack2max_score.items(), key=lambda item: item[0]))
 
-    benign_scores = pred_scores[y_truth == 0]
-    top_benign_scores = np.sort(benign_scores)[-k:][::-1]
-    mean = np.mean(top_benign_scores)
+    mean = _top_benign_mean(pred_scores, y_truth, k)
     att2score = {}
 
     for att in set.union(*list(node2attacks.values())):
@@ -981,24 +1043,20 @@ def compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth, k=10
 
 
 def compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth, k=10):
-    pred_scores = np.array(pred_scores).astype(float)
-    y_truth = np.array(y_truth)
+    pred_scores = _normalized_scores(pred_scores)
+    y_truth = np.asarray(y_truth)
 
-    pred_scores /= pred_scores.max() + 1e-6
-
-    benign_scores = pred_scores[y_truth == 0]
-    top_benign_scores = np.sort(benign_scores)[-k:][::-1]
-    mean = np.mean(top_benign_scores)
+    mean = _top_benign_mean(pred_scores, y_truth, k)
     att2tp = defaultdict(int)
 
     for att in set.union(*list(node2attacks.values())):
         att2tp[f"discrim_tp_att_{att}"] = 0
 
-    for node, score in zip(nodes, pred_scores):
-        if node in node2attacks:
-            for attack in node2attacks[node]:
-                if score > mean:
-                    att2tp[f"discrim_tp_att_{attack}"] += 1
+    hit_pos, hit_attacks = attack_hits(nodes, node2attacks)
+    for i, attacks in zip(hit_pos.tolist(), hit_attacks):
+        if pred_scores[i] > mean:
+            for attack in attacks:
+                att2tp[f"discrim_tp_att_{attack}"] += 1
     att2tp["discrim_tp_att_sum"] = np.sum(list(att2tp.values()))
 
     return att2tp
@@ -1036,29 +1094,12 @@ def get_detected_tps(scores, src_dst_t_type, edge2attack, y_truth, cfg):
     Returns:
         dict: Dictionary mapping attack identifiers to lists of detected true positive edges (as tuples).
     """
-    # Ensure inputs are numpy arrays for easier manipulation
-    scores = np.array(scores)
-    y_truth = np.array(y_truth)
-
-    # Create an array of indices to sort by scores
-    indices = np.argsort(scores)[::-1]  # Sort in descending order
-
-    # Sort scores, edges, and labels based on descending scores
-    sorted_scores = scores[indices]
-    sorted_edges = [src_dst_t_type[i] for i in indices]
-    sorted_labels = y_truth[indices]
-
-    # Find the cutoff k where no false positives (label 0) are included
-    k = 0
-    for i, label in enumerate(sorted_labels):
-        if label == 0:  # Stop at the first false positive
-            k = i
-            break
-        k = i + 1  # Include all true positives up to this point
-
-    # Select the top k edges (true positives)
-    true_positive_edges = sorted_edges[:k]
-    true_positive_indices = indices[:k]
+    # Ranking by descending score; the top k edges are true positives ranked above the first FP
+    indices = _descending_order(scores)
+    sorted_labels = np.asarray(y_truth)[indices]
+    false_positives = np.flatnonzero(sorted_labels == 0)
+    k = int(false_positives[0]) if len(false_positives) else len(indices)
+    true_positive_edges = take_items(src_dst_t_type, indices[:k])
 
     node_to_path = get_node_to_path_and_type(cfg)
 
@@ -1255,9 +1296,7 @@ def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
 
 
 def _tw_name_to_ns_range(name, timezone):
-    name = os.path.basename(name)
-    if name.endswith(".csv"):
-        name = name[: -len(".csv")]
+    name = strip_loss_ext(os.path.basename(name))
     start, end = name.split("~")
     return (
         datetime_to_ns_time_US_handle_nano(start, timezone=timezone),
@@ -1266,7 +1305,7 @@ def _tw_name_to_ns_range(name, timezone):
 
 
 def load_losses_per_time_window(losses_dir, cfg, max_unmatched_ratio=0.01):
-    """Loads the loss CSVs of a split/epoch directory and groups their rows by time window.
+    """Loads the loss files of a split/epoch directory and groups their rows by time window.
 
     The CSVs written during inference do not necessarily map 1:1 to the time
     windows (graphs) built during construction: intra-graph batching splits a
@@ -1285,8 +1324,8 @@ def load_losses_per_time_window(losses_dir, cfg, max_unmatched_ratio=0.01):
         without any row are absent from tw_to_df.
     """
     files = listdir_sorted(losses_dir)
-    dfs = [pd.read_csv(os.path.join(losses_dir, f)) for f in files]
-    per_file_names = [f[: -len(".csv")] if f.endswith(".csv") else f for f in files]
+    dfs = [read_losses(os.path.join(losses_dir, f)) for f in files]
+    per_file_names = [strip_loss_ext(f) for f in files]
     per_file = (per_file_names, {i: df for i, df in enumerate(dfs)})
 
     if len(dfs) == 0 or not all("time" in df.columns for df in dfs):
@@ -1615,25 +1654,52 @@ def transform_attack2nodes_to_node2attacks(attack2nodes):
 
 
 def get_metrics_if_all_attacks_detected(pred_scores, nodes, attack_to_GPs):
+    """FPs and TPs ranked above the item (node or edge) that makes all the attacks detected,
+    items being ranked by descending (score, item)."""
     nodes_per_attack = [v["nids"] if isinstance(v, dict) else v for k, v in attack_to_GPs.items()]
-    reverse_scores, reverse_nodes = zip(*sorted(zip(pred_scores, nodes), reverse=True))
-    fps = 0
-    detected_attacks = {}
-    tps, fps = 0, 0
     total_attack_nodes = sum(len(nodes_set) for nodes_set in nodes_per_attack)
+    scores = np.asarray(pred_scores, dtype=np.float64)
 
-    for score, node in zip(reverse_scores, reverse_nodes):
-        detected = False
-        for i, nodes_set in enumerate(nodes_per_attack):
-            if node in nodes_set:
-                detected_attacks[i] = 1
-                detected = True
-        if len(detected_attacks) == len(nodes_per_attack):
-            break
-        if detected:
-            tps += 1
-        else:
-            fps += 1
+    # Attacks (indices in `nodes_per_attack`) of each item
+    node2attack_ids = defaultdict(set)
+    for i, nodes_set in enumerate(nodes_per_attack):
+        for node in nodes_set:
+            node2attack_ids[node].add(i)
+    hit_pos, hit_attacks = attack_hits(nodes, dict(node2attack_ids))
+    is_hit = np.zeros(len(scores), dtype=bool)
+    is_hit[hit_pos] = True
+
+    # Best score of each attack: it is detected once this score is reached
+    best = {}
+    for i, attacks in zip(hit_pos.tolist(), hit_attacks):
+        for attack in attacks:
+            best[attack] = max(best.get(attack, -np.inf), scores[i])
+    if not nodes_per_attack:
+        tps = fps = 0
+    elif len(best) < len(nodes_per_attack):
+        # Some attacks are never detected: all the items are counted
+        tps = int(is_hit.sum())
+        fps = len(scores) - tps
+    else:
+        # All the attacks are detected among the items of the lowest best score, ordered by
+        # descending item
+        threshold = min(best.values())
+        above = scores > threshold
+        tps = int((is_hit & above).sum())
+        fps = int(above.sum()) - tps
+        detected = {attack for attack, score in best.items() if score > threshold}
+        tie = np.flatnonzero(scores == threshold)
+        attacks_of = dict(zip(hit_pos.tolist(), hit_attacks))
+        for _, i in sorted(zip(take_items(nodes, tie), tie.tolist()), reverse=True):
+            attacks = attacks_of.get(i)
+            if attacks is not None:
+                detected |= attacks
+            if len(detected) == len(nodes_per_attack):
+                break
+            if attacks is not None:
+                tps += 1
+            else:
+                fps += 1
 
     precision = tps / (tps + fps + 1e-12)
     recall = tps / (total_attack_nodes + 1e-12)
