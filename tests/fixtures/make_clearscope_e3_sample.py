@@ -4,7 +4,9 @@ In test mode, the pipeline only builds the first time window graph (truncated to
 edges) of the first day of the train, val and test sets. The sample therefore keeps, for each of
 these days, the first `--events_per_day` events, the nodes they touch and the ground truth nodes.
 On the test day, the sample starts at the beginning of the attack instead of midnight, so that
-the test graph contains malicious nodes.
+the test graph contains malicious nodes. The sample also keeps the events of the attack time windows
+between two ground truth nodes: they are the malicious edges of the edge-level evaluation with
+`malicious_edge_selection=both_nodes` (e.g. euler, jbeil), which are read from the database.
 
 Tables are exported with the CSV format of Postgres' COPY (which distinguishes NULL from empty
 strings) and loaded by `tests/conftest.py`, with the tables of `schema.sql`.
@@ -72,6 +74,12 @@ def day_ranges(dataset_cfg):
     ]
 
 
+def attack_windows(dataset_cfg):
+    """(start, end) in ns of the attacks."""
+    tz = pytz.timezone(dataset_cfg["timezone"])
+    return [(to_ns(start, tz), to_ns(end, tz)) for _, start, end in dataset_cfg["attack_to_time_window"]]
+
+
 def ground_truth_uuids(dataset_cfg):
     uuids = []
     for rel_path in dataset_cfg["ground_truth_relative_path"]:
@@ -106,14 +114,35 @@ def main(args):
     cur = connect.cursor()
     os.makedirs(SAMPLE_DIR, exist_ok=True)
 
+    gt_uuids = ground_truth_uuids(dataset_cfg)
+    cur.execute(
+        " UNION ".join(
+            f"SELECT index_id::text FROM {table} WHERE node_uuid = ANY(%s)"
+            for table in TABLE_COLUMNS
+            if table != "event_table"
+        ),
+        [gt_uuids] * (len(TABLE_COLUMNS) - 1),
+    )
+    gt_node_ids = sorted(row[0] for row in cur.fetchall())
+
     columns = ", ".join(TABLE_COLUMNS["event_table"])
     day_query = (
         f"(SELECT {columns} FROM event_table WHERE timestamp_rec >= %s AND timestamp_rec < %s "
         "ORDER BY timestamp_rec, event_uuid LIMIT %s)"
     )
+    attack_query = (
+        f"(SELECT {columns} FROM event_table WHERE timestamp_rec BETWEEN %s AND %s "
+        "AND src_index_id::text = ANY(%s) AND dst_index_id::text = ANY(%s))"
+    )
     ranges = day_ranges(dataset_cfg)
-    events_query = " UNION ALL ".join([day_query] * len(ranges))
+    windows = attack_windows(dataset_cfg)
+    events_query = (
+        "SELECT * FROM ("
+        + " UNION ".join([day_query] * len(ranges) + [attack_query] * len(windows))
+        + ") AS events ORDER BY timestamp_rec, event_uuid"
+    )
     params = [p for _, start, end in ranges for p in (start, end, args.events_per_day)]
+    params += [p for start, end in windows for p in (start, end, gt_node_ids, gt_node_ids)]
     export(cur, "event_table", events_query, params)
 
     cur.execute(f"SELECT src_index_id, dst_index_id FROM ({events_query}) AS events;", params)
@@ -125,7 +154,7 @@ def main(args):
             f"SELECT {', '.join(columns)} FROM {table} "
             "WHERE index_id::text = ANY(%s) OR node_uuid = ANY(%s) ORDER BY index_id"
         )
-        export(cur, table, query, (node_ids, ground_truth_uuids(dataset_cfg)))
+        export(cur, table, query, (node_ids, gt_uuids))
     connect.close()
     print(f"Sample written to {SAMPLE_DIR}")
 
