@@ -706,7 +706,31 @@ def merge_cfg_and_check_syntax(cfg, yml_file, syntax_check=TASK_ARGS):
     return cfg
 
 
+# {(yml_file, id(syntax_check)): (syntax_check, [(file, mtime) of yml_file and its includes], config)}
+_YML_CACHE = {}
+
+
 def load_yml_file_recursive(yml_file, syntax_check=TASK_ARGS):
+    """Loads and validates a yml config file, merged with the files it includes.
+
+    The config is loaded again before each task (to check which tasks should restart), so results
+    are cached until one of the files is modified. A copy is returned, which callers can modify.
+    """
+    key = (os.path.abspath(yml_file), id(syntax_check))
+    cached = _YML_CACHE.get(key)
+    if cached is not None:
+        check, files, config = cached
+        if check is syntax_check and all(os.path.getmtime(f) == mtime for f, mtime in files):
+            return deepcopy(config)
+
+    files = []
+    config = _load_yml_file_recursive(yml_file, syntax_check, files)
+    _YML_CACHE[key] = (syntax_check, files, config)
+    return deepcopy(config)
+
+
+def _load_yml_file_recursive(yml_file, syntax_check, files):
+    files.append((os.path.abspath(yml_file), os.path.getmtime(yml_file)))
     validate_yml_file(yml_file, syntax_check)
     with open(yml_file, "r") as file:
         user_config = yaml.safe_load(file)
@@ -716,7 +740,7 @@ def load_yml_file_recursive(yml_file, syntax_check=TASK_ARGS):
             includes = [includes]
         merged_base = {}
         for inc in includes:
-            inc_config = load_yml_file_recursive(get_yml_file(inc), syntax_check) or {}
+            inc_config = _load_yml_file_recursive(get_yml_file(inc), syntax_check, files) or {}
             merged_base = deep_merge_dicts(merged_base, inc_config)
         user_config = deep_merge_dicts(merged_base, user_config)
     return user_config
