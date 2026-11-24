@@ -28,6 +28,12 @@ State-of-the-art provenance-based and network IDSs, their datasets, and one modu
 
 </div>
 
+<div class="pm-hero__platforms" markdown>
+
+Runs on [:fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU](getting-started/installation.md) [:fontawesome-brands-apple: macOS (Apple Silicon)](getting-started/installation.md#macos)
+
+</div>
+
 </div>
 
 </div>
@@ -65,54 +71,14 @@ State-of-the-art provenance-based and network IDSs, their datasets, and one modu
 
 Both go through the same seven stages and share the same components, so most systems [run on either kind of data](guide/systems.md#running-across-families), and a new idea can be tested on both.
 
-## What's new
-
-<div class="grid cards" markdown>
-
--   :lucide-radar:{ .lg .middle } __Network intrusion detection__
-
-    ---
-
-    Network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and network datasets (LANL and the network flows of OpTC), in the same pipeline as the provenance systems. Systems of both families run on network and provenance datasets.
-
-    [:octicons-arrow-right-24: Running across families](guide/systems.md#running-across-families)
-
--   :lucide-gauge:{ .lg .middle } __Faster, leaner pipeline__
-
-    ---
-
-    Same results, in a fraction of the time and memory: Orthrus on THEIA_E5 runs end to end in ~61 min instead of ~3.4 h, with 16.6 GB of peak RAM instead of 370 GB. Graphs are ~5x smaller on disk.
-
-    [:octicons-arrow-right-24: Performance](guide/pipeline.md#performance)
-
-</div>
-
 ## Why PIDSMaker?
 
 Papers at top security venues often evaluate on the same datasets, but each uses its own labels and its own implementation of the baselines, so their results can't be compared fairly.
 PIDSMaker gives the community **one framework**, maintained in the open, that fixes this.
 
-<div class="grid cards" markdown>
-
--   :lucide-scale:{ .lg .middle } __Fair benchmarking__
-
-    ---
-
-    State-of-the-art baselines evaluated with the same datasets, labels and reference implementations.
-
--   :lucide-boxes:{ .lg .middle } __Modular components__
-
-    ---
-
-    The components of published systems, provenance-based and network, extracted into a modular testbed. Mix and match them to **discover better variants**.
-
--   :lucide-git-pull-request:{ .lg .middle } __Shared code__
-
-    ---
-
-    A central place where authors contribute their systems, so new work can be benchmarked reproducibly.
-
-</div>
+- **Fair benchmarking**: state-of-the-art baselines evaluated with the same datasets, labels and reference implementations.
+- **Modular components**: the components of published systems, extracted into a testbed where you mix and match them to **discover better variants**.
+- **Shared code**: a central place where authors contribute their systems, so new work can be benchmarked reproducibly.
 
 ## Up and running in three steps
 
@@ -183,14 +149,6 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
 <div class="grid cards" markdown>
 
--   :lucide-rocket:{ .lg .middle } __Getting started__
-
-    ---
-
-    Install PIDSMaker with Docker or Apptainer, load the datasets and run your first system.
-
-    [:octicons-arrow-right-24: Installation](getting-started/installation.md)
-
 -   :lucide-book-open:{ .lg .middle } __Background__
 
     ---
@@ -203,51 +161,19 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Seven stages, from graph construction to triage, for provenance and network data, with caching of every intermediate result.
+    Seven stages, from graph construction to triage, with caching of every intermediate result.
 
     [:octicons-arrow-right-24: Pipeline](guide/pipeline.md)
 
--   :lucide-shield:{ .lg .middle } __Systems__
+-   :lucide-shield:{ .lg .middle } __Systems & datasets__
 
     ---
 
-    All the systems side by side, and which datasets each one runs on.
+    All the systems side by side, and the provenance and network datasets with their attacks and ground truth.
 
-    [:octicons-arrow-right-24: Systems](guide/systems.md)
+    [:octicons-arrow-right-24: Systems](guide/systems.md) · [Datasets](guide/datasets.md)
 
--   :lucide-database:{ .lg .middle } __Datasets__
-
-    ---
-
-    Provenance (DARPA TC E3/E5, OpTC, ATLASv2, CARBANAKv2) and network (LANL, OpTC flows) datasets, with attack descriptions and ground truth.
-
-    [:octicons-arrow-right-24: Datasets](guide/datasets.md)
-
--   :lucide-graduation-cap:{ .lg .middle } __Tutorial__
-
-    ---
-
-    Build a new system from existing components and a custom encoder, then run it on provenance and network data.
-
-    [:octicons-arrow-right-24: Build a system](guide/tutorial.md)
-
--   :lucide-brain-circuit:{ .lg .middle } __Pretrained encoders__
-
-    ---
-
-    Replace word2vec with SPIDER, language models or self-supervised GNNs in any provenance-based IDS.
-
-    [:octicons-arrow-right-24: Pretrained encoders](features/pretrained_encoders.md)
-
--   :lucide-flask-conical:{ .lg .middle } __Tuning & instability__
-
-    ---
-
-    Hyperparameter sweeps with W&B, and measuring the variance between runs.
-
-    [:octicons-arrow-right-24: Tuning](features/tuning.md)
-
--   :lucide-target:{ .lg .middle } __Evaluation & labeling__
+-   :lucide-target:{ .lg .middle } __Evaluation__
 
     ---
 
@@ -255,29 +181,19 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     [:octicons-arrow-right-24: Evaluation](guide/evaluation.md)
 
--   :lucide-swords:{ .lg .middle } __Attack simulation__
+-   :lucide-graduation-cap:{ .lg .middle } __Build your own system__
 
     ---
 
-    Test the robustness of PIDSs with mimicry, synthetic and renaming attacks.
+    Combine existing components with a custom encoder, then run it on provenance and network data.
 
-    [:octicons-arrow-right-24: Attack simulation](features/attacks.md)
+    [:octicons-arrow-right-24: Tutorial](guide/tutorial.md)
 
--   :lucide-route:{ .lg .middle } __Triage__
-
-    ---
-
-    Reconstruct attacks from node detections with DepImpact or OCR-APT subgraphs.
-
-    [:octicons-arrow-right-24: Triage](features/triage.md)
-
--   :lucide-file-code:{ .lg .middle } __Reference__
+-   :lucide-flask-conical:{ .lg .middle } __Features__
 
     ---
 
-    Every CLI flag and configuration argument, generated from the source code.
-
-    [:octicons-arrow-right-24: Reference](reference/cli.md)
+    [Pretrained encoders](features/pretrained_encoders.md), [tuning & instability](features/tuning.md), [attack simulation](features/attacks.md), [triage](features/triage.md), and every argument in the [Reference](reference/cli.md).
 
 </div>
 

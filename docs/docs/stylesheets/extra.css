@@ -167,6 +167,38 @@
   color: #fff;
 }
 
+/* Supported platforms, with their logos, under the hero buttons */
+.md-typeset .pm-hero__platforms p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.68rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .pm-hero__platforms a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.2em 0.75em;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 999px;
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+}
+
+.md-typeset .pm-hero__platforms a:hover,
+.md-typeset .pm-hero__platforms a:focus {
+  border-color: var(--pm-orange);
+  color: var(--pm-orange);
+}
+
+.md-typeset .pm-hero__platforms .twemoji svg {
+  width: 1.05em;
+}
+
 @media screen and (max-width: 44.9375em) {
   .pm-hero {
     grid-template-columns: 1fr;
@@ -183,7 +215,8 @@
     font-size: 1.9rem;
   }
 
-  .md-typeset .pm-hero__actions p {
+  .md-typeset .pm-hero__actions p,
+  .md-typeset .pm-hero__platforms p {
     justify-content: center;
   }
 }
