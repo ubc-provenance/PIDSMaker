@@ -1,14 +1,14 @@
 ---
-title: Attack simulation
+title: Adversarial attacks
 description: Evaluate the robustness of PIDSs with mimicry attacks, synthetic attacks injected in the graphs, and renaming attacks.
 ---
 
-# Attack simulation
+# Adversarial attacks
 
 How robust is a detector to an attacker who tries to blend in? PIDSMaker can modify the data to simulate attacks, at three different stages of the pipeline.
 { .lead }
 
-| Simulation | What changes | Stage | Argument |
+| Attack | What changes | Stage | Argument |
 |---|---|---|---|
 | [Mimicry attack](#mimicry-attack) | Benign-looking file activity is added to the attack processes, in the test graphs | Construction | `construction.mimicry_edge_num` |
 | [Synthetic attacks](#synthetic-attacks) | Fake attacks are injected in the training and validation graphs, labeled for few-shot detection | Transformation | `transformation.used_methods: synthetic_attack_naive` |

@@ -193,7 +193,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    [Pretrained encoders](features/pretrained_encoders.md), [tuning & instability](features/tuning.md), [attack simulation](features/attacks.md), [triage](features/triage.md), and every argument in the [Reference](reference/cli.md).
+    [Pretrained encoders](features/pretrained_encoders.md), [tuning & instability](features/tuning.md), [adversarial attacks](features/attacks.md), [triage](features/triage.md), and every argument in the [Reference](reference/cli.md).
 
 </div>
 
