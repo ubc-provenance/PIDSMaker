@@ -1,7 +1,15 @@
+---
+title: Pretrained encoders
+description: Use SPIDER, language models or self-supervised GNNs pretrained on provenance data as node features in any PIDS, or fine-tune them as detectors.
+---
+
 # Pretrained Encoders
 
 Most PIDSs turn the label of each entity (process command line, file path, IP address and port) into a vector with a model trained on the target dataset only, such as `word2vec` or `doc2vec`.
 PIDSMaker can instead use an encoder **pretrained** on provenance data: [SPIDER](#spider), [CyberGFM](https://arxiv.org/abs/2601.05988), masked language models, self-supervised GNNs, or general-purpose language models such as GPT-2 and Llama.
+
+!!! info "Provenance datasets"
+    Pretrained encoders embed the textual labels of provenance entities, and are pretrained on provenance datasets. They are not tested on network datasets, whose hosts only have a name or an ID.
 
 All pretrained encoders share one featurization method, `featurization.used_method: pretrained`, and `featurization.pretrained.model_type` picks the encoder.
 They can be used in two ways:
@@ -52,7 +60,7 @@ These configs also enable [`training.stable_optim`](instability.md#reducing-inst
 ### Pretraining
 
 Without pretrained weights, the encoder is first pretrained on the benign data of the datasets listed in `featurization.pretrained.pretrain_datasets`: by default `PROVENANCE_BENIGN`, `TRACE_E3`, `TRACE_E5`, `CADETS_E5`, `CLEARSCOPE_E3` and `optc_h201`. Each of them must be installed as a database.
-`PROVENANCE_BENIGN` is a Linux audit corpus that contains only benign activity (see [Datasets](../datasets.md#provenance_benign)).
+`PROVENANCE_BENIGN` is a Linux audit corpus that contains only benign activity (see [Datasets](../guide/datasets.md#provenance_benign)).
 
 The trained encoder is saved in the `stored_models/` folder of the run's featurization artifacts.
 Pass that folder with `--featurization.pretrained.weights_path` to reuse it in other runs without pretraining again. The path must be absolute, because its files are symlinked into each run's artifact folder.
@@ -61,10 +69,10 @@ The main options are:
 
 - `featurization.pretrained.model_size`: `tiny`, `mini`, `med` or `baseline` for the encoders trained from scratch, or the variant of GPT-2, Llama and OPT.
 - `featurization.pretrained.training`: token budget (`pretrain_tokens`, `warmup_tokens`), `batch_size` and `lr`.
-- `featurization.tokenization`: `bpe` (vocabulary size, maximum label length and [substitutions](../config/featurization.md#substitutions) of hashes, UUIDs, IPs, ports, …) for most encoders, `whole_label` for DeepWalk and Node2Vec, `huggingface` for GPT-2, Llama and OPT (see [Tokenization](../config/featurization.md#tokenization)).
+- `featurization.tokenization`: `bpe` (vocabulary size, maximum label length and [substitutions](../reference/featurization.md#substitutions) of hashes, UUIDs, IPs, ports, …) for most encoders, `whole_label` for DeepWalk and Node2Vec, `huggingface` for GPT-2, Llama and OPT (see [Tokenization](../reference/featurization.md#tokenization)).
 - `featurization.pretrained.walks`: random walks used by the masked language models and DeepWalk.
 
-All options are listed in the [featurization arguments](../config/featurization.md).
+All options are listed in the [featurization arguments](../reference/featurization.md).
 
 ## SPIDER
 

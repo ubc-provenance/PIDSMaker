@@ -1,6 +1,11 @@
+---
+title: Supervised fine-tuning
+description: Add supervision to a PIDS with the predict_edge_supervised objective and hand-written or matched attack edges.
+---
+
 # Supervised Fine-Tuning with Attack Edges
 
-PIDSs usually learn from benign data only.
+PIDSs, like the network systems, usually learn from benign data only.
 The `predict_edge_supervised` objective adds some supervision: a binary classifier learns to separate the benign edges of the training graphs from a set of attack edges that you provide, then scores every test edge by how much it looks like an attack.
 
 ## How it works
@@ -8,6 +13,8 @@ The `predict_edge_supervised` objective adds some supervision: a binary classifi
 - **Input:** for each edge, the decoder receives the source and destination node features, each concatenated with the one-hot edge type. The GNN encoder is bypassed, so the node features themselves must be informative: this objective is meant to be used with [pretrained encoder](pretrained_encoders.md) embeddings, such as SPIDER.
 - **Training:** the negatives are the edges of the training graphs. The attack edges are the positives, oversampled with replacement to match each batch of benign edges. `pos_weight` adds weight to the attack class in the binary cross-entropy loss.
 - **Detection:** the anomaly score of a test edge is its loss against the benign label, which grows with the predicted probability of being an attack.
+
+The attack edges are described with provenance entities and event types, and `config/attack_edges/` only covers DARPA TC datasets: this objective is not tested on network datasets.
 
 Enable it by setting the objective in the `training.decoder` section:
 
@@ -85,4 +92,4 @@ training:
 !!! warning
     In this mode the positives come from the evaluation data, so the results are not comparable with those of unsupervised PIDSs.
 
-All options are listed in the [objective arguments](../config/objectives.md).
+All options are listed in the [objective arguments](../reference/objectives.md).

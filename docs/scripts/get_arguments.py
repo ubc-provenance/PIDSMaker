@@ -5,6 +5,7 @@ from pidsmaker.config import (
     CLEANING_CFG,
     DECODERS_CFG,
     ENCODERS_CFG,
+    EXPERIMENTS_CONFIG,
     FEATURIZATIONS_CFG,
     OBJECTIVES_CFG,
     TASK_ARGS,
@@ -104,6 +105,7 @@ write_md(CLEANING_CFG, "cleanings")
 write_md(ENCODERS_CFG, "encoders")
 write_md(DECODERS_CFG, "decoders")
 write_md(OBJECTIVES_CFG, "objectives", ignore=list(DECODERS_CFG.keys()))
+write_md(EXPERIMENTS_CONFIG, "experiments")
 
 # Generate args for each task individually
 IGNORE_NESTED = (

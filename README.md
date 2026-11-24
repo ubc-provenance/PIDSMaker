@@ -23,20 +23,21 @@
 	  &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
     &nbsp;|&nbsp;
-    <a href="https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/">⚙️ Installation</a>
+    <a href="https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/">⚙️ Installation</a>
   </strong>
 </p>
 
 ---
 
-The first framework designed to build and experiment with provenance-based intrusion detection systems (PIDSs) using deep learning architectures.
-It provides a single codebase to run most recent state-of-the-arts systems and easily customize them to develop new variants.
+The first framework designed to build and experiment with graph-based intrusion detection systems using deep learning architectures, on two kinds of data: **host provenance** (processes, files and netflows of each host), for provenance-based intrusion detection systems (PIDSs), and **network events** (authentications and flows between hosts), for network intrusion detection systems (NIDSs).
+It provides a single codebase and a single pipeline to run most recent state-of-the-art systems of both families, on the datasets of both, and easily customize them to develop new variants.
 
 
 ## Release notes
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| Unreleased (`main`) | | [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3 |
 | [4.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0) | Nov 2026 | Unified tokenization (`featurization.tokenization`, renamed tokenizer arguments), configurable graph cleaning (`construction.cleaning`), fixed queue, time-window and node-time-window evaluations, MAGIC kNN fix |
 | [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
 | [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
@@ -51,45 +52,62 @@ See the [releases](https://github.com/ubc-provenance/PIDSMaker/releases) for the
 
 ## Supported Systems
 
-The framework currently integrates the following PIDSs.
+The framework currently integrates the following provenance-based (PIDS) and network (NIDS) intrusion detection systems. They are described with the same components, and most of them [run on both kinds of datasets](https://ubc-provenance.github.io/PIDSMaker/guide/systems/#running-across-families).
 
-| PIDS       | Venue               | Paper |
-|------------|---------------------|-------|
-| Velox      | USENIX Security 2025 | [Link](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
-| Orthrus    | USENIX Security 2025 | [Link](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
-| R-Caid     | IEEE S&P 2024        | [Link](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
-| Flash      | IEEE S&P 2024        | [Link](https://dartlab.org/assets/pdf/flash.pdf) |
-| Kairos     | IEEE S&P 2024        | [Link](https://arxiv.org/pdf/2308.05034) |
-| Magic      | USENIX Security 2024 | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
-| NodLink    | NDSS 2024           | [Link](https://arxiv.org/pdf/2311.02331) |
-| ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
-| OCR-APT    | ACM CCS 2025        | [Link](https://arxiv.org/pdf/2510.15188) |
+| System      | Family     | Venue                        | Paper |
+|-------------|------------|------------------------------|-------|
+| Velox       | Provenance | USENIX Security 2025         | [Link](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
+| Orthrus     | Provenance | USENIX Security 2025         | [Link](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
+| OCR-APT     | Provenance | ACM CCS 2025                 | [Link](https://arxiv.org/pdf/2510.15188) |
+| R-Caid      | Provenance | IEEE S&P 2024                | [Link](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
+| Flash       | Provenance | IEEE S&P 2024                | [Link](https://dartlab.org/assets/pdf/flash.pdf) |
+| Kairos      | Provenance | IEEE S&P 2024                | [Link](https://arxiv.org/pdf/2308.05034) |
+| Magic       | Provenance | USENIX Security 2024         | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
+| NodLink     | Provenance | NDSS 2024                    | [Link](https://arxiv.org/pdf/2311.02331) |
+| ThreaTrace  | Provenance | IEEE TIFS 2022               | [Link](https://arxiv.org/pdf/2111.04333) |
+| LARES       | Network    | ACSAC 2026                   | [Link](https://ora.ox.ac.uk/objects/uuid:07b7d2a5-91f8-4c37-a90c-4ca615b428a7/files/ss7526g13z) |
+| Argus       | Network    | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00012) |
+| Jbeil       | Network    | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00009) |
+| Euler       | Network    | NDSS 2022                    | [Link](https://doi.org/10.14722/ndss.2022.24107) |
+| E-GraphSAGE | Network    | IEEE/IFIP NOMS 2022          | [Link](https://arxiv.org/abs/2103.16329) |
+| Anomal-E    | Network    | Knowledge-Based Systems 2022 | [Link](https://arxiv.org/abs/2207.06819) |
 
 ## Supported Datasets
 
-It also includes several easy-to-install provenance datasets for APT detection.
+### Provenance datasets
 
-| Dataset | OS | Attacks | Size (GB) |
-|---------|------|---------|-----------|
-| CADETS_E3 | FreeBSD | 3 | 10 |
-| THEIA_E3 | Linux | 2 | 12 |
-| CLEARSCOPE_E3 | Android | 1 | 4.8 |
-| FIVEDIRECTIONS_E3 | Windows | 2 | 22 |
-| TRACE_E3 | Linux | 3 | 100 |
-| CADETS_E5 | FreeBSD | 2 | 276 |
-| THEIA_E5 | Linux | 1 | 36 |
-| CLEARSCOPE_E5 | Android | 2 | 49 |
-| FIVEDIRECTIONS_E5 | Windows | 4 | 280 |
-| TRACE_E5 | Linux | 1 | 710 |
-| optc_h201 | Windows | 1 | 9 |
-| optc_h501 | Windows | 1 | 6.7 |
-| optc_h051 | Windows | 1 | 7.7 |
-| ATLASV2_EDR | Windows | 10 | 1 |
-| CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
+System events of hosts, with the attack nodes as ground truth, available as easy-to-install preprocessed databases.
+
+| Dataset | OS | Attacks | Nodes | Events | Size (GB) |
+|---------|------|--------:|------:|-------:|----------:|
+| CADETS_E3 | FreeBSD | 3 | 2.68M | 36.5M | 10 |
+| THEIA_E3 | Linux | 2 | 1.26M | 44.4M | 12 |
+| CLEARSCOPE_E3 | Android | 1 | 369K | 18.3M | 4.8 |
+| FIVEDIRECTIONS_E3 | Windows | 2 | 1.38M | 78.9M | 22 |
+| TRACE_E3 | Linux | 3 | 44.5M | 284M | 100 |
+| CADETS_E5 | FreeBSD | 2 | 15.2M | 1.08B | 276 |
+| THEIA_E5 | Linux | 1 | 2.29M | 141M | 36 |
+| CLEARSCOPE_E5 | Android | 2 | 501K | 199M | 49 |
+| FIVEDIRECTIONS_E5 | Windows | 4 | 18.8M | 1.09B | 280 |
+| TRACE_E5 | Linux | 1 | 72.3M | 2.64B | 710 |
+| optc_h201 | Windows | 1 | 5.27M | 38.2M | 9 |
+| optc_h501 | Windows | 1 | 3.96M | 28.0M | 6.7 |
+| optc_h051 | Windows | 1 | 4.62M | 31.6M | 7.7 |
+| ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 1 |
+| CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 6.6 |
+
+### Network datasets
+
+Authentications or flows between hosts, with labelled malicious events, built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares) ([details](https://ubc-provenance.github.io/PIDSMaker/guide/datasets/#network-datasets)).
+
+| Dataset | Events | Hosts | Malicious events | Size (GB) |
+|---------|--------|------:|-----------------:|----------:|
+| LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
+| OPTC_NET | 1.86B network flows | 625 | 5,165 | 275 |
 
 ## Pretrained Encoders
 
-Any PIDS can replace its node featurization (e.g. `word2vec`) by an encoder pretrained on provenance data.
+Any provenance-based system can replace its node featurization (e.g. `word2vec`) by an encoder pretrained on provenance data.
 
 | Encoder | Description |
 |---------|-------------|
@@ -108,10 +126,29 @@ A [comprehensive documentation](https://ubc-provenance.github.io/PIDSMaker/) is 
 
 ### Pipeline
 
-The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/pipeline) composed of seven stages, each parameterizable via configurable arguments, enabling flexible customization of new systems.
+The framework integrates a [pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/) composed of seven stages, shared by provenance and network systems, each parameterizable via configurable arguments, enabling flexible customization of new systems.
 
-<!-- Generated from pidsmaker/config/config.py, regenerate with: python docs/scripts/gen_pipeline_figure.py -->
-<img src="docs/docs/img/pipeline.svg" style="width: 100%"/>
+```mermaid
+flowchart TB
+    db[("Database<br/>provenance or network events")] --> prep
+    subgraph prep ["Graph preparation"]
+        direction LR
+        C["<b>1#160;·#160;Construction</b><br/>time-window graphs"] --> T["<b>2#160;·#160;Transformation</b><br/>optional"] --> F["<b>3#160;·#160;Featurization</b><br/>node & edge features"] --> B["<b>4#160;·#160;Batching</b><br/>features & batches"]
+    end
+    prep --> det
+    subgraph det ["Detection"]
+        direction LR
+        TR["<b>5#160;·#160;Training</b><br/>self-supervised model"] --> E["<b>6#160;·#160;Evaluation</b><br/>threshold & metrics"] --> TG["<b>7#160;·#160;Triage</b><br/>optional"]
+    end
+    det --> out(["Alerts, metrics & figures"])
+
+    classDef stage fill:#e5602a1f,stroke:#e5602a,stroke-width:1.5px;
+    classDef optional fill:#e5602a0d,stroke:#e5602a,stroke-width:1.5px,stroke-dasharray:5 4;
+    classDef io fill:#5f708022,stroke:#5f7080,stroke-width:1.5px;
+    class C,F,B,TR,E stage;
+    class T,TG optional;
+    class db,out io;
+```
 
 
 ## Setup
@@ -123,12 +160,12 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git
 
 ### 💻 Installation with Docker
 
-We have made the installation of PIDSMaker inclusing pre-processed databases for DARPA TC and OpTC datasets easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/ten-minute-install/).
+We have made the installation of PIDSMaker including pre-processed databases for the provenance datasets (DARPA TC, OpTC, ATLASv2, CARBANAKv2) easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/). The network datasets are [built from the files of LARES](https://ubc-provenance.github.io/PIDSMaker/getting-started/from-scratch/) for now.
 
 ## 🧪 Basic usage of the framework
 
 Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
-Replace `SYSTEM` by `velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`, `ocrapt`.
+Replace `SYSTEM` by a provenance system (`velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`, `ocrapt`) or a network system (`euler`, `argus`, `jbeil`, `lares`, `egraphsage`, `anomal_e`), and `DATASET` by a provenance (e.g. `CADETS_E3`) or network (`LANL`, `OPTC_NET`) dataset.
 
 1. Run in the shell:
     ```shell
@@ -155,12 +192,9 @@ We generally using using W&B for experiment monitoring and historization (see in
 
 ## Reproducing results
 
-PIDSs exhibit significant instability—that is, high sensitivity to training perturbations—due to their self-supervised training nature. 
+PIDSs and NIDSs exhibit significant instability—that is, high sensitivity to training perturbations—due to their self-supervised training nature. 
 Running the same configuration with different random seeds or minor hyperparameter changes often yields substantially different results. 
 Consequently, reproducing results as the framework evolves presents a real challenge.
-
-Based on our experiments, we provide [tuned hyperparameters](https://ubc-provenance.github.io/PIDSMaker/tuned_systems) for the main systems.
-However, we can't guarantee that these hyperparameters will lead to satisfactory results due to instability.
 
 We recommend [running each system multiple times](https://ubc-provenance.github.io/PIDSMaker/features/instability/) to increase the likelihood of obtaining a run with good metrics. Alternatively, you can perform [hyperparameter tuning](https://ubc-provenance.github.io/PIDSMaker/features/tuning/) for each system.
 
@@ -168,7 +202,7 @@ We recommend [running each system multiple times](https://ubc-provenance.github.
 
 ## Customize existing systems
 
-The default configuration files in `config/*.yml` represent the architecture of existing PIDSs in YAML format. They contain the original hyperparameters used by each system. 
+The default configuration files in `config/*.yml` represent the architecture of existing PIDSs and NIDSs in YAML format. They contain the original hyperparameters used by each system. 
 
 The main strength of PIDSMaker is the customization of existing systems for easy experimentation. 
 A few examples below.
@@ -195,7 +229,7 @@ python pidsmaker/main.py orthrus CADETS_E3 \
 
 ### From a new YAML config file
 
-Want to create a new PIDS? Create a new config under `config/your_system.yml`, inherit from existing PIDSs and tune it as you want.
+Want to create a new system? Create a new config under `config/your_system.yml`, inherit from existing systems and tune it as you want.
 
 <i>Magic with node type prediction instead of its hybrid masked feature reconstruction and structure prediction objective function, and use a 2-layer MLP with ReLU as decoder, and use NodLink's thresholding method.</i>
 
@@ -263,10 +297,10 @@ Once you find the best hyperparameters, store them in a yaml file and run your t
 
 If you use this work, please cite the two following papers:
 ```
-@article{bilot2026pidsmaker,
+@inproceedings{bilot2026pidsmaker,
   title={PIDSMaker: Building and Evaluating Provenance-based Intrusion Detection Systems},
   author={Bilot, Tristan and Jiang, Baoxiang and Pasquier, Thomas},
-  journal={arXiv preprint arXiv:2601.22983},
+  booktitle={Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '26)},
   year={2026}
 }
 @inproceedings{bilot2025simpler,
@@ -280,7 +314,7 @@ If you use this work, please cite the two following papers:
 
 ## Contributing
 
-Pull requests are welcome! Please follow the [contribution guidelines](https://ubc-provenance.github.io/PIDSMaker/contributing/).
+Pull requests are welcome! Please follow the [contribution guidelines](https://ubc-provenance.github.io/PIDSMaker/community/contributing/).
 
 Questions, ideas or feature requests? Join our [Discord](https://discord.gg/jecmkTABUg).
 

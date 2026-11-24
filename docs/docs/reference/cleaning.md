@@ -1,7 +1,14 @@
+---
+title: Cleaning
+description: Cleaning methods applied to the raw events before graph construction, and their effect on detection.
+---
+
 # Cleaning
 
 The databases of the datasets contain events and attributes that are artifacts of the collection rather than system behavior: null values stored as text, corrupted IPs, events logged twice, events of a process on itself, multicast name resolution traffic, etc.
 They are cleaned during the `construction` task, before the graphs are built, with `construction.cleaning`.
+
+The cleaning methods were designed for provenance datasets. On network datasets, the methods that filter events (`remove_duplicate_events`, `remove_self_loops`, `dedup_window_edges`) apply to the events between hosts: E-GraphSAGE and Anomal-E remove self-loops. `remove_noisy_netflows` only applies to the netflow nodes of provenance datasets; the broadcast and multicast flows of `OPTC_NET` are dropped by `construction.drop_noise_events` instead.
 
 `used_methods` is a comma-separated list of methods, or `none`. The default `none` builds the same graphs as the original systems, and keeps reusing the graphs already built.
 
@@ -77,7 +84,7 @@ And of Velox on other datasets:
 - Pretrained encoders such as SPIDER were pretrained on labels that were not cleaned: methods that change the labels or the events change their input, and lower their results.
 - `normalize_labels`, `remove_self_loops` and `remove_noisy_netflows` have no effect on CADETS_E3, which has few such labels and events.
 
-As PIDSs are unstable (see [Instability](../features/instability.md)), measure the effect of cleaning on several runs before using it.
+As detectors are unstable (see [Instability](../features/instability.md)), measure the effect of cleaning on several runs before using it.
 
 ## Attack nodes
 

@@ -1,3 +1,8 @@
+---
+title: Embedding visualizer
+description: Explore the node embeddings of a run in an interactive 3D web viewer.
+---
+
 # Embedding Visualizer
 
 PIDSMaker ships an interactive **3D web viewer** for exploring a run's node
@@ -16,6 +21,9 @@ It renders the per-node embeddings (UMAP or t-SNE projection) and supports:
   **GNN encoder** space, with an epoch selector for the encoder.
 - **Overlays** — temporal trajectories, the attack graph, a discrimination heatmap,
   and false-positive highlighting.
+
+!!! info "Provenance runs"
+    The viewer colors nodes by provenance type (process, file, netflow). It is not tested on the runs of network datasets.
 
 ## Running the viewer
 

@@ -1,8 +1,13 @@
-## Batching
+---
+title: Batching & sampling
+description: Global, intra-graph and inter-graph batching strategies, and TGN last-neighbor sampling.
+---
+
+# Batching & sampling
 
 Batching refers to grouping edges, nodes, or graphs into a temporal graph provided as input to the model.
 
-We provide three batching strategies that can be configured via dedicated [batching arguments](../config/tasks.md/#detection).
+We provide three batching strategies that can be configured via dedicated [batching arguments](../reference/tasks.md#stage-4-batching).
 
 **Global Batching**: takes as input a large flattened graph comprising all events in the dataset and partitions it into equal-size graphs based on number of edges, minutes, or similar.
 
@@ -35,12 +40,14 @@ The batch size plays a key role in determining the trade-off between memory usag
 
 ### TGN Last Neighbor Sampling
 
-In the [Temporal Graph Network (TGN)](https://arxiv.org/abs/2006.10637) architecture, the objective is to predict edges within a graph batch at time $t$ based on the last neighbors of each node seen in batches happening prior to $t$. Setting `tgn_last_neighbor` to the argument `batching.intra_graph_batching.used_methods` enables to pre-compute the TGN graph for each preprocessed graph in the dataset. Specifically, it does not replace the graph directly but adds `tgn_*` attributes to it, which can be used by the downstream encoder.
+In the [Temporal Graph Network (TGN)](https://arxiv.org/abs/2006.10637) architecture, the objective is to predict edges within a graph batch at time *t* based on the last neighbors of each node seen in batches happening prior to *t*. Setting `tgn_last_neighbor` to the argument `batching.intra_graph_batching.used_methods` enables to pre-compute the TGN graph for each preprocessed graph in the dataset. Specifically, it does not replace the graph directly but adds `tgn_*` attributes to it, which can be used by the downstream encoder.
 
 To use the TGN architecture, you **should** also add `tgn` to `training.encoder.used_methods` as it enables to properly handle TGN attributes.
 The `TGNEncoder` accepts as argument an `encoder`, defined in the config, which will be applied to the pre-computed TGN graph.
 
-Examples of TGN config can be found in `kairos.yml` and `orthrus.yml`.
+Examples of TGN config can be found in `kairos.yml` and `orthrus.yml` (provenance), and `jbeil.yml` (network).
+
+With `tgn_last_neighbor.negative_destinations`, a negative destination is drawn for each edge, uniformly among the destinations of the training graphs (or of all graphs, for validation and test), and embedded by the TGN with the nodes of the batch, as in TGN and Jbeil. It is used by the `tgn` negative sampling of `predict_edge_contrastive` (see `jbeil.yml`).
 
 ### Neighbor Sampling
 

@@ -1,3 +1,8 @@
+---
+title: Hyperparameter tuning
+description: Tune PIDSMaker systems with W&B sweeps (grid, random or Bayesian search), per dataset or across datasets.
+---
+
 # Hyperparameter Tuning
 
 PIDSMaker simplifies hyperparameter tuning by combining its efficient pipeline design with the power of [W&B Sweeps](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W%26B.ipynb).
@@ -6,7 +11,7 @@ PIDSMaker simplifies hyperparameter tuning by combining its efficient pipeline d
 ## Dataset-specific tuning
 Tuning is configured using YAML files, just like system definitions. For example, suppose you've created a new system named `my_system`, and its configuration is stored in `config/my_system.yml`. To search for optimal hyperparameters on the `THEIA_E3` dataset, you can create a new tuning configuration file at `config/experiments/tuning/systems/theia_e3/tuning_my_system.yml` following the [W&B syntax](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration/):
 
-``` yaml linenums="1" title="tuning_my_system.yml"
+``` yaml title="tuning_my_system.yml"
 method: grid # (1)!
 
 parameters:
@@ -20,10 +25,11 @@ parameters:
 
 1.  Other hyperparameter search strategies like `random` and `bayesian` can be used (more info [here](https://docs.wandb.ai/guides/sweeps/sweep-config-keys/#method)).
 
-Before starting the hyperparameter search, make sure you are logged in to W&B by running: `wandb login` inside the container’s shell. Then, launch the hyperparameter tuning with: `--tuning_mode=hyperparameters`:
+Before starting the hyperparameter search, make sure you are logged in to W&B by running: `wandb login` inside the container’s shell. Then, launch the hyperparameter tuning with `--tuning_mode=hyperparameters`, from the `scripts/` folder:
 
 ``` shell
-./run.sh my_system CADETS_E3 --tuning_mode=hyperparameters
+cd scripts
+./run.sh my_system THEIA_E3 --tuning_mode=hyperparameters
 ```
 
 This flag will automatically load the tuning configuration from `config/experiments/tuning/systems/theia_e3/tuning_my_system.yml`, based on the provided dataset and system names. Any overlapping arguments defined in `config/my_system.yml` will be overridden by those specified in the tuning file. If the specified tuning file does not exist (i.e., no dataset-specific configuration is available), the pipeline falls back to the default tuning configuration: `config/experiments/tuning/systems/default/tuning_default_baselines.yml`.
@@ -37,7 +43,8 @@ If you wish to use the same hyperparameter tuning configuration across all datas
 For instance, you might create a tuning file named `config/experiments/tuning/systems/default/tuning_my_system_all_datasets.yml`, then apply it to all dataset by running:
 
 ``` shell
-./run_all_datasets.py my_system \
+cd scripts
+./run_all_datasets.sh my_system \
     --tuning_mode=hyperparameters \
     --tuning_file_path=systems/default/tuning_my_system_all_datasets
 ```
@@ -52,7 +59,7 @@ or on a single dataset:
 
 The path passed to `--tuning_file_path` should start from `systems/`.
 
-!!! tips
+!!! tip
     For a better historization of experiments, we recommend to assign a name to each sweep (`--exp`) and a dedicated project name (`--project`):
 
     ``` shell
@@ -70,7 +77,7 @@ Once the sweep has finished, the best run can be obtained from W&B by sorting ba
 
 Get the hyperparameters associated with the best run and put them into a `config/tuned_baselines/{dataset}/tuned_my_system.yml`.
 
-``` yaml linenums="1" title="tuned_my_system.yml"
+``` yaml title="tuned_my_system.yml"
 featurization:
   used_method: word2vec
 
@@ -86,10 +93,16 @@ Each system should have a tuned file per dataset, or the best hyperparameters ca
 
 ## Run a tuned system
 
-Running a system with its best hyperparameters on a particular dataset is as using the `--tuned` arg:
+Running a system with its best hyperparameters on a particular dataset is as simple as adding `--tuned`:
 
 ``` shell
 ./run.sh my_system CADETS_E3 --tuned
 ```
 
 This will search for the `config/tuned_baselines/cadets_e3/tuned_my_system.yml` file and override the default system config by the best hyperparameters.
+
+For example, the defaults of the network systems are those of LANL, and `config/tuned_baselines/optc_net/` holds the OpTC settings of LARES and Argus:
+
+``` shell
+python pidsmaker/main.py lares OPTC_NET --tuned
+```
