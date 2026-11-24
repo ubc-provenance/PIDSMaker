@@ -14,6 +14,30 @@ Ten minutes from a fresh machine to your first run. PIDSMaker runs in two contai
     - Enough disk space for the datasets you pick (see the table below) and for the artifacts of your runs (a single run can produce 15 GB or more on E3 datasets).
     - No Docker, e.g. on an HPC cluster? Use [Apptainer](apptainer.md) instead.
 
+## macOS
+
+PIDSMaker runs on macOS (tested on Apple Silicon) with Docker Desktop, on CPU (Docker has no access to Apple GPUs), for most datasets: a laptop with 32 GB of RAM is ideal. It was tested end to end on `CADETS_E3` and `LANL`. The largest datasets (`TRACE_E3` and the E5 datasets, see the sizes in step 1) need more memory and disk than a laptop has. Before going further:
+
+1. **Give memory to Docker.** On Linux, containers use all the RAM of the machine. On macOS, they run in the virtual machine of Docker Desktop, limited to 8 GB by default, which the compose files cannot raise. Runs on provenance datasets can take more than 15 GB, and are killed when the VM runs out of memory. Give the VM about 75% of your RAM, e.g. 24 GB on a 32 GB laptop:
+
+    ```shell
+    # Memory and swap of the VM, in MiB (restarts Docker Desktop, which stops the running containers)
+    plutil -replace MemoryMiB -integer 24576 ~/Library/Group\ Containers/group.com.docker/settings-store.json
+    plutil -replace SwapMiB -integer 4096 ~/Library/Group\ Containers/group.com.docker/settings-store.json
+    docker desktop restart
+
+    # Check the memory of the VM, in GB
+    docker info --format '{{.MemTotal}}' | awk '{printf "%.1f GB\n", $1 / 1024^3}'
+    ```
+
+    PIDSMaker prints a warning at the beginning of a run when less than 16 GB are available.
+
+2. **Let Docker read the repository.** If the repository is in a protected folder such as `~/Documents` or `~/Desktop`, `docker compose` fails with `mkdir /host_mnt/Users/...: operation not permitted`. Allow Docker in **System Settings > Privacy & Security > Files and Folders** (or **Full Disk Access**), then restart Docker Desktop.
+3. **Free or change port 5000.** macOS uses it for AirPlay Receiver. Add `VIZ_PORT=5001` to `.env` (step 3), or turn off AirPlay Receiver in **System Settings > General > AirDrop & Handoff**.
+4. **Skip the GPU step.** Use the CPU override of the compose file in [step 5](#5-open-the-pidsmaker-container).
+
+On Apple Silicon, the image is built for ARM (`aarch64`), with the CPU build of PyTorch. In this setup, PIDSMaker limits PyTorch to 4 CPU threads (`OMP_NUM_THREADS=4`): the VM exposes the performance and efficiency cores of the Mac as identical CPUs, and with one thread per CPU, operations on small tensors are up to 100 times slower. Set `OMP_NUM_THREADS` yourself to override it.
+
 ## 1. Download the datasets
 
 PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, one per dataset.
@@ -80,29 +104,6 @@ You can also build these databases yourself from the official DARPA files: see [
 
 !!! warning "Not downloadable yet"
     The dumps of the network databases are not available for download yet. Once PIDSMaker is installed (steps 2 to 5), build the databases from the preprocessed files of LARES (a 14 GB archive), as explained in [Building datasets from scratch](from-scratch.md): the scripts write directly into the Postgres container. Dumps of these databases made with `pg_dump` are loaded like the others (step 4).
-
-### macOS
-
-PIDSMaker runs on macOS (tested on Apple Silicon) with Docker Desktop, on CPU (Docker has no access to Apple GPUs), for most datasets: a laptop with 32 GB of RAM is ideal. It was tested end to end on `CADETS_E3` and `LANL`. The largest datasets (`TRACE_E3` and the E5 datasets, see the sizes below) need more memory and disk than a laptop has. Before going further:
-
-1. **Give memory to Docker.** On Linux, containers use all the RAM of the machine. On macOS, they run in the virtual machine of Docker Desktop, limited to 8 GB by default, which the compose files cannot raise. Runs on provenance datasets can take more than 15 GB, and are killed when the VM runs out of memory. Give the VM about 75% of your RAM, e.g. 24 GB on a 32 GB laptop:
-
-    ```shell
-    # Memory and swap of the VM, in MiB (restarts Docker Desktop, which stops the running containers)
-    plutil -replace MemoryMiB -integer 24576 ~/Library/Group\ Containers/group.com.docker/settings-store.json
-    plutil -replace SwapMiB -integer 4096 ~/Library/Group\ Containers/group.com.docker/settings-store.json
-    docker desktop restart
-
-    # Check the memory of the VM, in GB
-    docker info --format '{{.MemTotal}}' | awk '{printf "%.1f GB\n", $1 / 1024^3}'
-    ```
-
-    PIDSMaker prints a warning at the beginning of a run when less than 16 GB are available.
-2. **Let Docker read the repository.** If the repository is in a protected folder such as `~/Documents` or `~/Desktop`, `docker compose` fails with `mkdir /host_mnt/Users/...: operation not permitted`. Allow Docker in **System Settings > Privacy & Security > Files and Folders** (or **Full Disk Access**), then restart Docker Desktop.
-3. **Free or change port 5000.** macOS uses it for AirPlay Receiver. Add `VIZ_PORT=5001` to `.env` (step 3), or turn off AirPlay Receiver in **System Settings > General > AirDrop & Handoff**.
-4. **Skip the GPU step.** Use the CPU override of the compose file in [step 5](#5-open-the-pidsmaker-container).
-
-On Apple Silicon, the image is built for ARM (`aarch64`), with the CPU build of PyTorch. In this setup, PIDSMaker limits PyTorch to 4 CPU threads (`OMP_NUM_THREADS=4`): the VM exposes the performance and efficiency cores of the Mac as identical CPUs, and with one thread per CPU, operations on small tensors are up to 100 times slower. Set `OMP_NUM_THREADS` yourself to override it.
 
 ## 2. Enable GPU support in Docker
 
