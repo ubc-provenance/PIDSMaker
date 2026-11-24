@@ -111,7 +111,7 @@ Every argument of the YAML config can be overridden from the command line, using
 
     ```shell
     python pidsmaker/main.py euler LANL \
-      --construction.time_window_size=60 \
+      --construction.time_window_size=60.0 \
       --training.decoder.predict_edge_contrastive.neg_ratio=5
     ```
 
