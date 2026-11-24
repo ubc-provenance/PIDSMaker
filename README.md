@@ -284,6 +284,19 @@ Pull requests are welcome! Please follow the [contribution guidelines](https://u
 
 Questions, ideas or feature requests? Join our [Discord](https://discord.gg/jecmkTABUg).
 
+## Support and Funding
+
+<p align="center">
+  <a href="https://www.amazon.science/research-awards/recipients/thomas-pasquier" target="_blank"><img
+    src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg"
+    alt="Thomas Pasquier's Amazon Research Award"
+    width="20%" align="middle"></a>
+  <a href="https://www.cs.ubc.ca/news/2026/01/thomas-amazon-cyberthreats" target="_blank"><img
+    src="https://upload.wikimedia.org/wikipedia/en/3/3c/Natural_Sciences_and_Engineering_Research_Council_Logo.svg"
+    alt="UBC article on the NSERC Alliance grant with Amazon"
+    width="20%" align="middle"></a>
+</p>
+
 ## License
 
 See [licence](LICENSE).
