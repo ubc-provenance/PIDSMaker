@@ -3,10 +3,10 @@ import os
 from datetime import datetime, timedelta
 
 import networkx as nx
-import torch
 
 from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
 from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.utils.graph_store import save_graph
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
     init_database_connection,
@@ -249,7 +249,7 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
                     graph_name = f"{date_dir}/{time_interval}"
 
                     print(f"Saving graph for {time_interval}")
-                    torch.save(g, graph_name)
+                    save_graph(g, graph_name)
 
                     start_time = batch_edges[-1][-2]
                     temp_list.clear()

@@ -7,6 +7,7 @@ from sklearn.metrics import f1_score, roc_auc_score
 from pidsmaker.utils.dataset_utils import get_node_map
 from pidsmaker.utils.labelling import get_ground_truth
 from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.loss_files import is_loss_file, read_losses
 from pidsmaker.utils.utils import listdir_sorted, log
 
 from . import inference_loop
@@ -87,7 +88,7 @@ class OCRAPTEarlyStop:
         d = os.path.join(edge_losses_dir, split, f"model_epoch_{epoch}")
         if not os.path.isdir(d):
             return None
-        dfs = [pd.read_csv(os.path.join(d, f)) for f in listdir_sorted(d) if f.endswith(".csv")]
+        dfs = [read_losses(os.path.join(d, f)) for f in listdir_sorted(d) if is_loss_file(f)]
         if not dfs:
             return None
         node_score = pd.concat(dfs, ignore_index=True).groupby("node")["loss"].max()

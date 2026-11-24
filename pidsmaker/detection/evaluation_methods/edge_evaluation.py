@@ -19,6 +19,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
 )
 from pidsmaker.utils.dataset_utils import get_rel2id_considering_triplets
 from pidsmaker.utils.labelling import get_attack_to_mal_edges, get_ground_truth_edges
+from pidsmaker.utils.loss_files import compact_int_columns, read_losses
 from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 
 
@@ -42,7 +43,7 @@ def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
     for file in log_tqdm(filelist, desc="Compute edge labels"):
         filepath = os.path.join(test_tw_path, file)
-        df = pd.read_csv(filepath).to_dict(orient="records")
+        df = read_losses(filepath).to_dict(orient="records")
 
         for line in df:
             srcnode = str(line["srcnode"])
@@ -94,7 +95,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     # Save edge-level scores (consistent with node_evaluation)
     if edge_records is not None:
         edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
-        torch.save(edge_records, edge_scores_file)
+        torch.save(compact_int_columns(edge_records), edge_scores_file)
         log(f"Saved {len(edge_records)} edge scores to {edge_scores_file}")
 
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")

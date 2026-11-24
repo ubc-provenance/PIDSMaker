@@ -16,14 +16,120 @@ from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_word2vec,
 )
 from pidsmaker.featurization.feat_inference_methods.feat_inference_pretrained import GraphBasedEncoder
-from pidsmaker.utils.data_utils import CollatableTemporalData
+from pidsmaker.utils.data_utils import COMPACT_MSG_KEYS, CollatableTemporalData
 from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.utils.graph_store import load_graph_columns
 from pidsmaker.utils.utils import (
     gen_relation_onehot,
     get_multi_datasets,
     get_split_to_files,
     log_tqdm,
 )
+
+
+def _onehot_table(type2oh):
+    """Stacks the one-hot vectors of a `gen_relation_onehot` mapping into a matrix.
+
+    Returns the (num_types + 1, d) matrix, whose last row is all zeros (missing type),
+    and the mapping {type_name: row}.
+    """
+    names = [k for k in type2oh if isinstance(k, str)]
+    table = torch.stack([type2oh[k] for k in names] + [torch.zeros_like(type2oh[names[0]])])
+    return table, {name: i for i, name in enumerate(names)}
+
+
+def _edge_columns_from_graph(graph):
+    """(nodes, node types, src rows, dst rows, times, labels, edge labels) in `graph.edges` order."""
+    src, dst, t, y, labels = [], [], [], [], []
+    for u, v, attr in graph.edges(data=True):
+        src.append(u)
+        dst.append(v)
+        t.append(int(attr["time"]))
+        y.append(int(attr.get("y", 0)))
+        labels.append(attr.get("label"))
+
+    # Map each node to a local row index, so that lookups are done once per node
+    nodes = list(graph.nodes)
+    node2row = {n: i for i, n in enumerate(nodes)}
+    src_rows = torch.tensor([node2row[u] for u in src], dtype=torch.long)
+    dst_rows = torch.tensor([node2row[v] for v in dst], dtype=torch.long)
+    node_attrs = graph.nodes
+    node_types = [node_attrs[n]["node_type"] for n in nodes]
+    return nodes, node_types, src_rows, dst_rows, t, y, labels
+
+
+def _edge_columns_from_store(cols):
+    """Same as `_edge_columns_from_graph`, from the stored columns (no networkx graph)."""
+    m = len(cols.src)
+    t = [int(x) for x in cols.edge_attrs["time"]]
+    y = [int(x) for x in cols.edge_attrs["y"]] if "y" in cols.edge_attrs else [0] * m
+    labels = cols.edge_attrs["label"] if "label" in cols.edge_attrs else [None] * m
+    src_rows = torch.from_numpy(cols.src.astype(np.int64))
+    dst_rows = torch.from_numpy(cols.dst.astype(np.int64))
+    return cols.node_ids, cols.node_attrs["node_type"], src_rows, dst_rows, t, y, labels
+
+
+def _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh):
+    """Builds the edge messages of a graph with per-node (not per-edge) lookups.
+
+    Equivalent to concatenating, for each edge in `graph.edges` order,
+    [src_type_onehot, src_emb, edge_type_onehot, dst_type_onehot, dst_emb].
+    """
+    nodes, node_type_list, src_rows, dst_rows, t, y, labels = edge_columns
+
+    # Edge endpoints in the original node order, before restricting the rows below
+    node_ids = [int(n) for n in nodes]
+    src = [node_ids[r] for r in src_rows.tolist()]
+    dst = [node_ids[r] for r in dst_rows.tolist()]
+
+    # Only nodes with edges get features: like the former per-edge lookups, isolated nodes
+    # are never looked up (they may have no embedding, e.g. with edge-based featurizations)
+    used = torch.unique(torch.cat([src_rows, dst_rows]))
+    remap = torch.full((len(nodes),), -1, dtype=torch.long)
+    remap[used] = torch.arange(used.numel())
+    src_rows, dst_rows = remap[src_rows], remap[dst_rows]
+    used = used.tolist()
+    nodes = [nodes[i] for i in used]
+    node_type_list = [node_type_list[i] for i in used]
+
+    ntype_table, ntype2row = _onehot_table(ntype2oh)
+    node_type_rows = torch.tensor([ntype2row[nt] for nt in node_type_list], dtype=torch.long)
+    node_types = ntype_table[node_type_rows]
+
+    etype_table, etype2row = _onehot_table(etype2oh)
+    missing = etype_table.shape[0] - 1
+    edge_type_rows = torch.tensor(
+        [missing if l is None else etype2row[l] for l in labels], dtype=torch.long
+    )
+
+    if indexid2vec is None:
+        node_feats = node_types
+    else:
+        # indexid2vec may use string keys (word2vec) or int keys;
+        # graph node IDs are cast to int, so try both.
+        def _lookup(nid):
+            nid = int(nid)
+            try:
+                return indexid2vec[nid]
+            except KeyError:
+                return indexid2vec[str(nid)]
+
+        node_embs = torch.from_numpy(np.stack([_lookup(n) for n in nodes])).float()
+        node_feats = torch.cat([node_types, node_embs], dim=1)
+
+    # The message of an edge is [src_feats | edge_type | dst_feats], where a node's feats
+    # are [node_type | node_emb]. Instead of materializing it (E x D, with each node's
+    # embedding repeated for each of its edges), each node's feats are stored once with
+    # the row of each edge's src/dst/type: see `expand_compact_msg`.
+    compact = {
+        COMPACT_MSG_KEYS[0]: node_feats.to(torch.float),
+        COMPACT_MSG_KEYS[1]: src_rows.to(torch.int32),
+        COMPACT_MSG_KEYS[2]: dst_rows.to(torch.int32),
+        COMPACT_MSG_KEYS[3]: etype_table.to(torch.float),
+        COMPACT_MSG_KEYS[4]: edge_type_rows.to(torch.int32),
+    }
+
+    return compact, src, dst, t, y
 
 
 def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, bert_generator=None, indexid2msg=None):
@@ -40,8 +146,9 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
         indexid2msg: Optional node label mapping for SPIDER
     """
     for i, path in enumerate(log_tqdm(sorted_paths, desc="Computing edge embeddings")):
-        graph = torch.load(path)
-        sorted_edges = graph.edges(data=True, keys=True)
+        # The standard path only needs the graph's columns, not a networkx graph
+        cols = load_graph_columns(path) if bert_generator is None else None
+        graph = torch.load(path) if cols is None else None
 
         src, dst, msg, t, y = [], [], [], [], []
 
@@ -49,7 +156,7 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
         if bert_generator is not None:
             # Collect all edge data first
             all_edge_data = []
-            for u, v, k, attr in sorted_edges:
+            for u, v, k, attr in graph.edges(data=True, keys=True):
                 src.append(int(u))
                 dst.append(int(v))
                 timestamp = int(attr["time"])
@@ -103,49 +210,25 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
 
         # Standard processing (pre-computed embeddings or types only)
         else:
-            edges_data = list(sorted_edges)
-
-            if not edges_data:
+            num_edges = graph.number_of_edges() if cols is None else len(cols.src)
+            if num_edges == 0:
                 continue  # skip empty graphs (no edges in this time window)
 
-            src = [int(u) for u, v, k, attr in edges_data]
-            dst = [int(v) for u, v, k, attr in edges_data]
-            t = [int(attr["time"]) for u, v, k, attr in edges_data]
-            y = [int(attr.get("y", 0)) for u, v, k, attr in edges_data]
-
-            # Batch all type and label lookups — avoids N individual torch.cat calls
-            zero_edge_label = torch.zeros_like(etype2oh[next(iter(etype2oh))])
-            ntype_u = torch.stack([ntype2oh[graph.nodes[u]["node_type"]] for u, v, k, attr in edges_data])
-            ntype_v = torch.stack([ntype2oh[graph.nodes[v]["node_type"]] for u, v, k, attr in edges_data])
-            edge_label_t = torch.stack([
-                etype2oh[attr["label"]] if "label" in attr else zero_edge_label
-                for u, v, k, attr in edges_data
-            ])
-
-            # Only types
-            if indexid2vec is None:
-                msg = [torch.cat([ntype_u, edge_label_t, ntype_v], dim=1)]
-
-            # Types + node embeddings
-            else:
-                # indexid2vec may use string keys (word2vec) or int keys;
-                # graph node IDs are cast to int above, so try both.
-                def _lookup(nid):
-                    try:
-                        return indexid2vec[nid]
-                    except KeyError:
-                        return indexid2vec[str(nid)]
-                src_embs = torch.from_numpy(np.stack([_lookup(u) for u in src])).float()
-                dst_embs = torch.from_numpy(np.stack([_lookup(v) for v in dst])).float()
-                msg = [torch.cat([ntype_u, src_embs, edge_label_t, ntype_v, dst_embs], dim=1)]
+            edge_columns = (
+                _edge_columns_from_graph(graph) if cols is None else _edge_columns_from_store(cols)
+            )
+            compact, src, dst, t, y = _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh)
 
         data = CollatableTemporalData(
             src=torch.tensor(src).to(torch.long),
             dst=torch.tensor(dst).to(torch.long),
             t=torch.tensor(t).to(torch.long),
-            msg=torch.vstack(msg).to(torch.float),
+            msg=torch.vstack(msg).to(torch.float) if bert_generator is not None else None,
             y=torch.tensor(y).to(torch.long),
         )
+        if bert_generator is None:
+            for key, value in compact.items():
+                data[key] = value
 
         os.makedirs(out_dir, exist_ok=True)
         file = path.split("/")[-1]

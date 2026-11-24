@@ -21,8 +21,9 @@ class ValidationWrapper(nn.Module):
 
     def get_val_score(self) -> float:
         if self.use_few_shot:
-            self.losses = torch.tensor(self.losses)
-            self.ys = torch.tensor(self.ys)
+            # Chunks of scores are concatenated once (rather than one 0-d tensor per edge)
+            self.losses = torch.cat([l.reshape(-1) for l in self.losses]) if self.losses else torch.tensor([])
+            self.ys = torch.cat([y.reshape(-1) for y in self.ys]) if self.ys else torch.tensor([])
             malicious_mean = self.losses[self.ys == 1].mean()
             benign_mean = self.losses[self.ys == 0].mean()
             log(f"=> Total mean score of fake malicious edges: {malicious_mean:.4f}")
@@ -45,7 +46,7 @@ class ValidationWrapper(nn.Module):
         loss_or_losses = results["loss"]
 
         if validation and self.use_few_shot:
-            self.losses.extend(loss_or_losses.cpu())
-            self.ys.extend(y_edge.cpu())
+            self.losses.append(loss_or_losses.detach().cpu())
+            self.ys.append(y_edge.cpu())
 
         return results

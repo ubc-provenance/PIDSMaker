@@ -545,6 +545,7 @@ class TestCombinations:
     @pytest.mark.parametrize("use_residual_norm", [False, True])
     def test_tgn_memory_with_node_features(self, dataset, device, use_residual_norm):
         from pidsmaker.tasks.batching import get_preprocessed_graphs
+        from pidsmaker.utils.data_utils import materialize_batch
 
         custom_args = [
             ("training.encoder.tgn.use_memory", True),
@@ -559,6 +560,7 @@ class TestCombinations:
         train_data, val_data, test_data, _ = get_preprocessed_graphs(cfg)
         for graphs in train_data + val_data + test_data:
             for g in graphs:
+                g = materialize_batch(g)  # features may be stored in a shared table
                 src, dst = g.reindexed_edge_index_tgn
                 assert g.x_tgn.shape[0] == g.x_from_tgn.shape[0] == g.n_id_tgn.shape[0]
                 assert torch.equal(g.n_id_tgn[src], g.original_edge_index[0])

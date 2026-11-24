@@ -594,24 +594,40 @@ def get_database_format(dataset, node_type):
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
 
+# Last result of `get_uuid_to_index_id`: the evaluation calls it many times per run
+_UUID_TO_INDEX_ID_CACHE = {}
+
+
 def get_uuid_to_index_id(cfg):
+    """Returns ({node_uuid: index_id}, {index_id: node_uuid}). The dicts are shared: read only."""
     dataset = cfg.dataset.name
-    node_types = get_node_feats_from_cfg(cfg).keys()
+    node_types = tuple(get_node_feats_from_cfg(cfg).keys())
+    database = (
+        cfg.dataset.database_all_file if cfg.construction.use_all_files else cfg.dataset.database
+    )
+    key = (dataset, database, cfg.database.host, cfg.database.port, node_types)
 
-    uuid2nid = {}
-    nid2uuid ={}
+    if key not in _UUID_TO_INDEX_ID_CACHE:
+        uuid2nid = {}
+        nid2uuid = {}
 
-    cur, conn = init_database_connection(cfg)
-    for node_type in node_types:
-        table_name = get_database_format(dataset, node_type)['table_name']
-        sql = f"SELECT index_id, node_uuid FROM {table_name};"
-        cur.execute(sql)
-        rows = cur.fetchall()
-        for row in rows:
-            uuid2nid[str(row[1])] = int(row[0])
-            nid2uuid[int(row[0])] = str(row[1])
+        cur, conn = init_database_connection(cfg)
+        try:
+            for node_type in node_types:
+                table_name = get_database_format(dataset, node_type)['table_name']
+                sql = f"SELECT index_id, node_uuid FROM {table_name};"
+                cur.execute(sql)
+                rows = cur.fetchall()
+                for row in rows:
+                    uuid2nid[str(row[1])] = int(row[0])
+                    nid2uuid[int(row[0])] = str(row[1])
+        finally:
+            conn.close()
+        _UUID_TO_INDEX_ID_CACHE.clear()  # only keep the last database in memory
+        _UUID_TO_INDEX_ID_CACHE[key] = (uuid2nid, nid2uuid)
 
-    return uuid2nid, nid2uuid
+    # Shared dicts (copying millions of entries at each call is slow): do not modify them
+    return _UUID_TO_INDEX_ID_CACHE[key]
 
 def get_time_and_end_node(cfg, start_time, end_time):
     """Return events in the window as (src_index_id, dst_index_id, timestamp, operation).
@@ -630,9 +646,23 @@ def get_time_and_end_node(cfg, start_time, end_time):
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
 
+# Last mapping returned by `get_node_to_path_and_type` (read many times per evaluation)
+_NODE_TO_PATH_CACHE = {}
+
+
 def get_node_to_path_and_type(cfg):
+    """Returns {index_id: {"path", "type"[, "cmd"]}}. The result is shared: do not modify it."""
     out_path = cfg.construction._node_id_to_path
     out_file = os.path.join(out_path, "node_to_paths.pkl")
+    if out_file in _NODE_TO_PATH_CACHE:
+        return _NODE_TO_PATH_CACHE[out_file]
+    node_to_path_type = _compute_node_to_path_and_type(cfg, out_path, out_file)
+    _NODE_TO_PATH_CACHE.clear()  # only keep the last dataset in memory
+    _NODE_TO_PATH_CACHE[out_file] = node_to_path_type
+    return node_to_path_type
+
+
+def _compute_node_to_path_and_type(cfg, out_path, out_file):
     dataset = cfg.dataset.name
 
     if not os.path.exists(out_file):
