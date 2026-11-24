@@ -128,6 +128,10 @@ class EdgeContrastivePrediction(nn.Module):
         # if self.balanced_loss else None
 
         loss = self.loss_fn(pos_scores, neg_scores, inference=inference)
+        if inference:
+            # One loss per edge, also for batches of a single edge (`squeeze` would return a scalar)
+            loss = loss.reshape(pos_scores.shape[0], -1)
+            return {"loss": loss.squeeze(1) if loss.shape[1] == 1 else loss}
         return {"loss": loss.squeeze()}
 
     def get_val_score(self):

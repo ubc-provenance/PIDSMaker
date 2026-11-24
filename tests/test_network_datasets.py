@@ -360,6 +360,25 @@ class TestNIDSComponents:
         assert 20 <= neg_src.shape[0] <= 30
         assert not torch.equal(neg_dst, h[3].expand_as(neg_dst))
 
+    def test_contrastive_inference_single_edge(self):
+        """At inference, the objective returns one loss per edge, also for a single edge."""
+        import torch
+
+        from pidsmaker.objectives.predict_edge_contrastive import EdgeContrastivePrediction
+
+        obj = EdgeContrastivePrediction(
+            decoder=lambda h_src, h_dst: (h_src * h_dst).sum(-1, keepdim=True),
+            loss_fn=lambda pos, neg, inference: -pos,
+            graph_reindexer=None,
+            neg_sampling="uniform",
+            neg_ratio=1,
+        )
+        for num_edges in (1, 3):
+            h = torch.randn(num_edges, 4)
+            edge_index = torch.zeros(2, num_edges, dtype=torch.long)
+            loss = obj(h, h, edge_index, inference=True, h=h)["loss"]
+            assert loss.shape == (num_edges,)
+
     def test_edge_autoencoder(self):
         import torch
         from types import SimpleNamespace
