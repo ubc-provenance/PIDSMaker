@@ -49,6 +49,8 @@ The methods available at each stage, and all their arguments, are listed in the 
 
 The same stages build provenance-based IDSs (PIDSs) and network IDSs (NIDSs). What changes is the data that flows through them, and the components that the systems of each family use by default:
 
+<div class="pm-families" markdown>
+
 | Stage | Provenance (e.g. Orthrus on `CADETS_E3`) | Network (e.g. Euler or LARES on `LANL`) |
 |---|---|---|
 | **Construction** | System events between processes, files and netflows, typed by system call (`EVENT_READ`, `EVENT_CONNECT`...). Raw data can be [cleaned](../reference/cleaning.md). | Authentications or flows between hosts, typed by their `operation` (`LogOn`, `FLOW_START`...) or by a categorical attribute (`construction.edge_type=logon_type`). `construction.operations` and `construction.drop_noise_events` select the events, and `construction.benign_training` drops the labelled malicious events of the train and val dates. |
@@ -58,6 +60,8 @@ The same stages build provenance-based IDSs (PIDSs) and network IDSs (NIDSs). Wh
 | **Training** | Predict the type of edges or nodes, or reconstruct node features. | Link prediction against negative edges (`predict_edge_contrastive`), edge autoencoder, Deep Graph Infomax; host identity and snapshot encoders (`node_id_embedding`, `snapshot_gru`). |
 | **Evaluation** | Per node, against the attack nodes listed in ground-truth files (`node_evaluation`). | Per edge, against the malicious events labelled in the database (`edge_evaluation`), or host-centered (`host_two_stage_evaluation`). Epochs can be selected without labels (`best_val_score`, `last_epoch`). |
 | **Triage** | DepImpact or OCR-APT subgraphs, from the detected nodes. | Not used: triage starts from node-level detections, and NIDSs detect edges. |
+
+</div>
 
 These are the defaults of each family, not restrictions: components work on both kinds of datasets, except those that need several node types or event attributes. See [Running across families](systems.md#running-across-families) and the [components of each system](systems.md#components-at-a-glance).
 

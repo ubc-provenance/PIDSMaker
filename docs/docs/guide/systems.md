@@ -12,23 +12,25 @@ PIDSMaker reimplements state-of-the-art intrusion detection systems as YAML conf
 
 | System | Data | Config | Venue | Paper |
 |---|---|---|---|---|
-| **Velox** | Provenance | `velox` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
-| **Orthrus** | Provenance | `orthrus`, `orthrus_non_snooped` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
-| **OCR-APT** | Provenance | `ocrapt` | <span class="pm-chip">ACM CCS 2025</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2510.15188) |
-| **R-Caid** | Provenance | `rcaid` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
-| **Flash** | Provenance | `flash` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://dartlab.org/assets/pdf/flash.pdf) |
-| **Kairos** | Provenance | `kairos` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2308.05034) |
-| **MAGIC** | Provenance | `magic` | <span class="pm-chip">USENIX Security 2024</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
-| **NodLink** | Provenance | `nodlink` | <span class="pm-chip">NDSS 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2311.02331) |
-| **ThreaTrace** | Provenance | `threatrace` | <span class="pm-chip">IEEE TIFS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2111.04333) |
-| **LARES** | Network | `lares` | <span class="pm-chip">ACSAC 2026</span> | [:lucide-file-text: Paper](https://ora.ox.ac.uk/objects/uuid:07b7d2a5-91f8-4c37-a90c-4ca615b428a7/files/ss7526g13z) |
-| **Argus** | Network | `argus` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00012) |
-| **Jbeil** | Network | `jbeil` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00009) |
-| **Euler** | Network | `euler` | <span class="pm-chip">NDSS 2022</span> | [:lucide-file-text: Paper](https://doi.org/10.14722/ndss.2022.24107) |
-| **E-GraphSAGE** | Network | `egraphsage` | <span class="pm-chip">IEEE/IFIP NOMS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/abs/2103.16329) |
-| **Anomal-E** | Network | `anomal_e` | <span class="pm-chip">Knowledge-Based Systems 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/abs/2207.06819) |
+| **Velox** | <span class="pm-family pm-family--prov">Provenance</span> | `velox` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
+| **Orthrus** | <span class="pm-family pm-family--prov">Provenance</span> | `orthrus`, `orthrus_non_snooped` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
+| **OCR-APT** | <span class="pm-family pm-family--prov">Provenance</span> | `ocrapt` | <span class="pm-chip">ACM CCS 2025</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2510.15188) |
+| **R-Caid** | <span class="pm-family pm-family--prov">Provenance</span> | `rcaid` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
+| **Flash** | <span class="pm-family pm-family--prov">Provenance</span> | `flash` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://dartlab.org/assets/pdf/flash.pdf) |
+| **Kairos** | <span class="pm-family pm-family--prov">Provenance</span> | `kairos` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2308.05034) |
+| **MAGIC** | <span class="pm-family pm-family--prov">Provenance</span> | `magic` | <span class="pm-chip">USENIX Security 2024</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
+| **NodLink** | <span class="pm-family pm-family--prov">Provenance</span> | `nodlink` | <span class="pm-chip">NDSS 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2311.02331) |
+| **ThreaTrace** | <span class="pm-family pm-family--prov">Provenance</span> | `threatrace` | <span class="pm-chip">IEEE TIFS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2111.04333) |
+| **LARES** | <span class="pm-family pm-family--net">Network</span> | `lares` | <span class="pm-chip">ACSAC 2026</span> | [:lucide-file-text: Paper](https://ora.ox.ac.uk/objects/uuid:07b7d2a5-91f8-4c37-a90c-4ca615b428a7/files/ss7526g13z) |
+| **Argus** | <span class="pm-family pm-family--net">Network</span> | `argus` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00012) |
+| **Jbeil** | <span class="pm-family pm-family--net">Network</span> | `jbeil` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00009) |
+| **Euler** | <span class="pm-family pm-family--net">Network</span> | `euler` | <span class="pm-chip">NDSS 2022</span> | [:lucide-file-text: Paper](https://doi.org/10.14722/ndss.2022.24107) |
+| **E-GraphSAGE** | <span class="pm-family pm-family--net">Network</span> | `egraphsage` | <span class="pm-chip">IEEE/IFIP NOMS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/abs/2103.16329) |
+| **Anomal-E** | <span class="pm-family pm-family--net">Network</span> | `anomal_e` | <span class="pm-chip">Knowledge-Based Systems 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/abs/2207.06819) |
 
 Run any of them with its config name and a dataset:
+
+<div class="pm-families" markdown>
 
 === "Provenance"
 
@@ -42,6 +44,8 @@ Run any of them with its config name and a dataset:
     python pidsmaker/main.py euler LANL
     python pidsmaker/main.py lares OPTC_NET --tuned   # OpTC hyperparameters of LARES
     ```
+
+</div>
 
 All systems are self-supervised and trained on benign data only. PIDSs flag the entities (processes, files, netflows) whose activity deviates from what they learned; NIDSs flag the authentications or flows that their model finds unlikely. E-GraphSAGE, originally a supervised edge classifier, is trained here with self-supervised link prediction like the other NIDSs. The header of each config describes the system and its differences with the original implementation.
 

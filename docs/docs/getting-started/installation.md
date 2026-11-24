@@ -18,7 +18,7 @@ Ten minutes from a fresh machine to your first run. PIDSMaker runs in two contai
 
 PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, one per dataset.
 
-### Provenance datasets
+### Provenance datasets { .pm-h-prov }
 
 DARPA TC and OpTC are very large and hard to process. We provide **preprocessed versions** of all provenance datasets as Postgres database dumps.
 **Compressed** is the size of the download, **uncompressed** the size once loaded into Postgres.
@@ -71,7 +71,7 @@ DARPA TC and OpTC are very large and hard to process. We provide **preprocessed 
 
 You can also build these databases yourself from the official DARPA files: see [Building datasets from scratch](from-scratch.md).
 
-### Network datasets
+### Network datasets { .pm-h-net }
 
 | Dataset    | Dump (GB) | Uncompressed (GB) |
 |------------|----------:|------------------:|
@@ -193,6 +193,8 @@ Runs started with `--wandb`, or with `./run.sh`, then send their logs and result
 
 From the `pids` container, run a first system on a dataset you loaded:
 
+<div class="pm-families" markdown>
+
 === "Provenance"
 
     ```shell
@@ -204,6 +206,8 @@ From the `pids` container, run a first system on a dataset you loaded:
     ```shell
     python pidsmaker/main.py euler LANL
     ```
+
+</div>
 
 If the pipeline starts building the graphs without database connection errors, you are all set. Continue with the [Quickstart](quickstart.md).
 

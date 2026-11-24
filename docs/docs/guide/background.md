@@ -12,6 +12,8 @@ New to graph-based intrusion detection? This page covers the concepts used throu
 
 Attacks leave traces at two levels. **Inside each host**, the operating system can record what processes do: which files they read and write, which programs they run, which connections they open. **Between hosts**, the network and the authentication services record who connects to whom. PIDSMaker builds a graph from either view, and runs the same pipeline on both:
 
+<div class="pm-families" markdown>
+
 | | Provenance | Network |
 |---|---|---|
 | **Records** | System events of a host, from audit frameworks (Linux Audit, ETW) or EDR telemetry | Authentications and network flows between hosts |
@@ -24,9 +26,11 @@ Attacks leave traces at two levels. **Inside each host**, the operating system c
 | **Ground truth** | Attack nodes, in ground-truth files | Malicious events, labelled in the database |
 | **Datasets** | DARPA TC, OpTC, ATLASv2, CARBANAKv2 | LANL, OpTC network flows |
 
+</div>
+
 Both views are complementary: provenance shows in detail how a host was compromised, the network shows how an attacker moves between hosts. In PIDSMaker, most detectors designed for one view [run on the other](systems.md#running-across-families).
 
-## Provenance graphs
+## Provenance graphs { .pm-h-prov }
 
 **System provenance** is a detailed record of the activity of a computer system. Operating systems can be configured to capture it with their audit frameworks, such as Linux Audit or Event Tracing for Windows (ETW). It captures:
 
@@ -76,7 +80,7 @@ Edges represent system calls or events. The DARPA TC datasets use 10 edge types:
 
 OpTC and the Carbon Black EDR datasets (ATLASv2, CARBANAKv2) have their own event types.
 
-## Network graphs
+## Network graphs { .pm-h-net }
 
 Network logs record the communications between the hosts of a network: authentications of a user from one computer to another, or flows of packets between two addresses. They are turned into a **network graph**: a directed graph whose nodes are hosts and whose edges are these events, with a timestamp and attributes.
 
@@ -120,6 +124,8 @@ flowchart LR
 
 **Training.** The model learns the patterns of normal behavior from benign activity, with a self-supervised task:
 
+<div class="pm-families" markdown>
+
 === "Provenance"
 
     Which processes access which files, how they communicate over the network, which events usually follow each other. PIDSs learn to predict the type of each edge (Velox, Orthrus, Kairos), the type of each node (Flash, ThreaTrace) or to reconstruct node features (MAGIC, NodLink).
@@ -127,6 +133,8 @@ flowchart LR
 === "Network"
 
     Which hosts usually authenticate to or connect with which others, and how. NIDSs learn to tell real edges from random ones (link prediction: Euler, Argus, Jbeil, E-GraphSAGE), or to reconstruct the embeddings of edges (LARES).
+
+</div>
 
 **Detection.** On the test data, the trained model makes the same predictions. A high error means that the behavior was not seen in training: an entity that suddenly reads unusual files, or a host that logs on to computers it never contacted. Nodes, edges or time windows whose error exceeds a threshold, chosen on validation data, are flagged as malicious.
 
