@@ -1,11 +1,11 @@
 ---
 title: Installation (Docker)
-description: Install PIDSMaker with Docker and load the preprocessed DARPA TC, OpTC, ATLASv2 and CARBANAKv2 databases.
+description: Install PIDSMaker with Docker, load the preprocessed provenance databases (DARPA TC, OpTC, ATLASv2, CARBANAKv2) and the network databases (LANL, OpTC flows).
 ---
 
 # Installation with Docker
 
-Ten minutes from a fresh machine to your first run. PIDSMaker runs in two containers: a **Postgres** database that stores the provenance data, and a **pids** container with the Python environment where you run experiments.
+Ten minutes from a fresh machine to your first run. PIDSMaker runs in two containers: a **Postgres** database that stores the datasets, provenance or network events, and a **pids** container with the Python environment where you run experiments.
 { .lead }
 
 !!! info "Requirements"
@@ -16,7 +16,11 @@ Ten minutes from a fresh machine to your first run. PIDSMaker runs in two contai
 
 ## 1. Download the datasets
 
-DARPA TC and OpTC are very large and hard to process. We provide **preprocessed versions** as Postgres database dumps.
+PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, one per dataset.
+
+### Provenance datasets
+
+DARPA TC and OpTC are very large and hard to process. We provide **preprocessed versions** of all provenance datasets as Postgres database dumps.
 **Compressed** is the size of the download, **uncompressed** the size once loaded into Postgres.
 
 | Dataset             | Compressed (GB) | Uncompressed (GB) |
@@ -65,8 +69,17 @@ DARPA TC and OpTC are very large and hard to process. We provide **preprocessed 
 
     Downloads resume where they stopped if you re-run the command.
 
-!!! note
-    You can also build the databases yourself from the official DARPA files: see [Building datasets from scratch](from-scratch.md).
+You can also build these databases yourself from the official DARPA files: see [Building datasets from scratch](from-scratch.md).
+
+### Network datasets
+
+| Dataset    | Dump (GB) | Uncompressed (GB) |
+|------------|----------:|------------------:|
+| `LANL`     | 0.7       | 8.5               |
+| `OPTC_NET` | 21        | 275               |
+
+!!! warning "Not downloadable yet"
+    The dumps of the network databases are not available for download yet. Once PIDSMaker is installed (steps 2 to 5), build the databases from the preprocessed files of LARES (a 14 GB archive), as explained in [Building datasets from scratch](from-scratch.md): the scripts write directly into the Postgres container. Dumps of these databases made with `pg_dump` are loaded like the others (step 4).
 
 ## 2. Enable GPU support in Docker
 
@@ -178,11 +191,19 @@ Runs started with `--wandb`, or with `./run.sh`, then send their logs and result
 
 ## Check your installation
 
-From the `pids` container, run a first system:
+From the `pids` container, run a first system on a dataset you loaded:
 
-```shell
-python pidsmaker/main.py velox CADETS_E3
-```
+=== "Provenance"
+
+    ```shell
+    python pidsmaker/main.py velox CADETS_E3
+    ```
+
+=== "Network"
+
+    ```shell
+    python pidsmaker/main.py euler LANL
+    ```
 
 If the pipeline starts building the graphs without database connection errors, you are all set. Continue with the [Quickstart](quickstart.md).
 

@@ -1,11 +1,11 @@
 ---
 title: Quickstart
-description: Run existing PIDSs on the supported datasets, override their arguments and read their results.
+description: Run the existing provenance-based and network IDSs on the supported datasets, override their arguments and read their results.
 ---
 
 # Quickstart
 
-This page shows how to run the existing PIDSs, change their arguments from the command line, and find their results.
+This page shows how to run the existing systems, provenance-based (PIDSs) and network (NIDSs), change their arguments from the command line, and find their results.
 { .lead }
 
 !!! note "Before you start"
@@ -21,21 +21,42 @@ python pidsmaker/main.py SYSTEM DATASET [--arg=value ...]
 
 `SYSTEM`
 :   The name of a YAML file in `config/`, which describes the full pipeline of a system:
-    `velox`, `orthrus`, `orthrus_non_snooped`, `kairos`, `magic`, `flash`, `nodlink`, `rcaid`, `threatrace`, `ocrapt`, or [your own](../guide/tutorial.md).
+
+    - provenance: `velox`, `orthrus`, `orthrus_non_snooped`, `kairos`, `magic`, `flash`, `nodlink`, `rcaid`, `threatrace`, `ocrapt`;
+    - network: `euler`, `argus`, `jbeil`, `lares`, `egraphsage`, `anomal_e`;
+    - or [your own](../guide/tutorial.md).
+
     See [Systems](../guide/systems.md) for a comparison.
 
 `DATASET`
 :   A dataset defined in `DATASET_DEFAULT_CONFIG` in `pidsmaker/config/config.py`, which maps it to its Postgres database:
-    `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5`, `optc_h201`, `optc_h501`, `optc_h051`, `ATLASV2_EDR`, `CARBANAKV2_EDR`.
+
+    - provenance: `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5`, `optc_h201`, `optc_h501`, `optc_h051`, `ATLASV2_EDR`, `CARBANAKV2_EDR`;
+    - network: `LANL`, `OPTC_NET`.
+
     See [Datasets](../guide/datasets.md).
 
-For example, Velox on CADETS E3:
+Any system runs on both kinds of datasets, with [a few exceptions](../guide/systems.md#running-across-families).
 
-```shell
-python pidsmaker/main.py velox CADETS_E3
-```
+For example:
 
-The content of `config/velox.yml` is parsed and checked against the arguments available in `TASK_ARGS` (`pidsmaker/config/config.py`), then the [seven stages of the pipeline](../guide/pipeline.md) run one after the other.
+=== "Provenance"
+
+    Velox on CADETS E3, which looks for the processes, files and netflows of the attacks:
+
+    ```shell
+    python pidsmaker/main.py velox CADETS_E3
+    ```
+
+=== "Network"
+
+    Euler on LANL, which looks for the authentications of the red team:
+
+    ```shell
+    python pidsmaker/main.py euler LANL
+    ```
+
+The content of the config (e.g. `config/velox.yml`) is parsed and checked against the arguments available in `TASK_ARGS` (`pidsmaker/config/config.py`), then the [seven stages of the pipeline](../guide/pipeline.md) run one after the other.
 
 ## Ways to run
 
@@ -78,11 +99,21 @@ The content of `config/velox.yml` is parsed and checked against the arguments av
 
 Every argument of the YAML config can be overridden from the command line, using its dotted path. CLI arguments always take precedence over the YAML file:
 
-```shell
-python pidsmaker/main.py kairos CADETS_E3 \
-  --training.node_hid_dim=128 \
-  --batching.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
-```
+=== "Provenance"
+
+    ```shell
+    python pidsmaker/main.py kairos CADETS_E3 \
+      --training.node_hid_dim=128 \
+      --batching.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
+    ```
+
+=== "Network"
+
+    ```shell
+    python pidsmaker/main.py euler LANL \
+      --construction.time_window_size=60 \
+      --training.decoder.predict_edge_contrastive.neg_ratio=5
+    ```
 
 Components can be swapped the same way. For example, Orthrus with doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers:
 
@@ -119,7 +150,7 @@ At the end of the `evaluation` task, metrics are printed in the logs and, with `
 | `adp_score` | Attack Detection Precision: area under the curve of the percentage of attacks detected against precision. It rewards systems that detect every attack with few false positives |
 | `discrimination` | Margin between the highest score of each attack and the mean of the 10 highest benign scores (normalized scores), averaged over attacks. Positive when attacks stand out |
 
-How samples are labeled, how thresholds are chosen and how each metric is computed is explained in [Evaluation & labeling](../guide/evaluation.md).
+Provenance systems classify nodes by default, network systems edges (authentications or flows). How samples are labeled, how thresholds are chosen and how each metric is computed is explained in [Evaluation & labeling](../guide/evaluation.md).
 
 All files produced by a run are written in the artifact folder, `/home/artifacts/` by default (set `ARTIFACTS_DIR` in `.env`, or `--artifact_dir`).
 
@@ -135,7 +166,15 @@ All files produced by a run are written in the artifact folder, `/home/artifacts
 
     [:octicons-arrow-right-24: Pipeline](../guide/pipeline.md)
 
--   :lucide-graduation-cap:{ .lg .middle } __Build your own PIDS__
+-   :lucide-shield:{ .lg .middle } __Compare the systems__
+
+    ---
+
+    The provenance and network systems side by side, and which datasets each one runs on.
+
+    [:octicons-arrow-right-24: Systems](../guide/systems.md)
+
+-   :lucide-graduation-cap:{ .lg .middle } __Build your own system__
 
     ---
 
