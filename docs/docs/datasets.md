@@ -261,7 +261,7 @@ The network flows of all the hosts of [DARPA OpTC](https://github.com/FiveDirect
 
 LARES labels only some of the records of each malicious flow (a flow has FLOW START and FLOW MESSAGE events, recorded by the hosts at both ends). By default, the database labels malicious all the records of a malicious flow (same 5-tuple in the same LARES file): 1,015 malicious FLOW START events instead of the 115 of LARES. The labels of LARES are kept by building the database with `--no_label_propagation` (see the [database creation guide](create-db-from-scratch.md#fill-the-database-optc-flows)). Euler and Argus use another preprocessing and labelling of OpTC (IP addresses as nodes, including external hosts, and all the events of compromised hosts as malicious), so their results on OpTC are not comparable.
 
-99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. `construction.drop_noise_events=True` drops them (off by default, as in LARES). The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with `--tuned` (`config/tuned_baselines/optc_net/`).
+99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. They are dropped by default (`construction.drop_noise_events`, which has no effect on other datasets); set `construction.drop_noise_events=False` to keep them, as LARES does. The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with `--tuned` (`config/tuned_baselines/optc_net/`).
 
 ## PROVENANCE_BENIGN
 

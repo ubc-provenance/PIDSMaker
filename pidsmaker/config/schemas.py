@@ -241,11 +241,9 @@ class DatasetSchema:
         return sql
 
     def with_noise_dropped(self, drop):
-        """The schema dropping its noise events (`construction.drop_noise_events`)."""
-        if not drop:
+        """The schema dropping its noise events (`construction.drop_noise_events`), if it has any."""
+        if not drop or not self.noise_events_sql:
             return self
-        if not self.noise_events_sql:
-            raise ValueError(f"construction.drop_noise_events: schema {self.name} has no noise events")
         return replace(self, drop_noise=True)
 
     def with_operations(self, operations):
@@ -1004,8 +1002,17 @@ def get_schema(cfg):
     schema = get_schema_by_name(name)
     edge_type = getattr(construction, "edge_type", None) if construction is not None else None
     operations = getattr(construction, "operations", None) if construction is not None else None
-    drop_noise = bool(getattr(construction, "drop_noise_events", False)) if construction is not None else False
-    return schema.with_operations(operations).with_noise_dropped(drop_noise).with_edge_type(edge_type)
+    return (
+        schema.with_operations(operations)
+        .with_noise_dropped(drops_noise_events(construction))
+        .with_edge_type(edge_type)
+    )
+
+
+def drops_noise_events(construction):
+    """`construction.drop_noise_events`, True when unset (configs not including default.yml)."""
+    value = getattr(construction, "drop_noise_events", None) if construction is not None else None
+    return True if value is None else bool(value)
 
 
 def label_format(node_type):

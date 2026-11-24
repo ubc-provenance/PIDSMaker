@@ -1367,7 +1367,8 @@ TASK_ARGS = {
             bool,
             desc="Drops the noise events of the dataset's schema when building graphs (OpTC \
                 network flows: NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor \
-                discovery, which link every host to most hosts in every time window). Default: False.",
+                discovery, which link every host to most hosts in every time window). No effect on datasets \
+                without noise events. Default: True.",
         ),
         "edge_type": Arg(
             str,

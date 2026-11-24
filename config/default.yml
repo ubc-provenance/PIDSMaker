@@ -10,7 +10,7 @@ construction:
   # edge attribute of the dataset schema (e.g. `logon_type` for LANL)
   edge_type: operation
   operations: default
-  drop_noise_events: False
+  drop_noise_events: True
   multi_dataset: none
   node_label_features:
     subject: type, path, cmd_line

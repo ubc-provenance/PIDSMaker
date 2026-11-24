@@ -10,7 +10,7 @@ from copy import deepcopy
 import yaml
 from yacs.config import CfgNode as CN
 
-from .schemas import get_schema, get_schema_by_name
+from .schemas import drops_noise_events, get_schema, get_schema_by_name
 from .config import (
     CLEANING_METHODS,
     DATASET_DEFAULT_CONFIG,
@@ -326,6 +326,7 @@ def get_cleaning_methods_from_cfg(cfg):
 # reused. Keys are paths in the task's config: a leaf arg is removed if its value is None or the
 # given default, a group of args (default `None`) if all its values are None.
 UNHASHED_DEFAULT_ARGS = {
+    # `drop_noise_events` is hashed only when it drops events (see `get_hashed_construction_cfg`)
     "construction": {"edge_type": "operation", "operations": "default", "drop_noise_events": False},
     "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
     "feat_inference": {"edge_attributes": "all"},
@@ -409,6 +410,10 @@ def get_hashed_construction_cfg(cfg):
     hashed["node_label_features"] = {
         k: v for k, v in cfg.construction.node_label_features.items() if k in node_types
     }
+    # Only datasets with noise events (e.g. OPTC_NET) are affected by `drop_noise_events`
+    hashed["drop_noise_events"] = drops_noise_events(cfg.construction) and bool(
+        get_schema(cfg).noise_events_sql
+    )
     methods = sorted(set(get_cleaning_methods_from_cfg(cfg)))
     if methods:
         cleaning = cfg.construction.cleaning

@@ -100,6 +100,22 @@ class TestSchemas:
         with pytest.raises(ValueError, match="at least two node types"):
             prepare_cfg("threatrace")
 
+    def test_noise_events_filter(self):
+        from types import SimpleNamespace
+
+        from pidsmaker.config.schemas import drops_noise_events
+
+        # OpTC noise events are dropped by default (also when the option is unset)
+        optc = SCHEMAS["optc_flows"]
+        assert drops_noise_events(SimpleNamespace()) and drops_noise_events(None)
+        assert not drops_noise_events(SimpleNamespace(drop_noise_events=False))
+        assert "NOT (" in optc.with_noise_dropped(True).operations_sql()
+        assert optc.with_noise_dropped(False).operations_sql() == optc.operations_sql()
+        # No effect on schemas without noise events
+        for name, schema in SCHEMAS.items():
+            if not schema.noise_events_sql:
+                assert schema.with_noise_dropped(True) is schema, name
+
     def test_operations_filter(self):
         # OpTC flows keep FLOW_START events by default (as LARES and Argus)
         optc = SCHEMAS["optc_flows"]
