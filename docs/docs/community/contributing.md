@@ -52,18 +52,24 @@ Iterate quickly
 pre-commit run --all-files
 ```
 </li>
-<li markdown>**Run the tests.** Functional tests check that changes to one component don't break the others. Update them when you add a component.
+<li markdown>**Run the tests.** Functional tests check that changes to one component don't break the others. Update them when you add a component. They run the pipeline in test mode on a small sample of CLEARSCOPE_E3 (`tests/fixtures/`) and on a synthetic LANL dataset, loaded into temporary databases: they only need the Postgres server, not the full datasets.
 
 === "GPU"
 
     ```shell
-    pytest -v
+    pytest -n 4               # in parallel with pytest-xdist
     ```
 
 === "CPU"
 
     ```shell
-    pytest -v --device cpu -k "not (test_transformations or test_featurizations)"
+    pytest -n 4 --device cpu  # as in the CI
+    ```
+
+=== "Full database"
+
+    ```shell
+    pytest -n 4 --db full     # CLEARSCOPE_E3 tests on the full database
     ```
 
 === "Coverage"
@@ -71,6 +77,8 @@ pre-commit run --all-files
     ```shell
     pytest --cov=pidsmaker tests/
     ```
+
+The tests also run on CPU with GitHub Actions on every pull request (`.github/workflows/tests.yml`). See [`tests/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/tests/README.md) for all options.
 </li>
 <li markdown>**Update the documentation.** If you added or changed arguments in `pidsmaker/config/config.py`, regenerate the reference and check the docs locally (see below).</li>
 </ol>
