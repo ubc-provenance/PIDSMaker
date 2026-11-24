@@ -61,4 +61,21 @@ jobs:
           python -m nltk.downloader -q punkt
 
       - name: Run tests
-        run: pytest tests --device cpu -n 4 --dist worksteal --durations=30
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest tests --device cpu -n 4 --dist worksteal --durations=30 -rfE 2>&1 | tee pytest.log
+
+      # Errors outside of the tests (collection, fixtures, crashed workers) are not annotated
+      # by the plugin: the end of the output is shown as an annotation of the run instead
+      - name: Report the failures
+        if: failure()
+        shell: bash
+        run: |
+          [ -f pytest.log ] || exit 0
+          summary=$(grep -E "^(FAILED|ERROR)|crashed|Interrupted|=====.*(passed|failed|error)" pytest.log | tail -n 60)
+          details=$(grep -vE "Warning|warnings.warn|^\s*$" pytest.log | tail -n 80)
+          for text in "$summary" "$details"; do
+            text="${text//'%'/'%25'}"; text="${text//$'\n'/'%0A'}"; text="${text//$'\r'/'%0D'}"
+            echo "::error title=pytest::${text}"
+          done
