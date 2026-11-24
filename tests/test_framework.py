@@ -1,5 +1,4 @@
 import os
-import shutil
 from itertools import product
 
 import pytest
@@ -13,7 +12,8 @@ from pidsmaker.config import (
     get_yml_cfg,
 )
 
-TESTS_ARTIFACT_DIR = os.path.join("/home/artifacts/", "tests2/")
+# Set by `framework_setup_teardown` (see the `artifact_dir` fixture of conftest.py)
+TESTS_ARTIFACT_DIR = None
 
 
 def prepare_cfg(
@@ -26,6 +26,7 @@ def prepare_cfg(
     objective=None,
     decoder=None,
     custom_args=None,
+    save_figures=False,
 ):
     input_args = [model, dataset]
     args, _ = get_runtime_required_args(return_unknown_args=True, args=input_args)
@@ -45,6 +46,9 @@ def prepare_cfg(
     if encoder and "tgn" not in encoder:
         args.__dict__["batching.intra_graph_batching.used_methods"] = "edges"
 
+    # Plotting dominates the evaluation time: figures are only tested by `TestEvaluationFigures`
+    args.__dict__["evaluation.save_figures"] = save_figures
+
     if custom_args:
         for k, v in custom_args:
             args.__dict__[k] = v
@@ -59,14 +63,11 @@ def prepare_cfg(
 
 
 @pytest.fixture(scope="session", autouse=True)
-def framework_setup_teardown():
-    # Runs before tests
-    shutil.rmtree(TESTS_ARTIFACT_DIR, ignore_errors=True)
+def framework_setup_teardown(artifact_dir):
+    global TESTS_ARTIFACT_DIR
+    TESTS_ARTIFACT_DIR = artifact_dir
     wandb.init(mode="disabled")
-
     yield
-    # Runs after tests
-    shutil.rmtree(TESTS_ARTIFACT_DIR)
 
 
 @pytest.fixture(scope="class")
@@ -419,6 +420,23 @@ class TestSystems:
         main.main(cfg)
 
 
+class TestEvaluationFigures:
+    @pytest.mark.parametrize(
+        "evaluation,figure",
+        [
+            ("node_evaluation", "adp_curve_model_epoch_0.png"),
+            ("edge_evaluation", "adp_curve_model_epoch_0.png"),
+            ("tw_evaluation", "pr_curve_model_epoch_0.png"),
+            ("node_tw_evaluation", "pr_curve_model_epoch_0.png"),
+        ],
+    )
+    def test_evaluation_figures(self, dataset, device, evaluation, figure):
+        custom_args = [("evaluation.used_method", evaluation)]
+        cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args, save_figures=True)
+        main.main(cfg)
+        assert os.path.exists(os.path.join(cfg.evaluation._precision_recall_dir, figure))
+
+
 class TestPretrainedEncoders:
     # Pretraining runs on the test dataset with a small budget, so no pretrained weights are needed.
     # The language models downloaded from HuggingFace (gpt2_pretrained, llama3_pretrained,
@@ -426,11 +444,15 @@ class TestPretrainedEncoders:
     model_types = ["spider", "bert", "deepwalk", "graphmae"]
 
     @staticmethod
-    def pretraining_args(dataset):
+    def pretraining_args(dataset, model_type="spider"):
+        # Token budget of about two epochs on the test graphs (each epoch ends with a KNN
+        # evaluation, which dominates the pretraining time). An epoch of spider has ~7k tokens and
+        # its best checkpoints are only saved at the end of an epoch.
+        pretrain_tokens = 10000 if model_type == "spider" else 1500
         return [
             ("featurization.pretrained.pretrain_datasets", dataset),
-            ("featurization.pretrained.training.pretrain_tokens", 20000),
-            ("featurization.pretrained.training.warmup_tokens", 2000),
+            ("featurization.pretrained.training.pretrain_tokens", pretrain_tokens),
+            ("featurization.pretrained.training.warmup_tokens", pretrain_tokens // 10),
             ("featurization.pretrained.deepwalk.epochs", 1),
             ("featurization.pretrained.graphmae.epochs", 1),
         ]
@@ -440,7 +462,7 @@ class TestPretrainedEncoders:
 
     @pytest.mark.parametrize("model_type", model_types)
     def test_pretrained_featurization(self, dataset, device, model_type):
-        custom_args = self.pretraining_args(dataset) + [
+        custom_args = self.pretraining_args(dataset, model_type) + [
             ("featurization.pretrained.model_type", model_type),
             ("featurization.tokenization.used_method", self.tokenizations.get(model_type, "bpe")),
         ]
@@ -472,7 +494,8 @@ class TestPretrainedEncoders:
         main.main(cfg)
 
     def test_finetune_as_detector(self, dataset, device):
-        custom_args = self.pretraining_args(dataset) + [("training.pretrained.finetune_epochs", 1)]
+        # cybergfm pretrains a BERT
+        custom_args = self.pretraining_args(dataset, "bert") + [("training.pretrained.finetune_epochs", 1)]
         cfg = prepare_cfg("cybergfm", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
@@ -537,6 +560,15 @@ class TestCombinations:
                 ("training.decoder.predict_edge_type.balanced_loss", True),
             ],
             [("training.decoder.predict_edge_type.balanced_loss", True)],
+            *[
+                [
+                    ("training.decoder.predict_edge_type.loss", "AMS"),
+                    ("training.decoder.predict_edge_type.AMS.version", version),
+                    ("training.decoder.predict_edge_type.AMS.margin", 0.2),
+                    ("training.decoder.predict_edge_type.AMS.scale", 30),
+                ]
+                for version in [1, 2]
+            ],
             [("training.encoder.tgn.use_residual_norm", True)],
             [("batching.edge_features", "time_encoding")],
             [("evaluation.used_method", "tw_evaluation")],

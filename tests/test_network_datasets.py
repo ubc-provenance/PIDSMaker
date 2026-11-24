@@ -1,7 +1,7 @@
 """Tests of network datasets (e.g. LANL) and of the dataset schemas.
 
 The LANL tests run on a small synthetic dataset in the LANL format (see `synthetic_lanl.py`),
-loaded into the `lanl_pytest` database by the LANL preprocessing script, so that they don't
+loaded into a temporary database by the LANL preprocessing script, so that they don't
 require the real dataset.
 """
 
@@ -25,25 +25,36 @@ from pidsmaker.utils.dataset_utils import encode_edge_attributes, get_rel2id
 
 sys.path.insert(0, os.path.dirname(__file__))
 import synthetic_lanl  # noqa: E402
+from conftest import admin_execute, database_params  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TESTS_ARTIFACT_DIR = "/home/artifacts/tests_network/"
-TEST_DATABASE = "lanl_pytest"
+# Specific to the process: pytest-xdist workers and concurrent test sessions each have their own
+TEST_DATABASE = f"pidsmaker_tests_lanl_{os.getpid()}"
+# Set by `lanl_database`
+TESTS_ARTIFACT_DIR = None
+USE_CPU = False
 
 
 def prepare_cfg(model, dataset="LANL", custom_args=(), test_mode=True):
     args, _ = get_runtime_required_args(return_unknown_args=True, args=[model, dataset])
     args.__dict__["artifact_dir"] = TESTS_ARTIFACT_DIR
+    # Plotting dominates the evaluation time (figures are tested in test_framework.py)
+    args.__dict__["evaluation.save_figures"] = False
     for k, v in custom_args:
         args.__dict__[k] = v
     cfg = get_yml_cfg(args)
     cfg._test_mode = test_mode
+    if USE_CPU:
+        cfg._use_cpu = True
     return cfg
 
 
 @pytest.fixture(scope="module", autouse=True)
-def lanl_database(tmp_path_factory):
+def lanl_database(tmp_path_factory, artifact_dir, device):
     """Loads the synthetic LANL dataset into the test database, used by the LANL dataset."""
+    global TESTS_ARTIFACT_DIR, USE_CPU
+    TESTS_ARTIFACT_DIR = os.path.join(artifact_dir, "network") + "/"
+    USE_CPU = device == "cpu"
     data_dir = tmp_path_factory.mktemp("lanl")
     auth, redteam = synthetic_lanl.generate(str(data_dir))
     subprocess.run(
@@ -58,6 +69,9 @@ def lanl_database(tmp_path_factory):
             "--database",
             TEST_DATABASE,
             "--overwrite",
+            # The default artifact directory (/home/artifacts/) may not be writable, e.g. in CI
+            "--artifact_dir",
+            TESTS_ARTIFACT_DIR,
         ],
         check=True,
         cwd=ROOT,
@@ -70,6 +84,7 @@ def lanl_database(tmp_path_factory):
     yield
     DATASET_DEFAULT_CONFIG["LANL"].update(original)
     shutil.rmtree(TESTS_ARTIFACT_DIR, ignore_errors=True)
+    admin_execute(database_params(), f'DROP DATABASE IF EXISTS "{TEST_DATABASE}";')
 
 
 class TestSchemas:

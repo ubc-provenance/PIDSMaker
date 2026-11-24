@@ -106,7 +106,8 @@ def classifier_evaluation(y_test, y_test_pred, scores):
         fn = int(np.count_nonzero((y_test == 1) & (y_test_pred == 0)))
         tn = len(y_test) - tp - fp - fn
     elif labels_exist:
-        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred).ravel()
+        # `labels` keeps the matrix 2x2 when a single class is present (e.g. all predicted malicious)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_test_pred, labels=[0, 1]).ravel()
     else:
         log("WARNING: Computing confusion matrix failed.")
         tn, fp, fn, tp = 1, 1, 1, 1  # only to not break tests
@@ -714,10 +715,10 @@ def plot_dor_recall_curve(scores, y_truth, out_file):
     # Iterate over each threshold to calculate recall and DOR
     for threshold in thresholds:
         # Make predictions based on the threshold
-        predictions = scores >= threshold
+        predictions = (scores >= threshold).astype(int)
 
         # Calculate TP, FP, TN, FN
-        TN, FP, FN, TP = confusion_matrix(y_truth, predictions).ravel()
+        TN, FP, FN, TP = confusion_matrix(y_truth, predictions, labels=[0, 1]).ravel()
         recall = TP / (TP + FN) if (TP + FN) > 0 else 0
 
         # Calculate Diagnostic Odds Ratio (DOR)

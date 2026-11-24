@@ -72,7 +72,7 @@ RUN pip install numpy==1.26.4
 
 RUN pip install gdown==5.2.0 umap-learn==0.5.6
 RUN pip install flask==3.0.3
-RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
+RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pytest-xdist==3.6.1 pre-commit==4.2.0 setuptools==61.0 mkdocs-material==9.6.12 mkdocs-glightbox==0.4.0
 
 COPY . .
 

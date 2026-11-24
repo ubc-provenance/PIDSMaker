@@ -1160,7 +1160,11 @@ OBJECTIVES_CFG = {
         "pos_weight": Arg(float, desc="BCE pos_weight for the attack class (on top of 1:1 oversampling)."),
     },
     "predict_edge_type": {
-        "loss": Arg(str, vals=OR(PRED_LOSSES), desc="Loss used to predict the edge type."),
+        "loss": Arg(
+            str,
+            vals=OR(PRED_LOSSES + ["AMS"]),
+            desc="Loss used to predict the edge type. AMS: additive margin softmax (see `AMS`).",
+        ),
         "decoder": Arg(
             str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
         ),
