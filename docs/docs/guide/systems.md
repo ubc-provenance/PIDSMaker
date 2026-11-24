@@ -1,6 +1,6 @@
 ---
 title: Systems
-description: The PIDSs reimplemented in PIDSMaker, their papers, and the components each one uses at every stage of the pipeline.
+description: The PIDSs and network IDSs reimplemented in PIDSMaker, their papers, and the components each one uses at every stage of the pipeline.
 ---
 
 # Systems
@@ -22,6 +22,8 @@ PIDSMaker reimplements state-of-the-art PIDSs as YAML configs in `config/`. Sinc
 | **NodLink** | `nodlink` | <span class="pm-chip">NDSS 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2311.02331) |
 | **ThreaTrace** | `threatrace` | <span class="pm-chip">IEEE TIFS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2111.04333) |
 
+PIDSMaker also reimplements network intrusion detection systems: **Euler**, **Argus**, **Jbeil**, **LARES**, **E-GraphSAGE** and **Anomal-E** (configs `euler`, `argus`, `jbeil`, `lares`, `egraphsage` and `anomal_e`). They are described with the same components, and run on provenance datasets as well as on the network datasets. See [Network intrusion detection](network.md).
+
 Run any of them with its config name:
 
 ```shell
@@ -30,7 +32,7 @@ python pidsmaker/main.py kairos CADETS_E3
 
 ## Components at a glance
 
-How each system is configured at the main stages of the [pipeline](pipeline.md). All systems are evaluated at the node level (`node_evaluation`) by default.
+How each system is configured at the main stages of the [pipeline](pipeline.md). All these PIDSs are evaluated at the node level (`node_evaluation`) by default.
 
 | System | Featurization | Encoder | Objective | Threshold |
 |---|---|---|---|---|
@@ -43,6 +45,8 @@ How each system is configured at the main stages of the [pipeline](pipeline.md).
 | NodLink | `fasttext` | `sum_aggregation` | `reconstruct_node_features` | `nodlink` |
 | ThreaTrace | `only_type` | `sage` | `predict_node_type` | `threatrace` |
 | OCR-APT | `ocrapt_features` | `rgcn_per_type` | `one_class` | `ocrapt` |
+
+The components of the network systems are listed in [Network intrusion detection](network.md#components).
 
 A few systems also use specific transformations or post-processing: R-Caid builds its pseudo-graph (`transformation.used_methods: rcaid_pseudo_graph`), NodLink makes graphs undirected (`undirected`), and OCR-APT extracts anomalous subgraphs in the triage stage (`triage.used_method: ocrapt_subgraph`).
 

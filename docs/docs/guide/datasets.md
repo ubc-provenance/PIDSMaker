@@ -1,11 +1,11 @@
 ---
 title: Datasets
-description: The provenance datasets supported by PIDSMaker (DARPA TC E3/E5, OpTC, ATLASv2, CARBANAKv2), their attack scenarios and ground-truth labels.
+description: The provenance datasets (DARPA TC E3/E5, OpTC, ATLASv2, CARBANAKv2) and network datasets (LANL, OpTC flows) supported by PIDSMaker, their attack scenarios and ground-truth labels.
 ---
 
 # Datasets
 
-PIDSMaker supports the public provenance datasets most used in APT detection research, preprocessed into Postgres databases that you can [download and load in minutes](../getting-started/installation.md#1-download-the-datasets). This page describes each dataset, its attack scenarios and its ground truth.
+PIDSMaker supports the public provenance datasets most used in APT detection research, preprocessed into Postgres databases that you can [download and load in minutes](../getting-started/installation.md#1-download-the-datasets). It also supports two network datasets, LANL and the network flows of OpTC, for [network intrusion detection](network.md). This page describes each dataset, its attack scenarios and its ground truth.
 { .lead }
 
 ## Overview
@@ -276,7 +276,7 @@ python pidsmaker/main.py SYSTEM CARBANAKV2_EDR
 
 ## Network datasets
 
-Network intrusion detection systems (e.g. Euler, Argus, Jbeil, LARES) model the communications between the hosts of a network. In PIDSMaker, network datasets are described by a schema (`pidsmaker/config/schemas.py`) that defines their node types (hosts), their edge types and the attributes of their events, which become edge features (`batching.edge_features=edge_attrs`). Any system runs on them, and network systems run on provenance datasets as well.
+Network intrusion detection systems (e.g. Euler, Argus, Jbeil, LARES) model the communications between the hosts of a network. In PIDSMaker, network datasets are described by a schema (`pidsmaker/config/schemas.py`) that defines their node types (hosts), their edge types and the attributes of their events, which become edge features (`batching.edge_features=edge_attrs`). Any system runs on them, and network systems run on provenance datasets as well (see [Network intrusion detection](network.md#any-system-on-any-dataset)).
 
 Malicious events are labelled in the database (`label` column), so the ground truth is event-level: the evaluation labels each edge with its events. Models are trained and validated on benign events only: `construction.benign_training` (on by default) drops the malicious events of the train and val dates, which has no effect when they have none (as for LANL and OPTC_NET). The preprocessed files of [LARES](https://github.com/TristanBilot/lares) are used for both datasets (see [Building datasets from scratch](../getting-started/from-scratch.md#network-datasets-lanl-and-optc-flows)).
 
@@ -327,8 +327,8 @@ DATASET_DEFAULT_CONFIG = {
         "raw_dir": "",
         "database": "my_database_name",
         "database_all_file": "my_database_name",
-        "num_node_types": 3, # Number of node types in the dataset __format__ (i.e., in pidsmaker/utils/dataset_utils.py)
-        "num_edge_types": 10, # Number of edge types in the dataset __format__ (i.e., in pidsmaker/utils/dataset_utils.py)
+        "schema": "darpa_tc", # Format of the database: node types, edge types and event attributes (in pidsmaker/config/schemas.py)
+        "timezone": "US/Eastern", # Timezone of the dates below
         "start_date": "2018-04-02", # Start date (Inclusive)
         "end_date": "2018-04-14", # End date (Exclusive)
         "train_dates": [
@@ -364,4 +364,6 @@ DATASET_DEFAULT_CONFIG = {
 }
 ```
 
-Then follow the [database creation guide](../getting-started/from-scratch.md) to load your data, and add its ground truth under `Ground_Truth/`.
+`schema` names a dataset schema of `SCHEMAS` in `pidsmaker/config/schemas.py` (`darpa_tc`, `optc`, `carbon_black_edr`, `lanl_auth`, `optc_flows`), from which the numbers of node and edge types are derived. A dataset in a new format needs a new schema, which describes the database tables of its node types, its edge types and the attributes of its events.
+
+Then follow the [database creation guide](../getting-started/from-scratch.md) to load your data, and add its ground truth under `Ground_Truth/` (or, with a schema that has a label column, label its events in the database, as the [network datasets](#network-datasets)).

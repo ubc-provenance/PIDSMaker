@@ -47,6 +47,8 @@ The `TGNEncoder` accepts as argument an `encoder`, defined in the config, which 
 
 Examples of TGN config can be found in `kairos.yml` and `orthrus.yml`.
 
+With `tgn_last_neighbor.negative_destinations`, a negative destination is drawn for each edge, uniformly among the destinations of the training graphs (or of all graphs, for validation and test), and embedded by the TGN with the nodes of the batch, as in TGN and Jbeil. It is used by the `tgn` negative sampling of `predict_edge_contrastive` (see `jbeil.yml`).
+
 ### Neighbor Sampling
 
 !!! info

@@ -29,6 +29,7 @@ nav = [
     { "Pipeline" = "guide/pipeline.md" },
     { "Systems" = "guide/systems.md" },
     { "Datasets" = "guide/datasets.md" },
+    { "Network intrusion detection" = "guide/network.md" },
     { "Evaluation & labeling" = "guide/evaluation.md" },
     { "Tutorial: a new PIDS" = "guide/tutorial.md" },
   ] },

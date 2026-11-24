@@ -14,11 +14,11 @@ The same detector can look excellent or useless depending on **what** is counted
 <li markdown>**Losses.** After training, the model computes a loss for every edge (or node, for node-level objectives) of the validation and test graphs. This is done at epoch 0 and then every two epochs, and saved per time window.</li>
 <li markdown>**Scores.** The evaluation method groups the losses into the **samples** it classifies (nodes, edges, time windows...) and reduces them into one anomaly score per sample.</li>
 <li markdown>**Threshold.** A threshold is computed from the **validation** losses, which contain benign activity only. Samples scoring above it are predicted malicious.</li>
-<li markdown>**Labels.** Each sample gets a ground-truth label, derived from the list of attack nodes of the dataset.</li>
+<li markdown>**Labels.** Each sample gets a ground-truth label, derived from the list of attack nodes of the dataset (or from the labels of its events, for [network datasets](#event-level-labels-network-datasets)).</li>
 <li markdown>**Metrics.** Predictions are compared with the labels, for each evaluated epoch, and the metrics of the best epoch are reported.</li>
 </ol>
 
-The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. All systems use `node_evaluation` by default.
+The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. All provenance systems use `node_evaluation` by default; [network systems](network.md) use `edge_evaluation`, or `host_two_stage_evaluation` for LARES.
 
 ## Evaluation granularities
 
@@ -41,6 +41,7 @@ The ground truth only lists attack **nodes**. Each evaluation method turns it in
 | `edge_evaluation` | An edge (event) | The loss of the edge | its source, destination or both are attack nodes, during an attack (`malicious_edge_selection`: `src_node`, `dst_node`, `both_nodes`) |
 | `tw_evaluation` | A time-window graph | Reduction of all the losses of the window | it contains at least one attack event |
 | `queue_evaluation` | A time-window graph, through its queue | Score of the queue that contains it | it contains at least one attack event |
+| `host_two_stage_evaluation` | An edge, predicted by the top-scored hosts | The loss of the edge | as `edge_evaluation` with `both_nodes`, or its event label (see [below](#host-centered-evaluation-lares)) |
 
 !!! info "Which samples are evaluated?"
     Only samples seen during inference are evaluated: a node that never appears in the test graphs is neither scored nor counted as a false negative. Empty time windows are skipped.
@@ -56,6 +57,15 @@ The ground truth only lists attack **nodes**. Each evaluation method turns it in
 3. The score of a queue is the product of (loss + 1) over its windows. All windows of queues scoring above `queue_threshold` are flagged.
 
 The `provnet_lof_queue` method is not supported anymore.
+
+### Host-centered evaluation (LARES)
+
+`host_two_stage_evaluation` reproduces the two-stage evaluation of LARES, on edge-level losses:
+
+1. Each host is scored by the maximum loss of its outgoing edges over the test period. The `alpha` highest host scores are split into two clusters with k-means, and the hosts of the high-score cluster are selected, along with the host ranked just below them.
+2. The `beta` highest-scored outgoing edges of each selected host are predicted malicious.
+
+With `root_attack_nodes`, only the malicious edges of these source hosts are positives, as in LARES (`dataset` uses the root sources of the dataset: `9660` on LANL, `201,402,501` on OPTC_NET). `test_end` ends the evaluated period earlier (LARES evaluates LANL on its first 14 days). Precision, recall and MCC come from the predictions of the two stages, AUC and AP from the edge losses; the rank of each root host is also reported. No threshold is used.
 
 ## Ground truth
 
@@ -88,13 +98,17 @@ The files live under `Ground_Truth/<version>/<dataset>/`. Changing the version o
 
 Selecting a version that has no file for the dataset fails with a clear error. See [`Ground_Truth/threatrace/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/Ground_Truth/threatrace/README.md) for the per-dataset ThreaTrace node counts.
 
+### Event-level labels (network datasets)
+
+Datasets whose schema has a label column, such as [LANL and OPTC_NET](datasets.md#network-datasets), label their events in the database instead of shipping ground-truth files, and `ground_truth_version` has no effect on them. Edges carry the labels of their events (also after `merge_edges`), malicious nodes are the endpoints of malicious events, and, as these datasets define no `attack_to_time_window`, all malicious events form a single attack over the test period.
+
 ## Thresholds
 
 `threshold_method` (in the section of the evaluation method) sets both how losses are reduced into a score and how the threshold is computed. Thresholds are computed on the **validation** losses unless stated otherwise.
 
 | `threshold_method` | Score of a sample | Threshold | Used by |
 |---|---|---|---|
-| `max_val_loss` | Max loss | Max validation loss × `alpha` (`node_evaluation.max_val_loss.alpha`, node and edge evaluation only) | Velox, Orthrus, Kairos, R-Caid |
+| `max_val_loss` | Max loss | Max validation loss × `alpha` (`node_evaluation.max_val_loss.alpha`, node and edge evaluation only) | Velox, Orthrus, Kairos, R-Caid, network systems except LARES |
 | `mean_val_loss` | Mean loss | Mean validation loss | |
 | `percentile` | 95th percentile of the losses | Max validation loss × `alpha` | |
 | `nodlink` | Max loss | 90th percentile of the validation losses | NodLink |
@@ -144,11 +158,16 @@ Every evaluated epoch is logged, and the metrics of the best one are reported, a
 | `best_adp` *(default)* | Highest ADP, ties broken by discrimination |
 | `best_discrimination` | Highest discrimination |
 | `best_ap@10` | Highest AP among the 10 highest scores, ties broken by discrimination |
+| `best_mcc` | Highest MCC, as in the code of LARES |
+| `best_val_score` | Highest score on validation data computed by the objective, without labels: the AUC + AP of link prediction on the validation edges with `predict_edge_contrastive` (Euler's early stopping) |
+| `last_epoch` | Last evaluated epoch, without labels |
 
-Time-window evaluations, which have no ADP, always use the highest AP. Queue evaluation uses the highest precision, then recall.
+With `best_adp`, `best_discrimination` and `best_ap@10`, time-window evaluations, which have no ADP, use the highest AP. Queue evaluation uses the highest precision, then recall.
 
-!!! warning "The epoch is selected on test metrics"
-    The selection uses the metrics of the test set. Keep this in mind when comparing with systems that select their model on validation data only, and evaluate over [several runs](../features/instability.md).
+With a label-free selection (`best_val_score` or `last_epoch`), `evaluation.evaluate_selected_epoch_only=True` evaluates only the selected epoch on the test set, instead of every epoch: faster on large test sets, but without per-epoch test metrics.
+
+!!! warning "Most selections use test metrics"
+    `best_adp`, `best_discrimination`, `best_ap@10` and `best_mcc` select the epoch on the metrics of the test set. Keep this in mind when comparing with systems that select their model on validation data only (`best_val_score`, `last_epoch`), and evaluate over [several runs](../features/instability.md).
 
 ## Outputs
 
@@ -157,6 +176,8 @@ Results are written to the `precision_recall_dir/` folder of the evaluation task
 - `scores_*.png` and `neat_scores_*.svg`: the score of every node, with attack nodes highlighted and the threshold.
 - `adp_curve_*.png`: the curve whose area is the ADP.
 - `discrim_curve_*.png` and `distrib_*.png`: the distribution of scores per node type.
+
+Figures with one point per node or edge are slow to draw on large test sets: `evaluation.save_figures=False` skips them, and the metrics are computed either way. The network systems disable them by default.
 
 ## Settings of each system
 
@@ -171,6 +192,8 @@ Results are written to the `precision_recall_dir/` folder of the evaluation task
 | NodLink | `node_evaluation` | `nodlink` | |
 | ThreaTrace | `node_evaluation` | `threatrace` | |
 | OCR-APT | `node_evaluation` | `ocrapt` | |
+| Euler, Argus, Jbeil, E-GraphSAGE, Anomal-E | `edge_evaluation` (`both_nodes`) | `max_val_loss` | |
+| LARES | `host_two_stage_evaluation` | | k-means on the top host scores (α = 3) |
 
 Any system can be evaluated differently from the CLI, for example Kairos at the time-window level:
 
