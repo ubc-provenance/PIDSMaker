@@ -69,6 +69,9 @@ def lanl_database(tmp_path_factory, artifact_dir, device):
             "--database",
             TEST_DATABASE,
             "--overwrite",
+            # The default artifact directory (/home/artifacts/) may not be writable, e.g. in CI
+            "--artifact_dir",
+            TESTS_ARTIFACT_DIR,
         ],
         check=True,
         cwd=ROOT,
