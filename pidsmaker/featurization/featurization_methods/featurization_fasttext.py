@@ -47,6 +47,12 @@ def train_fasttext(corpus, cfg):
         )
 
     model.build_vocab(corpus, update=use_pretrained_fb_model)
+    if len(model.wv) == 0:
+        raise ValueError(
+            f"FastText: no token of the node labels appears at least min_count={min_count} times. "
+            "This happens when labels are unique identifiers (e.g. host names in network datasets): "
+            "lower `featurization.fasttext.min_count` or use another featurization."
+        )
     model.train(corpus, epochs=epochs, total_examples=len(corpus))
 
     return model

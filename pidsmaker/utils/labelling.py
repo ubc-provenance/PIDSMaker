@@ -3,7 +3,56 @@ import os.path
 from collections import defaultdict
 
 from pidsmaker.utils.utils import datetime_to_ns_time_US, init_database_connection, log
-from pidsmaker.utils.dataset_utils import get_uuid_to_index_id, get_time_and_end_node
+from pidsmaker.utils.dataset_utils import get_schema, get_uuid_to_index_id, get_time_and_end_node
+
+
+def has_event_labels(cfg):
+    """Whether the dataset labels its events in the database (see `DatasetSchema.label_column`).
+
+    These datasets (e.g. network datasets like LANL) have event-level ground truth: the
+    malicious nodes are the endpoints of malicious events, and attacks are the groups of
+    malicious events in the time windows of `attack_to_time_window`.
+    """
+    return get_schema(cfg).label_column is not None
+
+
+# Last result of `get_malicious_events` (read many times per evaluation)
+_MALICIOUS_EVENTS_CACHE = {}
+
+
+def get_malicious_events(cfg):
+    """[(src_index_id, dst_index_id, timestamp, edge type)] of the events labelled malicious,
+    sorted by time. The edge type is the one of the graphs (see `construction.edge_type`)."""
+    schema = get_schema(cfg)
+    database = (
+        cfg.dataset.database_all_file if cfg.construction.use_all_files else cfg.dataset.database
+    )
+    key = (cfg.dataset.name, database, schema.name, schema.edge_type_attribute, schema.operations_sql())
+    if key not in _MALICIOUS_EVENTS_CACHE:
+        if schema.edge_type_attribute:
+            attr = schema.edge_attribute(schema.edge_type_attribute)
+            type_col, encode = attr.column, attr.encode
+        else:
+            type_col, encode = "operation", (lambda v: v)
+        cur, connect = init_database_connection(cfg)
+        try:
+            cur.execute(
+                f"SELECT src_index_id, dst_index_id, timestamp_rec, {type_col} "
+                f"FROM {schema.event_table} WHERE {schema.label_column} = 1{schema.operations_sql()} "
+                "ORDER BY timestamp_rec;"
+            )
+            rows = cur.fetchall()
+        finally:
+            connect.close()
+        _MALICIOUS_EVENTS_CACHE.clear()
+        _MALICIOUS_EVENTS_CACHE[key] = [
+            (int(src), int(dst), int(t), encode(etype)) for src, dst, t, etype in rows
+        ]
+    return _MALICIOUS_EVENTS_CACHE[key]
+
+
+def _malicious_events_of_attack(cfg, start, end):
+    return [e for e in get_malicious_events(cfg) if start <= e[2] <= end]
 
 
 def is_threatrace(cfg):
@@ -26,6 +75,8 @@ def _threatrace_gt_file(cfg):
 def ensure_ground_truth_available(cfg):
     """Fail fast with a clear message when the selected ground truth has no file for
     this dataset. ThreaTrace only covers CADETS, THEIA, TRACE, and FIVEDIRECTIONS (E3)."""
+    if has_event_labels(cfg):
+        return
     if not is_threatrace(cfg):
         missing = [
             path
@@ -71,9 +122,10 @@ def ground_truth_files(cfg):
 def ground_truth_attacks(cfg):
     """(relative_path, start_ns, end_ns) per attack. ThreaTrace collapses to a
     single combined window over the dataset's test period."""
-    if is_threatrace(cfg):
+    if is_threatrace(cfg) or (has_event_labels(cfg) and not cfg.dataset.attack_to_time_window):
         start, end = _test_period_ns(cfg)
-        return [(_threatrace_gt_file(cfg), start, end)]
+        name = "all_attacks" if has_event_labels(cfg) else _threatrace_gt_file(cfg)
+        return [(name, start, end)]
     return [
         (a[0], datetime_to_ns_time_US(a[1], timezone=cfg.dataset.timezone), datetime_to_ns_time_US(a[2], timezone=cfg.dataset.timezone))
         for a in cfg.dataset.attack_to_time_window
@@ -103,7 +155,21 @@ def _mimicry_nodes(cfg, relative_path, uuid2nids):
     return nodes
 
 
+def _get_ground_truth_from_event_labels(cfg):
+    """Malicious nodes: the endpoints of malicious events, labelled by their attack."""
+    _, nid2uuid = get_uuid_to_index_id(cfg)
+    ground_truth_paths, uuid_to_node_id = {}, {}
+    for name, start, end in ground_truth_attacks(cfg):
+        for src, dst, _t, _etype in _malicious_events_of_attack(cfg, start, end):
+            for nid in (src, dst):
+                ground_truth_paths.setdefault(nid, name)
+                uuid_to_node_id[nid2uuid[nid]] = str(nid)
+    return set(ground_truth_paths), ground_truth_paths, uuid_to_node_id
+
+
 def get_ground_truth(cfg):
+    if has_event_labels(cfg):
+        return _get_ground_truth_from_event_labels(cfg)
     uuid2nids, nid2uuid = get_uuid_to_index_id(cfg)
 
     ground_truth_nids, ground_truth_paths = [], {}
@@ -134,6 +200,14 @@ def get_ground_truth(cfg):
 
 
 def get_GP_of_each_attack(cfg):
+    if has_event_labels(cfg):
+        return {
+            i: {
+                "nids": {n for e in _malicious_events_of_attack(cfg, start, end) for n in e[:2]},
+                "time_range": [start, end],
+            }
+            for i, (_name, start, end) in enumerate(ground_truth_attacks(cfg))
+        }
     uuid2nids, _ = get_uuid_to_index_id(cfg)
 
     attack_to_nids = {}
@@ -161,6 +235,12 @@ def get_t2malicious_node(cfg) -> dict[list]:
     to the DARPA TC approach: any event touching a GT node within the attack
     window is malicious.
     """
+    if has_event_labels(cfg):
+        _, nid2uuid = get_uuid_to_index_id(cfg)
+        t_to_node = defaultdict(list)
+        for src, dst, t, _etype in get_malicious_events(cfg):
+            t_to_node[t].extend([nid2uuid[src], nid2uuid[dst]])
+        return t_to_node
     if _has_edge_csvs(cfg):
         return _get_t2malicious_node_from_edge_gt(cfg)
     return _get_t2malicious_node_from_node_gt(cfg)
@@ -260,6 +340,14 @@ def get_attack_to_mal_edges(cfg) -> dict[set]:
     loads explicit attack edges from CSV files.
     Otherwise falls back to the DB-query approach (DARPA TC datasets).
     """
+    if has_event_labels(cfg):
+        return {
+            i: {
+                (str(src), str(dst), t, etype)
+                for src, dst, t, etype in _malicious_events_of_attack(cfg, start, end)
+            }
+            for i, (_name, start, end) in enumerate(ground_truth_attacks(cfg))
+        }
     if _has_edge_csvs(cfg):
         return _get_attack_to_mal_edges_from_csv(cfg)
     return _get_attack_to_mal_edges_from_db(cfg)

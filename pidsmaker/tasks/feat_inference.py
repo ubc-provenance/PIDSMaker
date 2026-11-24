@@ -17,7 +17,15 @@ from pidsmaker.featurization.feat_inference_methods import (
 )
 from pidsmaker.featurization.feat_inference_methods.feat_inference_pretrained import GraphBasedEncoder
 from pidsmaker.utils.data_utils import COMPACT_MSG_KEYS, CollatableTemporalData
-from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.utils.dataset_utils import (
+    aggregated_edge_attribute_columns,
+    encode_aggregated_edge_attributes,
+    encode_edge_attributes,
+    get_input_edge_attributes,
+    uses_aggregated_edge_attributes,
+    get_node_map,
+    get_rel2id,
+)
 from pidsmaker.utils.graph_store import load_graph_columns
 from pidsmaker.utils.utils import (
     gen_relation_onehot,
@@ -67,6 +75,53 @@ def _edge_columns_from_store(cols):
     src_rows = torch.from_numpy(cols.src.astype(np.int64))
     dst_rows = torch.from_numpy(cols.dst.astype(np.int64))
     return cols.node_ids, cols.node_attrs["node_type"], src_rows, dst_rows, t, y, labels
+
+
+def _edge_attr_features(cfg, path, graph=None, cols=None):
+    """Edge attribute features of the graph at `path`, in `graph.edges` order (None without
+    attributes). `graph` or its stored columns `cols` are used when already loaded."""
+    names = [a.name for a in get_input_edge_attributes(cfg)]
+    if not names:
+        return None
+    if uses_aggregated_edge_attributes(cfg):
+        # Attributes aggregated over the events of merged edges (see `merge_edges`)
+        agg = [c for cols in aggregated_edge_attribute_columns(cfg).values() for c, _ in cols]
+        if cols is not None and all(c in cols.edge_attrs for c in agg):
+            columns = {c: list(cols.edge_attrs[c]) for c in agg}
+        else:
+            if graph is None:
+                graph = torch.load(path)
+            columns = {c: [] for c in agg}
+            for _, _, attr in graph.edges(data=True):
+                for c in agg:
+                    columns[c].append(attr.get(c))
+        return encode_aggregated_edge_attributes(cfg, columns)
+    # Edges added by transformations (e.g. R-Caid's pseudo-graph) may have no attributes:
+    # their missing attributes are null (OTHER for categorical, 0 for numeric attributes)
+    if cols is not None and all(name in cols.edge_attrs for name in names):
+        columns = {name: list(cols.edge_attrs[name]) for name in names}
+    else:
+        if graph is None:
+            graph = torch.load(path)
+        columns = {name: [] for name in names}
+        for _, _, attr in graph.edges(data=True):
+            for name in names:
+                columns[name].append(attr.get(name))
+    return encode_edge_attributes(cfg, columns)
+
+
+def _edge_weights(path, graph=None, cols=None):
+    """(E,) float tensor of the `weight` attribute of the edges, None if edges have no weight."""
+    if cols is not None:
+        if "weight" not in cols.edge_attrs:
+            return None
+        return torch.tensor([float(w) for w in cols.edge_attrs["weight"]], dtype=torch.float)
+    if graph is None:
+        graph = torch.load(path)
+    weights = [attr.get("weight") for _, _, attr in graph.edges(data=True)]
+    if not weights or any(w is None for w in weights):
+        return None
+    return torch.tensor(weights, dtype=torch.float)
 
 
 def _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh):
@@ -229,6 +284,13 @@ def feat_inference(indexid2vec, etype2oh, ntype2oh, sorted_paths, out_dir, cfg, 
         if bert_generator is None:
             for key, value in compact.items():
                 data[key] = value
+        edge_attrs = _edge_attr_features(cfg, path, graph=graph, cols=cols)
+        if edge_attrs is not None:
+            data.edge_attr_feats = edge_attrs
+        # Weights of the edges merged by the `merge_edges` transformation
+        edge_weight = _edge_weights(path, graph=graph, cols=cols)
+        if edge_weight is not None:
+            data.edge_weight = edge_weight
 
         os.makedirs(out_dir, exist_ok=True)
         file = path.split("/")[-1]
@@ -271,7 +333,7 @@ def main_from_config(cfg):
         return
 
     rel2id = get_rel2id(cfg)
-    ntype2id = get_node_map()
+    ntype2id = get_node_map(cfg)
     etype2onehot = gen_relation_onehot(rel2id=rel2id)
     ntype2onehot = gen_relation_onehot(rel2id=ntype2id)
 

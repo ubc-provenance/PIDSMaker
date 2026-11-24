@@ -1,4 +1,6 @@
+import multiprocessing
 import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import torch
 
@@ -6,14 +8,17 @@ from pidsmaker.config import SYNTHETIC_ATTACKS, update_cfg_for_multi_dataset
 from pidsmaker.preprocessing.transformation_methods import (
     synthetic_attack_naive,
     transformation_dag,
+    transformation_merge_edges,
     transformation_rcaid_pseudo_graph,
     transformation_undirected,
 )
-from pidsmaker.utils.graph_store import save_graph
+from pidsmaker.preprocessing.build_graph_methods.build_default_graphs import _can_fork, get_num_workers
+from pidsmaker.utils.graph_store import load_graph_columns, save_graph
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_multi_datasets,
     load_graphs_for_dates,
+    log,
     log_start,
     log_tqdm,
     set_seed,
@@ -59,22 +64,70 @@ def apply_synthetic_attacks(train_graphs, val_graphs, cfg, method):
     raise ValueError(f"Invalid attack generation method {method}")
 
 
+def _transform_file(path, date, dst_dir, cfg, methods):
+    """Transforms the graph stored at `path` and saves it in `dst_dir`."""
+    graph = None
+    if methods[0] == "merge_edges":
+        # Merges edges from the stored columns, without building the graph of all the events
+        cols = load_graph_columns(path)
+        if cols is not None:
+            graph = transformation_merge_edges.merge_columns(cols, cfg)
+            del cols
+            methods = methods[1:]
+    if graph is None:
+        graph = torch.load(path)
+
+    # Apply all transformations to a single graph
+    graph = apply_graph_transformations(graph, methods, cfg)
+
+    file_name = path.split("/")[-1]
+    dst_path = os.path.join(dst_dir, f"graph_{date}")
+    os.makedirs(dst_path, exist_ok=True)
+    save_graph(graph, os.path.join(dst_path, file_name))
+
+
+# Transformations whose result does not depend on the random state (run in parallel)
+_DETERMINISTIC_TRANSFORMATIONS = {"none", "merge_edges", "undirected", "dag"}
+
+# State shared with the forked workers of `add_graph_transformation` (inherited, not pickled)
+_WORKER_STATE = None
+
+
+def _transform_file_worker(path, date):
+    _transform_file(path, date, **_WORKER_STATE)
+
+
 def add_graph_transformation(base_dir, dst_dir, cfg, methods):
+    global _WORKER_STATE
     os.makedirs(dst_dir, exist_ok=True)
 
     dates = cfg.dataset.train_dates + cfg.dataset.val_dates + cfg.dataset.test_dates
-    for date in log_tqdm(dates, desc="Transforming"):
-        sorted_paths = get_all_graphs_for_dates(base_dir, [date])
-        for path in sorted_paths:
-            graph = torch.load(path)
+    jobs = [(path, date) for date in dates for path in get_all_graphs_for_dates(base_dir, [date])]
+    num_workers = min(get_num_workers(cfg), len(jobs))
+    # Graphs are transformed independently, except by random transformations, which draw from
+    # the global random state in graph order. A date in several splits is transformed once per
+    # split as before, so it is done sequentially to not write the same files concurrently
+    parallel = (
+        num_workers > 1
+        and _can_fork()
+        and len(set(dates)) == len(dates)
+        and set(methods) <= _DETERMINISTIC_TRANSFORMATIONS
+    )
+    if not parallel:
+        for path, date in log_tqdm(jobs, desc="Transforming"):
+            _transform_file(path, date, dst_dir, cfg, methods)
+        return
 
-            # Apply all transformations to a single graph
-            graph = apply_graph_transformations(graph, methods, cfg)
-
-            file_name = path.split("/")[-1]
-            dst_path = os.path.join(dst_dir, f"graph_{date}")
-            os.makedirs(dst_path, exist_ok=True)
-            save_graph(graph, os.path.join(dst_path, file_name))
+    log(f"Transforming {len(jobs)} graphs ({num_workers} processes)...")
+    _WORKER_STATE = dict(dst_dir=dst_dir, cfg=cfg, methods=methods)
+    try:
+        ctx = multiprocessing.get_context("fork")
+        with ProcessPoolExecutor(max_workers=num_workers, mp_context=ctx) as pool:
+            futures = [pool.submit(_transform_file_worker, path, date) for path, date in jobs]
+            for future in log_tqdm(as_completed(futures), desc="Transforming", total=len(jobs)):
+                future.result()
+    finally:
+        _WORKER_STATE = None
 
 
 def apply_graph_transformations(graph, methods, cfg):
@@ -87,6 +140,8 @@ def apply_graph_transformations(graph, methods, cfg):
             graph = transformation_undirected.main(graph)
         elif method == "dag":
             graph = transformation_dag.main(graph)
+        elif method == "merge_edges":
+            graph = transformation_merge_edges.main(graph, cfg)
         else:
             raise ValueError(f"Unrecognized transformation method: {method}")
 

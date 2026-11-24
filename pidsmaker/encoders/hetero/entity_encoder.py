@@ -4,20 +4,13 @@ import torch.nn.functional as F
 
 
 class EntityLinearEncoder(nn.Module):
-    def __init__(self, in_dim, out_dim, encoder, activation=False):
+    def __init__(self, in_dim, out_dim, encoder, activation=False, num_node_types=3):
         super().__init__()
         self.encoder = encoder
         self.activation = activation
 
         # One linear per entity type
-        # May be HeteroDictLinear for simplicity
-        self.linears = nn.ModuleList(
-            [
-                nn.Linear(in_dim, out_dim),
-                nn.Linear(in_dim, out_dim),
-                nn.Linear(in_dim, out_dim),
-            ]
-        )
+        self.linears = nn.ModuleList([nn.Linear(in_dim, out_dim) for _ in range(num_node_types)])
 
     def forward(self, x, node_type, *args, **kwargs):
         node_type_idx = node_type.max(dim=1).indices

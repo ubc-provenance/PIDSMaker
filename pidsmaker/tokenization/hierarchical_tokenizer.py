@@ -7,6 +7,8 @@ A label gives one token per level of its hierarchy:
 
 from typing import List, Optional
 
+from pidsmaker.config.schemas import label_format
+
 from .base import Tokenizer
 from .substitution import Substitutor
 
@@ -27,7 +29,7 @@ def ip2higlist(ip: str) -> List[str]:
 
 
 class HierarchicalTokenizer(Tokenizer):
-    """Process and file labels are split on '/', other labels on '.'.
+    """Path labels (e.g. processes and files) are split on '/', other labels on '.'.
     Substituted words are replaced by their placeholder before splitting."""
 
     name = "hierarchical"
@@ -37,6 +39,6 @@ class HierarchicalTokenizer(Tokenizer):
 
     def tokenize(self, label: str, node_type: Optional[str] = None) -> List[str]:
         label = self.substitutor.substitute_text(label, node_type)
-        if node_type in ("subject", "file"):
+        if label_format(node_type) == "path":
             return path2higlist(label)
         return ip2higlist(label)

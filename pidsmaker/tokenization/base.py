@@ -9,7 +9,10 @@ interface, so any of them can be combined with any tokenizer through
 import os
 from typing import Iterable, List, Optional, Tuple
 
-NODE_TYPES = ("subject", "file", "netflow")
+from pidsmaker.config.schemas import all_node_types
+
+# Node types of all dataset schemas (see `pidsmaker/config/schemas.py`)
+NODE_TYPES = tuple(all_node_types())
 
 # Name of the file where trainable tokenizers are stored in `featurization._model_dir`.
 TOKENIZER_FILE = "tokenizer.pt"
@@ -18,8 +21,8 @@ TOKENIZER_FILE = "tokenizer.pt"
 class Tokenizer:
     """Base class of tokenizers.
 
-    `tokenize(label, node_type)` receives the label of a node and its type
-    (`subject`, `file` or `netflow`). `node_type=None` marks a text that is not the
+    `tokenize(label, node_type)` receives the label of a node and its type (e.g. `subject`,
+    `file`, `netflow` or `host`). `node_type=None` marks a text that is not the
     label of a node, e.g. the edge type that FLASH adds to its node documents.
 
     Trainable tokenizers (e.g. BPE) learn their vocabulary in `fit()` during the

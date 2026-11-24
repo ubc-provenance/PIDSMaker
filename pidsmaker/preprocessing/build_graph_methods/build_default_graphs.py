@@ -5,6 +5,7 @@ Creates time-windowed graph snapshots with node features, edge types, and timest
 Supports attack mimicry generation for data augmentation.
 """
 
+import gc
 import multiprocessing
 import os
 import queue
@@ -15,14 +16,14 @@ from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from datetime import datetime, timedelta
 
-import networkx as nx
 import torch
 
 import pidsmaker.mimicry as mimicry
-from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
+from pidsmaker.config import get_dates_from_cfg, get_node_feats_from_cfg
+from pidsmaker.config.schemas import benign_training
 from pidsmaker.preprocessing.cleaning import Cleaner
-from pidsmaker.utils.graph_store import save_graph
-from pidsmaker.utils.dataset_utils import get_rel2id, rel2id_optc, OPTC_DATASETS, _has_consistent_edge_types, translate_optc_to_tc
+from pidsmaker.utils.graph_store import save_edge_list
+from pidsmaker.utils.dataset_utils import get_schema, iter_nodes
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
     get_split_to_files,
@@ -44,34 +45,25 @@ def _next_cursor_name():
     return f"pids_cur_{_cursor_id}"
 
 
-def _stream_rows(connect, sql, params=None, fetch_size=50_000):
-    """Execute a query via a server-side named cursor, yielding rows incrementally.
-
-    psycopg2 regular cursors buffer the entire result set on the client after
-    execute(). Named cursors keep results on the server and fetch in small
-    batches, keeping client-side memory bounded regardless of result size.
-    """
-    cur = connect.cursor(_next_cursor_name())
-    try:
-        cur.execute(sql, params)
-        while True:
-            rows = cur.fetchmany(fetch_size)
-            if not rows:
-                break
-            yield from rows
-    finally:
-        cur.close()
-
-
-
 # Rows keep the shape of `select *` (src_node, src_index_id, operation, dst_node,
 # dst_index_id, event_uuid, timestamp_rec, _id), but the columns that construction does
 # not use are not transferred (NULL): fetching rows dominates the query time.
-EVENTS_SQL = """
-select NULL, src_index_id, operation, NULL, dst_index_id, event_uuid, timestamp_rec, NULL
-from event_table
+# The columns of the schema's edge attributes, then its label column, follow (see `events_sql`).
+EVENT_TIME_IDX = 6
+EVENT_EXTRA_IDX = 8
+
+
+def events_sql(schema):
+    """Query of the events of a time range, ordered by time (see the row shape above)."""
+    extra = [attr.column for attr in schema.edge_attributes]
+    if schema.label_column:
+        extra.append(schema.label_column)
+    extra_sql = "".join(f", {col}" for col in extra)
+    return f"""
+select NULL, src_index_id, operation, NULL, dst_index_id, event_uuid, timestamp_rec, NULL{extra_sql}
+from {schema.event_table}
 where
-      timestamp_rec > %s and timestamp_rec < %s
+      timestamp_rec > %s and timestamp_rec < %s{schema.operations_sql()}
        ORDER BY timestamp_rec, event_uuid;
 """
 
@@ -114,7 +106,7 @@ class DayQueryPrefetcher:
         try:
             _, connect = init_database_connection(cfg)
             with connect.cursor(_next_cursor_name()) as cur:
-                cur.execute(EVENTS_SQL, params)
+                cur.execute(events_sql(get_schema(cfg)), params)
                 while True:
                     chunk = cur.fetchmany(self.fetch_size)
                     if not self._put(i, chunk) or len(chunk) < self.fetch_size:
@@ -157,8 +149,8 @@ class DayQueryPrefetcher:
 def compute_indexid2msg(cfg, cleaner=None):
     """Compute mapping from node index IDs to node types and feature labels.
 
-    Queries PostgreSQL database for all nodes (netflow, subject/process, file) and
-    extracts their attributes to create feature labels based on configuration.
+    Reads all nodes of the dataset (the tables of its schema's node types) and builds the
+    label of each node from its attributes, based on `construction.node_label_features`.
 
     Args:
         cfg: Configuration with database connection and feature settings
@@ -167,66 +159,25 @@ def compute_indexid2msg(cfg, cleaner=None):
 
     Returns:
         dict: Mapping {index_id: [node_type, label_string]} where:
-            - index_id: Database node identifier
-            - node_type: One of 'netflow', 'subject', 'file'
+            - index_id: Database node identifier (str)
+            - node_type: Name of the node type in the dataset's schema
             - label_string: Feature label (hashed or plaintext depending on config)
     """
     _, connect = init_database_connection(cfg)
     if cleaner is None:
         cleaner = Cleaner(cfg)
 
+    schema = get_schema(cfg)
     use_hashed_label = cfg.construction.use_hashed_label
     null_label_tokens = cfg.construction.null_label_tokens
-    node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
+    node_label_features = get_node_feats_from_cfg(cfg)
     indexid2msg = {}
 
-    _NONE_VALUES = {"None", "NA", "0", "none", "null", ""}
-
-    def _auto_label_default(attrs):
-        """Default auto-label: concatenate all non-null, non-type attributes."""
-        parts = []
-        for key in sorted(attrs):
-            if key == "type":
-                continue
-            val = attrs[key]
-            if val not in _NONE_VALUES:
-                parts.append(val)
-        return " ".join(parts)
-
     def get_label_str_from_features(attrs, node_type):
-        """Extract feature label from node attributes based on configured features.
-
-        Args:
-            attrs: Dictionary of node attributes
-            node_type: Type of node ('netflow', 'subject', 'file')
-
-        Returns:
-            str: Space-separated feature string, optionally hashed
-        """
+        """Feature label of a node from its attributes and the configured features."""
         feats = node_label_features[node_type]
         if feats == ["auto"]:
-            if node_type == "subject":
-                # Prefer cmd_line; fall back to path if cmd_line is null
-                cmd_line = attrs.get("cmd_line", "")
-                path = attrs.get("path", "")
-                if cmd_line not in _NONE_VALUES:
-                    label_str = cmd_line
-                elif path not in _NONE_VALUES:
-                    label_str = ("[NO_CMD] " + path) if null_label_tokens else path
-                else:
-                    label_str = "[NO_CMD]" if null_label_tokens else ""
-            elif node_type == "file":
-                path = attrs.get("path", "")
-                if path not in _NONE_VALUES:
-                    label_str = path
-                else:
-                    label_str = "[NO_PATH]" if null_label_tokens else ""
-            elif node_type == "netflow":
-                label_str = _auto_label_default(attrs)
-                if not label_str and null_label_tokens:
-                    label_str = "[NO_IP]"
-            else:
-                label_str = _auto_label_default(attrs)
+            label_str = schema.node_type(node_type).auto_label_str(attrs, null_label_tokens)
         elif cleaner:
             # Null attributes were emptied by the cleaning: they are skipped
             label_str = " ".join([attrs[label_used] for label_used in feats if attrs[label_used]])
@@ -236,56 +187,22 @@ def compute_indexid2msg(cfg, cleaner=None):
         label_str = cleaner.normalize_label(label_str)
         if use_hashed_label:
             label_str = stringtomd5(label_str)
-        # Keep only printable ASCII — provenance labels are paths, cmds, IPs
+        # Keep only printable ASCII — labels are paths, cmds, IPs, host names, ...
         label_str = re.sub(r"[^\x20-\x7e]+", "", label_str).strip()
         return label_str
 
-    # netflow
-    netflow_count = 0
-    for i in _stream_rows(connect, "select * from netflow_node_table;"):
-        attrs = {
-            "type": "netflow",
-            "local_ip": str(i[2]),
-            "local_port": str(i[3]),
-            "remote_ip": str(i[4]),
-            "remote_port": str(i[5]),
-        }
-        index_id = str(i[-1])
-        node_type = attrs["type"]
-        if cleaner.is_noisy_netflow(attrs):
+    counts = Counter()
+    for node_type, _uuid, _hash_id, index_id, attrs in iter_nodes(cfg, connect):
+        if "remote_ip" in attrs and cleaner.is_noisy_netflow(attrs):
             continue
         attrs = cleaner.clean_attributes(node_type, attrs)
         label_str = get_label_str_from_features(attrs, node_type)
-        indexid2msg[index_id] = [node_type, label_str]
-        netflow_count += 1
+        indexid2msg[str(index_id)] = [node_type, label_str]
+        counts[node_type] += 1
 
-    log(f"Number of netflow nodes: {netflow_count}")
-
-    # subject
-    subject_count = 0
-    for i in _stream_rows(connect, "select * from subject_node_table;"):
-        attrs = {"type": "subject", "path": str(i[2]), "cmd_line": str(i[3])}
-        index_id = str(i[-1])
-        node_type = attrs["type"]
-        attrs = cleaner.clean_attributes(node_type, attrs)
-        label_str = get_label_str_from_features(attrs, node_type)
-        indexid2msg[index_id] = [node_type, label_str]
-        subject_count += 1
-
-    log(f"Number of process nodes: {subject_count}")
-
-    # file
-    file_count = 0
-    for i in _stream_rows(connect, "select * from file_node_table;"):
-        attrs = {"type": "file", "path": str(i[2])}
-        index_id = str(i[-1])
-        node_type = attrs["type"]
-        attrs = cleaner.clean_attributes(node_type, attrs)
-        label_str = get_label_str_from_features(attrs, node_type)
-        indexid2msg[index_id] = [node_type, label_str]
-        file_count += 1
-
-    log(f"Number of file nodes: {file_count}")
+    for node_type, count in counts.items():
+        log(f"Number of {node_type} nodes: {count}")
+    connect.close()
 
     return indexid2msg  # {index_id: [node_type, msg]}
 
@@ -377,11 +294,10 @@ def gen_edge_fused_tw(indexid2msg, cfg, cleaner=None, file2nodes=None):
     """
     if cleaner is None:
         cleaner = Cleaner(cfg)
-    rel2id = get_rel2id(cfg)
-    # DB rows carry raw edge type strings (e.g. "START", "MESSAGE" for OpTC).
-    # When consistent_edge_types is on, get_rel2id returns TC-equivalent labels,
-    # so we must filter against the raw OpTC vocabulary instead of the translated one.
-    include_edge_type = rel2id_optc if cfg.dataset.name in OPTC_DATASETS else rel2id
+    schema = get_schema(cfg)
+    # DB rows carry raw edge type strings (e.g. "START", "MESSAGE" for OpTC), which are
+    # filtered against the raw vocabulary when the schema translates edge types.
+    include_edge_type = schema.event_filter_rel2id
 
     mimicry_edge_num = cfg.construction.mimicry_edge_num
     if mimicry_edge_num is not None and mimicry_edge_num > 0:
@@ -486,7 +402,7 @@ def _iter_day_chunks(cfg, params, fetch_size):
     _, connect = init_database_connection(cfg)
     try:
         with connect.cursor(_next_cursor_name()) as cur:
-            cur.execute(EVENTS_SQL, params)
+            cur.execute(events_sql(get_schema(cfg)), params)
             while True:
                 chunk = cur.fetchmany(fetch_size)
                 yield chunk
@@ -535,6 +451,63 @@ def _build_days_in_parallel(dates, common, num_workers, file2nodes):
         _DAY_WORKER_STATE = None
 
 
+class _EncodedValues(dict):
+    """{database value: `attr.encode(value)`}, filled on first access (few distinct values)."""
+
+    def __init__(self, attr):
+        super().__init__()
+        self.attr = attr
+
+    def __missing__(self, value):
+        encoded = self[value] = self.attr.encode(value)
+        return encoded
+
+
+def _attributes_encoder(edge_attributes):
+    """Function of the extra columns of an event row returning the tuple of the encoded values
+    of `edge_attributes` (the first columns), as `tuple(attr.encode(v) for ...)`."""
+    encoders = [attr.encode for attr in edge_attributes]
+    # Categorical attributes have few distinct values: their encodings are memoized
+    getters = [
+        _EncodedValues(attr).__getitem__ if attr.kind == "categorical" else attr.encode
+        for attr in edge_attributes
+    ]
+
+    def encode_slow(extra):
+        return tuple(encode(v) for encode, v in zip(encoders, extra))
+
+    def encode_fast(extra):
+        # One dict lookup per value instead of a call to `encode`
+        return tuple([get(v) for get, v in zip(getters, extra)])
+
+    def encode(extra):
+        try:
+            return encode_fast(extra)
+        except TypeError:  # unhashable values
+            return encode_slow(extra)
+
+    return encode
+
+
+def _save_window_graph(path, node_info, edge_list, edge_attr_names):
+    """Saves the graph of a time window: nodes {node: [node_type, label]} and edges
+    (src, dst, time, label, event_uuid, attribute values, y), with the edge attributes
+    {"event_uuid", "time", "label", "y", **attributes} (attributes of the same name as the
+    first ones replace them, as in a dict).
+
+    The compact file is written from the edge list (`save_edge_list`), without building the
+    networkx graph, which is slow for the millions of edges of the windows of network datasets.
+    """
+    infos = list(node_info.values())
+    node_attrs = {"node_type": [i[0] for i in infos], "label": [i[1] for i in infos]}
+    srcs, dsts, times, labels, uuids, attrs, ys = zip(*edge_list) if edge_list else ((),) * 7
+    edge_attrs = {"event_uuid": uuids, "time": times, "label": labels, "y": ys}
+    attr_cols = list(zip(*attrs)) if attrs else [()] * len(edge_attr_names)
+    for name, col in zip(edge_attr_names, attr_cols):
+        edge_attrs[name] = col
+    save_edge_list(path, list(node_info), node_attrs, srcs, dsts, edge_attrs)
+
+
 def _build_day(
     cfg, day_idx, date, day_params, day_chunks, fetch_size, indexid2msg, cleaner, use_cleaner,
     include_edge_type, attack_mimicry_events, mimicry_edge_num, _to_ns, file2nodes,
@@ -543,6 +516,57 @@ def _build_day(
 
     `day_chunks` yields the `fetchmany(fetch_size)` chunks of the day's events query.
     """
+    # The millions of event tuples of a window trigger costly cyclic GC passes that cannot free
+    # anything (events hold no reference cycles)
+    gc_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        _build_day_events(
+            cfg, day_idx, date, day_params, day_chunks, fetch_size, indexid2msg, cleaner,
+            use_cleaner, include_edge_type, attack_mimicry_events, mimicry_edge_num, _to_ns,
+            file2nodes,
+        )
+    finally:
+        if gc_enabled:
+            gc.enable()
+
+
+def _build_day_events(
+    cfg, day_idx, date, day_params, day_chunks, fetch_size, indexid2msg, cleaner, use_cleaner,
+    include_edge_type, attack_mimicry_events, mimicry_edge_num, _to_ns, file2nodes,
+):
+    schema = get_schema(cfg)
+    edge_attributes = schema.edge_attributes
+    edge_attr_names = [attr.name for attr in edge_attributes]
+    num_extras = len(edge_attributes) + (1 if schema.label_column else 0)
+    has_extras = num_extras > 0
+    edge_type_idx = (
+        edge_attr_names.index(schema.edge_type_attribute) if schema.edge_type_attribute else None
+    )
+
+    encode_attrs = _attributes_encoder(edge_attributes)
+    has_label = bool(schema.label_column)
+
+    # With `benign_training`, the malicious events of train/val dates are dropped
+    train_val_dates = set(cfg.dataset.train_dates) | set(cfg.dataset.val_dates)
+    drop_malicious = (
+        has_label
+        and benign_training(cfg.construction)
+        and date in train_val_dates
+        and date not in set(cfg.dataset.test_dates)
+    )
+    label_idx = EVENT_EXTRA_IDX + len(edge_attributes)
+    num_dropped_malicious = 0
+
+    def read_extras(row):
+        """(edge attribute values, label) of an event row. Missing columns (e.g. in events
+        generated by mimicry) are null."""
+        extra = row[EVENT_EXTRA_IDX:]
+        if len(extra) < num_extras:
+            extra = tuple(extra) + (None,) * (num_extras - len(extra))
+        y = int(extra[-1] or 0) if has_label else 0
+        return encode_attrs(extra), y
+
     date_start = f"{date} 00:00:00"
     date_stop = f"{(datetime.strptime(date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')} 00:00:00"
 
@@ -592,16 +616,12 @@ def _build_day(
             # Take ownership of leftover, then append newly filtered rows.
             filtered = leftover
             leftover = []
-            if use_cleaner:
-                keep_event = cleaner.keep_event
-                filtered.extend(
-                    row
-                    for row in db_chunk
-                    if row[2] in include_edge_type
-                    and keep_event(row[1], row[2], row[4], row[6])
-                )
-            else:
-                filtered.extend(row for row in db_chunk if row[2] in include_edge_type)
+            chunk = [row for row in db_chunk if row[2] in include_edge_type]
+            if drop_malicious:
+                benign = [row for row in chunk if not row[label_idx]]
+                num_dropped_malicious += len(chunk) - len(benign)
+                chunk = benign
+            filtered.extend(cleaner.filter_events(chunk) if use_cleaner else chunk)
 
             # On the last DB chunk also append mimicry events, matching
             # the original events_list ordering (real events then mimicry).
@@ -618,7 +638,7 @@ def _build_day(
 
             # Initialise start_time from the very first event seen.
             if start_time is None:
-                start_time = filtered[0][-2]
+                start_time = filtered[0][EVENT_TIME_IDX]
 
             # Slice filtered into BATCH-sized chunks.  Any incomplete tail
             # is saved as leftover for the next DB chunk (unless db_done).
@@ -638,11 +658,11 @@ def _build_day(
 
                 temp_list.extend(batch_edges)
 
-                if (batch_edges[-1][-2] > start_time + window_size_in_ns) or is_last_batch:
+                if (batch_edges[-1][EVENT_TIME_IDX] > start_time + window_size_in_ns) or is_last_batch:
                     time_interval = (
                         ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone)
                         + "~"
-                        + ns_time_to_datetime_US(batch_edges[-1][-2], timezone=cfg.dataset.timezone)
+                        + ns_time_to_datetime_US(batch_edges[-1][EVENT_TIME_IDX], timezone=cfg.dataset.timezone)
                     )
 
                     # log(f"Start create edge fused time window graph for {time_interval}")
@@ -656,16 +676,12 @@ def _build_day(
                     )
                     fuse_edge = cfg.construction.fuse_edge
                     edge_info = defaultdict(list)
-                    for (
-                        src_node,
-                        src_index_id,
-                        operation,
-                        dst_node,
-                        dst_index_id,
-                        event_uuid,
-                        timestamp_rec,
-                        _id,
-                    ) in temp_list:
+                    for row in temp_list:
+                        src_index_id = row[1]
+                        operation = row[2]
+                        dst_index_id = row[4]
+                        event_uuid = row[5]
+                        timestamp_rec = row[EVENT_TIME_IDX]
                         if src_index_id not in node_info or dst_index_id not in node_info:
                             src_msg = indexid2msg.get(src_index_id)
                             dst_msg = indexid2msg.get(dst_index_id)
@@ -676,34 +692,37 @@ def _build_day(
                             node_info.setdefault(src_index_id, src_msg)
                             node_info.setdefault(dst_index_id, dst_msg)
 
+                        # Edge attributes and label (empty for datasets without them)
+                        if has_extras:
+                            attrs, y = read_extras(row)
+                            if edge_type_idx is not None:
+                                operation = attrs[edge_type_idx]
+                        else:
+                            attrs, y = (), 0
+
                         if fuse_edge:
                             edge_info[(src_index_id, dst_index_id)].append(
-                                (timestamp_rec, operation, event_uuid)
+                                (timestamp_rec, operation, event_uuid, attrs, y)
                             )
                         else:
                             edge_list.append(
-                                (src_index_id, dst_index_id, timestamp_rec, operation, event_uuid)
+                                (src_index_id, dst_index_id, timestamp_rec, operation, event_uuid, attrs, y)
                             )
 
                     # Fusion: among the time-sorted events between two nodes, only the
-                    # first event of each run of consecutive identical operations is kept
+                    # first event of each run of consecutive identical events (same operation,
+                    # attributes and label) is kept
                     for (src, dst), data in edge_info.items():
                         sorted_data = sorted(data, key=lambda x: x[0])
-                        current_type = None
-                        for timestamp_rec, operation, event_uuid in sorted_data:
-                            if operation != current_type:
-                                current_type = operation
+                        current_key = None
+                        for timestamp_rec, operation, event_uuid, attrs, y in sorted_data:
+                            key = (operation, attrs, y)
+                            if key != current_key:
+                                current_key = key
                                 edge_list.append(
-                                    (src, dst, timestamp_rec, operation, event_uuid)
+                                    (src, dst, timestamp_rec, operation, event_uuid, attrs, y)
                                 )
 
-                    # log(f"Start creating graph for {time_interval}")
-                    graph = nx.MultiDiGraph()
-                    # node_info values are [node_type, label]
-                    graph.add_nodes_from(
-                        (node, {"node_type": info[0], "label": info[1]})
-                        for node, info in node_info.items()
-                    )
                     if cleaner:
                         cleaner.add_graph_nodes(node_info.keys())
 
@@ -712,42 +731,35 @@ def _build_day(
                     if cfg._test_mode:
                         edge_list = edge_list[: NUM_TEST_EDGES + 1]
 
-                    # Translate OpTC edge types to DARPA TC equivalents if enabled
-                    _translate = (
-                        cfg.dataset.name in OPTC_DATASETS
-                        and _has_consistent_edge_types(cfg)
-                    )
-                    if _translate:
+                    # Translates edge types (e.g. OpTC to DARPA TC with consistent_edge_types)
+                    if schema.edge_type_translation:
                         edge_list = [
                             (
                                 src,
                                 dst,
                                 t,
-                                translate_optc_to_tc(
+                                schema.translate_edge_type(
                                     label, node_info[src][0], node_info[dst][0]
                                 ),
                                 uuid,
+                                attrs,
+                                y,
                             )
-                            for src, dst, t, label, uuid in edge_list
+                            for src, dst, t, label, uuid, attrs, y in edge_list
                         ]
-                    graph.add_edges_from(
-                        (src, dst, {"event_uuid": uuid, "time": t, "label": label, "y": 0})
-                        for src, dst, t, label, uuid in edge_list
-                    )
-
                     date_dir = f"{cfg.construction._graphs_dir}/graph_{date}/"
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
                     # log(f"Saving graph for {time_interval}")
-                    save_graph(graph, graph_name)
+                    _save_window_graph(graph_name, node_info, edge_list, edge_attr_names)
                     if file2nodes is not None:
                         file2nodes[os.path.normpath(graph_name)] = set(node_info)
 
                     # log(f"[{time_interval}] Num of edges: {len(edge_list)}")
                     # log(f"[{time_interval}] Num of events: {len(temp_list)}")
                     # log(f"[{time_interval}] Num of nodes: {len(node_info.keys())}")
-                    start_time = batch_edges[-1][-2]
+                    start_time = batch_edges[-1][EVENT_TIME_IDX]
                     temp_list.clear()
 
                     # For unit tests, we only edges from the first graph
@@ -755,6 +767,9 @@ def _build_day(
                         test_mode_set_done = True
                         test_mode_stop = True
                         break
+
+    if num_dropped_malicious:
+        log(f"{date}: dropped {num_dropped_malicious} malicious events (benign training)")
 
 
 def main(cfg):

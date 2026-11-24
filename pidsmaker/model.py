@@ -91,6 +91,9 @@ class Model(nn.Module):
                 x_dict=getattr(batch, "x_dict", None),
             )
         h, h_src, h_dst = self.gather_h(batch, res)
+        # Edges in the node space of `h` (the batch's edges, unless the encoder embeds other
+        # nodes, e.g. all the nodes of the dataset, see `NodeIdEmbedding`)
+        self._h_edge_index = res.get("edge_index", batch.edge_index) if isinstance(res, dict) else batch.edge_index
         return h, h_src, h_dst
 
     def _embed_nodes(self, batch, inference):
@@ -140,7 +143,19 @@ class Model(nn.Module):
                 - Inference mode: per-edge anomaly scores (E,)
         """
         h, h_src, h_dst, mask_nodes = self._embed_nodes(batch, inference)
+        h_edge_index = self._h_edge_index
         train_mode = not inference
+
+        # Objectives contrasting the graph with a corrupted version of it (e.g. Deep Graph
+        # Infomax) receive the embeddings of the corrupted graph during training
+        corrupted = {}
+        if train_mode and any(
+            getattr(self._unwrap(o), "needs_corrupted_embeddings", False) for o in self.objectives
+        ):
+            from pidsmaker.objectives.deep_graph_infomax import corrupt_batch
+
+            _, h_src_c, h_dst_c = self.embed(corrupt_batch(batch), inference=False)
+            corrupted = {"h_src_corrupted": h_src_c, "h_dst_corrupted": h_dst_c}
 
         with torch.set_grad_enabled(train_mode):
             if self.fuse_duplicate_edges_training:
@@ -179,7 +194,7 @@ class Model(nn.Module):
                     h_src=h_src,  # shape (E, d)
                     h_dst=h_dst,  # shape (E, d)
                     h=h,  # shape (N, d)
-                    edge_index=batch.edge_index,
+                    edge_index=h_edge_index,  # edges in the node space of h
                     edge_type=batch.edge_type,
                     y_edge=batch.y,
                     inference=inference,
@@ -190,6 +205,7 @@ class Model(nn.Module):
                     validation=validation,
                     batch=batch,
                     mask_nodes=mask_nodes,  # Pass mask_nodes to objectives
+                    **corrupted,
                 )
                 loss = results["loss"]
 
@@ -273,14 +289,15 @@ class Model(nn.Module):
         h = res["h"]
         h_src = res.get("h_src", None)
         h_dst = res.get("h_dst", None)
+        edge_index = res.get("edge_index", batch.edge_index)
 
         if None in [h_src, h_dst]:
             if isinstance(h, torch.Tensor):
                 # h is a single tensor with node embeddings - index by edge_index
-                h_src, h_dst = h[batch.edge_index[0]], h[batch.edge_index[1]]
+                h_src, h_dst = h[edge_index[0]], h[edge_index[1]]
             elif isinstance(h, (tuple, list)):
                 # h is (h_src_nodes, h_dst_nodes) with separate node embeddings - index each
-                h_src, h_dst = h[0][batch.edge_index[0]], h[1][batch.edge_index[1]]
+                h_src, h_dst = h[0][edge_index[0]], h[1][edge_index[1]]
             else:
                 h_src, h_dst = h
 
@@ -326,9 +343,19 @@ class Model(nn.Module):
             self.few_shot_mode = False
 
     def reset_state(self):
-        """Reset encoder state (e.g., TGN memory) between evaluation windows."""
+        """Reset the state of the encoder (e.g., TGN memory) and of objectives (e.g. statistics
+        of training embeddings) before each training epoch."""
         if hasattr(self.encoder, "reset_state"):
             self.encoder.reset_state()
+        for objective in self.objectives:
+            objective = self._unwrap(objective)
+            if hasattr(objective, "reset_state"):
+                objective.reset_state()
+
+    @staticmethod
+    def _unwrap(objective):
+        """The objective wrapped by a `ValidationWrapper`."""
+        return getattr(objective, "objective", objective)
     
     def node_to_edge_loss(self, batch, loss):
         n_id = batch.original_n_id

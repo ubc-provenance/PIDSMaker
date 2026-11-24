@@ -1,0 +1,25 @@
+# Anomal-E (Caville et al., Knowledge-Based Systems 2022): "Anomal-E: A self-supervised network
+# intrusion detection system based on graph neural networks". The E-GraphSAGE encoder is trained
+# with Deep Graph Infomax on edge embeddings (whose corrupted graphs have shuffled edge features),
+# and edges are scored by an anomaly detector fitted on the embeddings of benign training edges.
+#
+# Difference with the original implementation: the anomaly detector is a PCA (reconstruction
+# error of edge embeddings), one of the four detectors evaluated by Anomal-E (PCA, IF, CBLOF, HBOS).
+# No labels are used to select the model: the last epoch is kept.
+
+_include_yml: egraphsage
+
+training:
+  num_epochs: 10
+  patience: 5
+  lr: 0.001
+  node_hid_dim: 128
+  node_out_dim: 128
+  decoder:
+    used_methods: deep_graph_infomax
+    deep_graph_infomax:
+      decoder: none
+      pca_components: 8
+
+evaluation:
+  best_model_selection: last_epoch

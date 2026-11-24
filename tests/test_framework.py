@@ -242,8 +242,11 @@ class TestCleaning:
 
 
 class TestEncoderObjective:
-    # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below.
-    encoders = [e for e in ENCODERS_CFG.keys() if e != "tgn"]
+    # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below. `node_id_embedding`
+    # and `snapshot_gru` wrap another encoder too, covered by test_snapshot_wrappers_objective_pairs.
+    encoders = [
+        e for e in ENCODERS_CFG.keys() if e not in ("tgn", "node_id_embedding", "snapshot_gru")
+    ]
     objectives = [
         "predict_node_type",
         "reconstruct_node_embeddings",
@@ -268,6 +271,13 @@ class TestEncoderObjective:
         cfg = prepare_cfg(
             "tests", dataset, device=device, encoder=encoder_combined, objective=objective, custom_args=custom_args
         )
+        main.main(cfg)
+
+    @pytest.mark.parametrize("objective", objectives)
+    def test_snapshot_wrappers_objective_pairs(self, dataset, device, objective):
+        # Encoder of Euler: GCN over node ID embeddings, followed by a GRU over the graphs
+        encoder = "gcn,node_id_embedding,snapshot_gru"
+        cfg = prepare_cfg("tests", dataset, device=device, encoder=encoder, objective=objective)
         main.main(cfg)
 
 

@@ -138,7 +138,7 @@ def load_all_datasets(cfg, device, only_keep=None):
             val_data = [_load_data_list_shared(path, "val", cfg, builder)]
             test_data = [_load_data_list_shared(path, "test", cfg, builder)]
             shared = SharedNodeFeatures(builder, cfg)
-            shared.has_edge_attrs = any("edge_attrs" in g for g in train_data[0][:1])
+            shared.has_edge_attrs = any("edge_attr_feats" in g for g in train_data[0][:1])
             del builder
             log(f"Node features stored once in a shared table ({shared.nbytes() / 1e9:.2f} GB)")
         except _SharedFeaturesUnsupported as e:
@@ -188,6 +188,9 @@ def load_all_datasets(cfg, device, only_keep=None):
             keys.append("t")
         if "msg" in edge_features:
             keys.append("msg")
+        if "edge_attrs" in edge_features or "msg" in edge_features:
+            # Edge features of the TGN, and part of msg_tgn rebuilt from the shared table
+            keys.append("edge_attr_feats")
         full_data = get_full_data(datasets, keys=keys)
 
     # Intra graph batching (TGN 1024 batches, last neighbor loader)
@@ -381,6 +384,17 @@ def extract_msg_from_data(
         else:
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
 
+        # Edge attributes of the dataset (e.g. ports, protocols, logon types) are part of
+        # the message describing the event, and optionally used as edge features
+        edge_attrs = getattr(g, "edge_attr_feats", None)
+        if edge_attrs is not None:
+            msg = torch.cat([msg, edge_attrs], dim=-1)
+            fields["edge_attrs"] = edge_attrs
+        elif "edge_attrs" in edge_features:
+            raise ValueError(
+                f"Edge feature `edge_attrs` requires a dataset with edge attributes "
+                f"(none in {cfg.dataset.name})."
+            )
 
         num_edge_types = get_num_edge_type(cfg)
         edge_feats = build_edge_feats(fields, msg, edge_features, possible_triplets, num_edge_types)
@@ -432,7 +446,7 @@ def _needs_raw_msg(cfg):
 
 
 def get_possible_triplets(cfg):
-    entity_map = get_node_map(from_zero=True)
+    entity_map = get_node_map(cfg, from_zero=True)
     event_map = get_rel2id(cfg, from_zero=True)
     possible_events = get_possible_events(cfg)
 
@@ -468,6 +482,8 @@ def build_edge_feats(fields, msg, edge_features, possible_triplets, num_edge_typ
         edge_feats.append(triplets)
     if "msg" in edge_features:
         edge_feats.append(msg)
+    if "edge_attrs" in edge_features:
+        edge_feats.append(fields["edge_attrs"])
     if len(edge_feats) == 0:
         return None
     if len(edge_feats) == 1 and edge_feats[0] is msg:
@@ -724,7 +740,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
                 shared.full_src, shared.full_dst = full_data.src, full_data.dst
                 shared.full_edge_type = full_data.edge_type
                 if shared.tgn_msg_has_edge_attrs:
-                    shared.full_edge_attrs = full_data.edge_attrs
+                    shared.full_edge_attrs = full_data.edge_attr_feats
             datasets = compute_tgn_graphs(
                 datasets=datasets,
                 full_data=full_data,
@@ -735,6 +751,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
                 node_feat_dim=None if shared is not None else sample.x_src.shape[1],
                 node_type_dim=None if shared is not None else sample.node_type_src.shape[1],
                 shared=shared,
+                edge_attrs_feature="edge_attrs" in _edge_features_list(cfg),
             )
 
         else:
@@ -753,7 +770,11 @@ def compute_tgn_graphs(
     node_feat_dim,
     node_type_dim,
     shared=None,
+    edge_attrs_feature=False,
 ):
+    """`datasets` is the [train, val, test] list of graph lists. With
+    `tgn_loader_cfg.negative_destinations`, a negative destination is drawn for each edge (see
+    `predict_edge_contrastive.neg_sampling=tgn`) and added to the nodes of its TGN graph."""
     tgn_neighbor_n_hop = tgn_loader_cfg.tgn_neighbor_n_hop
     fix_tgn_neighbor_loader = tgn_loader_cfg.fix_tgn_neighbor_loader
     fix_buggy_orthrus_TGN = tgn_loader_cfg.fix_buggy_orthrus_TGN
@@ -772,7 +793,16 @@ def compute_tgn_graphs(
         node_type_cache = torch.zeros((max_node, node_type_dim), device=device)
     assoc = torch.empty(max_node, dtype=torch.long, device=device)
 
-    for dataset in datasets:
+    # TGN/Jbeil negatives: for each edge, a destination drawn uniformly among the destinations
+    # of the training graphs (training) or of all graphs (validation and test), embedded by the
+    # TGN like the nodes of the graph
+    negative_destinations = bool(getattr(tgn_loader_cfg, "negative_destinations", False))
+    if negative_destinations:
+        neg_generator = torch.Generator(device="cpu").manual_seed(0)
+        train_pool = torch.unique(torch.cat([b.dst for dl in datasets[0] for b in dl]))
+        all_pool = torch.unique(torch.cat([b.dst for ds in datasets for dl in ds for b in dl]))
+
+    for split_idx, dataset in enumerate(datasets):
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
                 # Only the inputs are moved to the device and only the outputs are moved
@@ -785,6 +815,12 @@ def compute_tgn_graphs(
                     neighbor_loader.insert(src, dst)
 
                 original_n_id = batch_edge_index.unique()
+                if negative_destinations:
+                    pool = train_pool if split_idx == 0 else all_pool
+                    neg_dst = pool[
+                        torch.randint(0, len(pool), (src.numel(),), generator=neg_generator)
+                    ].to(device)
+                    original_n_id = torch.cat([original_n_id, neg_dst]).unique()
                 n_id = original_n_id
                 for _ in range(tgn_neighbor_n_hop):
                     n_id, edge_index, e_id = neighbor_loader(n_id)
@@ -850,11 +886,16 @@ def compute_tgn_graphs(
                 batch.n_id_tgn = n_id.cpu()
                 batch.edge_index_tgn = edge_index.cpu()
                 batch.reindexed_edge_index_tgn = assoc[batch_edge_index].cpu()
+                if negative_destinations:
+                    batch.neg_dst_tgn = assoc[neg_dst].cpu()
                 e_id_cpu = e_id.cpu()
                 # msg_tgn and t_tgn are only read by the TGN encoder with the
                 # `msg` and `time_encoding` edge features (see `run_global_batching`)
                 if "t" in full_data:
                     batch.t_tgn = full_data.t[e_id_cpu]
+                # Edge attributes used as TGN edge features (see `TGNEncoder`)
+                if edge_attrs_feature and "edge_attr_feats" in full_data:
+                    batch.edge_attr_feats_tgn = full_data.edge_attr_feats[e_id_cpu]
                 if shared is not None:
                     batch.e_id_tgn = e_id_cpu  # msg_tgn, node_type_tgn, edge_type_tgn
                 else:
@@ -1152,7 +1193,7 @@ def reindex_graphs(datasets, graph_reindexer, device, use_tgn, keep_edge_level_f
     graph_reindexer.clear_cache()
 
 def compute_hetero_graphs(datasets, device, cfg):
-    node_map = get_node_map(from_zero=True)
+    node_map = get_node_map(cfg, from_zero=True)
     edge_map = get_rel2id(cfg, from_zero=True)
 
     for dataset in datasets:
@@ -1304,7 +1345,6 @@ class SharedNodeFeatures:
 
         # Dataset edge attributes are appended to msg (they stay stored per edge)
         self.has_edge_attrs = False
-        self.edge_attrs_feature = "edge_attrs" in _edge_features_list(cfg)
 
         # Set by the preprocessing steps whose features are rebuilt
         self.tgn = None  # {"fix_buggy_orthrus_TGN": bool, "msg": bool}
@@ -1355,8 +1395,8 @@ class SharedNodeFeatures:
         g.node_type_dst = st.node_type[rows_dst]
         if self.needs_msg or self.edge_feats_is_msg:
             parts = [g.x_src, g.x_dst] + ([g.edge_type] if self.msg_has_edge_type else [])
-            if "edge_attrs" in g:
-                parts.append(g.edge_attrs)
+            if "edge_attr_feats" in g:
+                parts.append(g.edge_attr_feats)
             msg = torch.cat(parts, dim=-1)
             if self.needs_msg:
                 g.msg = msg

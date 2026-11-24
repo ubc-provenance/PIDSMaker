@@ -30,6 +30,9 @@ class ValidationWrapper(nn.Module):
             log(f"=> Total mean score of benign malicious edges: {benign_mean:.4f}")
             # ap = ap_score(self.ys, self.losses)
             score = malicious_mean - benign_mean
+        elif hasattr(self.objective, "get_val_score"):
+            # Objectives measuring their own validation quality (e.g. link prediction AUC + AP)
+            score = self.objective.get_val_score()
         else:
             score = 0.0
 
@@ -39,7 +42,7 @@ class ValidationWrapper(nn.Module):
 
     def forward(self, edge_type, y_edge, validation, inference, *args, **kwargs):
         results = self.objective(
-            *args, edge_type=edge_type, y_edge=y_edge, inference=inference, **kwargs
+            *args, edge_type=edge_type, y_edge=y_edge, inference=inference, validation=validation, **kwargs
         )
         assert isinstance(results, dict), "Return value of an objective should be a dict"
 
