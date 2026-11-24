@@ -118,7 +118,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
 === ":lucide-download: 1. Install"
 
-    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)).
+    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)). Runs on Linux, with or without a GPU, and on [macOS](getting-started/installation.md#macos) for most datasets, ideally with 32 GB of RAM.
 
     ```shell
     git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker

@@ -83,7 +83,7 @@ You can also build these databases yourself from the official DARPA files: see [
 
 ### macOS
 
-PIDSMaker runs on macOS (Intel and Apple Silicon) with Docker Desktop, on CPU (Docker has no access to Apple GPUs). Before going further:
+PIDSMaker runs on macOS (tested on Apple Silicon) with Docker Desktop, on CPU (Docker has no access to Apple GPUs), for most datasets: a laptop with 32 GB of RAM is ideal. It was tested end to end on `CADETS_E3` and `LANL`. The largest datasets (`TRACE_E3` and the E5 datasets, see the sizes below) need more memory and disk than a laptop has. Before going further:
 
 1. **Give memory to Docker.** On Linux, containers use all the RAM of the machine. On macOS, they run in the virtual machine of Docker Desktop, limited to 8 GB by default, which the compose files cannot raise. Runs on provenance datasets can take more than 15 GB, and are killed when the VM runs out of memory. Give the VM about 75% of your RAM, e.g. 24 GB on a 32 GB laptop:
 

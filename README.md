@@ -37,7 +37,7 @@ It provides a single codebase and a single pipeline to run most recent state-of-
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| Unreleased (`main`) | | [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3 |
+| Unreleased (`main`) | | [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3. [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, Docker Desktop on CPU) for most datasets, ideally with 32 GB of RAM |
 | [4.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0) | Nov 2026 | Unified tokenization (`featurization.tokenization`, renamed tokenizer arguments), configurable graph cleaning (`construction.cleaning`), fixed queue, time-window and node-time-window evaluations, MAGIC kNN fix |
 | [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
 | [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
@@ -161,6 +161,8 @@ git clone https://github.com/ubc-provenance/PIDSMaker.git
 ### 💻 Installation with Docker
 
 We have made the installation of PIDSMaker including pre-processed databases for the provenance datasets (DARPA TC, OpTC, ATLASv2, CARBANAKv2) easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/). The network datasets are [built from the files of LARES](https://ubc-provenance.github.io/PIDSMaker/getting-started/from-scratch/) for now.
+
+PIDSMaker runs on Linux with or without an NVIDIA GPU, and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) with Docker Desktop on CPU, for most datasets: a laptop with 32 GB of RAM is ideal. The largest datasets (`TRACE_E3` and the E5 datasets) need a server.
 
 ## 🧪 Basic usage of the framework
 
