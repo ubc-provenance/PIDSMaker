@@ -578,6 +578,41 @@ DATASET_DEFAULT_CONFIG = {
         # Root sources of the attacks (LARES host IDs), see the `LANL` entry
         "root_attack_nodes": [201, 402, 501],
     },
+    # NF-CSE-CIC-IDS2018-v3 (NetFlow v3 version of CSE-CIC-IDS2018): flows between the hosts of the
+    # CIC testbed (172.31.0.0/16) and of the attackers (AWS IPs), with per-flow labels. Every day
+    # from 2018-02-14 to 2018-02-22 and from 2018-02-28 has attacks, so models are trained and
+    # validated on the benign flows of their days (`construction.benign_training`). Local time
+    # (UTC-4) of the testbed.
+    "CIC_IDS2018": {
+        "raw_dir": "",
+        "database": "cic_ids2018",
+        "database_all_file": "cic_ids2018",
+        "schema": "netflow_v3",
+        "timezone": "America/Halifax",
+        "start_date": "2018-02-14",
+        "end_date": "2018-03-02",
+        "train_dates": ["2018-02-14", "2018-02-15", "2018-02-16"],
+        "val_dates": ["2018-02-20"],
+        "test_dates": [
+            "2018-02-21", "2018-02-22", "2018-02-23", "2018-02-27", "2018-02-28", "2018-03-01",
+            "2018-03-02",
+        ],  # fmt: skip
+        # No flows on these days (weekends and 2018-02-26)
+        "unused_dates": ["2018-02-17", "2018-02-18", "2018-02-19", "2018-02-24", "2018-02-25", "2018-02-26"],
+        "ground_truth_relative_path": [],
+        # Attacks of the test days (official CIC schedule). The web attacks of 2018-02-23 of the
+        # schedule are not labelled in NF-CSE-CIC-IDS2018-v3.
+        "attack_to_time_window": [
+            ["ddos_hoic_loic_udp", "2018-02-21 00:00:00", "2018-02-21 23:59:59"],
+            ["web_bruteforce_xss_sql_injection", "2018-02-22 00:00:00", "2018-02-22 23:59:59"],
+            ["infiltration_1", "2018-02-28 00:00:00", "2018-02-28 23:59:59"],
+            ["infiltration_2", "2018-03-01 00:00:00", "2018-03-01 23:59:59"],
+            ["botnet_ares", "2018-03-02 00:00:00", "2018-03-02 23:59:59"],
+        ],
+        # The attacks come from several external and internal hosts: all malicious flows are
+        # positives in LARES' evaluation
+        "root_attack_nodes": [],
+    },
 }
 
 # Arguments

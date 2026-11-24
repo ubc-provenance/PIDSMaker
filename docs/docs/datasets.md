@@ -28,6 +28,7 @@ Network datasets (hosts as nodes, authentications or network flows as edges, eve
 |---------|--------|-------|------------------|-----------|
 | LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
 | OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 5,165 (1,015 FLOW START)¹ | 275 |
+| CIC_IDS2018 | 20.1M network flows | 205,801 | 2.6M | 4 |
 
 ¹ With the labels of LARES propagated to all the records of malicious flows (default); 2,370 (115 FLOW START) with the labels of LARES as they are (see [OPTC_NET](#optc_net)).
 
@@ -262,6 +263,12 @@ The network flows of all the hosts of [DARPA OpTC](https://github.com/FiveDirect
 LARES labels only some of the records of each malicious flow (a flow has FLOW START and FLOW MESSAGE events, recorded by the hosts at both ends). By default, the database labels malicious all the records of a malicious flow (same 5-tuple in the same LARES file): 1,015 malicious FLOW START events instead of the 115 of LARES. The labels of LARES are kept by building the database with `--no_label_propagation` (see the [database creation guide](create-db-from-scratch.md#fill-the-database-optc-flows)). Euler and Argus use another preprocessing and labelling of OpTC (IP addresses as nodes, including external hosts, and all the events of compromised hosts as malicious), so their results on OpTC are not comparable.
 
 99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. They are dropped by default (`construction.drop_noise_events`, which has no effect on other datasets); set `construction.drop_noise_events=False` to keep them, as LARES does. The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with `--tuned` (`config/tuned_baselines/optc_net/`).
+
+### CIC_IDS2018
+
+[CSE-CIC-IDS2018](https://www.unb.ca/cic/datasets/ids-2018.html) in its NetFlow v3 version (`NF-CSE-CIC-IDS2018-v3`, [University of Queensland](https://staff.itee.uq.edu.au/marius/NIDS_datasets/)): 10 days of flows between the hosts of the CIC testbed (172.31.0.0/16) and the internet, from 2018-02-14 to 2018-03-02, during which attackers ran brute force, DoS, DDoS, web, infiltration and botnet attacks. Anomal-E uses the v2 version of this dataset, which has no timestamps; v3 adds the start and end time of flows. Edges are flows, typed by their transport protocol (TCP, UDP, ICMP, ...), with the ports (service ports, or IANA range), the bytes and packets in each direction and the duration as attributes. Labels are per flow.
+
+Every day from 2018-02-14 to 2018-02-22 and from 2018-02-28 has attacks, in windows of a few hours (brute force, DoS and DDoS) or throughout the day (web, infiltration and botnet attacks). Models are trained from 2018-02-14 to 2018-02-16 and validated on 2018-02-20 on their benign flows only (`construction.benign_training`, on by default: the malicious events of train and val dates are dropped), and tested from 2018-02-21 to 2018-03-02 (DDoS, web, infiltration and botnet attacks). Times are the local time of the testbed (UTC-4). The web attacks of 2018-02-23 of the official schedule are not labelled in this version of the dataset.
 
 ## PROVENANCE_BENIGN
 

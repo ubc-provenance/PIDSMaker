@@ -929,6 +929,44 @@ SCHEMAS["lanl_auth"] = DatasetSchema(
 )
 
 
+# NetFlow v3 datasets of the University of Queensland (Luay et al., 2025): network flows with 53
+# NetFlow features, including absolute timestamps (FLOW_START_MILLISECONDS), and per-flow labels.
+# E.g. NF-CSE-CIC-IDS2018-v3, a NetFlow version of CSE-CIC-IDS2018 (the dataset of Anomal-E).
+# Nodes are hosts (IP addresses) and the edge type is the transport protocol of the flow.
+# See `dataset_preprocessing/netflow/create_database_netflow_v3.py`.
+NETFLOW_PROTOCOLS = ("TCP", "UDP", "ICMP", "ICMPv6", "OTHER")
+rel2id_netflow = {}
+for _i, _event_type in enumerate(NETFLOW_PROTOCOLS):
+    rel2id_netflow[_i + 1] = _event_type
+    rel2id_netflow[_event_type] = _i + 1
+
+# Service ports are kept, other ports are grouped by IANA range (well-known, registered, dynamic)
+NETFLOW_PORTS = (
+    "0", "20", "21", "22", "23", "25", "53", "67", "68", "80", "123", "135", "137", "138", "139",
+    "161", "389", "443", "445", "547", "1433", "1900", "3128", "3306", "3389", "5060", "5355",
+    "5900", "8080", "1-1023", "1024-49151", "49152+",
+)  # fmt: skip
+
+NETFLOW_V3_EDGE_ATTRIBUTES = (
+    EdgeAttributeSchema("src_port", "src_port", "categorical", NETFLOW_PORTS),
+    EdgeAttributeSchema("dst_port", "dst_port", "categorical", NETFLOW_PORTS),
+    EdgeAttributeSchema("in_bytes", "in_bytes", "numeric"),
+    EdgeAttributeSchema("out_bytes", "out_bytes", "numeric"),
+    EdgeAttributeSchema("in_pkts", "in_pkts", "numeric"),
+    EdgeAttributeSchema("out_pkts", "out_pkts", "numeric"),
+    EdgeAttributeSchema("duration", "duration", "numeric"),
+)
+
+SCHEMAS["netflow_v3"] = DatasetSchema(
+    name="netflow_v3",
+    node_types=(HOST_NODE_TYPE,),
+    rel2id=rel2id_netflow,
+    possible_events={("host", "host"): list(NETFLOW_PROTOCOLS)},
+    edge_attributes=NETFLOW_V3_EDGE_ATTRIBUTES,
+    label_column="label",
+)
+
+
 # DARPA OpTC network flows of all hosts (FLOW START and FLOW MESSAGE events of eCAR), in the version
 # preprocessed by LARES (Bilot et al., ACSAC 2026), whose hosts are integer ids. Ports are grouped as
 # in LARES: common service ports are kept, other ports are grouped by range.

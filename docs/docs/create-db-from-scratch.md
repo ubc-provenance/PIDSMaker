@@ -94,7 +94,7 @@ python dataset_preprocessing/optc/create_database_optc.py orthrus DATASET
 ```
 where `DATASET` can be [`optc_h051` | `optc_h201` | `optc_h501`]
 
-## Network datasets (LANL and OpTC flows)
+## Network datasets (LANL, OpTC flows and CIC-IDS2018)
 
 Network datasets have hosts as nodes and authentications or network flows as edges. They are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares), which also provide the labels of malicious events used as ground truth.
 Unlike provenance datasets, their tables follow the dataset's schema (`pidsmaker/config/schemas.py`): no SQL initialization is needed, as the scripts below create the database and its tables.
@@ -144,6 +144,16 @@ This creates the `optc_net` database with the FLOW START and FLOW MESSAGE events
 **Labels.** A flow is recorded several times in OpTC (FLOW START and FLOW MESSAGE events, by the hosts at both ends), and LARES labels only some of these records: e.g. in the lateral movement of 2019-09-24, the FLOW MESSAGE events of 561 flows are malicious but the FLOW START of only 56 of them. By default, the script labels malicious all the records of a malicious flow (same 5-tuple, in either direction, in the same LARES file): 5,165 malicious events (1,015 FLOW START) instead of 2,370 (115 FLOW START). Add `--no_label_propagation` to keep the labels of LARES as they are. A database built without propagation can be relabelled in place with `--relabel`; graphs built before must then be built again (the labels of edges are stored in the graphs).
 
 Both scripts index the events by time (used by the construction) and the malicious events (used by the evaluation).
+
+### Fill the database (CIC-IDS2018)
+
+Download `NF-CSE-CIC-IDS2018-v3` from the [NetFlow v3 datasets of the University of Queensland](https://staff.itee.uq.edu.au/marius/NIDS_datasets/) (NetFlow version of [CSE-CIC-IDS2018](https://www.unb.ca/cic/datasets/ids-2018.html)), then in the `pidscontainer`, run:
+
+```shell
+python dataset_preprocessing/netflow/create_database_netflow_v3.py CIC_IDS2018 --input /data/NF-CSE-CIC-IDS2018-v3.csv
+```
+
+This creates the `cic_ids2018` database with the 20.1M flows of the dataset (2.6M malicious). The input can also be the zipped or gzipped CSV file, or a parquet version of it (requires `pyarrow`). Other NetFlow v3 datasets (e.g. NF-UNSW-NB15-v3) can be loaded by the same script with their own entry in `DATASET_DEFAULT_CONFIG`.
 
 ### Dump the network databases
 
