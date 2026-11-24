@@ -499,3 +499,28 @@ def test_metrics_of_lazy_edges(seed):
     assert eu.get_metrics_if_all_attacks_detected(scores, edges, attack_to_mal_edges) == (
         eu.get_metrics_if_all_attacks_detected(scores.tolist(), edge_list, attack_to_mal_edges)
     )
+
+
+@pytest.mark.parametrize("seed", [0, 1])
+def test_match_events_to_time_windows(seed):
+    """Events are matched to the windows that strictly contain them, as by a loop over all events."""
+    import random
+    from collections import defaultdict
+
+    from pidsmaker.detection.evaluation_methods.evaluation_utils import match_events_to_time_windows
+
+    rng = random.Random(seed)
+    t_to_node = defaultdict(list)
+    for _ in range(500):
+        t = rng.randint(0, 1000)
+        t_to_node[t].extend([f"n{rng.randint(0, 20)}", f"n{rng.randint(0, 20)}"])
+    # Contiguous and overlapping windows, sharing bounds with events, and an empty window
+    tw_ranges = [(s, s + rng.randint(0, 60)) for s in range(-50, 1050, 37)] + [(500, 500), (10, 5)]
+
+    expected, num_found = defaultdict(list), 0
+    for i, (start, end) in enumerate(tw_ranges):
+        for t, node_ids in sorted(t_to_node.items()):
+            if start < t < end:
+                expected[i].extend(node_ids)
+                num_found += 1
+    assert match_events_to_time_windows(tw_ranges, t_to_node) == (expected, num_found)

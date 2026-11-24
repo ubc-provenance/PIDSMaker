@@ -1,3 +1,4 @@
+import bisect
 import os
 import time
 from collections import defaultdict
@@ -1249,20 +1250,19 @@ def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
         graph_dir = cfg.transformation._graphs_dir
         test_tw_files = get_all_graphs_for_dates(graph_dir, cfg.dataset.test_dates)
 
-    num_found_event_labels = 0
-    tw_to_malicious_nodes = defaultdict(list)
-    for i, tw in enumerate(test_tw_files):
-        date = tw.split("/")[-1]
-        start, end = (
-            datetime_to_ns_time_US_handle_nano(date.split("~")[0], timezone=cfg.dataset.timezone),
-            datetime_to_ns_time_US_handle_nano(date.split("~")[1], timezone=cfg.dataset.timezone),
+    tz = cfg.dataset.timezone
+    tw_ranges = []
+    for tw in test_tw_files:
+        start, end = tw.split("/")[-1].split("~")[:2]
+        tw_ranges.append(
+            (
+                datetime_to_ns_time_US_handle_nano(start, timezone=tz),
+                datetime_to_ns_time_US_handle_nano(end, timezone=tz),
+            )
         )
-
-        for t, node_ids in t_to_node.items():
-            if start < t < end:
-                for node_id in node_ids:  # src, dst, or [src, dst] malicious nodes
-                    tw_to_malicious_nodes[i].append(node_id)
-                num_found_event_labels += 1
+    tw_to_malicious_nodes, num_found_event_labels = match_events_to_time_windows(
+        tw_ranges, t_to_node
+    )
 
     log(f"Matched {num_found_event_labels}/{len(t_to_node)} event timestamps to test time windows.")
     torch.save(tw_to_malicious_nodes, out_file)
@@ -1292,6 +1292,29 @@ def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
     )
 
     return tw_to_malicious_nodes
+
+
+def match_events_to_time_windows(tw_ranges, t_to_node):
+    """Malicious nodes of the events strictly inside each time window.
+
+    Args:
+        tw_ranges: [(start, end)] of the time windows (ns).
+        t_to_node: {event timestamp: malicious node ids of the events at that time}.
+
+    Returns:
+        ({time window index: node ids, in increasing time}, number of matched timestamps, counted
+        once per window containing them).
+    """
+    times = sorted(t_to_node)
+    tw_to_malicious_nodes = defaultdict(list)
+    num_found_event_labels = 0
+    for i, (start, end) in enumerate(tw_ranges):
+        # Timestamps in the open interval (start, end)
+        lo, hi = bisect.bisect_right(times, start), bisect.bisect_left(times, end)
+        for t in times[lo:hi]:
+            tw_to_malicious_nodes[i].extend(t_to_node[t])  # src, dst, or [src, dst] nodes
+        num_found_event_labels += max(hi - lo, 0)
+    return tw_to_malicious_nodes, num_found_event_labels
 
 
 def _tw_name_to_ns_range(name, timezone):
