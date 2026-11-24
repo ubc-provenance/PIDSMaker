@@ -84,7 +84,7 @@ And of Velox on other datasets:
 - Pretrained encoders such as SPIDER were pretrained on labels that were not cleaned: methods that change the labels or the events change their input, and lower their results.
 - `normalize_labels`, `remove_self_loops` and `remove_noisy_netflows` have no effect on CADETS_E3, which has few such labels and events.
 
-As PIDSs are unstable (see [Instability](../features/instability.md)), measure the effect of cleaning on several runs before using it.
+As detectors are unstable (see [Instability](../features/instability.md)), measure the effect of cleaning on several runs before using it.
 
 ## Attack nodes
 

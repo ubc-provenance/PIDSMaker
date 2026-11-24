@@ -24,7 +24,7 @@ Attacks leave traces at two levels. **Inside each host**, the operating system c
 | **Ground truth** | Attack nodes, in ground-truth files | Malicious events, labelled in the database |
 | **Datasets** | DARPA TC, OpTC, ATLASv2, CARBANAKv2 | LANL, OpTC network flows |
 
-Both views are complementary: provenance shows in detail how a host was compromised, the network shows how an attacker moves between hosts. In PIDSMaker, a detector designed for one view [runs on the other](systems.md#running-across-families).
+Both views are complementary: provenance shows in detail how a host was compromised, the network shows how an attacker moves between hosts. In PIDSMaker, most detectors designed for one view [run on the other](systems.md#running-across-families).
 
 ## Provenance graphs
 

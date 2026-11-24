@@ -18,7 +18,7 @@ The same detector can look excellent or useless depending on **what** is counted
 <li markdown>**Metrics.** Predictions are compared with the labels, for each evaluated epoch, and the metrics of the best epoch are reported.</li>
 </ol>
 
-The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. Each family has its usual granularity, but any method works on any dataset:
+The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. Each family has its usual granularity, which `evaluation.used_method` changes for any system:
 
 | | Provenance systems | Network systems |
 |---|---|---|

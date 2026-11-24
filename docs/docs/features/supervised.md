@@ -5,7 +5,7 @@ description: Add supervision to a PIDS with the predict_edge_supervised objectiv
 
 # Supervised Fine-Tuning with Attack Edges
 
-PIDSs usually learn from benign data only.
+PIDSs, like the network systems, usually learn from benign data only.
 The `predict_edge_supervised` objective adds some supervision: a binary classifier learns to separate the benign edges of the training graphs from a set of attack edges that you provide, then scores every test edge by how much it looks like an attack.
 
 ## How it works

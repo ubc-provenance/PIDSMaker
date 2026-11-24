@@ -135,7 +135,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
 === ":lucide-play: 2. Run a system"
 
-    Run any system on any dataset, from inside the `pids` container.
+    Run a provenance or a network system, from inside the `pids` container.
 
     ```shell
     python pidsmaker/main.py velox CADETS_E3          # a provenance IDS

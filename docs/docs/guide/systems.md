@@ -67,7 +67,7 @@ How each system is configured at the main stages of the [pipeline](pipeline.md):
 | E-GraphSAGE | `only_ones` | `egraphsage` | `predict_edge_contrastive` (uniform negatives) | `edge_evaluation` | `max_val_loss` |
 | Anomal-E | `only_ones` | `egraphsage` | `deep_graph_infomax` (PCA scores) | `edge_evaluation` | `max_val_loss` |
 
-The two families mostly differ at both ends of the pipeline. PIDSs embed the textual labels of entities (file paths, command lines, IP addresses) and are evaluated per node, against the attack nodes of the ground truth. Hosts have no such labels, only names, so NIDSs learn an embedding of the identity of each host (`node_id_embedding`, `lares`) and rely on the attributes of events; they are evaluated per edge, against the malicious events labelled in the dataset.
+The two families mostly differ at both ends of the pipeline. Most PIDSs embed the textual labels of entities (file paths, command lines, IP addresses), and all are evaluated per node, against the attack nodes of the ground truth. Hosts have no such labels, only a name or an ID, so NIDSs learn an embedding of the identity of each host (`node_id_embedding`, `lares`) and rely on the attributes of events; they are evaluated per edge, against the malicious events labelled in the dataset.
 
 Other stages:
 

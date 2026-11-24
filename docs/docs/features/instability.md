@@ -1,6 +1,6 @@
 ---
 title: Instability
-description: Measure and reduce the run-to-run instability of PIDSs with run_n_times and stable_optim.
+description: Measure and reduce the run-to-run instability of provenance and network IDSs with run_n_times and stable_optim.
 ---
 
 # Instability
