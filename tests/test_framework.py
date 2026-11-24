@@ -560,6 +560,15 @@ class TestCombinations:
                 ("training.decoder.predict_edge_type.balanced_loss", True),
             ],
             [("training.decoder.predict_edge_type.balanced_loss", True)],
+            *[
+                [
+                    ("training.decoder.predict_edge_type.loss", "AMS"),
+                    ("training.decoder.predict_edge_type.AMS.version", version),
+                    ("training.decoder.predict_edge_type.AMS.margin", 0.2),
+                    ("training.decoder.predict_edge_type.AMS.scale", 30),
+                ]
+                for version in [1, 2]
+            ],
             [("training.encoder.tgn.use_residual_norm", True)],
             [("batching.edge_features", "time_encoding")],
             [("evaluation.used_method", "tw_evaluation")],

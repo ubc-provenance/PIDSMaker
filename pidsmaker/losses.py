@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from torch.autograd import Variable
 
 
 def sce_loss(x, y, alpha=3, inference=False, **kwargs):
@@ -126,9 +125,7 @@ class AMSoftmax(nn.Module):
         ncenters = torch.div(self.centers, norms_c)
         logits = torch.matmul(nfeat, torch.transpose(ncenters, 0, 1))
 
-        y_onehot = torch.FloatTensor(batch_size, self.num_classes)
-        y_onehot.zero_()
-        y_onehot = Variable(y_onehot).cuda()
+        y_onehot = torch.zeros(batch_size, self.num_classes, device=feat.device)
         y_onehot.scatter_(1, torch.unsqueeze(label, dim=-1), self.margin)
         margin_logits = self.scale * (logits - y_onehot)
         err = cross_entropy(margin_logits, label, inference=inference)
