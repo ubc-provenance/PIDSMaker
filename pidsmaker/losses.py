@@ -47,6 +47,29 @@ def bce_contrastive(positive, negative, inference=False, weight=None, **kwargs):
     return pos_loss
 
 
+def ap_contrastive(positive, negative, inference=False, margin=0.8, **kwargs):
+    """Surrogate average precision loss of link prediction, as in Argus.
+
+    Each positive edge should be ranked above the negative edges: the precision of a positive
+    edge i is approximated by sum_{j in pos} l(s_j, s_i) / sum_{j in all} l(s_j, s_i), with the
+    squared hinge l(s_j, s_i) = max(0, margin - (s_i - s_j))^2 on sigmoid scores. This is the
+    mini-batch version of the AP loss of LibAUC (without its moving averages across batches).
+    At inference, edges are scored like `bce_contrastive` (low probability = anomalous).
+    """
+    pos_loss = F.binary_cross_entropy_with_logits(
+        positive, torch.ones_like(positive), reduction="none"
+    )
+    if inference:
+        return pos_loss
+
+    pos, neg = torch.sigmoid(positive.flatten()), torch.sigmoid(negative.flatten())
+    all_scores = torch.cat([pos, neg])
+    surrogate = torch.clamp(margin - (pos.unsqueeze(1) - all_scores.unsqueeze(0)), min=0) ** 2
+    num_pos = pos.shape[0]
+    precision = surrogate[:, :num_pos].sum(dim=1) / (surrogate.sum(dim=1) + 1e-12)
+    return -precision.mean()
+
+
 def cross_entropy(x, y, inference=False, weight=None, **kwargs):
     reduction = "none" if inference else "mean"
     return F.cross_entropy(x, y, reduction=reduction, weight=weight)

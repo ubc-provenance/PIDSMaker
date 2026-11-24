@@ -18,13 +18,19 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     transform_attack2nodes_to_node2attacks,
 )
 from pidsmaker.utils.dataset_utils import get_rel2id_considering_triplets
-from pidsmaker.utils.labelling import get_attack_to_mal_edges, get_ground_truth_edges
+from pidsmaker.utils.labelling import (
+    get_attack_to_mal_edges,
+    get_ground_truth_edges,
+    ground_truth_attacks,
+    has_event_labels,
+)
 from pidsmaker.utils.loss_files import compact_int_columns, read_losses
 from pidsmaker.utils.utils import listdir_sorted, log, log_tqdm
 
 
 def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
-    ground_truth_edges = get_ground_truth_edges(cfg)
+    # With event labels, edges carry their labels in the loss files (`y`)
+    ground_truth_edges = set() if has_event_labels(cfg) else get_ground_truth_edges(cfg)
     threshold_method = cfg.evaluation.edge_evaluation.threshold_method
     alpha = getattr(cfg.evaluation.edge_evaluation, "alpha", 1.0) or 1.0
     
@@ -53,11 +59,15 @@ def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
             edge_type = edge_type_map[line["edge_type"]]
             edge = (srcnode, dstnode, t, edge_type)
 
-            # CSV-based labels use 3-tuples (no timestamp), DB-based use 4-tuples
-            is_malicious = int(
-                edge in ground_truth_edges
-                or (srcnode, dstnode, edge_type) in ground_truth_edges
-            )
+            if "y" in line:
+                # Event-level labels carried by the edges (datasets with labelled events)
+                is_malicious = int(line["y"] > 0)
+            else:
+                # CSV-based labels use 3-tuples (no timestamp), DB-based use 4-tuples
+                is_malicious = int(
+                    edge in ground_truth_edges
+                    or (srcnode, dstnode, edge_type) in ground_truth_edges
+                )
             scores.append(loss)
             y_true.append(is_malicious)
             y_hat.append(int(loss > thr))
@@ -81,11 +91,23 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     scores, y_truth, y_preds, src_dst_t_type, thr, edge_records = get_edge_predictions(
         val_tw_path, test_tw_path, cfg, **kwargs
     )
-    attack_to_mal_edges = get_attack_to_mal_edges(cfg)
-
-    log(
-        f"Found {sum(y_truth)} / {sum(len(edges) for edges in attack_to_mal_edges.values())} malicious edges"
-    )
+    if has_event_labels(cfg):
+        # Edges carry their labels (`y`): malicious edges are assigned to the attack whose time
+        # window contains them. This also holds when edges are merged (e.g. `merge_edges`), whose
+        # times and types may differ from those of the labelled events of the database.
+        attacks = ground_truth_attacks(cfg)
+        attack_to_mal_edges = {i: set() for i in range(len(attacks))}
+        for edge, y in zip(src_dst_t_type, y_truth):
+            if y:
+                t = int(edge[2])
+                i = next((i for i, (_, s, e) in enumerate(attacks) if s <= t <= e), 0)
+                attack_to_mal_edges[i].add(edge)
+        log(f"Found {sum(y_truth)} malicious edges in the test set")
+    else:
+        attack_to_mal_edges = get_attack_to_mal_edges(cfg)
+        log(
+            f"Found {sum(y_truth)} / {sum(len(edges) for edges in attack_to_mal_edges.values())} malicious edges"
+        )
 
     edge2attack = transform_attack2nodes_to_node2attacks(attack_to_mal_edges)
 
@@ -103,24 +125,27 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     neat_scores_img_file = os.path.join(out_dir, f"neat_scores_{model_epoch_dir}.svg")
     discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
 
-    log(f"Saving figures to {out_dir}...")
+    save_figures = cfg.evaluation.save_figures is not False  # unset: saved
+    if save_figures:
+        log(f"Saving figures to {out_dir}...")
     adp_score = plot_detected_attacks_vs_precision(
-        scores, src_dst_t_type, edge2attack, y_truth, adp_img_file
+        scores, src_dst_t_type, edge2attack, y_truth, adp_img_file if save_figures else None
     )
     discrim_scores = compute_discrimination_score(scores, src_dst_t_type, edge2attack, y_truth)
-    plot_discrimination_metric(scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(scores, src_dst_t_type, edge2attack, y_truth)
-    plot_scores_with_paths_edge_level(
-        scores,
-        y_truth,
-        src_dst_t_type,
-        tw_to_malicious_nodes,
-        edge2attack,
-        scores_img_file,
-        cfg,
-        thr,
-    )
-    plot_scores_neat(scores, y_truth, src_dst_t_type, edge2attack, neat_scores_img_file, thr)
+    if save_figures:
+        plot_discrimination_metric(scores, y_truth, discrim_img_file)
+        plot_scores_with_paths_edge_level(
+            scores,
+            y_truth,
+            src_dst_t_type,
+            tw_to_malicious_nodes,
+            edge2attack,
+            scores_img_file,
+            cfg,
+            thr,
+        )
+        plot_scores_neat(scores, y_truth, src_dst_t_type, edge2attack, neat_scores_img_file, thr)
     stats = classifier_evaluation(y_truth, y_preds, scores)
 
     fps, tps, precision, recall = get_metrics_if_all_attacks_detected(
@@ -156,6 +181,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     )
 
     stats["scores_file"] = scores_file
-    stats["neat_scores_img_file"] = neat_scores_img_file
+    if save_figures:
+        stats["neat_scores_img_file"] = neat_scores_img_file
 
     return stats

@@ -347,6 +347,9 @@ def plot_scores_with_paths_node_level(
         "file": "o",  # Circle
         "netflow": "D",  # Diamond
     }
+    # Node types of other datasets (e.g. hosts of network datasets)
+    for t in sorted(set(types) - set(marker_styles)):
+        marker_styles[t] = "^"
 
     # Separate the scores based on labels
     scores_0 = scores[y_truth == 0]
@@ -498,6 +501,9 @@ def plot_scores_with_paths_edge_level(
         "file": "o",  # Circle
         "netflow": "D",  # Diamond
     }
+    # Node types of other datasets (e.g. hosts of network datasets)
+    for t in sorted(set(types) - set(marker_styles)):
+        marker_styles[t] = "^"
 
     # Separate the scores based on labels
     scores_0 = scores[y_truth == 0]
@@ -730,7 +736,8 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
 
     This function calculates the precision on the x-axis and the cumulative percentage of
     detected attacks on the y-axis, handles duplicate x-values by averaging, and then plots
-    it with a filled area under the curve.
+    it with a filled area under the curve. Returns the area under the curve (ADP score); the
+    figure is not saved when `out_file` is None.
     """
     # Sort nodes by descending anomaly scores
     sorted_indices = np.argsort(scores)[::-1]
@@ -777,6 +784,8 @@ def plot_detected_attacks_vs_precision(scores, nodes, node2attacks, labels, out_
 
     # Calculate area under the curve for % detected attacks vs precision
     area_under_curve = np.trapz(max_detected_attacks_percentages, unique_precisions) / 100
+    if out_file is None:
+        return area_under_curve
 
     # Plotting
     try:

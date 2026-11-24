@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import time
@@ -9,6 +10,7 @@ import torch.nn.functional as F
 from sklearn.neighbors import NearestNeighbors
 
 from pidsmaker.utils.data_utils import batch_to_device
+from pidsmaker.utils.labelling import has_event_labels
 from pidsmaker.utils.loss_files import write_losses
 from pidsmaker.utils.utils import (
     PeakCPUMemory,
@@ -62,6 +64,9 @@ def test_edge_level(
         "time": t_vars.astype(int),
         "edge_type": edge_types.astype(int),
     }
+    # Datasets with event-level labels: the label of each edge is kept for the evaluation
+    if has_event_labels(cfg):
+        edge_cols["y"] = data.y.cpu().numpy().astype(int)
 
     # Here is a checkpoint, which records all edge losses in the current time window
     time_interval = (
@@ -298,6 +303,12 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
 
         if split_name == "val":
             val_score = model.get_val_ap()
+            # Read by the evaluation to select the best epoch on validation data
+            # (`best_model_selection: best_val_score`)
+            val_scores_dir = os.path.join(cfg.training._edge_losses_dir, "val_scores")
+            os.makedirs(val_scores_dir, exist_ok=True)
+            with open(os.path.join(val_scores_dir, f"{model_epoch_file}.json"), "w") as f:
+                json.dump({"val_score": float(val_score)}, f)
             if logging:
                 log(
                     f"[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f}",

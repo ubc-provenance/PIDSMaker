@@ -1,0 +1,103 @@
+# Euler (King & Huang, NDSS 2022): "Euler: Detecting Network Lateral Movement via Scalable
+# Temporal Link Prediction". Each time window (snapshot) is a graph whose repeated edges are
+# merged and weighted by their standardized count. A GCN embeds the nodes of each snapshot from
+# their identity (one-hot node IDs, here a learned node ID embedding), a GRU combines the
+# successive embeddings of each node, and edges are scored by link prediction (inner product
+# decoder trained against random negative edges). Edges with a low probability are anomalous.
+#
+# As in Euler, all the nodes of the dataset are embedded in every snapshot
+# (`node_id_embedding.all_nodes`), negative edges are drawn uniformly among all nodes (10 per
+# positive edge), and the best epoch is selected by link prediction on validation edges.
+#
+# Differences with the original implementation:
+# - the GRU is trained with truncated backpropagation through time (one snapshot at a time,
+#   one optimizer step per snapshot), whereas Euler backpropagates through all the snapshots
+#   of the training set with one optimizer step per epoch;
+# - the second GCN layer outputs `node_out_dim` (16) features instead of 32;
+# - the validation score is computed on the validation day instead of 5% of the training edges;
+# - the threshold is computed on the validation set by the framework's threshold methods,
+#   instead of Euler's cutoff balancing the true and false positive rates.
+
+_include_yml: default
+
+construction:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 30.0  # δ = 30 min (Euler's LANL experiments)
+  use_hashed_label: False
+  fuse_edge: False
+  multi_dataset: none
+  cleaning:
+    used_methods: remove_self_loops
+transformation:
+  used_methods: merge_edges
+  merge_edges:
+    per_edge_type: False
+
+featurization:
+  emb_dim: 16
+  training_split: train
+  used_method: only_type
+  tokenization:
+    used_method: none
+feat_inference:
+  to_remove: True
+
+batching:
+  node_features: node_type
+  edge_features: none
+  fix_buggy_graph_reindexer: True
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: none
+  inter_graph_batching:
+    used_method: none
+
+training:
+  used_method: default
+  seed: 0
+  deterministic: False
+  num_epochs: 50
+  patience: 5
+  lr: 0.005
+  weight_decay: 0.0
+  node_hid_dim: 32
+  node_out_dim: 16
+  grad_accumulation: 1
+  encoder:
+    dropout: 0.25
+    used_methods: gcn,node_id_embedding,snapshot_gru
+    gcn:
+      activation: relu
+      num_layers: 2
+    node_id_embedding:
+      dim: 32
+      all_nodes: True
+    snapshot_gru:
+      hidden_dim: 32
+      dropout: 0.25
+  decoder:
+    used_methods: predict_edge_contrastive
+    predict_edge_contrastive:
+      neg_sampling: uniform
+      neg_ratio: 10.0
+      decoder: inner_product
+      inner_product:
+        dropout: 0.0
+
+evaluation:
+  # Disabled until the NIDS reach their published performance (one point per edge is slow)
+  save_figures: False
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_val_score
+  used_method: edge_evaluation
+  edge_evaluation:
+    malicious_edge_selection: both_nodes
+    threshold_method: max_val_loss
+  node_evaluation:
+    threshold_method: max_val_loss
+    use_dst_node_loss: True
+    use_kmeans: False

@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 import networkx as nx
 
-from pidsmaker.config import get_darpa_tc_node_feats_from_cfg, get_dates_from_cfg
-from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id
+from pidsmaker.config import get_dates_from_cfg, get_node_feats_from_cfg
+from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id, get_schema, iter_nodes
 from pidsmaker.utils.graph_store import save_graph
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
@@ -40,99 +40,30 @@ def _build_label(attrs, node_type, node_label_features, use_hashed_label):
 
 def get_node_list(cur, cfg):
     use_hashed_label = cfg.construction.use_hashed_label
-    node_label_features = get_darpa_tc_node_feats_from_cfg(cfg)
+    node_label_features = get_node_feats_from_cfg(cfg)
 
     uuid2idx = {}
     uuid2type = {}
     uuid2name = {}
     hash2uuid = {}
 
-    # netflow
-    sql = "select * from netflow_node_table;"
-    cur.execute(sql)
+    for node_type, node_uuid, hash_id, index_id, attrs in iter_nodes(cfg, cur.connection):
+        label_str = _build_label(attrs, node_type, node_label_features, use_hashed_label)
 
-    while True:
-        records = cur.fetchmany(1000)
-        if not records:
-            break
-        # node_uuid | hash_id | src_addr | src_port | dst_addr | dst_port | index_id
-        for i in records:
-            attrs = {
-                "type": "netflow",
-                "local_ip": str(i[2]),
-                "local_port": str(i[3]),
-                "remote_ip": str(i[4]),
-                "remote_port": str(i[5]),
-            }
-            node_uuid = str(i[0])
-            hash_id = str(i[1])
-            index_id = int(i[-1])
-
-            label_str = _build_label(attrs, "netflow", node_label_features, use_hashed_label)
-
-            uuid2idx[node_uuid] = index_id
-            uuid2type[node_uuid] = attrs["type"]
-            uuid2name[node_uuid] = label_str
-            hash2uuid[hash_id] = node_uuid
-
-    del records
-
-    # subject
-    sql = """
-    select * from subject_node_table;
-    """
-    cur.execute(sql)
-    while True:
-        records = cur.fetchmany(1000)
-        if not records:
-            break
-        # node_uuid | hash_id | path | cmd | index_id
-        for i in records:
-            attrs = {"type": "subject", "path": str(i[2]), "cmd_line": str(i[3])}
-            node_uuid = str(i[0])
-            hash_id = str(i[1])
-            index_id = int(i[-1])
-            label_str = _build_label(attrs, "subject", node_label_features, use_hashed_label)
-
-            uuid2idx[node_uuid] = index_id
-            uuid2type[node_uuid] = attrs["type"]
-            uuid2name[node_uuid] = label_str
-            hash2uuid[hash_id] = node_uuid
-
-    del records
-
-    # file
-    sql = """
-    select * from file_node_table;
-    """
-    cur.execute(sql)
-    while True:
-        records = cur.fetchmany(1000)
-        if not records:
-            break
-        # node_uuid | hash_id | path | index_id
-        for i in records:
-            attrs = {"type": "file", "path": str(i[2])}
-            node_uuid = str(i[0])
-            hash_id = str(i[1])
-            index_id = int(i[-1])
-            label_str = _build_label(attrs, "file", node_label_features, use_hashed_label)
-
-            uuid2idx[node_uuid] = index_id
-            uuid2type[node_uuid] = attrs["type"]
-            uuid2name[node_uuid] = label_str
-            hash2uuid[hash_id] = node_uuid
-
-    del records
+        uuid2idx[node_uuid] = int(index_id)
+        uuid2type[node_uuid] = node_type
+        uuid2name[node_uuid] = label_str
+        hash2uuid[hash_id] = node_uuid
 
     return uuid2idx, uuid2type, uuid2name, hash2uuid
 
 
 def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
     rel2id = get_rel2id(cfg)
-    ntype2id = get_node_map()
+    ntype2id = get_node_map(cfg)
     include_edge_type = rel2id
     node_type_dict = ntype2id
+    operations_sql = get_schema(cfg).operations_sql()
 
     def get_batches(arr, batch_size):
         for i in range(0, len(arr), batch_size):
@@ -156,9 +87,9 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
             sql = """
             select * from event_table
             where
-                  timestamp_rec>'%s' and timestamp_rec<'%s'
+                  timestamp_rec>'%s' and timestamp_rec<'%s'%s
                    ORDER BY timestamp_rec;
-            """ % (start_ns_timestamp, end_ns_timestamp)
+            """ % (start_ns_timestamp, end_ns_timestamp, operations_sql)
             cur.execute(sql)
             events = cur.fetchall()
 

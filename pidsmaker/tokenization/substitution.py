@@ -22,6 +22,8 @@ from typing import Iterable, List, Optional, Tuple
 
 from pidsmaker.config.config import SUBSTITUTION_METHODS as _CONFIG_SUBSTITUTION_METHODS
 
+from pidsmaker.config.schemas import label_format
+
 # ── Placeholder tokens ───────────────────────────────────────────────────────
 
 HASH = "[HASH]"
@@ -236,7 +238,7 @@ class Substitutor:
     def substitute_word(self, word: str, node_type: Optional[str] = None) -> Optional[str]:
         """The placeholder token of `word`, or None if no enabled pattern matches."""
         subs = self.substitutions
-        if node_type == "netflow":
+        if label_format(node_type) == "address":
             if "ip" in subs:
                 if RE_IP.match(word):
                     return classify_ip(word)
@@ -270,12 +272,12 @@ class Substitutor:
             return [(label, False)]
 
         pieces = []
-        separators = _WHITESPACE if node_type == "netflow" else _WORD_SEPARATORS
+        separators = _WHITESPACE if label_format(node_type) == "address" else _WORD_SEPARATORS
         for word in separators.split(label):
             if not word:
                 continue
             placeholder = None if separators.fullmatch(word) else self.substitute_word(word, node_type)
-            if placeholder is None and node_type == "netflow" and ":" in word:
+            if placeholder is None and label_format(node_type) == "address" and ":" in word:
                 # ip:port
                 ip, _, port = word.rpartition(":")
                 ip_tok = self.substitute_word(ip, node_type) or ip

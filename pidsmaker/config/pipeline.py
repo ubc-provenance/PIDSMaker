@@ -10,6 +10,7 @@ from copy import deepcopy
 import yaml
 from yacs.config import CfgNode as CN
 
+from .schemas import get_schema, get_schema_by_name
 from .config import (
     CLEANING_METHODS,
     DATASET_DEFAULT_CONFIG,
@@ -115,6 +116,10 @@ def set_dataset_cfg(cfg, dataset):
     cfg.dataset.name = dataset
     for attr, value in DATASET_DEFAULT_CONFIG[cfg.dataset.name].items():
         setattr(cfg.dataset, attr, value)
+    # Number of node and edge types, from the dataset's schema (see `schemas.py`)
+    schema = get_schema_by_name(cfg.dataset.schema)
+    cfg.dataset.num_node_types = schema.num_node_types
+    cfg.dataset.num_edge_types = schema.num_edge_types
 
 
 def get_runtime_required_args(return_unknown_args=False, args=None):
@@ -316,6 +321,79 @@ def get_cleaning_methods_from_cfg(cfg):
     return [m for m in methods if m != "none"]
 
 
+# Args added after the first releases, by task: they are removed from the hash of their task
+# while they have their default value, so that the artifacts computed before they existed are
+# reused. Keys are paths in the task's config: a leaf arg is removed if its value is None or the
+# given default, a group of args (default `None`) if all its values are None.
+UNHASHED_DEFAULT_ARGS = {
+    "construction": {"edge_type": "operation", "operations": "default"},
+    "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
+    "feat_inference": {"edge_attributes": "all"},
+    "evaluation": {
+        "save_figures": True,
+        "host_two_stage_evaluation": {"alpha": 3, "beta": 350, "root_attack_nodes": "", "test_end": ""},
+    },
+    "training": {
+        # Defaults of default.yml (configs that don't include it leave them unset)
+        "encoder.gcn": {"activation": "relu", "num_layers": 2},
+        "encoder.node_id_embedding": {"dim": 32, "all_nodes": False},
+        "encoder.snapshot_gru": {"hidden_dim": 0, "dropout": 0.0},
+        "encoder.lares": {"flow": "target_to_source", "use_node_features": False},
+        "encoder.argus": {"num_layers": 2},
+        "encoder.egraphsage": {"activation": "relu", "num_layers": 2, "undirected": True},
+        "decoder.predict_edge_contrastive.loss": "bce",
+        "decoder.predict_edge_contrastive.ap_margin": 0.8,
+        "decoder.predict_edge_contrastive.neg_sampling": "shuffle_dst",
+        "decoder.predict_edge_contrastive.neg_ratio": 1.0,
+        "decoder.few_shot.decoder.predict_edge_contrastive.loss": "bce",
+        "decoder.few_shot.decoder.predict_edge_contrastive.ap_margin": 0.8,
+        "decoder.few_shot.decoder.predict_edge_contrastive.neg_sampling": "shuffle_dst",
+        "decoder.few_shot.decoder.predict_edge_contrastive.neg_ratio": 1.0,
+        "decoder.deep_graph_infomax": {"decoder": "none", "pca_components": 8},
+        "decoder.autoencode_edge_embeddings": {"decoder": "none", "use_edge_feats": True},
+        "decoder.few_shot.decoder.autoencode_edge_embeddings": {"decoder": "none", "use_edge_feats": True},
+        "decoder.few_shot.decoder.deep_graph_infomax": {"decoder": "none", "pca_components": 8},
+    },
+}
+
+
+def _all_none(value):
+    if isinstance(value, dict):
+        return all(_all_none(v) for v in value.values())
+    return value is None
+
+
+def _is_default(value, default):
+    """Whether an arg (or a group of args) is unset or at its default value."""
+    if isinstance(value, dict):
+        if _all_none(value):
+            return True
+        if not isinstance(default, dict):
+            return False
+        return all(
+            _is_default(v, default[k]) if k in default else _all_none(v) for k, v in value.items()
+        )
+    return value is None or str(value).strip() == str(default)
+
+
+def strip_unhashed_defaults(task, task_cfg):
+    """Copy of a task's config without the args of `UNHASHED_DEFAULT_ARGS` at their default."""
+    args = UNHASHED_DEFAULT_ARGS.get(task)
+    if not args:
+        return task_cfg
+    task_cfg = deepcopy(dict(task_cfg))
+    for path, default in args.items():
+        *parents, key = path.split(".")
+        node = task_cfg
+        for parent in parents:
+            node = node.get(parent) if isinstance(node, dict) else None
+        if not isinstance(node, dict) or key not in node:
+            continue
+        if _is_default(node[key], default):
+            del node[key]
+    return task_cfg
+
+
 def get_hashed_construction_cfg(cfg):
     """Construction args that define the hash of its folder.
 
@@ -324,6 +402,11 @@ def get_hashed_construction_cfg(cfg):
     as their order has no effect.
     """
     hashed = {k: v for k, v in cfg.construction.items() if k != "cleaning"}
+    # Only the labels of the dataset's node types have an effect
+    node_types = set(get_schema(cfg).node_type_names)
+    hashed["node_label_features"] = {
+        k: v for k, v in cfg.construction.node_label_features.items() if k in node_types
+    }
     methods = sorted(set(get_cleaning_methods_from_cfg(cfg)))
     if methods:
         cleaning = cfg.construction.cleaning
@@ -342,6 +425,7 @@ def set_task_paths(cfg, subtask_concat_value=None):
         task_cfg = getattr(cfg, task)
         if task == "construction":
             task_cfg = get_hashed_construction_cfg(cfg)
+        task_cfg = strip_unhashed_defaults(task, task_cfg)
         restart_values = flatten_arg_values(task_cfg)
 
         _spider_pretrain_datasets = (
@@ -706,12 +790,40 @@ def check_edge_cases(cfg):
             raise ValueError("Couldn't use `tgn_last_neighbor` without `tgn` as encoder.")
 
     edge_features = [f.strip() for f in (cfg.batching.edge_features or "").split(",")]
-    is_optc = cfg.dataset.name.lower() in ["optc_h201", "optc_h501", "optc_h051"]
-    if is_optc:
-        if "edge_type_triplet" in edge_features:
-            raise ValueError("Edge feature `edge_type_triplet` is not implemented for OpTC datasets.")
-        if cfg._is_hetero:
-            raise ValueError("Hetero encoders are not implemented for OpTC datasets.")
+    edge_type = (cfg.construction.edge_type or "operation").strip()
+    base_schema = get_schema_by_name(cfg.dataset.schema)
+    if edge_type not in base_schema.edge_type_choices:
+        raise ValueError(
+            f"Invalid `construction.edge_type={edge_type}` for {cfg.dataset.name}: expected one of "
+            f"{base_schema.edge_type_choices} (schema `{base_schema.name}`)."
+        )
+    schema = get_schema(cfg)
+    encoders = cfg.training.encoder.used_methods
+    if use_tgn and ("node_id_embedding" in encoders or "snapshot_gru" in encoders):
+        raise ValueError("Encoders `node_id_embedding` and `snapshot_gru` cannot be used with `tgn`.")
+    if "node_id_embedding" in encoders and cfg.training.encoder.node_id_embedding.all_nodes:
+        objectives = [o.strip() for o in decoders.split(",")]
+        node_level = [o for o in objectives if o in OBJECTIVES_NODE_LEVEL]
+        if node_level or cfg.training.fuse_duplicate_edges_training:
+            raise ValueError(
+                "`node_id_embedding.all_nodes` embeds all the nodes of the dataset in every graph: it "
+                f"requires edge-level objectives (got {node_level}) and no `fuse_duplicate_edges_training`."
+            )
+    if "predict_node_type" in decoders and schema.num_node_types < 2:
+        raise ValueError(
+            f"Objective `predict_node_type` needs at least two node types, but {cfg.dataset.name} "
+            f"has a single node type ({schema.node_type_names[0]}). Use an edge-level objective "
+            "(e.g. `predict_edge_type` with `construction.edge_type`)."
+        )
+    if "edge_type_triplet" in edge_features and not schema.supports_edge_type_triplets:
+        raise ValueError(
+            f"Edge feature `edge_type_triplet` is not implemented for {cfg.dataset.name} "
+            f"(schema `{schema.name}`)."
+        )
+    if cfg._is_hetero and not schema.supports_hetero:
+        raise ValueError(
+            f"Hetero encoders are not implemented for {cfg.dataset.name} (schema `{schema.name}`)."
+        )
 
     if cfg._require_non_reversed_edges and "undirected" in cfg.transformation.used_methods:
         used = [e for e in REQUIRE_NON_REVERSED_EDGES_ENCODERS if e in cfg.training.encoder.used_methods]
@@ -1038,6 +1150,7 @@ EVALUATION_REQUIRED_ARGS = {
     "node_tw_evaluation": ["threshold_method"],
     "queue_evaluation": ["used_method", "queue_threshold"],
     "edge_evaluation": ["threshold_method", "malicious_edge_selection"],
+    "host_two_stage_evaluation": ["alpha", "beta"],
 }
 
 
@@ -1374,24 +1487,17 @@ def add_cfg_args_to_parser(cfg, parser):
     return parser
 
 
-def get_darpa_tc_node_feats_from_cfg(cfg):
+def get_node_feats_from_cfg(cfg):
+    """{node type: [attributes used in labels]} for the node types of the dataset's schema.
+
+    Node types are in id order. `["auto"]` means the type-specific default label.
+    """
     features = cfg.construction.node_label_features
     result = {}
-    for key in ("subject", "file", "netflow"):
-        raw = getattr(features, key).strip()
-        if raw == "auto":
-            result[key] = ["auto"]
-        else:
-            result[key] = list(map(lambda x: x.strip(), raw.split(",")))
+    for key in get_schema(cfg).node_type_names:
+        raw = (getattr(features, key, None) or "auto").strip()
+        result[key] = ["auto"] if raw == "auto" else [x.strip() for x in raw.split(",")]
     return result
-
-def get_node_feats_from_cfg(cfg):
-    features = cfg.construction.node_label_features
-    return {
-        "subject": list(map(lambda x: x.strip(), features.subject.split(","))),
-        "file": list(map(lambda x: x.strip(), features.file.split(","))),
-        "netflow": list(map(lambda x: x.strip(), features.netflow.split(","))),
-    }
 
 
 TASK_FINISHED_FILE = "done.txt"

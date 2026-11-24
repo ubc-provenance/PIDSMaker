@@ -6,6 +6,7 @@ from pidsmaker.config import SYNTHETIC_ATTACKS, update_cfg_for_multi_dataset
 from pidsmaker.preprocessing.transformation_methods import (
     synthetic_attack_naive,
     transformation_dag,
+    transformation_merge_edges,
     transformation_rcaid_pseudo_graph,
     transformation_undirected,
 )
@@ -87,6 +88,8 @@ def apply_graph_transformations(graph, methods, cfg):
             graph = transformation_undirected.main(graph)
         elif method == "dag":
             graph = transformation_dag.main(graph)
+        elif method == "merge_edges":
+            graph = transformation_merge_edges.main(graph, cfg)
         else:
             raise ValueError(f"Unrecognized transformation method: {method}")
 

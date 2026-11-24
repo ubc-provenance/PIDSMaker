@@ -1,0 +1,46 @@
+# Jbeil (Khoury et al., IEEE S&P 2024): "Jbeil: Temporal Graph-Based Inductive Learning to Infer
+# Lateral Movement in Evolving Enterprise Networks". A TGN (node memory + graph attention over
+# temporal neighbors) trained by self-supervised link prediction against random negative edges,
+# with degree-based node features. Edges with a low probability are anomalous.
+#
+# Differences with the original implementation (whose code is no longer available):
+# - node features count the incoming and outgoing edges of each type in the time window
+#   (`edges_distribution`), instead of Jbeil's 9 unique-neighbor counts computed on the whole log;
+# - Jbeil also trains on synthetic lateral movement events (not released), which are not used.
+
+_include_yml: kairos
+
+featurization:
+  used_method: only_type
+  tokenization:
+    used_method: none
+
+batching:
+  node_features: edges_distribution,node_type
+  edge_features: msg,time_encoding
+  intra_graph_batching:
+    used_methods: edges, tgn_last_neighbor
+    edges:
+      intra_graph_batch_size: 200
+    tgn_last_neighbor:
+      tgn_neighbor_size: 10
+
+training:
+  num_epochs: 10
+  patience: 5
+  lr: 0.0001
+  decoder:
+    used_methods: predict_edge_contrastive
+    predict_edge_contrastive:
+      decoder: edge_mlp
+      edge_mlp:
+        architecture_str: linear(0.5) | relu
+        src_dst_projection_coef: 1
+
+evaluation:
+  # Disabled until the NIDS reach their published performance (one point per edge is slow)
+  save_figures: False
+  used_method: edge_evaluation
+  edge_evaluation:
+    malicious_edge_selection: both_nodes
+    threshold_method: max_val_loss

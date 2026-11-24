@@ -411,32 +411,35 @@ def main(
                     attack_to_TPs[att] += 1
 
     # Plots the PR curve and scores for mean node loss
-    log(f"Saving figures to {out_dir}...")
+    save_figures = cfg.evaluation.save_figures is not False  # unset: saved
+    if save_figures:
+        log(f"Saving figures to {out_dir}...")
     # plot_precision_recall(pred_scores, y_truth, pr_img_file)
     adp_score = plot_detected_attacks_vs_precision(
-        pred_scores, nodes, node2attacks, y_truth, adp_img_file
+        pred_scores, nodes, node2attacks, y_truth, adp_img_file if save_figures else None
     )
     discrim_scores = compute_discrimination_score(pred_scores, nodes, node2attacks, y_truth)
-    plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
     discrim_tp = compute_discrimination_tp(pred_scores, nodes, node2attacks, y_truth)
     tp_per_attack = compute_tp_per_attack_thr(pred_scores, nodes, node2attacks, y_truth, thr)
-    # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
-    plot_scores_with_paths_node_level(
-        pred_scores,
-        y_truth,
-        nodes,
-        max_val_loss_tw,
-        tw_to_malicious_nodes,
-        node2attacks,
-        scores_img_file,
-        cfg,
-        thr,
-    )
-    plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
-    # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
-    node_to_type = {nid: info["type"] for nid, info in node_to_path.items()}
-    plot_scores_distribution(pred_scores, y_truth, nodes, node2attacks, distrib_img_file,
-                             node_to_type=node_to_type)
+    if save_figures:
+        plot_discrimination_metric(pred_scores, y_truth, discrim_img_file)
+        # plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
+        plot_scores_with_paths_node_level(
+            pred_scores,
+            y_truth,
+            nodes,
+            max_val_loss_tw,
+            tw_to_malicious_nodes,
+            node2attacks,
+            scores_img_file,
+            cfg,
+            thr,
+        )
+        plot_scores_neat(pred_scores, y_truth, nodes, node2attacks, neat_scores_img_file, thr)
+        # plot_score_seen(pred_scores, is_seen, seen_score_img_file)
+        node_to_type = {nid: info["type"] for nid, info in node_to_path.items()}
+        plot_scores_distribution(pred_scores, y_truth, nodes, node2attacks, distrib_img_file,
+                                 node_to_type=node_to_type)
     
     stats = classifier_evaluation(y_truth, y_preds, pred_scores)
 
@@ -498,7 +501,8 @@ def main(
     )
 
     stats["scores_file"] = scores_file
-    stats["neat_scores_img_file"] = neat_scores_img_file
+    if save_figures:
+        stats["neat_scores_img_file"] = neat_scores_img_file
     
     gnn_models_dir = cfg.training._trained_models_dir
     model_path = os.path.join(gnn_models_dir, model_epoch_dir)

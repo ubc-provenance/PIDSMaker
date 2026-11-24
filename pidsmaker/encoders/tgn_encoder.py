@@ -100,6 +100,8 @@ class TGNEncoder(nn.Module):
             edge_feats.append(batch.edge_type_tgn)
         if "msg" in self.edge_features:
             edge_feats.append(batch.msg_tgn)
+        if "edge_attrs" in self.edge_features:
+            edge_feats.append(batch.edge_attr_feats_tgn)
         if "time_encoding" in self.edge_features:  # or self.use_time_enc
             if not self.use_memory:
                 last_update = self.memory.get_last_update(n_id)

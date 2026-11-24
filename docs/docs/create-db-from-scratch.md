@@ -94,6 +94,59 @@ python dataset_preprocessing/optc/create_database_optc.py orthrus DATASET
 ```
 where `DATASET` can be [`optc_h051` | `optc_h201` | `optc_h501`]
 
+## Network datasets (LANL and OpTC flows)
+
+Network datasets have hosts as nodes and authentications or network flows as edges. They are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares), which also provide the labels of malicious events used as ground truth.
+Unlike provenance datasets, their tables follow the dataset's schema (`pidsmaker/config/schemas.py`): no SQL initialization is needed, as the scripts below create the database and its tables.
+Any system runs on them: for example, `construction.edge_type=logon_type` makes the edge type predicted by Velox the logon type of LANL authentications, and `batching.edge_features=edge_type,edge_attrs` gives the edge attributes (ports, protocols, logon types, ...) to the GNN.
+
+### Download files
+
+In `DATA_FOLDER`, download and extract the LARES archive (14.35 GB, 18.44 GB once extracted):
+
+```shell
+curl -L -o ${DATA_FOLDER}/lanl_optc_datasets.tar.gz "https://drive.usercontent.google.com/download?id=10fdDttLXP8zYwlrhqFzOe_kEvDGokfVY&export=download&confirm=t"
+tar -xzf ${DATA_FOLDER}/lanl_optc_datasets.tar.gz -C ${DATA_FOLDER}
+```
+
+### Fill the database (LANL)
+
+In the `pidscontainer`, run:
+
+```shell
+python dataset_preprocessing/lanl/create_database_lanl.py LANL --lares_dir /data/lanl_optc_datasets/LANL/preprocessed
+```
+
+This creates the `lanl` database with the NTLM authentications of the [LANL "Comprehensive, Multi-Source Cyber-Security Events"](https://csr.lanl.gov/data/cyber1/) dataset, as used by Euler, Argus, Jbeil and LARES. Add `--with_flows` to also load its network flows.
+
+The database can also be built from the official files, requested on the [LANL website](https://csr.lanl.gov/data/cyber1/) (authentications only):
+
+```shell
+python dataset_preprocessing/lanl/create_database_lanl.py LANL --auth_file /data/auth.txt.gz --redteam_file /data/redteam.txt.gz
+```
+
+!!! note
+    LANL timestamps are seconds from an undisclosed origin. They are mapped to UTC dates such that the first red team event happens on 2015-01-03: by default, models are trained on 2015-01-01, validated on 2015-01-02 and tested from 2015-01-03 to 2015-01-30.
+
+### Fill the database (OpTC flows)
+
+In the `pidscontainer`, run:
+
+```shell
+python dataset_preprocessing/optc/create_database_optc_net.py OPTC_NET --lares_dir /data/lanl_optc_datasets/OPTC/preprocessed
+```
+
+This creates the `optc_net` database with the FLOW START and FLOW MESSAGE events of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (about 1.9 billion events).
+
+!!! note
+    As in LARES and Argus, graphs are built from FLOW START events only. Set `construction.operations=all` to also use FLOW MESSAGE events, or a comma-separated list of operations (e.g. `construction.operations=FLOW_START`) to select events of any dataset.
+
+The official network flows of OpTC (`ecar-bro` folder of its Google Drive) can be downloaded with:
+
+```shell
+python dataset_preprocessing/optc/download_optc_net.py ${DATA_FOLDER}/optc_net
+```
+
 ## Verification
 Your databases are now built and filled with data. 
 If you are not already in the `pidsmaker` container, run:
@@ -112,5 +165,6 @@ python pidsmaker/main.py orthrus DATASET
 
 To export your database as a dump file for sharing, do:
 ```sh
-PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d DATASET -f DATASET.dump
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d DATABASE -f DATABASE.dump
 ```
+where `DATABASE` is the name of the database (e.g. `cadets_e3`, `lanl` or `optc_net`). Dumps are restored in a database named after their file, so keep the name of the database. The `pg_dump` client must have the same major version as the Postgres server.

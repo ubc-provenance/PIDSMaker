@@ -6,11 +6,16 @@ construction:
   use_hashed_label: False
   fuse_edge: True
   consistent_edge_types: False
+  # Edge attribute used as edge type: `operation` (default event type) or a categorical
+  # edge attribute of the dataset schema (e.g. `logon_type` for LANL)
+  edge_type: operation
+  operations: default
   multi_dataset: none
   node_label_features:
     subject: type, path, cmd_line
     file: type, path
     netflow: type, remote_ip, remote_port
+    host: name
   # Cleaning of the raw data before building the graphs (see docs/docs/config/cleaning.md).
   # `none` builds the graphs of the original systems.
   cleaning:
@@ -98,6 +103,7 @@ featurization:
       max_seq_len: 64
       substitutions: none
 feat_inference:
+  edge_attributes: all
   to_remove: True
 
 training:
@@ -148,6 +154,24 @@ training:
       activation: prelu
     custom_mlp:
       architecture_str: none
+    gcn:
+      activation: relu
+      num_layers: 2
+    node_id_embedding:
+      dim: 32
+      all_nodes: False
+    snapshot_gru:
+      hidden_dim: 0  # 0: node_out_dim
+      dropout: 0.0
+    egraphsage:
+      activation: relu
+      num_layers: 2
+      undirected: True
+    argus:
+      num_layers: 2
+    lares:
+      flow: target_to_source
+      use_node_features: False
   decoder:
     predict_edge_supervised:
       decoder: edge_mlp
@@ -189,6 +213,10 @@ training:
         architecture_str: linear(0.5) | relu | linear(0.5) | relu | linear(0.5) | relu
         src_dst_projection_coef: 1
     predict_edge_contrastive:
+      loss: bce
+      ap_margin: 0.8
+      neg_sampling: shuffle_dst
+      neg_ratio: 1.0
       decoder: inner_product
       inner_product:
         dropout: 0.0
@@ -196,6 +224,12 @@ training:
         architecture_str: linear(0.5) | relu
         src_dst_projection_coef: 1
     
+    deep_graph_infomax:
+      decoder: none
+      pca_components: 8
+    autoencode_edge_embeddings:
+      decoder: none
+      use_edge_feats: True
     few_shot:
       include_attacks_in_ssl_training: False
       freeze_encoder: True
@@ -215,6 +249,12 @@ training:
 
 evaluation:
   best_model_selection: best_adp
+  save_figures: True
+  host_two_stage_evaluation:
+    alpha: 3
+    beta: 350
+    root_attack_nodes: ""
+    test_end: ""
   node_evaluation:
     threshold_method: max_val_loss
     max_val_loss:

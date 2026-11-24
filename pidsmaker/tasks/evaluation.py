@@ -1,9 +1,11 @@
+import json
 import os
 
 import wandb
 
 from pidsmaker.detection.evaluation_methods import (
     edge_evaluation,
+    host_two_stage_evaluation,
     node_evaluation,
     node_tw_evaluation,
     queue_evaluation,
@@ -38,6 +40,7 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
         tw_to_malicious_nodes = compute_tw_labels(cfg, losses_dir=first_epoch_losses_dir)
 
     best_metrics = {
+        "val_score": float("-inf"),
         "adp_score": float("-inf"),
         "discrimination": float("-inf"),
         "ap@10": float("-inf"),
@@ -62,6 +65,13 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
             cfg,
             tw_to_malicious_nodes=tw_to_malicious_nodes,
         )
+        val_score_file = os.path.join(
+            cfg.training._edge_losses_dir, "val_scores", f"{model_epoch_dir}.json"
+        )
+        if os.path.exists(val_score_file):
+            with open(val_score_file) as f:
+                stats["val_score"] = json.load(f)["val_score"]
+
         log(f"[@{model_epoch_dir}] - Stats")
         for k, v in stats.items():
             log(f"{k}: {v}")
@@ -112,6 +122,33 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
 
 def best_metric_pick_best_epoch(stats, best_metrics, cfg):
     best_model_selection = cfg.evaluation.best_model_selection
+
+    # Last evaluated epoch (epochs are evaluated in increasing order)
+    if best_model_selection == "last_epoch":
+        if best_metrics["stats"] is None or stats["epoch"] >= best_metrics["stats"]["epoch"]:
+            best_metrics["stats"] = stats
+        return best_metrics
+
+    # Selection on the MCC of the predictions on the test set (as the code of LARES)
+    if best_model_selection == "best_mcc":
+        mcc = stats.get("mcc", float("-inf"))
+        mcc = float("-inf") if mcc != mcc else mcc
+        if best_metrics["stats"] is None or mcc > best_metrics.get("mcc", float("-inf")):
+            best_metrics["mcc"] = mcc
+            best_metrics["stats"] = stats
+        return best_metrics
+
+    # Selection on validation data only (e.g. link prediction AUC + AP of the validation edges)
+    if best_model_selection == "best_val_score":
+        if "val_score" not in stats:
+            raise ValueError(
+                "best_model_selection=best_val_score requires an objective computing a validation "
+                "score (e.g. predict_edge_contrastive)."
+            )
+        if best_metrics["stats"] is None or stats["val_score"] > best_metrics["val_score"]:
+            best_metrics["val_score"] = stats["val_score"]
+            best_metrics["stats"] = stats
+        return best_metrics
 
     # ADP and discrimination are only computed by node/edge-level evaluations.
     # Other evaluations (tw, node_tw) fall back to selecting the epoch with best AP.
@@ -165,5 +202,7 @@ def main(cfg):
         return queue_evaluation.main(cfg)
     elif method == "edge_evaluation":
         return standard_evaluation(cfg, evaluation_fn=edge_evaluation.main)
+    elif method == "host_two_stage_evaluation":
+        return standard_evaluation(cfg, evaluation_fn=host_two_stage_evaluation.main)
     else:
         raise ValueError(f"Invalid evaluation method {cfg.evaluation.used_method}")

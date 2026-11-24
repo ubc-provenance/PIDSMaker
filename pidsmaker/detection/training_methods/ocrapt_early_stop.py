@@ -109,7 +109,7 @@ class OCRAPTEarlyStop:
         node_to_type = {nid: info["type"] for nid, info in get_node_to_path_and_type(cfg).items()}
         # must match the type index the model itself uses (node_type_argmax), not an
         # independent ordering, otherwise freeze_type() would freeze the wrong type.
-        type_to_idx = {t: i for t, i in get_node_map(from_zero=True).items() if isinstance(t, str)}
+        type_to_idx = {t: i for t, i in get_node_map(cfg, from_zero=True).items() if isinstance(t, str)}
 
         # threshold from train scores (calibration), evaluated against val labels
         train = self._scores_by_type(cfg.training._edge_losses_dir, "train", epoch, node_to_type, type_to_idx, gt_nids)

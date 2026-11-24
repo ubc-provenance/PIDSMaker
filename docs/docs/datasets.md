@@ -22,6 +22,13 @@ PIDSMaker supports several public datasets commonly used in APT detection resear
 | ATLASV2_EDR | Windows | 10 | 1 |
 | CARBANAKV2_EDR | Windows + Linux | 1 | 6.6 |
 
+Network datasets (hosts as nodes, authentications or network flows as edges, event-level labels):
+
+| Dataset | Events | Hosts | Malicious events | Size (GB) |
+|---------|--------|-------|------------------|-----------|
+| LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
+| OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 2,370 (115 FLOW START) | 275 |
+
 
 ## DARPA TC
 
@@ -233,6 +240,22 @@ Multi-host testbed comprising four Windows 10 workstations (h1–h4), a CentOS 7
 ```shell
 python pidsmaker/main.py SYSTEM CARBANAKV2_EDR
 ```
+
+## Network datasets
+
+Network intrusion detection systems (e.g. Euler, Argus, Jbeil, LARES) model the communications between the hosts of a network. In PIDSMaker, network datasets are described by a schema (`pidsmaker/config/schemas.py`) that defines their node types (hosts), their edge types and the attributes of their events, which become edge features (`batching.edge_features=edge_attrs`). Any system runs on them, and network systems run on provenance datasets as well.
+
+Malicious events are labelled in the database (`label` column), so the ground truth is event-level: the evaluation labels each edge with its events. The preprocessed files of [LARES](https://github.com/TristanBilot/lares) are used for both datasets (see the [database creation guide](create-db-from-scratch.md)).
+
+### [LANL](https://csr.lanl.gov/data/cyber1/)
+
+The "Comprehensive, Multi-Source Cyber-Security Events" dataset of the Los Alamos National Laboratory: 58 days of authentications between the computers of the LANL network, with the red team events of a penetration test. As in Euler, Argus, Jbeil and LARES, only NTLM authentications are kept. Edges are authentications, typed by their orientation (`LogOn`, `LogOff`, ...), with the logon type, authentication type, success and kinds of source and destination users as attributes.
+
+LANL timestamps are seconds from an undisclosed origin, mapped to UTC dates such that the first red team event happens on 2015-01-03. Models are trained on 2015-01-01, validated on 2015-01-02 and tested from 2015-01-03 to 2015-01-30. The root source of the attack is host `9660`.
+
+### OPTC_NET
+
+The network flows of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (eCAR `FLOW START` and `FLOW MESSAGE` events), from 2019-09-16 to 2019-09-25. Edges are flows, with the source and destination ports (grouped by service and range), the protocol and the size of messages as attributes. As in LARES and Argus, only FLOW START events are used by default (`construction.operations`). Models are trained from 2019-09-16 to 2019-09-21, validated on 2019-09-22 and tested from 2019-09-23 to 2019-09-25 (malicious flows happen on 2019-09-23 and 2019-09-24). The root sources of the attacks are hosts `201`, `402` and `501`.
 
 ## PROVENANCE_BENIGN
 
