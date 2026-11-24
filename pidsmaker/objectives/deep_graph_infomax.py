@@ -51,7 +51,11 @@ class DeepGraphInfomax(nn.Module):
         self._pca = None
 
     def _discriminate(self, z, summary):
-        return self.discriminator(z, summary.expand_as(z)).squeeze(-1)
+        # Bilinear score z^T W s + b with the same summary s for all edges, computed as
+        # z @ (W s) + b: `nn.Bilinear` on the expanded summary materializes an (E, d, d) tensor
+        # in its backward pass (tens of GB on graphs with ~10^5 edges)
+        ws = self.discriminator.weight[0] @ summary.reshape(-1)
+        return z @ ws + self.discriminator.bias
 
     def _fit_pca(self):
         mean = self.sum / self.count.clamp(min=1)
