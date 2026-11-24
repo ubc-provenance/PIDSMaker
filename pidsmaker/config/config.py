@@ -158,11 +158,7 @@ DATASET_DEFAULT_CONFIG = {
                 "2019-05-15 16:19:00",
             ],
             # ["E5-CLEARSCOPE/node_clearscope_e5_firefox_0517.csv", '2019-05-17 11:49:00', '2019-05-17 15:32:00'],
-            [
-                "E5-CLEARSCOPE/node_clearscope_e5_lockwatch_0517.csv",
-                "2019-05-17 15:48:00",
-                "2019-05-17 16:01:00",
-            ],
+            # ["E5-CLEARSCOPE/node_clearscope_e5_lockwatch_0517.csv", "2019-05-17 15:48:00", "2019-05-17 16:01:00"],
             [
                 "E5-CLEARSCOPE/node_clearscope_e5_tester_0517.csv",
                 "2019-05-17 16:20:00",
