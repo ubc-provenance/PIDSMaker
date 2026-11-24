@@ -375,6 +375,29 @@ class TestNIDSComponents:
         assert 20 <= neg_src.shape[0] <= 30
         assert not torch.equal(neg_dst, h[3].expand_as(neg_dst))
 
+    @pytest.mark.parametrize("num_pos,num_neg,margin", [(1, 1, 0.8), (40, 7, 0.8), (300, 900, 0.5), (500, 200, 1.0)])
+    def test_ap_contrastive_matches_dense(self, num_pos, num_neg, margin):
+        """The AP loss of Argus, computed with sorted suffix sums, equals the dense
+        (positives x all edges) version, in value and gradients."""
+        import torch
+
+        from pidsmaker.losses import ap_contrastive
+
+        def dense(positive, negative):
+            pos, neg = torch.sigmoid(positive.flatten()), torch.sigmoid(negative.flatten())
+            all_scores = torch.cat([pos, neg])
+            hinge = torch.clamp(margin - (pos.unsqueeze(1) - all_scores.unsqueeze(0)), min=0) ** 2
+            precision = hinge[:, : pos.shape[0]].sum(dim=1) / (hinge.sum(dim=1) + 1e-12)
+            return -precision.mean()
+
+        torch.manual_seed(0)
+        pos = (torch.randn(num_pos, 1) * 3).requires_grad_()
+        neg = (torch.randn(num_neg, 1) * 3 - 1).requires_grad_()
+        expected, actual = dense(pos, neg), ap_contrastive(pos, neg, margin=margin)
+        assert torch.allclose(actual, expected, atol=1e-6)
+        for g_actual, g_expected in zip(torch.autograd.grad(actual, [pos, neg]), torch.autograd.grad(expected, [pos, neg])):
+            assert torch.allclose(g_actual, g_expected, atol=1e-6)
+
     def test_contrastive_inference_single_edge(self):
         """At inference, the objective returns one loss per edge, also for a single edge."""
         import torch
