@@ -1,11 +1,20 @@
 # Jbeil (Khoury et al., IEEE S&P 2024): "Jbeil: Temporal Graph-Based Inductive Learning to Infer
 # Lateral Movement in Evolving Enterprise Networks". A TGN (node memory + graph attention over
-# temporal neighbors) trained by self-supervised link prediction against random negative edges,
-# with degree-based node features. Edges with a low probability are anomalous.
+# temporal neighbors) trained by self-supervised link prediction against random negative edges.
+# Edges with a low probability are anomalous.
 #
-# Differences with the original implementation (whose code is no longer available):
-# - node features count the incoming and outgoing edges of each type in the time window
-#   (`edges_distribution`), instead of Jbeil's 9 unique-neighbor counts computed on the whole log;
+# As in TGN and Jbeil, each edge is contrasted with a negative edge from its source to a random
+# destination of the dataset, embedded by the TGN with the edges of the batch
+# (`negative_destinations`, `neg_sampling: tgn`), and the best epoch is selected by link
+# prediction on the validation set.
+#
+# Differences with the original implementation (https://github.com/surender08/Jbeil, a mirror of
+# the original repository):
+# - Jbeil's edges carry 9 unique-neighbor counts computed on the whole log (test days included)
+#   as features, which are not used (node features are the node type, zeros in Jbeil);
+# - the paper's results are link prediction metrics of all test edges (malicious ones included)
+#   against random negatives, binarized per batch; here, malicious edges are detected among the
+#   test edges by their score, and the data is split by days instead of 70/15/15 quantiles;
 # - Jbeil also trains on synthetic lateral movement events (not released), which are not used.
 
 _include_yml: kairos
@@ -16,7 +25,7 @@ featurization:
     used_method: none
 
 batching:
-  node_features: edges_distribution,node_type
+  node_features: node_type
   edge_features: msg,time_encoding
   intra_graph_batching:
     used_methods: edges, tgn_last_neighbor
@@ -24,6 +33,7 @@ batching:
       intra_graph_batch_size: 200
     tgn_last_neighbor:
       tgn_neighbor_size: 10
+      negative_destinations: True
 
 training:
   num_epochs: 10
@@ -32,6 +42,7 @@ training:
   decoder:
     used_methods: predict_edge_contrastive
     predict_edge_contrastive:
+      neg_sampling: tgn
       decoder: edge_mlp
       edge_mlp:
         architecture_str: linear(0.5) | relu
@@ -40,6 +51,7 @@ training:
 evaluation:
   # Disabled until the NIDS reach their published performance (one point per edge is slow)
   save_figures: False
+  best_model_selection: best_val_score
   used_method: edge_evaluation
   edge_evaluation:
     malicious_edge_selection: both_nodes

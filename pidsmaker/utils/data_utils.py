@@ -772,6 +772,9 @@ def compute_tgn_graphs(
     shared=None,
     edge_attrs_feature=False,
 ):
+    """`datasets` is the [train, val, test] list of graph lists. With
+    `tgn_loader_cfg.negative_destinations`, a negative destination is drawn for each edge (see
+    `predict_edge_contrastive.neg_sampling=tgn`) and added to the nodes of its TGN graph."""
     tgn_neighbor_n_hop = tgn_loader_cfg.tgn_neighbor_n_hop
     fix_tgn_neighbor_loader = tgn_loader_cfg.fix_tgn_neighbor_loader
     fix_buggy_orthrus_TGN = tgn_loader_cfg.fix_buggy_orthrus_TGN
@@ -790,7 +793,16 @@ def compute_tgn_graphs(
         node_type_cache = torch.zeros((max_node, node_type_dim), device=device)
     assoc = torch.empty(max_node, dtype=torch.long, device=device)
 
-    for dataset in datasets:
+    # TGN/Jbeil negatives: for each edge, a destination drawn uniformly among the destinations
+    # of the training graphs (training) or of all graphs (validation and test), embedded by the
+    # TGN like the nodes of the graph
+    negative_destinations = bool(getattr(tgn_loader_cfg, "negative_destinations", False))
+    if negative_destinations:
+        neg_generator = torch.Generator(device="cpu").manual_seed(0)
+        train_pool = torch.unique(torch.cat([b.dst for dl in datasets[0] for b in dl]))
+        all_pool = torch.unique(torch.cat([b.dst for ds in datasets for dl in ds for b in dl]))
+
+    for split_idx, dataset in enumerate(datasets):
         for data_list in dataset:
             for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
                 # Only the inputs are moved to the device and only the outputs are moved
@@ -803,6 +815,12 @@ def compute_tgn_graphs(
                     neighbor_loader.insert(src, dst)
 
                 original_n_id = batch_edge_index.unique()
+                if negative_destinations:
+                    pool = train_pool if split_idx == 0 else all_pool
+                    neg_dst = pool[
+                        torch.randint(0, len(pool), (src.numel(),), generator=neg_generator)
+                    ].to(device)
+                    original_n_id = torch.cat([original_n_id, neg_dst]).unique()
                 n_id = original_n_id
                 for _ in range(tgn_neighbor_n_hop):
                     n_id, edge_index, e_id = neighbor_loader(n_id)
@@ -868,6 +886,8 @@ def compute_tgn_graphs(
                 batch.n_id_tgn = n_id.cpu()
                 batch.edge_index_tgn = edge_index.cpu()
                 batch.reindexed_edge_index_tgn = assoc[batch_edge_index].cpu()
+                if negative_destinations:
+                    batch.neg_dst_tgn = assoc[neg_dst].cpu()
                 e_id_cpu = e_id.cpu()
                 # msg_tgn and t_tgn are only read by the TGN encoder with the
                 # `msg` and `time_encoding` edge features (see `run_global_batching`)

@@ -250,6 +250,7 @@ training:
 evaluation:
   best_model_selection: best_adp
   save_figures: True
+  evaluate_selected_epoch_only: False
   host_two_stage_evaluation:
     alpha: 3
     beta: 350

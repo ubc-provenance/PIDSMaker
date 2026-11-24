@@ -153,6 +153,9 @@ class TGNEncoder(nn.Module):
         if self.use_residual_norm:
             h = self.norm_local(self.dropout(h) + self.residual_proj(x_proj))
         
+        if "neg_dst_tgn" in batch:
+            # Embeddings of the negative destinations of the edges (`negative_destinations`)
+            batch.h_neg_tgn = h[batch.neg_dst_tgn]
         h_src = h[batch.reindexed_edge_index_tgn[0]]
         h_dst = h[batch.reindexed_edge_index_tgn[1]]
             

@@ -278,3 +278,22 @@ class TestNIDSComponents:
         scores = {1: 0.1, 2: 0.2, 3: 5.0, 4: 5.2, 5: 0.3}
         # Top cluster of the 3 highest scores (3, 4) and the host ranked just below them (5)
         assert sorted(select_hosts(scores, alpha=3)) == [3, 4, 5]
+
+    def test_label_free_epoch_selection(self, tmp_path):
+        import json
+        from types import SimpleNamespace
+
+        from pidsmaker.tasks.evaluation import _select_epoch_without_labels
+
+        epochs = ["model_epoch_1", "model_epoch_11", "model_epoch_3"]
+        (tmp_path / "val_scores").mkdir()
+        for d, score in [("model_epoch_1", 1.2), ("model_epoch_11", 1.5), ("model_epoch_3", 1.9)]:
+            (tmp_path / "val_scores" / f"{d}.json").write_text(json.dumps({"val_score": score}))
+        cfg = SimpleNamespace(
+            evaluation=SimpleNamespace(best_model_selection="last_epoch"),
+            training=SimpleNamespace(_edge_losses_dir=str(tmp_path)),
+        )
+        # Epochs are compared numerically, not as strings
+        assert _select_epoch_without_labels(cfg, epochs) == "model_epoch_11"
+        cfg.evaluation.best_model_selection = "best_val_score"
+        assert _select_epoch_without_labels(cfg, epochs) == "model_epoch_3"

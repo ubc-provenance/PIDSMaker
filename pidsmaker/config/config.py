@@ -1208,11 +1208,13 @@ OBJECTIVES_CFG = {
         "ap_margin": Arg(float, desc="Margin of the squared hinge of the `ap` loss (default: 0.8)."),
         "neg_sampling": Arg(
             str,
-            vals=OR(["shuffle_dst", "uniform", "uniform_dst"]),
+            vals=OR(["shuffle_dst", "uniform", "uniform_dst", "tgn"]),
             desc="Negative edges: `shuffle_dst` pairs each source with the destination of another \
                 edge of the graph (negatives keep the degree of destinations), `uniform` draws \
                 sources and destinations uniformly among the embedded nodes (as Euler and Argus), \
-                `uniform_dst` pairs the source of each edge with uniform destinations (as TGN, Jbeil).",
+                `uniform_dst` pairs the source of each edge with uniform destinations among the \
+                embedded nodes, `tgn` pairs it with a uniform destination of the dataset embedded \
+                by the TGN (as TGN and Jbeil, requires `tgn_last_neighbor.negative_destinations`).",
         ),
         "neg_ratio": Arg(float, desc="Number of negatives per positive edge with `uniform` sampling."),
         **DECODERS_CFG,
@@ -1581,6 +1583,13 @@ TASK_ARGS = {
                     bool,
                     desc="Whether to insert the edges of the current graph before loading last neighbors.",
                 ),
+                "negative_destinations": Arg(
+                    bool,
+                    desc="Draws a negative destination for each edge, uniformly among the destinations \
+                        of the training graphs (training) or of all graphs (validation, test), and adds \
+                        it to the nodes of the TGN graph to be embedded with memory and neighbors, as \
+                        TGN and Jbeil (used by `predict_edge_contrastive.neg_sampling=tgn`).",
+                ),
             },
         },
         "inter_graph_batching": {
@@ -1690,6 +1699,12 @@ TASK_ARGS = {
             desc="Whether to generate images of malicious nodes' neighborhoods (not stable).",
         ),
         "ground_truth_version": Arg(str, vals=OR(["orthrus", "reapr", "threatrace"])),
+        "evaluate_selected_epoch_only": Arg(
+            bool,
+            desc="Only evaluates the epoch selected by a label-free `best_model_selection` (`last_epoch`, \
+                `best_val_score`), instead of evaluating every epoch on the test set (faster on large \
+                test sets, without per-epoch test metrics).",
+        ),
         "save_figures": Arg(
             bool,
             desc="Whether to save the figures of the evaluation (scores, ADP and discrimination \

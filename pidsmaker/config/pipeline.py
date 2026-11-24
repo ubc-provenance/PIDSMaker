@@ -329,8 +329,10 @@ UNHASHED_DEFAULT_ARGS = {
     "construction": {"edge_type": "operation", "operations": "default"},
     "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
     "feat_inference": {"edge_attributes": "all"},
+    "batching": {"intra_graph_batching.tgn_last_neighbor.negative_destinations": False},
     "evaluation": {
         "save_figures": True,
+        "evaluate_selected_epoch_only": False,
         "host_two_stage_evaluation": {"alpha": 3, "beta": 350, "root_attack_nodes": "", "test_end": ""},
     },
     "training": {

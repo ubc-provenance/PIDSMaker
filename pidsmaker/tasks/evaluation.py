@@ -19,6 +19,28 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
 from pidsmaker.utils.utils import log
 
 
+def _select_epoch_without_labels(cfg, epoch_dirs):
+    """Epoch selected by a label-free `best_model_selection` (`last_epoch`, `best_val_score`)."""
+    method = cfg.evaluation.best_model_selection
+    by_epoch = sorted(epoch_dirs, key=lambda d: int(d.split("_")[-1]))
+    if method == "last_epoch":
+        return by_epoch[-1]
+    if method == "best_val_score":
+        scores = {}
+        for d in by_epoch:
+            path = os.path.join(cfg.training._edge_losses_dir, "val_scores", f"{d}.json")
+            if os.path.exists(path):
+                with open(path) as f:
+                    scores[d] = json.load(f)["val_score"]
+        if not scores:
+            raise ValueError("No validation scores found to select the best epoch.")
+        return max(scores, key=scores.get)
+    raise ValueError(
+        f"evaluate_selected_epoch_only requires a label-free best_model_selection "
+        f"(last_epoch or best_val_score), got {method}"
+    )
+
+
 def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
     val_losses_dir = os.path.join(cfg.training._edge_losses_dir, "val")
@@ -27,6 +49,8 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
         sorted_files = ["model_epoch_0"]
     else:
         sorted_files = listdir_sorted(test_losses_dir)
+        if cfg.evaluation.evaluate_selected_epoch_only:
+            sorted_files = [_select_epoch_without_labels(cfg, sorted_files)]
 
     # Pass the first epoch's CSV directory so compute_tw_labels enumerates the
     # same files as node_evaluation, avoiding TW index mismatch when
