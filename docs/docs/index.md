@@ -35,21 +35,21 @@ State-of-the-art provenance-based and network IDSs, their datasets, and one modu
 <style>.md-content__button { display: none; }</style>
 
 <div class="pm-stats">
-  <div class="pm-stat"><strong>15</strong><span>systems reimplemented: 9 provenance, 6 network</span></div>
-  <div class="pm-stat"><strong>17</strong><span>datasets: 15 provenance, 2 network</span></div>
-  <div class="pm-stat"><strong>7</strong><span>pipeline stages, shared by both</span></div>
+  <div class="pm-stat"><strong>15</strong><span>intrusion detection systems reimplemented</span></div>
+  <div class="pm-stat"><strong>17</strong><span>datasets</span></div>
+  <div class="pm-stat"><strong>7</strong><span>configurable pipeline stages</span></div>
   <div class="pm-stat"><strong>15+</strong><span>pretrained encoders</span></div>
 </div>
 
 ## One framework, two views
 
-<div class="grid cards" markdown>
+<div class="grid cards pm-family-cards" markdown>
 
 -   :lucide-cpu:{ .lg .middle } __Provenance__
 
     ---
 
-    System events inside each host: processes, files and netflows. Nine provenance-based IDSs (Velox, Orthrus, Kairos, MAGIC...) on DARPA TC, OpTC, ATLASv2 and CARBANAKv2, detecting the entities of an attack.
+    System events inside each host: processes, files and netflows. Provenance-based IDSs (Velox, Orthrus, Kairos, MAGIC...) on DARPA TC, OpTC, ATLASv2 and CARBANAKv2, detecting the entities of an attack.
 
     [:octicons-arrow-right-24: Provenance graphs](guide/background.md#provenance-graphs)
 
@@ -57,7 +57,7 @@ State-of-the-art provenance-based and network IDSs, their datasets, and one modu
 
     ---
 
-    Authentications and flows between hosts. Six network IDSs (Euler, Argus, Jbeil, LARES...) on LANL and the network flows of OpTC, detecting the malicious events of lateral movement.
+    Authentications and flows between hosts. Network IDSs (Euler, Argus, Jbeil, LARES...) on LANL and the network flows of OpTC, detecting the malicious events of lateral movement.
 
     [:octicons-arrow-right-24: Network graphs](guide/background.md#network-graphs)
 
@@ -73,7 +73,7 @@ Both go through the same seven stages and share the same components, so most sys
 
     ---
 
-    Six network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and two network datasets (LANL and the network flows of OpTC), in the same pipeline as the provenance systems. Systems of both families run on network and provenance datasets.
+    Network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and network datasets (LANL and the network flows of OpTC), in the same pipeline as the provenance systems. Systems of both families run on network and provenance datasets.
 
     [:octicons-arrow-right-24: Running across families](guide/systems.md#running-across-families)
 
@@ -186,7 +186,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Nine provenance-based IDSs and six network IDSs side by side, and which datasets each one runs on.
+    All the systems side by side, and which datasets each one runs on.
 
     [:octicons-arrow-right-24: Systems](guide/systems.md)
 

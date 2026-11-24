@@ -20,11 +20,15 @@ The same detector can look excellent or useless depending on **what** is counted
 
 The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. Each family has its usual granularity, which `evaluation.used_method` changes for any system:
 
+<div class="pm-families" markdown>
+
 | | Provenance systems | Network systems |
 |---|---|---|
 | **Default evaluation** | `node_evaluation`: is each process, file or netflow part of an attack? | `edge_evaluation`: is each authentication or flow malicious? `host_two_stage_evaluation` for LARES: which hosts are the sources of the attack, and which of their edges are malicious? |
 | **Ground truth** | Attack nodes, in [ground-truth files](#ground-truth) | Malicious events, [labelled in the database](#event-level-labels-network-datasets) |
 | **Reported epoch** | Best ADP (`best_adp`) | Chosen without labels (`best_val_score`, `last_epoch`), or best MCC for LARES |
+
+</div>
 
 See the [settings of each system](#settings-of-each-system).
 

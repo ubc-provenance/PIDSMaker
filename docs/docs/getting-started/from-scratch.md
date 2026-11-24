@@ -166,6 +166,8 @@ docker compose exec pids bash
 
 Then run a system on the new database:
 
+<div class="pm-families" markdown>
+
 === "Provenance"
 
     ```shell
@@ -177,6 +179,8 @@ Then run a system on the new database:
     ```shell
     python pidsmaker/main.py euler LANL
     ```
+
+</div>
 
 ## Sharing a database
 

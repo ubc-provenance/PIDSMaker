@@ -40,6 +40,8 @@ Any system runs on both kinds of datasets, with [a few exceptions](../guide/syst
 
 For example:
 
+<div class="pm-families" markdown>
+
 === "Provenance"
 
     Velox on CADETS E3, which looks for the processes, files and netflows of the attacks:
@@ -55,6 +57,8 @@ For example:
     ```shell
     python pidsmaker/main.py euler LANL
     ```
+
+</div>
 
 The content of the config (e.g. `config/velox.yml`) is parsed and checked against the arguments available in `TASK_ARGS` (`pidsmaker/config/config.py`), then the [seven stages of the pipeline](../guide/pipeline.md) run one after the other.
 
@@ -99,6 +103,8 @@ The content of the config (e.g. `config/velox.yml`) is parsed and checked agains
 
 Every argument of the YAML config can be overridden from the command line, using its dotted path. CLI arguments always take precedence over the YAML file:
 
+<div class="pm-families" markdown>
+
 === "Provenance"
 
     ```shell
@@ -114,6 +120,8 @@ Every argument of the YAML config can be overridden from the command line, using
       --construction.time_window_size=60.0 \
       --training.decoder.predict_edge_contrastive.neg_ratio=5
     ```
+
+</div>
 
 Components can be swapped the same way. For example, Orthrus with doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers:
 

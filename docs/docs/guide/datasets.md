@@ -12,7 +12,7 @@ PIDSMaker supports the public datasets most used in research on graph-based intr
 
 Nodes and events are counted in the database, before graph construction. Size is the size of the database once loaded.
 
-### Provenance
+### Provenance { .pm-h-prov }
 
 Nodes are processes, files and netflows, edges are system events, and the ground truth lists the attack nodes. The preprocessed databases are [downloaded](../getting-started/installation.md#1-download-the-datasets) as Postgres dumps.
 
@@ -54,7 +54,7 @@ Nodes are processes, files and netflows, edges are system events, and the ground
     | ATLASV2_EDR | 10.1% | 85.8% | 4.1% |
     | CARBANAKV2_EDR | 3.2% | 94.5% | 2.3% |
 
-### Network
+### Network { .pm-h-net }
 
 Nodes are hosts, edges are authentications or network flows, and malicious events are labelled in the database. The databases are [built from the preprocessed files of LARES](../getting-started/from-scratch.md).
 
@@ -65,7 +65,7 @@ Nodes are hosts, edges are authentications or network flows, and malicious event
 
 ¹ With the labels of LARES propagated to all the records of malicious flows (default); 2,370 (115 FLOW START) with the labels of LARES as they are (see [OPTC_NET](#optc_net)).
 
-## Provenance datasets
+## Provenance datasets { .pm-h-prov }
 
 Provenance datasets record the system events of one or several hosts, captured by an audit framework or by EDR telemetry, during benign activity and attack campaigns. Their ground truth lists the nodes involved in each attack (see [Ground truth](#ground-truth)).
 
@@ -293,7 +293,7 @@ The collection scripts are on the [`spider` branch](https://github.com/ubc-prove
 
 The dates of `PROVENANCE_BENIGN` in `DATASET_DEFAULT_CONFIG` (`pidsmaker/config/config.py`) are those of the corpus used in the paper (2026-03-16, UTC). Set them to the days of your own capture.
 
-## Network datasets
+## Network datasets { .pm-h-net }
 
 Network datasets record the communications between the hosts of an enterprise network, authentications or flows, during benign activity and a red team campaign. Their single node type is the host, and their events carry attributes (logon types, ports, protocols, sizes...) that become edge features (`batching.edge_features=edge_attrs`). Both are described by a schema in `pidsmaker/config/schemas.py`, and both are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares) (see [Building datasets from scratch](../getting-started/from-scratch.md)).
 
