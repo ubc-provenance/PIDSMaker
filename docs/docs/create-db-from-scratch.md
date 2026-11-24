@@ -136,10 +136,25 @@ In the `pidscontainer`, run:
 python dataset_preprocessing/optc/create_database_optc_net.py OPTC_NET --lares_dir /data/lanl_optc_datasets/OPTC/preprocessed
 ```
 
-This creates the `optc_net` database with the FLOW START and FLOW MESSAGE events of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (about 1.9 billion events).
+This creates the `optc_net` database with the FLOW START and FLOW MESSAGE events of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (about 1.9 billion events). Files are read by `--num_workers` processes (16 by default), each loading its events directly into the database.
 
 !!! note
     As in LARES and Argus, graphs are built from FLOW START events only. Set `construction.operations=all` to also use FLOW MESSAGE events, or a comma-separated list of operations (e.g. `construction.operations=FLOW_START`) to select events of any dataset.
+
+**Labels.** A flow is recorded several times in OpTC (FLOW START and FLOW MESSAGE events, by the hosts at both ends), and LARES labels only some of these records: e.g. in the lateral movement of 2019-09-24, the FLOW MESSAGE events of 561 flows are malicious but the FLOW START of only 56 of them. By default, the script labels malicious all the records of a malicious flow (same 5-tuple, in either direction, in the same LARES file): 5,165 malicious events (1,015 FLOW START) instead of 2,370 (115 FLOW START). Add `--no_label_propagation` to keep the labels of LARES as they are. A database built without propagation can be relabelled in place with `--relabel`; graphs built before must then be built again (the labels of edges are stored in the graphs).
+
+Both scripts index the events by time (used by the construction) and the malicious events (used by the evaluation).
+
+### Dump the network databases
+
+The dumps of `lanl` and `optc_net` are created from the databases filled above, in the `pidscontainer`:
+
+```shell
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d lanl -f /data/lanl.dump
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d optc_net -f /data/optc_net.dump
+```
+
+`lanl.dump` is about 0.7 GB and `optc_net.dump` about 21 GB (dumping `optc_net` takes about 2 hours). For the dump of OpTC with the labels of LARES, build the database with `--no_label_propagation` before dumping it, and keep its file name `optc_net.dump` (dumps are restored in a database named after their file), e.g. in a `lares_labels/` folder. `scripts/load_dumps.sh` also creates the index of malicious events when restoring dumps made without it.
 
 The official network flows of OpTC (`ecar-bro` folder of its Google Drive) can be downloaded with:
 

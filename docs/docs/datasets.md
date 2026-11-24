@@ -27,7 +27,9 @@ Network datasets (hosts as nodes, authentications or network flows as edges, eve
 | Dataset | Events | Hosts | Malicious events | Size (GB) |
 |---------|--------|-------|------------------|-----------|
 | LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
-| OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 2,370 (115 FLOW START) | 275 |
+| OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 5,165 (1,015 FLOW START)¹ | 275 |
+
+¹ With the labels of LARES propagated to all the records of malicious flows (default); 2,370 (115 FLOW START) with the labels of LARES as they are (see [OPTC_NET](#optc_net)).
 
 
 ## DARPA TC
@@ -256,6 +258,10 @@ LANL timestamps are seconds from an undisclosed origin, mapped to UTC dates such
 ### OPTC_NET
 
 The network flows of all the hosts of [DARPA OpTC](https://github.com/FiveDirections/OpTC-data) (eCAR `FLOW START` and `FLOW MESSAGE` events), from 2019-09-16 to 2019-09-25. Edges are flows, with the source and destination ports (grouped by service and range), the protocol and the size of messages as attributes. As in LARES and Argus, only FLOW START events are used by default (`construction.operations`). Models are trained from 2019-09-16 to 2019-09-21, validated on 2019-09-22 and tested from 2019-09-23 to 2019-09-25 (malicious flows happen on 2019-09-23 and 2019-09-24). The root sources of the attacks are hosts `201`, `402` and `501`.
+
+LARES labels only some of the records of each malicious flow (a flow has FLOW START and FLOW MESSAGE events, recorded by the hosts at both ends). By default, the database labels malicious all the records of a malicious flow (same 5-tuple in the same LARES file): 1,015 malicious FLOW START events instead of the 115 of LARES. The labels of LARES are kept by building the database with `--no_label_propagation` (see the [database creation guide](create-db-from-scratch.md#fill-the-database-optc-flows)). Euler and Argus use another preprocessing and labelling of OpTC (IP addresses as nodes, including external hosts, and all the events of compromised hosts as malicious), so their results on OpTC are not comparable.
+
+99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. `construction.drop_noise_events=True` drops them (off by default, as in LARES). The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with `--tuned` (`config/tuned_baselines/optc_net/`).
 
 ## PROVENANCE_BENIGN
 
