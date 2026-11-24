@@ -8,6 +8,8 @@ description: Cleaning methods applied to the raw events before graph constructio
 The databases of the datasets contain events and attributes that are artifacts of the collection rather than system behavior: null values stored as text, corrupted IPs, events logged twice, events of a process on itself, multicast name resolution traffic, etc.
 They are cleaned during the `construction` task, before the graphs are built, with `construction.cleaning`.
 
+The cleaning methods were designed for provenance datasets. On network datasets, the methods that filter events (`remove_duplicate_events`, `remove_self_loops`, `dedup_window_edges`) apply to the events between hosts: E-GraphSAGE and Anomal-E remove self-loops. `remove_noisy_netflows` only applies to the netflow nodes of provenance datasets; the broadcast and multicast flows of `OPTC_NET` are dropped by `construction.drop_noise_events` instead.
+
 `used_methods` is a comma-separated list of methods, or `none`. The default `none` builds the same graphs as the original systems, and keeps reusing the graphs already built.
 
 | Method | Effect | Removes nodes |

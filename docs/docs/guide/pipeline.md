@@ -1,19 +1,19 @@
 ---
 title: Pipeline
-description: The seven stages of the PIDSMaker pipeline, how each task is cached under a hash of its arguments, how to restart tasks, and the performance and disk usage of the pipeline.
+description: The seven stages of the PIDSMaker pipeline for provenance and network data, how each task is cached under a hash of its arguments, how to restart tasks, and the performance and disk usage of the pipeline.
 ---
 
 # Pipeline
 
-PIDSMaker breaks every system into the same **seven stages**. Each stage is configured by a section of the system's YAML file in `config/`, so building a new PIDS amounts to picking a method, and its arguments, for each stage.
+PIDSMaker breaks every system, provenance-based or network, into the same **seven stages**. Each stage is configured by a section of the system's YAML file in `config/`, so building a new system amounts to picking a method, and its arguments, for each stage.
 { .lead }
 
 ```mermaid
 flowchart TB
-    db[("Provenance database")] --> prep
+    db[("Database<br/>provenance or network events")] --> prep
     subgraph prep ["Graph preparation"]
         direction LR
-        C["<b>1#160;·#160;Construction</b><br/>time-window graphs"] --> T["<b>2#160;·#160;Transformation</b><br/>optional"] --> F["<b>3#160;·#160;Featurization</b><br/>node embeddings"] --> B["<b>4#160;·#160;Batching</b><br/>features & batches"]
+        C["<b>1#160;·#160;Construction</b><br/>time-window graphs"] --> T["<b>2#160;·#160;Transformation</b><br/>optional"] --> F["<b>3#160;·#160;Featurization</b><br/>node & edge features"] --> B["<b>4#160;·#160;Batching</b><br/>features & batches"]
     end
     prep --> det
     subgraph det ["Detection"]
@@ -34,16 +34,32 @@ flowchart TB
 ## The stages
 
 <ol class="pm-steps" markdown>
-<li markdown>**Construction** (`construction`): reads the events from the database, optionally [cleans](../reference/cleaning.md) them, and builds one provenance graph per time window (e.g. 15 minutes).</li>
-<li markdown>**Transformation** (`transformation`): optional transformations of the graphs, applied in sequence: making them undirected, turning them into DAGs, building the R-Caid pseudo-graph, merging repeated edges (`merge_edges`, used by the [network systems](network.md)), or injecting synthetic attacks.</li>
-<li markdown>**Featurization** (`featurization`, then `feat_inference`): learns a text embedding model on the labels of the entities (word2vec, doc2vec, FastText, hierarchical hashing, a [pretrained encoder](../features/pretrained_encoders.md)...), then embeds every node.</li>
+<li markdown>**Construction** (`construction`): reads the events of the dataset from the database, optionally [cleans](../reference/cleaning.md) them, and builds one graph per time window (e.g. 15 minutes). The dataset's schema (`pidsmaker/config/schemas.py`) defines its node types, edge types and event attributes.</li>
+<li markdown>**Transformation** (`transformation`): optional transformations of the graphs, applied in sequence: making them undirected, turning them into DAGs, building the R-Caid pseudo-graph, merging repeated edges into weighted edges (`merge_edges`), or injecting synthetic attacks.</li>
+<li markdown>**Featurization** (`featurization`, then `feat_inference`): learns a text embedding model on the labels of the entities (word2vec, doc2vec, FastText, hierarchical hashing, a [pretrained encoder](../features/pretrained_encoders.md)...) and embeds every node, or uses label-free features (`only_type`, `only_ones`). The attributes of events, if the dataset has any, are encoded as edge features.</li>
 <li markdown>**Batching** (`batching`): selects the node and edge features, and builds the batches given to the model: [global, intra-graph and inter-graph batching](../features/batching.md), TGN neighbor sampling.</li>
 <li markdown>**Training** (`training`): trains the encoder and the self-supervised objective on benign graphs, then computes the losses on the validation and test graphs.</li>
 <li markdown>**Evaluation** (`evaluation`): turns losses into anomaly scores, picks a threshold on the validation set, and computes the metrics at the node, edge, time-window, queue or host level. See [Evaluation & labeling](evaluation.md).</li>
-<li markdown>**Triage** (`triage`): optional post-processing of the detections, to reconstruct attack paths (DepImpact) or anomalous subgraphs (OCR-APT) and reduce false positives. See [Triage](../features/triage.md).</li>
+<li markdown>**Triage** (`triage`): optional post-processing of node-level detections, to reconstruct attack paths (DepImpact) or anomalous subgraphs (OCR-APT) and reduce false positives. See [Triage](../features/triage.md).</li>
 </ol>
 
 The methods available at each stage, and all their arguments, are listed in the [Reference](../reference/tasks.md).
+
+## Provenance and network views
+
+The same stages build provenance-based IDSs (PIDSs) and network IDSs (NIDSs). What changes is the data that flows through them, and the components that the systems of each family use by default:
+
+| Stage | Provenance (e.g. Orthrus on `CADETS_E3`) | Network (e.g. Euler or LARES on `LANL`) |
+|---|---|---|
+| **Construction** | System events between processes, files and netflows, typed by system call (`EVENT_READ`, `EVENT_CONNECT`...). Raw data can be [cleaned](../reference/cleaning.md). | Authentications or flows between hosts, typed by their `operation` (`LogOn`, `FLOW_START`...) or by a categorical attribute (`construction.edge_type=logon_type`). `construction.operations` and `construction.drop_noise_events` select the events, and `construction.benign_training` drops the labelled malicious events of the train and val dates. |
+| **Transformation** | Usually none; `undirected` (NodLink), `rcaid_pseudo_graph` (R-Caid). | `merge_edges`: the repeated edges of a window become one edge weighted by its count, optionally with aggregated attributes (counts per value, mean and std). |
+| **Featurization** | Text embeddings of the labels of entities: file paths, command lines, IP addresses and ports. | Hosts only have a name or an ID (e.g. `C1065` in LANL): NIDSs use `only_type` or `only_ones`, and learn the identity of each host in the encoder. Event attributes are encoded as edge features: one-hot categorical and log-scaled numeric attributes, selected with `feat_inference.edge_attributes`. |
+| **Batching** | Node features `node_emb,node_type`; edge features `edge_type` or TGN messages. | Edge features `edge_attrs` (Argus, LARES, E-GraphSAGE, Anomal-E). |
+| **Training** | Predict the type of edges or nodes, or reconstruct node features. | Link prediction against negative edges (`predict_edge_contrastive`), edge autoencoder, Deep Graph Infomax; host identity and snapshot encoders (`node_id_embedding`, `snapshot_gru`). |
+| **Evaluation** | Per node, against the attack nodes listed in ground-truth files (`node_evaluation`). | Per edge, against the malicious events labelled in the database (`edge_evaluation`), or host-centered (`host_two_stage_evaluation`). Epochs can be selected without labels (`best_val_score`, `last_epoch`). |
+| **Triage** | DepImpact or OCR-APT subgraphs, from the detected nodes. | Not used: triage starts from node-level detections, and NIDSs detect edges. |
+
+These are the defaults of each family, not restrictions: components work on both kinds of datasets, except those that need several node types or event attributes. See [Running across families](systems.md#running-across-families) and the [components of each system](systems.md#components-at-a-glance).
 
 ## Where the code lives
 
@@ -57,9 +73,10 @@ pidsmaker/
 ├── factory.py                  # builds encoders, decoders, objectives from the config
 ├── config/
 │   ├── config.py               # all available arguments (TASK_ARGS) and datasets
+│   ├── schemas.py              # node types, edge types and event attributes of datasets
 │   └── pipeline.py             # config parsing, task hashing and restarts
 └── tasks/
-    ├── construction.py         # 1. parse raw provenance + graph construction
+    ├── construction.py         # 1. read events + graph construction
     ├── transformation.py       # 2. graph transformations
     ├── featurization.py        # 3. train the text embedding model
     ├── feat_inference.py       # 3. embed the nodes

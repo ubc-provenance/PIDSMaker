@@ -29,7 +29,6 @@ nav = [
     { "Pipeline" = "guide/pipeline.md" },
     { "Systems" = "guide/systems.md" },
     { "Datasets" = "guide/datasets.md" },
-    { "Network intrusion detection" = "guide/network.md" },
     { "Evaluation & labeling" = "guide/evaluation.md" },
     { "Tutorial: a new PIDS" = "guide/tutorial.md" },
   ] },
@@ -142,6 +141,7 @@ name = "Join the PIDSMaker Discord"
 "config/decoders.md" = "reference/decoders.md"
 "config/objectives.md" = "reference/objectives.md"
 "contributing.md" = "community/contributing.md"
+"guide/network.md" = "guide/systems.md"
 
 [project.plugins.glightbox]
 

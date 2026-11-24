@@ -18,7 +18,7 @@ Every argument of each [pipeline](../guide/pipeline.md) task, as accepted in a s
 
 ## Stage 1: Construction
 
-Builds the time-window provenance graphs from the database. The raw data can be cleaned before the graphs are built with `construction.cleaning`: see [Cleaning](cleaning.md).
+Builds the time-window graphs of provenance or network events from the database. The raw data can be cleaned before the graphs are built with `construction.cleaning`: see [Cleaning](cleaning.md).
 
 --8<-- "scripts/args/args_construction.md"
 

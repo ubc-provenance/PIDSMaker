@@ -1,11 +1,11 @@
 ---
 title: Evaluation & labeling
-description: How PIDSMaker labels and evaluates detections at the node, edge, time-window and queue levels, computes thresholds and metrics such as ADP, and selects the reported epoch.
+description: How PIDSMaker labels and evaluates the detections of provenance and network systems at the node, edge, time-window, queue and host levels, computes thresholds and metrics such as ADP, and selects the reported epoch.
 ---
 
 # Evaluation & labeling
 
-The same detector can look excellent or useless depending on **what** is counted as a detection, **how** it is labeled, and **which threshold** is used. This page explains each of these choices in PIDSMaker, so that results can be compared fairly.
+The same detector can look excellent or useless depending on **what** is counted as a detection, **how** it is labeled, and **which threshold** is used. This page explains each of these choices in PIDSMaker, for provenance and network datasets, so that results can be compared fairly.
 { .lead }
 
 ## From losses to metrics
@@ -14,15 +14,23 @@ The same detector can look excellent or useless depending on **what** is counted
 <li markdown>**Losses.** After training, the model computes a loss for every edge (or node, for node-level objectives) of the validation and test graphs. This is done at epoch 0 and then every two epochs, and saved per time window.</li>
 <li markdown>**Scores.** The evaluation method groups the losses into the **samples** it classifies (nodes, edges, time windows...) and reduces them into one anomaly score per sample.</li>
 <li markdown>**Threshold.** A threshold is computed from the **validation** losses, which contain benign activity only. Samples scoring above it are predicted malicious.</li>
-<li markdown>**Labels.** Each sample gets a ground-truth label, derived from the list of attack nodes of the dataset (or from the labels of its events, for [network datasets](#event-level-labels-network-datasets)).</li>
+<li markdown>**Labels.** Each sample gets a ground-truth label, derived from the list of attack nodes of provenance datasets, or from the labels of the events of [network datasets](#event-level-labels-network-datasets).</li>
 <li markdown>**Metrics.** Predictions are compared with the labels, for each evaluated epoch, and the metrics of the best epoch are reported.</li>
 </ol>
 
-The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. All provenance systems use `node_evaluation` by default; [network systems](network.md) use `edge_evaluation`, or `host_two_stage_evaluation` for LARES.
+The evaluation method is set with `evaluation.used_method`, and its options in the sub-section of the same name. Each family has its usual granularity, but any method works on any dataset:
+
+| | Provenance systems | Network systems |
+|---|---|---|
+| **Default evaluation** | `node_evaluation`: is each process, file or netflow part of an attack? | `edge_evaluation`: is each authentication or flow malicious? `host_two_stage_evaluation` for LARES: which hosts are the sources of the attack, and which of their edges are malicious? |
+| **Ground truth** | Attack nodes, in [ground-truth files](#ground-truth) | Malicious events, [labelled in the database](#event-level-labels-network-datasets) |
+| **Reported epoch** | Best ADP (`best_adp`) | Chosen without labels (`best_val_score`, `last_epoch`), or best MCC for LARES |
+
+See the [settings of each system](#settings-of-each-system).
 
 ## Evaluation granularities
 
-The ground truth only lists attack **nodes**. Each evaluation method turns it into labels for the unit it classifies:
+The ground truth lists attack **nodes** (provenance datasets) or malicious **events** (network datasets). Each evaluation method turns it into labels for the unit it classifies:
 
 <div class="pm-eval-grid">
 <figure class="pm-eval-card"><svg viewBox="0 0 240 152" role="img"><rect class="win" x="8" y="22" width="68" height="86" rx="8"/><text class="lbl" x="42.0" y="16" text-anchor="middle">TW1</text><rect class="win" x="86" y="22" width="68" height="86" rx="8"/><text class="lbl" x="120.0" y="16" text-anchor="middle">TW2</text><rect class="win" x="164" y="22" width="68" height="86" rx="8"/><text class="lbl" x="198.0" y="16" text-anchor="middle">TW3</text><line class="e" x1="32.0" y1="48.0" x2="51.0" y2="48.0"/><line class="e" x1="27.3" y1="55.3" x2="38.3" y2="79.8"/><line class="e" x1="56.7" y1="55.3" x2="45.7" y2="79.8"/><circle class="n" cx="24" cy="48" r="7"/><circle class="n" cx="60" cy="48" r="7"/><circle class="n" cx="42" cy="88" r="7"/><line class="e" x1="110.0" y1="48.0" x2="129.0" y2="48.0"/><line class="e" x1="105.3" y1="55.3" x2="116.3" y2="79.8"/><line class="e" x1="134.7" y1="55.3" x2="123.7" y2="79.8"/><circle class="n" cx="102" cy="48" r="7"/><circle class="n" cx="138" cy="48" r="7"/><circle class="m" cx="120" cy="88" r="7"/><line class="e" x1="188.0" y1="48.0" x2="207.0" y2="48.0"/><line class="e" x1="183.3" y1="55.3" x2="194.3" y2="79.8"/><line class="e" x1="212.7" y1="55.3" x2="201.7" y2="79.8"/><circle class="n" cx="180" cy="48" r="7"/><circle class="n" cx="216" cy="48" r="7"/><circle class="m" cx="198" cy="88" r="7"/><path class="unit-m" style="fill:none" d="M120,97 C120,128 198,128 198,97"/><text class="note" x="120.0" y="146" text-anchor="middle">same node = 1 sample</text></svg><figcaption><strong>Node <code>node_evaluation</code></strong>One sample per node over the whole test set. Its score is the max loss of its edges in all windows. Malicious if the node is in the ground truth.</figcaption></figure>
@@ -38,7 +46,7 @@ The ground truth only lists attack **nodes**. Each evaluation method turns it in
 |---|---|---|---|
 | `node_evaluation` | A node, over the whole test set | Max (or mean, or 95th percentile) of the losses of its edges, as source (and as destination with `use_dst_node_loss`) | the node is in the ground truth |
 | `node_tw_evaluation` | A (node, time window) pair | Same reduction, over the node's losses in that window | the node is an attack node of that window |
-| `edge_evaluation` | An edge (event) | The loss of the edge | its source, destination or both are attack nodes, during an attack (`malicious_edge_selection`: `src_node`, `dst_node`, `both_nodes`) |
+| `edge_evaluation` | An edge (event) | The loss of the edge | its source, destination or both are attack nodes, during an attack (`malicious_edge_selection`: `src_node`, `dst_node`, `both_nodes`); on network datasets, one of its events is labelled malicious |
 | `tw_evaluation` | A time-window graph | Reduction of all the losses of the window | it contains at least one attack event |
 | `queue_evaluation` | A time-window graph, through its queue | Score of the queue that contains it | it contains at least one attack event |
 | `host_two_stage_evaluation` | An edge, predicted by the top-scored hosts | The loss of the edge | as `edge_evaluation` with `both_nodes`, or its event label (see [below](#host-centered-evaluation-lares)) |
@@ -69,7 +77,7 @@ With `root_attack_nodes`, only the malicious edges of these source hosts are pos
 
 ## Ground truth
 
-Evaluation compares predictions against a **ground truth**: the UUIDs of the nodes involved in each attack. The labeling of the DARPA TC attacks differs between prior works, and the choice of ground truth materially affects the reported metrics, so PIDSMaker ships several, selected with `evaluation.ground_truth_version` (default `orthrus`):
+Evaluation compares predictions against a **ground truth**. For provenance datasets, it is the UUIDs of the nodes involved in each attack, described below; network datasets label their events instead ([event-level labels](#event-level-labels-network-datasets)). The labeling of the DARPA TC attacks differs between prior works, and the choice of ground truth materially affects the reported metrics, so PIDSMaker ships several, selected with `evaluation.ground_truth_version` (default `orthrus`):
 
 === "CLI"
 
@@ -86,7 +94,7 @@ Evaluation compares predictions against a **ground truth**: the UUIDs of the nod
 
 | Version | Source | Format | Coverage |
 |---|---|---|---|
-| `orthrus` *(default)* | Labeling used by [Orthrus](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) | One CSV per attack, rows of `uuid, {labels}, count` | All datasets |
+| `orthrus` *(default)* | Labeling used by [Orthrus](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) | One CSV per attack, rows of `uuid, {labels}, count` | All provenance datasets |
 | `reapr` | Alternative labeling of the DARPA TC E3 datasets | Same as `orthrus` | E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS |
 | `threatrace` | Ground truth published by [ThreaTrace](https://arxiv.org/pdf/2111.04333) | One flat UUID-per-line `.txt` per dataset, treated as a single attack over the whole test period | E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS |
 

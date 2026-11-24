@@ -51,7 +51,7 @@ State-of-the-art PIDSs and network IDSs, the main DARPA and network datasets, an
 
     Six network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and two network datasets (LANL and the network flows of OpTC). Any system runs on network or provenance datasets.
 
-    [:octicons-arrow-right-24: Network intrusion detection](guide/network.md)
+    [:octicons-arrow-right-24: Systems](guide/systems.md)
 
 -   :lucide-gauge:{ .lg .middle } __Faster, leaner pipeline__
 

@@ -1,56 +1,104 @@
 ---
 title: Systems
-description: The PIDSs and network IDSs reimplemented in PIDSMaker, their papers, and the components each one uses at every stage of the pipeline.
+description: The provenance-based and network intrusion detection systems reimplemented in PIDSMaker, their papers, the components each one uses at every stage of the pipeline, and which datasets each one runs on.
 ---
 
 # Systems
 
-PIDSMaker reimplements state-of-the-art PIDSs as YAML configs in `config/`. Since every system is described with the same components, they can be compared side by side, and any component can be swapped into any other system.
+PIDSMaker reimplements state-of-the-art intrusion detection systems as YAML configs in `config/`: **provenance-based IDSs (PIDSs)**, which detect attacks in the system events of hosts, and **network IDSs (NIDSs)**, which detect them in the communications between hosts. All of them are described with the same components, so they can be compared side by side, any component can be swapped into any other system, and most systems run on [both kinds of datasets](#running-across-families).
 { .lead }
 
 ## Supported systems
 
-| System | Config | Venue | Paper |
-|---|---|---|---|
-| **Velox** | `velox` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
-| **Orthrus** | `orthrus`, `orthrus_non_snooped` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
-| **OCR-APT** | `ocrapt` | <span class="pm-chip">ACM CCS 2025</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2510.15188) |
-| **R-Caid** | `rcaid` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
-| **Flash** | `flash` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://dartlab.org/assets/pdf/flash.pdf) |
-| **Kairos** | `kairos` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2308.05034) |
-| **MAGIC** | `magic` | <span class="pm-chip">USENIX Security 2024</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
-| **NodLink** | `nodlink` | <span class="pm-chip">NDSS 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2311.02331) |
-| **ThreaTrace** | `threatrace` | <span class="pm-chip">IEEE TIFS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2111.04333) |
+| System | Data | Config | Venue | Paper |
+|---|---|---|---|---|
+| **Velox** | Provenance | `velox` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
+| **Orthrus** | Provenance | `orthrus`, `orthrus_non_snooped` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
+| **OCR-APT** | Provenance | `ocrapt` | <span class="pm-chip">ACM CCS 2025</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2510.15188) |
+| **R-Caid** | Provenance | `rcaid` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
+| **Flash** | Provenance | `flash` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://dartlab.org/assets/pdf/flash.pdf) |
+| **Kairos** | Provenance | `kairos` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2308.05034) |
+| **MAGIC** | Provenance | `magic` | <span class="pm-chip">USENIX Security 2024</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
+| **NodLink** | Provenance | `nodlink` | <span class="pm-chip">NDSS 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2311.02331) |
+| **ThreaTrace** | Provenance | `threatrace` | <span class="pm-chip">IEEE TIFS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2111.04333) |
+| **LARES** | Network | `lares` | <span class="pm-chip">ACSAC 2026</span> | [:lucide-code: Code](https://github.com/TristanBilot/lares) |
+| **Argus** | Network | `argus` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00012) |
+| **Jbeil** | Network | `jbeil` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00009) |
+| **Euler** | Network | `euler` | <span class="pm-chip">NDSS 2022</span> | [:lucide-file-text: Paper](https://doi.org/10.14722/ndss.2022.24107) |
+| **E-GraphSAGE** | Network | `egraphsage` | <span class="pm-chip">IEEE/IFIP NOMS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/abs/2103.16329) |
+| **Anomal-E** | Network | `anomal_e` | <span class="pm-chip">Knowledge-Based Systems 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/abs/2207.06819) |
 
-PIDSMaker also reimplements network intrusion detection systems: **Euler**, **Argus**, **Jbeil**, **LARES**, **E-GraphSAGE** and **Anomal-E** (configs `euler`, `argus`, `jbeil`, `lares`, `egraphsage` and `anomal_e`). They are described with the same components, and run on provenance datasets as well as on the network datasets. See [Network intrusion detection](network.md).
+Run any of them with its config name and a dataset:
 
-Run any of them with its config name:
+=== "Provenance"
 
-```shell
-python pidsmaker/main.py kairos CADETS_E3
-```
+    ```shell
+    python pidsmaker/main.py kairos CADETS_E3
+    ```
+
+=== "Network"
+
+    ```shell
+    python pidsmaker/main.py euler LANL
+    python pidsmaker/main.py lares OPTC_NET --tuned   # OpTC hyperparameters of LARES
+    ```
+
+All systems are self-supervised and trained on benign data only. PIDSs flag the entities (processes, files, netflows) whose activity deviates from what they learned; NIDSs flag the authentications or flows that their model finds unlikely. E-GraphSAGE, originally a supervised edge classifier, is trained here with self-supervised link prediction like the other NIDSs. The header of each config describes the system and its differences with the original implementation.
 
 ## Components at a glance
 
-How each system is configured at the main stages of the [pipeline](pipeline.md). All these PIDSs are evaluated at the node level (`node_evaluation`) by default.
+How each system is configured at the main stages of the [pipeline](pipeline.md):
 
-| System | Featurization | Encoder | Objective | Threshold |
-|---|---|---|---|---|
-| Velox | `word2vec` | `none` (linear layer) | `predict_edge_type` | `max_val_loss` |
-| Orthrus | `word2vec` | `tgn`, `graph_attention` | `predict_edge_type` | `max_val_loss` + k-means |
-| Kairos | `hierarchical_hashing` | `graph_attention`, `tgn` | `predict_edge_type` | `max_val_loss` |
-| MAGIC | `only_type` | `magic_gat` | `reconstruct_masked_features`, `predict_masked_struct` | `magic` |
-| Flash | `flash` | `sage` | `predict_node_type` | `flash` |
-| R-Caid | `doc2vec` | `rcaid_gat` | `predict_node_type` | `max_val_loss` |
-| NodLink | `fasttext` | `sum_aggregation` | `reconstruct_node_features` | `nodlink` |
-| ThreaTrace | `only_type` | `sage` | `predict_node_type` | `threatrace` |
-| OCR-APT | `ocrapt_features` | `rgcn_per_type` | `one_class` | `ocrapt` |
+| System | Featurization | Encoder | Objective | Evaluation | Threshold |
+|---|---|---|---|---|---|
+| Velox | `word2vec` | `none` (linear layer) | `predict_edge_type` | `node_evaluation` | `max_val_loss` |
+| Orthrus | `word2vec` | `tgn`, `graph_attention` | `predict_edge_type` | `node_evaluation` | `max_val_loss` + k-means |
+| Kairos | `hierarchical_hashing` | `graph_attention`, `tgn` | `predict_edge_type` | `node_evaluation` | `max_val_loss` |
+| MAGIC | `only_type` | `magic_gat` | `reconstruct_masked_features`, `predict_masked_struct` | `node_evaluation` | `magic` |
+| Flash | `flash` | `sage` | `predict_node_type` | `node_evaluation` | `flash` |
+| R-Caid | `doc2vec` | `rcaid_gat` | `predict_node_type` | `node_evaluation` | `max_val_loss` |
+| NodLink | `fasttext` | `sum_aggregation` | `reconstruct_node_features` | `node_evaluation` | `nodlink` |
+| ThreaTrace | `only_type` | `sage` | `predict_node_type` | `node_evaluation` | `threatrace` |
+| OCR-APT | `ocrapt_features` | `rgcn_per_type` | `one_class` | `node_evaluation` | `ocrapt` |
+| Euler | `only_type` | `gcn`, `node_id_embedding`, `snapshot_gru` | `predict_edge_contrastive` (uniform negatives) | `edge_evaluation` | `max_val_loss` |
+| Argus | `only_type` | `argus`, `node_id_embedding`, `snapshot_gru` | `predict_edge_contrastive` (`ap` loss) | `edge_evaluation` | `max_val_loss` |
+| Jbeil | `only_type` | `graph_attention`, `tgn` | `predict_edge_contrastive` (`tgn` negatives) | `edge_evaluation` | `max_val_loss` |
+| LARES | `only_type` | `lares` | `autoencode_edge_embeddings` | `host_two_stage_evaluation` | k-means on the top host scores |
+| E-GraphSAGE | `only_ones` | `egraphsage` | `predict_edge_contrastive` (uniform negatives) | `edge_evaluation` | `max_val_loss` |
+| Anomal-E | `only_ones` | `egraphsage` | `deep_graph_infomax` (PCA scores) | `edge_evaluation` | `max_val_loss` |
 
-The components of the network systems are listed in [Network intrusion detection](network.md#components).
+The two families mostly differ at both ends of the pipeline. PIDSs embed the textual labels of entities (file paths, command lines, IP addresses) and are evaluated per node, against the attack nodes of the ground truth. Hosts have no such labels, only names, so NIDSs learn an embedding of the identity of each host (`node_id_embedding`, `lares`) and rely on the attributes of events; they are evaluated per edge, against the malicious events labelled in the dataset.
 
-A few systems also use specific transformations or post-processing: R-Caid builds its pseudo-graph (`transformation.used_methods: rcaid_pseudo_graph`), NodLink makes graphs undirected (`undirected`), and OCR-APT extracts anomalous subgraphs in the triage stage (`triage.used_method: ocrapt_subgraph`).
+Other stages:
+
+- **Transformation.** R-Caid builds its pseudo-graph (`rcaid_pseudo_graph`) and NodLink makes graphs undirected (`undirected`). Euler, Argus, LARES, E-GraphSAGE and Anomal-E merge the repeated edges of each time window (`merge_edges`); Argus and LARES aggregate the attributes of the merged events (`merge_edges.aggregate_attributes`).
+- **Edge features.** Velox, Orthrus and OCR-APT use the edge type; Kairos and Jbeil the TGN messages (`msg,time_encoding`); Argus, LARES, E-GraphSAGE and Anomal-E the event attributes (`edge_attrs`).
+- **Epoch selection.** PIDSs report the epoch with the best ADP (`best_adp`, the default). Euler, Jbeil and E-GraphSAGE select it without labels on validation link prediction (`best_val_score`), Argus and Anomal-E keep the last epoch (`last_epoch`), and LARES selects the best MCC, as its code. See [Choosing the reported epoch](evaluation.md#choosing-the-reported-epoch).
+- **Triage.** OCR-APT extracts anomalous subgraphs from its detections (`triage.used_method: ocrapt_subgraph`).
 
 The available methods for each column are listed in the reference: [Featurization](../reference/featurization.md), [Encoders](../reference/encoders.md), [Objectives](../reference/objectives.md) and [Tasks](../reference/tasks.md#stage-6-evaluation).
+
+## Running across families
+
+Datasets are described by a [schema](datasets.md#adding-custom-datasets) (node types, edge types and event attributes) rather than by assumptions on a particular dataset, so a system written for one family runs on the other:
+
+```shell
+python pidsmaker/main.py orthrus LANL           # a PIDS on a network dataset
+python pidsmaker/main.py euler CLEARSCOPE_E3    # a NIDS on a provenance dataset
+```
+
+Two differences between the families limit this:
+
+| | On provenance datasets | On network datasets |
+|---|---|---|
+| **PIDSs** | All | Velox, Orthrus, Kairos, MAGIC and OCR-APT. Flash, R-Caid and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types: network datasets only have hosts. NodLink is not tested on network datasets. |
+| **NIDSs** | Euler and Jbeil as is. Argus, LARES, E-GraphSAGE and Anomal-E use event attributes, which provenance datasets don't have: replace them by the edge type with `--batching.edge_features=edge_type`. | All |
+
+The combinations of this table are those run by the tests (`tests/test_network_datasets.py`). A few useful options when moving across families:
+
+- `--construction.edge_type=logon_type` uses a categorical attribute of the events as edge type, e.g. the logon type of LANL authentications as the class predicted by Velox's `predict_edge_type`.
+- `--batching.edge_features=edge_type,edge_attrs` gives the event attributes (ports, protocols, logon types...) to a PIDS encoder that reads edge features, such as Orthrus.
+- Systems keep their evaluation: a PIDS on LANL is evaluated per host (`node_evaluation`, where the malicious hosts are the endpoints of malicious events), a NIDS on CLEARSCOPE_E3 per event (`edge_evaluation`, where the malicious events are those between attack nodes, with `malicious_edge_selection: both_nodes`). Switch with `evaluation.used_method`.
 
 ## Variants
 
@@ -61,10 +109,13 @@ The available methods for each column are listed in the reference: [Featurizatio
 :   `orthrus_non_snooped` with the GNN replaced by a single linear layer (`training.encoder.used_methods: none`) and without TGN neighbor sampling (`batching.intra_graph_batching.used_methods: edges`). It is the deliberately simple system proposed in [Bilot et al.](https://tfjmp.org/publications/2025-usenixsec-2.pdf).
 
 `pretrained_<system>`
-:   The same systems, with node features computed by a [pretrained encoder](../features/pretrained_encoders.md) such as SPIDER: `pretrained_velox`, `pretrained_orthrus`, `pretrained_kairos`, `pretrained_magic`, `pretrained_flash`, `pretrained_nodlink` and `pretrained_threatrace`.
+:   The provenance systems, with node features computed by a [pretrained encoder](../features/pretrained_encoders.md) such as SPIDER: `pretrained_velox`, `pretrained_orthrus`, `pretrained_kairos`, `pretrained_magic`, `pretrained_flash`, `pretrained_nodlink` and `pretrained_threatrace`.
 
 `cybergfm`
 :   The [CyberGFM](https://arxiv.org/abs/2601.05988) baseline: BERT pretrained on random walks, then fine-tuned as a detector with link prediction.
+
+`--tuned` on `OPTC_NET`
+:   The defaults of the network configs are those of LANL. `--tuned` loads the OpTC settings of LARES (30 min windows, α = 5, β = 30) and Argus (6 min snapshots), from `config/tuned_baselines/optc_net/`.
 
 !!! warning "Data snooping"
     Some original configs rely on test data: for example, `orthrus` trains its word2vec model on all splits, test included (`featurization.training_split: all`), and `kairos` does too. PIDSMaker keeps the original configs for reproducibility, but use the non-snooped variants when comparing systems. See [Bilot et al.](https://www.usenix.org/system/files/usenixsecurity25-bilot.pdf) for a detailed analysis.
@@ -72,8 +123,13 @@ The available methods for each column are listed in the reference: [Featurizatio
 ## Results and reproducibility
 
 The default configs contain the original hyperparameters of each system. To find better ones on a dataset, use [hyperparameter tuning](../features/tuning.md).
-PIDSs are [unstable](../features/instability.md): always evaluate them over several runs.
+Systems trained with self-supervision are [unstable](../features/instability.md), PIDSs and NIDSs alike: always evaluate them over several runs.
+
+!!! warning "Comparing NIDSs with published results"
+    - The `max_val_loss` threshold yields almost no true positives on the network datasets: AUC and AP are the meaningful metrics.
+    - On `OPTC_NET`, link prediction on validation edges is close to perfect, so label-free epoch selection picks a nearly arbitrary epoch: report results over several epochs and [runs](../features/instability.md).
+    - Euler and Argus evaluate OpTC on another preprocessing and labelling (IP addresses as nodes, all the events of compromised hosts malicious), so their published OpTC results are not comparable with `OPTC_NET`.
 
 ## Adding a system
 
-Want to add your PIDS? Follow the [tutorial](tutorial.md) to implement it with existing and new components, then [open a pull request](../community/contributing.md).
+Want to add your system? Follow the [tutorial](tutorial.md) to implement it with existing and new components, then [open a pull request](../community/contributing.md).

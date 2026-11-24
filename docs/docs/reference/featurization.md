@@ -13,6 +13,11 @@ In all methods, the resulting vectors are used as node features during the `trai
 
 The `pretrained` method uses an encoder pretrained on provenance data (SPIDER, language models, self-supervised GNNs, …), selected with `pretrained.model_type`. See [Pretrained Encoders](../features/pretrained_encoders.md).
 
+!!! info "Network datasets"
+    The nodes of network datasets are hosts, labelled by their name or ID (e.g. `C1065` in LANL). Text methods run on them (Velox uses `word2vec` on LANL), but these labels carry little information: the network systems use `only_type` or `only_ones`, and learn the identity of each host in their encoder (`node_id_embedding`, `lares`). `fasttext` stops with an error when no token appears `min_count` times, which happens with unique host names.
+
+    The attributes of events (logon types, ports, protocols, sizes...) are not featurized here: `feat_inference` encodes them as edge features (one-hot categorical and log-scaled numeric attributes), used with `batching.edge_features=edge_attrs` and selected with `feat_inference.edge_attributes`.
+
 ## Methods
 
 --8<-- "scripts/args/args_featurizations.md"
