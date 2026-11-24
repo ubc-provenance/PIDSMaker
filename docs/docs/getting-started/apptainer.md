@@ -37,7 +37,7 @@ make up     # start it again
 Create and activate the conda environment:
 
 ```shell
-conda env create -f ./scripts/apptainer/environment.yml
+conda env create -f ./scripts/apptainer/environment.yaml
 conda activate pids
 ```
 

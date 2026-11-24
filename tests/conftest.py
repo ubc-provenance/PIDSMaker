@@ -1,3 +1,7 @@
+# First, before the test modules import torch: sets the CPU threads (see pidsmaker/__init__.py)
+import pidsmaker  # noqa: F401
+
+# isort: split
 import gzip
 import os
 import shutil

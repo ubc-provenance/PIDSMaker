@@ -15,6 +15,7 @@ import hashlib
 import os
 import random
 import shutil
+import sys
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -387,10 +388,13 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
 
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+    # Flushed, so that logs redirected to a file (e.g. `nohup.out` of run.sh) are written as
+    # they come, instead of minutes later when the output buffer is full
+    kwargs.setdefault("flush", True)
     print(f"{timestamp} - {msg}", *args, **kwargs)
 
     if return_line:
-        print("")
+        print("", flush=True)
 
 
 DISABLE_TQDM = True
@@ -402,6 +406,46 @@ def log_tqdm(iterator, desc="", logging=True, **kwargs):
     if DISABLE_TQDM and logging:
         log(f"{desc}...")
     return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
+
+
+LOW_MEMORY_GB = 16
+
+
+def available_memory_gb():
+    """RAM usable by this process, in GB: the RAM of the machine (or of the Docker VM on macOS),
+    or the memory limit of the container if it is lower. None if it cannot be read."""
+    try:
+        import psutil
+
+        total = psutil.virtual_memory().total
+    except Exception:
+        return None
+    # Memory limit of the container (cgroup v2, then v1); "max" or a huge value means no limit
+    for path in ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
+        try:
+            with open(path) as f:
+                limit = f.read().strip()
+            if limit.isdigit():
+                total = min(total, int(limit))
+            break
+        except OSError:
+            continue
+    return total / (1024**3)
+
+
+def warn_if_low_memory(min_gb=LOW_MEMORY_GB):
+    """Warns when less than `min_gb` of RAM are available, e.g. in Docker Desktop on macOS,
+    whose VM has 8 GB by default: runs killed by the kernel when they run out of memory
+    otherwise only print `Killed`."""
+    memory_gb = available_memory_gb()
+    if memory_gb is not None and memory_gb < min_gb:
+        log(
+            f"Warning: only {memory_gb:.1f} GB of RAM are available, runs on large datasets may "
+            f"be killed when they run out of memory. With Docker Desktop (macOS), give more "
+            f"memory to its VM: https://ubc-provenance.github.io/PIDSMaker/getting-started/"
+            f"installation/#macos"
+        )
+    return memory_gb
 
 
 class PeakCPUMemory:
@@ -431,7 +475,9 @@ class PeakCPUMemory:
             pass
         import resource
 
-        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024**2)
+        # ru_maxrss is in bytes on macOS, and in kB on Linux
+        unit = 1 if sys.platform == "darwin" else 1024
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * unit / (1024**3)
 
 
 def get_device(cfg):

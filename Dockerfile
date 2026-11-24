@@ -8,17 +8,19 @@ RUN apt-get update \
     && apt-get install -y wget ca-certificates graphviz gnupg lsb-release maven
 
 # installing JDK1.8
+# The JDK folder is named after the architecture (amd64 or arm64): link it to a fixed path
 RUN apt update && \
     apt install -y openjdk-8-jdk && \
-    apt clean
+    apt clean && \
+    ln -s /usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture) /usr/lib/jvm/java-8-openjdk
 
-ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk/
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # installing sudo, git, gosu (for privilege dropping in entrypoint)
 RUN apt-get update && apt-get install -y sudo git && \
     set -eux; \
-    wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-amd64"; \
+    wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-$(dpkg --print-architecture)"; \
     chmod +x /usr/local/bin/gosu; \
     gosu --version; \
     gosu nobody true
@@ -32,10 +34,10 @@ RUN apt-get update \
  && node -v && npm -v \
  && rm -rf /var/lib/apt/lists/*
 
-# installing Anaconda version 23.3.1
-RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
-RUN bash Anaconda3-2023.03-1-Linux-x86_64.sh -b -p /opt/conda
-RUN rm Anaconda3-2023.03-1-Linux-x86_64.sh
+# installing Anaconda version 23.3.1 (x86_64, or aarch64 e.g. on Apple Silicon Macs)
+RUN wget -O anaconda.sh https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-$(uname -m).sh && \
+    bash anaconda.sh -b -p /opt/conda && \
+    rm anaconda.sh
 
 # Create a fixed container user. The UID/GID will be remapped at runtime
 # by entrypoint.sh to match the host user — no build args required.
@@ -59,12 +61,20 @@ RUN conda install -y psycopg2 tqdm && \
                 wandb==0.24.2 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
                 cairocffi==1.7.0 wget==3.2
 
-RUN pip install torch==2.1.2+cu121 torchvision==0.16.2+cu121 torchaudio==2.1.2+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
+# CUDA 12.1 on x86_64. On aarch64 (e.g. Docker on Apple Silicon), there is no CUDA: torch runs on
+# CPU, and PyG has no prebuilt extensions (PIDSMaker falls back to pure torch for torch_scatter)
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        pip install torch==2.1.2+cu121 torchvision==0.16.2+cu121 torchaudio==2.1.2+cu121 --extra-index-url https://download.pytorch.org/whl/cu121; \
+    else \
+        pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2; \
+    fi
 
 RUN pip install torch_geometric==2.6.1 --no-cache-dir && \
-    pip install pyg_lib==0.4.0 torch_scatter==2.1.2 torch_sparse==0.6.18 \
-                torch_cluster==1.6.3 torch_spline_conv==1.2.2 \
-                -f https://data.pyg.org/whl/torch-2.1.0+cu121.html --no-cache-dir
+    if [ "$(uname -m)" = "x86_64" ]; then \
+        pip install pyg_lib==0.4.0 torch_scatter==2.1.2 torch_sparse==0.6.18 \
+                    torch_cluster==1.6.3 torch_spline_conv==1.2.2 \
+                    -f https://data.pyg.org/whl/torch-2.1.0+cu121.html --no-cache-dir; \
+    fi
 
 RUN pip install gensim==4.4.0 pytz==2024.1 pandas==2.3.3 yacs==0.1.8 transformers==4.39.3
 
@@ -76,13 +86,16 @@ RUN pip install pytest==8.3.5 pytest-cov==6.1.1 pytest-xdist==3.6.1 pre-commit==
 
 COPY . .
 
+# Installed as root into the conda env (not in the user site of `pids`), so that `pidsmaker` can be
+# imported from any shell, including `docker compose exec pids bash`, which opens a root shell
+RUN [ -f pyproject.toml ] && pip install -e . || echo "No pyproject.toml found, skipping install"
+
 # COPY is done by the docker daemon as root, so we need to chown.
 # Only chown the project dir and the user home — not /home/artifacts
 # which is a runtime volume managed by entrypoint.sh.
 RUN chown -R pids:pids /home/pids /home/user
 USER pids
 
-RUN [ -f pyproject.toml ] && pip install -e . || echo "No pyproject.toml found, skipping install"
 RUN [ -f .pre-commit-config.yaml ] && pre-commit install || echo "No pre-commit found, skipping install"
 
 # Switch back to root so the entrypoint can remap UID/GID and fix permissions

@@ -27,6 +27,24 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
     - Inside Docker, the database host is `postgres` (the default). Outside Docker, e.g. with [Apptainer](../getting-started/apptainer.md), pass `--database_host localhost`.
     - Check that the dataset's database was loaded: from the Postgres container, `psql -U postgres -l` lists the databases.
 
+??? question "Google Drive answers \"Quota exceeded\" when downloading a dump."
+    Google limits the anonymous downloads of each file per day. Download it while signed in to a Google account, from the [shared folder](https://drive.google.com/drive/folders/1hqfz8__zVqb3QzBuOI2SxrW4lLIdYqFr) in your browser or with `./download_datasets.sh` and an access token (see [Download the datasets](../getting-started/installation.md#1-download-the-datasets)), or retry the next day.
+
+??? question "On macOS, `docker compose` fails with `operation not permitted`."
+    Docker Desktop is not allowed to read the folder of the repository (e.g. `~/Documents`). Allow it in **System Settings > Privacy & Security > Files and Folders** (or **Full Disk Access**), then restart Docker Desktop. See [macOS](../getting-started/installation.md#macos).
+
+??? question "`docker compose up` fails with `address already in use` on port 5000 or 8000."
+    Another program uses this port on the host, e.g. AirPlay Receiver on macOS for port 5000. Set other host ports in `.env`, e.g. `VIZ_PORT=5001` and `PIDS_PORT=8001`, then `source .env` and run `up` again.
+
+??? question "`docker compose up` fails with `could not select device driver \"nvidia\"`."
+    The machine has no NVIDIA GPU (or no NVIDIA Container Toolkit). Add the CPU override: `docker compose -f compose-pidsmaker.yml -f compose-pidsmaker.cpu.yml up -d --build`.
+
+??? question "A run is killed (`Killed`, exit code 137) on a laptop or with Docker Desktop."
+    The container ran out of memory. On macOS, Docker Desktop limits its virtual machine to 8 GB by default: raise it as explained in [macOS](../getting-started/installation.md#macos). Graph construction also uses less memory with fewer processes, e.g. `--num_workers=2`.
+
+??? question "Training is very slow on CPU in Docker on a Mac."
+    With Docker Desktop on Apple Silicon, PIDSMaker limits PyTorch to 4 threads (`OMP_NUM_THREADS=4`), as more threads make operations on small tensors up to 100 times slower in the VM. If you set `OMP_NUM_THREADS` yourself (e.g. `docker compose exec -e OMP_NUM_THREADS=6 pids bash`), keep it at most at the number of performance cores of your Mac.
+
 ??? question "Can I use PIDSMaker without Docker?"
     Yes, with [Apptainer and conda](../getting-started/apptainer.md), which is convenient on HPC clusters.
 

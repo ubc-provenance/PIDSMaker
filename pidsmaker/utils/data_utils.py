@@ -21,7 +21,58 @@ from torch_geometric.data.collate import collate
 from torch_geometric.data.data import size_repr
 from torch_geometric.data.temporal import prepare_idx
 from torch_geometric.loader import TemporalDataLoader
-from torch_scatter import scatter
+
+try:
+    from torch_scatter import scatter
+except ImportError:
+    # torch_scatter has no prebuilt wheels for some platforms (e.g. Apple Silicon, Linux aarch64)
+    # and fails to compile with recent compilers. Only its "sum" and "mean" reductions are used,
+    # which torch_scatter implements in Python on top of `scatter_add_`: same code here, so that
+    # results are identical (including the accumulation into an existing `out`).
+    def _broadcast(src, other, dim):
+        if dim < 0:
+            dim = other.dim() + dim
+        if src.dim() == 1:
+            for _ in range(0, dim):
+                src = src.unsqueeze(0)
+        for _ in range(src.dim(), other.dim()):
+            src = src.unsqueeze(-1)
+        return src.expand(other.size())
+
+    def _scatter_sum(src, index, dim=-1, out=None, dim_size=None):
+        index = _broadcast(index, src, dim)
+        if out is None:
+            size = list(src.size())
+            if dim_size is not None:
+                size[dim] = dim_size
+            elif index.numel() == 0:
+                size[dim] = 0
+            else:
+                size[dim] = int(index.max()) + 1
+            out = torch.zeros(size, dtype=src.dtype, device=src.device)
+        return out.scatter_add_(dim, index, src)
+
+    def scatter(src, index, dim=-1, out=None, dim_size=None, reduce="sum"):
+        if reduce in ("sum", "add"):
+            return _scatter_sum(src, index, dim, out, dim_size)
+        if reduce != "mean":
+            raise NotImplementedError(f"reduce={reduce} requires torch_scatter")
+        out = _scatter_sum(src, index, dim, out, dim_size)
+        dim_size = out.size(dim)
+        index_dim = dim
+        if index_dim < 0:
+            index_dim = index_dim + src.dim()
+        if index.dim() <= index_dim:
+            index_dim = index.dim() - 1
+        ones = torch.ones(index.size(), dtype=src.dtype, device=src.device)
+        count = _scatter_sum(ones, index, index_dim, None, dim_size)
+        count[count < 1] = 1
+        count = _broadcast(count, out, dim)
+        if out.is_floating_point():
+            out.true_divide_(count)
+        else:
+            out.div_(count, rounding_mode="floor")
+        return out
 
 from pidsmaker.config import update_cfg_for_multi_dataset
 from pidsmaker.debug_tests import debug_test_batching
