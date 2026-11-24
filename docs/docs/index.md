@@ -1,6 +1,6 @@
 ---
 title: Home
-description: PIDSMaker is an open-source framework to build, benchmark and extend provenance-based intrusion detection systems (PIDSs).
+description: PIDSMaker is an open-source framework to build, benchmark and extend graph-based intrusion detection systems on provenance and network data.
 hide:
   - navigation
   - toc
@@ -15,8 +15,8 @@ hide:
 <h1>PIDS<span class="pm-maker">Maker</span></h1>
 
 <p class="pm-hero__tagline">
-The open-source framework to <strong>build, benchmark and extend provenance-based intrusion detection systems</strong>.
-State-of-the-art PIDSs and network IDSs, the main DARPA and network datasets, and one modular pipeline, all in a single codebase.
+The open-source framework to <strong>build, benchmark and extend graph-based intrusion detection systems</strong>, on host provenance and network data.
+State-of-the-art provenance-based and network IDSs, their datasets, and one modular pipeline shared by both, all in a single codebase.
 </p>
 
 <div class="pm-hero__actions" markdown>
@@ -35,11 +35,35 @@ State-of-the-art PIDSs and network IDSs, the main DARPA and network datasets, an
 <style>.md-content__button { display: none; }</style>
 
 <div class="pm-stats">
-  <div class="pm-stat"><strong>15</strong><span>PIDSs and network IDSs reimplemented</span></div>
-  <div class="pm-stat"><strong>17</strong><span>provenance and network datasets</span></div>
-  <div class="pm-stat"><strong>7</strong><span>configurable pipeline stages</span></div>
+  <div class="pm-stat"><strong>15</strong><span>systems reimplemented: 9 provenance, 6 network</span></div>
+  <div class="pm-stat"><strong>17</strong><span>datasets: 15 provenance, 2 network</span></div>
+  <div class="pm-stat"><strong>7</strong><span>pipeline stages, shared by both</span></div>
   <div class="pm-stat"><strong>15+</strong><span>pretrained encoders</span></div>
 </div>
+
+## One framework, two views
+
+<div class="grid cards" markdown>
+
+-   :lucide-cpu:{ .lg .middle } __Provenance__
+
+    ---
+
+    System events inside each host: processes, files and netflows. Nine provenance-based IDSs (Velox, Orthrus, Kairos, MAGIC...) on DARPA TC, OpTC, ATLASv2 and CARBANAKv2, detecting the entities of an attack.
+
+    [:octicons-arrow-right-24: Provenance graphs](guide/background.md#provenance-graphs)
+
+-   :lucide-network:{ .lg .middle } __Network__
+
+    ---
+
+    Authentications and flows between hosts. Six network IDSs (Euler, Argus, Jbeil, LARES...) on LANL and the network flows of OpTC, detecting the malicious events of lateral movement.
+
+    [:octicons-arrow-right-24: Network graphs](guide/background.md#network-graphs)
+
+</div>
+
+Both go through the same seven stages and share the same components, so most systems [run on either kind of data](guide/systems.md#running-across-families), and a new idea can be tested on both.
 
 ## What's new
 
@@ -49,9 +73,9 @@ State-of-the-art PIDSs and network IDSs, the main DARPA and network datasets, an
 
     ---
 
-    Six network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and two network datasets (LANL and the network flows of OpTC). Any system runs on network or provenance datasets.
+    Six network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and two network datasets (LANL and the network flows of OpTC), in the same pipeline as the provenance systems. Systems of both families run on network and provenance datasets.
 
-    [:octicons-arrow-right-24: Systems](guide/systems.md)
+    [:octicons-arrow-right-24: Running across families](guide/systems.md#running-across-families)
 
 -   :lucide-gauge:{ .lg .middle } __Faster, leaner pipeline__
 
@@ -80,7 +104,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    The components of published systems, extracted into a modular testbed. Mix and match them to **discover better variants**.
+    The components of published systems, provenance-based and network, extracted into a modular testbed. Mix and match them to **discover better variants**.
 
 -   :lucide-git-pull-request:{ .lg .middle } __Shared code__
 
@@ -106,15 +130,16 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
     docker compose exec pids bash
     ```
 
-    1.  See [how to get an access token](getting-started/installation.md#1-download-the-datasets). Dumps are saved to `./data`.
+    1.  See [how to get an access token](getting-started/installation.md#provenance-datasets). Dumps are saved to `./data`. The network datasets are [built from the files of LARES](getting-started/from-scratch.md) for now.
     2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
 
-=== ":lucide-play: 2. Run a PIDS"
+=== ":lucide-play: 2. Run a system"
 
     Run any system on any dataset, from inside the `pids` container.
 
     ```shell
-    python pidsmaker/main.py velox CADETS_E3          # in the shell
+    python pidsmaker/main.py velox CADETS_E3          # a provenance IDS
+    python pidsmaker/main.py euler LANL               # a network IDS
     python pidsmaker/main.py kairos THEIA_E3 --wandb  # logged to Weights & Biases
     ```
 
@@ -141,11 +166,11 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     [:octicons-arrow-right-24: Installation](getting-started/installation.md)
 
--   :lucide-network:{ .lg .middle } __Background__
+-   :lucide-book-open:{ .lg .middle } __Background__
 
     ---
 
-    New to the field? Provenance graphs, GNNs and how PIDSs detect attacks.
+    New to the field? Provenance and network graphs, GNNs and how graph-based IDSs detect attacks.
 
     [:octicons-arrow-right-24: Background](guide/background.md)
 
@@ -153,7 +178,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Seven stages, from graph construction to triage, with caching of every intermediate result.
+    Seven stages, from graph construction to triage, for provenance and network data, with caching of every intermediate result.
 
     [:octicons-arrow-right-24: Pipeline](guide/pipeline.md)
 
@@ -161,7 +186,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Velox, Orthrus, Kairos, MAGIC, Flash, NodLink, R-Caid, ThreaTrace and OCR-APT, plus six network IDSs, side by side.
+    Nine provenance-based IDSs and six network IDSs side by side, and which datasets each one runs on.
 
     [:octicons-arrow-right-24: Systems](guide/systems.md)
 
@@ -169,7 +194,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    DARPA TC E3/E5, OpTC, ATLASv2 and CARBANAKv2, plus the LANL and OpTC network datasets, with attack descriptions and ground truth.
+    Provenance (DARPA TC E3/E5, OpTC, ATLASv2, CARBANAKv2) and network (LANL, OpTC flows) datasets, with attack descriptions and ground truth.
 
     [:octicons-arrow-right-24: Datasets](guide/datasets.md)
 
@@ -177,15 +202,15 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Build a new PIDS from existing components and a custom encoder, step by step.
+    Build a new system from existing components and a custom encoder, then run it on provenance and network data.
 
-    [:octicons-arrow-right-24: Build a PIDS](guide/tutorial.md)
+    [:octicons-arrow-right-24: Build a system](guide/tutorial.md)
 
 -   :lucide-brain-circuit:{ .lg .middle } __Pretrained encoders__
 
     ---
 
-    Replace word2vec with SPIDER, language models or self-supervised GNNs in any PIDS.
+    Replace word2vec with SPIDER, language models or self-supervised GNNs in any provenance-based IDS.
 
     [:octicons-arrow-right-24: Pretrained encoders](features/pretrained_encoders.md)
 
@@ -201,7 +226,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Node, edge, time-window and queue-level detection, thresholds, and metrics such as ADP.
+    Node, edge, time-window, queue and host-level detection, thresholds, and metrics such as ADP.
 
     [:octicons-arrow-right-24: Evaluation](guide/evaluation.md)
 
@@ -209,7 +234,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Test robustness with mimicry, synthetic and renaming attacks.
+    Test the robustness of PIDSs with mimicry, synthetic and renaming attacks.
 
     [:octicons-arrow-right-24: Attack simulation](features/attacks.md)
 
@@ -217,7 +242,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Reconstruct attacks from detections with DepImpact or OCR-APT subgraphs.
+    Reconstruct attacks from node detections with DepImpact or OCR-APT subgraphs.
 
     [:octicons-arrow-right-24: Triage](features/triage.md)
 

@@ -6,7 +6,7 @@
 
 [project]
 site_name = "PIDSMaker"
-site_description = "A framework to build, benchmark and extend provenance-based intrusion detection systems (PIDSs)."
+site_description = "A framework to build, benchmark and extend graph-based intrusion detection systems on provenance and network data (PIDSs and NIDSs)."
 site_author = "UBC Provenance team"
 site_url = "https://ubc-provenance.github.io/PIDSMaker/"
 repo_url = "https://github.com/ubc-provenance/PIDSMaker"
