@@ -17,9 +17,9 @@
   <strong>
     <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/bilot">📄 Experiments Paper</a>
     &nbsp;|&nbsp;
-	<a href="https://www.arxiv.org/abs/2601.22983">📄 Framework Paper</a>
+	<a href="https://dl.acm.org/doi/10.1145/3770855.3817514">📄 Framework Paper</a>
     &nbsp;|&nbsp;
-    <a href="https://tristanbilot.github.io/public_content/slides_pidsmaker.pdf">🎙️ NDSS PRISM'26 Slides</a>
+    <a href="https://tristanbilot.github.io/public_content/slides_pidsmaker.pdf">🎙️ NDSS PRISM'26 Tutorial</a>
 	  &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
     &nbsp;|&nbsp;
