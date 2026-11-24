@@ -27,7 +27,7 @@ def get_malicious_events(cfg):
     database = (
         cfg.dataset.database_all_file if cfg.construction.use_all_files else cfg.dataset.database
     )
-    key = (cfg.dataset.name, database, schema.name, schema.edge_type_attribute, schema.operations)
+    key = (cfg.dataset.name, database, schema.name, schema.edge_type_attribute, schema.operations_sql())
     if key not in _MALICIOUS_EVENTS_CACHE:
         if schema.edge_type_attribute:
             attr = schema.edge_attribute(schema.edge_type_attribute)

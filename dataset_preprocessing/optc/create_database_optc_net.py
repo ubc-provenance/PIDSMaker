@@ -78,15 +78,48 @@ def open_text(path):
 
 
 _worker = {}
+# A line of a LARES file whose label (third field) is not 0
+_LABELLED_LINE = re.compile(r"^[^,\n]*,[^,\n]*,(?!0,)[^,\n]+,", re.M)
 
 
-def _init_worker(db_params, table, columns, attributes):
+def _init_worker(db_params, table, columns, attributes, propagate_labels):
     _worker["connect"] = psycopg2.connect(**db_params)
-    _worker.update(table=table, columns=columns, attributes=attributes)
+    _worker.update(
+        table=table, columns=columns, attributes=attributes, propagate_labels=propagate_labels
+    )
 
 
 def _csv(value):
     return "" if value is None else str(value)
+
+
+def _flow_key(src, dst, src_port, dst_port, protocol):
+    """Same key for both directions of a flow (5-tuple)."""
+    a, b = (src, src_port), (dst, dst_port)
+    return (min(a, b), max(a, b), protocol)
+
+
+def read_rows(path, propagate_labels=True):
+    """Rows of a LARES file, as lists of strings (`label` is rows[i][2]).
+
+    LARES labels individual eCAR records: the same flow is recorded several times (FLOW START
+    and FLOW MESSAGE events, by the hosts at both ends), and only some of these records are
+    labelled. E.g. in the lateral movement of 2019-09-24 11:09 (DeathStar from host 501), the
+    FLOW MESSAGE events of 561 flows are malicious but the FLOW START of only 56 of them, so
+    that keeping only FLOW START events (as LARES does) drops most of the attack. With
+    `propagate_labels`, all the records of a flow (same 5-tuple, in either direction) with a
+    malicious record in the same file are malicious. The ephemeral source ports make 5-tuples
+    unique over the dataset (no record of a malicious 5-tuple is outside the file of the
+    malicious records)."""
+    with open_text(path) as f:
+        rows = [line.rstrip("\n").split(",") for line in f]
+    if propagate_labels:
+        malicious = {_flow_key(r[3], r[4], r[5], r[6], r[7]) for r in rows if int(r[2] or 0)}
+        if malicious:
+            for r in rows:
+                if _flow_key(r[3], r[4], r[5], r[6], r[7]) in malicious:
+                    r[2] = "1"
+    return rows
 
 
 def _load_file(path):
@@ -97,30 +130,29 @@ def _load_file(path):
     lines, hosts = [], set()
     stats = {"events": 0, "malicious": 0, "unknown_action": 0}
     min_mal, max_mal = None, None
-    with open_text(path) as f:
-        for line_no, line in enumerate(f):
-            ts, action, label, src, dst, src_port, dst_port, protocol, size, _idx = line.rstrip("\n").split(",")
-            operation = ACTIONS.get(action)
-            if operation is None:
-                stats["unknown_action"] += 1
-                operation = "OTHER"
-            attrs = {
-                "src_port": port_category(src_port),
-                "dst_port": port_category(dst_port),
-                "protocol": protocol or None,
-                "size": float(size) if size else None,
-            }
-            t = int(round(float(ts) * 1e9))
-            label = int(label or 0)
-            fields = [src, src, operation, dst, dst, f"{file_id}_{line_no:07d}", t]
-            fields += [attrs[name] for name in attributes] + [label]
-            lines.append(",".join(map(_csv, fields)))
-            hosts.update((src, dst))
-            stats["events"] += 1
-            if label:
-                stats["malicious"] += 1
-                min_mal = t if min_mal is None else min(min_mal, t)
-                max_mal = t if max_mal is None else max(max_mal, t)
+    for line_no, row in enumerate(read_rows(path, _worker["propagate_labels"])):
+        ts, action, label, src, dst, src_port, dst_port, protocol, size, _idx = row
+        operation = ACTIONS.get(action)
+        if operation is None:
+            stats["unknown_action"] += 1
+            operation = "OTHER"
+        attrs = {
+            "src_port": port_category(src_port),
+            "dst_port": port_category(dst_port),
+            "protocol": protocol or None,
+            "size": float(size) if size else None,
+        }
+        t = int(round(float(ts) * 1e9))
+        label = int(label or 0)
+        fields = [src, src, operation, dst, dst, f"{file_id}_{line_no:07d}", t]
+        fields += [attrs[name] for name in attributes] + [label]
+        lines.append(",".join(map(_csv, fields)))
+        hosts.update((src, dst))
+        stats["events"] += 1
+        if label:
+            stats["malicious"] += 1
+            min_mal = t if min_mal is None else min(min_mal, t)
+            max_mal = t if max_mal is None else max(max_mal, t)
     if lines:
         connect = _worker["connect"]
         with connect.cursor() as cur:
@@ -132,7 +164,7 @@ def _load_file(path):
     return hosts, stats, min_mal, max_mal
 
 
-def load_events(cfg, lares_dir, num_workers):
+def load_events(cfg, lares_dir, num_workers, propagate_labels=True):
     schema = get_schema(cfg)
     columns = event_table_columns(schema)
     attributes = [a.name for a in schema.edge_attributes]
@@ -147,7 +179,7 @@ def load_events(cfg, lares_dir, num_workers):
     stats = {"events": 0, "malicious": 0, "unknown_action": 0}
     malicious_times = []
     files = numbered_files(lares_dir)
-    init_args = (db_params, schema.event_table, columns, attributes)
+    init_args = (db_params, schema.event_table, columns, attributes, propagate_labels)
     with multiprocessing.Pool(num_workers, initializer=_init_worker, initargs=init_args) as pool:
         for file_hosts, file_stats, min_mal, max_mal in tqdm(
             pool.imap_unordered(_load_file, files), total=len(files), desc="Loading flows"
@@ -177,6 +209,48 @@ def load_events(cfg, lares_dir, num_workers):
         )
 
 
+def _propagated_labels(path):
+    """[(event_uuid, timestamp)] of the events of a file that are only malicious with label
+    propagation (see `read_rows`)."""
+    file_id = os.path.basename(path).split(".")[0]
+    with open_text(path) as f:
+        if not _LABELLED_LINE.search(f.read()):
+            return []
+    original = read_rows(path, propagate_labels=False)
+    propagated = read_rows(path, propagate_labels=True)
+    return [
+        (f"{file_id}_{line_no:07d}", int(round(float(new[0]) * 1e9)))
+        for line_no, (old, new) in enumerate(zip(original, propagated))
+        if new[2] == "1" and not int(old[2] or 0)
+    ]
+
+
+def relabel_events(cfg, lares_dir, num_workers):
+    """Propagates the labels of an existing database (built without label propagation) in
+    place, instead of rebuilding it: events are identified by their `event_uuid` (file and line
+    of the LARES file), within the time range of each file (indexed)."""
+    schema = get_schema(cfg)
+    with multiprocessing.Pool(num_workers) as pool:
+        events = [
+            e
+            for file_events in tqdm(
+                pool.imap_unordered(_propagated_labels, numbered_files(lares_dir)),
+                total=len(numbered_files(lares_dir)),
+                desc="Propagating labels",
+            )
+            for e in file_events
+        ]
+    cur, connect = init_database_connection(cfg)
+    cur.execute(
+        f"UPDATE {schema.event_table} SET {schema.label_column} = 1 "
+        "WHERE timestamp_rec BETWEEN %s AND %s AND event_uuid = ANY(%s)",
+        (min(t for _, t in events), max(t for _, t in events), [u for u, _ in events]),
+    )
+    log(f"Labelled {cur.rowcount} more events as malicious ({len(events)} expected)")
+    connect.commit()
+    connect.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("dataset", nargs="?", default="OPTC_NET", help="Dataset name in the config")
@@ -184,6 +258,17 @@ def main():
     parser.add_argument("--num_workers", type=int, default=16, help="Processes reading the files")
     parser.add_argument("--database", default=None, help="Overrides the database of the dataset")
     parser.add_argument("--overwrite", action="store_true", help="Recreates existing tables")
+    parser.add_argument(
+        "--no_label_propagation",
+        action="store_true",
+        help="Keeps the labels of LARES as they are (only some records of malicious flows are "
+        "labelled, see `read_rows`)",
+    )
+    parser.add_argument(
+        "--relabel",
+        action="store_true",
+        help="Only propagates the labels of an existing database built without propagation",
+    )
     args, unknown = parser.parse_known_args()
 
     # Remaining args (e.g. --database_host) are handled by the framework's parser. The
@@ -195,9 +280,13 @@ def main():
     if args.database:
         cfg.dataset.database = cfg.dataset.database_all_file = args.database
 
+    if args.relabel:
+        relabel_events(cfg, args.lares_dir, args.num_workers)
+        return
+
     ensure_database(cfg)
     create_tables(cfg, args.overwrite)
-    load_events(cfg, args.lares_dir, args.num_workers)
+    load_events(cfg, args.lares_dir, args.num_workers, not args.no_label_propagation)
     index_events_by_time(cfg)
     log(f"Database {get_database_name(cfg)} created.")
 

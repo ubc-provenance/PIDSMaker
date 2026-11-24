@@ -165,6 +165,9 @@ class DatasetSchema:
             (None: all the edge types of the schema). The schema's value is the default, which
             `construction.operations` overrides (e.g. OpTC flows keep FLOW_START events by
             default, as LARES and Argus).
+        noise_events_sql: SQL condition matching the events dropped with
+            `construction.drop_noise_events` (e.g. broadcast and multicast flows), or None.
+        drop_noise: whether the events of `noise_events_sql` are dropped.
     """
 
     name: str
@@ -180,6 +183,8 @@ class DatasetSchema:
     edge_type_attribute: str = None
     label_column: str = None
     operations: tuple = None
+    noise_events_sql: str = None
+    drop_noise: bool = False
     _by_name: dict = field(default=None, repr=False, compare=False)
 
     def __post_init__(self):
@@ -225,11 +230,23 @@ class DatasetSchema:
         return {k: v for k, v in rel2id.items() if k in self.operations or v in self.operations}
 
     def operations_sql(self):
-        """SQL condition (starting with ` AND`) selecting the events of `operations`, or ""."""
-        if self.operations is None:
-            return ""
-        values = ", ".join("'" + op.replace("'", "''") + "'" for op in self.operations)
-        return f" AND operation IN ({values})"
+        """SQL condition (starting with ` AND`) selecting the events of `operations` (without
+        the noise events with `drop_noise`), or ""."""
+        sql = ""
+        if self.operations is not None:
+            values = ", ".join("'" + op.replace("'", "''") + "'" for op in self.operations)
+            sql = f" AND operation IN ({values})"
+        if self.drop_noise and self.noise_events_sql:
+            sql += f" AND NOT ({self.noise_events_sql})"
+        return sql
+
+    def with_noise_dropped(self, drop):
+        """The schema dropping its noise events (`construction.drop_noise_events`)."""
+        if not drop:
+            return self
+        if not self.noise_events_sql:
+            raise ValueError(f"construction.drop_noise_events: schema {self.name} has no noise events")
+        return replace(self, drop_noise=True)
 
     def with_operations(self, operations):
         """The schema keeping the events of the given operations (`construction.operations`):
@@ -945,6 +962,14 @@ SCHEMAS["optc_flows"] = DatasetSchema(
     label_column="label",
     # As in LARES and Argus, only FLOW START events are used by default
     operations=("FLOW_START",),
+    # NetBIOS name/datagram (137, 138), LLMNR (5355) and SSDP (1900) broadcasts and multicasts
+    # and ICMPv6 neighbor discovery (types 135, 136), received by every host: 99.86% of the
+    # FLOW START events, they link each host to ~500 of the 625 hosts in every 30 min (LARES'
+    # `filter_noise_protocols` drops 137, 138 and 5355)
+    noise_events_sql=(
+        "COALESCE(dst_port, '') IN ('137', '138', '5355', '1900') "
+        "OR (COALESCE(protocol, '') = '58' AND COALESCE(dst_port, '') IN ('135', '136'))"
+    ),
 )
 
 
@@ -979,7 +1004,8 @@ def get_schema(cfg):
     schema = get_schema_by_name(name)
     edge_type = getattr(construction, "edge_type", None) if construction is not None else None
     operations = getattr(construction, "operations", None) if construction is not None else None
-    return schema.with_operations(operations).with_edge_type(edge_type)
+    drop_noise = bool(getattr(construction, "drop_noise_events", False)) if construction is not None else False
+    return schema.with_operations(operations).with_noise_dropped(drop_noise).with_edge_type(edge_type)
 
 
 def label_format(node_type):

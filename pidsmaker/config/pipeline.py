@@ -326,7 +326,7 @@ def get_cleaning_methods_from_cfg(cfg):
 # reused. Keys are paths in the task's config: a leaf arg is removed if its value is None or the
 # given default, a group of args (default `None`) if all its values are None.
 UNHASHED_DEFAULT_ARGS = {
-    "construction": {"edge_type": "operation", "operations": "default"},
+    "construction": {"edge_type": "operation", "operations": "default", "drop_noise_events": False},
     "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
     "feat_inference": {"edge_attributes": "all"},
     "batching": {"intra_graph_batching.tgn_last_neighbor.negative_destinations": False},

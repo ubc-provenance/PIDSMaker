@@ -1363,6 +1363,12 @@ TASK_ARGS = {
                 `all` keeps all events, otherwise a comma-separated list of operations \
                 (e.g. `FLOW_START,FLOW_MESSAGE`).",
         ),
+        "drop_noise_events": Arg(
+            bool,
+            desc="Drops the noise events of the dataset's schema when building graphs (OpTC \
+                network flows: NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor \
+                discovery, which link every host to most hosts in every time window). Default: False.",
+        ),
         "edge_type": Arg(
             str,
             vals=OR(sorted({c for schema in SCHEMAS.values() for c in schema.edge_type_choices})),

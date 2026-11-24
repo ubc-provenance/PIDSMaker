@@ -330,6 +330,24 @@ class TestNIDSComponents:
         assert obj(h_src, h_dst, inference=False, batch=batch)["loss"].dim() == 0
         assert obj(h_src, h_dst, inference=True, batch=batch)["loss"].shape == (5,)
 
+    def test_argus_edge_conditioned_conv(self):
+        """The ARGUS convolution equals NNConv without building per-edge weight matrices."""
+        import torch
+        import torch.nn as nn
+        from torch_geometric.nn import NNConv
+
+        from pidsmaker.encoders.argus_encoder import _edge_conditioned_conv
+
+        torch.manual_seed(0)
+        conv = NNConv(16, 12, nn.Sequential(nn.Linear(5, 8), nn.ReLU(), nn.Linear(8, 16 * 12)), aggr="mean")
+        x = torch.randn(40, 16, requires_grad=True)
+        edge_index, edge_attr = torch.randint(0, 40, (2, 300)), torch.randn(300, 5)
+        expected, out = conv(x, edge_index, edge_attr), _edge_conditioned_conv(conv, x, edge_index, edge_attr)
+        assert torch.allclose(out, expected, atol=1e-5)
+        params = [x, *conv.parameters()]
+        for a, b in zip(torch.autograd.grad(out.sum(), params), torch.autograd.grad(expected.sum(), params)):
+            assert torch.allclose(a, b, atol=1e-4)
+
     def test_two_stage_host_selection(self):
         from pidsmaker.detection.evaluation_methods.host_two_stage_evaluation import select_hosts
 

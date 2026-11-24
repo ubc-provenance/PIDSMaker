@@ -1,0 +1,13 @@
+# Hyperparameters of LARES on OpTC (`OPTC_base` in src/utils/config.py of the LARES repository),
+# loaded with `--tuned`. The defaults of lares.yml are those of LANL.
+construction:
+  time_window_size: 30.0  # 30 one-minute files per snapshot
+training:
+  seed: 42
+  lr: 0.001
+  node_hid_dim: 128
+  node_out_dim: 128
+evaluation:
+  host_two_stage_evaluation:
+    alpha: 5
+    beta: 30
