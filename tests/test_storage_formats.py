@@ -137,3 +137,42 @@ def test_loss_files_roundtrip(tmp_path):
     pd.testing.assert_frame_equal(legacy[["loss", "srcnode", "time"]], expected[["loss", "srcnode", "time"]])
     sub = read_losses(str(tmp_path / "2018-04-06 00:00:00.0~2018-04-06 00:15:00.0.npz"), usecols=["loss"])
     assert list(sub.columns) == ["loss"]
+
+
+def test_loss_file_replaces_stale_csv_of_same_window(tmp_path):
+    name = "2018-04-06 00:00:00.0~2018-04-06 00:15:00.0"
+    pd.DataFrame({"loss": [1.0], "srcnode": [1]}).to_csv(tmp_path / f"{name}.csv", index=False)
+    write_losses(str(tmp_path), name, {"loss": np.array([2.0]), "srcnode": np.array([1])})
+    assert sorted(p.name for p in tmp_path.iterdir()) == [f"{name}.npz"]
+
+
+def test_edge_messages_ignore_isolated_nodes():
+    """Featurizations that embed only nodes with edges (flash, alacarte) have no vector
+    for isolated nodes, which must not be looked up (as before the vectorization)."""
+    from pidsmaker.tasks.feat_inference import _edge_columns_from_graph, _vectorized_edge_msg
+    from pidsmaker.utils.data_utils import CollatableTemporalData, expand_compact_msg
+
+    g = nx.MultiDiGraph()
+    g.add_node("1", node_type="subject", label="a")
+    g.add_node("3", node_type="file", label="isolated")
+    g.add_node("2", node_type="file", label="b")
+    g.add_edge("1", "2", time=5, label="EVENT_READ", y=0)
+    g.add_edge("2", "1", time=6, label="EVENT_WRITE", y=1)
+    indexid2vec = {"1": np.array([1.0, 2.0]), "2": np.array([3.0, 4.0])}
+    ntype2oh = {t: torch.eye(3)[i] for i, t in enumerate(["subject", "file", "netflow"])}
+    etype2oh = {t: torch.eye(2)[i] for i, t in enumerate(["EVENT_READ", "EVENT_WRITE"])}
+
+    compact, src, dst, t, y = _vectorized_edge_msg(
+        _edge_columns_from_graph(g), indexid2vec, etype2oh, ntype2oh
+    )
+    assert (src, dst, t, y) == ([1, 2], [2, 1], [5, 6], [0, 1])
+    data = CollatableTemporalData(src=torch.tensor(src), dst=torch.tensor(dst), t=torch.tensor(t))
+    for k, v in compact.items():
+        data[k] = v
+    msg = expand_compact_msg(data).msg
+    feats = {n: torch.cat([ntype2oh[g.nodes[n]["node_type"]], torch.tensor(indexid2vec[n]).float()]) for n in ["1", "2"]}
+    expected = torch.stack([
+        torch.cat([feats["1"], etype2oh["EVENT_READ"], feats["2"]]),
+        torch.cat([feats["2"], etype2oh["EVENT_WRITE"], feats["1"]]),
+    ])
+    assert torch.equal(msg, expected)

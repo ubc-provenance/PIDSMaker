@@ -110,8 +110,8 @@ def test_node_level(
         pro2 = pro.max(1)
 
         node_type_num = data.node_type.argmax(1)
-        denom = torch.where(pro2[0] != 0, pro2[0], torch.full_like(pro2[0], 1e-5))
-        score = torch.log(pro1[0] / denom + 1e-12)  # we do that or the score is much too high
+        score = torch.where(pro2[0] != 0, pro1[0] / pro2[0], pro1[0] / 1e-5)
+        score = torch.log(score + 1e-12)  # we do that or the score is much too high
         score = score.clamp(min=0)
         correct_pred = (node_type_num == pred).long()
 

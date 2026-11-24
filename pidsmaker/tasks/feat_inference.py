@@ -77,6 +77,21 @@ def _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh):
     """
     nodes, node_type_list, src_rows, dst_rows, t, y, labels = edge_columns
 
+    # Edge endpoints in the original node order, before restricting the rows below
+    node_ids = [int(n) for n in nodes]
+    src = [node_ids[r] for r in src_rows.tolist()]
+    dst = [node_ids[r] for r in dst_rows.tolist()]
+
+    # Only nodes with edges get features: like the former per-edge lookups, isolated nodes
+    # are never looked up (they may have no embedding, e.g. with edge-based featurizations)
+    used = torch.unique(torch.cat([src_rows, dst_rows]))
+    remap = torch.full((len(nodes),), -1, dtype=torch.long)
+    remap[used] = torch.arange(used.numel())
+    src_rows, dst_rows = remap[src_rows], remap[dst_rows]
+    used = used.tolist()
+    nodes = [nodes[i] for i in used]
+    node_type_list = [node_type_list[i] for i in used]
+
     ntype_table, ntype2row = _onehot_table(ntype2oh)
     node_type_rows = torch.tensor([ntype2row[nt] for nt in node_type_list], dtype=torch.long)
     node_types = ntype_table[node_type_rows]
@@ -114,9 +129,6 @@ def _vectorized_edge_msg(edge_columns, indexid2vec, etype2oh, ntype2oh):
         COMPACT_MSG_KEYS[4]: edge_type_rows.to(torch.int32),
     }
 
-    node_ids = [int(n) for n in nodes]
-    src = [node_ids[r] for r in src_rows.tolist()]
-    dst = [node_ids[r] for r in dst_rows.tolist()]
     return compact, src, dst, t, y
 
 

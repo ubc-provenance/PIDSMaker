@@ -158,7 +158,7 @@ def main(cfg):
                     del g, results, loss
 
                 # Last batch
-                if loss_acc.requires_grad:
+                if loss_acc > 0:
                     loss_acc.backward()
                     if stable_optim:
                         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -215,7 +215,7 @@ def main(cfg):
                                 loss_acc = torch.zeros(1, device=device)
 
                     # Last batch
-                    if loss_acc.requires_grad:
+                    if loss_acc > 0:
                         loss_acc.backward()
                         optimizer.step()
 

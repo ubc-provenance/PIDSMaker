@@ -61,6 +61,11 @@ def write_losses(out_dir, name, columns):
     if isinstance(columns, pd.DataFrame):
         columns = {c: columns[c].to_numpy() for c in columns.columns}
     path = os.path.join(out_dir, name + LOSS_EXT)
+    # A CSV of the same window left by a previous run with the former format would be
+    # read in addition to this file
+    legacy = os.path.join(out_dir, name + _LEGACY_EXT)
+    if os.path.exists(legacy):
+        os.remove(legacy)
     np.savez_compressed(path, **{k: _compact_column(v) for k, v in columns.items()})
     return path
 
@@ -108,8 +113,9 @@ _EPOCH_FILE_PREFIXES = ("edge_scores_", "result_", "scores_")
 
 def _epochs_to_keep(cfg, metrics):
     keep = set()
-    if metrics and metrics.get("epoch") is not None:
-        keep.add(f"model_epoch_{int(metrics['epoch'])}")
+    if not metrics or metrics.get("epoch") is None:
+        return keep  # the evaluation's best epoch is unknown (e.g. cached): nothing is pruned
+    keep.add(f"model_epoch_{int(metrics['epoch'])}")
 
     # Triage selects its own best epoch (highest MCC) from the per-epoch stats
     import torch

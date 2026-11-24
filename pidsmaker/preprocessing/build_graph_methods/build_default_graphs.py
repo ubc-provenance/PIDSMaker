@@ -429,7 +429,9 @@ def gen_edge_fused_tw(indexid2msg, cfg, cleaner=None, file2nodes=None):
         file2nodes = {}
 
     num_workers = min(get_num_workers(cfg), len(dates))
-    if num_workers > 1 and _can_fork():
+    # The same date may appear in several splits (e.g. PROVENANCE_BENIGN): it is then built
+    # several times as before, which parallel workers would do concurrently on the same files
+    if num_workers > 1 and _can_fork() and len(set(dates)) == len(dates):
         log(f"Building graphs ({num_workers} processes)...")
         _build_days_in_parallel(dates, common, num_workers, file2nodes)
     else:
