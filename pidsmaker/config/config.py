@@ -1370,6 +1370,13 @@ TASK_ARGS = {
                 discovery, which link every host to most hosts in every time window). No effect on datasets \
                 without noise events. Default: True.",
         ),
+        "benign_training": Arg(
+            bool,
+            desc="Drops the events labelled malicious from the graphs of the train and val dates, so \
+                that models are trained and validated on benign events only (datasets with event \
+                labels whose train or val dates have attacks). No effect on other datasets and \
+                dates. Default: True.",
+        ),
         "edge_type": Arg(
             str,
             vals=OR(sorted({c for schema in SCHEMAS.values() for c in schema.edge_type_choices})),

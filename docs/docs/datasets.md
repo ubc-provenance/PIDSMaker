@@ -247,7 +247,7 @@ python pidsmaker/main.py SYSTEM CARBANAKV2_EDR
 
 Network intrusion detection systems (e.g. Euler, Argus, Jbeil, LARES) model the communications between the hosts of a network. In PIDSMaker, network datasets are described by a schema (`pidsmaker/config/schemas.py`) that defines their node types (hosts), their edge types and the attributes of their events, which become edge features (`batching.edge_features=edge_attrs`). Any system runs on them, and network systems run on provenance datasets as well.
 
-Malicious events are labelled in the database (`label` column), so the ground truth is event-level: the evaluation labels each edge with its events. The preprocessed files of [LARES](https://github.com/TristanBilot/lares) are used for both datasets (see the [database creation guide](create-db-from-scratch.md)).
+Malicious events are labelled in the database (`label` column), so the ground truth is event-level: the evaluation labels each edge with its events. Models are trained and validated on benign events only: `construction.benign_training` (on by default) drops the malicious events of the train and val dates, which has no effect when they have none (as for LANL and OPTC_NET). The preprocessed files of [LARES](https://github.com/TristanBilot/lares) are used for both datasets (see the [database creation guide](create-db-from-scratch.md)).
 
 ### [LANL](https://csr.lanl.gov/data/cyber1/)
 

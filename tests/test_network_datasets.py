@@ -197,6 +197,32 @@ class TestLANL:
         assert len(nids) == 26  # the attacker's computer and its 25 targets
 
 
+    @pytest.mark.parametrize("benign", [True, False])
+    def test_benign_training(self, tmp_path, benign):
+        """With `benign_training`, the graphs of train/val dates have no malicious edge."""
+        import glob
+
+        from pidsmaker.preprocessing.build_graph_methods import build_default_graphs
+        from pidsmaker.preprocessing.cleaning import Cleaner
+        from pidsmaker.utils.graph_store import load_graph
+
+        cfg = prepare_cfg("velox", custom_args=[("construction.benign_training", benign)], test_mode=False)
+        # The first red team events of the synthetic dataset happen on 2015-01-03
+        cfg.dataset.train_dates, cfg.dataset.val_dates = ["2015-01-03"], []
+        cfg.dataset.test_dates = ["2015-01-04"]
+        cfg.construction._graphs_dir = str(tmp_path)
+        cleaner = Cleaner(cfg)
+        indexid2msg = build_default_graphs.compute_indexid2msg(cfg=cfg, cleaner=cleaner)
+        build_default_graphs.gen_edge_fused_tw(indexid2msg=indexid2msg, cfg=cfg, cleaner=cleaner, file2nodes={})
+
+        def num_malicious(date):
+            paths = glob.glob(os.path.join(str(tmp_path), f"graph_{date}", "*"))
+            return sum(d["y"] for p in paths for *_, d in load_graph(p).edges(data=True))
+
+        assert (num_malicious("2015-01-03") == 0) == benign
+        assert num_malicious("2015-01-04") > 0  # test dates keep their malicious events
+
+
 class TestNIDSOnProvenanceDatasets:
     """Network IDSs run on provenance datasets, which have no edge attributes: edge features
     that rely on them are replaced by the edge type."""

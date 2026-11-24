@@ -10,7 +10,7 @@ from copy import deepcopy
 import yaml
 from yacs.config import CfgNode as CN
 
-from .schemas import drops_noise_events, get_schema, get_schema_by_name
+from .schemas import benign_training, drops_noise_events, get_schema, get_schema_by_name
 from .config import (
     CLEANING_METHODS,
     DATASET_DEFAULT_CONFIG,
@@ -327,7 +327,13 @@ def get_cleaning_methods_from_cfg(cfg):
 # given default, a group of args (default `None`) if all its values are None.
 UNHASHED_DEFAULT_ARGS = {
     # `drop_noise_events` is hashed only when it drops events (see `get_hashed_construction_cfg`)
-    "construction": {"edge_type": "operation", "operations": "default", "drop_noise_events": False},
+    # `benign_training` only drops events of datasets with labelled attacks in train/val dates
+    "construction": {
+        "edge_type": "operation",
+        "operations": "default",
+        "drop_noise_events": False,
+        "benign_training": True,
+    },
     "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
     "feat_inference": {"edge_attributes": "all"},
     "batching": {"intra_graph_batching.tgn_last_neighbor.negative_destinations": False},
@@ -414,6 +420,8 @@ def get_hashed_construction_cfg(cfg):
     hashed["drop_noise_events"] = drops_noise_events(cfg.construction) and bool(
         get_schema(cfg).noise_events_sql
     )
+    # Only datasets with event labels are affected by `benign_training`
+    hashed["benign_training"] = benign_training(cfg.construction) or not get_schema(cfg).label_column
     methods = sorted(set(get_cleaning_methods_from_cfg(cfg)))
     if methods:
         cleaning = cfg.construction.cleaning

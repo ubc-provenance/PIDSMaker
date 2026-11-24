@@ -11,6 +11,7 @@ construction:
   edge_type: operation
   operations: default
   drop_noise_events: True
+  benign_training: True
   multi_dataset: none
   node_label_features:
     subject: type, path, cmd_line

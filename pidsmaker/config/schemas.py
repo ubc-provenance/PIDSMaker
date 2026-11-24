@@ -1009,6 +1009,12 @@ def get_schema(cfg):
     )
 
 
+def benign_training(construction):
+    """`construction.benign_training`, True when unset (configs not including default.yml)."""
+    value = getattr(construction, "benign_training", None) if construction is not None else None
+    return True if value is None else bool(value)
+
+
 def drops_noise_events(construction):
     """`construction.drop_noise_events`, True when unset (configs not including default.yml)."""
     value = getattr(construction, "drop_noise_events", None) if construction is not None else None
