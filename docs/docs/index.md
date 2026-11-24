@@ -41,7 +41,7 @@ Runs on [:fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU](getting-
 <style>.md-content__button { display: none; }</style>
 
 <div class="pm-stats">
-  <div class="pm-stat"><strong>15</strong><span>intrusion detection systems reimplemented</span></div>
+  <div class="pm-stat"><strong>15</strong><span>intrusion detection systems</span></div>
   <div class="pm-stat"><strong>17</strong><span>datasets</span></div>
   <div class="pm-stat"><strong>7</strong><span>configurable pipeline stages</span></div>
   <div class="pm-stat"><strong>15+</strong><span>pretrained encoders</span></div>
@@ -88,7 +88,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     === ":fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU"
 
-        A server or workstation with Docker and the [NVIDIA Container Toolkit](getting-started/installation.md#2-enable-gpu-support-in-docker), for all datasets.
+        A server or workstation with Docker and the [NVIDIA Container Toolkit](getting-started/installation.md#2-set-up-docker), for all datasets.
 
         ```shell
         git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
