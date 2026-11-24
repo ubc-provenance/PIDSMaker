@@ -37,6 +37,7 @@ It provides a single codebase to run most recent state-of-the-arts systems and e
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| Unreleased (`main`) | | [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/network/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, any system on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3 |
 | [4.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0) | Nov 2026 | Unified tokenization (`featurization.tokenization`, renamed tokenizer arguments), configurable graph cleaning (`construction.cleaning`), fixed queue, time-window and node-time-window evaluations, MAGIC kNN fix |
 | [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
 | [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
@@ -65,6 +66,17 @@ The framework currently integrates the following PIDSs.
 | ThreaTrace | IEEE TIFS 2022      | [Link](https://arxiv.org/pdf/2111.04333) |
 | OCR-APT    | ACM CCS 2025        | [Link](https://arxiv.org/pdf/2510.15188) |
 
+It also integrates the following network intrusion detection systems (NIDSs), which run on network and provenance datasets.
+
+| NIDS        | Venue                        | Paper |
+|-------------|------------------------------|-------|
+| LARES       | ACSAC 2026                   | [Code](https://github.com/TristanBilot/lares) |
+| Argus       | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00012) |
+| Jbeil       | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00009) |
+| Euler       | NDSS 2022                    | [Link](https://doi.org/10.14722/ndss.2022.24107) |
+| E-GraphSAGE | IEEE/IFIP NOMS 2022          | [Link](https://arxiv.org/abs/2103.16329) |
+| Anomal-E    | Knowledge-Based Systems 2022 | [Link](https://arxiv.org/abs/2207.06819) |
+
 ## Supported Datasets
 
 It also includes several easy-to-install provenance datasets for APT detection.
@@ -86,6 +98,13 @@ It also includes several easy-to-install provenance datasets for APT detection.
 | optc_h051 | Windows | 1 | 4.62M | 31.6M | 7.7 |
 | ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 1 |
 | CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 6.6 |
+
+And two network datasets, with hosts as nodes and labelled events ([details](https://ubc-provenance.github.io/PIDSMaker/guide/datasets/#network-datasets)).
+
+| Dataset | Events | Hosts | Malicious events | Size (GB) |
+|---------|--------|------:|-----------------:|----------:|
+| LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
+| OPTC_NET | 1.86B network flows | 625 | 5,165 | 275 |
 
 ## Pretrained Encoders
 

@@ -16,7 +16,7 @@ hide:
 
 <p class="pm-hero__tagline">
 The open-source framework to <strong>build, benchmark and extend provenance-based intrusion detection systems</strong>.
-State-of-the-art PIDSs, the main DARPA datasets and one modular pipeline, all in a single codebase.
+State-of-the-art PIDSs and network IDSs, the main DARPA and network datasets, and one modular pipeline, all in a single codebase.
 </p>
 
 <div class="pm-hero__actions" markdown>
@@ -35,10 +35,32 @@ State-of-the-art PIDSs, the main DARPA datasets and one modular pipeline, all in
 <style>.md-content__button { display: none; }</style>
 
 <div class="pm-stats">
-  <div class="pm-stat"><strong>9</strong><span>PIDSs reimplemented</span></div>
-  <div class="pm-stat"><strong>15</strong><span>ready-to-load datasets</span></div>
+  <div class="pm-stat"><strong>15</strong><span>PIDSs and network IDSs reimplemented</span></div>
+  <div class="pm-stat"><strong>17</strong><span>provenance and network datasets</span></div>
   <div class="pm-stat"><strong>7</strong><span>configurable pipeline stages</span></div>
   <div class="pm-stat"><strong>15+</strong><span>pretrained encoders</span></div>
+</div>
+
+## What's new
+
+<div class="grid cards" markdown>
+
+-   :lucide-radar:{ .lg .middle } __Network intrusion detection__
+
+    ---
+
+    Six network IDSs (Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E) and two network datasets (LANL and the network flows of OpTC). Any system runs on network or provenance datasets.
+
+    [:octicons-arrow-right-24: Network intrusion detection](guide/network.md)
+
+-   :lucide-gauge:{ .lg .middle } __Faster, leaner pipeline__
+
+    ---
+
+    Same results, in a fraction of the time and memory: Orthrus on THEIA_E5 runs end to end in ~61 min instead of ~3.4 h, with 16.6 GB of peak RAM instead of 370 GB. Graphs are ~5x smaller on disk.
+
+    [:octicons-arrow-right-24: Performance](guide/pipeline.md#performance)
+
 </div>
 
 ## Why PIDSMaker?
@@ -139,7 +161,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    Velox, Orthrus, Kairos, MAGIC, Flash, NodLink, R-Caid, ThreaTrace and OCR-APT, side by side.
+    Velox, Orthrus, Kairos, MAGIC, Flash, NodLink, R-Caid, ThreaTrace and OCR-APT, plus six network IDSs, side by side.
 
     [:octicons-arrow-right-24: Systems](guide/systems.md)
 
@@ -147,7 +169,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
     ---
 
-    DARPA TC E3/E5, OpTC, ATLASv2 and CARBANAKv2, with attack descriptions and ground truth.
+    DARPA TC E3/E5, OpTC, ATLASv2 and CARBANAKv2, plus the LANL and OpTC network datasets, with attack descriptions and ground truth.
 
     [:octicons-arrow-right-24: Datasets](guide/datasets.md)
 
@@ -224,7 +246,7 @@ If you use PIDSMaker in your research, please cite the following papers.
     }
     ```
 
-    [:lucide-book-open: Read the paper](https://www.arxiv.org/abs/2601.22983)
+    [:lucide-book-open: Read the paper](https://dl.acm.org/doi/10.1145/3770855.3817514)
 
 === "Experiments paper (USENIX Security 2025)"
 
