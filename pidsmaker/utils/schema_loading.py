@@ -66,5 +66,12 @@ def index_events_by_time(cfg):
     cur, connect = init_database_connection(cfg)
     log("Indexing events by time...")
     cur.execute(f"CREATE INDEX IF NOT EXISTS event_time_idx ON {schema.event_table} (timestamp_rec);")
+    if schema.label_column:
+        # The labelling queries the few malicious events, which would otherwise scan the table
+        log("Indexing malicious events...")
+        cur.execute(
+            f"CREATE INDEX IF NOT EXISTS event_label_idx ON {schema.event_table} (timestamp_rec) "
+            f"WHERE {schema.label_column} = 1;"
+        )
     connect.commit()
     connect.close()

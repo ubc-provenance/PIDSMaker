@@ -16,65 +16,121 @@ are the edge features of the models instead of the attributes of the first event
 Merged edges are ordered by the time of their first event.
 """
 
-import math
-from collections import Counter, defaultdict
-
 import networkx as nx
+import numpy as np
+import pandas as pd
 
 from pidsmaker.utils.dataset_utils import aggregated_edge_attribute_columns, get_input_edge_attributes
-
-
-def _aggregate(events, attributes, columns):
-    """{aggregated column: value} of the events of a merged edge."""
-    out = {}
-    for attr in attributes:
-        values = [ev.get(attr.name) for ev in events]
-        if attr.kind == "categorical":
-            known = set(attr.values)
-            counts = Counter(v if v in known else attr.OTHER for v in map(str, values))
-            for column, value in columns[attr.name]:
-                out[column] = counts.get(value, 0)
-        else:
-            xs = [float(v) for v in values if v is not None and float(v) == float(v)]
-            mean = sum(xs) / len(xs) if xs else 0.0
-            std = math.sqrt(sum((x - mean) ** 2 for x in xs) / len(xs)) if xs else 0.0
-            stats = {"n": len(xs), "mean": mean, "std": std}
-            for column, stat in columns[attr.name]:
-                out[column] = stats[stat]
-    return out
+from pidsmaker.utils.graph_store import graph_columns
 
 
 def main(G: nx.MultiDiGraph, cfg) -> nx.MultiDiGraph:
+    """Merges the edges of a networkx graph (see `merge_columns`)."""
+    return merge_columns(graph_columns(G), cfg)
+
+
+def _factorize(cols_attrs, name, m):
+    """(codes, uniques) of an edge attribute column (all None if the column is missing)."""
+    if name in cols_attrs:
+        return cols_attrs.factorize(name)
+    return np.zeros(m, dtype=np.int64), [None]
+
+
+def merge_columns(cols, cfg) -> nx.MultiDiGraph:
+    """Merged graph of the graph whose columns are `cols` (`graph_store.GraphColumns`, e.g. from
+    `load_graph_columns`), computed with vectorized operations on the columns: graphs of network
+    datasets have millions of edges."""
     per_edge_type = bool(cfg.transformation.merge_edges.per_edge_type)
     aggregate = bool(getattr(cfg.transformation.merge_edges, "aggregate_attributes", False))
-    # All the attributes are aggregated: those used as features are selected by feat_inference
     attributes = get_input_edge_attributes(cfg, selected=False) if aggregate else []
     columns = aggregated_edge_attribute_columns(cfg, selected=False) if aggregate else {}
 
-    groups = defaultdict(list)
-    for u, v, attr in G.edges(data=True):
-        key = (u, v, attr.get("label")) if per_edge_type else (u, v)
-        groups[key].append(attr)
-
-    merged = []
-    for key, events in groups.items():
-        events.sort(key=lambda a: a["time"])
-        first = dict(events[0])
-        first["y"] = max(int(a.get("y", 0)) for a in events)
-        first["count"] = len(events)
-        if aggregate:
-            first.update(_aggregate(events, attributes, columns))
-        merged.append((key[0], key[1], first))
-    merged.sort(key=lambda e: e[2]["time"])
-
-    counts = [e[2]["count"] for e in merged]
-    mean = sum(counts) / len(counts) if counts else 0.0
-    std = math.sqrt(sum((c - mean) ** 2 for c in counts) / len(counts)) if counts else 0.0
-    for _, _, attr in merged:
-        z = (attr["count"] - mean) / std if std > 0 else 0.0
-        attr["weight"] = 1.0 / (1.0 + math.exp(-z))
-
     H = nx.MultiDiGraph()
-    H.add_nodes_from(G.nodes(data=True))
-    H.add_edges_from(merged)
+    node_keys = list(cols.node_attrs)
+    H.add_nodes_from(
+        (n, dict(zip(node_keys, values)))
+        for n, *values in zip(cols.node_ids, *(cols.node_attrs[k] for k in node_keys))
+    )
+    m = len(cols.src)
+    if m == 0:
+        return H
+
+    attrs = cols.edge_attrs
+    src, dst = np.asarray(cols.src, dtype=np.int64), np.asarray(cols.dst, dtype=np.int64)
+    # Groups numbered in order of first appearance, as the dict of `main`
+    gid = pd.factorize(src * len(cols.node_ids) + dst)[0]
+    if per_edge_type:
+        label_codes, labels = _factorize(attrs, "label", m)
+        gid = pd.factorize(gid.astype(np.int64) * len(labels) + label_codes)[0]
+    gid = gid.astype(np.int64)
+    num_groups = int(gid.max()) + 1
+    time = attrs.array("time", np.int64)
+
+    # First event of each group: earliest time, then earliest in edge order (stable sort)
+    order = np.lexsort((time, gid))
+    sorted_gid = gid[order]
+    starts = np.flatnonzero(np.r_[True, sorted_gid[1:] != sorted_gid[:-1]])
+    first_idx = order[starts]  # indexed by group
+
+    counts = np.bincount(gid, minlength=num_groups)
+    if "y" in attrs:
+        y_max = np.maximum.reduceat(attrs.array("y", np.int64)[order], starts)
+    else:
+        y_max = np.zeros(num_groups, dtype=np.int64)
+
+    extra = {}  # aggregated column -> per-group values
+    for attr in attributes:
+        codes, uniques = _factorize(attrs, attr.name, m)
+        if attr.kind == "categorical":
+            known = set(attr.values)
+            index = {value: i for i, (_, value) in enumerate(columns[attr.name])}
+            lut = np.array(
+                [index.get(v if v in known else attr.OTHER, -1) for v in map(str, uniques)],
+                dtype=np.int64,
+            )
+            value_idx = lut[codes]
+            kept = value_idx >= 0
+            k = len(index)
+            table = np.bincount(
+                gid[kept] * k + value_idx[kept], minlength=num_groups * k
+            ).reshape(num_groups, k)
+            for i, (column, _) in enumerate(columns[attr.name]):
+                extra[column] = table[:, i]
+        else:
+            lut = np.array([np.nan if v is None else float(v) for v in uniques], dtype=np.float64)
+            xs = lut[codes]
+            valid = ~np.isnan(xs)
+            x = np.where(valid, xs, 0.0)
+            n = np.bincount(gid, weights=valid, minlength=num_groups)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                mean = np.where(n > 0, np.bincount(gid, weights=x, minlength=num_groups) / n, 0.0)
+                sq = np.where(valid, (x - mean[gid]) ** 2, 0.0)
+                var = np.bincount(gid, weights=sq, minlength=num_groups) / n
+                std = np.where(n > 0, np.sqrt(var), 0.0)
+            stats = {"n": n.astype(np.int64), "mean": mean, "std": std}
+            for column, stat in columns[attr.name]:
+                extra[column] = stats[stat]
+
+    c = counts.astype(np.float64)
+    mean, std = c.mean(), c.std()
+    z = (c - mean) / std if std > 0 else np.zeros(num_groups)
+    weight = 1.0 / (1.0 + np.exp(-z))
+
+    # Merged edges ordered by the time of their first event (ties: group order)
+    group_order = np.lexsort((np.arange(num_groups), time[first_idx]))
+    edge_idx = first_idx[group_order]
+    keys = list(attrs) + [k for k in ("y", "count") if k not in attrs] + list(extra) + ["weight"]
+    values = {k: attrs.take(k, edge_idx) for k in attrs}
+    values["y"] = y_max[group_order].tolist()
+    values["count"] = counts[group_order].tolist()
+    for column, col_values in extra.items():
+        values[column] = col_values[group_order].tolist()
+    values["weight"] = weight[group_order].tolist()
+
+    node_ids = cols.node_ids
+    us = [node_ids[i] for i in src[edge_idx].tolist()]
+    vs = [node_ids[i] for i in dst[edge_idx].tolist()]
+    H.add_edges_from(
+        (u, v, dict(zip(keys, row))) for u, v, *row in zip(us, vs, *(values[k] for k in keys))
+    )
     return H

@@ -5,6 +5,7 @@ Creates time-windowed graph snapshots with node features, edge types, and timest
 Supports attack mimicry generation for data augmentation.
 """
 
+import gc
 import multiprocessing
 import os
 import queue
@@ -15,13 +16,12 @@ from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from datetime import datetime, timedelta
 
-import networkx as nx
 import torch
 
 import pidsmaker.mimicry as mimicry
 from pidsmaker.config import get_dates_from_cfg, get_node_feats_from_cfg
 from pidsmaker.preprocessing.cleaning import Cleaner
-from pidsmaker.utils.graph_store import save_graph
+from pidsmaker.utils.graph_store import save_edge_list
 from pidsmaker.utils.dataset_utils import get_schema, iter_nodes
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
@@ -450,6 +450,63 @@ def _build_days_in_parallel(dates, common, num_workers, file2nodes):
         _DAY_WORKER_STATE = None
 
 
+class _EncodedValues(dict):
+    """{database value: `attr.encode(value)`}, filled on first access (few distinct values)."""
+
+    def __init__(self, attr):
+        super().__init__()
+        self.attr = attr
+
+    def __missing__(self, value):
+        encoded = self[value] = self.attr.encode(value)
+        return encoded
+
+
+def _attributes_encoder(edge_attributes):
+    """Function of the extra columns of an event row returning the tuple of the encoded values
+    of `edge_attributes` (the first columns), as `tuple(attr.encode(v) for ...)`."""
+    encoders = [attr.encode for attr in edge_attributes]
+    # Categorical attributes have few distinct values: their encodings are memoized
+    getters = [
+        _EncodedValues(attr).__getitem__ if attr.kind == "categorical" else attr.encode
+        for attr in edge_attributes
+    ]
+
+    def encode_slow(extra):
+        return tuple(encode(v) for encode, v in zip(encoders, extra))
+
+    def encode_fast(extra):
+        # One dict lookup per value instead of a call to `encode`
+        return tuple([get(v) for get, v in zip(getters, extra)])
+
+    def encode(extra):
+        try:
+            return encode_fast(extra)
+        except TypeError:  # unhashable values
+            return encode_slow(extra)
+
+    return encode
+
+
+def _save_window_graph(path, node_info, edge_list, edge_attr_names):
+    """Saves the graph of a time window: nodes {node: [node_type, label]} and edges
+    (src, dst, time, label, event_uuid, attribute values, y), with the edge attributes
+    {"event_uuid", "time", "label", "y", **attributes} (attributes of the same name as the
+    first ones replace them, as in a dict).
+
+    The compact file is written from the edge list (`save_edge_list`), without building the
+    networkx graph, which is slow for the millions of edges of the windows of network datasets.
+    """
+    infos = list(node_info.values())
+    node_attrs = {"node_type": [i[0] for i in infos], "label": [i[1] for i in infos]}
+    srcs, dsts, times, labels, uuids, attrs, ys = zip(*edge_list) if edge_list else ((),) * 7
+    edge_attrs = {"event_uuid": uuids, "time": times, "label": labels, "y": ys}
+    attr_cols = list(zip(*attrs)) if attrs else [()] * len(edge_attr_names)
+    for name, col in zip(edge_attr_names, attr_cols):
+        edge_attrs[name] = col
+    save_edge_list(path, list(node_info), node_attrs, srcs, dsts, edge_attrs)
+
+
 def _build_day(
     cfg, day_idx, date, day_params, day_chunks, fetch_size, indexid2msg, cleaner, use_cleaner,
     include_edge_type, attack_mimicry_events, mimicry_edge_num, _to_ns, file2nodes,
@@ -458,6 +515,25 @@ def _build_day(
 
     `day_chunks` yields the `fetchmany(fetch_size)` chunks of the day's events query.
     """
+    # The millions of event tuples of a window trigger costly cyclic GC passes that cannot free
+    # anything (events hold no reference cycles)
+    gc_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        _build_day_events(
+            cfg, day_idx, date, day_params, day_chunks, fetch_size, indexid2msg, cleaner,
+            use_cleaner, include_edge_type, attack_mimicry_events, mimicry_edge_num, _to_ns,
+            file2nodes,
+        )
+    finally:
+        if gc_enabled:
+            gc.enable()
+
+
+def _build_day_events(
+    cfg, day_idx, date, day_params, day_chunks, fetch_size, indexid2msg, cleaner, use_cleaner,
+    include_edge_type, attack_mimicry_events, mimicry_edge_num, _to_ns, file2nodes,
+):
     schema = get_schema(cfg)
     edge_attributes = schema.edge_attributes
     edge_attr_names = [attr.name for attr in edge_attributes]
@@ -467,14 +543,17 @@ def _build_day(
         edge_attr_names.index(schema.edge_type_attribute) if schema.edge_type_attribute else None
     )
 
+    encode_attrs = _attributes_encoder(edge_attributes)
+    has_label = bool(schema.label_column)
+
     def read_extras(row):
         """(edge attribute values, label) of an event row. Missing columns (e.g. in events
         generated by mimicry) are null."""
-        extra = tuple(row[EVENT_EXTRA_IDX:])
-        extra = extra + (None,) * (num_extras - len(extra))
-        attrs = tuple(attr.encode(v) for attr, v in zip(edge_attributes, extra))
-        y = int(extra[-1] or 0) if schema.label_column else 0
-        return attrs, y
+        extra = row[EVENT_EXTRA_IDX:]
+        if len(extra) < num_extras:
+            extra = tuple(extra) + (None,) * (num_extras - len(extra))
+        y = int(extra[-1] or 0) if has_label else 0
+        return encode_attrs(extra), y
 
     date_start = f"{date} 00:00:00"
     date_stop = f"{(datetime.strptime(date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')} 00:00:00"
@@ -526,12 +605,8 @@ def _build_day(
             filtered = leftover
             leftover = []
             if use_cleaner:
-                keep_event = cleaner.keep_event
                 filtered.extend(
-                    row
-                    for row in db_chunk
-                    if row[2] in include_edge_type
-                    and keep_event(row[1], row[2], row[4], row[6])
+                    cleaner.filter_events([row for row in db_chunk if row[2] in include_edge_type])
                 )
             else:
                 filtered.extend(row for row in db_chunk if row[2] in include_edge_type)
@@ -636,13 +711,6 @@ def _build_day(
                                     (src, dst, timestamp_rec, operation, event_uuid, attrs, y)
                                 )
 
-                    # log(f"Start creating graph for {time_interval}")
-                    graph = nx.MultiDiGraph()
-                    # node_info values are [node_type, label]
-                    graph.add_nodes_from(
-                        (node, {"node_type": info[0], "label": info[1]})
-                        for node, info in node_info.items()
-                    )
                     if cleaner:
                         cleaner.add_graph_nodes(node_info.keys())
 
@@ -667,27 +735,12 @@ def _build_day(
                             )
                             for src, dst, t, label, uuid, attrs, y in edge_list
                         ]
-                    graph.add_edges_from(
-                        (
-                            src,
-                            dst,
-                            {
-                                "event_uuid": uuid,
-                                "time": t,
-                                "label": label,
-                                "y": y,
-                                **dict(zip(edge_attr_names, attrs)),
-                            },
-                        )
-                        for src, dst, t, label, uuid, attrs, y in edge_list
-                    )
-
                     date_dir = f"{cfg.construction._graphs_dir}/graph_{date}/"
                     os.makedirs(date_dir, exist_ok=True)
                     graph_name = f"{date_dir}/{time_interval}"
 
                     # log(f"Saving graph for {time_interval}")
-                    save_graph(graph, graph_name)
+                    _save_window_graph(graph_name, node_info, edge_list, edge_attr_names)
                     if file2nodes is not None:
                         file2nodes[os.path.normpath(graph_name)] = set(node_info)
 

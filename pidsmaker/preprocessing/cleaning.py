@@ -25,6 +25,7 @@ import json
 import os
 import re
 from collections import Counter
+from operator import itemgetter
 
 from pidsmaker.config.config import CLEANING_METHODS, IP_CATEGORIES  # noqa: F401
 from pidsmaker.config.pipeline import get_cleaning_methods_from_cfg
@@ -164,6 +165,25 @@ class Cleaner:
         return label
 
     # --------------------------------------------------------------- events
+    def filter_events(self, rows):
+        """Rows (with src, operation, dst and timestamp at indices 1, 2, 4 and 6) kept by
+        `keep_event`, in order. Same result and statistics as calling it on each row."""
+        if "remove_duplicate_events" in self.methods:  # sequential state: row by row
+            keep_event = self.keep_event
+            return [row for row in rows if keep_event(row[1], row[2], row[4], row[6])]
+        if not rows:
+            return []
+        self.stats["events.input"] += len(rows)
+        self._seen_nodes.update(map(itemgetter(1), rows))
+        self._seen_nodes.update(map(itemgetter(4), rows))
+        if "remove_self_loops" in self.methods:
+            kept = [row for row in rows if row[1] != row[4]]
+            removed = len(rows) - len(kept)
+            if removed:
+                self.stats["events.removed.self_loops"] += removed
+            return kept
+        return list(rows)
+
     def keep_event(self, src_index_id, operation, dst_index_id, timestamp) -> bool:
         """Whether an event is kept. Events must be given in timestamp order."""
         self.stats["events.input"] += 1

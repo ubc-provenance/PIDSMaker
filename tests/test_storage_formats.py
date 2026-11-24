@@ -176,3 +176,63 @@ def test_edge_messages_ignore_isolated_nodes():
         torch.cat([feats["2"], etype2oh["EVENT_WRITE"], feats["1"]]),
     ])
     assert torch.equal(msg, expected)
+
+
+def _payload_bytes(payload):
+    import pickle
+
+    return {k: pickle.dumps(v) for k, v in payload.items()}
+
+
+@pytest.mark.parametrize("num_edges", [0, 1, 200])
+def test_edge_list_payload_matches_graph(num_edges):
+    """`encode_edge_list` gives the payload of the graph built from the same edges."""
+    from pidsmaker.utils.graph_store import encode_edge_list
+
+    rng = np.random.default_rng(num_edges)
+    nodes = [str(i) for i in rng.permutation(30)]
+    node_attrs = {"node_type": [f"t{i % 3}" for i in range(30)], "label": [f"n{i}" for i in range(30)]}
+    # Few nodes: repeated pairs, self-loops and interleaved pairs
+    src = [nodes[i] for i in rng.integers(0, 8, num_edges)]
+    dst = [nodes[i] for i in rng.integers(0, 8, num_edges)]
+    edge_attrs = {
+        "event_uuid": [f"8A1F0C3E-0000-4000-8000-{i:012X}" for i in range(num_edges)],
+        "time": [int(t) for t in rng.integers(0, 50, num_edges)],
+        "label": [f"EVENT_{i % 4}" for i in range(num_edges)],
+        "y": [int(i % 7 == 0) for i in range(num_edges)],
+        "size": [float(i) / 3 for i in range(num_edges)],
+    }
+    g = nx.MultiDiGraph()
+    g.add_nodes_from((n, {k: v[i] for k, v in node_attrs.items()}) for i, n in enumerate(nodes))
+    g.add_edges_from(
+        (u, v, {k: col[i] for k, col in edge_attrs.items()}) for i, (u, v) in enumerate(zip(src, dst))
+    )
+    expected = _payload_bytes(encode_graph(g))
+    assert _payload_bytes(encode_edge_list(nodes, node_attrs, src, dst, edge_attrs)) == expected
+
+
+def test_lazy_columns_match_decoded_columns(tmp_path):
+    """`take`, `factorize` and `array` of the columns of a stored graph match its values."""
+    g = nx.MultiDiGraph()
+    g.add_nodes_from([("1", {"t": "a"}), ("2", {"t": "b"})])
+    values = {
+        "int": [5, 3, 5, 9],
+        "float": [0.5, float("nan"), 0.5, 2.0],
+        "strdict": ["x", "y", "x", "x"],
+        "uuid": [f"8A1F0C3E-0000-4000-8000-{i:012X}" for i in range(4)],
+        "intstr": ["10", "20", "30", "40"],
+        "strblob": ["a", "bb", "ccc", "dddd"],
+        "obj": [None, 1, "s", 2.5],
+    }
+    for i in range(4):
+        g.add_edge("1", "2", **{k: v[i] for k, v in values.items()})
+    path = str(tmp_path / "g")
+    save_graph(g, path)
+    cols = load_graph_columns(path).edge_attrs
+    for k, v in values.items():
+        assert cols.take(k, [3, 0]) == [v[3], v[0]], k
+        codes, uniques = cols.factorize(k)
+        rebuilt = [uniques[c] for c in codes]
+        assert all(a == b or (a != a and b != b) for a, b in zip(rebuilt, v)), k
+        assert cols[k] == v or k == "float"
+    assert cols.array("int", np.int64).tolist() == values["int"]

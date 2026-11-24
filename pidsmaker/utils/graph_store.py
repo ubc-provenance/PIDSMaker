@@ -26,9 +26,11 @@ import pickle
 import threading
 import uuid as _uuid
 import zlib
+from collections.abc import Mapping
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 import torch
 
 FORMAT_VERSION = 1
@@ -111,19 +113,21 @@ def _try_int_strings(values):
 
 
 def _encode_column(values):
-    if _all_type(values, int):
+    # Types of the values in one pass (an empty column is an int column)
+    types = set(map(type, values)) if len(values) else {int}
+    if types == {int}:
         try:
             return ("int", _pack_array(np.array(values, dtype=np.int64)))
         except OverflowError:
             return ("obj", values)
-    if _all_type(values, float):
+    if types == {float}:
         return ("float", _pack_array(np.array(values, dtype=np.float64)))
-    if _all_type(values, str):
-        vocab = dict.fromkeys(values)
-        if len(vocab) <= max(1, len(values) // 2):
-            index = {v: i for i, v in enumerate(vocab)}
-            codes = np.array([index[v] for v in values], dtype=_smallest_index_dtype(len(vocab)))
-            return ("strdict", list(vocab), _pack_array(codes))
+    if types == {str}:
+        if len(set(values)) <= max(1, len(values) // 2):
+            # Values numbered in order of first appearance (same as a dict of the values)
+            codes, vocab = pd.factorize(np.array(values, dtype=object))
+            codes = codes.astype(_smallest_index_dtype(len(vocab)))
+            return ("strdict", vocab.tolist(), _pack_array(codes))
         for attempt in (_try_uuid, _try_int_strings):
             col = attempt(values)
             if col is not None:
@@ -231,24 +235,92 @@ def encode_graph(graph):
     if edge_attrs is None:
         return None
 
+    return _payload(
+        cls_name, dict(graph.graph), nodes, node_attrs, src, dst,
+        _encode_column(keys) if multi else None, edge_attrs, len(pair_pos), pred_order,
+    )
+
+
+def _payload(cls_name, graph_attrs, nodes, node_attrs, src, dst, keys, edge_attrs, num_pairs, pred_order):
+    """Payload of a graph: `node_attrs` and `edge_attrs` are (keys, encoded columns), `src`
+    and `dst` the node positions of the edges in successor order, `keys` the encoded edge keys
+    (None for simple graphs) and `pred_order` the predecessor order of the (u, v) pairs."""
     idx_dtype = np.int32 if len(nodes) <= _I32.max else np.int64
     return {
         "version": FORMAT_VERSION,
         "class": cls_name,
-        "graph_attrs": dict(graph.graph),
+        "graph_attrs": graph_attrs,
         "num_nodes": len(nodes),
-        "num_edges": len(edge_dicts),
-        "num_pairs": len(pair_pos),
-        "node_ids": _encode_column(nodes),
+        "num_edges": len(src),
+        "num_pairs": num_pairs,
+        "node_ids": _encode_column(list(nodes)),
         "node_attr_keys": node_attrs[0],
         "node_attr_cols": node_attrs[1],
-        "src": _pack_array(np.array(src, dtype=idx_dtype)),
-        "dst": _pack_array(np.array(dst, dtype=idx_dtype)),
-        "keys": _encode_column(keys) if multi else None,
+        "src": _pack_array(np.asarray(src).astype(idx_dtype)),
+        "dst": _pack_array(np.asarray(dst).astype(idx_dtype)),
+        "keys": keys,
         "edge_attr_keys": edge_attrs[0],
         "edge_attr_cols": edge_attrs[1],
-        "pred_order": _pack_array(np.array(pred_order, dtype=np.int64)),
+        "pred_order": _pack_array(np.asarray(pred_order, dtype=np.int64)),
     }
+
+
+def encode_edge_list(nodes, node_attrs, src, dst, edge_attrs):
+    """Payload of the MultiDiGraph built by adding the nodes `nodes` (in this order, with the
+    attributes {key: list of values} `node_attrs`) and then the edges (src[i], dst[i]) with the
+    attributes {key: list of values} `edge_attrs`, in this order.
+
+    Same result as `encode_graph` on that graph, without building it: networkx graphs store
+    each edge as a dict, which is slow to build and to encode for millions of edges.
+    """
+    num_nodes, num_edges = len(nodes), len(src)
+    node_pos = {n: i for i, n in enumerate(nodes)}
+    if len(node_pos) != num_nodes:
+        raise ValueError("Duplicate nodes")
+
+    src_pos = np.fromiter((node_pos[u] for u in src), dtype=np.int64, count=num_edges)
+    dst_pos = np.fromiter((node_pos[v] for v in dst), dtype=np.int64, count=num_edges)
+    # Pairs (u, v) numbered in order of first appearance: the order of the successors of u
+    # (and of the predecessors of v) in the networkx adjacency dicts
+    pair_id, _ = pd.factorize(src_pos * max(num_nodes, 1) + dst_pos)
+    pair_id = pair_id.astype(np.int64)
+    num_pairs = int(pair_id.max()) + 1 if num_edges else 0
+
+    # Edges in successor order: for u, for v in succ[u], for key in succ[u][v]
+    order = np.lexsort((np.arange(num_edges), pair_id, src_pos))
+    sorted_pairs = pair_id[order]
+    starts = np.r_[True, sorted_pairs[1:] != sorted_pairs[:-1]] if num_edges else np.zeros(0, bool)
+    start_idx = np.flatnonzero(starts)
+    keys = np.arange(num_edges) - np.repeat(start_idx, np.diff(np.append(start_idx, num_edges)))
+
+    # Index of each pair in successor order, and pairs in predecessor order
+    pair_src = np.empty(num_pairs, dtype=np.int64)
+    pair_dst = np.empty(num_pairs, dtype=np.int64)
+    pair_src[pair_id], pair_dst[pair_id] = src_pos, dst_pos
+    succ_pairs = np.lexsort((np.arange(num_pairs), pair_src))
+    pair_rank = np.empty(num_pairs, dtype=np.int64)
+    pair_rank[succ_pairs] = np.arange(num_pairs)
+    pred_pairs = np.lexsort((np.arange(num_pairs), pair_dst))
+
+    if num_edges:
+        take = order.tolist()
+        edge_cols = (
+            tuple(edge_attrs),
+            [_encode_column([values[i] for i in take]) for values in edge_attrs.values()],
+        )
+    else:
+        edge_cols = ((), [])
+    node_cols = (tuple(node_attrs), [_encode_column(list(v)) for v in node_attrs.values()]) if num_nodes else ((), [])
+    return _payload(
+        "MultiDiGraph", {}, nodes, node_cols, src_pos[order], dst_pos[order],
+        _encode_column(keys.tolist()), edge_cols, num_pairs, pair_rank[pred_pairs],
+    )
+
+
+def save_edge_list(path, nodes, node_attrs, src, dst, edge_attrs):
+    """Saves the graph described by `encode_edge_list`, as `save_graph` would save it."""
+    obj = _CompactGraph(encode_edge_list(nodes, node_attrs, src, dst, edge_attrs))
+    torch.save(obj, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def decode_graph(payload):
@@ -318,25 +390,109 @@ def _decode_graph(payload):
     return graph
 
 
+def _take_column(col, n, idx):
+    """Values of a column at the positions `idx` (same as `_decode_column(col, n)[i]`)."""
+    kind = col[0]
+    idx = np.asarray(idx, dtype=np.int64)
+    if kind in ("int", "float"):
+        return _unpack_array(col[1])[idx].tolist()
+    if kind == "strdict":
+        vocab = col[1]
+        return [vocab[i] for i in _unpack_array(col[2])[idx].tolist()]
+    if kind == "uuid":
+        arr = _unpack_array(col[1]).reshape(n, 16)[idx]
+        return _decode_uuids(arr, len(idx), col[2])
+    if kind == "intstr":
+        return [str(i) for i in _unpack_array(col[1])[idx].tolist()]
+    if kind == "strblob":
+        blob = zlib.decompress(col[1])
+        offsets = _unpack_array(col[2])
+        starts, ends = offsets[idx].tolist(), offsets[idx + 1].tolist()
+        return [blob[s:e].decode("utf-8", "surrogatepass") for s, e in zip(starts, ends)]
+    if kind == "obj":
+        values = col[1]
+        return [values[i] for i in idx.tolist()]
+    raise ValueError(f"Unknown column kind {kind}")
+
+
+def _factorize_column(col, n):
+    """(codes, uniques) of a column: `uniques[codes[i]]` is its i-th value."""
+    kind = col[0]
+    if kind == "strdict":
+        return _unpack_array(col[2]).astype(np.int64), list(col[1])
+    if kind in ("int", "float", "intstr"):
+        codes, uniques = pd.factorize(_unpack_array(col[1]), use_na_sentinel=False)
+        uniques = uniques.tolist()
+        if kind == "intstr":
+            uniques = [str(u) for u in uniques]
+        return codes.astype(np.int64), uniques
+    values = _decode_column(col, n)
+    try:
+        # Exact values (pandas would turn None into NaN)
+        index = {}
+        codes = np.fromiter((index.setdefault(v, len(index)) for v in values), np.int64, count=n)
+        return codes, list(index)
+    except TypeError:  # unhashable values
+        codes, uniques = pd.factorize(pd.Series(values, dtype=object), use_na_sentinel=False)
+        return codes.astype(np.int64), list(uniques)
+
+
+class LazyColumns(Mapping):
+    """{name: column values (list)}, each column being decoded on first access."""
+
+    def __init__(self, keys, cols, n):
+        self._cols = dict(zip(keys, cols))
+        self._n = n
+        self._decoded = {}
+
+    def __getitem__(self, key):
+        if key not in self._decoded:
+            self._decoded[key] = _decode_column(self._cols[key], self._n)
+        return self._decoded[key]
+
+    def __iter__(self):
+        return iter(self._cols)
+
+    def __len__(self):
+        return len(self._cols)
+
+    def __contains__(self, key):
+        return key in self._cols
+
+    def take(self, key, idx):
+        """Values of a column at the positions `idx`, without decoding the whole column."""
+        if key in self._decoded:
+            values = self._decoded[key]
+            return [values[i] for i in np.asarray(idx).tolist()]
+        return _take_column(self._cols[key], self._n, idx)
+
+    def factorize(self, key):
+        """(codes array, unique values) of a column, without building one object per value
+        when the column is stored as integers or a dictionary."""
+        return _factorize_column(self._cols[key], self._n)
+
+    def array(self, key, dtype):
+        """A numeric column as a numpy array."""
+        col = self._cols[key]
+        if col[0] in ("int", "float"):
+            return _unpack_array(col[1]).astype(dtype, copy=False)
+        return np.asarray(self[key], dtype=dtype)
+
+
 class GraphColumns:
-    """Decoded columns of a stored graph (see `load_graph_columns`)."""
+    """Columns of a stored graph (see `load_graph_columns`). Node and edge attributes are
+    `LazyColumns`, decoded on first access."""
 
     def __init__(self, payload):
         n, m = payload["num_nodes"], payload["num_edges"]
         self.multi = payload["class"] == "MultiDiGraph"
         self.graph_attrs = payload["graph_attrs"]
         self.node_ids = _decode_column(payload["node_ids"], n)
-        self.node_attrs = {
-            k: _decode_column(c, n)
-            for k, c in zip(payload["node_attr_keys"], payload["node_attr_cols"])
-        }
+        self.node_attrs = LazyColumns(payload["node_attr_keys"], payload["node_attr_cols"], n)
         # Edges in `graph.edges` order, as node positions in `node_ids`
         self.src = _unpack_array(payload["src"])
         self.dst = _unpack_array(payload["dst"])
-        self.edge_attrs = {
-            k: _decode_column(c, m)
-            for k, c in zip(payload["edge_attr_keys"], payload["edge_attr_cols"])
-        }
+        self.edge_attrs = LazyColumns(payload["edge_attr_keys"], payload["edge_attr_cols"], m)
 
 
 _LOAD_STATE = threading.local()
@@ -368,6 +524,19 @@ def save_graph(graph, path):
 def load_graph(path):
     """Loads a graph saved by `save_graph` or a legacy pickled graph."""
     return torch.load(path)
+
+
+def graph_columns(graph):
+    """`GraphColumns` of a networkx graph (as if it was saved and loaded with
+    `load_graph_columns`). Graphs that cannot be stored compactly (e.g. edges with different
+    attributes) are not supported."""
+    payload = encode_graph(graph)
+    if payload is None:
+        raise ValueError(
+            "Unsupported graph: only directed (multi)graphs whose nodes and edges all have the "
+            "same attributes are supported"
+        )
+    return GraphColumns(payload)
 
 
 def load_graph_columns(path):
