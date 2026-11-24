@@ -198,6 +198,8 @@ Graph construction builds the graphs of each day of the dataset in parallel proc
 python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
 ```
 
+The graphs of the time windows are also transformed in `--num_workers` parallel processes, including by the R-Caid pseudo-graph (`rcaid_pseudo_graph`), whose random timestamps are drawn in window order from the same random state as in a sequential run, so that the transformed graphs are unchanged. The R-Caid transformation itself computes the descendants of the roots once per distinct set of successors, stops exploring those of the roots that will be pruned, and saves its edges without building networkx graphs: on CADETS_E3, the transformation task went from 371 to 6.5 s with 4 processes, with identical graphs.
+
 ### Shared node features
 
 During training, node features (embeddings and types) are stored once in a shared table, and each batch only holds node IDs: its features are rebuilt on the GPU when the batch is used, with the same operations as before, so the model receives identical inputs. This divides the RAM used by the loaded graphs by about 4-6x (on CADETS_E3, from 11.9 to 1.9 GB with Orthrus and from 5.6 to 1.4 GB with Kairos), for roughly 10% more time per epoch and about 1 GB of GPU memory. Configurations whose node features depend on the graph (`only_ones`, `edges_distribution`), heterogeneous graphs, inter-graph batching and multi-dataset training keep storing features per batch. `--no_shared_node_features` disables the table.

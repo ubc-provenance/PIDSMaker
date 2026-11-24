@@ -7,7 +7,8 @@ string and two ints). They are now saved as typed column arrays:
 - string columns are dictionary-encoded when values repeat (node types, labels,
   edge operations), packed as 16-byte UUIDs when they are canonical UUIDs, stored as
   integers when they are canonical decimal integers (node IDs), or as one UTF-8 blob;
-- int/float columns as int64/float64 arrays, anything else as a pickled list;
+- int/float columns as int64/float64 arrays (np.int64 scalars too, e.g. the random timestamps
+  of R-Caid, loaded back as np.int64), anything else as a pickled list;
 - the adjacency order (successors and predecessors) is recorded so that the rebuilt
   graph is identical to the original one: same nodes, edges, keys, attributes, Python
   types and iteration orders (nodes, edges, in_edges, predecessors).
@@ -122,6 +123,9 @@ def _encode_column(values):
             return ("obj", values)
     if types == {float}:
         return ("float", _pack_array(np.array(values, dtype=np.float64)))
+    if types == {np.int64}:
+        # numpy scalars (e.g. drawn by np.random), decoded as numpy scalars
+        return ("npint64", _pack_array(np.array(values, dtype=np.int64)))
     if types == {str}:
         if len(set(values)) <= max(1, len(values) // 2):
             # Values numbered in order of first appearance (same as a dict of the values)
@@ -142,6 +146,8 @@ def _decode_column(col, n):
     kind = col[0]
     if kind in ("int", "float"):
         return _unpack_array(col[1]).tolist()
+    if kind == "npint64":
+        return list(_unpack_array(col[1]))
     if kind == "strdict":
         vocab = col[1]
         return [vocab[i] for i in _unpack_array(col[2]).tolist()]
@@ -169,6 +175,12 @@ def _encode_attr_dicts(dicts):
         if len(d) != len(keys) or tuple(d) != keys:
             return None
     return keys, [_encode_column([d[k] for d in dicts]) for k in keys]
+
+
+def encode_attr_dicts(dicts):
+    """(keys, encoded columns) of a list of attribute dicts, or None if they do not all have the
+    same keys in the same order (such graphs are saved as pickles)."""
+    return _encode_attr_dicts(dicts)
 
 
 def _decode_attr_dicts(keys, cols, n):
@@ -317,6 +329,47 @@ def encode_edge_list(nodes, node_attrs, src, dst, edge_attrs):
     )
 
 
+def encode_edge_positions(nodes, node_cols, src_pos, dst_pos, edge_attrs):
+    """Payload of the MultiDiGraph built by adding the nodes `nodes` (in this order, with the
+    attribute columns `node_cols`, as returned by `encode_attr_dicts`) and then the edges
+    (nodes[src_pos[i]], nodes[dst_pos[i]]) with the attributes {key: list of values, or int64
+    array standing for its list of numpy scalars} `edge_attrs`, in this order, given that each (src, dst) pair appears once and that `src_pos`
+    is sorted (edges already in successor order, all with key 0)."""
+    src_pos = np.asarray(src_pos, dtype=np.int64)
+    dst_pos = np.asarray(dst_pos, dtype=np.int64)
+    num_edges = len(src_pos)
+    if num_edges and np.any(src_pos[1:] < src_pos[:-1]):
+        raise ValueError("Edges are not sorted by source node")
+    if num_edges and len(np.unique(src_pos * max(len(nodes), 1) + dst_pos)) != num_edges:
+        raise ValueError("Duplicate edges")
+    # Predecessors of each node in the order their edges were added
+    pred_order = np.argsort(dst_pos, kind="stable")
+    edge_cols = (
+        (tuple(edge_attrs), [_encode_values(v) for v in edge_attrs.values()])
+        if num_edges
+        else ((), [])
+    )
+    keys = _encode_values(np.zeros(num_edges, dtype=np.int64), scalars=False)
+    return _payload(
+        "MultiDiGraph", {}, nodes, node_cols, src_pos, dst_pos, keys, edge_cols, num_edges,
+        pred_order,
+    )
+
+
+def _encode_values(values, scalars=True):
+    """`_encode_column` of a list, or of the elements of an int64 array without building them:
+    numpy scalars (`list(values)`) or Python ints (`values.tolist()`) if not `scalars`."""
+    if isinstance(values, np.ndarray) and values.dtype == np.int64 and values.ndim == 1 and len(values):
+        return ("npint64" if scalars else "int", _pack_array(values))
+    return _encode_column(list(values) if scalars else values.tolist())
+
+
+def save_edge_positions(path, nodes, node_cols, src_pos, dst_pos, edge_attrs):
+    """Saves the graph described by `encode_edge_positions`, as `save_graph` would save it."""
+    obj = _CompactGraph(encode_edge_positions(nodes, node_cols, src_pos, dst_pos, edge_attrs))
+    torch.save(obj, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def save_edge_list(path, nodes, node_attrs, src, dst, edge_attrs):
     """Saves the graph described by `encode_edge_list`, as `save_graph` would save it."""
     obj = _CompactGraph(encode_edge_list(nodes, node_attrs, src, dst, edge_attrs))
@@ -396,6 +449,8 @@ def _take_column(col, n, idx):
     idx = np.asarray(idx, dtype=np.int64)
     if kind in ("int", "float"):
         return _unpack_array(col[1])[idx].tolist()
+    if kind == "npint64":
+        return list(_unpack_array(col[1])[idx])
     if kind == "strdict":
         vocab = col[1]
         return [vocab[i] for i in _unpack_array(col[2])[idx].tolist()]
@@ -420,9 +475,9 @@ def _factorize_column(col, n):
     kind = col[0]
     if kind == "strdict":
         return _unpack_array(col[2]).astype(np.int64), list(col[1])
-    if kind in ("int", "float", "intstr"):
+    if kind in ("int", "float", "intstr", "npint64"):
         codes, uniques = pd.factorize(_unpack_array(col[1]), use_na_sentinel=False)
-        uniques = uniques.tolist()
+        uniques = list(uniques) if kind == "npint64" else uniques.tolist()
         if kind == "intstr":
             uniques = [str(u) for u in uniques]
         return codes.astype(np.int64), uniques
@@ -466,6 +521,10 @@ class LazyColumns(Mapping):
             return [values[i] for i in np.asarray(idx).tolist()]
         return _take_column(self._cols[key], self._n, idx)
 
+    def encoded(self):
+        """(keys, encoded columns), as stored."""
+        return tuple(self._cols), list(self._cols.values())
+
     def factorize(self, key):
         """(codes array, unique values) of a column, without building one object per value
         when the column is stored as integers or a dictionary."""
@@ -474,7 +533,7 @@ class LazyColumns(Mapping):
     def array(self, key, dtype):
         """A numeric column as a numpy array."""
         col = self._cols[key]
-        if col[0] in ("int", "float"):
+        if col[0] in ("int", "float", "npint64"):
             return _unpack_array(col[1]).astype(dtype, copy=False)
         return np.asarray(self[key], dtype=dtype)
 
