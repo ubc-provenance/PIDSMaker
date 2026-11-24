@@ -157,14 +157,15 @@ This creates the `cic_ids2018` database with the 20.1M flows of the dataset (2.6
 
 ### Dump the network databases
 
-The dumps of `lanl` and `optc_net` are created from the databases filled above, in the `pidscontainer`:
+The dumps of `lanl`, `optc_net` and `cic_ids2018` are created from the databases filled above, in the `pidscontainer`:
 
 ```shell
 PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d lanl -f /data/lanl.dump
 PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d optc_net -f /data/optc_net.dump
+PGPASSWORD=postgres pg_dump -U postgres -h postgres -p 5432 -F c -d cic_ids2018 -f /data/cic_ids2018.dump
 ```
 
-`lanl.dump` is about 0.7 GB and `optc_net.dump` about 21 GB (dumping `optc_net` takes about 2 hours). For the dump of OpTC with the labels of LARES, build the database with `--no_label_propagation` before dumping it, and keep its file name `optc_net.dump` (dumps are restored in a database named after their file), e.g. in a `lares_labels/` folder. `scripts/load_dumps.sh` also creates the index of malicious events when restoring dumps made without it.
+`lanl.dump` is about 0.7 GB, `cic_ids2018.dump` about 0.4 GB and `optc_net.dump` about 21 GB (dumping `optc_net` takes about 2 hours). For the dump of OpTC with the labels of LARES, build the database with `--no_label_propagation` before dumping it, and keep its file name `optc_net.dump` (dumps are restored in a database named after their file), e.g. in a `lares_labels/` folder. `scripts/load_dumps.sh` also creates the index of malicious events when restoring dumps made without it.
 
 The official network flows of OpTC (`ecar-bro` folder of its Google Drive) can be downloaded with:
 
