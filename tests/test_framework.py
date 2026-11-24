@@ -46,14 +46,15 @@ def prepare_cfg(
     if encoder and "tgn" not in encoder:
         args.__dict__["batching.intra_graph_batching.used_methods"] = "edges"
 
+    # Plotting dominates the evaluation time: figures are only tested by `TestEvaluationFigures`
+    args.__dict__["evaluation.save_figures"] = save_figures
+
     if custom_args:
         for k, v in custom_args:
             args.__dict__[k] = v
 
     cfg = get_yml_cfg(args)
     cfg._test_mode = True
-    # Plotting dominates the evaluation time: figures are only tested by `TestEvaluationFigures`
-    cfg._save_figures = save_figures
 
     if device == "cpu":
         cfg._use_cpu = True
@@ -430,8 +431,7 @@ class TestEvaluationFigures:
         ],
     )
     def test_evaluation_figures(self, dataset, device, evaluation, figure):
-        # Figures are not part of the task hash: the evaluation may be cached by a previous test
-        custom_args = [("evaluation.used_method", evaluation), ("force_restart", "evaluation")]
+        custom_args = [("evaluation.used_method", evaluation)]
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args, save_figures=True)
         main.main(cfg)
         assert os.path.exists(os.path.join(cfg.evaluation._precision_recall_dir, figure))

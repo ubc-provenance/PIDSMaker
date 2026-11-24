@@ -48,7 +48,7 @@ def database_params():
     )
 
 
-def _admin_execute(params, *queries):
+def admin_execute(params, *queries):
     connect = psycopg2.connect(database="postgres", **params)
     connect.autocommit = True
     with connect.cursor() as cur:
@@ -59,7 +59,7 @@ def _admin_execute(params, *queries):
 
 def load_sample_database(name, params):
     """(Re)creates the database `name` with the tables of the CLEARSCOPE_E3 sample."""
-    _admin_execute(
+    admin_execute(
         params,
         f'DROP DATABASE IF EXISTS "{name}";',
         f'CREATE DATABASE "{name}" TEMPLATE template0;',
@@ -94,7 +94,7 @@ def clearscope_e3_database(request):
     dataset["database"] = dataset["database_all_file"] = name
     yield
     dataset.update(original)
-    _admin_execute(params, f'DROP DATABASE IF EXISTS "{name}";')
+    admin_execute(params, f'DROP DATABASE IF EXISTS "{name}";')
 
 
 @pytest.fixture(scope="session")
