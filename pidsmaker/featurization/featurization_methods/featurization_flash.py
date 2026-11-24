@@ -2,11 +2,13 @@ import os
 from collections import defaultdict
 from itertools import chain
 
+import numpy as np
 import torch
 from gensim.models import Word2Vec
 
 from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
 from pidsmaker.tokenization import fit_tokenizer, load_tokenizer
+from pidsmaker.utils.graph_store import load_graph_columns
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
@@ -14,6 +16,95 @@ from pidsmaker.utils.utils import (
     log_start,
     log_tqdm,
 )
+
+
+# Each edge gives 3 texts to its source and destination nodes; a node keeps the texts of its
+# first edges (in time order) of each graph, up to this number of texts
+MAX_TEXTS_PER_NODE = 300
+
+
+def _edge_columns(file_path):
+    """(node IDs, src and dst node positions, edge labels, edge times) of a stored graph, in
+    `graph.edges` order."""
+    cols = load_graph_columns(file_path)
+    if cols is not None:
+        return (
+            cols.node_ids,
+            cols.src.astype(np.int64),
+            cols.dst.astype(np.int64),
+            cols.edge_attrs["label"] if len(cols.src) else [],
+            cols.edge_attrs["time"] if len(cols.src) else [],
+        )
+    graph = torch.load(file_path)
+    nodes = list(graph.nodes)
+    pos = {n: i for i, n in enumerate(nodes)}
+    src, dst, labels, times = [], [], [], []
+    for u, v, key, attr in graph.edges(data=True, keys=True):
+        src.append(pos[u])
+        dst.append(pos[v])
+        labels.append(attr["label"])
+        times.append(attr["time"])
+    return nodes, np.array(src, dtype=np.int64), np.array(dst, dtype=np.int64), labels, times
+
+
+def _time_order(times):
+    """Edge indices sorted by `int(time)` (stable, as `sorted`)."""
+    times = [int(t) for t in times]
+    try:
+        return np.argsort(np.array(times, dtype=np.int64), kind="stable")
+    except OverflowError:
+        return np.array(sorted(range(len(times)), key=times.__getitem__), dtype=np.int64)
+
+
+def _graph_texts(file_path, indexid2msg, text_ids):
+    """Texts of the nodes of one graph.
+
+    Returns (node IDs, edges, triplets): the nodes in order of first appearance in
+    the edges sorted by time; for each node, the (time-sorted) indices of the edges whose texts
+    it keeps (its first MAX_TEXTS_PER_NODE / 3 edges, a self-loop counting twice); and for each
+    edge the IDs in `text_ids` of its 3 texts (src, edge type, dst). `text_ids` maps each text
+    (node type or None, label) to an ID, and is extended with the new texts.
+    """
+    nodes, src, dst, labels, times = _edge_columns(file_path)
+    m = len(src)
+    order = _time_order(times)
+    src, dst = src[order], dst[order]
+    labels = [labels[i] for i in order.tolist()]
+
+    # Texts: (node type, label) of the endpoints, (None, edge type) of the edges
+    used = np.unique(np.concatenate([src, dst])).tolist()
+    node_text = np.zeros(len(nodes), dtype=np.int64)
+    for i in used:
+        node_type, msg = indexid2msg[nodes[i]]
+        node_text[i] = text_ids.setdefault((node_type, msg), len(text_ids))
+    op_text = np.array(
+        [text_ids.setdefault((None, op), len(text_ids)) for op in labels], dtype=np.int64
+    )
+    triplets = np.stack([node_text[src], op_text, node_text[dst]], axis=1).reshape(m, 3)
+
+    # Incidences of the nodes: (src of edge 0, dst of edge 0, src of edge 1, ...). A node keeps
+    # the texts of its first incidences
+    inc = np.empty(2 * m, dtype=np.int64)
+    inc[0::2], inc[1::2] = src, dst
+    by_node = np.argsort(inc, kind="stable")
+    sorted_nodes = inc[by_node]
+    starts = np.flatnonzero(np.r_[m > 0, sorted_nodes[1:] != sorted_nodes[:-1]])
+    sizes = np.diff(np.append(starts, 2 * m))
+    rank = np.arange(2 * m) - np.repeat(starts, sizes)
+    max_edges = -(-MAX_TEXTS_PER_NODE // 3)  # texts are added 3 by 3 while there are fewer than MAX
+    kept = rank < max_edges
+    kept_edges = by_node[kept] // 2
+    kept_sizes = np.minimum(sizes, max_edges)
+
+    # Nodes in order of first incidence
+    node_order = np.argsort(by_node[starts], kind="stable")
+    group_nodes = sorted_nodes[starts].tolist()
+    bounds = np.r_[0, np.cumsum(kept_sizes)].tolist()
+    node_ids, node_edges = [], []
+    for g in node_order.tolist():
+        node_ids.append(nodes[group_nodes[g]])
+        node_edges.append(kept_edges[bounds[g] : bounds[g + 1]])
+    return node_ids, node_edges, triplets
 
 
 def get_node2corpus(cfg, splits, fit=False):
@@ -27,63 +118,57 @@ def get_node2corpus(cfg, splits, fit=False):
     dates = list(chain.from_iterable([getattr(cfg.dataset, f"{split}_dates") for split in splits]))
     sorted_paths = get_all_graphs_for_dates(cfg.transformation._graphs_dir, dates)
 
+    # Texts, numbered in order of first appearance in the graphs
+    text_ids = {}
     data_of_graphs = []
-
     for file_path in log_tqdm(sorted_paths, desc=f"Loading training data for {str(splits)}"):
-        graph = torch.load(file_path)
+        data_of_graphs.append(_graph_texts(file_path, indexid2msg, text_ids))
+    texts = list(text_ids)
+    del text_ids
 
-        sorted_edges = sorted(
-            [
-                (u, v, attr["label"], int(attr["time"]))
-                for u, v, key, attr in graph.edges(data=True, keys=True)
-            ],
-            key=lambda x: x[3],
-        )
-
-        nodes, node_types, edges = defaultdict(list), {}, []
-        for e in sorted_edges:
-            src, dst, operation, t = e
-            src_type, src_msg = indexid2msg[src]
-            dst_type, dst_msg = indexid2msg[dst]
-
-            # (node_type, text) pairs; the edge type has no node type
-            properties = [(src_type, src_msg), (None, operation), (dst_type, dst_msg)]
-
-            if len(nodes[src]) < 300:
-                nodes[src].extend(properties)
-            node_types[src] = src_type
-
-            if len(nodes[dst]) < 300:
-                nodes[dst].extend(properties)
-            node_types[dst] = dst_type
-
-            edges.append((src, dst))
-
-        features, types, index_map = [], [], {}
-        for node_id, props in nodes.items():
-            features.append(props)
-            types.append(node_types[node_id])
-            index_map[node_id] = len(features) - 1
-
-        data_of_graphs.append((features, types, list(index_map.keys())))
+    # Texts in order of first appearance in the nodes' texts (graph by graph, node by node)
+    seen = np.zeros(len(texts), dtype=bool)
+    text_order = []
+    for _, node_edges, triplets in data_of_graphs:
+        if not node_edges:
+            continue
+        seq = triplets[np.concatenate(node_edges)].ravel()
+        uniq, first = np.unique(seq, return_index=True)
+        uniq = uniq[np.argsort(first, kind="stable")]
+        uniq = uniq[~seen[uniq]]
+        seen[uniq] = True
+        text_order.extend(uniq.tolist())
 
     if fit:
-        texts = dict.fromkeys(text for graphs in data_of_graphs for msg in graphs[0] for text in msg)
-        tokenizer = fit_tokenizer(cfg, list(texts))
+        tokenizer = fit_tokenizer(cfg, [texts[i] for i in text_order])
     else:
         tokenizer = load_tokenizer(cfg)
 
-    token_cache = {}
-    node2corpus = defaultdict(list)
-    for graphs in log_tqdm(data_of_graphs, desc="Tokenizing corpus"):
-        for msg, node_type, node_id in zip(graphs[0], graphs[1], graphs[2]):
-            for text in msg:
-                if text not in token_cache:
-                    text_type, sentence = text
-                    token_cache[text] = tokenizer.tokenize(sentence, text_type)
+    # Tokens of each text, tokenized in order of first appearance
+    tokens_of = [None] * len(texts)
+    for i in log_tqdm(text_order, desc="Tokenizing corpus"):
+        text_type, sentence = texts[i]
+        tokens_of[i] = tokenizer.tokenize(sentence, text_type)
 
-                tokens = token_cache[text]
-                node2corpus[node_id].extend(tokens)
+    node2corpus = defaultdict(list)
+    triplet_tokens = {}
+    for node_ids, node_edges, triplets in data_of_graphs:
+        if not node_ids:
+            continue
+        # Tokens of the distinct (src, edge type, dst) text triplets of the graph
+        uniq, inverse = np.unique(triplets, axis=0, return_inverse=True)
+        inverse = inverse.reshape(-1)
+        uniq_tokens = []
+        for a, b, c in uniq.tolist():
+            key = (a, b, c)
+            tokens = triplet_tokens.get(key)
+            if tokens is None:
+                tokens = triplet_tokens[key] = tokens_of[a] + tokens_of[b] + tokens_of[c]
+            uniq_tokens.append(tokens)
+        for node_id, edges in zip(node_ids, node_edges):
+            extend = node2corpus[node_id].extend
+            for t in inverse[edges].tolist():
+                extend(uniq_tokens[t])
 
     return node2corpus
 
