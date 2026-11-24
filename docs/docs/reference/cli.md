@@ -15,7 +15,7 @@ python pidsmaker/main.py SYSTEM DATASET [FLAGS] [--task.argument=value ...]
 | Positional | Description |
 |---|---|
 | `SYSTEM` | Name of a YAML config in `config/`, without the extension (e.g. `velox`, `pretrained_velox`). See [Systems](../guide/systems.md). |
-| `DATASET` | Name of a dataset in `DATASET_DEFAULT_CONFIG` (e.g. `CADETS_E3`, `optc_h201`). See [Datasets](../guide/datasets.md). |
+| `DATASET` | Name of a dataset in `DATASET_DEFAULT_CONFIG` (e.g. `CADETS_E3`, `optc_h201`, `LANL`). See [Datasets](../guide/datasets.md). |
 
 Any argument from the [Reference](tasks.md) can be passed as `--task.argument=value`; it overrides the YAML config.
 
@@ -28,6 +28,16 @@ Any argument from the [Reference](tasks.md) can be passed as `--task.argument=va
 | `--cpu` | off | Runs on CPU even if a GPU is available. |
 | `--save_for_viz` | off | Keeps the per-epoch checkpoints and test graphs needed by the [embedding visualizer](../features/visualization.md). |
 | `--save_graph_preprocessing` | off | Saves the preprocessed graphs on disk (heavy). |
+
+## Performance
+
+These flags don't change the results, nor the task hashes. See [Performance](../guide/pipeline.md#performance) and [Disk usage](../guide/pipeline.md#disk-usage).
+
+| Flag | Default | Description |
+|---|---|---|
+| `--num_workers N` | `min(8, #CPUs)` | Number of processes for CPU-bound preprocessing such as graph construction. |
+| `--no_shared_node_features` | off | Stores node features per batch instead of in a shared table rebuilt for each batch. Uses much more memory; for debugging. |
+| `--keep_best_epoch_only` | off | At the end of the pipeline, deletes the loss files, evaluation pickles and weights of all epochs except the best one (stats and plots are kept). Re-running evaluation afterwards only considers the kept epoch. |
 
 ## Experiment tracking
 

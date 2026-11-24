@@ -1,6 +1,6 @@
 ---
 title: Pipeline
-description: The seven stages of the PIDSMaker pipeline, how each task is cached under a hash of its arguments, and how to restart tasks.
+description: The seven stages of the PIDSMaker pipeline, how each task is cached under a hash of its arguments, how to restart tasks, and the performance and disk usage of the pipeline.
 ---
 
 # Pipeline
@@ -35,11 +35,11 @@ flowchart TB
 
 <ol class="pm-steps" markdown>
 <li markdown>**Construction** (`construction`): reads the events from the database, optionally [cleans](../reference/cleaning.md) them, and builds one provenance graph per time window (e.g. 15 minutes).</li>
-<li markdown>**Transformation** (`transformation`): optional transformations of the graphs, applied in sequence: making them undirected, turning them into DAGs, building the R-Caid pseudo-graph, or injecting synthetic attacks.</li>
+<li markdown>**Transformation** (`transformation`): optional transformations of the graphs, applied in sequence: making them undirected, turning them into DAGs, building the R-Caid pseudo-graph, merging repeated edges (`merge_edges`, used by the [network systems](network.md)), or injecting synthetic attacks.</li>
 <li markdown>**Featurization** (`featurization`, then `feat_inference`): learns a text embedding model on the labels of the entities (word2vec, doc2vec, FastText, hierarchical hashing, a [pretrained encoder](../features/pretrained_encoders.md)...), then embeds every node.</li>
 <li markdown>**Batching** (`batching`): selects the node and edge features, and builds the batches given to the model: [global, intra-graph and inter-graph batching](../features/batching.md), TGN neighbor sampling.</li>
 <li markdown>**Training** (`training`): trains the encoder and the self-supervised objective on benign graphs, then computes the losses on the validation and test graphs.</li>
-<li markdown>**Evaluation** (`evaluation`): turns losses into anomaly scores, picks a threshold on the validation set, and computes the metrics at the node, edge, time-window or queue level. See [Evaluation & labeling](evaluation.md).</li>
+<li markdown>**Evaluation** (`evaluation`): turns losses into anomaly scores, picks a threshold on the validation set, and computes the metrics at the node, edge, time-window, queue or host level. See [Evaluation & labeling](evaluation.md).</li>
 <li markdown>**Triage** (`triage`): optional post-processing of the detections, to reconstruct attack paths (DepImpact) or anomalous subgraphs (OCR-APT) and reduce false positives. See [Triage](../features/triage.md).</li>
 </ol>
 
@@ -89,6 +89,8 @@ flowchart LR
 <small>With `--featurization.emb_dim=64`: the highlighted tasks are reused, the others run again.</small>
 
 This makes experiments much faster: tuning the learning rate never rebuilds the graphs.
+
+Arguments added in new versions of PIDSMaker are left out of the hash while they keep their default value, so the outputs computed before they existed are still reused after an update.
 
 !!! warning "Avoid concurrent runs with identical early tasks"
     If two runs with the same `construction` arguments and dataset start at the same time, they write to the same folder. Start the first run and wait until its shared tasks are done before launching the others, or use `--restart_from_scratch`.
@@ -153,19 +155,49 @@ The outputs are then written to a new folder named after a random hash, isolated
 
 ## Performance
 
+The pipeline was optimized for speed and memory without changing its outputs: graphs, features, the batches given to the models, losses and metrics are identical to those of previous versions (GPU training is not bit-deterministic, so a few losses can differ by about 0.0001). Measured on full runs from scratch, before and after the optimizations:
+
+| Run | Wall time | Peak RAM | Disk |
+|---|---|---|---|
+| Orthrus, THEIA_E5 | ~3.4 h → ~61 min | 370 → 16.6 GB | |
+| Orthrus, CADETS_E3 | 42 → 20 min | 47 → 4.8 GB | 9.7 → 2.2 GB |
+| Orthrus, optc_h201 | 95 → 29 min | 128 → 11.1 GB | 25.9 → 8.1 GB |
+| Kairos, CADETS_E3 | 72 → 30 min | 14.4 → 4.7 GB | 4.5 → 1.6 GB |
+| Kairos, optc_h501 | 191 → 39 min | 37 → 10.0 GB | 13.6 → 5.7 GB |
+
+<small>Measured in [PR #77](https://github.com/ubc-provenance/PIDSMaker/pull/77); the CADETS_E3 and OpTC runs used A100 80 GB GPUs, and peak RAM is the resident memory of the largest process. On THEIA_E5, construction went from 824 to 204 s, `feat_inference` from 619 to 397 s, training (12 epochs) from 8,945 to 2,255 s and evaluation from 1,685 to 494 s.</small>
+
+On the network datasets ([PR #78](https://github.com/ubc-provenance/PIDSMaker/pull/78)), merging the edges of the 205 graphs of `OPTC_NET` (LARES) went from ~77 to 4.5 min, the edge evaluation of one epoch (38M edges) from 658 to 58 s, and LARES on `OPTC_NET` end to end from more than 2 h to 15 min.
+
+### Parallel graph construction
+
 Graph construction builds the graphs of each day of the dataset in parallel processes. The number of processes is set with `--num_workers` (default: `min(8, #CPUs)`); it does not change the produced graphs, nor the task hashes.
 
 ```shell
 python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
 ```
 
-During training, node features (embeddings and types) are stored once in a shared table, and each batch only holds node IDs: its features are rebuilt on the GPU when the batch is used, with the same operations as before, so the model receives identical inputs. This divides the RAM used by the loaded graphs by about 4-6x. Configurations whose node features depend on the graph (`only_ones`, `edges_distribution`), heterogeneous graphs, inter-graph batching and multi-dataset training keep storing features per batch. `--no_shared_node_features` disables the table.
+### Shared node features
+
+During training, node features (embeddings and types) are stored once in a shared table, and each batch only holds node IDs: its features are rebuilt on the GPU when the batch is used, with the same operations as before, so the model receives identical inputs. This divides the RAM used by the loaded graphs by about 4-6x (on CADETS_E3, from 11.9 to 1.9 GB with Orthrus and from 5.6 to 1.4 GB with Kairos), for roughly 10% more time per epoch and about 1 GB of GPU memory. Configurations whose node features depend on the graph (`only_ones`, `edges_distribution`), heterogeneous graphs, inter-graph batching and multi-dataset training keep storing features per batch. `--no_shared_node_features` disables the table.
+
+!!! note "Deterministic database reads"
+    Postgres sessions now disable synchronized scans (`synchronize_seqscans=off`), so that tables are always read in the same order. Runs are reproducible, but node embeddings can differ from those of runs made with previous versions on a server whose scans had drifted.
 
 ## Disk usage
 
-Graphs produced by construction and transformation are stored as compressed column arrays (about 5x smaller than pickled networkx graphs); `torch.load` on a graph file still returns the identical networkx graph, and previously generated graphs remain readable.
+Outputs are stored in compact formats, and all readers still accept the previous ones, so existing artifact folders keep working:
 
-Inference writes the losses of every epoch and split as compressed `.npz` files (previous runs with `.csv` loss files remain readable). Evaluation also stores per-epoch pickles. To keep only the outputs of the best epoch once the pipeline has finished, use `--keep_best_epoch_only`. Stats and plots are kept for every epoch, but re-running evaluation afterwards only considers the kept epoch(s).
+| Output | Format | Reduction |
+|---|---|---|
+| Graphs of construction and transformation | Compressed column arrays instead of pickled networkx graphs | ~5x smaller |
+| Node features of `feat_inference` | Node feature rows and per-edge row indices instead of one message per edge | 6.1 → 0.9 GB on CADETS_E3 |
+| Losses of each epoch | Compressed `.npz` instead of `.csv` | ~8x smaller |
+| Edge scores of the edge evaluation (`edge_scores_*.pkl`) | int32 instead of int64 columns | ~35% smaller |
+
+`torch.load` on a graph file still returns the identical networkx graph.
+
+Evaluation also stores per-epoch pickles. To keep only the outputs of the best epoch once the pipeline has finished, use `--keep_best_epoch_only`. Stats and plots are kept for every epoch, but re-running evaluation afterwards only considers the kept epoch(s).
 
 ```shell
 python pidsmaker/main.py orthrus CADETS_E3 --keep_best_epoch_only
