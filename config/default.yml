@@ -83,7 +83,7 @@ featurization:
     use_pretrained_fb_model: False
   flash:
     min_count: 1
-    workers: 15
+    workers: 1
   # Default parameters of each tokenization. Systems set `tokenization.used_method`.
   # `substitutions` lists the values replaced by placeholder tokens ([HASH], [NUM], ...), or `none`.
   tokenization:

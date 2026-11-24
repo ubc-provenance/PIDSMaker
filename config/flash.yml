@@ -28,7 +28,7 @@ featurization:
   seed: 0
   flash:
     min_count: 1
-    workers: 15
+    workers: 1 # several workers make word2vec training non-deterministic
 feat_inference:
   to_remove: True
 
