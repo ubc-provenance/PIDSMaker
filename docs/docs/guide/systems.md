@@ -21,7 +21,7 @@ PIDSMaker reimplements state-of-the-art intrusion detection systems as YAML conf
 | **MAGIC** | Provenance | `magic` | <span class="pm-chip">USENIX Security 2024</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
 | **NodLink** | Provenance | `nodlink` | <span class="pm-chip">NDSS 2024</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2311.02331) |
 | **ThreaTrace** | Provenance | `threatrace` | <span class="pm-chip">IEEE TIFS 2022</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2111.04333) |
-| **LARES** | Network | `lares` | <span class="pm-chip">ACSAC 2026</span> | [:lucide-code: Code](https://github.com/TristanBilot/lares) |
+| **LARES** | Network | `lares` | <span class="pm-chip">ACSAC 2026</span> | [:lucide-file-text: Paper](https://ora.ox.ac.uk/objects/uuid:07b7d2a5-91f8-4c37-a90c-4ca615b428a7/files/ss7526g13z) |
 | **Argus** | Network | `argus` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00012) |
 | **Jbeil** | Network | `jbeil` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://doi.org/10.1109/SP54263.2024.00009) |
 | **Euler** | Network | `euler` | <span class="pm-chip">NDSS 2022</span> | [:lucide-file-text: Paper](https://doi.org/10.14722/ndss.2022.24107) |
