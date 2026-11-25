@@ -5,7 +5,7 @@ description: Build the PIDSMaker Postgres databases yourself, from the official 
 
 # Building datasets from scratch
 
-PIDSMaker ships [preprocessed database dumps](installation.md#1-download-the-datasets) of its provenance datasets. This guide builds the databases yourself: the **provenance datasets** from the official DARPA files, for instance to change the parsing, and the **network datasets** (LANL and the network flows of OpTC) from the preprocessed files of [LARES](https://github.com/TristanBilot/lares), which is currently the only way to get them.
+PIDSMaker ships [preprocessed database dumps](installation.md#1-download-the-datasets) of all its datasets. This guide builds the databases yourself, for instance to change the parsing: the **provenance datasets** from the official DARPA files, and the **network datasets** (LANL and the network flows of OpTC) from the preprocessed files of [LARES](https://github.com/TristanBilot/lares).
 { .lead }
 
 !!! warning "Plan for time and disk space"
