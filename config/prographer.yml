@@ -47,7 +47,9 @@
 #   epoch on CADETS_E3);
 # - ProGrapher only keeps the latest event between a pair of entities: RSGs are built from sets
 #   of neighbors and edge types, so repeated events have no effect here (but events of other
-#   types between the same pair are kept).
+#   types between the same pair are kept). As sets, distinct neighbors with the same RSG also
+#   count once: an RSG does not reflect how many such neighbors a node has (e.g. a process
+#   writing 1 or 1,000 files of the same RSG), unlike the multisets of the original WL kernel.
 
 _include_yml: default
 
@@ -78,7 +80,7 @@ featurization:
     min_count: 1
     alpha: 0.025
     infer_epochs: 100
-    num_workers: 8
+    num_workers: 1  # several workers make the training of gensim non-deterministic
 feat_inference:
   to_remove: True
 

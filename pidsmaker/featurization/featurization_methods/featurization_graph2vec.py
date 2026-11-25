@@ -150,7 +150,11 @@ def infer_snapshot_embedding(model, words, epochs, seed):
     """
     dim = model.dv.vector_size
     model.random = np.random.RandomState(seed)
-    doctag_vectors = pseudorandom_weak_vector(dim, seed_string=str(seed)).reshape(1, dim)
+    # gensim seeds this vector with Python's `hash` of the string by default, which is randomized
+    # per process: the integer seed is used directly so the inferred vectors are reproducible.
+    doctag_vectors = pseudorandom_weak_vector(
+        dim, seed_string=str(seed), hashfxn=lambda _: seed
+    ).reshape(1, dim)
     doctags_lockf = np.ones(1, dtype=np.float32)
     work = np.zeros(model.layer1_size, dtype=np.float32)
 

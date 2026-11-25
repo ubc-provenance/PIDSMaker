@@ -339,7 +339,7 @@ UNHASHED_DEFAULT_ARGS = {
     "featurization": {
         "graph2vec": {
             "wl_iterations": 4, "negative": 15, "min_count": 1, "alpha": 0.025,
-            "infer_epochs": 100, "num_workers": 8,
+            "infer_epochs": 100, "num_workers": 1,
         },
     },
     "feat_inference": {"edge_attributes": "all"},

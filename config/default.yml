@@ -90,7 +90,7 @@ featurization:
     min_count: 1
     alpha: 0.025
     infer_epochs: 100
-    num_workers: 8
+    num_workers: 1  # several workers make the training of gensim non-deterministic
   # Default parameters of each tokenization. Systems set `tokenization.used_method`.
   # `substitutions` lists the values replaced by placeholder tokens ([HASH], [NUM], ...), or `none`.
   tokenization:

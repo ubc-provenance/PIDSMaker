@@ -37,7 +37,10 @@
 #   a forward DFS from a data object) with every entity of that behavior, i.e. multi-hop causal
 #   pairs; here, interactions are the endpoints of the events (1-hop). The KG and its GNN
 #   propagation are built per time window (15 min) instead of over the whole log, and the noise
-#   reduction of ShadeWatcher's parser is not applied.
+#   reduction of ShadeWatcher's parser is not applied. As in the code (inverse relations are
+#   commented out in `recommend/util/gnn_data.py`), each node only aggregates the tails of the
+#   triples it is the head of: nodes that are only destinations of events get no neighborhood
+#   information from the GNN layers.
 # - Training: the BPR and TransR losses are summed and optimized jointly at each batch (time
 #   window), as in the objective of the paper (L = L_first + L_higher + lambda ||Theta||, lambda
 #   as Adam's weight decay), whereas the code alternates one epoch of each with two optimizers
