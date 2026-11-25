@@ -110,14 +110,14 @@
 5. (patterns mode) Max edges collected per pattern.<br>
 6. (synthetic mode) Path to YAML file with explicit (src_type, src_label, edge_type, dst_type, dst_label) attack edge definitions.<br>
 7. BCE pos_weight for the attack class (on top of 1:1 oversampling).<br>
-8. Loss used to predict the edge type.<br><br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
+8. Loss used to predict the edge type. AMS: additive margin softmax (see `AMS`).<br><br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`<br>`AMS`
 9. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 10. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 11. <br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
 12. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 13. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 14. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
-15. `bce`: binary cross-entropy of positive vs. random negative edges (default),                 `ap`: surrogate average precision loss of Argus.<br><br><b>Available options (one selection)</b>:<br>`bce`<br>`ap`
+15. `bce`: binary cross-entropy of positive vs. random negative edges (default),                 `ap`: surrogate average precision loss of Argus, `bpr`: pairwise BPR loss of                 ShadeWatcher, softplus(s_neg - s_pos) between each negative edge and its positive edge.<br><br><b>Available options (one selection)</b>:<br>`bce`<br>`ap`<br>`bpr`
 16. Margin of the squared hinge of the `ap` loss (default: 0.8).<br>
 17. Negative edges: `shuffle_dst` pairs each source with the destination of another                 edge of the graph (negatives keep the degree of destinations), `uniform` draws                 sources and destinations uniformly among the embedded nodes (as Euler and Argus),                 `uniform_dst` pairs the source of each edge with uniform destinations among the                 embedded nodes, `tgn` pairs it with a uniform destination of the dataset embedded                 by the TGN (as TGN and Jbeil, requires `tgn_last_neighbor.negative_destinations`).<br><br><b>Available options (one selection)</b>:<br>`shuffle_dst`<br>`uniform`<br>`uniform_dst`<br>`tgn`
 18. Number of negatives per positive edge with `uniform` sampling.<br>

@@ -23,6 +23,9 @@ class EdgeContrastivePrediction(nn.Module):
       destinations of the dataset and embedded by the TGN with the edges of the batch, as in TGN
       and Jbeil (requires `tgn_last_neighbor.negative_destinations`).
 
+    Each negative edge is paired with a positive edge (that of its source, except with `uniform`),
+    which pairwise losses such as `bpr` (ShadeWatcher) compare it to.
+
     At validation, the AUC and AP of validation edges against uniform negatives measure how well
     the model predicts links (`get_val_score`, used by `best_model_selection: best_val_score`).
     """
@@ -48,7 +51,9 @@ class EdgeContrastivePrediction(nn.Module):
         )
         return h_src, h_dst, edge_index
 
-    def _uniform_negative_sampling(self, edge_index, h, h_src, h_dst, ratio, keep_src=False):
+    def _uniform_negative_sampling(
+        self, edge_index, h, h_src, h_dst, ratio, keep_src=False, return_pos_index=False
+    ):
         table_src, table_dst, edge_index = self._node_tables(edge_index, h, h_src, h_dst)
         num_nodes = table_src.size(0)
         num_neg = max(1, int(round(edge_index.size(1) * ratio)))
@@ -62,9 +67,14 @@ class EdgeContrastivePrediction(nn.Module):
         keep = (src != dst) & ~torch.isin(src * num_nodes + dst, pos_hash)
         if not keep.any():  # e.g. tiny graphs: keep the drawn edges rather than no negative
             keep = torch.ones_like(keep)
-        return table_src[src[keep]], table_dst[dst[keep]]
+        neg_h_src, neg_h_dst = table_src[src[keep]], table_dst[dst[keep]]
+        if not return_pos_index:
+            return neg_h_src, neg_h_dst
+        # Positive edge paired with each negative (that of its source with `keep_src`)
+        pos_index = torch.arange(num_neg, device=edge_index.device) % edge_index.size(1)
+        return neg_h_src, neg_h_dst, pos_index[keep]
 
-    def _fast_negative_sampling(self, edge_index, h_src, h_dst, aug_coef=1.0):
+    def _fast_negative_sampling(self, edge_index, h_src, h_dst, aug_coef=1.0, return_pos_index=False):
         (h_src, h_dst), edge_index, _ = self.graph_reindexer._reindex_graph(
             edge_index, h_src, h_dst, x_is_tuple=True
         )
@@ -79,17 +89,21 @@ class EdgeContrastivePrediction(nn.Module):
         el_hash = lambda x: x[0, :] + x[1, :] * num_nodes
         el1d = el_hash(edge_index)
 
-        neg_ei = neg_ei[:, neg_ei[0] != neg_ei[1]]  # remove self-loops
+        # Positive edge paired with each negative (that of its source)
+        pos_index = torch.arange(neg_ei.size(1), device=neg_ei.device)
+        no_loop = neg_ei[0] != neg_ei[1]
+        neg_ei, pos_index = neg_ei[:, no_loop], pos_index[no_loop]  # remove self-loops
         neg_hash = el_hash(neg_ei)
 
-        neg_samples = neg_ei[
-            :, ~torch.isin(neg_hash, el1d)
-        ]  # remove collision edges in positive edges
+        no_collision = ~torch.isin(neg_hash, el1d)  # remove collision edges in positive edges
+        neg_samples, pos_index = neg_ei[:, no_collision], pos_index[no_collision]
 
         neg_h_src = h_src[neg_samples[0]]
         neg_h_dst = h_dst[neg_samples[1]]
 
-        return neg_h_src, neg_h_dst
+        if not return_pos_index:
+            return neg_h_src, neg_h_dst
+        return neg_h_src, neg_h_dst, pos_index
 
     def forward(self, h_src, h_dst, edge_index, inference, h=None, validation=False, batch=None, **kwargs):
         pos_scores = self.decoder(h_src=h_src, h_dst=h_dst)
@@ -100,16 +114,21 @@ class EdgeContrastivePrediction(nn.Module):
                 "`batching.intra_graph_batching.tgn_last_neighbor.negative_destinations`."
             )
 
+        # Positive edge paired with each negative edge (by default, the edge of the same index)
+        pos_index = None
         if not inference:
             if self.neg_sampling == "tgn":
                 neg_h_src, neg_h_dst = h_src, h_neg
             elif self.neg_sampling in ("uniform", "uniform_dst"):
-                neg_h_src, neg_h_dst = self._uniform_negative_sampling(
+                neg_h_src, neg_h_dst, pos_index = self._uniform_negative_sampling(
                     edge_index, h, h_src, h_dst, self.neg_ratio,
                     keep_src=self.neg_sampling == "uniform_dst",
+                    return_pos_index=True,
                 )
             else:
-                neg_h_src, neg_h_dst = self._fast_negative_sampling(edge_index, h_src, h_dst)
+                neg_h_src, neg_h_dst, pos_index = self._fast_negative_sampling(
+                    edge_index, h_src, h_dst, return_pos_index=True
+                )
             neg_scores = self.decoder(h_src=neg_h_src, h_dst=neg_h_dst)
         else:
             neg_scores = None
@@ -127,7 +146,8 @@ class EdgeContrastivePrediction(nn.Module):
         # class_weights = compute_class_weights(node_type, num_classes=self.node_type_dim) \
         # if self.balanced_loss else None
 
-        loss = self.loss_fn(pos_scores, neg_scores, inference=inference)
+        pairing = {} if pos_index is None else {"pos_index": pos_index}
+        loss = self.loss_fn(pos_scores, neg_scores, inference=inference, **pairing)
         if inference:
             # One loss per edge, also for batches of a single edge (`squeeze` would return a scalar)
             loss = loss.reshape(pos_scores.shape[0], -1)

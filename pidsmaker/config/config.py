@@ -1048,6 +1048,18 @@ ENCODERS_CFG = {
     "argus": {
         "num_layers": Arg(int, desc="Number of layers: GCN layers followed by a last edge-conditioned convolution (NNConv) if edge features are used."),
     },
+    "shadewatcher": {
+        "hidden_dims": Arg(
+            str,
+            desc="Comma-separated output sizes of the GNN layers propagating the TransR entity \
+                embeddings (of size `node_hid_dim`) over the knowledge graph (ShadeWatcher: `32,16`). \
+                The output concatenates the entity embeddings and the output of each layer, \
+                projected to `node_out_dim` if their sizes differ.",
+        ),
+        "kg_dim": Arg(int, desc="Size of the relation space of TransR (relation embeddings and projections)."),
+        "kg_neg_ratio": Arg(int, desc="Number of corrupted triples per triple of the TransR loss."),
+        "kg_margin": Arg(float, desc="Margin between the distances of valid and corrupted triples in the TransR loss."),
+    },
     "gat": {
         "activation": Arg(str),
         "num_heads": Arg(int),
@@ -1205,9 +1217,10 @@ OBJECTIVES_CFG = {
         ),
         "loss": Arg(
             str,
-            vals=OR(["bce", "ap"]),
+            vals=OR(["bce", "ap", "bpr"]),
             desc="`bce`: binary cross-entropy of positive vs. random negative edges (default), \
-                `ap`: surrogate average precision loss of Argus.",
+                `ap`: surrogate average precision loss of Argus, `bpr`: pairwise BPR loss of \
+                ShadeWatcher, softplus(s_neg - s_pos) between each negative edge and its positive edge.",
         ),
         "ap_margin": Arg(float, desc="Margin of the squared hinge of the `ap` loss (default: 0.8)."),
         "neg_sampling": Arg(
@@ -1224,6 +1237,11 @@ OBJECTIVES_CFG = {
         **DECODERS_CFG,
         "inner_product": {
             "dropout": Arg(float),
+            "negate": Arg(
+                bool,
+                desc="Scores edges by the negated inner product, as ShadeWatcher, whose inner \
+                    product is the probability that two entities would not interact.",
+            ),
         },
     },
     # Self-supervised contrastive learning on edges, with PCA anomaly scores (Anomal-E)

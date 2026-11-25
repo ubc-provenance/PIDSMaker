@@ -64,6 +64,14 @@
         <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (11)</span></li>
     </ul>
     </li>
+    <li class='bullet'><span class="key">shadewatcher</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">hidden_dims</span>: <span class="value">str (12)</span></li>
+        <li class='no-bullet'><span class="key-leaf">kg_dim</span>: <span class="value">int (13)</span></li>
+        <li class='no-bullet'><span class="key-leaf">kg_neg_ratio</span>: <span class="value">int (14)</span></li>
+        <li class='no-bullet'><span class="key-leaf">kg_margin</span>: <span class="value">float (15)</span></li>
+    </ul>
+    </li>
     <li class='bullet'><span class="key">gat</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str</span></li>
@@ -123,9 +131,9 @@
     </li>
     <li class='bullet'><span class="key">hetero_graph_transformer</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str (12)</span></li>
-        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (13)</span></li>
-        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (14)</span></li>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str (16)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (17)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (18)</span></li>
     </ul>
     </li>
 </ul>
@@ -143,6 +151,10 @@
 9. Number of E-GraphSAGE layers, whose messages include the edge features.<br>
 10. Aggregates each edge in both directions, as E-GraphSAGE and Anomal-E (default: True).<br>
 11. Number of layers: GCN layers followed by a last edge-conditioned convolution (NNConv) if edge features are used.<br>
-12. Unused: the input projections always use ReLU.<br>
-13. Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer.<br>
-14. Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC.<br>
+12. Comma-separated output sizes of the GNN layers propagating the TransR entity                 embeddings (of size `node_hid_dim`) over the knowledge graph (ShadeWatcher: `32,16`).                 The output concatenates the entity embeddings and the output of each layer,                 projected to `node_out_dim` if their sizes differ.<br>
+13. Size of the relation space of TransR (relation embeddings and projections).<br>
+14. Number of corrupted triples per triple of the TransR loss.<br>
+15. Margin between the distances of valid and corrupted triples in the TransR loss.<br>
+16. Unused: the input projections always use ReLU.<br>
+17. Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer.<br>
+18. Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC.<br>

@@ -412,11 +412,18 @@ class TestSystems:
         "threatrace",
         "rcaid",
         "ocrapt",
+        "shadewatcher",
     ]
 
     @pytest.mark.parametrize("system", systems)
     def test_systems(self, dataset, device, system):
         cfg = prepare_cfg(system, dataset, device=device)
+        main.main(cfg)
+
+    def test_shadewatcher_node_id_embedding(self, dataset, device):
+        # ShadeWatcher with a learned embedding of each entity ID concatenated to its features
+        custom_args = [("training.encoder.used_methods", "shadewatcher,node_id_embedding")]
+        cfg = prepare_cfg("shadewatcher", dataset, device=device, custom_args=custom_args)
         main.main(cfg)
 
 
@@ -570,6 +577,16 @@ class TestCombinations:
                 for version in [1, 2]
             ],
             [("training.encoder.tgn.use_residual_norm", True)],
+            # BPR loss of ShadeWatcher with the negatives of other systems
+            [
+                ("training.decoder.used_methods", "predict_edge_contrastive"),
+                ("training.decoder.predict_edge_contrastive.loss", "bpr"),
+            ],
+            [
+                ("training.decoder.used_methods", "predict_edge_contrastive"),
+                ("training.decoder.predict_edge_contrastive.loss", "bpr"),
+                ("training.decoder.predict_edge_contrastive.neg_sampling", "uniform"),
+            ],
             [("batching.edge_features", "time_encoding")],
             [("evaluation.used_method", "tw_evaluation")],
             [

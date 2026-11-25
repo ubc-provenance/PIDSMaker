@@ -15,6 +15,7 @@ from .magic_encoder import MagicGAT
 from .rcaid_encoder import RCaidGAT
 from .rgcn import RGCN, PerTypeRGCN
 from .sage import SAGE
+from .shadewatcher_encoder import ShadeWatcherEncoder
 from .sum_aggregation import SumAggregation
 from .temporal_wrappers import NodeIdEmbedding, SnapshotGRU
 from .tgn_encoder import TGNEncoder

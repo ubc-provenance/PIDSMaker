@@ -362,6 +362,10 @@ UNHASHED_DEFAULT_ARGS = {
         "decoder.autoencode_edge_embeddings": {"decoder": "none", "use_edge_feats": True},
         "decoder.few_shot.decoder.autoencode_edge_embeddings": {"decoder": "none", "use_edge_feats": True},
         "decoder.few_shot.decoder.deep_graph_infomax": {"decoder": "none", "pca_components": 8},
+        # ShadeWatcher
+        "encoder.shadewatcher": {"hidden_dims": (32, 16), "kg_dim": 32, "kg_neg_ratio": 2, "kg_margin": 1.0},
+        "decoder.predict_edge_contrastive.inner_product.negate": False,
+        "decoder.few_shot.decoder.predict_edge_contrastive.inner_product.negate": False,
     },
 }
 

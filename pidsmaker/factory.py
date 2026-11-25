@@ -272,6 +272,19 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
             )
 
         # System-specific encoders
+        elif method == "shadewatcher":
+            sw_cfg = cfg.training.encoder.shadewatcher
+            encoder = ShadeWatcherEncoder(
+                in_dim=in_dim,
+                emb_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                num_edge_types=get_num_edge_type(cfg),
+                hidden_dims=parse_int_list(sw_cfg.hidden_dims),
+                kg_dim=sw_cfg.kg_dim,
+                kg_neg_ratio=sw_cfg.kg_neg_ratio,
+                kg_margin=sw_cfg.kg_margin,
+                dropout=dropout,
+            )
         elif method == "glstm":
             encoder = GLSTM(
                 in_features=in_dim,
@@ -984,6 +997,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             if predict_edge_method == "inner_product":
                 edge_decoder = EdgeInnerProductDecoder(
                     dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
+                    negate=bool(objective_cfg.predict_edge_contrastive.inner_product.negate),
                 )
 
             else:
@@ -1001,6 +1015,8 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             if loss_name == "ap":
                 margin = objective_cfg.predict_edge_contrastive.ap_margin or 0.8
                 loss_fn = lambda pos, neg, **kw: ap_contrastive(pos, neg, margin=margin, **kw)
+            elif loss_name == "bpr":
+                loss_fn = bpr_contrastive
             else:
                 loss_fn = bce_contrastive
 
@@ -1188,6 +1204,13 @@ def special_categorical_loss_fn_factory(loss: str, out_dim: int, num_classes: in
         raise ValueError(f"Invalid version {version}")
     
     return categorical_loss_fn_factory(loss)
+
+def parse_int_list(value):
+    """Parses a list of integers given as `32,16` (read as a tuple by the config), `32` or a list."""
+    if isinstance(value, (list, tuple)):
+        return [int(v) for v in value]
+    return [int(v) for v in str(value).strip("()[] ").split(",") if v.strip()]
+
 
 def activation_fn_factory(activation: str):
     """Create activation function (sigmoid, relu, tanh, prelu, etc.).
