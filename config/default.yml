@@ -55,6 +55,7 @@ featurization:
     decline_rate: 30
   doc2vec:
     include_neighbors: False
+    truncate_process_name: False
     alpha: 0.025
     workers: 3
   alacarte:
@@ -169,6 +170,9 @@ training:
       negative_slope: 0.2
       alpha_l: 3.0
       activation: prelu
+    rcaid_gat:
+      num_layers: 2
+      num_heads: 1
     custom_mlp:
       architecture_str: none
     gcn:
