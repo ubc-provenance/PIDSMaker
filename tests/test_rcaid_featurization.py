@@ -201,3 +201,23 @@ def test_rcaid_doc2vec_model(tmp_path, monkeypatch):
             assert np.array_equal(
                 model.infer_vector(doc.words), expected_model.infer_vector(doc.words)
             )
+
+
+def test_node_vectors_do_not_depend_on_inference_order():
+    """Each node vector is the same whatever the nodes inferred before it, and a node
+    without tokens gets a zero vector instead of an unseeded random one."""
+    from pidsmaker.featurization.feat_inference_methods.feat_inference_doc2vec import (
+        infer_node_vector,
+    )
+
+    docs = [TaggedDocument(words, [i]) for i, words in enumerate(
+        [["usr", "bin", "sshd"], ["tmp", "x"], ["etc", "passwd"], ["usr", "lib"], [""]] * 5
+    )]
+    model = Doc2Vec(docs, vector_size=8, min_count=1, epochs=2, workers=1, seed=0)
+    queries = [["usr", "bin", "sshd"], ["tmp", "x"], [], [""], ["etc", "passwd", "usr"]]
+
+    forward = [infer_node_vector(model, q) for q in queries]
+    backward = [infer_node_vector(model, q) for q in queries[::-1]][::-1]
+    for a, b in zip(forward, backward):
+        assert np.array_equal(a, b)
+    assert not forward[2].any() and not forward[3].any()
