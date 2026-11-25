@@ -45,6 +45,7 @@ batching:
       fix_tgn_neighbor_loader: False
       directed: False
       insert_neighbors_before: False
+      reset_state_every_day: True
   inter_graph_batching:
     used_method: none
 training:

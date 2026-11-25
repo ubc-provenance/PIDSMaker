@@ -83,7 +83,13 @@ from pidsmaker.utils.dataset_utils import (
     get_rel2id,
     get_possible_events,
 )
-from pidsmaker.utils.utils import get_multi_datasets, log, log_dataset_stats, log_tqdm
+from pidsmaker.utils.utils import (
+    get_multi_datasets,
+    log,
+    log_dataset_stats,
+    log_tqdm,
+    ns_time_to_datetime_US,
+)
 from pidsmaker.hetero import compute_hetero_features
 
 
@@ -875,6 +881,7 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
                 node_type_dim=None if shared is not None else sample.node_type_src.shape[1],
                 shared=shared,
                 edge_attrs_feature="edge_attrs" in _edge_features_list(cfg),
+                timezone=cfg.dataset.timezone,
             )
 
         else:
@@ -894,6 +901,7 @@ def compute_tgn_graphs(
     node_type_dim,
     shared=None,
     edge_attrs_feature=False,
+    timezone="US/Eastern",
 ):
     """`datasets` is the [train, val, test] list of graph lists. With
     `tgn_loader_cfg.negative_destinations`, a negative destination is drawn for each edge (see
@@ -908,6 +916,10 @@ def compute_tgn_graphs(
     neighbor_loader = LastNeighborLoader(
         max_node, size=neighbor_size, directed=directed, device=device
     )
+    # As Kairos, which trains and tests on one graph per day: the neighbors (here) and the
+    # TGN memory (`TGNEncoder`, from the `reset_tgn_state` flag) are reset at each new day
+    reset_state_every_day = bool(getattr(tgn_loader_cfg, "reset_state_every_day", False))
+    prev_day = None
 
     # With a shared node feature table, only the graph structure is computed here and the
     # features are gathered per batch (see `SharedNodeFeatures.materialize`)
@@ -933,6 +945,13 @@ def compute_tgn_graphs(
                 src = batch.src.to(device)
                 dst = batch.dst.to(device)
                 batch_edge_index = torch.stack([src, dst], dim=0)
+
+                if reset_state_every_day:
+                    day = ns_time_to_datetime_US(int(batch.t[0]), timezone=timezone)[:10]
+                    batch.reset_tgn_state = day != prev_day
+                    if batch.reset_tgn_state:
+                        neighbor_loader.clear()
+                    prev_day = day
 
                 if insert_neighbors_before:
                     neighbor_loader.insert(src, dst)

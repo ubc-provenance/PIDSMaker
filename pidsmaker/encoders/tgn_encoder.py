@@ -69,6 +69,10 @@ class TGNEncoder(nn.Module):
             )
 
     def forward(self, batch, inference=False, **kwargs):
+        # First batch of a day with `tgn_last_neighbor.reset_state_every_day`
+        if getattr(batch, "reset_tgn_state", False) and (self.use_memory or self.use_time_enc):
+            self.memory.reset_state()
+
         n_id = batch.n_id_tgn  # NOTE: this one may need to be updated with no __inc__, or memory is get for unknown nodes
         edge_index = batch.edge_index_tgn
         x = batch.x_tgn

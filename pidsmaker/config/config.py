@@ -1703,6 +1703,11 @@ TASK_ARGS = {
                     bool,
                     desc="Whether to insert the edges of the current graph before loading last neighbors.",
                 ),
+                "reset_state_every_day": Arg(
+                    bool,
+                    desc="Empties the last neighbors and resets the TGN memory at the first batch of each day \
+                        (date of its first event), as Kairos, which trains and tests on one graph per day.",
+                ),
                 "negative_destinations": Arg(
                     bool,
                     desc="Draws a negative destination for each edge, uniformly among the destinations \

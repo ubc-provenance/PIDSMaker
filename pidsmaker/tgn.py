@@ -527,3 +527,7 @@ class LastNeighborLoader:
     def reset_state(self):
         self.cur_e_id = 0
         self.e_id.fill_(-1)
+
+    def clear(self):
+        """Removes all neighbors, while new edges keep their IDs counting from the last ones."""
+        self.e_id.fill_(-1)

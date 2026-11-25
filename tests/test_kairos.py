@@ -55,6 +55,18 @@ def test_graph_attention_final_activation(final_activation):
     assert bool((h >= 0).all()) == final_activation
 
 
+def test_neighbor_loader_clear_keeps_edge_ids():
+    loader = LastNeighborLoader(10, size=3)
+    loader.insert(torch.tensor([0, 1]), torch.tensor([1, 2]))
+    loader.clear()
+    n_id, edge_index, e_id = loader(torch.tensor([0, 1, 2]))
+    assert e_id.numel() == 0 and edge_index.shape[1] == 0
+    # The IDs of the next edges still index the concatenation of all the edges
+    loader.insert(torch.tensor([3]), torch.tensor([4]))
+    _, _, e_id = loader(torch.tensor([3]))
+    assert e_id.tolist() == [2]
+
+
 def encoder_cfg(encoders, objectives, use_memory=True, use_node_feats_in_gnn=False):
     cfg = decoder_cfg(objectives)
     cfg.training.decoder.use_few_shot = False

@@ -34,6 +34,8 @@ batching:
     tgn_last_neighbor:
       tgn_neighbor_size: 10
       negative_destinations: True
+      # Kept continuous across days (Kairos resets them every day)
+      reset_state_every_day: False
 
 training:
   encoder:
