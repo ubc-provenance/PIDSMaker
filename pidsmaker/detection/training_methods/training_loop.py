@@ -298,6 +298,7 @@ def main(cfg):
                 model=model,
                 val_data=val_data,
                 test_data=test_data,
+                train_data=train_data,
                 epoch=epoch,
                 split="all",
             )
@@ -324,6 +325,7 @@ def main(cfg):
             model=model,
             val_data=val_data,
             test_data=test_data,
+            train_data=train_data,
             epoch=best_epoch,
             split="test",
         )

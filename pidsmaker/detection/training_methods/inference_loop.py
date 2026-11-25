@@ -1,22 +1,19 @@
 import json
 import math
 import os
-import random
 import time
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn.functional as F
-from sklearn.neighbors import NearestNeighbors
 
 from pidsmaker.detection.flash_detection import flash_anomaly_score
+from pidsmaker.detection.magic_knn import MagicKNNDetector
 from pidsmaker.utils.data_utils import batch_to_device, to_original_node_ids
 from pidsmaker.utils.labelling import has_event_labels
 from pidsmaker.utils.loss_files import write_losses
 from pidsmaker.utils.utils import (
     PeakCPUMemory,
-    calculate_average_from_file,
     get_device,
     log,
     log_tqdm,
@@ -114,6 +111,7 @@ def test_node_level(
     model_epoch_file,
     cfg,
     device,
+    magic_detector=None,
 ):
     model.eval()
 
@@ -160,80 +158,20 @@ def test_node_level(
             "correct_pred": correct.long().cpu().numpy(),
         }
 
-    # Magic codes
+    # MAGIC: k-NN distance of the test nodes to the benign training nodes
     elif cfg.evaluation.node_evaluation.threshold_method == "magic":
-        os.makedirs(cfg.training._magic_dir, exist_ok=True)
-        if split == "val":
-            x_train, *_ = model.embed(data, inference=True)
-            x_train = x_train.cpu().numpy()
-            num_nodes = x_train.shape[0]
-            sample_size = 5000 if num_nodes > 5000 else num_nodes
-            sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
-            x_train_sampled = x_train[sample_indices]
-            x_train_mean = x_train_sampled.mean(axis=0)
-            x_train_std = x_train_sampled.std(axis=0)
-            x_train_sampled = (x_train_sampled - x_train_mean) / x_train_std
-
-            x_train_sampled = pd.DataFrame.from_records(x_train_sampled)
-
-            n_neighbors = 10
-            nbrs = NearestNeighbors(n_neighbors=n_neighbors)
-            nbrs.fit(x_train_sampled)
-            idx = list(range(x_train_sampled.shape[0]))
-            random.shuffle(idx)
-            try:
-                sample = x_train_sampled.iloc[idx[: min(50000, x_train_sampled.shape[0])]]
-                distances_train, _ = nbrs.kneighbors(
-                    sample, n_neighbors=min(len(sample), n_neighbors)
-                )
-            except KeyError as e:
-                log(f"KeyError encountered: {e}")
-                log(f"Available columns in x_train: {x_train_sampled.columns}")
-                raise
-            mean_distance_train = distances_train.mean().mean()
-            if mean_distance_train == 0:
-                mean_distance_train = 1e-9
-
-            train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
-            with open(train_distance_file, "a") as f:
-                f.write(f"{mean_distance_train}\n")
-
-            node_list = {"node": n_id_np, "loss": losses.astype(float)}
-
-        elif split == "test":
-            train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
-            mean_distance_train = calculate_average_from_file(train_distance_file)
-
+        if split == "test":
+            if magic_detector is None:
+                raise ValueError("MAGIC detection requires a detector fitted on the train split.")
             x_test, *_ = model.embed(data, inference=True)
-            x_test = x_test.cpu().numpy()
-            num_nodes = x_test.shape[0]
-            sample_size = 5000 if num_nodes > 5000 else num_nodes
-            sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
-            x_test_sampled = x_test[sample_indices]
-            x_test_mean = x_test_sampled.mean(axis=0)
-            x_test_std = x_test_sampled.std(axis=0)
-            x_test_sampled = (x_test_sampled - x_test_mean) / x_test_std
-
-            torch.cuda.empty_cache()
-            x_test_sampled = pd.DataFrame.from_records(x_test_sampled)
-
-            n_neighbors = 10
-            nbrs = NearestNeighbors(n_neighbors=n_neighbors)
-            nbrs.fit(x_test_sampled)
-
-            # Query in the same standardized space as the fitted sample.
-            distances, _ = nbrs.kneighbors(
-                (x_test - x_test_mean) / x_test_std, n_neighbors=n_neighbors
-            )
-            distances = distances.mean(axis=1)
-            # distances = distances.to_numpy()
-            score = distances / mean_distance_train
-
+            score = magic_detector.score(magic_detection_embedding(model, x_test))
             node_list = {
                 "node": n_id_np,
-                "magic_score": score.astype(float),
+                "magic_score": score.cpu().numpy().astype(float),
                 "loss": losses.astype(float),
             }
+        else:
+            node_list = {"node": n_id_np, "loss": losses.astype(float)}
 
     else:
         node_list = {"node": n_id_np, "loss": losses.astype(float)}
@@ -247,6 +185,47 @@ def test_node_level(
     os.makedirs(logs_dir, exist_ok=True)
     write_losses(logs_dir, time_interval, node_list)
     return losses
+
+
+def magic_detection_embedding(model, h):
+    """Node embedding scored by MAGIC's k-NN detector."""
+    return h
+
+
+@torch.no_grad()
+def fit_magic_detector(cfg, model, train_data, device):
+    """Fits MAGIC's k-NN detector on the embeddings of the benign training nodes."""
+    from pidsmaker.detection.training_methods.training_loop import (
+        needs_attack_removal,
+        remove_attacks_if_needed,
+    )
+
+    model.eval()
+    s = time.time()
+    embs = []
+    for dataset in train_data:
+        for g in dataset:
+            has_attacks = needs_attack_removal(g, cfg)
+            g = batch_to_device(g, device)
+            if has_attacks:
+                g = remove_attacks_if_needed(g, cfg)
+            h, *_ = model.embed(g, inference=True)
+            embs.append(magic_detection_embedding(model, h).float())
+            del g
+    x_train = torch.cat(embs)
+    del embs
+    node_eval = cfg.evaluation.node_evaluation
+    detector = MagicKNNDetector(
+        k=node_eval.magic_knn_k or 10,
+        max_reference_size=node_eval.magic_max_reference_size or None,
+        seed=cfg.training.seed or 0,
+    ).fit(x_train)
+    log(
+        f"MAGIC k-NN detector fitted on {detector.reference.shape[0]:,} of {x_train.shape[0]:,} "
+        f"benign training node embeddings (k={detector.k}, mean distance "
+        f"{detector.mean_distance:.4f}) in {time.time() - s:.1f}s"
+    )
+    return detector
 
 
 def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data=None):
@@ -277,6 +256,14 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
 
+    magic_detector = None
+    if cfg.evaluation.node_evaluation.threshold_method == "magic" and any(
+        name == "test" for _, name in splits
+    ):
+        if train_data is None:
+            raise ValueError("MAGIC detection requires the train split as k-NN reference set.")
+        magic_detector = fit_magic_detector(cfg, model, train_data, device)
+
     val_score = 0.0
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
@@ -302,6 +289,7 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
                     model_epoch_file=model_epoch_file,
                     cfg=cfg,
                     device=device,
+                    **({"magic_detector": magic_detector} if test_fn is test_node_level else {}),
                 )
                 all_losses.append(np.asarray(losses, dtype=np.float64).ravel())
                 tpb.append(time.time() - s)

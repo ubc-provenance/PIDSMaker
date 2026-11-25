@@ -78,3 +78,5 @@ evaluation:
   node_evaluation:
     threshold_method: magic # can't use anything else here
     use_dst_node_loss: True
+    magic_knn_k: 10 # k-NN on the benign training embeddings, as in MAGIC
+    magic_max_reference_size: 0 # 0: all the training node embeddings

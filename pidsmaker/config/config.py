@@ -1875,6 +1875,16 @@ TASK_ARGS = {
                 float,
                 desc="For threshold_method=ocrapt: min per-type contamination floor.",
             ),
+            "magic_knn_k": Arg(
+                int,
+                desc="For threshold_method=magic: number of nearest benign training nodes whose \
+                    mean distance scores a test node (default 10, as in the MAGIC paper).",
+            ),
+            "magic_max_reference_size": Arg(
+                int,
+                desc="For threshold_method=magic: the k-NN reference set is a random sample of at most \
+                    this many benign training node embeddings (0: all of them).",
+            ),
         },
         "tw_evaluation": {
             "threshold_method": Arg(

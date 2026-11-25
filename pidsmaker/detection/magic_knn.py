@@ -1,0 +1,89 @@
+"""MAGIC's detection module: k-nearest-neighbour outlier detection on node embeddings.
+
+As in the original MAGIC (Jia et al., USENIX Security 2024, `model/eval.py`), the embeddings of
+the benign training graphs form the reference set. Embeddings are standardized with the mean and
+standard deviation of the reference set, and the anomaly score of a node is its mean Euclidean
+distance to its k nearest benign neighbours divided by the mean k-NN distance of benign nodes.
+A score of ~1 is as typical as a training node; outliers score well above 1.
+
+The search is an exact brute-force search on the device of the reference set, by chunks.
+"""
+
+import torch
+
+# MAGIC estimates the mean k-NN distance of the reference set on at most 50,000 of its nodes
+MEAN_DISTANCE_SAMPLE = 50_000
+
+
+class MagicKNNDetector:
+    def __init__(self, k=10, max_reference_size=None, chunk_elems=2**27, seed=0):
+        """
+        Args:
+            k: number of nearest neighbours (10 in the MAGIC paper).
+            max_reference_size: if set, the reference set is a uniform random sample of at most
+                this many training embeddings, to bound the cost of the search.
+            chunk_elems: max number of query-reference distances computed at once.
+            seed: seed of the sampling of the reference set.
+        """
+        self.k = k
+        self.max_reference_size = max_reference_size
+        self.chunk_elems = chunk_elems
+        self.seed = seed
+        self.reference = None
+        self.mean = None
+        self.std = None
+        self.mean_distance = None
+
+    def _generator(self):
+        g = torch.Generator(device="cpu")
+        g.manual_seed(self.seed)
+        return g
+
+    def fit(self, x_train: torch.Tensor):
+        """Fits the detector on the embeddings of benign training nodes (N, d)."""
+        x_train = x_train.float()
+        gen = self._generator()
+        if self.max_reference_size and x_train.shape[0] > self.max_reference_size:
+            idx = torch.randperm(x_train.shape[0], generator=gen)[: self.max_reference_size]
+            x_train = x_train[idx.to(x_train.device)]
+
+        self.mean = x_train.mean(dim=0)
+        # Constant dimensions (e.g. dead units) would divide by zero
+        self.std = x_train.std(dim=0, unbiased=False).clamp_min(1e-6)
+        self.reference = (x_train - self.mean) / self.std
+
+        n = self.reference.shape[0]
+        sample = torch.randperm(n, generator=gen)[: min(MEAN_DISTANCE_SAMPLE, n)]
+        # As in MAGIC, the sampled training nodes are part of the reference set: their nearest
+        # neighbour is themselves, at distance 0
+        dists = self._knn_mean_distance(self.reference[sample.to(self.reference.device)])
+        mean_distance = dists.mean().item()
+        self.mean_distance = mean_distance if mean_distance > 0 else 1e-9
+        return self
+
+    @torch.no_grad()
+    def _knn_mean_distance(self, queries: torch.Tensor) -> torch.Tensor:
+        """Mean distance of each (standardized) query to its k nearest reference nodes."""
+        ref = self.reference
+        k = min(self.k, ref.shape[0])
+        chunk = max(1, self.chunk_elems // max(1, ref.shape[0]))
+        out = []
+        ref_sq = (ref * ref).sum(dim=1)
+        for i in range(0, queries.shape[0], chunk):
+            q = queries[i : i + chunk]
+            # ||q - r||^2 = ||q||^2 - 2 q.r + ||r||^2, clamped against negative rounding errors
+            d2 = (q * q).sum(dim=1, keepdim=True) - 2 * q @ ref.T + ref_sq.unsqueeze(0)
+            topk = torch.topk(d2, k, dim=1, largest=False).values
+            out.append(topk.clamp_min(0).sqrt().mean(dim=1))
+        if not out:
+            return torch.zeros(0, device=ref.device)
+        return torch.cat(out)
+
+    @torch.no_grad()
+    def score(self, x: torch.Tensor) -> torch.Tensor:
+        """Anomaly score of each node embedding (N, d) -> (N,)."""
+        if self.reference is None:
+            raise RuntimeError("MagicKNNDetector must be fitted on benign embeddings first.")
+        x = x.float().to(self.reference.device)
+        x = (x - self.mean) / self.std
+        return self._knn_mean_distance(x) / self.mean_distance
