@@ -285,8 +285,9 @@ class TGNMemory(torch.nn.Module):
         super().train(mode)
 
     # Nodes whose memory is updated at once when flushing the message store: the aggregated
-    # messages of all the nodes of TRACE_E3 (44.5M) take 56 GB of GPU memory.
-    flush_chunk_size = 2_000_000
+    # messages of all the nodes of TRACE_E3 (44.5M) take 56 GB of GPU memory, and the update
+    # of 2M nodes peaks at 12 GB with Kairos (250K nodes: 1.5 GB, at a similar speed).
+    flush_chunk_size = 250_000
 
     def _flush_all_memory(self):
         """Updates the memory of all nodes, as `_update_memory` on all nodes, in chunks of nodes.
