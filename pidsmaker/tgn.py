@@ -280,9 +280,30 @@ class TGNMemory(torch.nn.Module):
             # As we load directly the memory from a pkl file, I don't think we need this line anymore so we
             # removed it. If results become strange in the future, try to add this line back to ensure it
             # doen't affect performance.
-            self._update_memory(torch.arange(self.num_nodes, device=self.memory.device))
+            self._flush_all_memory()
             self._reset_message_store()
         super().train(mode)
+
+    # Nodes whose memory is updated at once when flushing the message store: the aggregated
+    # messages of all the nodes of TRACE_E3 (44.5M) take 56 GB of GPU memory.
+    flush_chunk_size = 2_000_000
+
+    def _flush_all_memory(self):
+        """Updates the memory of all nodes, as `_update_memory` on all nodes, in chunks of nodes.
+        Every chunk reads the memory before the update, so the new memory of all chunks is
+        computed first (and kept on CPU) before any is written."""
+        n_id = torch.arange(self.num_nodes, device=self.memory.device)
+        if self.num_nodes <= self.flush_chunk_size:
+            self._update_memory(n_id)
+            return
+        updates = []
+        for chunk in n_id.split(self.flush_chunk_size):
+            memory, last_update = self._get_updated_memory(chunk)
+            updates.append((chunk, memory.detach().cpu(), last_update.cpu()))
+            del memory, last_update
+        for chunk, memory, last_update in updates:
+            self.memory[chunk] = memory.to(self.memory.device)
+            self.last_update[chunk] = last_update.to(self.last_update.device)
 
 
 class TimeEncodingMemory(torch.nn.Module):
