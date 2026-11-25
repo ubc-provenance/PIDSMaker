@@ -197,6 +197,8 @@ training:
     predict_node_type:
       decoder: node_mlp
       balanced_loss: False
+      flash_snapshots: False
+      flash_drop_conf: 0.9
       node_mlp:
         architecture_str: none
     reconstruct_node_features:

@@ -132,6 +132,9 @@ def test_node_level(
     elif cfg.evaluation.node_evaluation.threshold_method == "flash":
         # `out` holds log-probabilities: the confidence of FLASH is computed on probabilities
         score, correct = flash_anomaly_score(results["out"].exp(), data.node_type.argmax(1))
+        ensemble = getattr(model, "flash_ensemble", None)
+        if ensemble is not None:
+            score = ensemble.score(model, data, score)
         node_list = {
             "node": n_id_np,
             "loss": losses.astype(float),

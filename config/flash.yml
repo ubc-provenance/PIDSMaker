@@ -65,6 +65,8 @@ training:
     predict_node_type:
       decoder: none
       balanced_loss: True
+      flash_snapshots: True
+      flash_drop_conf: 0.9
 
 evaluation:
   viz_malicious_nodes: False

@@ -125,7 +125,7 @@ Datasets whose schema has a label column, such as [LANL and OPTC_NET](datasets.m
 | `percentile` | 95th percentile of the losses | Max validation loss × `alpha` | |
 | `nodlink` | Max loss | 90th percentile of the validation losses | NodLink |
 | `threatrace` | Max of log(p₁/p₂), the ratio of the two most likely node types | 1.5, and the node type must be predicted correctly | ThreaTrace |
-| `flash` | Max of (p₁ − p₂)/p₁ on the node type logits | 0.53, and the node type must be predicted correctly | Flash |
+| `flash` | Max over time windows of 1 − c if the node type is predicted correctly and 1 + c otherwise, with c = (p₁ − p₂)/p₁ on the node type probabilities, min-max normalized per window. With `predict_node_type.flash_snapshots`, the min over the snapshots of the epochs so far | Flagged unless predicted correctly with c > 0.53 (score ≥ 0.47) | Flash |
 | `magic` | Max distance to the 10 nearest test embeddings, relative to validation | Mean score over the test nodes | MAGIC |
 | `ocrapt` | Max loss | Per node type: the top fraction of scores, set by `ocrapt_contamination` and `ocrapt_min_contamination` | OCR-APT |
 | `fixed_zero` | Max loss | 0 (decision boundary of a binary classifier) | [Supervised](../features/supervised.md) objective |

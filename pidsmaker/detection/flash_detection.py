@@ -40,3 +40,77 @@ def flash_anomaly_score(probs, node_type_idx):
 def flash_flags(score, threshold):
     """Original rule: a node is flagged unless it is correctly predicted with conf > threshold."""
     return score >= 1 - threshold
+
+
+TRAIN_MASK_KEY = "flash_train_mask"
+
+
+def flash_drop_learned(probs, node_type_idx, drop_conf):
+    """Training nodes that FLASH removes after an epoch: those whose type is predicted correctly,
+    or predicted with a confidence of at least `drop_conf` (`(pred == y) | (conf >= 0.9)` in the
+    CADETS and THEIA notebooks)."""
+    conf, pred = flash_confidence(probs)
+    return (pred == node_type_idx) | (conf >= drop_conf)
+
+
+class FlashSnapshotEnsemble:
+    """The sequence of GNN snapshots of FLASH.
+
+    In the original code, the GNN is trained for N rounds (22 on CADETS, 20 on THEIA). Each
+    round trains on the training nodes that are still misclassified, then removes the nodes it
+    learned (see `flash_drop_learned`), and saves the model. At test time, a node is benign if
+    any of the N snapshots predicts its type correctly with a confidence above the threshold.
+
+    Here, a round is an epoch over the training graphs: the remaining nodes of each graph are
+    stored in the CPU graph (`TRAIN_MASK_KEY`) and only them contribute to the loss, and the
+    score of a node at inference is the minimum of its `flash_anomaly_score` over the snapshots
+    of the epochs trained so far (so it is flagged iff no snapshot is confidently correct).
+    """
+
+    def __init__(self, drop_conf):
+        self.drop_conf = drop_conf
+        self.states = []
+
+    @staticmethod
+    def _state(model):
+        return {k: v.detach().clone() for k, v in model.state_dict().items()}
+
+    @torch.no_grad()
+    def after_epoch(self, model, train_data, device):
+        from pidsmaker.utils.data_utils import batch_to_device
+        from pidsmaker.utils.utils import log
+
+        self.states.append(self._state(model))
+        was_training = model.training
+        model.eval()
+        remaining, total = 0, 0
+        for dataset in train_data:
+            for g in dataset:
+                mask = getattr(g, TRAIN_MASK_KEY, None)
+                if mask is None or mask.any():
+                    # The node features and types may only be built on the device copy
+                    batch = batch_to_device(g, device)
+                    out = model(batch, inference=True)["out"]
+                    drop = flash_drop_learned(out.exp(), batch.node_type.argmax(1), self.drop_conf)
+                    mask = ~drop.cpu() if mask is None else mask & ~drop.cpu()
+                setattr(g, TRAIN_MASK_KEY, mask)
+                remaining += int(mask.sum())
+                total += mask.numel()
+        model.train(was_training)
+        log(f"FLASH round {len(self.states) - 1}: {remaining}/{total} training nodes still misclassified")
+
+    @torch.no_grad()
+    def score(self, model, data, current_score):
+        """Minimum anomaly score over the snapshots. `current_score` is the score given by the
+        current weights of `model`, which are restored."""
+        if len(self.states) <= 1:
+            return current_score
+        current = self._state(model)
+        node_type_idx = data.node_type.argmax(1)
+        best = current_score
+        for state in self.states[:-1]:  # the last snapshot holds the current weights
+            model.load_state_dict(state)
+            out = model(data, inference=True)["out"]
+            best = torch.minimum(best, flash_anomaly_score(out.exp(), node_type_idx)[0])
+        model.load_state_dict(current)
+        return best

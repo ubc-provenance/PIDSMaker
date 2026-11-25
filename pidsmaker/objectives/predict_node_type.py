@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+from pidsmaker.detection.flash_detection import TRAIN_MASK_KEY
 from pidsmaker.utils.utils import compute_class_weights
 
 
@@ -22,5 +23,16 @@ class NodeTypePrediction(nn.Module):
         )
 
         node_type_classes = node_type.argmax(dim=1)
-        loss = self.loss_fn(h_hat, node_type_classes, inference=inference, weight=class_weights)
+        if inference:
+            loss = self.loss_fn(h_hat, node_type_classes, inference=True, weight=class_weights)
+        else:
+            # FLASH trains each round on the nodes it still misclassifies only
+            batch = kwargs.get("batch")
+            train_mask = getattr(batch, TRAIN_MASK_KEY, None) if batch is not None else None
+            if train_mask is None:
+                loss = self.loss_fn(h_hat, node_type_classes, inference=False, weight=class_weights)
+            else:
+                loss = self.loss_fn(
+                    h_hat[train_mask], node_type_classes[train_mask], inference=False, weight=class_weights
+                )
         return {"loss": loss, "out": F.log_softmax(h_hat, dim=1)}

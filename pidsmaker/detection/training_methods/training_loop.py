@@ -17,6 +17,7 @@ import numpy as np
 import torch
 import wandb
 
+from pidsmaker.detection.flash_detection import TRAIN_MASK_KEY, FlashSnapshotEnsemble
 from pidsmaker.factory import (
     build_model,
     early_stop_tracker_factory,
@@ -115,6 +116,17 @@ def main(cfg):
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
 
+    # FLASH: a sequence of GNN snapshots, each trained on the nodes still misclassified
+    model.flash_ensemble = None
+    node_type_cfg = getattr(cfg.training.decoder, "predict_node_type", None)
+    if (
+        cfg._is_node_level
+        and cfg.evaluation.node_evaluation.threshold_method == "flash"
+        and node_type_cfg is not None
+        and node_type_cfg.flash_snapshots
+    ):
+        model.flash_ensemble = FlashSnapshotEnsemble(drop_conf=node_type_cfg.flash_drop_conf)
+
     for epoch in range(0, num_epochs):
         best_val_score, best_model, best_epoch = float("-inf"), None, None
 
@@ -139,6 +151,9 @@ def main(cfg):
             optimizer.zero_grad()
             for dataset in train_data:
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
+                    flash_mask = getattr(g, TRAIN_MASK_KEY, None)
+                    if flash_mask is not None and not flash_mask.any():
+                        continue  # FLASH: no node of this graph is still misclassified
                     # Checked on the CPU graph to avoid a GPU sync at each batch
                     has_attacks_to_remove = needs_attack_removal(g, cfg)
                     # Copy to device without mutating the CPU graph: no copy back needed
@@ -173,6 +188,9 @@ def main(cfg):
                     optimizer.step()
                     if scheduler is not None:
                         scheduler.step()
+
+            if model.flash_ensemble is not None:
+                model.flash_ensemble.after_epoch(model, train_data, device)
 
             tot_loss = tot_loss.item() / sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)

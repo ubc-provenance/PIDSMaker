@@ -1197,6 +1197,17 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
+        "flash_snapshots": Arg(
+            bool,
+            desc="With the `flash` threshold method: trains each epoch on the training nodes still "
+            "misclassified, and flags a node only if no snapshot of the epochs so far predicts its "
+            "type correctly with a confidence above the threshold, as in FLASH.",
+        ),
+        "flash_drop_conf": Arg(
+            float,
+            desc="With `flash_snapshots`: training nodes predicted with this confidence or more are "
+            "removed after an epoch, as the correctly predicted ones (0.9 in FLASH).",
+        ),
     },
     # R-Caid: predicts the name of the executable of each process (other nodes are not scored)
     "predict_process_tag": {
