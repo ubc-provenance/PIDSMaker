@@ -171,7 +171,9 @@ class TGNEncoder(nn.Module):
             # The raw message is only used by the TGN memory (TimeEncodingMemory ignores it,
             # and `msg` is not kept in the batches when unused)
             raw_msg = batch.msg if self.use_memory else None
-            self.memory.update_state(batch.src, batch.dst, batch.t, raw_msg)
+            # The nodes of the edges, computed in the batching (`torch.unique` waits for the GPU)
+            n_id_edges = None if "neg_dst_tgn" in batch else getattr(batch, "original_n_id", None)
+            self.memory.update_state(batch.src, batch.dst, batch.t, raw_msg, n_id=n_id_edges)
 
         # Detaching memory is only useful for backprop in training
         if self.use_memory and not inference:
