@@ -202,6 +202,7 @@ Figures with one point per node or edge are slow to draw on large test sets: `ev
 | MAGIC | `node_evaluation` | `magic` | |
 | Flash | `node_evaluation` | `flash` | |
 | NodLink | `node_evaluation` | `nodlink` | |
+| ProGrapher | `tw_evaluation` (`node_evaluation` from its key indicators) | `max_val_loss` | |
 | ThreaTrace | `node_evaluation` | `threatrace` | |
 | OCR-APT | `node_evaluation` | `ocrapt` | |
 | Euler, Argus, Jbeil, E-GraphSAGE, Anomal-E | `edge_evaluation` (`both_nodes`) | `max_val_loss` | |

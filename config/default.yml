@@ -85,6 +85,13 @@ featurization:
   flash:
     min_count: 1
     workers: 1
+  graph2vec:  # ProGrapher
+    wl_iterations: 4
+    negative: 15
+    min_count: 1
+    alpha: 0.025
+    infer_epochs: 100
+    num_workers: 1  # several workers make the training of gensim non-deterministic
   # Default parameters of each tokenization. Systems set `tokenization.used_method`.
   # `substitutions` lists the values replaced by placeholder tokens ([HASH], [NUM], ...), or `none`.
   tokenization:
@@ -182,6 +189,15 @@ training:
     lares:
       flow: target_to_source
       use_node_features: False
+    shadewatcher:
+      hidden_dims: 32,16
+      kg_dim: 32
+      kg_neg_ratio: 2
+      kg_margin: 1.0
+    textrcnn:  # ProGrapher
+      sequence_length: 128
+      num_layers: 5
+      rnn_type: lstm
   decoder:
     predict_edge_supervised:
       decoder: edge_mlp
@@ -242,6 +258,9 @@ training:
     autoencode_edge_embeddings:
       decoder: none
       use_edge_feats: True
+    predict_snapshot_embedding:  # ProGrapher
+      decoder: none
+      top_k: 0
     few_shot:
       include_attacks_in_ssl_training: False
       freeze_encoder: True

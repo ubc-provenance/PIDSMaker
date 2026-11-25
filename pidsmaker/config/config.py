@@ -655,6 +655,26 @@ FEATURIZATIONS_CFG = {
             desc="Number of threads training Doc2Vec. Training is deterministic only with 1.",
         ),
     },
+    # Whole-graph embedding of each time window (ProGrapher), see featurization_graph2vec.py
+    "graph2vec": {
+        "wl_iterations": Arg(
+            int,
+            desc="Depth D of the Weisfeiler-Lehman rooted subgraphs (RSGs) of each node, built from \
+                node and edge types (ProGrapher: 3 on small graphs, 4 on large ones).",
+        ),
+        "negative": Arg(int, desc="Number of negative RSGs sampled per RSG (PV-DBOW)."),
+        "min_count": Arg(int, desc="RSGs seen fewer times in the training snapshots are ignored."),
+        "alpha": Arg(float, desc="Initial learning rate of doc2vec."),
+        "infer_epochs": Arg(
+            int,
+            desc="Epochs to infer the embedding of each snapshot (all splits) from the trained RSG vectors.",
+        ),
+        "num_workers": Arg(
+            int,
+            desc="Processes extracting RSGs and inferring embeddings, and threads of doc2vec \
+                training (training is only deterministic with 1).",
+        ),
+    },
     "fasttext": {
         "min_count": Arg(int),
         "alpha": Arg(float),
@@ -976,6 +996,7 @@ SUBWORD_TOKENIZATION_METHODS = [m for m in TEXT_TOKENIZATION_METHODS if m != "wh
 FEATURIZATION_TOKENIZATIONS = {
     "word2vec": SUBWORD_TOKENIZATION_METHODS,
     "doc2vec": TEXT_TOKENIZATION_METHODS,
+    "graph2vec": ["none"],
     "fasttext": SUBWORD_TOKENIZATION_METHODS,
     "temporal_rw": TEXT_TOKENIZATION_METHODS,
     "flash": TEXT_TOKENIZATION_METHODS,
@@ -1039,6 +1060,21 @@ ENCODERS_CFG = {
         "hidden_dim": Arg(int, desc="Size of the GRU state, projected to `node_out_dim` (0: `node_out_dim`)."),
         "dropout": Arg(float, desc="Dropout applied to the input of the GRU."),
     },
+    # ProGrapher: predicts the graph2vec embedding of each snapshot from the previous ones
+    "textrcnn": {
+        "sequence_length": Arg(
+            int,
+            desc="Number of previous snapshots (graphs) whose graph2vec embeddings form the input \
+                sequence (ProGrapher's L). Shorter sequences are used when fewer snapshots were seen.",
+        ),
+        "num_layers": Arg(int, desc="Number of layers of the bidirectional RNN (hidden size: `node_hid_dim`)."),
+        "rnn_type": Arg(
+            str,
+            vals=OR(["lstm", "gru", "rnn"]),
+            desc="Bidirectional RNN computing the left and right contexts of each snapshot: \
+                `rnn` is the ReLU recurrence of the TextRCNN equations, `lstm` and `gru` are gated.",
+        ),
+    },
     "lares": {
         "flow": Arg(
             str,
@@ -1059,6 +1095,18 @@ ENCODERS_CFG = {
     },
     "argus": {
         "num_layers": Arg(int, desc="Number of layers: GCN layers followed by a last edge-conditioned convolution (NNConv) if edge features are used."),
+    },
+    "shadewatcher": {
+        "hidden_dims": Arg(
+            str,
+            desc="Comma-separated output sizes of the GNN layers propagating the TransR entity \
+                embeddings (of size `node_hid_dim`) over the knowledge graph (ShadeWatcher: `32,16`). \
+                The output concatenates the entity embeddings and the output of each layer, \
+                projected to `node_out_dim` if their sizes differ.",
+        ),
+        "kg_dim": Arg(int, desc="Size of the relation space of TransR (relation embeddings and projections)."),
+        "kg_neg_ratio": Arg(int, desc="Number of corrupted triples per triple of the TransR loss."),
+        "kg_margin": Arg(float, desc="Margin between the distances of valid and corrupted triples in the TransR loss."),
     },
     "gat": {
         "activation": Arg(str),
@@ -1144,6 +1192,7 @@ OBJECTIVES_NODE_LEVEL = [
     "reconstruct_masked_features",
     "one_class",
     "predict_masked_struct",
+    "predict_snapshot_embedding",
 ]
 OBJECTIVES_EDGE_LEVEL = [
     "autoencode_edge_embeddings",
@@ -1156,6 +1205,8 @@ OBJECTIVES_EDGE_LEVEL = [
 OBJECTIVES = OBJECTIVES_NODE_LEVEL + OBJECTIVES_EDGE_LEVEL
 # Objectives that do not use a decoder (their `decoder` arg is ignored)
 OBJECTIVES_WITHOUT_DECODER = ["deep_graph_infomax", "autoencode_edge_embeddings"]
+# The encoder of ProGrapher (`textrcnn`) directly predicts the snapshot embedding
+OBJECTIVES_WITHOUT_DECODER += ["predict_snapshot_embedding"]
 OBJECTIVES_CFG = {
     # Prediction-based
     "predict_edge_supervised": {
@@ -1260,9 +1311,10 @@ OBJECTIVES_CFG = {
         ),
         "loss": Arg(
             str,
-            vals=OR(["bce", "ap"]),
+            vals=OR(["bce", "ap", "bpr"]),
             desc="`bce`: binary cross-entropy of positive vs. random negative edges (default), \
-                `ap`: surrogate average precision loss of Argus.",
+                `ap`: surrogate average precision loss of Argus, `bpr`: pairwise BPR loss of \
+                ShadeWatcher, softplus(s_neg - s_pos) between each negative edge and its positive edge.",
         ),
         "ap_margin": Arg(float, desc="Margin of the squared hinge of the `ap` loss (default: 0.8)."),
         "neg_sampling": Arg(
@@ -1279,6 +1331,11 @@ OBJECTIVES_CFG = {
         **DECODERS_CFG,
         "inner_product": {
             "dropout": Arg(float),
+            "negate": Arg(
+                bool,
+                desc="Scores edges by the negated inner product, as ShadeWatcher, whose inner \
+                    product is the probability that two entities would not interact.",
+            ),
         },
     },
     # Self-supervised contrastive learning on edges, with PCA anomaly scores (Anomal-E)
@@ -1290,6 +1347,15 @@ OBJECTIVES_CFG = {
             int,
             desc="Number of principal components of the PCA fitted on the embeddings of training \
                 edges. Edges are scored by the reconstruction error of their embedding.",
+        ),
+    },
+    # Prediction of the graph2vec embedding of each snapshot, with node scores (ProGrapher)
+    "predict_snapshot_embedding": {
+        "decoder": Arg(str, vals=OR(["none"]), desc="Unused: the encoder predicts the embedding."),
+        "top_k": Arg(
+            int,
+            desc="Number of top-ranked rooted subgraphs (key indicators) whose nodes get a score: \
+                other nodes get 0. 0 scores all nodes by the rank of their best rooted subgraph.",
         ),
     },
     # Reconstruction-based

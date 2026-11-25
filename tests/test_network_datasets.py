@@ -178,7 +178,7 @@ NIDS_SYSTEMS = ["euler", "argus", "jbeil", "lares", "egraphsage", "anomal_e"]
 
 
 class TestLANL:
-    systems = ["velox", "orthrus", "kairos", "magic", "ocrapt"] + NIDS_SYSTEMS
+    systems = ["velox", "orthrus", "kairos", "magic", "ocrapt", "shadewatcher"] + NIDS_SYSTEMS
 
     @pytest.mark.parametrize("system", systems)
     def test_systems(self, system):

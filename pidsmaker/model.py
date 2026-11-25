@@ -94,6 +94,9 @@ class Model(nn.Module):
         # Edges in the node space of `h` (the batch's edges, unless the encoder embeds other
         # nodes, e.g. all the nodes of the dataset, see `NodeIdEmbedding`)
         self._h_edge_index = res.get("edge_index", batch.edge_index) if isinstance(res, dict) else batch.edge_index
+        # Loss of the encoder's own parameters (e.g. TransR of ShadeWatcher), added to the loss
+        # of the objectives during training
+        self._encoder_aux_loss = res.get("aux_loss") if isinstance(res, dict) else None
         return h, h_src, h_dst
 
     def _embed_nodes(self, batch, inference):
@@ -144,6 +147,7 @@ class Model(nn.Module):
         """
         h, h_src, h_dst, mask_nodes = self._embed_nodes(batch, inference)
         h_edge_index = self._h_edge_index
+        encoder_aux_loss = self._encoder_aux_loss
         train_mode = not inference
 
         # Objectives contrasting the graph with a corrupted version of it (e.g. Deep Graph
@@ -228,6 +232,9 @@ class Model(nn.Module):
                         f"Shapes of loss/score do not match ({loss.numel()} vs {loss_or_scores.numel()})"
                     )
                 loss_or_scores = loss_or_scores + loss
+
+            if train_mode and encoder_aux_loss is not None:
+                loss_or_scores = loss_or_scores + encoder_aux_loss
 
             results["loss"] = loss_or_scores
             return results

@@ -89,6 +89,23 @@ def _sum_squared_hinge(queries, keys, margin):
     return count * a * a + 2 * a * suffix_k[first] + suffix_k2[first]
 
 
+def bpr_contrastive(positive, negative, inference=False, pos_index=None, **kwargs):
+    """Bayesian personalized ranking (BPR) loss of link prediction, as in ShadeWatcher.
+
+    Each negative edge is paired with a positive edge (`pos_index[i]` is the positive edge of the
+    negative edge i, by default the edge of the same index), whose score should be higher:
+    softplus(s_neg - s_pos). At inference, edges are scored by their negated score (low score =
+    anomalous).
+    """
+    if inference:
+        return -positive
+    if pos_index is None:
+        if positive.shape[0] != negative.shape[0]:
+            raise ValueError("The `bpr` loss requires a positive edge for each negative edge.")
+        pos_index = torch.arange(positive.shape[0], device=positive.device)
+    return F.softplus(negative.flatten() - positive.flatten()[pos_index]).mean()
+
+
 def cross_entropy(x, y, inference=False, weight=None, **kwargs):
     reduction = "none" if inference else "mean"
     return F.cross_entropy(x, y, reduction=reduction, weight=weight)
