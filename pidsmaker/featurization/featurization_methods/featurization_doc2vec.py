@@ -18,7 +18,7 @@ from pidsmaker.utils.utils import log, log_start
 
 def doc2vec(
     cfg,
-    tagged_data: list[str],
+    tagged_data,
     model_save_path: str,
     epochs: int,
     emb_dim: int,
@@ -29,7 +29,8 @@ def doc2vec(
 
     Args:
         cfg: Configuration object
-        tagged_data: Tagged documents (walks with node identifiers)
+        tagged_data: Tagged documents (walks with node identifiers), a list or a re-iterable
+            corpus (iterated once to build the vocabulary, then once per epoch)
         model_save_path: Path to save model
         epochs: Training epochs
         emb_dim: Embedding dimension
