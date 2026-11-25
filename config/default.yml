@@ -110,9 +110,13 @@ feat_inference:
   to_remove: True
 
 training:
-  # ThreaTrace (`threshold_method: threatrace`)
+  # ThreaTrace (`used_method: threatrace` and `threshold_method: threatrace`)
   threatrace:
     ratio_threshold: 1.5
+    max_submodels: 100
+    max_retrain_epochs: 149
+    retrain_loss_threshold: 1.0
+    max_rounds_without_progress: 3
   encoder:
     x_is_tuple: False
     graph_attention:

@@ -1719,13 +1719,28 @@ TASK_ARGS = {
         ),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "fuse_duplicate_edges_training": Arg(bool, desc="During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss."),
-        "used_method": Arg(str, vals=OR(["default", "pretrained"]), desc="Which training pipeline use."),
+        "used_method": Arg(str, vals=OR(["default", "pretrained", "threatrace"]), desc="Which training pipeline use. \
+            `threatrace` trains ThreaTrace's successive submodels (see `training.threatrace`)."),
         "threatrace": {
             "ratio_threshold": Arg(
                 float,
-                desc="ThreaTrace's `thre`: a node is explained when its type is predicted with a \
-                    top-1 / top-2 probability ratio of at least this value. Anomalous nodes are \
-                    those not explained (used by `threshold_method: threatrace`).",
+                desc="ThreaTrace's `thre`: a node is explained by a submodel when its type is predicted \
+                    with a top-1 / top-2 probability ratio of at least this value. Anomalous nodes are \
+                    those no submodel explains (used by `threshold_method: threatrace`).",
+            ),
+            "max_submodels": Arg(int, desc="Maximum number of submodels trained by `used_method: threatrace`."),
+            "max_retrain_epochs": Arg(
+                int, desc="Maximum number of epochs to train each submodel after the first one."
+            ),
+            "retrain_loss_threshold": Arg(
+                float,
+                desc="Training of a submodel after the first one stops once its mean loss on the nodes \
+                    not yet explained is below this value.",
+            ),
+            "max_rounds_without_progress": Arg(
+                int,
+                desc="Training stops after this number of consecutive rounds where the submodel \
+                    explains no new training node.",
             ),
         },
         "ocrapt_early_stop": {

@@ -42,7 +42,7 @@ def flash_flags(score, threshold):
     return score >= 1 - threshold
 
 
-TRAIN_MASK_KEY = "flash_train_mask"
+TRAIN_MASK_KEY = "node_loss_mask"  # NODE_LOSS_MASK_KEY of `predict_node_type`
 
 
 def flash_drop_learned(probs, node_type_idx, drop_conf):

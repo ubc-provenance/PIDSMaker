@@ -34,7 +34,7 @@ batching:
   inter_graph_batching:
     used_method: none
 training:
-  used_method: default
+  used_method: threatrace
   seed: 0
   deterministic: False
   num_epochs: 12
@@ -46,6 +46,10 @@ training:
   grad_accumulation: 1
   threatrace:
     ratio_threshold: 1.5  # `thre` of CADETS and THEIA in the original
+    max_submodels: 100
+    max_retrain_epochs: 149
+    retrain_loss_threshold: 1.0
+    max_rounds_without_progress: 3
   encoder:
     dropout: 0.5
     used_methods: sage
