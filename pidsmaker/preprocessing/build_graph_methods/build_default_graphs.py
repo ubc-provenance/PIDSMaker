@@ -191,14 +191,24 @@ def compute_indexid2msg(cfg, cleaner=None):
         label_str = re.sub(r"[^\x20-\x7e]+", "", label_str).strip()
         return label_str
 
+    # Nodes of the same type and label share the same [node_type, label] list (values are
+    # never modified). Many nodes share their label (e.g. TRACE_E3 has 39M processes but 355
+    # distinct paths), so this divides the memory of the mapping, and avoids that forked
+    # graph-building workers copy the pages of millions of lists whose refcount they change.
+    shared_msgs = defaultdict(dict)  # {node_type: {label: [node_type, label]}}
     counts = Counter()
     for node_type, _uuid, _hash_id, index_id, attrs in iter_nodes(cfg, connect):
         if "remote_ip" in attrs and cleaner.is_noisy_netflow(attrs):
             continue
         attrs = cleaner.clean_attributes(node_type, attrs)
         label_str = get_label_str_from_features(attrs, node_type)
-        indexid2msg[str(index_id)] = [node_type, label_str]
+        msgs = shared_msgs[node_type]
+        msg = msgs.get(label_str)
+        if msg is None:
+            msg = msgs[label_str] = [node_type, label_str]
+        indexid2msg[str(index_id)] = msg
         counts[node_type] += 1
+    del shared_msgs
 
     for node_type, count in counts.items():
         log(f"Number of {node_type} nodes: {count}")
@@ -244,7 +254,9 @@ def compute_and_save_split2nodes(cfg, file2nodes=None):
     Args:
         cfg: Configuration with graph directory and split file paths
         file2nodes: Optional {normalized graph path: node set} recorded while building
-            the graphs. Graphs found there are not reloaded from disk.
+            the graphs. Graphs found there are not reloaded from disk. The set of a graph may
+            be a superset of its nodes shared by graphs of the same splits (e.g. the nodes
+            of its day).
 
     Returns:
         dict: Mapping of split names to node sets:
@@ -255,10 +267,15 @@ def compute_and_save_split2nodes(cfg, file2nodes=None):
     file2nodes = file2nodes or {}
 
     for split, files in split_to_files.items():
+        merged = set()  # ids of the node sets already merged (graphs may share a set)
         for path in log_tqdm(files, desc=f"Check nodes in {split} set"):
             nodes = file2nodes.get(os.path.normpath(path))
             if nodes is None:
                 nodes = torch.load(path).nodes()
+            elif id(nodes) in merged:
+                continue
+            else:
+                merged.add(id(nodes))
             split2nodes[split].update(nodes)
     split2nodes = dict(split2nodes)
 
@@ -290,7 +307,8 @@ def gen_edge_fused_tw(indexid2msg, cfg, cleaner=None, file2nodes=None):
             - Output directory paths
         cleaner: Optional `Cleaner` removing events (self-loops, duplicates, ...)
         file2nodes: Optional dict filled with {normalized graph path: node set}, so that
-            the nodes of each graph can be retrieved without reloading it from disk.
+            the nodes of each split can be retrieved without reloading the graphs from disk.
+            All the graphs of a day share the set of the nodes of the day.
     """
     if cleaner is None:
         cleaner = Cleaner(cfg)
@@ -572,6 +590,7 @@ def _build_day_events(
 
     timestamps = [date_start, date_stop]
     test_mode_set_done = False
+    day_nodes = set()
 
     for i in range(0, len(timestamps) - 1):
         start = timestamps[i]
@@ -754,7 +773,11 @@ def _build_day_events(
                     # log(f"Saving graph for {time_interval}")
                     _save_window_graph(graph_name, node_info, edge_list, edge_attr_names)
                     if file2nodes is not None:
-                        file2nodes[os.path.normpath(graph_name)] = set(node_info)
+                        # The graphs of a day share the set of the nodes of the day: a
+                        # set per graph took tens of GB on large datasets, while only the
+                        # nodes of each split are needed (a day belongs to the same splits)
+                        day_nodes.update(node_info)
+                        file2nodes[os.path.normpath(graph_name)] = day_nodes
 
                     # log(f"[{time_interval}] Num of edges: {len(edge_list)}")
                     # log(f"[{time_interval}] Num of events: {len(temp_list)}")
