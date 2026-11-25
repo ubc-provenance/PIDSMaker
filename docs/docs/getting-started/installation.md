@@ -18,7 +18,7 @@ Ten minutes from a fresh machine to your first run. PIDSMaker runs in two contai
 
 ## 1. Download the datasets
 
-PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, one per dataset. DARPA TC and OpTC are very large and hard to process: we provide **preprocessed versions** of all provenance datasets as Postgres database dumps. The network datasets are built from the preprocessed files of LARES for now.
+PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, one per dataset. DARPA TC and OpTC are very large and hard to process: we provide **preprocessed versions** of all datasets as Postgres database dumps. The dumps of the network datasets are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares).
 
 | Dataset | Family | Download (GB) | Loaded in Postgres (GB) |
 |---|---|--:|--:|
@@ -37,15 +37,15 @@ PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, on
 | `optc_h051` | <span class="pm-family pm-family--prov">Provenance</span> | 1.7 | 7.7 |
 | `ATLASV2_EDR` | <span class="pm-family pm-family--prov">Provenance</span> | 0.2 | 1 |
 | `CARBANAKV2_EDR` | <span class="pm-family pm-family--prov">Provenance</span> | 1.1 | 6.6 |
-| `LANL` | <span class="pm-family pm-family--net">Network</span> | [build](#network-datasets) | 8.5 |
-| `OPTC_NET` | <span class="pm-family pm-family--net">Network</span> | [build](#network-datasets) | 275 |
+| `LANL` | <span class="pm-family pm-family--net">Network</span> | 0.7 | 8.5 |
+| `OPTC_NET` | <span class="pm-family pm-family--net">Network</span> | 21 | 275 |
 
 **Download** is the size of the dump, **loaded in Postgres** the size of the database once loaded.
 
 !!! tip "New to PIDSMaker?"
     Start with `CADETS_E3`, `THEIA_E3` or `CLEARSCOPE_E3` for provenance-based detection, and `LANL` for network detection: they are small, quick to load, and the most widely used in papers.
 
-### Download the provenance dumps { #provenance-datasets .pm-h-prov }
+### Download the dumps { #download-the-dumps }
 
 === "Option 1: Google Drive"
 
@@ -64,7 +64,7 @@ PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, on
 
     ```shell
     # A comma-separated list of datasets
-    ./download_datasets.sh cadets_e3,optc_h201,clearscope_e5 YOUR_ACCESS_TOKEN
+    ./download_datasets.sh cadets_e3,optc_h201,lanl YOUR_ACCESS_TOKEN
 
     # Or all datasets
     ./download_datasets.sh all YOUR_ACCESS_TOKEN
@@ -72,11 +72,7 @@ PIDSMaker reads its [datasets](../guide/datasets.md) from Postgres databases, on
 
     Downloads resume where they stopped if you re-run the command.
 
-You can also build these databases yourself from the official DARPA files: see [Building datasets from scratch](from-scratch.md).
-
-### Build the network databases { #network-datasets .pm-h-net }
-
-The dumps of the network databases are not available for download yet. Once PIDSMaker is installed (steps 2 to 5), build the databases from the preprocessed files of LARES (a 14 GB archive), as explained in [Building datasets from scratch](from-scratch.md): the scripts write directly into the Postgres container. Dumps of these databases made with `pg_dump` (0.7 GB for `LANL`, 21 GB for `OPTC_NET`) are loaded like the others (step 4).
+You can also build these databases yourself, the provenance databases from the official DARPA files and the network databases from the preprocessed files of LARES: see [Building datasets from scratch](from-scratch.md).
 
 <span id="macos"></span>
 

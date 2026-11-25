@@ -9,7 +9,7 @@ For environments without Docker, such as HPC clusters, PIDSMaker can run with [S
 { .lead }
 
 !!! info "Requirements"
-    Singularity/Apptainer and conda are already installed on the machine, and you have downloaded the database dumps of your provenance datasets (see [step 1 of the Docker guide](installation.md#1-download-the-datasets)).
+    Singularity/Apptainer and conda are already installed on the machine, and you have downloaded the database dumps of your datasets (see [step 1 of the Docker guide](installation.md#1-download-the-datasets)).
 
 ## 1. Set up the database
 
@@ -51,5 +51,4 @@ python pidsmaker/main.py SYSTEM DATASET --artifact_dir ./artifacts/ --database_h
 
 The other database settings (`--database_user`, `--database_password`, `--database_port`) are listed in the [command line reference](../reference/cli.md#database-and-storage).
 
-The network datasets (`LANL`, `OPTC_NET`) are built rather than downloaded: once the database runs, follow [step 4 of Building datasets from scratch](from-scratch.md#4-fill-the-database) from the conda environment, adding `--database_host localhost` to the commands of the scripts.
 Continue with the [Quickstart](quickstart.md).
