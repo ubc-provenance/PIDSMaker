@@ -646,6 +646,26 @@ FEATURIZATIONS_CFG = {
         "epochs": Arg(int),
         "alpha": Arg(float),
     },
+    # Whole-graph embedding of each time window (ProGrapher), see featurization_graph2vec.py
+    "graph2vec": {
+        "wl_iterations": Arg(
+            int,
+            desc="Depth D of the Weisfeiler-Lehman rooted subgraphs (RSGs) of each node, built from \
+                node and edge types (ProGrapher: 3 on small graphs, 4 on large ones).",
+        ),
+        "negative": Arg(int, desc="Number of negative RSGs sampled per RSG (PV-DBOW)."),
+        "min_count": Arg(int, desc="RSGs seen fewer times in the training snapshots are ignored."),
+        "alpha": Arg(float, desc="Initial learning rate of doc2vec."),
+        "infer_epochs": Arg(
+            int,
+            desc="Epochs to infer the embedding of each snapshot (all splits) from the trained RSG vectors.",
+        ),
+        "num_workers": Arg(
+            int,
+            desc="Processes extracting RSGs and inferring embeddings, and threads of doc2vec \
+                training (training is only deterministic with 1).",
+        ),
+    },
     "fasttext": {
         "min_count": Arg(int),
         "alpha": Arg(float),
@@ -967,6 +987,7 @@ SUBWORD_TOKENIZATION_METHODS = [m for m in TEXT_TOKENIZATION_METHODS if m != "wh
 FEATURIZATION_TOKENIZATIONS = {
     "word2vec": SUBWORD_TOKENIZATION_METHODS,
     "doc2vec": TEXT_TOKENIZATION_METHODS,
+    "graph2vec": ["none"],
     "fasttext": SUBWORD_TOKENIZATION_METHODS,
     "temporal_rw": TEXT_TOKENIZATION_METHODS,
     "flash": TEXT_TOKENIZATION_METHODS,
@@ -1026,6 +1047,21 @@ ENCODERS_CFG = {
     "snapshot_gru": {
         "hidden_dim": Arg(int, desc="Size of the GRU state, projected to `node_out_dim` (0: `node_out_dim`)."),
         "dropout": Arg(float, desc="Dropout applied to the input of the GRU."),
+    },
+    # ProGrapher: predicts the graph2vec embedding of each snapshot from the previous ones
+    "textrcnn": {
+        "sequence_length": Arg(
+            int,
+            desc="Number of previous snapshots (graphs) whose graph2vec embeddings form the input \
+                sequence (ProGrapher's L). Shorter sequences are used when fewer snapshots were seen.",
+        ),
+        "num_layers": Arg(int, desc="Number of layers of the bidirectional RNN (hidden size: `node_hid_dim`)."),
+        "rnn_type": Arg(
+            str,
+            vals=OR(["lstm", "gru", "rnn"]),
+            desc="Bidirectional RNN computing the left and right contexts of each snapshot: \
+                `rnn` is the ReLU recurrence of the TextRCNN equations, `lstm` and `gru` are gated.",
+        ),
     },
     "lares": {
         "flow": Arg(
@@ -1127,6 +1163,7 @@ OBJECTIVES_NODE_LEVEL = [
     "reconstruct_masked_features",
     "one_class",
     "predict_masked_struct",
+    "predict_snapshot_embedding",
 ]
 OBJECTIVES_EDGE_LEVEL = [
     "autoencode_edge_embeddings",
@@ -1139,6 +1176,8 @@ OBJECTIVES_EDGE_LEVEL = [
 OBJECTIVES = OBJECTIVES_NODE_LEVEL + OBJECTIVES_EDGE_LEVEL
 # Objectives that do not use a decoder (their `decoder` arg is ignored)
 OBJECTIVES_WITHOUT_DECODER = ["deep_graph_infomax", "autoencode_edge_embeddings"]
+# The encoder of ProGrapher (`textrcnn`) directly predicts the snapshot embedding
+OBJECTIVES_WITHOUT_DECODER += ["predict_snapshot_embedding"]
 OBJECTIVES_CFG = {
     # Prediction-based
     "predict_edge_supervised": {
@@ -1235,6 +1274,15 @@ OBJECTIVES_CFG = {
             int,
             desc="Number of principal components of the PCA fitted on the embeddings of training \
                 edges. Edges are scored by the reconstruction error of their embedding.",
+        ),
+    },
+    # Prediction of the graph2vec embedding of each snapshot, with node scores (ProGrapher)
+    "predict_snapshot_embedding": {
+        "decoder": Arg(str, vals=OR(["none"]), desc="Unused: the encoder predicts the embedding."),
+        "top_k": Arg(
+            int,
+            desc="Number of top-ranked rooted subgraphs (key indicators) whose nodes get a score: \
+                other nodes get 0. 0 scores all nodes by the rank of their best rooted subgraph.",
         ),
     },
     # Reconstruction-based

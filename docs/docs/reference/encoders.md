@@ -17,6 +17,7 @@ The main encoders, grouped by what they model, with the systems that use them:
 | Edge types and attributes in messages | `rgcn`, `rgcn_per_type`, `argus`, `egraphsage`, `lares`, `gin` (GINE, with edge features) | OCR-APT (`rgcn_per_type`), Argus, E-GraphSAGE and Anomal-E (`egraphsage`), LARES |
 | Identity of each node | `node_id_embedding`, `lares` | Euler, Argus, LARES |
 | Memory across time windows | `tgn`, `snapshot_gru` | Kairos, Orthrus and Jbeil (`tgn`), Euler and Argus (`snapshot_gru`) |
+| Sequence of whole-graph embeddings | `textrcnn` | ProGrapher |
 | No message passing | `none` (linear layer), `custom_mlp` | Velox |
 | Heterogeneous graphs | `hetero_graph_transformer` | |
 
@@ -37,6 +38,9 @@ Encoders that learn the identity of nodes are meant for nodes without informativ
 :   GraphSAGE layers whose messages include the edge features, aggregated in both directions with `undirected` (E-GraphSAGE, Anomal-E).
 
 `node_id_embedding` and `snapshot_gru` wrap another encoder, like `tgn` (e.g. `gcn,node_id_embedding,snapshot_gru`), and can't be combined with `tgn`. `node_id_embedding` concatenates a learned embedding of each node's identity to its input features; with `all_nodes`, all the nodes of the dataset are embedded in every graph (edge-level objectives only). `snapshot_gru` runs a GRU over the successive embeddings of each node, one step per graph (Euler, Argus).
+
+`textrcnn`
+:   The anomaly detector of ProGrapher. It does not embed nodes: it predicts the graph2vec embedding of each time window (`featurization.used_method=graph2vec`) from those of the last `sequence_length` windows, with a TextRCNN (bidirectional RNN of `num_layers` layers and size `node_hid_dim`, max-pooling, fully-connected layer). Like `snapshot_gru`, it keeps a state across graphs (the last embeddings), reset before each training epoch; with fewer previous windows, the sequence is shorter. It requires one graph per time window (no global, intra- or inter-graph batching) and the `predict_snapshot_embedding` objective.
 
 ## Arguments
 

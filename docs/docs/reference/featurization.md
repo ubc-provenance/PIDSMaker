@@ -11,6 +11,8 @@ Some methods like `word2vec` and `doc2vec` learn this vector from the text corpu
 Other methods like `only_type` and `only_ones` simply skip this embedding step and assign either a one-hot encoded type or ones to each entity. Those methods thus do not require any specific argument.
 In all methods, the resulting vectors are used as node features during the `training` task.
 
+The `graph2vec` method (ProGrapher) embeds each time-window graph as a whole rather than its nodes: the Weisfeiler-Lehman rooted subgraphs of all nodes, built from node and edge types up to depth `wl_iterations`, are the words of a document embedded with doc2vec (PV-DBOW). The model is trained on the snapshots of `training_split`, then the embedding of every snapshot is inferred (`infer_epochs`) and stored in its graph, with the rooted subgraphs of its nodes; nodes only get their type as features. It is used by the `textrcnn` encoder and the `predict_snapshot_embedding` objective.
+
 The `pretrained` method uses an encoder pretrained on provenance data (SPIDER, language models, self-supervised GNNs, …), selected with `pretrained.model_type`. See [Pretrained Encoders](../features/pretrained_encoders.md).
 
 !!! info "Network datasets"
@@ -34,7 +36,7 @@ Methods that learn from text first split the label of each entity into tokens. T
 | `whole_label` | a single token per entity (type and label) | DeepWalk, Node2Vec |
 | `bpe` | domain-specific pieces (path components, flags, ports, IP categories, …) and BPE subwords learned on the training labels | SPIDER and the other pretrained encoders |
 | `huggingface` | the subwords of a HuggingFace tokenizer (`model_name`) | GPT-2, Llama and OPT pretrained encoders |
-| `none` | no tokens | methods that do not read labels: `only_type`, `only_ones`, `magic`, `ocrapt_features`, `alacarte` |
+| `none` | no tokens | methods that do not read labels: `only_type`, `only_ones`, `magic`, `ocrapt_features`, `alacarte`, `graph2vec` |
 
 For example, Orthrus with the BPE tokenization of SPIDER:
 

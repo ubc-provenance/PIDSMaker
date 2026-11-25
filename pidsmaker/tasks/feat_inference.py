@@ -10,6 +10,7 @@ from pidsmaker.featurization.feat_inference_methods import (
     feat_inference_doc2vec,
     feat_inference_fasttext,
     feat_inference_flash,
+    feat_inference_graph2vec,
     feat_inference_HFH,
     feat_inference_ocrapt_features,
     feat_inference_TRW,
@@ -301,6 +302,8 @@ def get_indexid2vec(cfg):
     method = cfg.featurization.used_method.strip()
     if method in ["only_type", "only_ones"]:
         return None
+    if method == "graph2vec":  # nodes get their type, snapshots their graph2vec embedding
+        return None
     if method == "alacarte":
         return feat_inference_alacarte.main(cfg)
     if method == "doc2vec":
@@ -383,6 +386,10 @@ def main_from_config(cfg):
                 bert_generator=bert_generator,
                 indexid2msg=indexid2msg,
             )
+        # Whole-graph embedding of each snapshot (ProGrapher)
+        if cfg.featurization.used_method.strip() == "graph2vec":
+            out_dir = os.path.join(cfg.feat_inference._edge_embeds_dir, f"{split}/")
+            feat_inference_graph2vec.main(cfg, sorted_paths, out_dir)
 
     # Release GPU memory if using graph encoder
     if graph_encoder is not None:

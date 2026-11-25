@@ -64,6 +64,7 @@ The framework currently integrates the following provenance-based (PIDS) and net
 | Kairos      | Provenance | IEEE S&P 2024                | [Link](https://arxiv.org/pdf/2308.05034) |
 | Magic       | Provenance | USENIX Security 2024         | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
 | NodLink     | Provenance | NDSS 2024                    | [Link](https://arxiv.org/pdf/2311.02331) |
+| ProGrapher  | Provenance | USENIX Security 2023         | [Link](https://www.usenix.org/system/files/usenixsecurity23-yang-fan.pdf) |
 | ThreaTrace  | Provenance | IEEE TIFS 2022               | [Link](https://arxiv.org/pdf/2111.04333) |
 | LARES       | Network    | ACSAC 2026                   | [Link](https://ora.ox.ac.uk/objects/uuid:07b7d2a5-91f8-4c37-a90c-4ca615b428a7/files/ss7526g13z) |
 | Argus       | Network    | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00012) |

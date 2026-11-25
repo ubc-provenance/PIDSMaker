@@ -17,4 +17,5 @@ from .rgcn import RGCN, PerTypeRGCN
 from .sage import SAGE
 from .sum_aggregation import SumAggregation
 from .temporal_wrappers import NodeIdEmbedding, SnapshotGRU
+from .textrcnn import TextRCNN
 from .tgn_encoder import TGNEncoder

@@ -331,7 +331,8 @@ def extract_msg_from_data(
     method = cfg.featurization.used_method.strip()
     only_type = method == "only_type"
     only_ones = method == "only_ones"
-    if only_type or only_ones or emb_dim is None:
+    # graph2vec embeds whole graphs (`graph_emb`), not nodes
+    if only_type or only_ones or method == "graph2vec" or emb_dim is None:
         emb_dim = 0
     node_type_dim = cfg.dataset.num_node_types
     # msg holds the plain (possibly OpTC-consistent) edge types; triplet types are derived later
