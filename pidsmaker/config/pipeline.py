@@ -851,6 +851,16 @@ def check_edge_cases(cfg):
                 "`node_id_embedding.all_nodes` embeds all the nodes of the dataset in every graph: it "
                 f"requires edge-level objectives (got {node_level}) and no `fuse_duplicate_edges_training`."
             )
+    if "predict_node_type" in decoders:
+        from pidsmaker.utils.data_utils import get_selected_node_features
+
+        if "node_type" in get_selected_node_features(cfg):
+            raise ValueError(
+                "Objective `predict_node_type` predicts the node type, so the node type cannot be a "
+                "node feature (the label would be given as input). Remove `node_type` from "
+                "`batching.node_features` (with `featurization.used_method: only_type`, select "
+                "another feature such as `edges_distribution`)."
+            )
     if "predict_node_type" in decoders and schema.num_node_types < 2:
         raise ValueError(
             f"Objective `predict_node_type` needs at least two node types, but {cfg.dataset.name} "

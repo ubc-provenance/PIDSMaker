@@ -366,6 +366,23 @@ def load_data_set(cfg, split: str, multi_dataset=False) -> list[CollatableTempor
         return [load_data_list(path, split, cfg)]
 
 
+def get_selected_node_features(cfg) -> list[str]:
+    """Node features (`batching.node_features`) actually used as GNN input.
+
+    Featurizations without embeddings (`only_type`, `only_ones`) have no `node_emb`, so it is
+    dropped. `only_ones` replaces every feature by ones. With `only_type`, the features that do
+    not need embeddings (e.g. `edges_distribution`) are kept, and `node_type` is the fallback
+    when nothing else is selected.
+    """
+    method = cfg.featurization.used_method.strip()
+    if method == "only_ones":
+        return ["only_ones"]
+    feats = [f.strip() for f in cfg.batching.node_features.replace("-", ",").split(",") if f.strip()]
+    if method == "only_type":
+        feats = [f for f in feats if f != "node_emb"] or ["node_type"]
+    return feats
+
+
 def extract_msg_from_data(
     data_set: list[CollatableTemporalData], cfg
 ) -> list[CollatableTemporalData]:
@@ -393,7 +410,7 @@ def extract_msg_from_data(
         oc = cfg.featurization.ocrapt_features
         emb_dim = 2 * edge_type_dim + 3 + int(oc.use_lifespan) + int(oc.use_cumulative_active_time)
 
-    selected_node_feats = cfg.batching.node_features
+    selected_node_feats = get_selected_node_features(cfg)
 
     msg_len = data_set[0].msg.shape[1]
     expected_msg_len = (emb_dim * 2) + (node_type_dim * 2) + edge_type_dim
@@ -413,15 +430,6 @@ def extract_msg_from_data(
     if "edges_distribution" in selected_node_feats:
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
-
-    if only_type:
-        selected_node_feats = ["node_type"]
-    elif only_ones:
-        selected_node_feats = ["only_ones"]
-    else:
-        selected_node_feats = list(
-            map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(","))
-        )
 
     edge_features = list(
         map(lambda x: x.strip(), cfg.batching.edge_features.split(","))
@@ -1333,12 +1341,7 @@ class _SharedFeaturesUnsupported(Exception):
 
 
 def _selected_node_feats(cfg):
-    method = cfg.featurization.used_method.strip()
-    if method == "only_type":
-        return ["node_type"]
-    if method == "only_ones":
-        return ["only_ones"]
-    return [x.strip() for x in cfg.batching.node_features.replace("-", ",").split(",")]
+    return get_selected_node_features(cfg)
 
 
 def _edge_feats_is_msg(cfg):
