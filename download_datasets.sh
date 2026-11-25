@@ -29,6 +29,8 @@ get_id() {
     fivedirections_e5) echo "1EkxlbReJgMHW4TwAypPggQBA-RTRVxs4" ;;
     atlasv2_edr) echo "1t7pW7i23Ry-Z7Tpu2B-E4gezT7Wu74ma" ;;
     carbanakv2_edr) echo "1rJN9F8JkmqMAV9zUjralcFB5wykAgLnd" ;;
+    lanl) echo "1lMJI26qVpzpbJ5-qizd7jyocAGPPa7vq" ;;
+    optc_net) echo "1mQV20PsDNo1teoi6UE861gR4d7PCmPJ3" ;;
     *) echo "" ;;
   esac
 }
@@ -68,7 +70,7 @@ download_trace_e5() {
 
 ALL_DATASETS="cadets_e3 clearscope_e3 theia_e3 theia_e5 clearscope_e5 \
 optc_h051 optc_h201 optc_h501 cadets_e5 trace_e3 \
-fivedirections_e3 fivedirections_e5 trace_e5"
+fivedirections_e3 fivedirections_e5 trace_e5 lanl optc_net"
 
 if [ "$DATASETS_ARG" = "all" ]; then
   SELECTED="$ALL_DATASETS"

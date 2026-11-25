@@ -100,7 +100,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
         docker compose exec pids bash
         ```
 
-        1.  See [how to get an access token](getting-started/installation.md#provenance-datasets). Dumps are saved to `./data`. The network datasets are [built from the files of LARES](getting-started/from-scratch.md) for now.
+        1.  See [how to get an access token](getting-started/installation.md#download-the-dumps). Dumps are saved to `./data`.
         2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
 
     === ":fontawesome-brands-apple: macOS (Apple Silicon)"
@@ -119,7 +119,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
         docker compose exec pids bash
         ```
 
-        1.  See [how to get an access token](getting-started/installation.md#provenance-datasets). Dumps are saved to `./data`. The network datasets are [built from the files of LARES](getting-started/from-scratch.md) for now.
+        1.  See [how to get an access token](getting-started/installation.md#download-the-dumps). Dumps are saved to `./data`.
         2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`. Port 5000 is used by AirPlay Receiver on macOS.
         3.  Gives 24 GB to the VM of Docker Desktop (8 GB by default), for a 32 GB Mac: about 75% of your RAM.
         4.  The CPU override removes the NVIDIA GPU reservation.

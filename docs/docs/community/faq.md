@@ -13,9 +13,6 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 ??? question "Which datasets should I start with?"
     For provenance-based detection, `CADETS_E3`, `THEIA_E3` and `CLEARSCOPE_E3`. They are small (5 to 12 GB once loaded), quick to process, and the most used in papers. For network detection, `LANL`. E5 datasets and `TRACE_E3` are much larger: see the sizes in the [installation guide](../getting-started/installation.md#1-download-the-datasets).
 
-??? question "Where can I download the network datasets (LANL, OPTC_NET)?"
-    Their dumps are not available for download yet. Build their databases from the preprocessed files of LARES, as explained in [Building datasets from scratch](../getting-started/from-scratch.md). `LANL` is the smaller one: 8.5 GB once loaded, against 275 GB for `OPTC_NET`.
-
 ??? question "A dataset download stopped halfway."
     Re-run the same `./download_datasets.sh` command: downloads resume where they stopped. With `gdown`, add `--continue` to the command.
 
