@@ -15,9 +15,11 @@ class GraphAttentionEmbedding(nn.Module):
         concat,
         num_layers,
         flow="source_to_target",
+        final_activation=False,
     ):
         super().__init__()
         self.activation = activation
+        self.final_activation = final_activation
         self.dropout = nn.Dropout(dropout)
 
         self.convs = nn.ModuleList()
@@ -56,4 +58,6 @@ class GraphAttentionEmbedding(nn.Module):
             x = self.dropout(x)
 
         x = self.convs[-1](x, edge_index, edge_feats)
+        if self.final_activation:
+            x = self.activation(x)
         return {"h": x}

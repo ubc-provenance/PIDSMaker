@@ -160,6 +160,7 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 concat=cfg.training.encoder.graph_attention.concat,
                 flow=cfg.training.encoder.graph_attention.flow,
                 num_layers=cfg.training.encoder.graph_attention.num_layers,
+                final_activation=bool(cfg.training.encoder.graph_attention.final_activation),
             )
         elif method == "hetero_graph_transformer":
             node_map = get_node_map(cfg, from_zero=True)

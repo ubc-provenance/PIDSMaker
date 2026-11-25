@@ -36,6 +36,11 @@ batching:
       negative_destinations: True
 
 training:
+  encoder:
+    # Not Kairos' 8 heads and final ReLU
+    graph_attention:
+      num_heads: 4
+      final_activation: False
   num_epochs: 10
   patience: 5
   lr: 0.0001

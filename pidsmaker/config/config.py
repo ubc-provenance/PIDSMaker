@@ -1013,6 +1013,9 @@ ENCODERS_CFG = {
         "concat": Arg(bool),
         "flow": Arg(str),
         "num_layers": Arg(int),
+        "final_activation": Arg(
+            bool, desc="Applies `activation` to the output of the last layer too, as in Kairos."
+        ),
     },
     "sage": {
         "activation": Arg(str),
