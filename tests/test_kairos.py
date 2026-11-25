@@ -93,6 +93,16 @@ def test_packed_batch_to_device_matches_to():
                 assert torch.equal(out[key], value), key
 
 
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a GPU")
+def test_batch_to_device_keeps_tensors_already_on_the_gpu():
+    from pidsmaker.utils.data_utils import CollatableTemporalData, batch_to_device
+
+    data = CollatableTemporalData(src=torch.arange(4), x=torch.ones(4, 2, device="cuda"))
+    for device in ("cuda", "cuda:0"):
+        out = batch_to_device(data, device)
+        assert out.x is data.x and out.src.is_cuda and torch.equal(out.src.cpu(), data.src)
+
 def encoder_cfg(encoders, objectives, use_memory=True, use_node_feats_in_gnn=False):
     cfg = decoder_cfg(objectives)
     cfg.training.decoder.use_few_shot = False

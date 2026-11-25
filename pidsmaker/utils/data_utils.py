@@ -178,10 +178,16 @@ def batch_to_device(data, device):
     """
     device = torch.device(device)
     if device.type == "cuda":
+        if device.index is None:  # `cuda:0` != `cuda`, so tensors on the GPU would be copied
+            device = torch.device("cuda", torch.cuda.current_device())
         out = copy.copy(data)
-        keys = [k for k, v in data.items() if isinstance(v, torch.Tensor) and v.device != device]
-        for k, v in zip(keys, _PACKED_TRANSFER([data[k] for k in keys], device)):
+        tensors = {k: v for k, v in data.items() if isinstance(v, torch.Tensor) and v.device != device}
+        keys = [k for k, v in tensors.items() if v.device.type == "cpu"]
+        for k, v in zip(keys, _PACKED_TRANSFER([tensors[k] for k in keys], device)):
             out[k] = v
+        for k, v in tensors.items():  # on another GPU
+            if v.device.type != "cpu":
+                out[k] = v.to(device, non_blocking=True)
     else:
         out = copy.copy(data).to(device, non_blocking=True)
     if SHARED_FEATS_KEY in out:
