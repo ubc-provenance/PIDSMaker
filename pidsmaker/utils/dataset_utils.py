@@ -78,6 +78,24 @@ def get_possible_events(cfg):
 _cursor_id = 0
 
 
+def _iter_rows(connect, sql, fetch_size=100_000):
+    """Yields the rows of `sql` through a server-side cursor, `fetch_size` rows at a time,
+    instead of transferring all of them at once (`fetchall` of the 44.5M nodes of TRACE_E3
+    holds tens of GB of row tuples)."""
+    global _cursor_id
+    _cursor_id += 1
+    cur = connect.cursor(f"pids_rows_cur_{_cursor_id}")
+    try:
+        cur.execute(sql)
+        while True:
+            rows = cur.fetchmany(fetch_size)
+            if not rows:
+                break
+            yield from rows
+    finally:
+        cur.close()
+
+
 def iter_nodes(cfg, connect, node_types=None, fetch_size=50_000):
     """Yields (node_type, node_uuid, hash_id, index_id, attrs) for all nodes of the database.
 
@@ -134,11 +152,10 @@ def get_uuid_to_index_id(cfg):
             for node_type in get_node_feats_from_cfg(cfg):
                 table_name = schema.node_type(node_type).table
                 sql = f"SELECT index_id, node_uuid FROM {table_name};"
-                cur.execute(sql)
-                rows = cur.fetchall()
-                for row in rows:
-                    uuid2nid[str(row[1])] = int(row[0])
-                    nid2uuid[int(row[0])] = str(row[1])
+                for row in _iter_rows(conn, sql):
+                    node_uuid, index_id = str(row[1]), int(row[0])
+                    uuid2nid[node_uuid] = index_id
+                    nid2uuid[index_id] = node_uuid
         finally:
             conn.close()
         _UUID_TO_INDEX_ID_CACHE.clear()  # only keep the last database in memory
@@ -177,15 +194,86 @@ def get_node_to_path_and_type(cfg):
 
     `path` is the node shown in evaluation outputs (see `NodeTypeSchema.display`), and the
     other keys are the raw attributes listed in `NodeTypeSchema.display_extra` (e.g. `cmd`).
+
+    Only the nodes of the built graphs are loaded (6.35M of the 44.5M nodes of TRACE_E3);
+    other nodes are read from the database when accessed (see `NodeToPathType`).
     """
     out_path = cfg.construction._node_id_to_path
     out_file = os.path.join(out_path, "node_to_paths.pkl")
     if out_file in _NODE_TO_PATH_CACHE:
         return _NODE_TO_PATH_CACHE[out_file]
-    node_to_path_type = _compute_node_to_path_and_type(cfg, out_path, out_file)
     _NODE_TO_PATH_CACHE.clear()  # only keep the last dataset in memory
+    node_to_path_type = NodeToPathType(cfg, _compute_node_to_path_and_type(cfg, out_path, out_file))
     _NODE_TO_PATH_CACHE[out_file] = node_to_path_type
     return node_to_path_type
+
+
+def _node_info(nt, row):
+    """{"path", "type", ...} of a node of type `nt` from its row (index_id, *nt.columns)."""
+    raw_attrs = {attr: value for (attr, _), value in zip(nt.columns, row[1:])}
+    info = {"path": nt.display_path(raw_attrs), "type": nt.name}
+    for key, attr in nt.display_extra:
+        info[key] = raw_attrs[attr]
+    return info
+
+
+class NodeToPathType(dict):
+    """{index_id: info} of `get_node_to_path_and_type`, where the nodes that are not in it
+    (nodes absent from the graphs) are read from the database on access, by `[]` or `get`.
+    Iterating it only covers the loaded nodes."""
+
+    def __init__(self, cfg, data):
+        super().__init__(data)
+        self._cfg = cfg
+        self._absent = set()
+
+    def __missing__(self, index_id):
+        info = self._read(index_id)
+        if info is None:
+            raise KeyError(index_id)
+        return info
+
+    def get(self, index_id, default=None):
+        if index_id in self:
+            return self[index_id]
+        info = self._read(index_id)
+        return default if info is None else info
+
+    def _read(self, index_id):
+        if index_id in self._absent or isinstance(index_id, bool):
+            return None
+        try:
+            index_id = int(index_id)
+        except (TypeError, ValueError):
+            return None
+        if index_id in self:
+            return dict.__getitem__(self, index_id)
+        cur, connect = init_database_connection(self._cfg)
+        try:
+            for nt in get_schema(self._cfg).node_types:
+                columns = ", ".join(["index_id"] + [col for _, col in nt.columns])
+                cur.execute(f"SELECT {columns} FROM {nt.table} WHERE index_id = %s;", (index_id,))
+                row = cur.fetchone()
+                if row is not None:
+                    info = _node_info(nt, row)
+                    dict.__setitem__(self, index_id, info)
+                    return info
+        finally:
+            connect.close()
+        self._absent.add(index_id)
+        return None
+
+    def __reduce__(self):  # pickled as a plain dict
+        return (dict, (dict(self),))
+
+
+def _graph_node_ids(cfg):
+    """Index IDs of the nodes of the built graphs (from split2nodes), or None if unknown."""
+    path = os.path.join(cfg.construction._dicts_dir, "split2nodes.pkl")
+    if not os.path.exists(path):
+        return None
+    split2nodes = torch.load(path)
+    return {int(n) for nodes in split2nodes.values() for n in nodes}
 
 
 def _compute_node_to_path_and_type(cfg, out_path, out_file):
@@ -193,18 +281,15 @@ def _compute_node_to_path_and_type(cfg, out_path, out_file):
         return torch.load(out_file)
 
     os.makedirs(out_path, exist_ok=True)
+    graph_nodes = _graph_node_ids(cfg)
     cur, connect = init_database_connection(cfg)
     node_to_path_type = {}
     try:
         for nt in get_schema(cfg).node_types:
             columns = ", ".join(["index_id"] + [col for _, col in nt.columns])
-            cur.execute(f"SELECT {columns} FROM {nt.table};")
-            for row in cur.fetchall():
-                raw_attrs = {attr: value for (attr, _), value in zip(nt.columns, row[1:])}
-                info = {"path": nt.display_path(raw_attrs), "type": nt.name}
-                for key, attr in nt.display_extra:
-                    info[key] = raw_attrs[attr]
-                node_to_path_type[row[0]] = info
+            for row in _iter_rows(connect, f"SELECT {columns} FROM {nt.table};"):
+                if graph_nodes is None or int(row[0]) in graph_nodes:
+                    node_to_path_type[row[0]] = _node_info(nt, row)
     finally:
         connect.close()
 
