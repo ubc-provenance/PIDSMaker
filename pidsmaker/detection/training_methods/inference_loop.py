@@ -225,8 +225,9 @@ def fit_magic_detector(cfg, model, train_data, device):
         seed=cfg.training.seed or 0,
     ).fit(x_train)
     log(
-        f"MAGIC k-NN detector fitted on {detector.reference.shape[0]:,} of {x_train.shape[0]:,} "
-        f"benign training node embeddings (k={detector.k}, mean distance "
+        f"MAGIC k-NN detector fitted on {detector.num_reference_nodes:,} of {x_train.shape[0]:,} "
+        f"benign training node embeddings ({detector.reference.shape[0]:,} distinct, "
+        f"k={detector.k}, mean distance "
         f"{detector.mean_distance:.4f}) in {time.time() - s:.1f}s"
     )
     return detector

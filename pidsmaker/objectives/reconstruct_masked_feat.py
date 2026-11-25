@@ -32,31 +32,20 @@ class GMAEFeatReconstruction(nn.Module):
         # Recover mask_nodes passed from Model.forward
         mask_nodes = kwargs.get("mask_nodes", None)
 
-        # During inference or if no mask was applied, we might not have mask_nodes.
-        # But for training this objective, we expect them.
-        if mask_nodes is None and not inference:
+        # The reconstruction is a training signal only: MAGIC scores nodes with its k-NN
+        # detector, so the decoder is not run at inference
+        if inference:
+            return {"loss": torch.zeros((x.shape[0],), device=h.device)}
+
+        if mask_nodes is None:
             raise ValueError(
                 "GMAEFeatReconstruction objective requires masked nodes, but mask_nodes is None."
             )
 
         batch = kwargs.get("batch")
         edge_feats = getattr(batch, "edge_feats", None) if batch else None
-
         recon = self.decoder(h, edge_index, edge_feats=edge_feats)
 
-        # Calculate loss only on masked nodes
-        if mask_nodes is not None:
-            x_init = x[mask_nodes].to(h.device)
-            x_rec = recon[mask_nodes].to(h.device)
-        else:
-            # If inference, maybe we want global loss? Or just 0 as per previous code
-            x_init = x
-            x_rec = recon
-
-        if inference:
-            losses = torch.zeros((x.shape[0],), device=x.device)
-            return {"loss": losses}
-
-        loss = self.loss_fn(x_rec, x_init, inference=inference)
-
+        # Loss only on the masked nodes
+        loss = self.loss_fn(recon[mask_nodes], x[mask_nodes].to(h.device), inference=False)
         return {"loss": loss}

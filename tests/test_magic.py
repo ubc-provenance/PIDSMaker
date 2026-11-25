@@ -39,20 +39,38 @@ def test_knn_reference_is_the_training_set_not_the_test_window():
 def test_knn_standardizes_with_training_statistics():
     x_train = _benign() * torch.tensor([100.0] + [1.0] * 7)
     det = MagicKNNDetector(k=5).fit(x_train)
-    assert torch.allclose(det.reference.std(dim=0, unbiased=False), torch.ones(8), atol=1e-4)
+    assert torch.allclose(det.mean, x_train.mean(dim=0))
+    assert torch.allclose(det.std, x_train.std(dim=0, unbiased=False))
     # Same scores whatever the scale of the input space
     x_test = _benign(100, seed=3)
     det2 = MagicKNNDetector(k=5).fit(x_train * 7.0)
     assert torch.allclose(det.score(x_test), det2.score(x_test * 7.0), rtol=1e-3, atol=1e-4)
 
 
+def _brute_force_scores(x_train, x_test, k):
+    mean, std = x_train.mean(dim=0), x_train.std(dim=0, unbiased=False).clamp_min(1e-6)
+    ref, q = (x_train - mean) / std, (x_test - mean) / std
+    return torch.cdist(q, ref).topk(k, largest=False).values.mean(dim=1)
+
+
+def test_knn_with_duplicate_embeddings_is_exact():
+    # Many nodes share the same embedding: the distinct-embedding search must give the same
+    # k-NN distances as a search over all the nodes
+    base = _benign(40, d=4)
+    reps = torch.randint(1, 15, (40,), generator=torch.Generator().manual_seed(1))
+    x_train = base.repeat_interleave(reps, dim=0)
+    x_test = torch.cat([_benign(30, d=4, seed=4), base[:5]])
+    det = MagicKNNDetector(k=10, chunk_elems=7 * 40).fit(x_train)
+    assert det.reference.shape[0] == 40 and det.num_reference_nodes == x_train.shape[0]
+    expected = _brute_force_scores(x_train, x_test, 10)
+    assert torch.allclose(det.score(x_test) * det.mean_distance, expected, rtol=1e-4, atol=1e-5)
+
+
 def test_knn_matches_brute_force_with_chunking():
     x_train = _benign(300, d=4)
     x_test = _benign(50, d=4, seed=5)
     det = MagicKNNDetector(k=7, chunk_elems=300 * 3).fit(x_train)
-    ref = det.reference
-    q = (x_test - det.mean) / det.std
-    expected = torch.cdist(q, ref).topk(7, largest=False).values.mean(dim=1) / det.mean_distance
+    expected = _brute_force_scores(x_train, x_test, 7) / det.mean_distance
     assert torch.allclose(det.score(x_test), expected, rtol=1e-4, atol=1e-5)
 
 
@@ -60,7 +78,7 @@ def test_knn_constant_dimension_and_reference_cap():
     x_train = _benign(1000, d=4)
     x_train[:, 2] = 1.0
     det = MagicKNNDetector(k=3, max_reference_size=200).fit(x_train)
-    assert det.reference.shape[0] == 200
+    assert det.num_reference_nodes == 200
     assert torch.isfinite(det.score(_benign(10, d=4, seed=9))).all()
 
 
