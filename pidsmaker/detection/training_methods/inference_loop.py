@@ -9,6 +9,7 @@ import torch
 import torch.nn.functional as F
 from sklearn.neighbors import NearestNeighbors
 
+from pidsmaker.detection.flash_detection import flash_anomaly_score
 from pidsmaker.utils.data_utils import batch_to_device, to_original_node_ids
 from pidsmaker.utils.labelling import has_event_labels
 from pidsmaker.utils.loss_files import write_losses
@@ -129,19 +130,13 @@ def test_node_level(
 
     # Flash code
     elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-        out = results["out"]
-        pred = out.max(1)[1]
-        sorted, indices = out.sort(dim=1, descending=True)
-        eps = 1e-6
-        conf = (sorted[:, 0] - sorted[:, 1]) / (sorted[:, 0] + eps)
-        conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
-
-        node_type_num = data.node_type.argmax(1)
+        # `out` holds log-probabilities: the confidence of FLASH is computed on probabilities
+        score, correct = flash_anomaly_score(results["out"].exp(), data.node_type.argmax(1))
         node_list = {
             "node": n_id_np,
             "loss": losses.astype(float),
-            "flash_score": conf.clamp(min=0).cpu().numpy().astype(float),
-            "correct_pred": (node_type_num == pred).long().cpu().numpy(),
+            "flash_score": score.cpu().numpy().astype(float),
+            "correct_pred": correct.long().cpu().numpy(),
         }
 
     # Magic codes

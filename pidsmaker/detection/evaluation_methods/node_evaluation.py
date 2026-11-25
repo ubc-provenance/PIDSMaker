@@ -37,6 +37,7 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     reduce_losses_to_score,
     transform_attack2nodes_to_node2attacks,
 )
+from pidsmaker.detection.flash_detection import flash_flags
 from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
 from pidsmaker.utils.loss_files import compact_int_columns, read_losses
@@ -252,16 +253,14 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
                     detected_tw = tw
 
         elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-            max_score = 0
-            pred_score = max(losses["flash_score"])
-
-            for score, node_type_pred, tw in zip(
-                losses["flash_score"], losses["correct_pred"], losses["tw"]
-            ):
-                if score > thr and node_type_pred and score > max_score:
-                    flash_label = 1
-                    max_score = score
-                    detected_tw = tw
+            # The node is flagged if, in one of its time windows, it is not predicted correctly
+            # with a confidence above the threshold (see `flash_detection`)
+            scores = losses["flash_score"]
+            tw_max = int(np.argmax(scores))
+            pred_score = scores[tw_max]
+            if flash_flags(np.float64(pred_score), thr):
+                flash_label = 1
+                detected_tw = losses["tw"][tw_max]
 
         elif cfg.evaluation.node_evaluation.threshold_method == "magic":
             max_score = 0
