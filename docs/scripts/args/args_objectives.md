@@ -60,43 +60,49 @@
         <li class='no-bullet'><span class="key-leaf">pca_components</span>: <span class="value">int (20)</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">reconstruct_node_features</span>
+    <li class='bullet'><span class="key">predict_snapshot_embedding</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (21)</span></li>
-        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (22)</span></li>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (21)</span></li>
+        <li class='no-bullet'><span class="key-leaf">top_k</span>: <span class="value">int (22)</span></li>
     </ul>
     </li>
-    <li class='bullet'><span class="key">reconstruct_node_embeddings</span>
+    <li class='bullet'><span class="key">reconstruct_node_features</span>
     <ul>
         <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (23)</span></li>
         <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (24)</span></li>
     </ul>
     </li>
+    <li class='bullet'><span class="key">reconstruct_node_embeddings</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (25)</span></li>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (26)</span></li>
+    </ul>
+    </li>
     <li class='bullet'><span class="key">autoencode_edge_embeddings</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (25)</span></li>
-        <li class='no-bullet'><span class="key-leaf">use_edge_feats</span>: <span class="value">bool (26)</span></li>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (27)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_edge_feats</span>: <span class="value">bool (28)</span></li>
     </ul>
     </li>
     <li class='bullet'><span class="key">reconstruct_edge_embeddings</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (27)</span></li>
-        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (28)</span></li>
+        <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (29)</span></li>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (30)</span></li>
     </ul>
     </li>
     <li class='bullet'><span class="key">reconstruct_masked_features</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (29)</span></li>
+        <li class='no-bullet'><span class="key-leaf">loss</span>: <span class="value">str (31)</span></li>
         <li class='no-bullet'><span class="key-leaf">mask_rate</span>: <span class="value">float</span></li>
-        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (30)</span></li>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (32)</span></li>
     </ul>
     </li>
     <li class='bullet'><span class="key">one_class</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (31)</span></li>
-        <li class='no-bullet'><span class="key-leaf">beta</span>: <span class="value">float (32)</span></li>
-        <li class='no-bullet'><span class="key-leaf">eps</span>: <span class="value">float (33)</span></li>
-        <li class='no-bullet'><span class="key-leaf">warmup</span>: <span class="value">int (34)</span></li>
+        <li class='no-bullet'><span class="key-leaf">decoder</span>: <span class="value">str (33)</span></li>
+        <li class='no-bullet'><span class="key-leaf">beta</span>: <span class="value">float (34)</span></li>
+        <li class='no-bullet'><span class="key-leaf">eps</span>: <span class="value">float (35)</span></li>
+        <li class='no-bullet'><span class="key-leaf">warmup</span>: <span class="value">int (36)</span></li>
     </ul>
     </li>
 </ul>
@@ -110,7 +116,7 @@
 5. (patterns mode) Max edges collected per pattern.<br>
 6. (synthetic mode) Path to YAML file with explicit (src_type, src_label, edge_type, dst_type, dst_label) attack edge definitions.<br>
 7. BCE pos_weight for the attack class (on top of 1:1 oversampling).<br>
-8. Loss used to predict the edge type.<br><br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
+8. Loss used to predict the edge type. AMS: additive margin softmax (see `AMS`).<br><br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`<br>`AMS`
 9. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 10. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
 11. <br><b>Available options (one selection)</b>:<br>`cross_entropy`<br>`BCE`
@@ -123,17 +129,19 @@
 18. Number of negatives per positive edge with `uniform` sampling.<br>
 19. Unused: the discriminator of DGI is bilinear.<br><br><b>Available options (one selection)</b>:<br>`none`
 20. Number of principal components of the PCA fitted on the embeddings of training                 edges. Edges are scored by the reconstruction error of their embedding.<br>
-21. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
-22. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+21. Unused: the encoder predicts the embedding.<br><br><b>Available options (one selection)</b>:<br>`none`
+22. Number of top-ranked rooted subgraphs (key indicators) whose nodes get a score:                 other nodes get 0. 0 scores all nodes by the rank of their best rooted subgraph.<br>
 23. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
 24. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
-25. Unused: the objective has its own autoencoder.<br><br><b>Available options (one selection)</b>:<br>`none`
-26. Adds the edge features (`batching.edge_features`) to the edge embedding through a                 gated skip connection, as LARES.<br>
-27. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
-28. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+25. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
+26. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+27. Unused: the objective has its own autoencoder.<br><br><b>Available options (one selection)</b>:<br>`none`
+28. Adds the edge features (`batching.edge_features`) to the edge embedding through a                 gated skip connection, as LARES.<br>
 29. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
 30. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
-31. Decoder applied to embeddings before the hypersphere; use 'none' (identity).<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
-32. Soft-boundary fraction; radius is the (1-beta) distance quantile.<br>
-33. Center slack keeping |c| away from zero.<br>
-34. Kept for parity; a no-op (c/r update every train step).<br>
+31. <br><b>Available options (one selection)</b>:<br>`SCE`<br>`MSE`<br>`MSE_sum`<br>`MAE`<br>`none`
+32. Decoder used before computing loss.<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+33. Decoder applied to embeddings before the hypersphere; use 'none' (identity).<br><br><b>Available options (one selection)</b>:<br>`edge_mlp`<br>`node_mlp`<br>`magic_gat`<br>`nodlink`<br>`inner_product`<br>`none`
+34. Soft-boundary fraction; radius is the (1-beta) distance quantile.<br>
+35. Center slack keeping |c| away from zero.<br>
+36. Kept for parity; a no-op (c/r update every train step).<br>
