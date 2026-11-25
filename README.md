@@ -37,7 +37,7 @@ It provides a single codebase and a single pipeline to run most recent state-of-
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| Unreleased (`main`) | | [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3. [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, Docker Desktop on CPU) for most datasets, ideally with 32 GB of RAM |
+| Unreleased (`main`) | | [ShadeWatcher and ProGrapher](https://ubc-provenance.github.io/PIDSMaker/guide/systems/) provenance systems. [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3. [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, Docker Desktop on CPU) for most datasets, ideally with 32 GB of RAM |
 | [4.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0) | Nov 2026 | Unified tokenization (`featurization.tokenization`, renamed tokenizer arguments), configurable graph cleaning (`construction.cleaning`), fixed queue, time-window and node-time-window evaluations, MAGIC kNN fix |
 | [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
 | [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
@@ -64,7 +64,9 @@ The framework currently integrates the following provenance-based (PIDS) and net
 | Kairos      | Provenance | IEEE S&P 2024                | [Link](https://arxiv.org/pdf/2308.05034) |
 | Magic       | Provenance | USENIX Security 2024         | [Link](https://www.usenix.org/system/files/usenixsecurity24-jia-zian.pdf) |
 | NodLink     | Provenance | NDSS 2024                    | [Link](https://arxiv.org/pdf/2311.02331) |
+| ProGrapher  | Provenance | USENIX Security 2023         | [Link](https://www.usenix.org/system/files/usenixsecurity23-yang-fan.pdf) |
 | ThreaTrace  | Provenance | IEEE TIFS 2022               | [Link](https://arxiv.org/pdf/2111.04333) |
+| ShadeWatcher | Provenance | IEEE S&P 2022               | [Link](https://jun-zeng.github.io/file/shadewatcher_paper.pdf) |
 | LARES       | Network    | ACSAC 2026                   | [Link](https://ora.ox.ac.uk/objects/uuid:07b7d2a5-91f8-4c37-a90c-4ca615b428a7/files/ss7526g13z) |
 | Argus       | Network    | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00012) |
 | Jbeil       | Network    | IEEE S&P 2024                | [Link](https://doi.org/10.1109/SP54263.2024.00009) |

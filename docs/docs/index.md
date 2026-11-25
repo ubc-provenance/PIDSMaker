@@ -41,7 +41,7 @@ Runs on [:fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU](getting-
 <style>.md-content__button { display: none; }</style>
 
 <div class="pm-stats">
-  <div class="pm-stat"><strong>15</strong><span>intrusion detection systems</span></div>
+  <div class="pm-stat"><strong>17</strong><span>intrusion detection systems</span></div>
   <div class="pm-stat"><strong>17</strong><span>datasets</span></div>
   <div class="pm-stat"><strong>7</strong><span>configurable pipeline stages</span></div>
   <div class="pm-stat"><strong>15+</strong><span>pretrained encoders</span></div>

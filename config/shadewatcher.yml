@@ -1,0 +1,146 @@
+# ShadeWatcher (Zeng et al., IEEE S&P 2022): "ShadeWatcher: Recommendation-guided Cyber Threat
+# Analysis using System Audit Records". Threat detection as a recommendation problem: system
+# entities interact with other entities as users with items, and interactions that an entity
+# would unlikely "prefer" are threats. A knowledge graph (KG) joins the interactions,
+# (h, interact, t), with the events of the provenance graph as side information, (h, event, t).
+# TransR embeds the entities and relations of the KG (first-order information), GNN layers
+# propagate these embeddings along the KG with a relation-aware attention (KGAT-style) and a
+# GraphSAGE aggregator (higher-order information), and the inner product of the concatenated
+# embeddings of two entities is the probability that they would *not* interact. The GNN is
+# trained with a BPR loss against random interactions, TransR with a pairwise loss against
+# corrupted triples, on benign data only.
+#
+# Mapping onto PIDSMaker:
+# - each edge of a time window is both an interaction and a KG triple whose relation is the edge
+#   type (`shadewatcher` encoder); repeated events are merged per (src, type, dst) (`merge_edges`)
+#   so that triples are unique, as in the KG of ShadeWatcher;
+# - the TransR loss is computed by the encoder and added to the loss of the objective; the
+#   interactions are scored by `predict_edge_contrastive` with the BPR loss (`loss: bpr`), two
+#   negatives per interaction sharing its source (`uniform_dst`, `neg_ratio: 2`, as
+#   `inter_pos_rate`), and the negated inner product (`negate`: an observed interaction has a low
+#   probability of not happening);
+# - the anomaly score of an interaction is the inner product, and an entity's is the max over its
+#   interactions (`node_evaluation`, both endpoints), so that alerts are entity-level and comparable
+#   with the other PIDSs.
+#
+# Differences with the original implementation (https://github.com/jun-zeng/ShadeWatcher):
+# - Entity embeddings: ShadeWatcher learns one embedding per entity ID over a single KG of all
+#   the audit data, randomly split 80/10/10 into interactions to train, validate and test. Here,
+#   models are trained on the first days and tested on later days, whose entities are mostly
+#   unseen: a per-ID embedding would stay untrained for them. The embedding of an entity is
+#   instead a linear projection of its features: a word2vec embedding of its label (process
+#   path and command line, file path, IP and port, i.e. the attributes of ShadeWatcher's
+#   entities) and its type, trained on the training split only. Add `node_id_embedding` to the
+#   encoders (`--training.encoder.used_methods=shadewatcher,node_id_embedding`) to concatenate a
+#   learned ID embedding to the features, closer to ShadeWatcher but transductive.
+# - Interactions: ShadeWatcher pairs the root data object of each behavior (a subgraph found by
+#   a forward DFS from a data object) with every entity of that behavior, i.e. multi-hop causal
+#   pairs; here, interactions are the endpoints of the events (1-hop). The KG and its GNN
+#   propagation are built per time window (15 min) instead of over the whole log, and the noise
+#   reduction of ShadeWatcher's parser is not applied. As in the code (inverse relations are
+#   commented out in `recommend/util/gnn_data.py`), each node only aggregates the tails of the
+#   triples it is the head of: nodes that are only destinations of events get no neighborhood
+#   information from the GNN layers.
+# - Training: the BPR and TransR losses are summed and optimized jointly at each batch (time
+#   window), as in the objective of the paper (L = L_first + L_higher + lambda ||Theta||, lambda
+#   as Adam's weight decay), whereas the code alternates one epoch of each with two optimizers
+#   over random batches of 1024 interactions/triples. Negatives are drawn among the nodes of the
+#   window instead of all the entities. The BPR loss averages the pairs (interaction, negative),
+#   whereas the code compares each interaction to the sum of the scores of its 2 negatives.
+# - TransR: squared L2 distance as the code (the paper writes L1), with the margin γ = 1 of the
+#   paper (defined but unused in the code). The attention is recomputed from the current TransR
+#   embeddings at each batch, without gradient, whereas the code computes it once before training.
+# - Threshold and epochs: the threshold is the max score of validation interactions
+#   (`max_val_loss`) instead of a fixed value grid-searched on labelled validation data (-0.5 in
+#   the paper, 1.5 in the code), and the reported epoch is chosen as for the other PIDSs
+#   (`best_adp`), among 30 epochs as in the paper.
+# - Model adaptation from analyst feedback on false positives is not implemented.
+
+_include_yml: default
+
+construction:
+  used_method: default
+  use_all_files: True
+  mimicry_edge_num: 0
+  time_window_size: 15.0
+  use_hashed_label: False
+  fuse_edge: True
+  node_label_features:
+    subject: type, path, cmd_line
+    file: type, path
+    netflow: type, remote_ip, remote_port
+  multi_dataset: none
+transformation:
+  used_methods: merge_edges
+  merge_edges:
+    per_edge_type: True
+
+featurization:
+  emb_dim: 128
+  epochs: 50
+  training_split: train
+  seed: 0
+  used_method: word2vec
+  tokenization:
+    used_method: nltk
+    nltk:
+      type_aware: True
+      substitutions: none
+feat_inference:
+  to_remove: True
+
+batching:
+  node_features: node_emb,node_type
+  edge_features: none
+  fix_buggy_graph_reindexer: True
+  global_batching:
+    used_method: none
+  intra_graph_batching:
+    used_methods: none
+  inter_graph_batching:
+    used_method: none
+
+training:
+  used_method: default
+  seed: 0
+  deterministic: False
+  num_epochs: 30
+  patience: 5
+  lr: 0.001
+  weight_decay: 0.00001  # λ = 1e-5
+  node_hid_dim: 32  # size of the TransR entity embeddings
+  node_out_dim: 80  # 32 (TransR) + 32 + 16 (GNN layers), concatenated
+  grad_accumulation: 1
+  stable_optim: False
+  fuse_duplicate_edges_training: False
+  encoder:
+    dropout: 0.2
+    used_methods: shadewatcher
+    shadewatcher:
+      hidden_dims: 32,16
+      kg_dim: 32
+      kg_neg_ratio: 2
+      kg_margin: 1.0
+  decoder:
+    used_methods: predict_edge_contrastive
+    predict_edge_contrastive:
+      loss: bpr
+      neg_sampling: uniform_dst
+      neg_ratio: 2.0
+      decoder: inner_product
+      inner_product:
+        dropout: 0.0
+        negate: True
+    use_few_shot: False
+
+evaluation:
+  viz_malicious_nodes: False
+  ground_truth_version: orthrus
+  best_model_selection: best_adp
+  used_method: node_evaluation
+  node_evaluation:
+    threshold_method: max_val_loss
+    max_val_loss:
+      alpha: 1.0
+    use_dst_node_loss: True
+    use_kmeans: False

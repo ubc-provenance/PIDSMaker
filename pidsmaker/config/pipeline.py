@@ -335,6 +335,13 @@ UNHASHED_DEFAULT_ARGS = {
         "benign_training": True,
     },
     "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
+    # ProGrapher
+    "featurization": {
+        "graph2vec": {
+            "wl_iterations": 4, "negative": 15, "min_count": 1, "alpha": 0.025,
+            "infer_epochs": 100, "num_workers": 1,
+        },
+    },
     "feat_inference": {"edge_attributes": "all"},
     "batching": {"intra_graph_batching.tgn_last_neighbor.negative_destinations": False},
     "evaluation": {
@@ -362,6 +369,14 @@ UNHASHED_DEFAULT_ARGS = {
         "decoder.autoencode_edge_embeddings": {"decoder": "none", "use_edge_feats": True},
         "decoder.few_shot.decoder.autoencode_edge_embeddings": {"decoder": "none", "use_edge_feats": True},
         "decoder.few_shot.decoder.deep_graph_infomax": {"decoder": "none", "pca_components": 8},
+        # ShadeWatcher
+        "encoder.shadewatcher": {"hidden_dims": (32, 16), "kg_dim": 32, "kg_neg_ratio": 2, "kg_margin": 1.0},
+        "decoder.predict_edge_contrastive.inner_product.negate": False,
+        "decoder.few_shot.decoder.predict_edge_contrastive.inner_product.negate": False,
+        # ProGrapher
+        "encoder.textrcnn": {"sequence_length": 128, "num_layers": 5, "rnn_type": "lstm"},
+        "decoder.predict_snapshot_embedding": {"decoder": "none", "top_k": 0},
+        "decoder.few_shot.decoder.predict_snapshot_embedding": None,
     },
 }
 

@@ -4,6 +4,7 @@ from pidsmaker.featurization.featurization_methods import (
     featurization_alacarte,
     featurization_doc2vec,
     featurization_flash,
+    featurization_graph2vec,
     featurization_trw,
     featurization_word2vec,
 )
@@ -20,6 +21,8 @@ def main(cfg):
         featurization_alacarte.main(cfg)
     elif method == "doc2vec":
         featurization_doc2vec.main(cfg)
+    elif method == "graph2vec":
+        featurization_graph2vec.main(cfg)
     elif method in ["hierarchical_hashing", "only_type", "magic", "only_ones", "ocrapt_features"]:
         # these methods don't need to build or train any model
         # so we do nothing here and generate vectorized graphs directly in feat_inference.py

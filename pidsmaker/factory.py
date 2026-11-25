@@ -272,6 +272,19 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
             )
 
         # System-specific encoders
+        elif method == "shadewatcher":
+            sw_cfg = cfg.training.encoder.shadewatcher
+            encoder = ShadeWatcherEncoder(
+                in_dim=in_dim,
+                emb_dim=node_hid_dim,
+                out_dim=node_out_dim,
+                num_edge_types=get_num_edge_type(cfg),
+                hidden_dims=parse_int_list(sw_cfg.hidden_dims),
+                kg_dim=sw_cfg.kg_dim,
+                kg_neg_ratio=sw_cfg.kg_neg_ratio,
+                kg_margin=sw_cfg.kg_margin,
+                dropout=dropout,
+            )
         elif method == "glstm":
             encoder = GLSTM(
                 in_features=in_dim,
@@ -319,6 +332,19 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 activation=activation_fn_factory(cfg.training.encoder.magic_gat.activation),
                 is_decoder=False,
                 edge_dim=edge_dim or 0,  # Pass the calculated edge dimension
+            )
+
+        # Sequence model over the graph2vec embeddings of the last snapshots (ProGrapher)
+        elif method == "textrcnn":
+            check_snapshot_batching(cfg)
+            textrcnn_cfg = cfg.training.encoder.textrcnn
+            encoder = TextRCNN(
+                emb_dim=cfg.featurization.emb_dim,
+                hid_dim=node_hid_dim,
+                num_layers=textrcnn_cfg.num_layers,
+                sequence_length=textrcnn_cfg.sequence_length,
+                dropout=dropout,
+                rnn_type=textrcnn_cfg.rnn_type.strip(),
             )
 
         # MLP encoders
@@ -984,6 +1010,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             if predict_edge_method == "inner_product":
                 edge_decoder = EdgeInnerProductDecoder(
                     dropout=objective_cfg.predict_edge_contrastive.inner_product.dropout,
+                    negate=bool(objective_cfg.predict_edge_contrastive.inner_product.negate),
                 )
 
             else:
@@ -1001,6 +1028,8 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             if loss_name == "ap":
                 margin = objective_cfg.predict_edge_contrastive.ap_margin or 0.8
                 loss_fn = lambda pos, neg, **kw: ap_contrastive(pos, neg, margin=margin, **kw)
+            elif loss_name == "bpr":
+                loss_fn = bpr_contrastive
             else:
                 loss_fn = bce_contrastive
 
@@ -1064,6 +1093,14 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
                 )
             )
 
+        elif objective == "predict_snapshot_embedding":
+            objectives.append(
+                SnapshotEmbeddingPrediction(
+                    rsg_vectors=load_graph2vec_rsg_vectors(cfg),
+                    top_k=objective_cfg.predict_snapshot_embedding.top_k or 0,
+                )
+            )
+
         else:
             raise ValueError(f"Invalid objective {objective}")
 
@@ -1084,6 +1121,41 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
         objective.is_node_level = name in OBJECTIVES_NODE_LEVEL
 
     return objectives
+
+
+def check_snapshot_batching(cfg):
+    """Snapshot-level components (ProGrapher) need one graph per time window."""
+    batching = cfg.batching
+    methods = {
+        "global_batching.used_method": batching.global_batching.used_method,
+        "intra_graph_batching.used_methods": batching.intra_graph_batching.used_methods,
+        "inter_graph_batching.used_method": batching.inter_graph_batching.used_method,
+    }
+    batched = [f"batching.{k}={v}" for k, v in methods.items() if (v or "none").strip() != "none"]
+    if batched:
+        raise ValueError(
+            "The `textrcnn` encoder embeds each time window as a whole (one snapshot per graph): "
+            f"set {', '.join(batched)} to `none`."
+        )
+    if cfg.featurization.used_method.strip() != "graph2vec":
+        raise ValueError(
+            "The `textrcnn` encoder predicts graph2vec snapshot embeddings: it requires "
+            "`featurization.used_method=graph2vec`."
+        )
+
+
+def load_graph2vec_rsg_vectors(cfg):
+    """(V, d) output vectors of the rooted subgraphs of the graph2vec model (ProGrapher)."""
+    from gensim.models.doc2vec import Doc2Vec
+
+    from pidsmaker.featurization.featurization_methods.featurization_graph2vec import MODEL_FILE
+
+    if cfg.featurization.used_method.strip() != "graph2vec":
+        raise ValueError(
+            "The `predict_snapshot_embedding` objective requires `featurization.used_method=graph2vec`."
+        )
+    model = Doc2Vec.load(os.path.join(cfg.featurization._model_dir, MODEL_FILE))
+    return torch.from_numpy(model.syn1neg.copy())
 
 
 def few_shot_decoder_factory(cfg, graph_reindexer, device, objective_cfg=None):
@@ -1188,6 +1260,13 @@ def special_categorical_loss_fn_factory(loss: str, out_dim: int, num_classes: in
         raise ValueError(f"Invalid version {version}")
     
     return categorical_loss_fn_factory(loss)
+
+def parse_int_list(value):
+    """Parses a list of integers given as `32,16` (read as a tuple by the config), `32` or a list."""
+    if isinstance(value, (list, tuple)):
+        return [int(v) for v in value]
+    return [int(v) for v in str(value).strip("()[] ").split(",") if v.strip()]
+
 
 def activation_fn_factory(activation: str):
     """Create activation function (sigmoid, relu, tanh, prelu, etc.).
