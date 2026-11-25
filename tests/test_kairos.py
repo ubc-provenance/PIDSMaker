@@ -30,6 +30,16 @@ def test_msg_has_edge_type():
     assert _msg_has_edge_type(decoder_cfg("predict_edge_contrastive"))
 
 
+def test_mlp_dropout_rates():
+    mlp = build_mlp_from_string(
+        "linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout | tanh", 400, 7, dropout=0.1
+    )
+    dropouts = [m.p for m in mlp.mlp if isinstance(m, torch.nn.Dropout)]
+    assert dropouts == [0.5, 0.1]
+    linears = [(m.in_features, m.out_features) for m in mlp.mlp if isinstance(m, torch.nn.Linear)]
+    assert linears == [(400, 800), (800, 200), (200, 7)]
+
+
 @pytest.mark.parametrize("final_activation", [False, True])
 def test_graph_attention_final_activation(final_activation):
     torch.manual_seed(0)

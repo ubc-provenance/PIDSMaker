@@ -40,7 +40,9 @@ def build_mlp_from_string(arch_str, in_dim, out_dim, dropout):
                 in_dim = out_dim  # Update in_dim for the next layer
 
             elif part.startswith("dropout"):
-                layers.append(nn.Dropout(dropout))
+                # `dropout(p)` sets the rate of this layer, `dropout` uses `training.encoder.dropout`
+                rate = float(part[len("dropout(") : -1]) if part.startswith("dropout(") else dropout
+                layers.append(nn.Dropout(rate))
 
             elif part == "tanh":
                 layers.append(nn.Tanh())

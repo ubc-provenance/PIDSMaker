@@ -1111,7 +1111,8 @@ DECODERS_CFG = {
             str,
             desc="A string describing a simple neural network. Example: if the encoder's output has shape `node_out_dim=128` \
                                 setting `architecture_str=linear(2) | relu | linear(0.5)` creates this MLP: nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 128), nn.Linear(128, y). \
-                                Precisely, in linear(x), x is the multiplier of input neurons. The final layer `nn.Linear(128, y)` is added automatically such that `y` is the \
+                                Precisely, in linear(x), x is the multiplier of input neurons. `dropout(p)` adds a dropout of rate p, \
+                                `dropout` one of rate `training.encoder.dropout`. The final layer `nn.Linear(128, y)` is added automatically such that `y` is the \
                                 output size matching the downstream objective (e.g. edge type prediction involves predicting 10 edge types, so the output of the decoder should be 10).",
         ),
         "src_dst_projection_coef": Arg(
