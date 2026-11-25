@@ -801,7 +801,8 @@ def encoder_out_dim(cfg):
 def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, all_data=None, edge_dim=None):
     if objective_cfg is None:
         objective_cfg = cfg.training.decoder
-    node_out_dim = cfg.training.node_out_dim
+    # Size of the node embeddings `h` given to the decoders
+    node_out_dim = encoder_out_dim(cfg)
     node_hid_dim = cfg.training.node_hid_dim
 
     entity_map = get_node_map(cfg, from_zero=True)
@@ -921,7 +922,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
                 method,
                 objective,
                 cfg,
-                in_dim=encoder_out_dim(cfg),
+                in_dim=node_out_dim,
                 out_dim=in_dim,
                 device=device,
                 edge_dim=edge_dim,
@@ -939,7 +940,7 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             loss_fn = categorical_loss_fn_factory(objective_cfg.predict_masked_struct.loss)
 
             decoder = decoder_factory(
-                method, objective, cfg, in_dim=encoder_out_dim(cfg) * 2, out_dim=1, device=device
+                method, objective, cfg, in_dim=node_out_dim * 2, out_dim=1, device=device
             )
             objectives.append(
                 GMAEStructPrediction(
@@ -1131,7 +1132,7 @@ def few_shot_decoder_factory(cfg, graph_reindexer, device, objective_cfg=None):
     if not cfg.training.decoder.use_few_shot:
         return None
 
-    node_out_dim = cfg.training.node_out_dim
+    node_out_dim = encoder_out_dim(cfg)
     objective_cfg = cfg.training.decoder.few_shot.decoder
 
     objective = objective_factory(
