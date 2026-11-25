@@ -1232,6 +1232,11 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
+        "max_samples": Arg(
+            int,
+            desc="Number of existing edges sampled per batch as positives, with as many negative \
+                node pairs, capped by the number of nodes (MAGIC: 10000). 0 uses all the edges.",
+        ),
     },
     "detect_edge_few_shot": {
         "decoder": Arg(
@@ -1884,6 +1889,13 @@ TASK_ARGS = {
                 int,
                 desc="For threshold_method=magic: the k-NN reference set is a random sample of at most \
                     this many benign training node embeddings (0: all of them).",
+            ),
+            "magic_embedding": Arg(
+                str,
+                vals=OR(["last", "concat"]),
+                desc="For threshold_method=magic: node embedding scored by the k-NN detector, the output \
+                    of the last encoder layer (`last`, MAGIC's code) or the concatenation of all its \
+                    layers (`concat`, MAGIC's paper).",
             ),
         },
         "tw_evaluation": {

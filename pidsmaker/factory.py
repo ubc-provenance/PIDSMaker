@@ -303,25 +303,19 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 out_dim=node_out_dim,
             )
         elif method == "magic_gat":
-            n_layers = cfg.training.encoder.magic_gat.num_layers
-            n_heads = cfg.training.encoder.magic_gat.num_heads
-            negative_slope = cfg.training.encoder.magic_gat.negative_slope
-            assert node_hid_dim % n_heads == 0, "Invalid shape dim for number of heads"
-
             encoder = MagicGAT(
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
-                n_layers=n_layers,
-                n_heads=n_heads,
+                n_layers=cfg.training.encoder.magic_gat.num_layers,
+                n_heads=cfg.training.encoder.magic_gat.num_heads,
                 feat_drop=0.1,
                 attn_drop=0.0,
-                negative_slope=negative_slope,
-                concat_out=True,
+                negative_slope=cfg.training.encoder.magic_gat.negative_slope,
                 residual=True,
                 activation=activation_fn_factory(cfg.training.encoder.magic_gat.activation),
                 is_decoder=False,
-                edge_dim=edge_dim or 0,  # Pass the calculated edge dimension
+                edge_dim=edge_dim or None,
             )
 
         # MLP encoders
@@ -473,7 +467,9 @@ def encoder_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num, graph_
     return encoder
 
 
-def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_cfg=None):
+def decoder_factory(
+    method, objective, cfg, in_dim, out_dim, device, objective_cfg=None, edge_dim=None
+):
     """Build decoder for specified objective and method.
 
     Args:
@@ -514,25 +510,24 @@ def decoder_factory(method, objective, cfg, in_dim, out_dim, device, objective_c
             device=device,
         )
     elif method == "magic_gat":
-        n_layers = decoder_cfg.num_layers
-        n_heads = decoder_cfg.num_heads
-        negative_slope = decoder_cfg.negative_slope
-
+        # MAGIC's feature decoder: the concatenated encoder layers (`in_dim`) are projected to
+        # `node_out_dim` (`encoder_to_decoder`), then decoded by a GAT without final activation
         return MagicGAT(
             in_dim=in_dim,
-            hid_dim=in_dim,
+            hid_dim=cfg.training.node_hid_dim,
             out_dim=out_dim,
-            n_layers=n_layers,
-            n_heads=n_heads,
+            n_layers=decoder_cfg.num_layers,
+            n_heads=decoder_cfg.num_heads,
             feat_drop=0.1,
             attn_drop=0.0,
-            negative_slope=negative_slope,
-            concat_out=True,
+            negative_slope=decoder_cfg.negative_slope,
             residual=True,
             activation=activation_fn_factory(
                 decoder_cfg.activation or cfg.training.encoder.magic_gat.activation
             ),
             is_decoder=True,
+            edge_dim=edge_dim,
+            in_proj_dim=cfg.training.node_out_dim,
         )
     elif method == "none":
         if in_dim != out_dim:
@@ -794,6 +789,15 @@ def _load_attack_features_from_synthetic(cfg, attack_edges_path):
     return torch.stack(atk_x_src_list), torch.stack(atk_x_dst_list), torch.stack(atk_edge_type_list)
 
 
+def encoder_out_dim(cfg):
+    """Size of the node embeddings `h` returned by the encoder."""
+    if "magic_gat" in cfg.training.encoder.used_methods:
+        # MAGIC's encoder returns the concatenation of all its layers
+        n_layers = cfg.training.encoder.magic_gat.num_layers
+        return (n_layers - 1) * cfg.training.node_hid_dim + cfg.training.node_out_dim
+    return cfg.training.node_out_dim
+
+
 def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, all_data=None, edge_dim=None):
     if objective_cfg is None:
         objective_cfg = cfg.training.decoder
@@ -914,7 +918,13 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             loss_fn = recon_loss_fn_factory(objective_cfg.reconstruct_masked_features.loss)
 
             decoder = decoder_factory(
-                method, objective, cfg, in_dim=node_out_dim, out_dim=in_dim, device=device
+                method,
+                objective,
+                cfg,
+                in_dim=encoder_out_dim(cfg),
+                out_dim=in_dim,
+                device=device,
+                edge_dim=edge_dim,
             )
             objectives.append(
                 GMAEFeatReconstruction(
@@ -929,12 +939,13 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
             loss_fn = categorical_loss_fn_factory(objective_cfg.predict_masked_struct.loss)
 
             decoder = decoder_factory(
-                method, objective, cfg, in_dim=node_out_dim * 2, out_dim=1, device=device
+                method, objective, cfg, in_dim=encoder_out_dim(cfg) * 2, out_dim=1, device=device
             )
             objectives.append(
                 GMAEStructPrediction(
                     decoder=decoder,
                     loss_fn=loss_fn,
+                    max_samples=objective_cfg.predict_masked_struct.max_samples,
                 )
             )
 

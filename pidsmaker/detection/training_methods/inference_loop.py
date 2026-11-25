@@ -164,7 +164,7 @@ def test_node_level(
             if magic_detector is None:
                 raise ValueError("MAGIC detection requires a detector fitted on the train split.")
             x_test, *_ = model.embed(data, inference=True)
-            score = magic_detector.score(magic_detection_embedding(model, x_test))
+            score = magic_detector.score(magic_detection_embedding(model, x_test, cfg))
             node_list = {
                 "node": n_id_np,
                 "magic_score": score.cpu().numpy().astype(float),
@@ -187,8 +187,12 @@ def test_node_level(
     return losses
 
 
-def magic_detection_embedding(model, h):
-    """Node embedding scored by MAGIC's k-NN detector."""
+def magic_detection_embedding(model, h, cfg=None):
+    """Node embedding scored by MAGIC's k-NN detector: the last encoder layer (`last`, the
+    original code) or all the concatenated layers (`concat`, the paper)."""
+    mode = (cfg.evaluation.node_evaluation.magic_embedding if cfg is not None else None) or "last"
+    if mode == "last" and hasattr(model.encoder, "detection_embedding"):
+        return model.encoder.detection_embedding(h)
     return h
 
 
@@ -210,7 +214,7 @@ def fit_magic_detector(cfg, model, train_data, device):
             if has_attacks:
                 g = remove_attacks_if_needed(g, cfg)
             h, *_ = model.embed(g, inference=True)
-            embs.append(magic_detection_embedding(model, h).float())
+            embs.append(magic_detection_embedding(model, h, cfg).float())
             del g
     x_train = torch.cat(embs)
     del embs
