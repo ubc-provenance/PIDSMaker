@@ -176,12 +176,74 @@ def batch_to_device(data, device):
     Batches using a shared node feature table get their features rebuilt on `device`
     (see `SharedNodeFeatures`).
     """
-    out = copy.copy(data).to(device, non_blocking=True)
+    device = torch.device(device)
+    if device.type == "cuda":
+        out = copy.copy(data)
+        keys = [k for k, v in data.items() if isinstance(v, torch.Tensor) and v.device != device]
+        for k, v in zip(keys, _PACKED_TRANSFER([data[k] for k in keys], device)):
+            out[k] = v
+    else:
+        out = copy.copy(data).to(device, non_blocking=True)
     if SHARED_FEATS_KEY in out:
         shared = out[SHARED_FEATS_KEY]
         del out[SHARED_FEATS_KEY]
         shared.materialize(out, device)
     return out
+
+
+class _PackedTransfer:
+    """Copies CPU tensors to the GPU at once: they are packed into a pinned buffer, copied with
+    a single transfer, and the GPU tensors are views of their bytes in the copied buffer.
+
+    A copy from pageable memory waits for the kernels queued before it, so moving the ~15
+    tensors of a batch one by one waited ~15 times for the GPU per batch. Two pinned buffers
+    are used in turn: one is filled while the transfer of the previous batch may be running."""
+
+    ALIGN = 16  # bytes, so that every tensor can be viewed with its dtype
+
+    def __init__(self):
+        self.buffers = [None, None]
+        self.events = [None, None]
+        self.turn = 0
+
+    def __call__(self, tensors, device):
+        if not tensors:
+            return []
+        tensors = [t.contiguous() for t in tensors]
+        offsets, total = [], 0
+        for t in tensors:
+            offsets.append(total)
+            nbytes = t.numel() * t.element_size()
+            total += (nbytes + self.ALIGN - 1) // self.ALIGN * self.ALIGN
+
+        i = self.turn
+        self.turn = 1 - i
+        if self.events[i] is not None:
+            self.events[i].synchronize()  # the previous transfer from this buffer is done
+        if self.buffers[i] is None or self.buffers[i].numel() < total:
+            self.buffers[i] = torch.empty(int(total * 1.5) + 1024, dtype=torch.uint8).pin_memory()
+        staging = self.buffers[i]
+        # Single-threaded copies with numpy: `Tensor.copy_` splits copies across the intra-op
+        # threads, whose synchronization costs more than these small copies on a busy machine
+        staging_np = staging.numpy()
+        for t, off in zip(tensors, offsets):
+            n = t.numel() * t.element_size()
+            if n:
+                staging_np[off : off + n] = t.view(-1).view(torch.uint8).numpy()
+
+        packed = staging[:total].to(device, non_blocking=True)
+        if self.events[i] is None:
+            self.events[i] = torch.cuda.Event()
+        self.events[i].record()
+
+        out = []
+        for t, off in zip(tensors, offsets):
+            n = t.numel() * t.element_size()
+            out.append(packed[off : off + n].view(t.dtype).view(t.shape))
+        return out
+
+
+_PACKED_TRANSFER = _PackedTransfer()
 
 
 # Sorted original node IDs of the compacted node IDs (`batching.compact_node_ids`), or None

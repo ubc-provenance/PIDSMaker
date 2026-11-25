@@ -67,6 +67,32 @@ def test_neighbor_loader_clear_keeps_edge_ids():
     assert e_id.tolist() == [2]
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a GPU")
+def test_packed_batch_to_device_matches_to():
+    from pidsmaker.utils.data_utils import CollatableTemporalData, batch_to_device
+
+    g = torch.Generator().manual_seed(0)
+    data = CollatableTemporalData(
+        src=torch.randint(0, 100, (37,), generator=g),
+        dst=torch.randint(0, 100, (37,), generator=g),
+        t=torch.randint(0, 10**18, (37,), generator=g),
+        msg=torch.randn(37, 5, generator=g),
+    )
+    data.y = torch.zeros(37, dtype=torch.bool)
+    data.edge_index_tgn = torch.randint(0, 100, (2, 11), generator=g)[:, ::2]  # non-contiguous
+    data.empty = torch.zeros(0, 3, dtype=torch.float16)
+    data.scalar = torch.tensor(3.5, dtype=torch.float64)
+    data.tgn_mode = True
+    for _ in range(3):  # both pinned buffers, then the first one again
+        out = batch_to_device(data, "cuda")
+        ref = data.clone().to("cuda")
+        assert out.tgn_mode is True and data.src.device.type == "cpu"
+        for key, value in ref.items():
+            if isinstance(value, torch.Tensor):
+                assert out[key].dtype == value.dtype and out[key].shape == value.shape, key
+                assert torch.equal(out[key], value), key
+
+
 def encoder_cfg(encoders, objectives, use_memory=True, use_node_feats_in_gnn=False):
     cfg = decoder_cfg(objectives)
     cfg.training.decoder.use_few_shot = False
