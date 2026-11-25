@@ -26,7 +26,7 @@ batching:
   save_on_disk: False
   node_features: edges_distribution
   edge_features: none
-  fix_buggy_graph_reindexer: False
+  fix_buggy_graph_reindexer: True
   global_batching:
     used_method: none
   intra_graph_batching:
