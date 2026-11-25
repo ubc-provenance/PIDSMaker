@@ -11,7 +11,8 @@ construction:
     netflow: remote_ip
   multi_dataset: none
   cleaning:
-    used_methods: none
+    # MAGIC keeps one edge per (source, destination, edge type) in a graph (paper, Sec. 4.1)
+    used_methods: dedup_window_edges
 transformation:
   used_methods: none
 
