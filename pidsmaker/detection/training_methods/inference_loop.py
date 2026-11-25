@@ -348,19 +348,6 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
                 g = batch_to_device(g, device)
 
                 s = time.time()
-                test_fn = test_node_level if (cfg._is_node_level and not cfg._is_hybrid_loss) else test_edge_level
-                losses = test_fn(
-                    data=g,
-                    model=model,
-                    split=split_name,
-                    model_epoch_file=model_epoch_file,
-                    cfg=cfg,
-                    device=device,
-                    **({"magic_detector": magic_detector} if test_fn is test_node_level else {}),
-                )
-                all_losses.append(np.asarray(losses, dtype=np.float64).ravel())
-
-
                 if is_node_level:
                     losses = test_node_level(
                         data=g,
@@ -369,6 +356,7 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
                         model_epoch_file=model_epoch_file,
                         cfg=cfg,
                         device=device,
+                        magic_detector=magic_detector,
                     )
                     all_losses.append(np.asarray(losses, dtype=np.float64).ravel())
                 else:
