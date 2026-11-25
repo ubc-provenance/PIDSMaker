@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 from sklearn.neighbors import NearestNeighbors
 
-from pidsmaker.utils.data_utils import batch_to_device
+from pidsmaker.utils.data_utils import batch_to_device, to_original_node_ids
 from pidsmaker.utils.labelling import has_event_labels
 from pidsmaker.utils.loss_files import write_losses
 from pidsmaker.utils.utils import (
@@ -41,7 +41,7 @@ def test_edge_level(
 
     # If the data has been reindexed in the loader or batched, we retrieve original node IDs
     # to later find the labels
-    edge_index = data.original_edge_index
+    edge_index = to_original_node_ids(data.original_edge_index)
 
     # A single device->host transfer for all columns
     edge_types = data.edge_type.max(dim=1).indices + 1
@@ -101,7 +101,7 @@ def test_node_level(
     results = model(data, inference=True, validation=validation)
     loss = results["loss"]
     losses = loss.float().cpu().numpy()
-    n_id = getattr(data, "original_n_id_tgn", getattr(data, "original_n_id"))
+    n_id = to_original_node_ids(getattr(data, "original_n_id_tgn", getattr(data, "original_n_id")))
     n_id_np = n_id.cpu().numpy()
 
     # ThreaTrace code

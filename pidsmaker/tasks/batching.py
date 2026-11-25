@@ -2,7 +2,11 @@ import os
 
 import torch
 
-from pidsmaker.utils.data_utils import load_all_datasets
+from pidsmaker.utils.data_utils import (
+    get_original_node_ids,
+    load_all_datasets,
+    set_original_node_ids,
+)
 from pidsmaker.utils.utils import get_device, log, log_start, set_seed
 
 
@@ -14,6 +18,9 @@ def get_preprocessed_graphs(cfg):
     log("Loading preprocessed graphs...")
     out_dir = cfg.batching._preprocessed_graphs_dir
     out_file = os.path.join(out_dir, "torch_graphs.pkl")
+    node_ids_file = os.path.join(out_dir, "original_node_ids.pkl")
+    # Original IDs of the compacted node IDs (`batching.compact_node_ids`)
+    set_original_node_ids(torch.load(node_ids_file) if os.path.exists(node_ids_file) else None)
     return torch.load(out_file)
 
 def get_data(cfg):
@@ -35,3 +42,8 @@ def main(cfg):
     os.makedirs(out_dir, exist_ok=True)
     log(f"Saving preprocessed graphs to {out_file}...")
     torch.save((train_data, val_data, test_data, max_node_num), out_file)
+    node_ids_file = os.path.join(out_dir, "original_node_ids.pkl")
+    if get_original_node_ids() is not None:
+        torch.save(get_original_node_ids(), node_ids_file)
+    elif os.path.exists(node_ids_file):
+        os.remove(node_ids_file)

@@ -178,6 +178,46 @@ def batch_to_device(data, device):
     return out
 
 
+# Sorted original node IDs of the compacted node IDs (`batching.compact_node_ids`), or None
+_ORIGINAL_NODE_IDS = None
+
+
+def set_original_node_ids(node_ids):
+    global _ORIGINAL_NODE_IDS
+    _ORIGINAL_NODE_IDS = node_ids
+
+
+def get_original_node_ids():
+    return _ORIGINAL_NODE_IDS
+
+
+def to_original_node_ids(ids):
+    """Node IDs of the database of (compacted) node IDs `ids` (unchanged without compaction)."""
+    if _ORIGINAL_NODE_IDS is None:
+        return ids
+    return _ORIGINAL_NODE_IDS.to(ids.device)[ids.long()].to(ids.dtype)
+
+
+def compact_node_ids(dataset_groups, shared=None):
+    """Renumbers in place the `src` and `dst` of all graphs to the rank of their ID among the
+    sorted IDs of the nodes in the graphs (`batching.compact_node_ids`). The order of the nodes
+    is kept (sorting, `unique`, ... give the same results), while tensors indexed by node ID are
+    sized by the number of nodes in the graphs instead of the largest database ID.
+
+    Returns the sorted original IDs, also kept for `to_original_node_ids`.
+    """
+    graphs = [data for group in dataset_groups for dataset in group for data in dataset]
+    node_ids = torch.cat([torch.cat([g.src, g.dst]).unique() for g in graphs]).unique()
+    for g in graphs:
+        g.src = torch.searchsorted(node_ids, g.src).to(g.src.dtype)
+        g.dst = torch.searchsorted(node_ids, g.dst).to(g.dst.dtype)
+    if shared is not None:
+        shared.node_row = shared.node_row[node_ids]
+        shared.num_nodes = len(node_ids)
+    set_original_node_ids(node_ids)
+    return node_ids
+
+
 def load_all_datasets(cfg, device, only_keep=None):
     multi_dataset = cfg.batching.multi_dataset_training
     shared = None
@@ -208,6 +248,12 @@ def load_all_datasets(cfg, device, only_keep=None):
     use_tgn_intra = (
         "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
     )
+
+    if getattr(cfg.batching, "compact_node_ids", False):
+        node_ids = compact_node_ids([train_data, val_data, test_data], shared=shared)
+        log(f"Node IDs compacted: {len(node_ids)} nodes in the graphs, max ID {int(node_ids[-1])}")
+    else:
+        set_original_node_ids(None)
 
     max_node = max(
         max(data.src.max().item(), data.dst.max().item())

@@ -336,7 +336,10 @@ UNHASHED_DEFAULT_ARGS = {
     },
     "transformation": {"merge_edges": None, "merge_edges.aggregate_attributes": False},
     "feat_inference": {"edge_attributes": "all"},
-    "batching": {"intra_graph_batching.tgn_last_neighbor.negative_destinations": False},
+    "batching": {
+        "intra_graph_batching.tgn_last_neighbor.negative_destinations": False,
+        "compact_node_ids": False,
+    },
     "evaluation": {
         "save_figures": True,
         "evaluate_selected_epoch_only": False,

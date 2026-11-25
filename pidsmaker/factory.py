@@ -22,7 +22,7 @@ from pidsmaker.losses import *
 from pidsmaker.model import Model
 from pidsmaker.objectives import *
 from pidsmaker.tgn import IdentityMessage, LastAggregator, TGNMemory, TimeEncodingMemory
-from pidsmaker.utils.data_utils import GraphReindexer, materialize_batch
+from pidsmaker.utils.data_utils import GraphReindexer, materialize_batch, to_original_node_ids
 from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
@@ -575,7 +575,7 @@ def _load_attack_features(cfg, edge_scores_path, top_n, all_data):
                 g = materialize_batch(g)
                 # original_edge_index holds global IDs (before reindexing);
                 # g.src/g.dst have been overwritten with local 0..N-1 indices.
-                orig_ei = g.original_edge_index.cpu()
+                orig_ei = to_original_node_ids(g.original_edge_index).cpu()
                 src_np = orig_ei[0].numpy()
                 dst_np = orig_ei[1].numpy()
                 t_np = g.t.cpu().numpy()
@@ -663,7 +663,7 @@ def _load_attack_features_from_patterns(cfg, attack_patterns, max_edges_per_patt
                         break
                     g = materialize_batch(g)
 
-                    orig_ei  = g.original_edge_index.cpu()
+                    orig_ei  = to_original_node_ids(g.original_edge_index).cpu()
                     src_ids  = orig_ei[0].tolist()
                     dst_ids  = orig_ei[1].tolist()
                     etypes   = g.edge_type  # (E, num_edge_types)

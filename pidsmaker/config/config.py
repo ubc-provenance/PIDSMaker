@@ -1597,6 +1597,15 @@ TASK_ARGS = {
         "multi_dataset_training": Arg(
             bool, desc="Whether the GNN should be trained on all datasets in `multi_dataset`."
         ),
+        "compact_node_ids": Arg(
+            bool,
+            desc="Renumbers the nodes of the graphs from 0 to (number of nodes in the graphs - 1), keeping \
+                                their order, instead of using the node IDs of the database, which also count the nodes \
+                                absent from all graphs (86% of the 44.5M IDs of TRACE_E3). Tensors indexed by node (TGN \
+                                memory, neighbor loader, node ID embeddings, `all_nodes` embeddings, ...) are sized \
+                                accordingly. Node IDs are restored in the outputs. Results are unchanged, except for \
+                                methods drawing random nodes among all IDs (e.g. uniform negatives of Euler and Argus).",
+        ),
         "fix_buggy_graph_reindexer": Arg(
             bool,
             desc="A bug has been found in the first version of the framework, where reindexing graphs in shape (N, d) \
