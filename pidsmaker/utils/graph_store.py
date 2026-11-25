@@ -292,6 +292,17 @@ def encode_edge_list(nodes, node_attrs, src, dst, edge_attrs):
 
     src_pos = np.fromiter((node_pos[u] for u in src), dtype=np.int64, count=num_edges)
     dst_pos = np.fromiter((node_pos[v] for v in dst), dtype=np.int64, count=num_edges)
+    node_cols = (tuple(node_attrs), [_encode_column(list(v)) for v in node_attrs.values()]) if num_nodes else ((), [])
+    return encode_multi_edge_positions(nodes, node_cols, src_pos, dst_pos, edge_attrs)
+
+
+def encode_multi_edge_positions(nodes, node_cols, src_pos, dst_pos, edge_attrs):
+    """Same as `encode_edge_list`, with the edges given as node positions, the node attributes as
+    encoded columns (as returned by `encode_attr_dicts`) and the edge attributes as lists or int64
+    arrays (whose values are stored as Python ints)."""
+    num_nodes, num_edges = len(nodes), len(src_pos)
+    src_pos = np.asarray(src_pos, dtype=np.int64)
+    dst_pos = np.asarray(dst_pos, dtype=np.int64)
     # Pairs (u, v) numbered in order of first appearance: the order of the successors of u
     # (and of the predecessors of v) in the networkx adjacency dicts
     pair_id, _ = pd.factorize(src_pos * max(num_nodes, 1) + dst_pos)
@@ -318,14 +329,19 @@ def encode_edge_list(nodes, node_attrs, src, dst, edge_attrs):
         take = order.tolist()
         edge_cols = (
             tuple(edge_attrs),
-            [_encode_column([values[i] for i in take]) for values in edge_attrs.values()],
+            [
+                _encode_values(values[order], scalars=False)
+                if isinstance(values, np.ndarray)
+                else _encode_column([values[i] for i in take])
+                for values in edge_attrs.values()
+            ],
         )
     else:
         edge_cols = ((), [])
-    node_cols = (tuple(node_attrs), [_encode_column(list(v)) for v in node_attrs.values()]) if num_nodes else ((), [])
     return _payload(
         "MultiDiGraph", {}, nodes, node_cols, src_pos[order], dst_pos[order],
-        _encode_column(keys.tolist()), edge_cols, num_pairs, pair_rank[pred_pairs],
+        _encode_values(keys.astype(np.int64), scalars=False), edge_cols, num_pairs,
+        pair_rank[pred_pairs],
     )
 
 
@@ -367,6 +383,12 @@ def _encode_values(values, scalars=True):
 def save_edge_positions(path, nodes, node_cols, src_pos, dst_pos, edge_attrs):
     """Saves the graph described by `encode_edge_positions`, as `save_graph` would save it."""
     obj = _CompactGraph(encode_edge_positions(nodes, node_cols, src_pos, dst_pos, edge_attrs))
+    torch.save(obj, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def save_multi_edge_positions(path, nodes, node_cols, src_pos, dst_pos, edge_attrs):
+    """Saves the graph described by `encode_multi_edge_positions`, as `save_graph` would save it."""
+    obj = _CompactGraph(encode_multi_edge_positions(nodes, node_cols, src_pos, dst_pos, edge_attrs))
     torch.save(obj, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
 
 

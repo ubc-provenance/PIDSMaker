@@ -1423,7 +1423,39 @@ TASK_ARGS = {
             desc="Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`",
         ),
         "rcaid_pseudo_graph": {
-            "use_pruning": Arg(bool),
+            "use_pruning": Arg(
+                bool,
+                desc="Whether roots reaching more than `prune_threshold` of the nodes of the graph \
+                    get no pseudo edges (R-Caid's pruning of highly-connected roots).",
+            ),
+            "prune_threshold": Arg(
+                float,
+                desc="Fraction of the nodes of the graph above which the descendants of a root are \
+                    pruned (0.5 for DARPA TC in the paper).",
+            ),
+            "root_node_types": Arg(
+                str,
+                desc="Comma-separated node types that can be roots (e.g. `file,netflow`: files and \
+                    sockets, as in the paper), or `all`.",
+            ),
+            "keep_original_edges": Arg(
+                bool,
+                desc="Whether the transformed graph keeps the edges of the provenance graph next to \
+                    the pseudo edges (root -> descendant), which have no edge type. If False, only \
+                    the pseudo edges are kept.",
+            ),
+            "merge_same_label_roots": Arg(
+                bool,
+                desc="Whether the pseudo edges of the roots with the same type and label (thus the \
+                    same features) towards a same node are merged into one, from the first such root.",
+            ),
+            "max_roots_per_node": Arg(
+                int,
+                desc="Maximum number of pseudo-roots of a node (0: no limit): its roots with the \
+                    fewest descendants. Bounds the pseudo edges by this number times the number of \
+                    nodes, e.g. when a process reads thousands of files that become roots of all \
+                    its descendants.",
+            ),
         },
         "merge_edges": {
             "per_edge_type": Arg(
