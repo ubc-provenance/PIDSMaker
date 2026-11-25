@@ -1,0 +1,6 @@
+# Override of compose-pidsmaker.yml for machines without an NVIDIA GPU (e.g. macOS, laptops):
+# removes the GPU reservation, which Docker refuses when no NVIDIA driver is found.
+#   docker compose -f compose-pidsmaker.yml -f compose-pidsmaker.cpu.yml up -d --build
+services:
+  pids:
+    deploy: !reset {}

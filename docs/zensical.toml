@@ -39,7 +39,7 @@ nav = [
     { "Pretrained encoders" = "features/pretrained_encoders.md" },
     { "Supervised fine-tuning" = "features/supervised.md" },
     { "Multi-dataset training" = "features/multi-dataset.md" },
-    { "Attack simulation" = "features/attacks.md" },
+    { "Adversarial attacks" = "features/attacks.md" },
     { "Triage" = "features/triage.md" },
     { "Embedding visualizer" = "features/visualization.md" },
   ] },

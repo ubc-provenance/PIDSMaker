@@ -1,0 +1,3 @@
+# The repository is bind-mounted at runtime: keep datasets and run outputs out of the image
+data/
+artifacts/
