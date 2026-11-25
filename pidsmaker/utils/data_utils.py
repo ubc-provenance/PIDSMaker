@@ -489,11 +489,10 @@ def extract_msg_from_data(
         x_src = torch.cat(x_src, dim=-1)
         x_dst = torch.cat(x_dst, dim=-1)
 
-        # If we want to predict the edge type, we remove the edge type from the message
-        if "predict_edge_type" in cfg.training.decoder.used_methods:
-            msg = torch.cat([x_src, x_dst], dim=-1)
-        else:
+        if _msg_has_edge_type(cfg):
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
+        else:
+            msg = torch.cat([x_src, x_dst], dim=-1)
 
         # Edge attributes of the dataset (e.g. ports, protocols, logon types) are part of
         # the message describing the event, and optionally used as edge features
@@ -539,6 +538,19 @@ def extract_msg_from_data(
         # g.edge_index = ...
 
     return data_set
+
+def _msg_has_edge_type(cfg):
+    """Whether the edge messages `msg` = [src | dst | edge type] hold the edge type.
+
+    With `predict_edge_type`, the edge type is removed from the messages unless
+    `predict_edge_type.edge_type_in_msg` is set. The messages of an edge only reach the TGN
+    after its type is predicted (memory update, and edge features of the next batches), so
+    keeping it does not leak the predicted type: Kairos' messages are (src, edge type, dst).
+    """
+    if "predict_edge_type" not in cfg.training.decoder.used_methods:
+        return True
+    return bool(cfg.training.decoder.predict_edge_type.edge_type_in_msg)
+
 
 def _edge_features_list(cfg):
     return [x.strip() for x in cfg.batching.edge_features.split(",")]
@@ -1446,7 +1458,7 @@ class SharedNodeFeatures:
         self.needs_msg = _needs_raw_msg(cfg)
         self.edge_feats_is_msg = _edge_feats_is_msg(cfg)
         self.edge_features = _edge_features_list(cfg)
-        self.msg_has_edge_type = "predict_edge_type" not in cfg.training.decoder.used_methods
+        self.msg_has_edge_type = _msg_has_edge_type(cfg)
         self.fix_buggy_graph_reindexer = cfg.batching.fix_buggy_graph_reindexer
 
         # Dataset edge attributes are appended to msg (they stay stored per edge)

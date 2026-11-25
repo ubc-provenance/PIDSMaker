@@ -76,7 +76,7 @@ The two families mostly differ at both ends of the pipeline. Most PIDSs embed th
 Other stages:
 
 - **Transformation.** R-Caid builds its pseudo-graph (`rcaid_pseudo_graph`: the provenance graph plus an edge from each file or socket root to each of its descendants, at most 16 roots per node) and NodLink makes graphs undirected (`undirected`). Euler, Argus, LARES, E-GraphSAGE and Anomal-E merge the repeated edges of each time window (`merge_edges`); Argus and LARES aggregate the attributes of the merged events (`merge_edges.aggregate_attributes`).
-- **Edge features.** Velox, Orthrus and OCR-APT use the edge type; Kairos and Jbeil the TGN messages (`msg,time_encoding`); Argus, LARES, E-GraphSAGE and Anomal-E the event attributes (`edge_attrs`).
+- **Edge features.** Velox, Orthrus and OCR-APT use the edge type; Kairos and Jbeil the TGN messages (`msg,time_encoding`), which hold the types of the past edges in Kairos (`predict_edge_type.edge_type_in_msg`); Argus, LARES, E-GraphSAGE and Anomal-E the event attributes (`edge_attrs`).
 - **Epoch selection.** PIDSs report the epoch with the best ADP (`best_adp`, the default). Euler, Jbeil and E-GraphSAGE select it without labels on validation link prediction (`best_val_score`), Argus and Anomal-E keep the last epoch (`last_epoch`), and LARES selects the best MCC, as its code. See [Choosing the reported epoch](evaluation.md#choosing-the-reported-epoch).
 - **Triage.** OCR-APT extracts anomalous subgraphs from its detections (`triage.used_method: ocrapt_subgraph`).
 

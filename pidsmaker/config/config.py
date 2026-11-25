@@ -1184,6 +1184,12 @@ OBJECTIVES_CFG = {
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
         "use_triplet_types": Arg(bool),
+        "edge_type_in_msg": Arg(
+            bool,
+            desc="Keeps the edge type in the edge messages `msg` (TGN memory and `msg` edge \
+                features), as in Kairos. Messages of an edge are only used after its type is \
+                predicted. By default, the edge type is removed from the messages.",
+        ),
         "AMS":
             {
                 "version": Arg(int),

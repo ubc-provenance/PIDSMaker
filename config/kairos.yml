@@ -79,6 +79,7 @@ training:
     predict_edge_type:
       balanced_loss: False
       use_triplet_types: False
+      edge_type_in_msg: True
       decoder: edge_mlp
       edge_mlp:
         architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.25) | tanh | linear(0.25) | dropout(0.5) | tanh
