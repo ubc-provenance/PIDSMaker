@@ -18,4 +18,5 @@ from .sage import SAGE
 from .shadewatcher_encoder import ShadeWatcherEncoder
 from .sum_aggregation import SumAggregation
 from .temporal_wrappers import NodeIdEmbedding, SnapshotGRU
+from .textrcnn import TextRCNN
 from .tgn_encoder import TGNEncoder

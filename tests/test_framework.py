@@ -118,6 +118,7 @@ class TestFeaturization:
         "flash",
         "alacarte",
         "temporal_rw",
+        "graph2vec",
     ]
 
     @pytest.mark.parametrize("featurization", featurizations)
@@ -245,8 +246,11 @@ class TestCleaning:
 class TestEncoderObjective:
     # `tgn` is a wrapper, covered by test_encoder_tgn_objective_pairs below. `node_id_embedding`
     # and `snapshot_gru` wrap another encoder too, covered by test_snapshot_wrappers_objective_pairs.
+    # `textrcnn` embeds snapshots, not nodes: it is covered by TestProGrapher.
     encoders = [
-        e for e in ENCODERS_CFG.keys() if e not in ("tgn", "node_id_embedding", "snapshot_gru")
+        e
+        for e in ENCODERS_CFG.keys()
+        if e not in ("tgn", "node_id_embedding", "snapshot_gru", "textrcnn")
     ]
     objectives = [
         "predict_node_type",
@@ -413,6 +417,7 @@ class TestSystems:
         "rcaid",
         "ocrapt",
         "shadewatcher",
+        "prographer",
     ]
 
     @pytest.mark.parametrize("system", systems)
@@ -812,3 +817,93 @@ class TestCombinations:
         cfg = prepare_cfg("tests", dataset, device=device, custom_args=custom_args)
         with pytest.raises(ValueError, match="Decoder `none` of objective `reconstruct_node_features`"):
             main.main(cfg)
+
+
+class TestProGrapher:
+    """ProGrapher: graph2vec snapshot embeddings, TextRCNN and key indicators."""
+
+    @pytest.mark.parametrize(
+        "custom_args",
+        [
+            # Entity-level evaluation from the key indicators, with the top-4 RSGs of the paper
+            [
+                ("evaluation.used_method", "node_evaluation"),
+                ("training.decoder.predict_snapshot_embedding.top_k", 4),
+            ],
+            # ReLU recurrence of the TextRCNN equations, transductive graph2vec
+            [
+                ("training.encoder.textrcnn.rnn_type", "rnn"),
+                ("featurization.training_split", "all"),
+                ("evaluation.used_method", "node_tw_evaluation"),
+            ],
+        ],
+    )
+    def test_prographer_options(self, dataset, device, custom_args):
+        custom_args = custom_args + [("training.num_epochs", 2), ("featurization.epochs", 2)]
+        cfg = prepare_cfg("prographer", dataset, device=device, custom_args=custom_args)
+        main.main(cfg)
+
+    def test_textrcnn_requires_graph2vec(self, dataset, device):
+        custom_args = [
+            ("training.decoder.used_methods", "predict_snapshot_embedding"),
+            ("batching.intra_graph_batching.used_methods", "none"),
+        ]
+        cfg = prepare_cfg(
+            "tests", dataset, device=device, encoder="textrcnn", custom_args=custom_args
+        )
+        with pytest.raises(ValueError, match="graph2vec"):
+            main.main(cfg)
+
+    def test_rooted_subgraphs(self):
+        import numpy as np
+
+        from pidsmaker.featurization.featurization_methods.featurization_graph2vec import (
+            rooted_subgraphs,
+        )
+
+        # p0 -READ-> f1, p0 -WRITE-> f2, and the same graph with other node and edge orders
+        labels = rooted_subgraphs(
+            ["subject", "file", "file"], np.array([0, 0]), np.array([1, 2]), ["READ", "WRITE"], 2
+        )
+        permuted = rooted_subgraphs(
+            ["file", "file", "subject"], np.array([2, 2]), np.array([1, 0]), ["WRITE", "READ"], 2
+        )
+        assert labels.shape == (3, 3)
+        assert list(labels[0]) == ["subject", "file", "file"]
+        # Files differ by their edge types from depth 1, the process is the same in both graphs
+        assert labels[1, 1] != labels[1, 2]
+        assert list(permuted[:, 2]) == list(labels[:, 0])
+        assert sorted(permuted[2, :2]) == sorted(labels[2, 1:])
+
+    def test_textrcnn_short_sequences(self):
+        from types import SimpleNamespace
+
+        from pidsmaker.encoders import TextRCNN
+        from pidsmaker.objectives import SnapshotEmbeddingPrediction
+
+        torch.manual_seed(0)
+        encoder = TextRCNN(emb_dim=8, hid_dim=4, num_layers=2, sequence_length=3, dropout=0.2)
+        # RSG 0 is aligned with the deviation, RSG 1 opposed to it
+        objective = SnapshotEmbeddingPrediction(torch.tensor([[1.0] * 8, [-1.0] * 8]))
+        for i in range(5):  # fewer, then more snapshots than `sequence_length`
+            batch = SimpleNamespace(
+                graph_emb=torch.full((1, 8), float(i)),
+                original_n_id=torch.tensor([3, 7]),
+                # node 3: RSGs 1 (depth 0) and 0 (depth 1), node 7: RSG 1 and an unseen RSG
+                snapshot_rsg=torch.tensor([[[3, 1, 0], [7, 1, -1]]], dtype=torch.int32),
+            )
+            res = encoder(batch=batch, edge_index=torch.tensor([[0], [1]]))
+            assert res["h"].shape == (1, 8) and res["h_src"].shape == (1, 8)
+            assert len(encoder.history) == min(i + 1, 3)
+            loss = objective(h=res["h"], inference=False, batch=batch)["loss"]
+            loss.backward()
+
+        with torch.no_grad():
+            pred = torch.full((1, 8), -10.0)  # the actual embedding (4) is above the prediction
+            scores = objective(h=pred, inference=True, validation=True, batch=batch)["loss"]
+        error = torch.linalg.vector_norm(batch.graph_emb - pred)
+        # Node 3 is rooted at the top RSG: it gets the snapshot error, node 7 half of it
+        assert torch.allclose(scores, torch.stack([error, error / 2]))
+        assert objective.get_val_score() == pytest.approx(-error.item())
+        encoder.reset_state()
+        assert encoder.history == []
