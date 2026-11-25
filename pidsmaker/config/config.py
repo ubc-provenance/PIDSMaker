@@ -1720,6 +1720,14 @@ TASK_ARGS = {
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "fuse_duplicate_edges_training": Arg(bool, desc="During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss."),
         "used_method": Arg(str, vals=OR(["default", "pretrained"]), desc="Which training pipeline use."),
+        "threatrace": {
+            "ratio_threshold": Arg(
+                float,
+                desc="ThreaTrace's `thre`: a node is explained when its type is predicted with a \
+                    top-1 / top-2 probability ratio of at least this value. Anomalous nodes are \
+                    those not explained (used by `threshold_method: threatrace`).",
+            ),
+        },
         "ocrapt_early_stop": {
             "enabled": Arg(bool, desc="Off by default, no-op unless set."),
             "patience": Arg(int),

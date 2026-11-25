@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import random
 import time
@@ -22,6 +23,31 @@ from pidsmaker.utils.utils import (
     ns_time_to_datetime_US,
     set_seed,
 )
+
+
+def threatrace_log_ratio(log_probs, node_type):
+    """log(p_true / max_{c != true} p_c) per node, from log-probabilities (N, C).
+
+    ThreaTrace explains a node when its type is predicted with a top-1 / top-2 probability
+    ratio of at least `thre`. This is equivalent to `ratio >= thre` with the ratio above: when
+    the prediction is right it is the top-1 / top-2 ratio, and when it is wrong it is <= 1.
+    """
+    log_p_true = log_probs.gather(1, node_type.unsqueeze(1)).squeeze(1)
+    others = log_probs.scatter(1, node_type.unsqueeze(1), float("-inf"))
+    return log_p_true - others.max(dim=1).values
+
+
+def threatrace_anomaly_score(outs, node_type, ratio_threshold):
+    """ThreaTrace's anomaly score, positive iff the node is anomalous.
+
+    A node is anomalous when no submodel predicts its type with a probability ratio of at least
+    `ratio_threshold` (test_darpatc.py). The score is
+    `log(ratio_threshold) - max_k log(p_true / max_{c != true} p_c)` over the submodels `outs`
+    (log-probabilities), so that anomalous nodes are exactly those with a score > 0, and nodes
+    whose type is the least well predicted rank first.
+    """
+    best = torch.stack([threatrace_log_ratio(out, node_type) for out in outs]).max(dim=0).values
+    return math.log(ratio_threshold) - best
 
 
 @torch.no_grad()
@@ -107,25 +133,17 @@ def test_node_level(
 
     # ThreaTrace code
     if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-        out = results["out"]
-        pred = out.max(1)[1]
-        pro = F.softmax(out, dim=1)
-        pro1 = pro.max(1)
-        # Masks the top-1 probability to get the second highest one
-        pro.scatter_(1, pro1[1].unsqueeze(1), -1)
-        pro2 = pro.max(1)
-
+        # One output per submodel (ThreaTrace's multi-model scheme), or the single model's
         node_type_num = data.node_type.argmax(1)
-        score = torch.where(pro2[0] != 0, pro1[0] / pro2[0], pro1[0] / 1e-5)
-        score = torch.log(score + 1e-12)  # we do that or the score is much too high
-        score = score.clamp(min=0)
-        correct_pred = (node_type_num == pred).long()
+        outs = results.get("outs", [results["out"]])
+        score = threatrace_anomaly_score(
+            outs, node_type_num, cfg.training.threatrace.ratio_threshold
+        )
 
         node_list = {
             "node": n_id_np,
             "loss": losses.astype(float),
             "threatrace_score": score.cpu().numpy().astype(float),
-            "correct_pred": correct_pred.cpu().numpy(),
         }
 
     # Flash code

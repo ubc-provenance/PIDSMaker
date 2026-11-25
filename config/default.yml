@@ -110,6 +110,9 @@ feat_inference:
   to_remove: True
 
 training:
+  # ThreaTrace (`threshold_method: threatrace`)
+  threatrace:
+    ratio_threshold: 1.5
   encoder:
     x_is_tuple: False
     graph_attention:

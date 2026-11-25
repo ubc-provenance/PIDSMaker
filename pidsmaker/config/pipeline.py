@@ -1240,6 +1240,13 @@ def check_evaluation(cfg):
             raise ValueError(
                 f"Threshold method `{node_threshold_method}` requires the `predict_node_type` objective."
             )
+    if is_node_level and node_threshold_method == "threatrace":
+        ratio = cfg.training.threatrace.ratio_threshold
+        if ratio is None or ratio < 1.0:
+            raise ValueError(
+                "Threshold method `threatrace` requires `training.threatrace.ratio_threshold` >= 1 "
+                f"(got {ratio})."
+            )
 
     if method == "queue_evaluation" and cfg._is_node_level and not cfg._is_hybrid_loss:
         raise ValueError(

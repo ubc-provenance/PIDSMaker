@@ -44,6 +44,8 @@ training:
   node_hid_dim: 32
   node_out_dim: 3
   grad_accumulation: 1
+  threatrace:
+    ratio_threshold: 1.5  # `thre` of CADETS and THEIA in the original
   encoder:
     dropout: 0.5
     used_methods: sage

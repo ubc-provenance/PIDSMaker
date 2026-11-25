@@ -241,16 +241,14 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         flash_label = 0
         detected_tw = None
         if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-            max_score = 0
-            pred_score = max(losses["threatrace_score"])
-
-            for score, node_type_pred, tw in zip(
-                losses["threatrace_score"], losses["correct_pred"], losses["tw"]
-            ):
-                if score > thr and node_type_pred and score > max_score:
-                    threatrace_label = 1
-                    max_score = score
-                    detected_tw = tw
+            # The score is positive iff no submodel explains the node's type in that
+            # time window (see `threatrace_anomaly_score`): a node is detected if it is
+            # anomalous in any time window, the one with the highest score being kept.
+            scores = losses["threatrace_score"]
+            best = int(np.argmax(scores))
+            pred_score = scores[best]
+            threatrace_label = int(pred_score > thr)
+            detected_tw = losses["tw"][best]
 
         elif cfg.evaluation.node_evaluation.threshold_method == "flash":
             # The node is flagged if, in one of its time windows, it is not predicted correctly

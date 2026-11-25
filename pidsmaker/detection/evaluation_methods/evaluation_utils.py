@@ -188,7 +188,8 @@ def get_threshold(val_tw_path, threshold_method: str, alpha=1.0, contamination=0
     elif threshold_method == "percentile":
         return calculate_threshold(val_tw_path, threshold_method, alpha)["max"]
     elif threshold_method == "threatrace":
-        return 1.5
+        # The ratio threshold is already applied in the score (see `threatrace_anomaly_score`)
+        return 0.0
     elif threshold_method == "flash":
         return 0.53
     elif threshold_method == "nodlink":
