@@ -650,6 +650,10 @@ FEATURIZATIONS_CFG = {
         ),
         "epochs": Arg(int),
         "alpha": Arg(float),
+        "workers": Arg(
+            int,
+            desc="Number of threads training Doc2Vec. Training is deterministic only with 1.",
+        ),
     },
     "fasttext": {
         "min_count": Arg(int),

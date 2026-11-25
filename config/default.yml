@@ -56,6 +56,7 @@ featurization:
   doc2vec:
     include_neighbors: False
     alpha: 0.025
+    workers: 3
   alacarte:
     walk_length: 30
     num_walks: 10

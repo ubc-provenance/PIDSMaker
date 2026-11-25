@@ -37,6 +37,7 @@ featurization:
     include_neighbors: False
     truncate_process_name: True
     alpha: 0.025
+    workers: 1
 feat_inference:
   to_remove: True
 

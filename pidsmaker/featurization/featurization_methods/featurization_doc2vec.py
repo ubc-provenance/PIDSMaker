@@ -36,6 +36,7 @@ def doc2vec(
     emb_dim: int,
     alpha: float,
     dm: int = 1,
+    workers: int = 3,
 ):
     """Train Doc2Vec model on graph corpus.
 
@@ -54,7 +55,8 @@ def doc2vec(
     """
     SEED = 0
     model = Doc2Vec(
-        vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED
+        vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED,
+        workers=workers,
     )
     model.build_vocab(tagged_data)
 
@@ -92,5 +94,6 @@ def main(cfg):
         epochs=epochs,
         emb_dim=emb_dim,
         alpha=alpha,
+        workers=cfg.featurization.doc2vec.workers,
         cfg=cfg,
     )
