@@ -25,6 +25,7 @@ feat_inference:
 batching:
   save_on_disk: False
   node_features: edges_distribution
+  edges_distribution_scaling: none
   edge_features: none
   fix_buggy_graph_reindexer: True
   global_batching:

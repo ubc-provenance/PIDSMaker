@@ -428,6 +428,7 @@ def extract_msg_from_data(
     }
 
     if "edges_distribution" in selected_node_feats:
+        distrib_scaling = (getattr(cfg.batching, "edges_distribution_scaling", None) or "max").strip()
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
 
@@ -465,11 +466,16 @@ def extract_msg_from_data(
                     0, g.dst.unsqueeze(1).expand(-1, edge_type_dim), fields["edge_type"]
                 )
 
-                # In ThreaTrace they don't standardize, here we do standardize by max value in TW
-                x_distrib = x_distrib / (x_distrib.max() + 1e-12)
+                # Indexing copies the rows, scaled below. ThreaTrace uses the raw counts (`none`)
+                rows_src, rows_dst = x_distrib[g.src], x_distrib[g.dst]
+                if distrib_scaling == "max":  # divided by the max count of the time window
+                    max_count = x_distrib.max() + 1e-12
+                    rows_src, rows_dst = rows_src / max_count, rows_dst / max_count
+                elif distrib_scaling == "log1p":
+                    rows_src, rows_dst = torch.log1p(rows_src), torch.log1p(rows_dst)
 
-                x_src.append(x_distrib[g.src])
-                x_dst.append(x_distrib[g.dst])
+                x_src.append(rows_src)
+                x_dst.append(rows_dst)
 
                 x_distrib.fill_(0)
 

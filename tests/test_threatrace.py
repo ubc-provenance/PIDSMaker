@@ -90,6 +90,7 @@ def test_threatrace_config():
     assert get_selected_node_features(cfg) == ["edges_distribution"]
     assert cfg.training.used_method == "threatrace"
     assert cfg.batching.fix_buggy_graph_reindexer
+    assert cfg.batching.edges_distribution_scaling == "none"  # raw counts
     # Original GraphSAGE: 2 layers, 32 hidden neurons, one output per node type
     assert cfg.training.encoder.sage.num_layers == 2
     assert cfg.training.node_hid_dim == 32

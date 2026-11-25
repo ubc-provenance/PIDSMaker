@@ -1596,6 +1596,12 @@ TASK_ARGS = {
                                     `node_emb` refers to the embedding generated during the `featurization` task, `only_ones` is a vector of ones \
                                     with length `node_type`, `edges_distribution` counts emitted and received edges.",
         ),
+        "edges_distribution_scaling": Arg(
+            str,
+            vals=OR(["max", "none", "log1p"]),
+            desc="Scaling of the `edges_distribution` counts: `max` divides them by the largest count of \
+                the time window (default), `none` keeps the raw counts (as ThreaTrace), `log1p` applies log(1 + x).",
+        ),
         "edge_features": Arg(
             str,
             vals=AND(["edge_type", "edge_type_triplet", "msg", "time_encoding", "edge_attrs", "none"]),
