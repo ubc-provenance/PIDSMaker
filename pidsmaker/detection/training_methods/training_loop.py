@@ -148,7 +148,10 @@ def main(cfg):
 
                     results = model(g)
                     loss = results["loss"]
-                    loss.sum().backward()
+                    # A batch without any trainable output (e.g. a graph of OCR-APT with no
+                    # node to predict) gives a constant loss, which contributes no gradient
+                    if loss.requires_grad:
+                        loss.sum().backward()
                     loss_acc += loss.detach()
                     tot_loss += loss.detach().sum().double()
 
