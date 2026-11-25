@@ -76,3 +76,26 @@ def encoder_cfg(encoders, objectives, use_memory=True, use_node_feats_in_gnn=Fal
     cfg.training.encoder.tgn.use_memory = use_memory
     cfg.training.encoder.tgn.use_node_feats_in_gnn = use_node_feats_in_gnn
     return cfg
+
+
+def test_per_batch_node_feats_used():
+    from pidsmaker.utils.data_utils import _per_batch_node_feats_used
+
+    # Kairos: the TGN embeds its memory, the objective only reads the embeddings of the edges
+    assert _per_batch_node_feats_used(encoder_cfg("graph_attention,tgn", "predict_edge_type")) == (
+        False,
+        False,
+    )
+    assert _per_batch_node_feats_used(
+        encoder_cfg("tgn,graph_attention", "predict_edge_type", use_memory=False)
+    ) == (True, False)
+    assert _per_batch_node_feats_used(
+        encoder_cfg("tgn,graph_attention", "predict_edge_type", use_node_feats_in_gnn=True)
+    ) == (True, False)
+    assert _per_batch_node_feats_used(
+        encoder_cfg("tgn,graph_attention", "reconstruct_node_features")
+    ) == (False, True)
+    assert _per_batch_node_feats_used(encoder_cfg("graph_attention", "predict_edge_type")) == (
+        True,
+        True,
+    )

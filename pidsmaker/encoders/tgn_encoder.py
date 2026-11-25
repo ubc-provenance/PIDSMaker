@@ -75,11 +75,12 @@ class TGNEncoder(nn.Module):
 
         n_id = batch.n_id_tgn  # NOTE: this one may need to be updated with no __inc__, or memory is get for unknown nodes
         edge_index = batch.edge_index_tgn
-        x = batch.x_tgn
+        # Not built when unused (with memory and without `use_node_feats_in_gnn`)
+        x = getattr(batch, "x_tgn", None)
 
         # NOTE: these are shape (N,) not (E,)
-        x_s = batch.x_from_tgn
-        x_d = batch.x_to_tgn
+        x_s = getattr(batch, "x_from_tgn", None)
+        x_d = getattr(batch, "x_to_tgn", None)
 
         x_proj = None
         if (not self.use_memory) or self.use_node_feats_in_gnn:

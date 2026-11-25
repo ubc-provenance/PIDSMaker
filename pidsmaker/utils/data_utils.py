@@ -1479,6 +1479,7 @@ class SharedNodeFeatures:
         self.edge_features = _edge_features_list(cfg)
         self.msg_has_edge_type = _msg_has_edge_type(cfg)
         self.fix_buggy_graph_reindexer = cfg.batching.fix_buggy_graph_reindexer
+        self.tgn_node_feats_used, self.node_feats_used = _per_batch_node_feats_used(cfg)
 
         # Dataset edge attributes are appended to msg (they stay stored per edge)
         self.has_edge_attrs = False
@@ -1544,7 +1545,9 @@ class SharedNodeFeatures:
         if self.tgn is not None and g.tgn_mode:
             n_id = g.n_id_tgn
             n_rows = st.node_row[n_id]
-            if self.tgn["fix_buggy_orthrus_TGN"]:
+            if not self.tgn_node_feats_used:
+                pass
+            elif self.tgn["fix_buggy_orthrus_TGN"]:
                 num_nodes = n_id.size(0)
                 x_src = torch.zeros((num_nodes, st.x.shape[1]), device=st.x.device)
                 x_dst = x_src.clone()
@@ -1580,7 +1583,7 @@ class SharedNodeFeatures:
                 g.msg_tgn = torch.cat(parts, dim=-1)
 
         # `GraphReindexer.reindex_graph`
-        if self.reindex is not None:
+        if self.reindex is not None and self.node_feats_used:
             edge_index = g.original_edge_index
             x, *_ = st.reindexer._reindex_graph(
                 edge_index, g.x_src, g.x_dst, x_is_tuple=self.reindex["x_is_tuple"]
@@ -1604,6 +1607,31 @@ def materialize_batch(data):
     if SHARED_FEATS_KEY not in data:
         return data
     return batch_to_device(data, data.src.device)
+
+
+# Objectives that only read the embeddings of the edges' nodes (not the batch's node features)
+_OBJECTIVES_WITHOUT_NODE_FEATS = {"predict_edge_type", "predict_edge_contrastive"}
+
+
+def _per_batch_node_feats_used(cfg):
+    """Whether the features rebuilt per batch by `SharedNodeFeatures.materialize` are read:
+    (x_from_tgn, x_to_tgn, x_tgn) by the TGN encoder, and the node-level (x, node_type).
+
+    The TGN encoder only reads its node features without memory or with
+    `use_node_feats_in_gnn` (it embeds the memory otherwise), and reads none of the node-level
+    features, which are then only read by some objectives. Skipping the unused ones saves
+    their computation at each batch, including a `torch.unique` that waits for the GPU."""
+    methods = [m.strip() for m in cfg.training.encoder.used_methods.replace("-", ",").split(",")]
+    if "tgn" not in methods:
+        return True, True
+    tgn = cfg.training.encoder.tgn
+    tgn_node_feats_used = (not tgn.use_memory) or bool(tgn.use_node_feats_in_gnn)
+    objectives = {o.strip() for o in cfg.training.decoder.used_methods.split(",")}
+    node_feats_used = (
+        not objectives <= _OBJECTIVES_WITHOUT_NODE_FEATS
+        or bool(cfg.training.decoder.use_few_shot)
+    )
+    return tgn_node_feats_used, node_feats_used
 
 
 def _load_data_list_shared(path, split, cfg, builder):
