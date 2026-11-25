@@ -31,11 +31,12 @@ def get_splits_to_train_featurization(cfg):
     raise ValueError(f"Invalid training split {training_split}")
 
 
-def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False):
+def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False, label_fn=None):
     """
     Returns the tokenized labels of all nodes within a specific split.
     For training, the train split can be used to get only the corpus of train set.
     Labels are tokenized with `featurization.tokenization`, fitted on these labels.
+    `label_fn(node_type, label)`, if given, replaces each label beforehand.
     """
     splits = get_splits_to_train_featurization(cfg)
     split2nodes = get_split2nodes(cfg, gather_multi_dataset=gather_multi_dataset)
@@ -47,6 +48,8 @@ def get_corpus(cfg, doc2vec_format=False, gather_multi_dataset=False):
 
     for node, msg in indexid2msg.items():
         node_type, node_label = msg
+        if label_fn is not None:
+            node_label = label_fn(node_type, node_label)
 
         if (node in nodes_to_include) and (node_label not in node_labels):
             node_labels.add(node_label)

@@ -60,7 +60,7 @@ How each system is configured at the main stages of the [pipeline](pipeline.md):
 | Kairos | `hierarchical_hashing` | `graph_attention`, `tgn` | `predict_edge_type` | `node_evaluation` | `max_val_loss` |
 | MAGIC | `only_type` | `magic_gat` | `reconstruct_masked_features`, `predict_masked_struct` | `node_evaluation` | `magic` |
 | Flash | `flash` | `sage` | `predict_node_type` | `node_evaluation` | `flash` |
-| R-Caid | `doc2vec` | `rcaid_gat` | `predict_node_type` | `node_evaluation` | `max_val_loss` |
+| R-Caid | `doc2vec` | `rcaid_gat` | `predict_process_tag` | `node_evaluation` | `max_val_loss` |
 | NodLink | `fasttext` | `sum_aggregation` | `reconstruct_node_features` | `node_evaluation` | `nodlink` |
 | ThreaTrace | `only_type` | `sage` | `predict_node_type` | `node_evaluation` | `threatrace` |
 | OCR-APT | `ocrapt_features` | `rgcn_per_type` | `one_class` | `node_evaluation` | `ocrapt` |
@@ -75,7 +75,7 @@ The two families mostly differ at both ends of the pipeline. Most PIDSs embed th
 
 Other stages:
 
-- **Transformation.** R-Caid builds its pseudo-graph (`rcaid_pseudo_graph`) and NodLink makes graphs undirected (`undirected`). Euler, Argus, LARES, E-GraphSAGE and Anomal-E merge the repeated edges of each time window (`merge_edges`); Argus and LARES aggregate the attributes of the merged events (`merge_edges.aggregate_attributes`).
+- **Transformation.** R-Caid builds its pseudo-graph (`rcaid_pseudo_graph`: the provenance graph plus an edge from each file or socket root to each of its descendants, at most 16 roots per node) and NodLink makes graphs undirected (`undirected`). Euler, Argus, LARES, E-GraphSAGE and Anomal-E merge the repeated edges of each time window (`merge_edges`); Argus and LARES aggregate the attributes of the merged events (`merge_edges.aggregate_attributes`).
 - **Edge features.** Velox, Orthrus and OCR-APT use the edge type; Kairos and Jbeil the TGN messages (`msg,time_encoding`); Argus, LARES, E-GraphSAGE and Anomal-E the event attributes (`edge_attrs`).
 - **Epoch selection.** PIDSs report the epoch with the best ADP (`best_adp`, the default). Euler, Jbeil and E-GraphSAGE select it without labels on validation link prediction (`best_val_score`), Argus and Anomal-E keep the last epoch (`last_epoch`), and LARES selects the best MCC, as its code. See [Choosing the reported epoch](evaluation.md#choosing-the-reported-epoch).
 - **Triage.** OCR-APT extracts anomalous subgraphs from its detections (`triage.used_method: ocrapt_subgraph`).
@@ -95,7 +95,7 @@ Two differences between the families limit this:
 
 | | On provenance datasets | On network datasets |
 |---|---|---|
-| **PIDSs** | All | Velox, Orthrus, Kairos, MAGIC and OCR-APT. Flash, R-Caid and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types: network datasets only have hosts. NodLink is not tested on network datasets. |
+| **PIDSs** | All | Velox, Orthrus, Kairos, MAGIC and OCR-APT. Flash and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types, and R-Caid the executables of processes (`predict_process_tag`): network datasets only have hosts. NodLink is not tested on network datasets. |
 | **NIDSs** | Euler and Jbeil as is. Argus, LARES, E-GraphSAGE and Anomal-E use event attributes, which provenance datasets don't have: replace them by the edge type with `--batching.edge_features=edge_type`. | All |
 
 The combinations of this table are those run by the tests (`tests/test_network_datasets.py`). A few useful options when moving across families:

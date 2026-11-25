@@ -96,8 +96,10 @@
     
     </li>
     <li class='bullet'><span class="key">rcaid_gat</span>
-    
-    
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (12)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (13)</span></li>
+    </ul>
     </li>
     <li class='bullet'><span class="key">magic_gat</span>
     <ul>
@@ -123,9 +125,9 @@
     </li>
     <li class='bullet'><span class="key">hetero_graph_transformer</span>
     <ul>
-        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str (12)</span></li>
-        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (13)</span></li>
-        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (14)</span></li>
+        <li class='no-bullet'><span class="key-leaf">activation</span>: <span class="value">str (14)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_heads</span>: <span class="value">int (15)</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_layers</span>: <span class="value">int (16)</span></li>
     </ul>
     </li>
 </ul>
@@ -143,6 +145,8 @@
 9. Number of E-GraphSAGE layers, whose messages include the edge features.<br>
 10. Aggregates each edge in both directions, as E-GraphSAGE and Anomal-E (default: True).<br>
 11. Number of layers: GCN layers followed by a last edge-conditioned convolution (NNConv) if edge features are used.<br>
-12. Unused: the input projections always use ReLU.<br>
-13. Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer.<br>
-14. Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC.<br>
+12. Number of layers (local + root attention, then MLP update).<br>
+13. Number of attention heads (averaged) of each attention.<br>
+14. Unused: the input projections always use ReLU.<br>
+15. Number of attention heads of each Heterogeneous Graph Transformer (HGT) layer.<br>
+16. Number of HGT layers. Each node and edge type gets its own parameters; not available on OpTC.<br>

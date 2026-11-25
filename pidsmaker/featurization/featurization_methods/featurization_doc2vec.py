@@ -13,7 +13,19 @@ from pidsmaker.featurization.featurization_utils import (
     get_corpus,
     get_corpus_using_neighbors_features,
 )
+from pidsmaker.utils.process_tags import truncate_process_name
 from pidsmaker.utils.utils import log, log_start
+
+
+def doc2vec_label_fn(cfg):
+    """Function replacing the label of a node before computing its features, or None."""
+    if not getattr(cfg.featurization.doc2vec, "truncate_process_name", None):
+        return None
+
+    def label_fn(node_type, label):
+        return truncate_process_name(label) if node_type == "subject" else label
+
+    return label_fn
 
 
 def doc2vec(
@@ -61,11 +73,13 @@ def main(cfg):
 
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
     if cfg.featurization.doc2vec.include_neighbors:
+        if doc2vec_label_fn(cfg) is not None:
+            raise ValueError("`truncate_process_name` is not supported with `include_neighbors`")
         tagged_data = get_corpus_using_neighbors_features(cfg, doc2vec_format=True)
 
     # Standard token-level Doc2vec
     else:
-        tagged_data = get_corpus(cfg, doc2vec_format=True)
+        tagged_data = get_corpus(cfg, doc2vec_format=True, label_fn=doc2vec_label_fn(cfg))
 
     epochs = cfg.featurization.epochs
     emb_dim = cfg.featurization.emb_dim

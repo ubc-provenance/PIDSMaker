@@ -854,6 +854,11 @@ def check_edge_cases(cfg):
             f"has a single node type ({schema.node_type_names[0]}). Use an edge-level objective "
             "(e.g. `predict_edge_type` with `construction.edge_type`)."
         )
+    if "predict_process_tag" in decoders and "subject" not in schema.node_type_names:
+        raise ValueError(
+            f"Objective `predict_process_tag` predicts the executable of processes (`subject` nodes), "
+            f"but {cfg.dataset.name} has none (node types: {', '.join(schema.node_type_names)})."
+        )
     if "edge_type_triplet" in edge_features and not schema.supports_edge_type_triplets:
         raise ValueError(
             f"Edge feature `edge_type_triplet` is not implemented for {cfg.dataset.name} "

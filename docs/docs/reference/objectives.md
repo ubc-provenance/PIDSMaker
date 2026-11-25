@@ -15,7 +15,8 @@ An objective consists of a loss function and a decoder. Node-level objectives co
 | Edge | `deep_graph_infomax` | Tell edges from those of a corrupted graph | Anomal-E |
 | Edge | `reconstruct_edge_embeddings` | Reconstruct edge embeddings | |
 | Edge | `predict_edge_supervised` | Separate benign edges from given attack edges | [Supervised fine-tuning](../features/supervised.md) |
-| Node | `predict_node_type` | Predict the type of each node | Flash, R-Caid, ThreaTrace |
+| Node | `predict_node_type` | Predict the type of each node | Flash, ThreaTrace |
+| Node | `predict_process_tag` | Predict the name of the executable of each process, which is removed from its features (`doc2vec.truncate_process_name`); scores processes by the loss, or by the distance to K-Means clusters of training processes (`detection: kmeans`) | R-Caid |
 | Node | `reconstruct_node_features`, `reconstruct_node_embeddings` | Reconstruct node features or embeddings | NodLink |
 | Node | `reconstruct_masked_features`, `predict_masked_struct` | Reconstruct masked features and structure | MAGIC |
 | Node | `one_class` | Map benign nodes into a hypersphere per node type (Deep SVDD) | OCR-APT |

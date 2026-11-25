@@ -287,11 +287,14 @@ def encoder_block_factory(cfg, msg_dim, in_dim, edge_dim, device, max_node_num):
                 num_edge_type=max(15, get_num_edge_type(cfg) + 1),
             ).to(device)
         elif method == "rcaid_gat":
+            rcaid_cfg = cfg.training.encoder.rcaid_gat
             encoder = RCaidGAT(
                 in_dim=in_dim,
                 hid_dim=node_hid_dim,
                 out_dim=node_out_dim,
                 dropout=dropout,
+                num_layers=getattr(rcaid_cfg, "num_layers", None) or 2,
+                num_heads=getattr(rcaid_cfg, "num_heads", None) or 1,
             )
         elif method == "sum_aggregation":
             encoder = SumAggregation(
@@ -886,6 +889,22 @@ def objective_factory(cfg, in_dim, graph_reindexer, device, objective_cfg=None, 
                     loss_fn=loss_fn,
                     balanced_loss=balanced_loss,
                     node_type_dim=cfg.dataset.num_node_types,
+                )
+            )
+
+        elif objective == "predict_process_tag":
+            node_classes, num_known = process_tag_classes_from_cfg(cfg)
+            # One logit per process tag seen in training, plus one for the unknown tags
+            decoder = decoder_factory(
+                method, objective, cfg, in_dim=node_out_dim, out_dim=num_known + 1, device=device
+            )
+            objectives.append(
+                ProcessTagPrediction(
+                    decoder=decoder,
+                    node_classes=node_classes,
+                    num_known=num_known,
+                    balanced_loss=objective_cfg.predict_process_tag.balanced_loss,
+                    detection=(objective_cfg.predict_process_tag.detection or "loss").strip(),
                 )
             )
 

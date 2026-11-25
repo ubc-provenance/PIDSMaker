@@ -638,7 +638,16 @@ FEATURIZATIONS_CFG = {
         "decline_rate": Arg(int),
     },
     "doc2vec": {
-        "include_neighbors": Arg(bool),
+        "include_neighbors": Arg(
+            bool,
+            desc="Whether the document of a node also contains the labels of its successors.",
+        ),
+        "truncate_process_name": Arg(
+            bool,
+            desc="Whether the features of processes are computed from the directory of their \
+                executable only, without its name nor the rest of their label (as in R-Caid, \
+                whose `predict_process_tag` objective predicts the name).",
+        ),
         "epochs": Arg(int),
         "alpha": Arg(float),
     },
@@ -1064,7 +1073,10 @@ ENCODERS_CFG = {
         "num_layers": Arg(int),
     },
     "sum_aggregation": {},
-    "rcaid_gat": {},
+    "rcaid_gat": {
+        "num_layers": Arg(int, desc="Number of layers (local + root attention, then MLP update)."),
+        "num_heads": Arg(int, desc="Number of attention heads (averaged) of each attention."),
+    },
     "magic_gat": {
         "num_layers": Arg(int),
         "num_heads": Arg(int),
@@ -1118,6 +1130,7 @@ RECON_LOSSES = ["SCE", "MSE", "MSE_sum", "MAE", "none"]
 PRED_LOSSES = ["cross_entropy", "BCE"]
 OBJECTIVES_NODE_LEVEL = [
     "predict_node_type",
+    "predict_process_tag",
     "reconstruct_node_features",
     "reconstruct_node_embeddings",
     "reconstruct_masked_features",
@@ -1180,6 +1193,22 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
+    },
+    # R-Caid: predicts the name of the executable of each process (other nodes are not scored)
+    "predict_process_tag": {
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
+        **DECODERS_CFG,
+        "balanced_loss": Arg(bool),
+        "detection": Arg(
+            str,
+            vals=OR(["loss", "kmeans"]),
+            desc="Score of the processes at inference. `loss`: cross-entropy of their tag (tags \
+                unseen in training have their own class, never predicted). `kmeans`: distance of \
+                their embedding to the median of the nearest K-Means cluster of training \
+                processes (as in the paper).",
+        ),
     },
     "predict_masked_struct": {
         "loss": Arg(str, vals=OR(PRED_LOSSES)),
