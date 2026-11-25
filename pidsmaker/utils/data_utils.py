@@ -952,6 +952,16 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
     return datasets
 
 
+def _to_cpu_at_once(tensors):
+    """`[t.cpu() for t in tensors]` with one transfer (the tensors must have the same dtype)."""
+    if tensors[0].device.type == "cpu":
+        return [t.cpu() for t in tensors]
+    flat = torch.cat([t.reshape(-1) for t in tensors]).cpu()
+    return [
+        part.view(t.shape) for part, t in zip(flat.split([t.numel() for t in tensors]), tensors)
+    ]
+
+
 def compute_tgn_graphs(
     datasets,
     full_data,
@@ -1004,9 +1014,8 @@ def compute_tgn_graphs(
             for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
                 # Only the inputs are moved to the device and only the outputs are moved
                 # back: transferring the whole batch both ways dominated this step.
-                src = batch.src.to(device)
-                dst = batch.dst.to(device)
-                batch_edge_index = torch.stack([src, dst], dim=0)
+                batch_edge_index = torch.stack([batch.src, batch.dst], dim=0).to(device)
+                src, dst = batch_edge_index[0], batch_edge_index[1]
 
                 if reset_state_every_day:
                     day = ns_time_to_datetime_US(int(batch.t[0]), timezone=timezone)[:10]
@@ -1084,15 +1093,22 @@ def compute_tgn_graphs(
                     del x_src_dev, x_dst_dev
 
                 batch.tgn_mode = True
-                batch.original_edge_index = batch_edge_index.cpu()
-                batch.original_n_id = original_n_id.cpu()
-                batch.reindexed_original_n_id_tgn = assoc[original_n_id].cpu()
-                batch.n_id_tgn = n_id.cpu()
-                batch.edge_index_tgn = edge_index.cpu()
-                batch.reindexed_edge_index_tgn = assoc[batch_edge_index].cpu()
+                # A single device->host transfer (each one waits for the GPU)
+                outputs = {
+                    "original_edge_index": batch_edge_index,
+                    "original_n_id": original_n_id,
+                    "reindexed_original_n_id_tgn": assoc[original_n_id],
+                    "n_id_tgn": n_id,
+                    "edge_index_tgn": edge_index,
+                    "reindexed_edge_index_tgn": assoc[batch_edge_index],
+                    "e_id": e_id,
+                }
                 if negative_destinations:
-                    batch.neg_dst_tgn = assoc[neg_dst].cpu()
-                e_id_cpu = e_id.cpu()
+                    outputs["neg_dst_tgn"] = assoc[neg_dst]
+                outputs = dict(zip(outputs, _to_cpu_at_once(list(outputs.values()))))
+                e_id_cpu = outputs.pop("e_id")
+                for key, value in outputs.items():
+                    batch[key] = value
                 # msg_tgn and t_tgn are only read by the TGN encoder with the
                 # `msg` and `time_encoding` edge features (see `run_global_batching`)
                 if "t" in full_data:
