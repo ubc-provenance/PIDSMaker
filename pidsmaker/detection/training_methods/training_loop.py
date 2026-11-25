@@ -126,10 +126,17 @@ def main(cfg):
             model.reset_state()
             model.to_fine_tuning(False)
 
+            # Sum of the losses of the batches since the last optimizer step (without autograd
+            # graph). Each batch is backpropagated right away and its gradients accumulate in
+            # `.grad` until the step: the gradients are those of the summed losses, while only
+            # the autograd graph of one batch is kept in memory (with `grad_accumulation` = N,
+            # backpropagating the sum kept the graphs of N batches, e.g. of all the graphs of
+            # the training set with OCR-APT).
             loss_acc = torch.zeros(1, device=device)
             # Accumulated on device to avoid a GPU->CPU sync at each batch
             tot_loss = torch.zeros((), dtype=torch.float64, device=device)
             model.train()
+            optimizer.zero_grad()
             for dataset in train_data:
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
                     # Checked on the CPU graph to avoid a GPU sync at each batch
@@ -139,27 +146,25 @@ def main(cfg):
                     if has_attacks_to_remove:
                         g = remove_attacks_if_needed(g, cfg)
 
-                    optimizer.zero_grad()
-
                     results = model(g)
                     loss = results["loss"]
-                    loss_acc += loss
+                    loss.sum().backward()
+                    loss_acc += loss.detach()
                     tot_loss += loss.detach().sum().double()
 
                     if (i + 1) % grad_acc == 0:
-                        loss_acc.backward()
                         if stable_optim:
                             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                         optimizer.step()
                         if scheduler is not None:
                             scheduler.step()
+                        optimizer.zero_grad()
                         loss_acc = torch.zeros(1, device=device)
 
                     del g, results, loss
 
                 # Last batch
                 if loss_acc > 0:
-                    loss_acc.backward()
                     if stable_optim:
                         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
