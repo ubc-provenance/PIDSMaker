@@ -28,7 +28,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--backend",
         choices=["postgres", "parquet"],
-        default="postgres",
+        default="parquet",
         help="Database backend of the tests. `parquet` writes the sample as a Parquet dataset in "
         "a temporary directory (no Postgres server needed). With `--db full`, the Parquet "
         "dataset of CLEARSCOPE_E3 is read from $PIDSMAKER_DATASETS_DIR.",
