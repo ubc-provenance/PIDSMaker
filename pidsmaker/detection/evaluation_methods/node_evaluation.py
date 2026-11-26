@@ -239,7 +239,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         results[node_id]["is_seen"] = int(str(node_id) in train_node_set)
 
         # We need the detected TW range to check if the detected node spans in an attack TW
-        detected_tw = detected_tw or node_to_max_loss_tw.get(node_id, None)
+        if detected_tw is None:  # not `or`: the first time window has the index 0
+            detected_tw = node_to_max_loss_tw.get(node_id, None)
         if detected_tw is not None:
             results[node_id]["time_range"] = [
                 datetime_to_ns_time_US_handle_nano(tw, timezone=cfg.dataset.timezone) for tw in filelist[detected_tw].split("~")
