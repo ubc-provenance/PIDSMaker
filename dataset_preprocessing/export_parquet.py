@@ -13,9 +13,11 @@ give identical results:
   partitioned by day (UTC), and each day is sorted by DuckDB. DuckDB compares strings byte by
   byte, Postgres with the collation of the database (e.g. en_US.utf8, which ignores dashes and
   case at first). Both orders are the same when all the event UUIDs are canonical UUIDs of a
-  single case, or alphanumeric strings of a single case: this is checked (`tie_order` of the
-  manifest). One file is written per day. Datasets whose event UUIDs fail this check (e.g. LANL)
-  are exported with `--sort_in_postgres`, which sorts them in Postgres into a single file.
+  single case, or alphanumeric strings of a single case, or more generally when no letter has
+  both cases and the events of each timestamp have IDs of the same shape (same length and
+  separators at the same places, e.g. `agraph_12_0000001` in LANL): this is checked (`tie_order`
+  of the manifest). One file is written per day. Datasets that fail this check can be exported
+  with `--sort_in_postgres`, which sorts their events in Postgres into a single file.
 
 Exports are written to `<out_dir>/<database>.tmp` and renamed when complete. Row counts are
 checked against Postgres.
@@ -183,6 +185,52 @@ def export_database(database, args):
     )
 
 
+def check_tie_order(db, database, events):
+    """Whether the byte order of the event UUIDs of `events` (a DuckDB relation) is the order
+    of the collation of Postgres, for the events of a same timestamp (see the docstring)."""
+    checks = ", ".join(
+        f"count(*) FILTER (WHERE NOT regexp_full_match(event_uuid, '{p}'))"
+        for p in UUID_PATTERNS.values()
+    )
+    mismatches = db.execute(f"SELECT {checks} FROM {events};").fetchone()
+    patterns = [name for name, n in zip(UUID_PATTERNS, mismatches) if n == 0]
+    if patterns:
+        return patterns[0]
+    mixed_case = db.execute(
+        f"SELECT bool_or(regexp_matches(event_uuid, '[a-z]')) "
+        f"AND bool_or(regexp_matches(event_uuid, '[A-Z]')) FROM {events};"
+    ).fetchone()[0]
+    mixed_shapes = db.execute(
+        f"SELECT count(*) FROM (SELECT timestamp_rec FROM {events} GROUP BY timestamp_rec "
+        "HAVING count(DISTINCT regexp_replace(event_uuid, '[0-9A-Za-z]', 'x', 'g')) > 1);"
+    ).fetchone()[0]
+    if not mixed_case and mixed_shapes == 0:
+        return "same_shape_in_ties"
+    log(
+        database,
+        f"WARNING: event UUIDs match none of {list(UUID_PATTERNS)}, letters of both cases: "
+        f"{bool(mixed_case)}, timestamps with UUIDs of several shapes: {mixed_shapes}. The order "
+        "of the events of a same timestamp may differ from Postgres (see --sort_in_postgres)",
+    )
+    return "unverified"
+
+
+def recheck(dataset_dir):
+    """Checks the tie order of the event table of an existing export, updating its manifest."""
+    path = os.path.join(dataset_dir, "manifest.json")
+    with open(path) as f:
+        manifest = json.load(f)
+    db = duckdb.connect()
+    for table, info in manifest["tables"].items():
+        if "tie_order" not in info or info["tie_order"] == "postgres":
+            continue
+        files = ", ".join(sql_str(os.path.join(dataset_dir, table, f)) for f in info["files"])
+        info["tie_order"] = check_tie_order(db, manifest["database"], f"read_parquet([{files}])")
+        log(manifest["database"], f"{table}: tie order {info['tie_order']}")
+    with open(path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+
 def export_event_table(db, database, table, names, tmp_dir, table_dir, args):
     """Copies the events unsorted, partitioned by day, then writes each day sorted."""
     staging = os.path.join(tmp_dir, f"_staging_{table}")
@@ -193,20 +241,7 @@ def export_event_table(db, database, table, names, tmp_dir, table_dir, args):
     log(database, f"{table}: copied, sorting each day")
     stage = f"read_parquet({sql_str(staging + '/*/*.parquet')}, hive_partitioning = true)"
 
-    # Byte order of the UUIDs = order of the Postgres collation (see the docstring)
-    checks = ", ".join(
-        f"count(*) FILTER (WHERE NOT regexp_full_match(event_uuid, '{p}'))"
-        for p in UUID_PATTERNS.values()
-    )
-    mismatches = db.execute(f"SELECT {checks} FROM {stage};").fetchone()
-    patterns = [name for name, n in zip(UUID_PATTERNS, mismatches) if n == 0]
-    tie_order = patterns[0] if patterns else "unverified"
-    if not patterns:
-        log(
-            database,
-            f"WARNING: event UUIDs match none of {list(UUID_PATTERNS)} {mismatches}: the order "
-            "of the events of a same timestamp may differ from Postgres",
-        )
+    tie_order = check_tie_order(db, database, stage)
 
     # Partition folders are `_day=<day>`, NULL timestamps (if any) in a non-numeric one, sorted
     # last as by ORDER BY in Postgres
@@ -256,11 +291,19 @@ def main():
         "files of the size of the event table on the Postgres server), into a single file",
     )
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--recheck",
+        action="store_true",
+        help="Only check again the tie order of existing exports (and update their manifest)",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
     for database in args.databases:
-        export_database(database, args)
+        if args.recheck:
+            recheck(os.path.join(args.out_dir, database))
+        else:
+            export_database(database, args)
 
 
 if __name__ == "__main__":
