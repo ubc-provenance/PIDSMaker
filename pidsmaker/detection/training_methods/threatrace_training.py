@@ -8,7 +8,7 @@ below `retrain_loss_threshold`. Training stops when all nodes are explained, or 
 `max_rounds_without_progress` consecutive rounds that explain no new node.
 
 At inference, a node is anomalous when no submodel explains it (see
-`inference_loop.threatrace_anomaly_score`).
+`threatrace_detection.threatrace_anomaly_score`).
 
 Training nodes are the (time window, node) pairs of the training graphs.
 """
@@ -19,6 +19,7 @@ from time import perf_counter as timer
 import torch
 import torch.nn as nn
 
+from pidsmaker.detection.threatrace_detection import threatrace_log_ratio
 from pidsmaker.factory import build_model, optimizer_factory
 from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
@@ -96,7 +97,7 @@ def explained_nodes(model, graphs, masks, cfg, device):
             continue
         g = _prepare(g, cfg, device)
         out = model(g, inference=True)["out"]
-        log_ratio = inference_loop.threatrace_log_ratio(out, g.node_type.argmax(1))
+        log_ratio = threatrace_log_ratio(out, g.node_type.argmax(1))
         explained.append((log_ratio >= log_thr).cpu() & mask)
     return explained
 

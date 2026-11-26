@@ -12,7 +12,7 @@ from torch_geometric.data import Data
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.detection.evaluation_methods.evaluation_utils import get_threshold
-from pidsmaker.detection.training_methods.inference_loop import threatrace_anomaly_score
+from pidsmaker.detection.threatrace_detection import threatrace_anomaly_score
 from pidsmaker.detection.training_methods.threatrace_training import (
     ThreaTraceEnsemble,
     train_submodels,

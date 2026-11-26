@@ -161,7 +161,7 @@ def test_magic_struct_prediction_samples_like_magic():
 def test_magic_detection_embedding_last_or_concat():
     from types import SimpleNamespace
 
-    from pidsmaker.detection.training_methods.inference_loop import magic_detection_embedding
+    from pidsmaker.detection.magic_knn import magic_detection_embedding
 
     model = SimpleNamespace(encoder=_encoder())
     h = torch.randn(7, 192)

@@ -17,6 +17,8 @@ rule iff its score is at least `1 - threshold`.
 
 import torch
 
+from pidsmaker.detection.node_scoring import NodeScorer
+
 
 def flash_confidence(probs, eps=1e-6):
     """Normalized confidence of each row of `probs` (N, C) and the predicted classes."""
@@ -114,3 +116,22 @@ class FlashSnapshotEnsemble:
             best = torch.minimum(best, flash_anomaly_score(out.exp(), node_type_idx)[0])
         model.load_state_dict(current)
         return best
+
+
+class FlashScorer(NodeScorer):
+    """Writes the `flash_score` of the nodes, thresholded by `threshold_method: flash`, and
+    whether their type is predicted correctly. With snapshots, the score is the minimum over
+    the snapshots of the model's `flash_ensemble`."""
+
+    def columns(self, model, data, results, split, node, loss):
+        # `out` holds log-probabilities: the confidence of FLASH is computed on probabilities
+        score, correct = flash_anomaly_score(results["out"].exp(), data.node_type.argmax(1))
+        ensemble = getattr(model, "flash_ensemble", None)
+        if ensemble is not None:
+            score = ensemble.score(model, data, score)
+        return {
+            "node": node,
+            "loss": loss,
+            "flash_score": score.cpu().numpy().astype(float),
+            "correct_pred": correct.long().cpu().numpy(),
+        }

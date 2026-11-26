@@ -12,7 +12,13 @@ set is stored once per distinct embedding with its multiplicity: the k nearest d
 embeddings always hold the k nearest nodes, and the k-NN distances are recovered exactly.
 """
 
+import time
+
 import torch
+
+from pidsmaker.detection.node_scoring import NodeScorer
+from pidsmaker.utils.data_utils import batch_to_device
+from pidsmaker.utils.utils import log
 
 # MAGIC estimates the mean k-NN distance of the reference set on at most 50,000 of its nodes
 MEAN_DISTANCE_SAMPLE = 50_000
@@ -102,3 +108,77 @@ class MagicKNNDetector:
         x, inverse = torch.unique(x, dim=0, return_inverse=True)
         x = (x - self.mean) / self.std
         return (self._knn_mean_distance(x) / self.mean_distance)[inverse]
+
+
+def magic_detection_embedding(model, h, cfg=None):
+    """Node embedding scored by MAGIC's k-NN detector: the last encoder layer (`last`, the
+    original code) or all the concatenated layers (`concat`, the paper)."""
+    mode = (cfg.evaluation.node_evaluation.magic_embedding if cfg is not None else None) or "last"
+    if mode == "last" and hasattr(model.encoder, "detection_embedding"):
+        return model.encoder.detection_embedding(h)
+    return h
+
+
+@torch.no_grad()
+def fit_magic_detector(cfg, model, train_data, device):
+    """Fits MAGIC's k-NN detector on the embeddings of the benign training nodes."""
+    from pidsmaker.detection.training_methods.training_loop import (
+        needs_attack_removal,
+        remove_attacks_if_needed,
+    )
+
+    model.eval()
+    s = time.time()
+    embs = []
+    for dataset in train_data:
+        for g in dataset:
+            has_attacks = needs_attack_removal(g, cfg)
+            g = batch_to_device(g, device)
+            if has_attacks:
+                g = remove_attacks_if_needed(g, cfg)
+            h, *_ = model.embed(g, inference=True)
+            embs.append(magic_detection_embedding(model, h, cfg).float())
+            del g
+    x_train = torch.cat(embs)
+    del embs
+    node_eval = cfg.evaluation.node_evaluation
+    detector = MagicKNNDetector(
+        k=node_eval.magic_knn_k or 10,
+        max_reference_size=node_eval.magic_max_reference_size or None,
+        seed=cfg.training.seed or 0,
+    ).fit(x_train)
+    log(
+        f"MAGIC k-NN detector fitted on {detector.num_reference_nodes:,} of {x_train.shape[0]:,} "
+        f"benign training node embeddings ({detector.reference.shape[0]:,} distinct, "
+        f"k={detector.k}, mean distance "
+        f"{detector.mean_distance:.4f}) in {time.time() - s:.1f}s"
+    )
+    return detector
+
+
+class MagicScorer(NodeScorer):
+    """Writes the `magic_score` of the test nodes, thresholded by `threshold_method: magic`: the
+    k-NN distance of their embeddings to those of the benign training nodes."""
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.detector = None
+
+    def prepare(self, model, train_data, split_names, device):
+        if "test" in split_names:
+            if train_data is None:
+                raise ValueError("MAGIC detection requires the train split as k-NN reference set.")
+            self.detector = fit_magic_detector(self.cfg, model, train_data, device)
+
+    def columns(self, model, data, results, split, node, loss):
+        if split != "test":
+            return {"node": node, "loss": loss}
+        if self.detector is None:
+            raise ValueError("MAGIC detection requires a detector fitted on the train split.")
+        x_test, *_ = model.embed(data, inference=True)
+        score = self.detector.score(magic_detection_embedding(model, x_test, self.cfg))
+        return {
+            "node": node,
+            "magic_score": score.cpu().numpy().astype(float),
+            "loss": loss,
+        }

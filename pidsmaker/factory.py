@@ -16,6 +16,10 @@ from pidsmaker.config import (
     decoder_matches_objective,
 )
 from pidsmaker.decoders import *
+from pidsmaker.detection.flash_detection import FlashScorer
+from pidsmaker.detection.magic_knn import MagicScorer
+from pidsmaker.detection.node_scoring import NodeScorer
+from pidsmaker.detection.threatrace_detection import ThreaTraceScorer
 from pidsmaker.encoders import *
 from pidsmaker.experiments.uncertainty import add_dropout_to_model
 from pidsmaker.losses import *
@@ -1378,6 +1382,22 @@ def early_stop_tracker_factory(cfg):
         min_delta=ocrapt_cfg.min_delta,
         max_delta=ocrapt_cfg.max_delta,
     )
+
+
+def node_scorer_factory(cfg):
+    """Build the scorer of the nodes at the inference of node-level objectives.
+
+    ThreaTrace, FLASH and MAGIC threshold scores of their own, computed at inference (see
+    `pidsmaker.detection.node_scoring`); the other threshold methods threshold the node losses.
+
+    Args:
+        cfg: Configuration, checked for `evaluation.node_evaluation.threshold_method`
+
+    Returns:
+        A `NodeScorer`
+    """
+    scorers = {"threatrace": ThreaTraceScorer, "flash": FlashScorer, "magic": MagicScorer}
+    return scorers.get(cfg.evaluation.node_evaluation.threshold_method, NodeScorer)(cfg)
 
 
 def get_dimensions_from_data_sample(data):
