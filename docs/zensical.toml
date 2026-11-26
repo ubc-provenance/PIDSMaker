@@ -20,8 +20,7 @@ extra_javascript = ["javascripts/benchmark.js"]
 nav = [
   { "Home" = "index.md" },
   { "Getting started" = [
-    { "Installation (Docker)" = "getting-started/installation.md" },
-    { "Installation (Apptainer)" = "getting-started/apptainer.md" },
+    { "Installation" = "getting-started/installation.md" },
     { "Quickstart" = "getting-started/quickstart.md" },
     { "Building datasets from scratch" = "getting-started/from-scratch.md" },
   ] },
@@ -128,7 +127,9 @@ name = "Join the PIDSMaker Discord"
 # Old URLs, kept so that links to the previous layout of the docs still work.
 [project.plugins.redirects.redirect_maps]
 "ten-minute-install.md" = "getting-started/installation.md"
-"singularity_install.md" = "getting-started/apptainer.md"
+"singularity_install.md" = "getting-started/installation.md#hpc-clusters"
+"getting-started/apptainer.md" = "getting-started/installation.md#hpc-clusters"
+"getting-started/docker.md" = "getting-started/installation.md"
 "introduction.md" = "getting-started/quickstart.md"
 "create-db-from-scratch.md" = "getting-started/from-scratch.md"
 "download-files.md" = "getting-started/from-scratch.md#downloading-the-files-manually"

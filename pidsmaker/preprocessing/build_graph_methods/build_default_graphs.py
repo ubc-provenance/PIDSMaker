@@ -1,6 +1,6 @@
-"""Default provenance graph construction from PostgreSQL database.
+"""Default graph construction from the events of a dataset.
 
-Builds provenance graphs from DARPA TC/OpTC datasets stored in PostgreSQL.
+Builds the graphs of a dataset (provenance or network events, see `pidsmaker/utils/database.py`).
 Creates time-windowed graph snapshots with node features, edge types, and timestamps.
 Supports attack mimicry generation for data augmentation.
 """
@@ -54,7 +54,8 @@ EVENT_EXTRA_IDX = 8
 
 
 def events_sql(schema):
-    """Query of the events of a time range, ordered by time (see the row shape above)."""
+    """Query of the events of a time range, in their stored order: by `timestamp_rec,
+    event_uuid` (see the row shape above and `pidsmaker/utils/database.py`)."""
     extra = [attr.column for attr in schema.edge_attributes]
     if schema.label_column:
         extra.append(schema.label_column)
@@ -63,8 +64,7 @@ def events_sql(schema):
 select NULL, src_index_id, operation, NULL, dst_index_id, event_uuid, timestamp_rec, NULL{extra_sql}
 from {schema.event_table}
 where
-      timestamp_rec > %s and timestamp_rec < %s{schema.operations_sql()}
-       ORDER BY timestamp_rec, event_uuid;
+      timestamp_rec > %s and timestamp_rec < %s{schema.operations_sql()};
 """
 
 

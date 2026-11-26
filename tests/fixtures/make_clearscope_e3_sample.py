@@ -6,30 +6,31 @@ these days, the first `--events_per_day` events, the nodes they touch and the gr
 On the test day, the sample starts at the beginning of the attack instead of midnight, so that
 the test graph contains malicious nodes. The sample also keeps the events of the attack time windows
 between two ground truth nodes: they are the malicious edges of the edge-level evaluation with
-`malicious_edge_selection=both_nodes` (e.g. euler, jbeil), which are read from the database.
+`malicious_edge_selection=both_nodes` (e.g. euler, jbeil), which are read from the dataset.
 
-Tables are exported with the CSV format of Postgres' COPY (which distinguishes NULL from empty
-strings) and loaded by `tests/conftest.py`, with the tables of `schema.sql`.
+The sample is a dataset (see `pidsmaker/utils/database.py`), read by `tests/conftest.py`: events
+sorted by `timestamp_rec, event_uuid`, nodes sorted by `index_id`.
 
-Usage (requires the full CLEARSCOPE_E3 database):
-    python tests/fixtures/make_clearscope_e3_sample.py [--database_host postgres] [--events_per_day 5000]
+Usage (reads the full CLEARSCOPE_E3 dataset, downloaded first if it is missing):
+    python tests/fixtures/make_clearscope_e3_sample.py [--datasets_dir DIR] [--events_per_day 5000]
 """
 
 import argparse
 import csv
-import gzip
-import io
+import json
 import os
+import shutil
 import sys
 from datetime import datetime
 
-import psycopg2
+import duckdb
 import pytz
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 
 from pidsmaker.config import DATASET_DEFAULT_CONFIG  # noqa: E402
+from pidsmaker.datasets import download  # noqa: E402
 
 DATASET = "CLEARSCOPE_E3"
 SAMPLE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "clearscope_e3_sample")
@@ -77,7 +78,9 @@ def day_ranges(dataset_cfg):
 def attack_windows(dataset_cfg):
     """(start, end) in ns of the attacks."""
     tz = pytz.timezone(dataset_cfg["timezone"])
-    return [(to_ns(start, tz), to_ns(end, tz)) for _, start, end in dataset_cfg["attack_to_time_window"]]
+    return [
+        (to_ns(start, tz), to_ns(end, tz)) for _, start, end in dataset_cfg["attack_to_time_window"]
+    ]
 
 
 def ground_truth_uuids(dataset_cfg):
@@ -88,74 +91,76 @@ def ground_truth_uuids(dataset_cfg):
     return uuids
 
 
-def export(cur, table, query, params):
-    """Writes the rows of `query` to `<table>.csv.gz` with the CSV format of COPY."""
-    buf = io.StringIO()
-    cur.copy_expert(
-        f"COPY ({cur.mogrify(query, params).decode()}) TO STDOUT WITH (FORMAT csv, HEADER true)",
-        buf,
-    )
-    # mtime=0 keeps the files identical when the sample is extracted again
-    with open(os.path.join(SAMPLE_DIR, f"{table}.csv.gz"), "wb") as raw:
-        with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as gz:
-            gz.write(buf.getvalue().encode())
-    print(f"{table}: {buf.getvalue().count(chr(10)) - 1} rows")
+def sql_list(values):
+    return "(" + ", ".join("'" + str(v).replace("'", "''") + "'" for v in values) + ")"
 
 
 def main(args):
     dataset_cfg = DATASET_DEFAULT_CONFIG[DATASET]
-    connect = psycopg2.connect(
-        database=args.database or dataset_cfg["database"],
-        host=args.database_host,
-        user=args.database_user,
-        password=args.database_password,
-        port=args.database_port,
-    )
-    cur = connect.cursor()
-    os.makedirs(SAMPLE_DIR, exist_ok=True)
+    (source,) = download(DATASET, datasets_dir=args.datasets_dir)
+    with open(os.path.join(source, "manifest.json")) as f:
+        source_tables = json.load(f)["tables"]
+    db = duckdb.connect()
+    for table, info in source_tables.items():
+        files = sql_list(os.path.join(source, table, name) for name in info["files"])
+        db.execute(f"CREATE VIEW {table} AS SELECT * FROM read_parquet([{files[1:-1]}]);")
 
-    gt_uuids = ground_truth_uuids(dataset_cfg)
-    cur.execute(
-        " UNION ".join(
-            f"SELECT index_id::text FROM {table} WHERE node_uuid = ANY(%s)"
-            for table in TABLE_COLUMNS
-            if table != "event_table"
-        ),
-        [gt_uuids] * (len(TABLE_COLUMNS) - 1),
+    gt_uuids = sql_list(ground_truth_uuids(dataset_cfg))
+    gt_node_ids = sorted(
+        row[0]
+        for row in db.execute(
+            " UNION ".join(
+                f"SELECT CAST(index_id AS VARCHAR) FROM {table} WHERE node_uuid IN {gt_uuids}"
+                for table in TABLE_COLUMNS
+                if table != "event_table"
+            )
+        ).fetchall()
     )
-    gt_node_ids = sorted(row[0] for row in cur.fetchall())
 
     columns = ", ".join(TABLE_COLUMNS["event_table"])
-    day_query = (
-        f"(SELECT {columns} FROM event_table WHERE timestamp_rec >= %s AND timestamp_rec < %s "
-        "ORDER BY timestamp_rec, event_uuid LIMIT %s)"
-    )
-    attack_query = (
-        f"(SELECT {columns} FROM event_table WHERE timestamp_rec BETWEEN %s AND %s "
-        "AND src_index_id::text = ANY(%s) AND dst_index_id::text = ANY(%s))"
-    )
-    ranges = day_ranges(dataset_cfg)
-    windows = attack_windows(dataset_cfg)
-    events_query = (
-        "SELECT * FROM ("
-        + " UNION ".join([day_query] * len(ranges) + [attack_query] * len(windows))
-        + ") AS events ORDER BY timestamp_rec, event_uuid"
-    )
-    params = [p for _, start, end in ranges for p in (start, end, args.events_per_day)]
-    params += [p for start, end in windows for p in (start, end, gt_node_ids, gt_node_ids)]
-    export(cur, "event_table", events_query, params)
-
-    cur.execute(f"SELECT src_index_id, dst_index_id FROM ({events_query}) AS events;", params)
-    node_ids = sorted({str(node_id) for row in cur.fetchall() for node_id in row})
-    for table, columns in TABLE_COLUMNS.items():
-        if table == "event_table":
-            continue
-        query = (
-            f"SELECT {', '.join(columns)} FROM {table} "
-            "WHERE index_id::text = ANY(%s) OR node_uuid = ANY(%s) ORDER BY index_id"
+    queries = [
+        f"(SELECT {columns} FROM event_table WHERE timestamp_rec >= {start} AND "
+        f"timestamp_rec < {end} ORDER BY timestamp_rec, event_uuid LIMIT {args.events_per_day})"
+        for _, start, end in day_ranges(dataset_cfg)
+    ]
+    queries += [
+        f"(SELECT {columns} FROM event_table WHERE timestamp_rec BETWEEN {start} AND {end} "
+        f"AND src_index_id IN {sql_list(gt_node_ids)} AND dst_index_id IN {sql_list(gt_node_ids)})"
+        for start, end in attack_windows(dataset_cfg)
+    ]
+    events = f"SELECT * FROM ({' UNION '.join(queries)}) ORDER BY timestamp_rec, event_uuid"
+    db.execute(f"CREATE TABLE sample_events AS {events};")
+    node_ids = sql_list(
+        sorted(
+            {
+                str(node_id)
+                for row in db.execute(
+                    "SELECT src_index_id, dst_index_id FROM sample_events"
+                ).fetchall()
+                for node_id in row
+            }
         )
-        export(cur, table, query, (node_ids, gt_uuids))
-    connect.close()
+    )
+    queries = {"event_table": "SELECT * FROM sample_events"}
+    for table, columns in TABLE_COLUMNS.items():
+        if table != "event_table":
+            queries[table] = (
+                f"SELECT {', '.join(columns)} FROM {table} WHERE CAST(index_id AS VARCHAR) IN "
+                f"{node_ids} OR node_uuid IN {gt_uuids} ORDER BY index_id"
+            )
+
+    shutil.rmtree(SAMPLE_DIR, ignore_errors=True)
+    manifest = {"format_version": 1, "database": DATASET.lower(), "tables": {}}
+    for table, query in queries.items():
+        os.makedirs(os.path.join(SAMPLE_DIR, table))
+        path = os.path.join(SAMPLE_DIR, table, "part-00000.parquet")
+        db.execute(f"COPY ({query}) TO '{path}' (FORMAT parquet, COMPRESSION zstd);")
+        num_rows = db.execute(f"SELECT count(*) FROM '{path}'").fetchone()[0]
+        manifest["tables"][table] = {"files": ["part-00000.parquet"], "num_rows": num_rows}
+        print(f"{table}: {num_rows} rows")
+    with open(os.path.join(SAMPLE_DIR, "manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+    db.close()
     print(f"Sample written to {SAMPLE_DIR}")
 
 
@@ -164,11 +169,10 @@ if __name__ == "__main__":
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
-        "--database", default=None, help="Source database (default: that of CLEARSCOPE_E3)"
+        "--datasets_dir",
+        default=None,
+        help="Folder of the full dataset (default: $PIDSMAKER_DATASETS_DIR, else "
+        "~/.cache/pidsmaker/datasets)",
     )
-    parser.add_argument("--database_host", default="postgres")
-    parser.add_argument("--database_user", default="postgres")
-    parser.add_argument("--database_password", default="postgres")
-    parser.add_argument("--database_port", type=int, default=5432)
     parser.add_argument("--events_per_day", type=int, default=5000)
     main(parser.parse_args())

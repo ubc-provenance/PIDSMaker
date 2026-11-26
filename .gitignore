@@ -173,18 +173,6 @@ docs/site/
 weights/
 scores/
 *tar.gz
-postgres_data/
-postgres_lock/
-
-# Singularity files
-*.sif
-*.def
-
-# Postgres directories
-postgres_config
-postgres_run
-postgres_log
-postgres_data
 
 # tokenizer data
 nltk_data
@@ -192,6 +180,5 @@ nltk_data
 .claude
 
 # Visualization artifacts
-scripts/viz_env/
 embedding_viz_*.json
 pidsmaker/vizgen/.plotly_cache/

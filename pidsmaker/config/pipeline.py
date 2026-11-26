@@ -34,8 +34,31 @@ from .config import (
     Arg,
 )
 
-ROOT_PROJECT_PATH = pathlib.Path(__file__).parent.parent.parent.resolve()
+
+
+def _resources_root():
+    """Folder of `config/` and `Ground_Truth/`: `pidsmaker/resources/` when PIDSMaker is
+    installed from a wheel (see setup.py), else the root of the repository (source checkout or
+    editable install)."""
+    package_resources = pathlib.Path(__file__).parent.parent / "resources"
+    if (package_resources / "config").is_dir():
+        return package_resources.resolve()
+    return pathlib.Path(__file__).parent.parent.parent.resolve()
+
+
+ROOT_PROJECT_PATH = _resources_root()
 ROOT_GROUND_TRUTH_DIR = os.path.join(ROOT_PROJECT_PATH, "Ground_Truth/")
+DEFAULT_ARTIFACT_DIR = "/home/artifacts/"
+
+
+def default_artifact_dir():
+    """$PIDSMAKER_ARTIFACT_DIR, else /home/artifacts/ if it exists (e.g. on servers), else
+    `artifacts/` in the working directory."""
+    if os.environ.get("PIDSMAKER_ARTIFACT_DIR"):
+        return os.environ["PIDSMAKER_ARTIFACT_DIR"]
+    if os.path.isdir(DEFAULT_ARTIFACT_DIR):
+        return DEFAULT_ARTIFACT_DIR
+    return os.path.join(os.getcwd(), "artifacts", "")
 
 # ================================================================================
 
@@ -72,23 +95,15 @@ def get_default_cfg(args):
     cfg._keep_best_epoch_only = getattr(args, "keep_best_epoch_only", False)
     cfg._shared_node_features = not getattr(args, "no_shared_node_features", False)
     cfg._from_weights = args.from_weights
-    cfg._from_weights_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        "weights",
-        args.model,
-        args.dataset,
-    )
+    cfg._from_weights_path = os.path.join(ROOT_PROJECT_PATH, "weights", args.model, args.dataset)
 
     cfg._restart_from_scratch = args.restart_from_scratch
     if cfg._restart_from_scratch:
         cfg._run_random_seed = str(uuid.uuid4())
 
-    # Database: we simply create variables for all configurations described in the dict
+    # Datasets (see pidsmaker/utils/database.py)
     cfg.database = CN()
-    cfg.database.host = args.database_host
-    cfg.database.user = args.database_user
-    cfg.database.password = args.database_password
-    cfg.database.port = args.database_port
+    cfg.database.datasets_dir = getattr(args, "datasets_dir", None)
 
     # Dataset: we simply create variables for all configurations described in the dict
     set_dataset_cfg(cfg, args.dataset)
@@ -175,20 +190,17 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--tuning_file_path", default="", help="If set, use the given YML path for tuning"
     )
     parser.add_argument(
-        "--database_host", default="postgres", help="Host machine where the db is located"
-    )
-    parser.add_argument(
-        "--database_user", default="postgres", help="Database user to connect to the database"
-    )
-    parser.add_argument(
-        "--database_password", default="postgres", help="The password to the database user"
-    )
-    parser.add_argument(
-        "--database_port", type=int, default=5432, help="The port number for Postgres (default: 5432)"
+        "--datasets_dir",
+        default=os.environ.get("PIDSMAKER_DATASETS_DIR"),
+        help="Folder of the datasets (Parquet files, read with DuckDB), one subfolder per "
+        "database. Default: $PIDSMAKER_DATASETS_DIR, else ~/.cache/pidsmaker/datasets",
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(
-        "--artifact_dir", default="/home/artifacts/", help="Destination folder for generated files"
+        "--artifact_dir",
+        default=default_artifact_dir(),
+        help="Destination folder for generated files. Default: $PIDSMAKER_ARTIFACT_DIR, else "
+        "/home/artifacts/ if it exists, else ./artifacts/",
     )
     parser.add_argument(
         "--num_workers",

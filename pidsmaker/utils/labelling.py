@@ -38,8 +38,7 @@ def get_malicious_events(cfg):
         try:
             cur.execute(
                 f"SELECT src_index_id, dst_index_id, timestamp_rec, {type_col} "
-                f"FROM {schema.event_table} WHERE {schema.label_column} = 1{schema.operations_sql()} "
-                "ORDER BY timestamp_rec;"
+                f"FROM {schema.event_table} WHERE {schema.label_column} = 1{schema.operations_sql()};"
             )
             rows = cur.fetchall()
         finally:

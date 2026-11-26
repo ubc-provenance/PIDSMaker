@@ -24,10 +24,10 @@ For example, on LANL, whether LARES selects the root attacker in the first stage
 To quantify instability, PIDSMaker supports running a system multiple times and computing statistics across runs. Use the `--experiment=run_n_times` flag:
 
 ```shell
-./run.sh orthrus CADETS_E3 --experiment=run_n_times
+pidsmaker orthrus CADETS_E3 --wandb --background --experiment=run_n_times
 ```
 
-This executes the pipeline N times using the same configuration, with each run using a different random seed. Run it from the `scripts/` folder.
+This executes the pipeline N times using the same configuration, with each run using a different random seed.
 
 ### Configuration
 
@@ -88,7 +88,7 @@ The metrics of the runs with the lowest and highest ADP are also logged with the
 `mc_dropout` adds dropout of rate `dropout` to every layer of the encoder and keeps it active at inference, so each run makes different predictions. `bagged_ensemble` is meant to train on a growing number of training days, starting at `min_num_days`.
 
 ```shell
-./run.sh orthrus CADETS_E3 --experiment=run_n_times_hyperparameters
+pidsmaker orthrus CADETS_E3 --wandb --background --experiment=run_n_times_hyperparameters
 ```
 
 To run a single method, write your own YAML in `config/experiments/uncertainty/` and pass its name to `--experiment`. All arguments are listed in the [Tasks reference](../reference/tasks.md#experiments).
@@ -107,7 +107,7 @@ To run a single method, write your own YAML in `config/experiments/uncertainty/`
 It is off by default, and on in the [pretrained encoder](pretrained_encoders.md) configs. It can be enabled for any system, for example with `run_n_times` to measure its effect on the `*_std` metrics:
 
 ```shell
-./run.sh orthrus CADETS_E3 --training.stable_optim=True --experiment=run_n_times
+pidsmaker orthrus CADETS_E3 --wandb --background --training.stable_optim=True --experiment=run_n_times
 ```
 
 ## Recommendations

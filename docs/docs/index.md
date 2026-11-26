@@ -8,16 +8,15 @@ hide:
 
 <div class="pm-hero" markdown>
 
-<img class="pm-hero__logo" src="assets/pidsmaker_new.png" alt="PIDSMaker logo">
+<img class="pm-hero__logo off-glb" src="assets/pidsmaker_new.png" alt="PIDSMaker logo">
 
 <div markdown>
 
 <h1>PIDS<span class="pm-maker">Maker</span></h1>
 
-<p class="pm-hero__tagline">
-The open-source framework to <strong>build, benchmark and extend graph-based intrusion detection systems</strong>, on host provenance and network data.
-State-of-the-art provenance-based and network IDSs, their datasets, and one modular pipeline shared by both, all in a single codebase.
-</p>
+<p class="pm-hero__tagline">Build, benchmark and extend graph-based intrusion detection systems.</p>
+
+<p class="pm-hero__sub">State-of-the-art provenance and network IDSs, their datasets and one modular pipeline, all open source.</p>
 
 <div class="pm-hero__actions" markdown>
 
@@ -30,7 +29,7 @@ State-of-the-art provenance-based and network IDSs, their datasets, and one modu
 
 <div class="pm-hero__platforms" markdown>
 
-Runs on [:fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU](getting-started/installation.md) [:fontawesome-brands-apple: macOS (Apple Silicon)](getting-started/installation.md#macos)
+Runs on [:fontawesome-brands-linux: Linux (GPU or CPU)](getting-started/installation.md) [:fontawesome-brands-apple: macOS (Apple Silicon)](getting-started/installation.md#macos)
 
 </div>
 
@@ -39,6 +38,30 @@ Runs on [:fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU](getting-
 </div>
 
 <style>.md-content__button { display: none; }</style>
+
+<div class="pm-install" markdown>
+
+<div class="pm-install__intro" markdown>
+
+## Up and running in two commands
+
+From v5.0.0, PIDSMaker needs no database server or Docker: datasets are downloaded from [![](assets/huggingface_logo.svg){ .pm-hf-logo .off-glb } Hugging Face](https://huggingface.co/datasets/pidsmaker/datasets){ .pm-hf } on first use.
+
+</div>
+
+<div class="pm-install__code" markdown>
+
+```shell
+pip install pidsmaker
+pidsmaker orthrus CADETS_E3
+```
+
+Requires Python 3.9–3.11 · [Installation guide](getting-started/installation.md)
+{ .pm-install__note }
+
+</div>
+
+</div>
 
 <div class="pm-stats">
   <div class="pm-stat"><strong>17</strong><span>intrusion detection systems</span></div>
@@ -80,66 +103,35 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 - **Modular components**: the components of published systems, extracted into a testbed where you mix and match them to **discover better variants**.
 - **Shared code**: a central place where authors contribute their systems, so new work can be benchmarked reproducibly.
 
-## Up and running in three steps
+## Next steps
 
-=== ":lucide-download: 1. Install"
+=== ":lucide-play: Run other systems"
 
-    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)). We recommend one of two setups:
-
-    === ":fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU"
-
-        A server or workstation with Docker and the [NVIDIA Container Toolkit](getting-started/installation.md#2-set-up-docker), for all datasets.
-
-        ```shell
-        git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
-        ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
-        cp .env.local .env                                          # (2)!
-        docker compose -p postgres -f compose-postgres.yml up -d --build
-        docker compose -p postgres exec postgres /scripts/load_dumps.sh
-        docker compose -f compose-pidsmaker.yml up -d --build
-        docker compose exec pids bash
-        ```
-
-        1.  See [how to get an access token](getting-started/installation.md#download-the-dumps). Dumps are saved to `./data`.
-        2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
-
-    === ":fontawesome-brands-apple: macOS (Apple Silicon)"
-
-        A Mac with [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/), on CPU, for most datasets: 32 GB of RAM is ideal ([details](getting-started/installation.md#macos)).
-
-        ```shell
-        git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
-        ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
-        cp .env.local .env && echo "VIZ_PORT=5001" >> .env          # (2)!
-        plutil -replace MemoryMiB -integer 24576 ~/Library/Group\ Containers/group.com.docker/settings-store.json
-        docker desktop restart                                      # (3)!
-        docker compose -p postgres -f compose-postgres.yml up -d --build
-        docker compose -p postgres exec postgres /scripts/load_dumps.sh
-        docker compose -f compose-pidsmaker.yml -f compose-pidsmaker.cpu.yml up -d --build  # (4)!
-        docker compose exec pids bash
-        ```
-
-        1.  See [how to get an access token](getting-started/installation.md#download-the-dumps). Dumps are saved to `./data`.
-        2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`. Port 5000 is used by AirPlay Receiver on macOS.
-        3.  Gives 24 GB to the VM of Docker Desktop (8 GB by default), for a 32 GB Mac: about 75% of your RAM.
-        4.  The CPU override removes the NVIDIA GPU reservation.
-
-=== ":lucide-play: 2. Run a system"
-
-    Run a provenance or a network system, from inside the `pids` container.
+    Run any system on a provenance or a network dataset, by name:
 
     ```shell
-    python pidsmaker/main.py velox CADETS_E3          # a provenance IDS
-    python pidsmaker/main.py euler LANL               # a network IDS
-    python pidsmaker/main.py kairos THEIA_E3 --wandb  # logged to Weights & Biases
+    pidsmaker velox CADETS_E3          # a provenance IDS
+    pidsmaker euler LANL               # a network IDS
+    pidsmaker kairos THEIA_E3 --wandb  # logged to Weights & Biases
     ```
 
-=== ":lucide-sliders-horizontal: 3. Make it yours"
+=== "![](assets/huggingface_logo.svg){ .pm-hf-logo .off-glb } Download datasets"
+
+    All the [datasets](guide/datasets.md) are Parquet files in the Hugging Face repository [`pidsmaker/datasets`](https://huggingface.co/datasets/pidsmaker/datasets), from 0.16 GB (`ATLASV2_EDR`) to 74 GB (`TRACE_E5`), 178 GB in total. A run downloads its dataset when it is missing, or you can download datasets ahead of time:
+
+    ```shell
+    pidsmaker download CADETS_E3 LANL  # some datasets
+    pidsmaker download --list          # all the datasets and their sizes
+    ```
+
+    Runs on :fontawesome-brands-linux: Linux, ideally with an :simple-nvidia: NVIDIA GPU, for all datasets, and on :fontawesome-brands-apple: macOS (Apple Silicon), on CPU, for most datasets: 32 GB of RAM is ideal ([details](getting-started/installation.md#macos)).
+
+=== ":lucide-sliders-horizontal: Make it yours"
 
     Override any argument from the CLI, or write a new YAML config that inherits from an existing system.
 
     ```shell
-    python pidsmaker/main.py orthrus CADETS_E3 \
+    pidsmaker orthrus CADETS_E3 \
       --featurization.used_method=doc2vec \
       --training.encoder.used_methods=tgn,sage \
       --training.encoder.sage.num_layers=3

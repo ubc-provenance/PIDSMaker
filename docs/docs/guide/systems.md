@@ -37,14 +37,14 @@ Run any of them with its config name and a dataset:
 === "Provenance"
 
     ```shell
-    python pidsmaker/main.py kairos CADETS_E3
+    pidsmaker kairos CADETS_E3
     ```
 
 === "Network"
 
     ```shell
-    python pidsmaker/main.py euler LANL
-    python pidsmaker/main.py lares OPTC_NET --tuned   # OpTC hyperparameters of LARES
+    pidsmaker euler LANL
+    pidsmaker lares OPTC_NET --tuned   # OpTC hyperparameters of LARES
     ```
 
 </div>
@@ -93,8 +93,8 @@ The available methods for each column are listed in the reference: [Featurizatio
 Datasets are described by a [schema](datasets.md#adding-custom-datasets) (node types, edge types and event attributes) rather than by assumptions on a particular dataset, so a system written for one family runs on the other:
 
 ```shell
-python pidsmaker/main.py orthrus LANL           # a PIDS on a network dataset
-python pidsmaker/main.py euler CLEARSCOPE_E3    # a NIDS on a provenance dataset
+pidsmaker orthrus LANL           # a PIDS on a network dataset
+pidsmaker euler CLEARSCOPE_E3    # a NIDS on a provenance dataset
 ```
 
 Two differences between the families limit this:

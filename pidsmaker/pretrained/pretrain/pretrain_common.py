@@ -399,8 +399,9 @@ def _eval_knn_on_eval_set(model, tokenizer, device, model_type, batch_size=512):
     """
     import numpy as np
 
-    base_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '..')
-    eval_set_path = os.path.join(base_dir, 'config', 'eval', 'eval_set_clustering.json')
+    from pidsmaker.config.pipeline import ROOT_PROJECT_PATH
+
+    eval_set_path = os.path.join(ROOT_PROJECT_PATH, 'config', 'eval', 'eval_set_clustering.json')
     if not os.path.exists(eval_set_path):
         return {}
 

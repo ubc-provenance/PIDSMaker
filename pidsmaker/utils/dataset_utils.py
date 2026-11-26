@@ -141,7 +141,7 @@ def get_uuid_to_index_id(cfg):
     database = (
         cfg.dataset.database_all_file if cfg.construction.use_all_files else cfg.dataset.database
     )
-    key = (dataset, database, cfg.database.host, cfg.database.port, schema.name)
+    key = (dataset, database, cfg.database.datasets_dir, schema.name)
 
     if key not in _UUID_TO_INDEX_ID_CACHE:
         uuid2nid = {}
@@ -411,51 +411,3 @@ def encode_edge_attributes(cfg, columns):
             x = torch.nan_to_num(x, nan=0.0).clamp(min=0)
             feats.append(torch.log1p(x).unsqueeze(1))
     return torch.cat(feats, dim=1)
-
-
-def create_schema_tables(schema, cur):
-    """Creates the database tables of a schema (node tables and event table).
-
-    Used by the preprocessing scripts of the datasets whose tables are defined by their schema:
-    each node table has the columns `node_uuid`, `hash_id`, `index_id` and the columns of the
-    node type's attributes, and the event table the standard event columns, the columns of the
-    edge attributes and the label column.
-    """
-    for nt in schema.node_types:
-        attr_cols = "".join(f"    {col} VARCHAR,\n" for _, col in nt.columns)
-        cur.execute(
-            f"""CREATE TABLE IF NOT EXISTS {nt.table} (
-    node_uuid VARCHAR NOT NULL,
-    hash_id VARCHAR NOT NULL,
-{attr_cols}    index_id BIGINT,
-    PRIMARY KEY (node_uuid, hash_id)
-);"""
-        )
-    extra_cols = "".join(
-        f"    {a.column} {'VARCHAR' if a.kind == 'categorical' else 'DOUBLE PRECISION'},\n"
-        for a in schema.edge_attributes
-    )
-    if schema.label_column:
-        extra_cols += f"    {schema.label_column} SMALLINT DEFAULT 0,\n"
-    cur.execute(
-        f"""CREATE TABLE IF NOT EXISTS {schema.event_table} (
-    src_node VARCHAR,
-    src_index_id VARCHAR,
-    operation VARCHAR,
-    dst_node VARCHAR,
-    dst_index_id VARCHAR,
-    event_uuid VARCHAR NOT NULL,
-    timestamp_rec BIGINT,
-    _id BIGSERIAL PRIMARY KEY,
-{extra_cols.rstrip().rstrip(",")}
-);"""
-    )
-
-
-def event_table_columns(schema):
-    """Columns of the event table filled by preprocessing scripts (all but `_id`)."""
-    cols = ["src_node", "src_index_id", "operation", "dst_node", "dst_index_id", "event_uuid", "timestamp_rec"]
-    cols += [a.column for a in schema.edge_attributes]
-    if schema.label_column:
-        cols.append(schema.label_column)
-    return cols

@@ -86,7 +86,7 @@ Evaluation compares predictions against a **ground truth**. For provenance datas
 === "CLI"
 
     ```shell
-    python pidsmaker/main.py SYSTEM CADETS_E3 --evaluation.ground_truth_version threatrace
+    pidsmaker SYSTEM CADETS_E3 --evaluation.ground_truth_version threatrace
     ```
 
 === "YAML"
@@ -213,7 +213,7 @@ Figures with one point per node or edge are slow to draw on large test sets: `ev
 Any system can be evaluated differently from the CLI, for example Kairos at the time-window level:
 
 ```shell
-python pidsmaker/main.py kairos CADETS_E3 \
+pidsmaker kairos CADETS_E3 \
   --evaluation.used_method=tw_evaluation \
   --evaluation.tw_evaluation.threshold_method=max_val_loss
 ```

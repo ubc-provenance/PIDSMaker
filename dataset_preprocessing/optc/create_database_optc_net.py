@@ -1,7 +1,7 @@
-"""DARPA OpTC network preprocessing: creates the PostgreSQL database of the network flows of OpTC.
+"""DARPA OpTC network preprocessing: creates the Parquet dataset of the network flows of OpTC.
 
 The network version of OpTC is made of the FLOW START and FLOW MESSAGE events of the eCAR data of
-all the hosts of the exercise. Both are loaded in the database; as in LARES and Argus, only FLOW
+all the hosts of the exercise. Both are loaded in the dataset; as in LARES and Argus, only FLOW
 START events are used by default (`construction.operations` of the `OPTC_NET` dataset). This script loads the version
 preprocessed by LARES (https://github.com/TristanBilot/lares), split in files of one minute and
 labelled as in the LARES paper. Download `lanl_optc_datasets.tar.gz` from the LARES repository,
@@ -14,35 +14,37 @@ Each line of the LARES files is `timestamp,action,label,src,dst,src_port,dst_por
 where `action` is F_S (FLOW START) or F_M (FLOW MESSAGE), hosts are integer ids and `size` is the
 size of messages (empty for FLOW START events).
 
-The database follows the `optc_flows` schema (see `pidsmaker/config/schemas.py`): nodes are hosts,
-events are flows from a source to a destination host whose attributes are the ports (grouped as
-in LARES), the protocol and the size of messages, and malicious events have `label=1`.
-Timestamps are the real timestamps of OpTC (seconds since epoch).
+The dataset is written to `<datasets_dir>/optc_net` (`--datasets_dir`, default
+$PIDSMAKER_DATASETS_DIR or ~/.cache/pidsmaker/datasets; see `pidsmaker/utils/database.py`), and
+follows the `optc_flows` schema (see `pidsmaker/config/schemas.py`): nodes are hosts, events are
+flows from a source to a destination host whose attributes are the ports (grouped as in LARES), the
+protocol and the size of messages, and malicious events have `label=1`. Timestamps are the real
+timestamps of OpTC (seconds since epoch). Files are read in parallel by `--num_workers` processes,
+each writing the events of its files to its own staging files; events are numbered (`_id`) in the
+order of the files and of their lines.
 
 The official eCAR files of OpTC can be downloaded with `download_optc_net.py`.
 """
 
 import argparse
 import gzip
-import io
 import multiprocessing
 import os
 import re
 
-import psycopg2
 from tqdm import tqdm
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.config.schemas import OPTC_PORTS
-from pidsmaker.utils.dataset_utils import event_table_columns, get_schema
-from pidsmaker.utils.schema_loading import (
-    copy_rows,
-    create_tables,
-    ensure_database,
-    get_database_name,
-    index_events_by_time,
+from pidsmaker.utils.database import parquet_dataset_dir
+from pidsmaker.utils.dataset_utils import get_schema
+from pidsmaker.utils.dataset_writer import (
+    DatasetBuilder,
+    TableWriter,
+    schema_tables,
+    update_table,
 )
-from pidsmaker.utils.utils import init_database_connection, log, ns_time_to_datetime_US, stringtomd5
+from pidsmaker.utils.utils import log, ns_time_to_datetime_US, stringtomd5
 
 ACTIONS = {"F_S": "FLOW_START", "F_M": "FLOW_MESSAGE"}
 _SPECIFIC_PORTS = {p for p in OPTC_PORTS if p.isdigit()}
@@ -82,15 +84,8 @@ _worker = {}
 _LABELLED_LINE = re.compile(r"^[^,\n]*,[^,\n]*,(?!0,)[^,\n]+,", re.M)
 
 
-def _init_worker(db_params, table, columns, attributes, propagate_labels):
-    _worker["connect"] = psycopg2.connect(**db_params)
-    _worker.update(
-        table=table, columns=columns, attributes=attributes, propagate_labels=propagate_labels
-    )
-
-
-def _csv(value):
-    return "" if value is None else str(value)
+def _init_worker(spec, attributes, propagate_labels):
+    _worker.update(spec=spec, attributes=attributes, propagate_labels=propagate_labels)
 
 
 def _flow_key(src, dst, src_port, dst_port, protocol):
@@ -122,12 +117,16 @@ def read_rows(path, propagate_labels=True):
     return rows
 
 
-def _load_file(path):
-    """Loads the events of one LARES file with COPY (each worker has its own connection, so
-    files are loaded in parallel), and returns its hosts and statistics."""
+def _load_file(task):
+    """Writes the events of one LARES file to a staging file of the event table (each worker
+    writes its own files, so that files are loaded in parallel), and returns its number of
+    events, hosts and statistics."""
+    index, path, staging_path = task
     file_id = os.path.basename(path).split(".")[0]
     attributes = _worker["attributes"]
-    lines, hosts = [], set()
+    # Empty strings are null, as in the published dataset
+    writer = TableWriter(_worker["spec"], staging_path, empty_as_null=True)
+    hosts = set()
     stats = {"events": 0, "malicious": 0, "unknown_action": 0}
     min_mal, max_mal = None, None
     for line_no, row in enumerate(read_rows(path, _worker["propagate_labels"])):
@@ -146,59 +145,47 @@ def _load_file(path):
         label = int(label or 0)
         fields = [src, src, operation, dst, dst, f"{file_id}_{line_no:07d}", t]
         fields += [attrs[name] for name in attributes] + [label]
-        lines.append(",".join(map(_csv, fields)))
+        writer.add(fields)
         hosts.update((src, dst))
         stats["events"] += 1
         if label:
             stats["malicious"] += 1
             min_mal = t if min_mal is None else min(min_mal, t)
             max_mal = t if max_mal is None else max(max_mal, t)
-    if lines:
-        connect = _worker["connect"]
-        with connect.cursor() as cur:
-            cur.copy_expert(
-                f"COPY {_worker['table']} ({', '.join(_worker['columns'])}) FROM STDIN WITH (FORMAT csv)",
-                io.StringIO("\n".join(lines) + "\n"),
-            )
-        connect.commit()
-    return hosts, stats, min_mal, max_mal
+    num_events = writer.close()
+    return index, staging_path, num_events, hosts, stats, min_mal, max_mal
 
 
-def load_events(cfg, lares_dir, num_workers, propagate_labels=True):
+def load_events(builder, cfg, lares_dir, num_workers, propagate_labels=True):
     schema = get_schema(cfg)
-    columns = event_table_columns(schema)
     attributes = [a.name for a in schema.edge_attributes]
-    db_params = dict(
-        dbname=get_database_name(cfg),
-        host=cfg.database.host,
-        user=cfg.database.user,
-        password=cfg.database.password,
-        port=cfg.database.port,
-    )
     hosts = set()
     stats = {"events": 0, "malicious": 0, "unknown_action": 0}
     malicious_times = []
     files = numbered_files(lares_dir)
-    init_args = (db_params, schema.event_table, columns, attributes, propagate_labels)
+    tasks = [
+        (i, path, builder.staging_path(schema.event_table, f"{i:06d}"))
+        for i, path in enumerate(files)
+    ]
+    staging = []
+    init_args = (builder.spec(schema.event_table), attributes, propagate_labels)
     with multiprocessing.Pool(num_workers, initializer=_init_worker, initargs=init_args) as pool:
-        for file_hosts, file_stats, min_mal, max_mal in tqdm(
-            pool.imap_unordered(_load_file, files), total=len(files), desc="Loading flows"
+        for index, path, num_events, file_hosts, file_stats, min_mal, max_mal in tqdm(
+            pool.imap_unordered(_load_file, tasks), total=len(files), desc="Loading flows"
         ):
+            staging.append((index, path, num_events))
             hosts |= file_hosts
             for k, v in file_stats.items():
                 stats[k] += v
             malicious_times += [t for t in (min_mal, max_mal) if t is not None]
+    # Events are numbered in the order of the files
+    for _, path, num_events in sorted(staging):
+        builder.add_staging_file(schema.event_table, path, num_events)
 
     # Hosts keep their LARES integer id as index id
-    cur, connect = init_database_connection(cfg)
-    copy_rows(
-        cur,
-        schema.node_type("host").table,
-        ["node_uuid", "hash_id", "name", "index_id"],
-        ((h, stringtomd5(h), h, int(h)) for h in sorted(hosts, key=int)),
+    builder.table(schema.node_type("host").table).add_rows(
+        (h, stringtomd5(h), h, int(h)) for h in sorted(hosts, key=int)
     )
-    connect.commit()
-    connect.close()
 
     log(f"Events: {stats}, hosts: {len(hosts)}")
     if malicious_times:
@@ -226,9 +213,12 @@ def _propagated_labels(path):
 
 
 def relabel_events(cfg, lares_dir, num_workers):
-    """Propagates the labels of an existing database (built without label propagation) in
+    """Propagates the labels of an existing dataset (built without label propagation) in
     place, instead of rebuilding it: events are identified by their `event_uuid` (file and line
-    of the LARES file), within the time range of each file (indexed)."""
+    of the LARES file), within the time range of the files. The files of the event table are
+    rewritten (running it again gives the same dataset)."""
+    import pyarrow as pa
+
     schema = get_schema(cfg)
     with multiprocessing.Pool(num_workers) as pool:
         events = [
@@ -240,15 +230,22 @@ def relabel_events(cfg, lares_dir, num_workers):
             )
             for e in file_events
         ]
-    cur, connect = init_database_connection(cfg)
-    cur.execute(
-        f"UPDATE {schema.event_table} SET {schema.label_column} = 1 "
-        "WHERE timestamp_rec BETWEEN %s AND %s AND event_uuid = ANY(%s)",
-        (min(t for _, t in events), max(t for _, t in events), [u for u, _ in events]),
+    if not events:
+        log("No label to propagate")
+        return
+    first, last = min(t for _, t in events), max(t for _, t in events)
+    updated = update_table(
+        parquet_dataset_dir(cfg),
+        schema.event_table,
+        schema.label_column,
+        "1",
+        f"timestamp_rec BETWEEN {first} AND {last} "
+        "AND event_uuid IN (SELECT event_uuid FROM _relabelled)",
+        relations={"_relabelled": pa.table({"event_uuid": [u for u, _ in events]})},
+        note="labels propagated with --relabel",
+        log=log,
     )
-    log(f"Labelled {cur.rowcount} more events as malicious ({len(events)} expected)")
-    connect.commit()
-    connect.close()
+    log(f"Labelled {updated} more events as malicious ({len(events)} expected)")
 
 
 def main():
@@ -256,8 +253,10 @@ def main():
     parser.add_argument("dataset", nargs="?", default="OPTC_NET", help="Dataset name in the config")
     parser.add_argument("--lares_dir", required=True, help="OPTC/preprocessed folder of the LARES datasets")
     parser.add_argument("--num_workers", type=int, default=16, help="Processes reading the files")
-    parser.add_argument("--database", default=None, help="Overrides the database of the dataset")
-    parser.add_argument("--overwrite", action="store_true", help="Recreates existing tables")
+    parser.add_argument(
+        "--database", default=None, help="Overrides the database (folder name) of the dataset"
+    )
+    parser.add_argument("--overwrite", action="store_true", help="Replaces an existing dataset")
     parser.add_argument(
         "--no_label_propagation",
         action="store_true",
@@ -267,11 +266,11 @@ def main():
     parser.add_argument(
         "--relabel",
         action="store_true",
-        help="Only propagates the labels of an existing database built without propagation",
+        help="Only propagates the labels of an existing dataset built without propagation",
     )
     args, unknown = parser.parse_known_args()
 
-    # Remaining args (e.g. --database_host) are handled by the framework's parser. The
+    # Remaining args (e.g. --datasets_dir) are handled by the framework's parser. The
     # system config (velox) is irrelevant: only the dataset and database settings are used
     cfg_args, _ = get_runtime_required_args(
         return_unknown_args=True, args=["velox", args.dataset] + unknown
@@ -284,11 +283,18 @@ def main():
         relabel_events(cfg, args.lares_dir, args.num_workers)
         return
 
-    ensure_database(cfg)
-    create_tables(cfg, args.overwrite)
-    load_events(cfg, args.lares_dir, args.num_workers, not args.no_label_propagation)
-    index_events_by_time(cfg)
-    log(f"Database {get_database_name(cfg)} created.")
+    dataset_dir = parquet_dataset_dir(cfg)
+    labels = "LARES labels" if args.no_label_propagation else "propagated labels"
+    with DatasetBuilder(
+        dataset_dir,
+        schema_tables(get_schema(cfg)),
+        source=f"dataset_preprocessing/optc/create_database_optc_net.py ({labels})",
+        overwrite=args.overwrite,
+        empty_as_null=True,
+        log=log,
+    ) as builder:
+        load_events(builder, cfg, args.lares_dir, args.num_workers, not args.no_label_propagation)
+    log(f"Dataset {dataset_dir} created.")
 
 
 if __name__ == "__main__":

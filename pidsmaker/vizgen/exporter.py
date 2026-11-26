@@ -2,23 +2,23 @@
 """CLI entry point for interactive 3D embedding visualization.
 
 Usage:
-    python scripts/embedding_viz.py <model> <dataset> [options]
+    python -m pidsmaker.vizgen.web.export <model> <dataset> [options]
 
 Examples:
     # Word2Vec raw embeddings (default)
-    python scripts/embedding_viz.py orthrus CADETS_E3
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3
 
     # GNN encoder embeddings
-    python scripts/embedding_viz.py orthrus CADETS_E3 --embeddings encoder
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --embeddings encoder
 
     # Both views
-    python scripts/embedding_viz.py orthrus CADETS_E3 --embeddings both
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --embeddings both
 
     # Custom sampling
-    python scripts/embedding_viz.py orthrus CADETS_E3 --max_benign 10000 --max_attack all
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --max_benign 10000 --max_attack all
 
     # t-SNE instead of UMAP
-    python scripts/embedding_viz.py orthrus CADETS_E3 --method tsne
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --method tsne
 """
 
 import argparse
@@ -47,9 +47,9 @@ from pidsmaker.vizgen.html_builder import build_html
 
 def load_viz_config():
     """Load viz_config.yml defaults."""
-    config_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "config", "viz_config.yml"
-    )
+    from pidsmaker.config.pipeline import ROOT_PROJECT_PATH
+
+    config_path = os.path.join(ROOT_PROJECT_PATH, "config", "viz_config.yml")
     if os.path.exists(config_path):
         with open(config_path, encoding="utf-8") as f:
             return yaml.safe_load(f).get("embedding_viz", {})
@@ -57,11 +57,10 @@ def load_viz_config():
 
 
 def _get_artifacts_root():
-    """Return the correct artifacts root for Docker vs Host."""
-    if os.path.exists("/home/artifacts"):
-        return "/home/artifacts"
-    pidsmaker_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    return os.environ.get("PIDS_ARTIFACTS_DIR", os.path.join(pidsmaker_root, "artifacts"))
+    """Return the artifacts root: $PIDS_ARTIFACTS_DIR, else the default of --artifact_dir."""
+    from pidsmaker.config.pipeline import default_artifact_dir
+
+    return os.environ.get("PIDS_ARTIFACTS_DIR") or default_artifact_dir()
 
 
 def _find_manifests(dataset):

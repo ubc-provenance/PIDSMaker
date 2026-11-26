@@ -10,29 +10,29 @@ PIDSMaker supports the public datasets most used in research on graph-based intr
 
 ## Overview
 
-Nodes and events are counted in the database, before graph construction. Size is the size of the database once loaded.
+Nodes and events are counted in the database of each dataset, before graph construction. Size is the size of its Parquet files, [downloaded](../getting-started/installation.md#2-download-the-datasets) with `pidsmaker download` and read in place.
 
 ### Provenance { .pm-h-prov }
 
-Nodes are processes, files and netflows, edges are system events, and the ground truth lists the attack nodes. The preprocessed databases are [downloaded](../getting-started/installation.md#1-download-the-datasets) as Postgres dumps.
+Nodes are processes, files and netflows, edges are system events, and the ground truth lists the attack nodes. The preprocessed datasets are [downloaded](../getting-started/installation.md#2-download-the-datasets) from Hugging Face.
 
 | Dataset | OS | Attacks | Nodes | Events | Size (GB) |
 |---|---|--:|--:|--:|--:|
-| CADETS_E3 | FreeBSD | 3 | 2.68M | 36.5M | 10 |
-| THEIA_E3 | Linux | 2 | 1.26M | 44.4M | 12 |
-| CLEARSCOPE_E3 | Android | 1 | 369K | 18.3M | 4.8 |
-| FIVEDIRECTIONS_E3 | Windows | 2 | 1.38M | 78.9M | 22 |
-| TRACE_E3 | Linux | 3 | 44.5M | 284M | 100 |
-| CADETS_E5 | FreeBSD | 2 | 15.2M | 1.08B | 276 |
-| THEIA_E5 | Linux | 1 | 2.29M | 141M | 36 |
-| CLEARSCOPE_E5 | Android | 2 | 501K | 199M | 49 |
-| FIVEDIRECTIONS_E5 | Windows | 4 | 18.8M | 1.09B | 280 |
-| TRACE_E5 | Linux | 1 | 72.3M | 2.64B | 710 |
-| optc_h201 | Windows | 1 | 5.27M | 38.2M | 9 |
-| optc_h501 | Windows | 1 | 3.96M | 28.0M | 6.7 |
-| optc_h051 | Windows | 1 | 4.62M | 31.6M | 7.7 |
-| ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 1 |
-| CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 6.6 |
+| CADETS_E3 | FreeBSD | 3 | 2.68M | 36.5M | 1.3 |
+| THEIA_E3 | Linux | 2 | 1.26M | 44.4M | 0.71 |
+| CLEARSCOPE_E3 | Android | 1 | 369K | 18.3M | 0.51 |
+| FIVEDIRECTIONS_E3 | Windows | 2 | 1.38M | 78.9M | 2.3 |
+| TRACE_E3 | Linux | 3 | 44.5M | 284M | 9.4 |
+| CADETS_E5 | FreeBSD | 2 | 15.2M | 1.08B | 32.9 |
+| THEIA_E5 | Linux | 1 | 2.29M | 141M | 3.9 |
+| CLEARSCOPE_E5 | Android | 2 | 501K | 199M | 5.0 |
+| FIVEDIRECTIONS_E5 | Windows | 4 | 18.8M | 1.09B | 30.3 |
+| TRACE_E5 | Linux | 1 | 72.3M | 2.64B | 74.3 |
+| optc_h201 | Windows | 1 | 5.27M | 38.2M | 1.6 |
+| optc_h501 | Windows | 1 | 3.96M | 28.0M | 1.2 |
+| optc_h051 | Windows | 1 | 4.62M | 31.6M | 1.3 |
+| ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 0.16 |
+| CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 1.1 |
 
 ??? info "Share of each node type"
 
@@ -56,12 +56,12 @@ Nodes are processes, files and netflows, edges are system events, and the ground
 
 ### Network { .pm-h-net }
 
-Nodes are hosts, edges are authentications or network flows, and malicious events are labelled in the database. The databases are [built from the preprocessed files of LARES](../getting-started/from-scratch.md).
+Nodes are hosts, edges are authentications or network flows, and malicious events are labelled in the database. The databases are [built from the preprocessed files of LARES](../getting-started/from-scratch.md), and downloaded like the provenance datasets.
 
 | Dataset | Events | Hosts | Malicious events | Size (GB) |
 |---|---|--:|---|--:|
-| LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
-| OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 5,165 (1,015 FLOW START)¹ | 275 |
+| LANL | 49.3M NTLM authentications | 15,610 | 705 | 0.40 |
+| OPTC_NET | 1.86B network flows (1.12B FLOW START) | 625 | 5,165 (1,015 FLOW START)¹ | 11.8 |
 
 ¹ With the labels of LARES propagated to all the records of malicious flows (default); 2,370 (115 FLOW START) with the labels of LARES as they are (see [OPTC_NET](#optc_net)).
 
@@ -89,7 +89,7 @@ FreeBSD host with Nginx server exploitation.
 | 2 | 13 min | Nginx re-exploited to deploy new Drakon implant with root privileges. Multiple failed `sshd` injection attempts using renamed `libdrakon` copies. |
 
 ```shell
-python pidsmaker/main.py SYSTEM CADETS_E3
+pidsmaker SYSTEM CADETS_E3
 ```
 
 ##### THEIA_E3
@@ -102,7 +102,7 @@ Ubuntu host with Firefox exploitation.
 | 1 | 30 min | Firefox exploited to drop Drakon implant as `/home/admin/clean` with root privileges, then copied as `profile`. Both connected to C2 server. |
 
 ```shell
-python pidsmaker/main.py SYSTEM THEIA_E3
+pidsmaker SYSTEM THEIA_E3
 ```
 
 ##### CLEARSCOPE_E3
@@ -114,7 +114,7 @@ Android device with Firefox exploitation.
 | 0 | 54 min | Firefox exploited via malicious website. Drakon implant installed and elevated, but module loading failed. Persistent C2 connection maintained. |
 
 ```shell
-python pidsmaker/main.py SYSTEM CLEARSCOPE_E3
+pidsmaker SYSTEM CLEARSCOPE_E3
 ```
 
 ##### TRACE_E3
@@ -128,7 +128,7 @@ Ubuntu host with Firefox and Pine e-mail client exploitation.
 | 2 | 12 min | Drakon implant dropped to `/tmp/ztmp` via the malicious password-manager Firefox extension and run with user privileges (labelled *Pine Backdoor w/ Drakon Dropper* in the DARPA report). Injection into `sshd` and privilege escalation failed, so MicroAPT was executed from disk: it connected to C2, port-scanned the network (no open ports found) and ran netrecon. |
 
 ```shell
-python pidsmaker/main.py SYSTEM TRACE_E3
+pidsmaker SYSTEM TRACE_E3
 ```
 
 ##### FIVEDIRECTIONS_E3
@@ -141,7 +141,7 @@ Windows 10 host with Firefox and Excel macro exploitation.
 | 1 | 37 min | Phishing e-mail with a `BoviaBenefitsOE.xlsm` attachment carrying an encoded PowerShell command. The macro did not fire automatically, so the user ran the command manually: it downloaded `update.ps1` from `208.75.117.5` and opened a powercat reverse shell, which the attacker used to read the hosts file and personal files. |
 
 ```shell
-python pidsmaker/main.py SYSTEM FIVEDIRECTIONS_E3
+pidsmaker SYSTEM FIVEDIRECTIONS_E3
 ```
 
 #### Engagement 5 (E5), May 2019
@@ -158,7 +158,7 @@ FreeBSD host with Nginx server exploitation.
 | 1 | 5h18 | Nginx re-exploited on both CADETS hosts. A first attempt called back to the wrong C2 listener, so C2 was moved to a pivot host (`128.55.12.233:80`). Drakon ran `hostname` and `whoami` and exfiltrated `/etc/passwd` from both hosts; the C2 connections were left open for the rest of the day. |
 
 ```shell
-python pidsmaker/main.py SYSTEM CADETS_E5
+pidsmaker SYSTEM CADETS_E5
 ```
 
 ##### THEIA_E5
@@ -170,7 +170,7 @@ Ubuntu host with Firefox exploitation.
 | 0 | 19 min | Firefox exploited via malicious website. Root gained with BinFmt-Elevate, Drakon shellcode injected into `sshd`, persistence file created, C2 access maintained. |
 
 ```shell
-python pidsmaker/main.py SYSTEM THEIA_E5
+pidsmaker SYSTEM THEIA_E5
 ```
 
 ##### CLEARSCOPE_E5
@@ -183,7 +183,7 @@ Android device with APK-based attacks.
 | 1 | 8 min | MicroAPT deployed directly via adb shell after APK dropper failed. Privilege escalation via BinFmt Elevate driver, then file exfiltration. |
 
 ```shell
-python pidsmaker/main.py SYSTEM CLEARSCOPE_E5
+pidsmaker SYSTEM CLEARSCOPE_E5
 ```
 
 ##### TRACE_E5
@@ -195,7 +195,7 @@ Ubuntu host with Firefox exploitation. A second attempt on May 17 with the Azaze
 | 0 | 1h28 | Firefox exploited via the hijacked `www.yale.edu` website, Drakon APT connected to C2. Root gained with the BinFmt-Elevate driver (installed beforehand as benign activity), then Drakon injected into `sshd` with the new ptrace-based `inject2` technique, opening further C2 connections used to read `/etc/passwd` and `/etc/shadow`. |
 
 ```shell
-python pidsmaker/main.py SYSTEM TRACE_E5
+pidsmaker SYSTEM TRACE_E5
 ```
 
 ##### FIVEDIRECTIONS_E5
@@ -210,7 +210,7 @@ Windows 10 hosts with Firefox exploitation.
 | 3 | 6 min | Follow-up to the Application Verifier persistence set up on May 16 (an unused date), which injects `drakon.dll` into every new Firefox process. A C2 connection from a fresh Firefox launch was used to escalate to SYSTEM with the File System Filter driver and exfiltrate the hosts file. |
 
 ```shell
-python pidsmaker/main.py SYSTEM FIVEDIRECTIONS_E5
+pidsmaker SYSTEM FIVEDIRECTIONS_E5
 ```
 
 ### DARPA OpTC
@@ -224,7 +224,7 @@ Windows enterprise environment with realistic APT scenarios. [:lucide-external-l
 | 0 | 1h58 | PowerShell Empire stager executed with elevated access. Mimikatz used for credential theft, registry persistence set, recon performed, then pivoted to other hosts via WMI. |
 
 ```shell
-python pidsmaker/main.py SYSTEM optc_h201
+pidsmaker SYSTEM optc_h201
 ```
 
 #### optc_h501
@@ -234,7 +234,7 @@ python pidsmaker/main.py SYSTEM optc_h201
 | 0 | 5h01 | Phishing email launched PowerShell Empire stager. Escalated via DeathStar, WMI persistence established, RDP tunneling and file exfiltration performed, then pivoted to other hosts. |
 
 ```shell
-python pidsmaker/main.py SYSTEM optc_h501
+pidsmaker SYSTEM optc_h501
 ```
 
 #### optc_h051
@@ -244,7 +244,7 @@ python pidsmaker/main.py SYSTEM optc_h501
 | 0 | 3h56 | Malicious Notepad++ update installed Meterpreter. Escalated to SYSTEM, migrated into LSASS for Mimikatz credential theft, established persistence, timestomped files, added admin account for RDP. |
 
 ```shell
-python pidsmaker/main.py SYSTEM optc_h051
+pidsmaker SYSTEM optc_h051
 ```
 
 ### ATLASv2
@@ -267,7 +267,7 @@ python pidsmaker/main.py SYSTEM optc_h051
 | m6 | 33 min | CVE-2017-11882 Microsoft Word memory corruption exploit on h1 with lateral movement to h2 via poisoned HTTP server. PDFs exfiltrated. |
 
 ```shell
-python pidsmaker/main.py SYSTEM ATLASV2_EDR
+pidsmaker SYSTEM ATLASV2_EDR
 ```
 
 ### CARBANAKv2
@@ -281,12 +281,12 @@ python pidsmaker/main.py SYSTEM ATLASV2_EDR
 | 0 | 10 days | MITRE Carbanak APT emulation. Attacker compromises h1 (Apr 30) via WScript-based Carbanak implant (`TransBaseOdbcDriver.js`). Pivots to Linux fileserver fs and then Windows AD domain controller dc via lateral movement (May 2). Subsequently spreads to h2, h3, and h4 (May 7–10), establishing persistence across all hosts. |
 
 ```shell
-python pidsmaker/main.py SYSTEM CARBANAKV2_EDR
+pidsmaker SYSTEM CARBANAKV2_EDR
 ```
 
 ### PROVENANCE_BENIGN
 
-A Linux audit corpus used only to [pretrain SPIDER](../features/pretrained_encoders.md#pretraining). It has no ground truth, so it can't be used to evaluate detection.
+A Linux audit corpus used only to [pretrain SPIDER](../features/pretrained_encoders.md#pretraining). It has no ground truth, so it can't be used to evaluate detection. It is downloaded like the other datasets (`pidsmaker download PROVENANCE_BENIGN`, 2 MB).
 
 It is built on a Linux machine: auditd records the system calls of 21 scripted workloads (from core utilities, compilers and package managers to web servers, databases, browsers and attack-like commands), the logs are parsed into entities and edges, and `create_database_provenance_benign.py` loads them into a `PROVENANCE_BENIGN` database with the DARPA TC schema.
 The collection scripts are on the [`spider` branch](https://github.com/ubc-provenance/PIDSMaker/tree/spider/scripts/provenance_capture), and their [README](https://github.com/ubc-provenance/PIDSMaker/blob/spider/scripts/provenance_capture/README.md) describes each step.
@@ -306,7 +306,7 @@ The "Comprehensive, Multi-Source Cyber-Security Events" dataset of the Los Alamo
 LANL timestamps are seconds from an undisclosed origin, mapped to UTC dates such that the first red team event happens on 2015-01-03. Models are trained on 2015-01-01, validated on 2015-01-02 and tested from 2015-01-03 to 2015-01-30. The root source of the attack is host `9660`.
 
 ```shell
-python pidsmaker/main.py SYSTEM LANL
+pidsmaker SYSTEM LANL
 ```
 
 ### OPTC_NET
@@ -318,7 +318,7 @@ LARES labels only some of the records of each malicious flow (a flow has FLOW ST
 99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. They are dropped by default (`construction.drop_noise_events`, which has no effect on other datasets); set `construction.drop_noise_events=False` to keep them, as LARES does. The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with `--tuned` (`config/tuned_baselines/optc_net/`).
 
 ```shell
-python pidsmaker/main.py SYSTEM OPTC_NET
+pidsmaker SYSTEM OPTC_NET
 ```
 
 ## Train, validation and test splits

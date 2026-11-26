@@ -1,4 +1,4 @@
-"""LANL dataset preprocessing: creates the PostgreSQL database of the LANL events.
+"""LANL dataset preprocessing: creates the Parquet dataset of the LANL events.
 
 Dataset: "Comprehensive, Multi-Source Cyber-Security Events" (A. D. Kent, 2015),
 https://csr.lanl.gov/data/cyber1/. Two sources are supported:
@@ -18,7 +18,9 @@ https://csr.lanl.gov/data/cyber1/. Two sources are supported:
       python dataset_preprocessing/lanl/create_database_lanl.py LANL \
           --auth_file /data/lanl/auth.txt.gz --redteam_file /data/lanl/redteam.txt.gz
 
-The database follows the `lanl_auth` schema (see `pidsmaker/config/schemas.py`):
+The dataset is written to `<datasets_dir>/lanl` (`--datasets_dir`, default
+$PIDSMAKER_DATASETS_DIR or ~/.cache/pidsmaker/datasets; see `pidsmaker/utils/database.py`), and
+follows the `lanl_auth` schema (see `pidsmaker/config/schemas.py`):
 
 - nodes are the computers (`host_node_table`), identified by their name (e.g. C17693);
 - authentications go from a source to a destination computer. Their `operation` is the
@@ -53,22 +55,15 @@ from tqdm import tqdm
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.config.schemas import LANL_AUTH_ORIENTATIONS
-from pidsmaker.utils.dataset_utils import event_table_columns, get_schema
-from pidsmaker.utils.schema_loading import (
-    copy_rows,
-    create_tables,
-    ensure_database,
-    get_database_name,
-    index_events_by_time,
-)
-from pidsmaker.utils.utils import init_database_connection, log, stringtomd5
+from pidsmaker.utils.database import parquet_dataset_dir
+from pidsmaker.utils.dataset_utils import get_schema
+from pidsmaker.utils.dataset_writer import DatasetBuilder, schema_tables
+from pidsmaker.utils.utils import log, stringtomd5
 
 # The first red team event of LANL (t=150885) is mapped to 2015-01-03 00:00:00 UTC
 FIRST_REDTEAM_TIME = 150885
 ORIGIN = datetime(2015, 1, 3, tzinfo=timezone.utc) - timedelta(seconds=FIRST_REDTEAM_TIME)
 ORIGIN_NS = int(ORIGIN.timestamp()) * 1_000_000_000
-
-COPY_BATCH = 1_000_000
 
 _USER_RE = re.compile(r"^U\d+(@|$)")
 _COMPUTER_ACCOUNT_RE = re.compile(r"^C\d+\$?(@|$)")
@@ -101,14 +96,11 @@ def open_text(path):
 
 
 class EventWriter:
-    """Buffers event rows (in the column order of the event table) and bulk loads them."""
+    """Writes event rows (in the column order of the event table) to the dataset."""
 
-    def __init__(self, cfg):
-        self.schema = get_schema(cfg)
-        self.columns = event_table_columns(self.schema)
-        self.attributes = [a.name for a in self.schema.edge_attributes]
-        self.cur, self.connect = init_database_connection(cfg)
-        self.rows = []
+    def __init__(self, builder, schema):
+        self.attributes = [a.name for a in schema.edge_attributes]
+        self.table = builder.table(schema.event_table)
         self.host2id = {}
         self.stats = {"events": 0, "malicious": 0}
 
@@ -119,24 +111,13 @@ class EventWriter:
 
     def add(self, src, dst, operation, event_uuid, t, attrs, label):
         src_id, dst_id = self.host_id(src), self.host_id(dst)
-        row = [src, src_id, operation, dst, dst_id, event_uuid, lanl_time_to_ns(t)]
+        # Index ids are strings in the event table
+        row = [src, str(src_id), operation, dst, str(dst_id), event_uuid, lanl_time_to_ns(t)]
         row += [attrs.get(name) for name in self.attributes]
         row.append(int(label))
-        self.rows.append(row)
+        self.table.add(row)
         self.stats["events"] += 1
         self.stats["malicious"] += int(label)
-        if len(self.rows) >= COPY_BATCH:
-            self.flush()
-
-    def flush(self):
-        if self.rows:
-            copy_rows(self.cur, self.schema.event_table, self.columns, self.rows)
-            self.connect.commit()
-            self.rows = []
-
-    def close(self):
-        self.flush()
-        self.connect.close()
 
 
 def auth_attrs(src_user, dst_user, auth_type, logon_type, success):
@@ -290,17 +271,10 @@ def load_lares(writer, lares_dir, max_time, with_flows):
     return malicious_times
 
 
-def load_hosts(cfg, host2id):
-    schema = get_schema(cfg)
-    cur, connect = init_database_connection(cfg)
-    copy_rows(
-        cur,
-        schema.node_type("host").table,
-        ["node_uuid", "hash_id", "name", "index_id"],
-        ((name, stringtomd5(name), name, index_id) for name, index_id in host2id.items()),
+def load_hosts(builder, schema, host2id):
+    builder.table(schema.node_type("host").table).add_rows(
+        (name, stringtomd5(name), name, index_id) for name, index_id in host2id.items()
     )
-    connect.commit()
-    connect.close()
     log(f"Saved {len(host2id)} hosts")
 
 
@@ -321,15 +295,17 @@ def main():
     parser.add_argument(
         "--max_time", type=int, default=None, help="Stops reading after this LANL time (seconds)"
     )
-    parser.add_argument("--database", default=None, help="Overrides the database of the dataset")
-    parser.add_argument("--overwrite", action="store_true", help="Recreates existing tables")
+    parser.add_argument(
+        "--database", default=None, help="Overrides the database (folder name) of the dataset"
+    )
+    parser.add_argument("--overwrite", action="store_true", help="Replaces an existing dataset")
     args, unknown = parser.parse_known_args()
     if bool(args.lares_dir) == bool(args.auth_file):
         parser.error("Use either --lares_dir or --auth_file (with --redteam_file)")
     if args.auth_file and not args.redteam_file:
         parser.error("--auth_file requires --redteam_file")
 
-    # Remaining args (e.g. --database_host) are handled by the framework's parser. The
+    # Remaining args (e.g. --datasets_dir) are handled by the framework's parser. The
     # system config (velox) is irrelevant: only the dataset and database settings are used
     cfg_args, _ = get_runtime_required_args(
         return_unknown_args=True, args=["velox", args.dataset] + unknown
@@ -338,27 +314,36 @@ def main():
     if args.database:
         cfg.dataset.database = cfg.dataset.database_all_file = args.database
 
-    ensure_database(cfg)
-    create_tables(cfg, args.overwrite)
-    writer = EventWriter(cfg)
-    try:
+    schema = get_schema(cfg)
+    dataset_dir = parquet_dataset_dir(cfg)
+    source = "LARES files" if args.lares_dir else "raw files"
+    if args.with_flows:
+        source += ", with flows"
+    # Empty strings are null, as in the published dataset
+    with DatasetBuilder(
+        dataset_dir,
+        schema_tables(schema),
+        source=f"dataset_preprocessing/lanl/create_database_lanl.py ({source})",
+        overwrite=args.overwrite,
+        empty_as_null=True,
+        log=log,
+    ) as builder:
+        writer = EventWriter(builder, schema)
         if args.lares_dir:
             malicious_times = load_lares(writer, args.lares_dir, args.max_time, args.with_flows)
         else:
             redteam = read_redteam(args.redteam_file)
             log(f"Loaded {len(redteam)} red team events")
-            malicious_times = load_raw(writer, args.auth_file, redteam, args.all_auth_types, args.max_time)
-    finally:
-        writer.close()
-    log(f"Events: {writer.stats}")
-    if malicious_times:
-        first = ORIGIN + timedelta(seconds=min(malicious_times))
-        last = ORIGIN + timedelta(seconds=max(malicious_times))
-        log(f"Malicious events span {first} to {last} (UTC)")
-
-    index_events_by_time(cfg)
-    load_hosts(cfg, writer.host2id)
-    log(f"Database {get_database_name(cfg)} created.")
+            malicious_times = load_raw(
+                writer, args.auth_file, redteam, args.all_auth_types, args.max_time
+            )
+        log(f"Events: {writer.stats}")
+        if malicious_times:
+            first = ORIGIN + timedelta(seconds=min(malicious_times))
+            last = ORIGIN + timedelta(seconds=max(malicious_times))
+            log(f"Malicious events span {first} to {last} (UTC)")
+        load_hosts(builder, schema, writer.host2id)
+    log(f"Dataset {dataset_dir} created.")
 
 
 if __name__ == "__main__":

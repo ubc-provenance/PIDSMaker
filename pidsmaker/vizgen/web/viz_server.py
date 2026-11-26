@@ -70,12 +70,10 @@ PIDSMAKER_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 
 
 def get_artifacts_root():
-    """Mirror loader.resolve_latest_viz_dir's root resolution."""
-    if os.path.isdir("/home/artifacts"):
-        return "/home/artifacts"
-    return os.environ.get(
-        "PIDS_ARTIFACTS_DIR", os.path.join(PIDSMAKER_ROOT, "artifacts")
-    )
+    """$PIDS_ARTIFACTS_DIR, else the default of --artifact_dir (as the exporter)."""
+    from pidsmaker.config.pipeline import default_artifact_dir
+
+    return os.environ.get("PIDS_ARTIFACTS_DIR") or default_artifact_dir()
 
 
 ARTIFACTS_ROOT = get_artifacts_root()

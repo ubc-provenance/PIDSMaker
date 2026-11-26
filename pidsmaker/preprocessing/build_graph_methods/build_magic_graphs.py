@@ -84,12 +84,16 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
             stop = timestamps[i + 1]
             start_ns_timestamp = datetime_to_ns_time_US(start, timezone=cfg.dataset.timezone)
             end_ns_timestamp = datetime_to_ns_time_US(stop, timezone=cfg.dataset.timezone)
+            # In their stored order, by timestamp_rec, event_uuid
             sql = """
             select * from event_table
             where
-                  timestamp_rec>'%s' and timestamp_rec<'%s'%s
-                   ORDER BY timestamp_rec;
-            """ % (start_ns_timestamp, end_ns_timestamp, operations_sql)
+                  timestamp_rec>'%s' and timestamp_rec<'%s'%s;
+            """ % (
+                start_ns_timestamp,
+                end_ns_timestamp,
+                operations_sql,
+            )
             cur.execute(sql)
             events = cur.fetchall()
 

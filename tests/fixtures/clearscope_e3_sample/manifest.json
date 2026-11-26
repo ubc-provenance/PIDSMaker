@@ -1,0 +1,30 @@
+{
+  "format_version": 1,
+  "database": "clearscope_e3",
+  "tables": {
+    "event_table": {
+      "files": [
+        "part-00000.parquet"
+      ],
+      "num_rows": 16290
+    },
+    "subject_node_table": {
+      "files": [
+        "part-00000.parquet"
+      ],
+      "num_rows": 22
+    },
+    "file_node_table": {
+      "files": [
+        "part-00000.parquet"
+      ],
+      "num_rows": 513
+    },
+    "netflow_node_table": {
+      "files": [
+        "part-00000.parquet"
+      ],
+      "num_rows": 190
+    }
+  }
+}

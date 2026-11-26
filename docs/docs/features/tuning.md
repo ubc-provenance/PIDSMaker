@@ -25,11 +25,10 @@ parameters:
 
 1.  Other hyperparameter search strategies like `random` and `bayesian` can be used (more info [here](https://docs.wandb.ai/guides/sweeps/sweep-config-keys/#method)).
 
-Before starting the hyperparameter search, make sure you are logged in to W&B by running: `wandb login` inside the container’s shell. Then, launch the hyperparameter tuning with `--tuning_mode=hyperparameters`, from the `scripts/` folder:
+Before starting the hyperparameter search, make sure you are logged in to W&B by running `wandb login`. Then, launch the hyperparameter tuning with `--tuning_mode=hyperparameters`:
 
 ``` shell
-cd scripts
-./run.sh my_system THEIA_E3 --tuning_mode=hyperparameters
+pidsmaker my_system THEIA_E3 --wandb --background --tuning_mode=hyperparameters
 ```
 
 This flag will automatically load the tuning configuration from `config/experiments/tuning/systems/theia_e3/tuning_my_system.yml`, based on the provided dataset and system names. Any overlapping arguments defined in `config/my_system.yml` will be overridden by those specified in the tuning file. If the specified tuning file does not exist (i.e., no dataset-specific configuration is available), the pipeline falls back to the default tuning configuration: `config/experiments/tuning/systems/default/tuning_default_baselines.yml`.
@@ -43,16 +42,17 @@ If you wish to use the same hyperparameter tuning configuration across all datas
 For instance, you might create a tuning file named `config/experiments/tuning/systems/default/tuning_my_system_all_datasets.yml`, then apply it to all dataset by running:
 
 ``` shell
-cd scripts
-./run_all_datasets.sh my_system \
-    --tuning_mode=hyperparameters \
-    --tuning_file_path=systems/default/tuning_my_system_all_datasets
+for dataset in CLEARSCOPE_E3 CADETS_E3 THEIA_E3 CLEARSCOPE_E5 THEIA_E5 CADETS_E5; do
+    pidsmaker my_system $dataset --wandb --restart_from_scratch \
+        --tuning_mode=hyperparameters \
+        --tuning_file_path=systems/default/tuning_my_system_all_datasets
+done
 ```
 
 or on a single dataset:
 
 ``` shell
-./run.sh my_system CLEARSCOPE_E3 \
+pidsmaker my_system CLEARSCOPE_E3 --wandb --background \
     --tuning_mode=hyperparameters \
     --tuning_file_path=systems/default/tuning_my_system_all_datasets
 ```
@@ -63,7 +63,7 @@ The path passed to `--tuning_file_path` should start from `systems/`.
     For a better historization of experiments, we recommend to assign a name to each sweep (`--exp`) and a dedicated project name (`--project`):
 
     ``` shell
-    ./run.sh my_system CADETS_E3 \
+    pidsmaker my_system CADETS_E3 --wandb --background \
         --tuning_mode=hyperparameters \
         --exp=bench_fasttext_word2vec \
         --project=best_featurization_method
@@ -96,7 +96,7 @@ Each system should have a tuned file per dataset, or the best hyperparameters ca
 Running a system with its best hyperparameters on a particular dataset is as simple as adding `--tuned`:
 
 ``` shell
-./run.sh my_system CADETS_E3 --tuned
+pidsmaker my_system CADETS_E3 --wandb --background --tuned
 ```
 
 This will search for the `config/tuned_baselines/cadets_e3/tuned_my_system.yml` file and override the default system config by the best hyperparameters.
@@ -104,5 +104,5 @@ This will search for the `config/tuned_baselines/cadets_e3/tuned_my_system.yml` 
 For example, the defaults of the network systems are those of LANL, and `config/tuned_baselines/optc_net/` holds the OpTC settings of LARES and Argus:
 
 ``` shell
-python pidsmaker/main.py lares OPTC_NET --tuned
+pidsmaker lares OPTC_NET --tuned
 ```

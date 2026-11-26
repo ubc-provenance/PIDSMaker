@@ -15,22 +15,13 @@ permissions:
 
 jobs:
   pytest:
-    # Python 3.9 (as in the Dockerfile) is not available on newer images
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    services:
-      # The CLEARSCOPE_E3 tests run on the sample of tests/fixtures, loaded into this server
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest and newest versions supported by torch 2.1
+        python-version: ["3.9", "3.11"]
     env:
       # One thread per pytest-xdist worker
       OMP_NUM_THREADS: 1
@@ -38,32 +29,30 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # The default database host of the framework (--database_host) is `postgres`
-      - name: Resolve the database host
-        run: echo "127.0.0.1 postgres" | sudo tee -a /etc/hosts
-
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.9"
+          python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: tests/requirements.txt
+          cache-dependency-path: pyproject.toml
 
-      - name: Install dependencies (CPU)
+      # As users install it: the package (not editable) with the dependencies of pyproject.toml,
+      # without the PyG extensions.
+      - name: Install PIDSMaker (CPU)
         run: |
           pip install torch==2.1.2 --index-url https://download.pytorch.org/whl/cpu
-          pip install torch_geometric==2.6.1
-          pip install pyg_lib==0.4.0 torch_scatter==2.1.2 torch_sparse==0.6.18 \
-                      torch_cluster==1.6.3 torch_spline_conv==1.2.2 \
-                      -f https://data.pyg.org/whl/torch-2.1.0+cpu.html
-          pip install -r tests/requirements.txt pytest-github-actions-annotate-failures
-          pip install -e . --no-deps
+          pip install ".[test]" pytest-github-actions-annotate-failures
+          pip check
           # Downloaded at import time otherwise, by each worker at the same time
           python -m nltk.downloader -q punkt
+          # From outside the repository, the installed package is imported
+          cd /tmp && pidsmaker --help && python -c "import pidsmaker.config.pipeline as p; assert 'site-packages' in str(p.ROOT_PROJECT_PATH), p.ROOT_PROJECT_PATH"
 
       - name: Run tests
         shell: bash
         run: |
           set -o pipefail
+          # `pytest` (not `python -m pytest`) does not put the repository on sys.path: the tests
+          # import the installed package
           pytest tests --device cpu -n 4 --dist worksteal --durations=30 -rfE 2>&1 | tee pytest.log
 
       # Errors outside of the tests (collection, fixtures, crashed workers) are not annotated

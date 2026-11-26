@@ -26,7 +26,7 @@ Our goal is to implement a new system that satisfies the following requirements:
     - A GPU with at least 5 GB of memory, or a CPU
     - More than 20 GB of RAM
     - More than 10 GB of storage
-    - PIDSMaker [installed](../getting-started/installation.md), with a shell opened in the `pids` container
+    - PIDSMaker [installed from source](../getting-started/installation.md#1-install-pidsmaker) (`pip install -e .`), as we add files to its code and configs
 
 ## 1. Integrate a new encoder
 
@@ -200,20 +200,19 @@ evaluation:
 
 ## 3. Run the pipeline
 
-In the pids container, you can now run the pipeline. We highly recommend using VSCode with the dev container extension to open your whole workspace in the container to avoid re-building the image after updating the code. Using dev container also enables to run the framework in debug mode using VSCode's debugger.
+You can now run the pipeline. With the editable install, your changes to the code are used without reinstalling.
 
 For tiny experiments, you can run the framework locally like so:
 
 ``` sh
-python pidsmaker/main.py custom_system CADETS_E3 --project=test_custom_system
+pidsmaker custom_system CADETS_E3 --project=test_custom_system
 ```
 
 For more practical experimentation, prefer running the framework in background and monitor the logs, figures and metrics in Weights & Biases (W&B).
 To do so, ensure you have logged to W&B with `wandb login` and run:
 
 ``` sh
-cd scripts
-./run.sh custom_system CADETS_E3 --project=test_custom_system
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system
 ```
 
 !!! note
@@ -242,16 +241,16 @@ While this first version of the model yields relatively satisfactory results, we
 
 ``` sh
 # Remove node type from node features, keep only the word2vec embedding
-./run.sh custom_system CADETS_E3 --project=test_custom_system \
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system \
     --batching.node_features=node_emb
 
 # Increase node embedding size
-./run.sh custom_system CADETS_E3 --project=test_custom_system \
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system \
     --training.node_hid_dim=256 \
     --training.node_out_dim=256
 
 # Reduce the number of GNN layers
-./run.sh custom_system CADETS_E3 --project=test_custom_system \
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system \
     --training.encoder.custom_encoder.num_layers=2
 ```
 
@@ -262,7 +261,7 @@ For more advanced hyperparameter exploration, consider using the [hyperparameter
 Nothing in our system is specific to provenance: the encoder only sees node features and edges, and the objective predicts edge types. The same config runs on a [network dataset](datasets.md#network-datasets), whose nodes are hosts and edges authentications:
 
 ``` sh
-./run.sh custom_system LANL --project=test_custom_system \
+pidsmaker custom_system LANL --wandb --background --project=test_custom_system \
     --construction.edge_type=logon_type
 ```
 

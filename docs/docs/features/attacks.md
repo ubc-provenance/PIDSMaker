@@ -31,7 +31,7 @@ With `construction.mimicry_edge_num` set to N > 0, PIDSMaker adds N such events 
 </ol>
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --construction.mimicry_edge_num=1000
+pidsmaker orthrus CADETS_E3 --construction.mimicry_edge_num=1000
 ```
 
 Compare the metrics with those of the same run without mimicry (`mimicry_edge_num: 0`, the default in every system). Since it is a construction argument, the whole pipeline runs again.
@@ -50,7 +50,7 @@ Compare the metrics with those of the same run without mimicry (`mimicry_edge_nu
 3. Injected edges are labeled as attacks (`y = 1`). They are removed from self-supervised training, and used by the few-shot objective (`training.decoder.use_few_shot`).
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 \
+pidsmaker orthrus CADETS_E3 \
   --transformation.used_methods=synthetic_attack_naive \
   --transformation.synthetic_attack_naive.num_malicious_process=10
 ```

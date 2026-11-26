@@ -19,7 +19,7 @@ The dataset passed on the command line is the **primary** dataset: it is the onl
 For example, Orthrus trained on CADETS E3 and THEIA E3, and evaluated on CADETS E3:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 \
+pidsmaker orthrus CADETS_E3 \
   --construction.multi_dataset=CADETS_E3,THEIA_E3 \
   --featurization.multi_dataset_training=True \
   --batching.multi_dataset_training=True

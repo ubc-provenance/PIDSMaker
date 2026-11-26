@@ -1,27 +1,32 @@
-"""OpTC dataset preprocessing - create PostgreSQL database from JSON logs.
+"""OpTC dataset preprocessing - create the Parquet dataset from JSON logs.
 
-Parses OpTC provenance JSON files and populates PostgreSQL database with nodes
-(subjects, files, netflows) and events (edges) for graph construction.
+Parses OpTC provenance JSON files and writes the nodes (subjects, files, netflows) and events
+(edges) of a host for graph construction to a Parquet dataset (`<datasets_dir>/<database>`, see
+`pidsmaker/utils/database.py`), with the tables of the published OpTC datasets.
+All the files of `--raw_dir` (and its subfolders) are read:
+
+    python dataset_preprocessing/optc/create_database_optc.py orthrus DATASET --raw_dir /data/
 """
 
+import argparse
 import json
 import os
 
-from psycopg2 import extras as ex
 from tqdm import tqdm
 
 from pidsmaker.config import get_runtime_required_args, get_yml_cfg
-from pidsmaker.utils.dataset_utils import OPTC_hostname_map, get_rel2id
+from pidsmaker.utils.database import parquet_dataset_dir
+from pidsmaker.utils.dataset_utils import OPTC_hostname_map, get_rel2id, get_schema
+from pidsmaker.utils.dataset_writer import INTEGER, DatasetBuilder, schema_tables
 from pidsmaker.utils.utils import (
     OPTC_datetime_to_timestamp_US,
     get_all_filelist,
-    init_database_connection,
     log,
     stringtomd5,
 )
 
 
-def save_nodes(cfg, dataset_dir):
+def save_nodes(cfg, builder, dataset_dir):
     hostname = OPTC_hostname_map[cfg.dataset.name]
     all_paths = get_all_filelist(dataset_dir)
 
@@ -92,7 +97,6 @@ def save_nodes(cfg, dataset_dir):
                     subject_uuid2attr[dst_uuid] = (path, cmd)
 
     index_id = 0
-    cur, connect = init_database_connection(cfg)
     uuid2index_id = {}
 
     # Save subject_nodes
@@ -106,11 +110,7 @@ def save_nodes(cfg, dataset_dir):
         index_id += 1
 
     log(f"Start saving subject nodes.")
-    sql = """insert into subject_node_table
-                             values %s
-                """
-    ex.execute_values(cur, sql, datalist, page_size=10000)
-    connect.commit()
+    builder.table("subject_node_table").add_rows(datalist)
     log(f"Finished saving subject nodes.")
     del subject_uuid2attr
     del datalist
@@ -124,11 +124,7 @@ def save_nodes(cfg, dataset_dir):
         index_id += 1
 
     log(f"Start saving file nodes.")
-    sql = """insert into file_node_table
-                             values %s
-                """
-    ex.execute_values(cur, sql, datalist, page_size=10000)
-    connect.commit()
+    builder.table("file_node_table").add_rows(datalist)
     log(f"Finished saving file nodes.")
     del file_uuid2attr
     del datalist
@@ -150,11 +146,7 @@ def save_nodes(cfg, dataset_dir):
         index_id += 1
 
     log(f"Start saving net nodes.")
-    sql = """insert into netflow_node_table
-                             values %s
-                """
-    ex.execute_values(cur, sql, datalist, page_size=10000)
-    connect.commit()
+    builder.table("netflow_node_table").add_rows(datalist)
     log(f"Finished saving net nodes.")
     del netflow_uuid2attr
     del datalist
@@ -162,13 +154,13 @@ def save_nodes(cfg, dataset_dir):
     return uuid2index_id
 
 
-def save_events(cfg, uuid2index_id, dataset_dir):
+def save_events(cfg, builder, uuid2index_id, dataset_dir):
     hostname = OPTC_hostname_map[cfg.dataset.name]
     all_paths = get_all_filelist(dataset_dir)
 
     rel2id = get_rel2id(cfg)
 
-    cur, connect = init_database_connection(cfg)
+    events = builder.table("event_table")
 
     for i, file in enumerate(all_paths):
         with open(file, "r") as f:
@@ -209,20 +201,20 @@ def save_events(cfg, uuid2index_id, dataset_dir):
                 if reverse_flag:
                     temp_data = [
                         dst_uuid,
-                        dst_index_id,
+                        str(dst_index_id),
                         operation,
                         src_uuid,
-                        src_index_id,
+                        str(src_index_id),
                         event_uuid,
                         timestamp,
                     ]
                 else:
                     temp_data = [
                         src_uuid,
-                        src_index_id,
+                        str(src_index_id),
                         operation,
                         dst_uuid,
-                        dst_index_id,
+                        str(dst_index_id),
                         event_uuid,
                         timestamp,
                     ]
@@ -230,23 +222,37 @@ def save_events(cfg, uuid2index_id, dataset_dir):
                 datalist.append(temp_data)
 
             log(f"Start saving events for {i}-th/{len(all_paths)} file.")
-            sql = """insert into event_table
-                                        values %s
-                        """
-            ex.execute_values(cur, sql, datalist, page_size=50000)
-            connect.commit()
+            events.add_rows(datalist)
             log(f"Finish saving events for {i}-th/{len(all_paths)} file.")
 
 
+def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__.split("\n\n")[0],
+        usage="%(prog)s MODEL DATASET [--raw_dir RAW_DIR] [--overwrite] [framework options, "
+        "e.g. --datasets_dir]",
+    )
+    parser.add_argument("--raw_dir", default="/data/", help="Folder of the JSON files")
+    parser.add_argument("--overwrite", action="store_true", help="Replaces an existing dataset")
+    args, unknown = parser.parse_known_args()
+    cfg = get_yml_cfg(get_runtime_required_args(args=unknown))
+
+    dataset_dir = parquet_dataset_dir(cfg)
+    # Tables of the OpTC datasets, whose `_id` is an integer
+    with DatasetBuilder(
+        dataset_dir,
+        schema_tables(get_schema(cfg), serial_type=INTEGER),
+        source="dataset_preprocessing/optc/create_database_optc.py",
+        overwrite=args.overwrite,
+        log=log,
+    ) as builder:
+        uuid2index_id = save_nodes(cfg, builder, args.raw_dir)
+        log("Finished saving nodes.")
+
+        save_events(cfg, builder, uuid2index_id, args.raw_dir)
+        log("Finished saving events.")
+    log(f"Dataset {dataset_dir} created.")
+
+
 if __name__ == "__main__":
-    args = get_runtime_required_args()
-    cfg = get_yml_cfg(args)
-
-    dataset_name = cfg.dataset.name
-    raw_dir = "/data/"
-
-    uuid2index_id = save_nodes(cfg, raw_dir)
-    log(f"Finished saving nodes.")
-
-    save_events(cfg, uuid2index_id, raw_dir)
-    log(f"Finished saving events.")
+    main()

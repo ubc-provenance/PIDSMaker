@@ -24,7 +24,6 @@ from time import mktime
 import networkx as nx
 import nltk
 import numpy as np
-import psycopg2
 import pytz
 import torch
 from tqdm import tqdm
@@ -143,36 +142,10 @@ def OPTC_datetime_to_timestamp_US(date, timezone="Etc/GMT+4"):
 
 
 def init_database_connection(cfg):
-    if cfg.construction.use_all_files:
-        database_name = cfg.dataset.database_all_file
-    else:
-        database_name = cfg.dataset.database
+    """(cursor, connection) of the database of the dataset (see `pidsmaker/utils/database.py`)."""
+    from pidsmaker.utils.database import init_database_connection as _init
 
-    # Queries without ORDER BY (e.g. `select * from file_node_table`) return rows in the
-    # table's physical order, which determines e.g. the order of indexid2msg and thus the
-    # featurization. With synchronized seqscans (Postgres default), a scan started while
-    # another scan of the same table is running joins it midway and returns rotated rows,
-    # making results depend on concurrent runs. Disabled for this session only.
-    options = "-c synchronize_seqscans=off"
-    if cfg.database.host is not None:
-        connect = psycopg2.connect(
-            database=database_name,
-            host=cfg.database.host,
-            user=cfg.database.user,
-            password=cfg.database.password,
-            port=cfg.database.port,
-            options=options,
-        )
-    else:
-        connect = psycopg2.connect(
-            database=database_name,
-            user=cfg.database.user,
-            password=cfg.database.password,
-            port=cfg.database.port,
-            options=options,
-        )
-    cur = connect.cursor()
-    return cur, connect
+    return _init(cfg)
 
 
 def std(t):
@@ -388,7 +361,7 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
 
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    # Flushed, so that logs redirected to a file (e.g. `nohup.out` of run.sh) are written as
+    # Flushed, so that logs redirected to a file (e.g. with `pidsmaker --background`) are written as
     # they come, instead of minutes later when the output buffer is full
     kwargs.setdefault("flush", True)
     print(f"{timestamp} - {msg}", *args, **kwargs)
@@ -412,15 +385,15 @@ LOW_MEMORY_GB = 16
 
 
 def available_memory_gb():
-    """RAM usable by this process, in GB: the RAM of the machine (or of the Docker VM on macOS),
-    or the memory limit of the container if it is lower. None if it cannot be read."""
+    """RAM usable by this process, in GB: the RAM of the machine, or the memory limit of its
+    cgroup (e.g. of a container or of an HPC job) if it is lower. None if it cannot be read."""
     try:
         import psutil
 
         total = psutil.virtual_memory().total
     except Exception:
         return None
-    # Memory limit of the container (cgroup v2, then v1); "max" or a huge value means no limit
+    # Memory limit of the cgroup (v2, then v1); "max" or a huge value means no limit
     for path in ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
         try:
             with open(path) as f:
@@ -434,16 +407,13 @@ def available_memory_gb():
 
 
 def warn_if_low_memory(min_gb=LOW_MEMORY_GB):
-    """Warns when less than `min_gb` of RAM are available, e.g. in Docker Desktop on macOS,
-    whose VM has 8 GB by default: runs killed by the kernel when they run out of memory
-    otherwise only print `Killed`."""
+    """Warns when less than `min_gb` of RAM are available: runs killed by the kernel when they
+    run out of memory otherwise only print `Killed`."""
     memory_gb = available_memory_gb()
     if memory_gb is not None and memory_gb < min_gb:
         log(
             f"Warning: only {memory_gb:.1f} GB of RAM are available, runs on large datasets may "
-            f"be killed when they run out of memory. With Docker Desktop (macOS), give more "
-            f"memory to its VM: https://ubc-provenance.github.io/PIDSMaker/getting-started/"
-            f"installation/#macos"
+            f"be killed when they run out of memory."
         )
     return memory_gb
 
@@ -743,7 +713,7 @@ def set_seed(cfg, seed=None):
     torch.backends.cudnn.benchmark = False
     
     if cfg.training.deterministic:
-        # NOTE: must do `export CUBLAS_WORKSPACE_CONFIG=:4096:8`
+        # Needs CUBLAS_WORKSPACE_CONFIG=:4096:8 on CUDA, set by the `pidsmaker` command (cli.py)
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 

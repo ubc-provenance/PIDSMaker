@@ -79,20 +79,13 @@ steps:
    ```bash
    ssh -N -L 5000:localhost:5000 <user>@<server>
    ```
-   `localhost` here is resolved on the server, so this works when port 5000 is
-   reachable on the server host. If PIDSMaker runs in Docker and 5000 is not
-   published to the host, target the container IP instead (find it with
-   `docker inspect <container>`):
-   ```bash
-   ssh -N -L 5000:<container-ip>:5000 <user>@<server>
-   ```
+   `localhost` here is resolved on the server, so this works when the server
+   listens on port 5000 of the server host.
 
 3. Open `http://localhost:5000` in your browser on the local machine.
 
 Notes:
 
-- `compose-pidsmaker.yml` maps `5000:5000`, so once the container is recreated,
-  the host-`localhost` form in step 2 works. Until then, use the container IP.
 - The tunnel is secure and exposes nothing. Publishing the port for direct
   `http://<server-ip>:5000` access is optional and for LAN/VPN only; keep it
   firewalled, as there is no authentication.

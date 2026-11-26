@@ -1,16 +1,18 @@
 ---
 title: Command line
-description: The command-line flags of PIDSMaker's main.py, and the helper scripts used to run experiments.
+description: The pidsmaker command, its flags, the download of datasets, the environment variables of PIDSMaker, and the helper scripts used to run experiments.
 ---
 
 # Command line
 
-`pidsmaker/main.py` is the single entry point of the framework. Besides the [task arguments](tasks.md), it accepts the flags below, which control how a run is executed rather than what it computes.
+The `pidsmaker` command is the single entry point of the framework: it runs a system on a dataset, and [downloads datasets](#downloading-datasets). Besides the [task arguments](tasks.md), a run accepts the flags below, which control how it is executed rather than what it computes.
 { .lead }
 
 ```shell
-python pidsmaker/main.py SYSTEM DATASET [FLAGS] [--task.argument=value ...]
+pidsmaker SYSTEM DATASET [FLAGS] [--task.argument=value ...]
 ```
+
+From a clone of the repository, `python pidsmaker/main.py SYSTEM DATASET ...` is equivalent.
 
 | Positional | Description |
 |---|---|
@@ -43,7 +45,7 @@ These flags don't change the results, nor the task hashes. See [Performance](../
 
 | Flag | Default | Description |
 |---|---|---|
-| `--wandb` | off | Sends logs, metrics and figures to Weights & Biases. Always on with `./run.sh`. |
+| `--wandb` | off | Sends logs, metrics and figures to Weights & Biases. |
 | `--project NAME` | `PIDSMaker` | W&B project of the run. |
 | `--exp NAME` | | Name of the experiment, to group and find runs in W&B. |
 | `--tags TAGS` | | W&B tags of the run. |
@@ -58,23 +60,59 @@ These flags don't change the results, nor the task hashes. See [Performance](../
 | `--sweep_id ID` | | Joins an existing W&B sweep, to run it with several agents. |
 | `--tuned` | off | Loads the tuned hyperparameters of the system from `config/tuned_baselines/<dataset>/tuned_<system>.yml` (e.g. LARES and Argus on `OPTC_NET`). |
 
-## Database and storage
+## Datasets and storage
 
 | Flag | Default | Description |
 |---|---|---|
-| `--database_host HOST` | `postgres` | Host of the Postgres server. Use `localhost` outside Docker. |
-| `--database_port PORT` | `5432` | Port of the Postgres server. |
-| `--database_user USER` | `postgres` | Postgres user. |
-| `--database_password PASSWORD` | `postgres` | Password of the Postgres user. |
-| `--artifact_dir PATH` | `/home/artifacts/` | Folder where all task outputs are written. |
+| `--datasets_dir PATH` | `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets` | Folder of the Parquet datasets, one subfolder per dataset. |
+| `--artifact_dir PATH` | `$PIDSMAKER_ARTIFACT_DIR`, else `/home/artifacts/` if it exists, else `./artifacts/` | Folder where all task outputs are written. |
 
-## Helper scripts
+## Downloading datasets
 
-The scripts in `scripts/` wrap `main.py`. Run them from the `scripts/` folder. `run.sh` and `run_local.sh` also set deterministic CUDA and Python hashing settings (`CUBLAS_WORKSPACE_CONFIG=:4096:8`, `PYTHONHASHSEED=0`).
+`pidsmaker download` downloads datasets from Hugging Face (see [Download the datasets](../getting-started/installation.md#2-download-the-datasets)):
 
-| Script | Description |
-|---|---|
-| `./run.sh SYSTEM DATASET [args]` | Runs in the background with `nohup` and `--wandb`. Logs go to `scripts/nohup.out`. |
-| `./run_local.sh SYSTEM DATASET [args]` | Same settings, in the foreground and without W&B. |
-| `./run_all_datasets.sh SYSTEM [args]` | Runs a system on CLEARSCOPE, CADETS and THEIA (E3 and E5) one after the other, in the background, with W&B. |
-| `./run_serial.sh SYSTEM DATASET [args]` | Runs in the foreground with `--wandb` and `--restart_from_scratch`. Used by `run_all_datasets.sh`. |
+```shell
+pidsmaker download DATASET [DATASET ...]   # or `all`
+pidsmaker download --list                  # the datasets, their sizes, and which are downloaded
+```
+
+Dataset names are case-insensitive, and the names of their databases work too (e.g. `optc_051` for `optc_h051`). Datasets already downloaded are skipped, and interrupted downloads resume where they stopped.
+
+| Flag | Default | Description |
+|---|---|---|
+| `--list` | | Lists the datasets, their sizes, and which are downloaded. |
+| `--datasets_dir PATH` | `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets` | Where datasets are stored. |
+| `--repo REPO` | `$PIDSMAKER_HF_REPO`, else `pidsmaker/datasets` | Hugging Face dataset repository. |
+| `--revision REVISION` | | Branch, tag or commit of the repository. |
+| `--force` | off | Downloads the datasets again, even if they are already downloaded. |
+
+The same from Python: `from pidsmaker.datasets import download; download("CADETS_E3")`.
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `PIDSMAKER_DATASETS_DIR` | `~/.cache/pidsmaker/datasets` | Folder of the datasets (default of `--datasets_dir`). |
+| `PIDSMAKER_ARTIFACT_DIR` | `/home/artifacts/` if it exists, else `./artifacts/` | Folder of the artifacts (default of `--artifact_dir`). |
+| `PIDSMAKER_AUTO_DOWNLOAD` | `1` | A run downloads its dataset if it is missing. With `0`, it stops with an error instead. |
+| `PIDSMAKER_HF_REPO` | `pidsmaker/datasets` | Hugging Face dataset repository of the datasets (default of `--repo`). |
+| `PIDSMAKER_DUCKDB_THREADS` | `8` | Threads of each DuckDB connection. Graph construction opens several connections at the same time, one per day. |
+| `OMP_NUM_THREADS` | | CPU threads of PyTorch (by default, one per core). |
+
+## Running in the background
+
+`--background` runs the pipeline detached from the terminal: the run continues after you close it or log out, and its output goes to a log file in the current folder, `pidsmaker_SYSTEM_DATASET_<time>.log`, whose path the command prints. Several runs can be started in parallel this way.
+
+```shell
+pidsmaker orthrus CADETS_E3 --wandb --background
+```
+
+To run a system on several datasets one after the other, in the background:
+
+```shell
+nohup sh -c 'for d in CLEARSCOPE_E3 CADETS_E3 THEIA_E3; do pidsmaker SYSTEM $d --wandb --restart_from_scratch; done' > runs.log 2>&1 &
+```
+
+## Reproducibility
+
+`pidsmaker` runs the pipeline with `PYTHONHASHSEED=0`, so that sets of strings are iterated in the same order in every run, and `CUBLAS_WORKSPACE_CONFIG=:4096:8`, needed by the deterministic algorithms of CUDA (`training.deterministic`). Values you set yourself are kept. `python pidsmaker/main.py` runs without them.
