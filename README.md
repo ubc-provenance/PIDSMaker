@@ -15,13 +15,13 @@
 
 <p align="center">
   <strong>
+    <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
+    &nbsp;|&nbsp;
     <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/bilot">📄 Experiments Paper</a>
     &nbsp;|&nbsp;
-	<a href="https://dl.acm.org/doi/10.1145/3770855.3817514">📄 Framework Paper</a>
+    <a href="https://dl.acm.org/doi/10.1145/3770855.3817514">📄 Framework Paper</a>
     &nbsp;|&nbsp;
     <a href="https://tristanbilot.github.io/public_content/slides_pidsmaker.pdf">🎙️ NDSS PRISM'26 Tutorial</a>
-	  &nbsp;|&nbsp;
-    <a href="https://ubc-provenance.github.io/PIDSMaker/">📘 Documentation</a>
     &nbsp;|&nbsp;
     <a href="https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/">⚙️ Installation</a>
   </strong>
@@ -29,15 +29,30 @@
 
 ---
 
-The first framework designed to build and experiment with graph-based intrusion detection systems using deep learning architectures, on two kinds of data: **host provenance** (processes, files and netflows of each host), for provenance-based intrusion detection systems (PIDSs), and **network events** (authentications and flows between hosts), for network intrusion detection systems (NIDSs).
-It provides a single codebase and a single pipeline to run most recent state-of-the-art systems of both families, on the datasets of both, and easily customize them to develop new variants.
+The first framework to build and experiment with deep learning graph-based intrusion detection systems, on **host provenance** (PIDSs) and **network events** (NIDSs).
+A single codebase and pipeline runs 17 state-of-the-art systems on 17 datasets of both families, and makes them easy to customize into new variants.
+
+
+## 💻 Installation (Linux/macOS)
+
+PIDSMaker is a Python package, for Python 3.9 to 3.11. Its datasets are Parquet files, downloaded from [Hugging Face](https://huggingface.co/datasets/pidsmaker/datasets) and read in place with DuckDB: nothing else to set up.
+
+```shell
+conda create -n pids python=3.11 && conda activate pids
+pip install pidsmaker
+pidsmaker velox CADETS_E3
+```
+
+The [installation guide](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) covers the GPU and CPU builds of PyTorch, where datasets and artifacts are stored, macOS and [HPC clusters](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#hpc-clusters).
+
+PIDSMaker runs on Linux with or without an NVIDIA GPU, and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) on CPU, for most datasets: a laptop with 32 GB of RAM is ideal. The largest datasets (`TRACE_E3` and the E5 datasets) need a server.
 
 
 ## Release notes
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| [5.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/5.0.0) | Nov 2026 | [`pip install pidsmaker`](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) and the `pidsmaker` command. Datasets as Parquet files downloaded from Hugging Face (`pidsmaker download`) and read with DuckDB, with identical results: no database server or Docker needed. [ShadeWatcher and ProGrapher](https://ubc-provenance.github.io/PIDSMaker/guide/systems/) provenance systems. [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3. [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, on CPU) for most datasets, ideally with 32 GB of RAM |
+| [5.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/5.0.0) | Nov 2026 | [`pip install pidsmaker`](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) and the `pidsmaker` command. Datasets as Parquet files from Hugging Face, read with DuckDB: no database server or Docker. [ShadeWatcher and ProGrapher](https://ubc-provenance.github.io/PIDSMaker/guide/systems/). [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, on LANL and OpTC flows. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB of RAM). [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, on CPU) |
 | [4.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0) | Nov 2026 | Unified tokenization (`featurization.tokenization`, renamed tokenizer arguments), configurable graph cleaning (`construction.cleaning`), fixed queue, time-window and node-time-window evaluations, MAGIC kNN fix |
 | [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
 | [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
@@ -152,30 +167,6 @@ flowchart TB
     class db,out io;
 ```
 
-
-## Setup
-
-### 💻 Installation
-
-PIDSMaker is a Python package, for Python 3.9 to 3.11. Its datasets are Parquet files, downloaded from [Hugging Face](https://huggingface.co/datasets/pidsmaker/datasets) and read in place with DuckDB: nothing else to set up.
-
-```shell
-conda create -n pids python=3.11 && conda activate pids
-pip install pidsmaker
-pidsmaker download CADETS_E3      # 1.3 GB; `pidsmaker download --list` lists all datasets
-pidsmaker velox CADETS_E3
-```
-
-To change the code, install it from source instead:
-
-```shell
-git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
-pip install -e .
-```
-
-The [installation guide](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) covers the GPU and CPU builds of PyTorch, where datasets and artifacts are stored, macOS and [HPC clusters](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#hpc-clusters).
-
-PIDSMaker runs on Linux with or without an NVIDIA GPU, and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) on CPU, for most datasets: a laptop with 32 GB of RAM is ideal. The largest datasets (`TRACE_E3` and the E5 datasets) need a server.
 
 ## 🧪 Basic usage of the framework
 
