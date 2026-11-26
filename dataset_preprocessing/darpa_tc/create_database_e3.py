@@ -2,8 +2,8 @@
 
 Parses DARPA TC Engagement 3 provenance JSON files and writes the nodes and events for graph
 construction to a Parquet dataset (`<datasets_dir>/<database>`, see
-`pidsmaker/utils/database.py`), with the tables of the Postgres databases of the DARPA TC
-datasets. The files of the dataset are listed in `filelist.py`, and read from `--raw_dir`:
+`pidsmaker/utils/database.py`), with the tables of the published DARPA TC datasets. The files
+of the dataset are listed in `filelist.py`, and read from `--raw_dir`:
 
     python dataset_preprocessing/darpa_tc/create_database_e3.py orthrus DATASET --raw_dir /data/
 """
@@ -295,7 +295,7 @@ def main():
     raw_dir = os.path.join(args.raw_dir, "")
 
     dataset_dir = parquet_dataset_dir(cfg)
-    # Tables of the Postgres databases of the DARPA TC datasets, whose `_id` is a SERIAL
+    # Tables of the DARPA TC datasets, whose `_id` is an integer
     with DatasetBuilder(
         dataset_dir,
         schema_tables(get_schema(cfg), serial_type=INTEGER),

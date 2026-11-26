@@ -9,13 +9,11 @@ This includes the network datasets (LANL and the network flows of OpTC), built f
 
 ## Building a dataset
 
-The scripts write a Parquet dataset (no Postgres server is needed) to
-`<datasets_dir>/<database>/`, where `<datasets_dir>` is `--datasets_dir`, or
-`$PIDSMAKER_DATASETS_DIR`, or `~/.cache/pidsmaker/datasets` by default, and `<database>` the
-database of the dataset in `pidsmaker/config/config.py` (e.g. `cadets_e3`). The dataset is read
-with `--database_backend parquet` (or `PIDSMAKER_DATABASE_BACKEND=parquet`). An existing dataset
-is only replaced with `--overwrite`. The dataset is written to `<database>.tmp`, renamed when
-complete.
+The scripts write a Parquet dataset to `<datasets_dir>/<database>/`, where PIDSMaker reads it:
+`<datasets_dir>` is `--datasets_dir`, or `$PIDSMAKER_DATASETS_DIR`, or
+`~/.cache/pidsmaker/datasets` by default, and `<database>` the database of the dataset in
+`pidsmaker/config/config.py` (e.g. `cadets_e3`). An existing dataset is only replaced with
+`--overwrite`. The dataset is written to `<database>.tmp`, renamed when complete.
 
 ```shell
 # DARPA TC E3 (CADETS_E3, THEIA_E3) and E5 (CADETS_E5, THEIA_E5): the files listed in
@@ -34,10 +32,6 @@ python dataset_preprocessing/lanl/create_database_lanl.py LANL --auth_file /data
 python dataset_preprocessing/optc/create_database_optc_net.py OPTC_NET --lares_dir /data/lanl_optc_datasets/OPTC/preprocessed
 ```
 
-The datasets are those that the previous versions of these scripts loaded into Postgres, as
-exported by `export_parquet.py` (same tables, columns, values and order of rows, see
-`pidsmaker/utils/dataset_writer.py`). Databases still in Postgres are exported with:
-
-```shell
-python dataset_preprocessing/export_parquet.py clearscope_e3 cadets_e3 --out_dir ~/.cache/pidsmaker/datasets
-```
+The datasets have the tables and columns of the published ones (see
+`pidsmaker/utils/dataset_writer.py`): events are sorted by `timestamp_rec, event_uuid`, and the
+rows of node tables are in the order in which the scripts write them.

@@ -2,7 +2,7 @@
 
 The LANL tests run on a small synthetic dataset in the LANL format (see `synthetic_lanl.py`),
 written to a temporary Parquet dataset by the LANL preprocessing script, so that they don't
-require the real dataset. They run with `--backend parquet` (the script writes Parquet datasets).
+require the real dataset.
 """
 
 import os
@@ -53,11 +53,9 @@ def prepare_cfg(model, dataset="LANL", custom_args=(), test_mode=True):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def lanl_database(request, tmp_path_factory, artifact_dir, device):
+def lanl_database(tmp_path_factory, artifact_dir, device):
     """Writes the synthetic LANL dataset to a Parquet dataset of a temporary folder, used by the
     LANL dataset."""
-    if request.config.getoption("backend") != "parquet":
-        pytest.skip("The LANL preprocessing script writes Parquet datasets (use --backend parquet)")
     global TESTS_ARTIFACT_DIR, LANL_DATASETS_DIR, USE_CPU
     TESTS_ARTIFACT_DIR = os.path.join(artifact_dir, "network") + "/"
     USE_CPU = device == "cpu"

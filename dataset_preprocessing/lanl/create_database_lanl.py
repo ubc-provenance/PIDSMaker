@@ -57,7 +57,7 @@ from pidsmaker.config import get_runtime_required_args, get_yml_cfg
 from pidsmaker.config.schemas import LANL_AUTH_ORIENTATIONS
 from pidsmaker.utils.database import parquet_dataset_dir
 from pidsmaker.utils.dataset_utils import get_schema
-from pidsmaker.utils.dataset_writer import COPY, DatasetBuilder, schema_tables
+from pidsmaker.utils.dataset_writer import DatasetBuilder, schema_tables
 from pidsmaker.utils.utils import log, stringtomd5
 
 # The first red team event of LANL (t=150885) is mapped to 2015-01-03 00:00:00 UTC
@@ -319,14 +319,13 @@ def main():
     source = "LARES files" if args.lares_dir else "raw files"
     if args.with_flows:
         source += ", with flows"
-    # The database was loaded with COPY (FORMAT csv): empty strings are null, and the order of
-    # the rows of the node table is the order in which COPY stores them
+    # Empty strings are null, as in the published dataset
     with DatasetBuilder(
         dataset_dir,
         schema_tables(schema),
         source=f"dataset_preprocessing/lanl/create_database_lanl.py ({source})",
         overwrite=args.overwrite,
-        load=COPY,
+        empty_as_null=True,
         log=log,
     ) as builder:
         writer = EventWriter(builder, schema)

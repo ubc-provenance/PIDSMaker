@@ -40,7 +40,7 @@ cadets_e3/
   subject_node_table/part-00000.parquet
 ```
 
-The manifest lists the files, columns, number of rows and order of each table. Events are sorted by `timestamp_rec, event_uuid`; node tables keep the order in which the framework reads them (results depend on it). The files were exported from the Postgres databases used by previous versions of PIDSMaker (`dataset_preprocessing/export_parquet.py`), and give the same results.
+The manifest lists the files, columns, number of rows and order of each table. Events are sorted by `timestamp_rec, event_uuid`; node tables keep the order in which the framework reads them (results depend on it). The datasets were built with the preprocessing scripts of PIDSMaker.
 
 | Dataset | Folder | Events | Size (GB) | Source |
 |---|---|--:|--:|---|

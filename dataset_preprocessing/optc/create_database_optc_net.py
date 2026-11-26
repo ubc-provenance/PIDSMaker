@@ -39,7 +39,6 @@ from pidsmaker.config.schemas import OPTC_PORTS
 from pidsmaker.utils.database import parquet_dataset_dir
 from pidsmaker.utils.dataset_utils import get_schema
 from pidsmaker.utils.dataset_writer import (
-    COPY,
     DatasetBuilder,
     TableWriter,
     schema_tables,
@@ -125,8 +124,8 @@ def _load_file(task):
     index, path, staging_path = task
     file_id = os.path.basename(path).split(".")[0]
     attributes = _worker["attributes"]
-    # The database was loaded with COPY (FORMAT csv), where empty strings are null
-    writer = TableWriter(_worker["spec"], staging_path, load=COPY)
+    # Empty strings are null, as in the published dataset
+    writer = TableWriter(_worker["spec"], staging_path, empty_as_null=True)
     hosts = set()
     stats = {"events": 0, "malicious": 0, "unknown_action": 0}
     min_mal, max_mal = None, None
@@ -291,7 +290,7 @@ def main():
         schema_tables(get_schema(cfg)),
         source=f"dataset_preprocessing/optc/create_database_optc_net.py ({labels})",
         overwrite=args.overwrite,
-        load=COPY,
+        empty_as_null=True,
         log=log,
     ) as builder:
         load_events(builder, cfg, args.lares_dir, args.num_workers, not args.no_label_propagation)

@@ -2,7 +2,7 @@
 
 Parses OpTC provenance JSON files and writes the nodes (subjects, files, netflows) and events
 (edges) of a host for graph construction to a Parquet dataset (`<datasets_dir>/<database>`, see
-`pidsmaker/utils/database.py`), with the tables of the Postgres databases of the OpTC datasets.
+`pidsmaker/utils/database.py`), with the tables of the published OpTC datasets.
 All the files of `--raw_dir` (and its subfolders) are read:
 
     python dataset_preprocessing/optc/create_database_optc.py orthrus DATASET --raw_dir /data/
@@ -238,7 +238,7 @@ def main():
     cfg = get_yml_cfg(get_runtime_required_args(args=unknown))
 
     dataset_dir = parquet_dataset_dir(cfg)
-    # Tables of the Postgres databases of the OpTC datasets, whose `_id` is a SERIAL
+    # Tables of the OpTC datasets, whose `_id` is an integer
     with DatasetBuilder(
         dataset_dir,
         schema_tables(get_schema(cfg), serial_type=INTEGER),
