@@ -43,7 +43,7 @@ pytest tests -n 4 --db full
 ```
 
 The LANL tests (`test_network_datasets.py`) run on a small synthetic dataset in the LANL format (`synthetic_lanl.py`),
-loaded into a temporary database by the LANL preprocessing script, which writes to Postgres: they only run with `--backend postgres`, and are skipped otherwise.
+written to a temporary Parquet dataset by the LANL preprocessing script. They only run with `--backend parquet`, and are skipped with `--backend postgres`.
 
 `test_datasets.py` tests the downloads of datasets and the `pidsmaker` command against a fake Hugging Face repository, without network access.
 
