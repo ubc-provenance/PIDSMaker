@@ -70,11 +70,13 @@ For the network datasets, LANL can also be built from its official files, reques
 python dataset_preprocessing/optc/download_optc_net.py ${DATA_FOLDER}/optc_net
 ```
 
-<span id="2-mount-the-raw-files-in-the-container"></span>
-
 ## 2. Get Java for DARPA TC
 
-The raw files of DARPA TC are Avro files, converted to JSON by the Java consumer of DARPA, which needs **Java 8** and **Maven**. The [`pids` container](docker.md) has both: mount `DATA_FOLDER` in it (uncomment the `- /path/to/raw/data:/data` volume of `compose-pidsmaker.yml`, with your `DATA_FOLDER`), and run the next steps in the container with `DATA_FOLDER=/data`. Otherwise, install them on your machine (e.g. `sudo apt install openjdk-8-jdk maven`).
+The raw files of DARPA TC are Avro files, converted to JSON by the Java consumer of DARPA, which needs **Java 8** and **Maven**. Install them in your conda environment, or with the package manager of your system (e.g. `sudo apt install openjdk-8-jdk maven`):
+
+```shell
+conda install -c conda-forge openjdk=8 maven
+```
 
 The other datasets need nothing more than PIDSMaker.
 

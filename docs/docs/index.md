@@ -56,7 +56,7 @@ pip install pidsmaker
 pidsmaker orthrus CADETS_E3
 ```
 
-Requires Python 3.9–3.11 · [Installation guide](getting-started/installation.md) · [Docker](getting-started/docker.md)
+Requires Python 3.9–3.11 · [Installation guide](getting-started/installation.md)
 { .pm-install__note }
 
 </div>

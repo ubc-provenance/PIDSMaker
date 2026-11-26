@@ -200,7 +200,7 @@ evaluation:
 
 ## 3. Run the pipeline
 
-You can now run the pipeline. With the editable install, your changes to the code are used without reinstalling. With [Docker](../getting-started/docker.md), the VS Code Dev Container also lets you run the framework in debug mode with VS Code's debugger.
+You can now run the pipeline. With the editable install, your changes to the code are used without reinstalling.
 
 For tiny experiments, you can run the framework locally like so:
 

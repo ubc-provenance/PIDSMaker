@@ -27,7 +27,7 @@ It renders the per-node embeddings (UMAP or t-SNE projection) and supports:
 
 ## Running the viewer
 
-Start the server where PIDSMaker is installed (in the `pids` container with [Docker](../getting-started/docker.md)). The UMAP projection needs the `viz` extra (`pip install "pidsmaker[viz]"`, already installed in the Docker image).
+Start the server where PIDSMaker is installed. The UMAP projection needs the `viz` extra (`pip install "pidsmaker[viz]"`).
 
 ```shell
 python -m pidsmaker.vizgen.web.viz_server

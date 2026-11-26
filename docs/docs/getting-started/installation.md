@@ -5,7 +5,7 @@ description: Install PIDSMaker with pip, and download the preprocessed provenanc
 
 # Installation
 
-A few minutes from a fresh machine to your first run. PIDSMaker is a Python package: install it with pip, download a dataset, and run a system. Datasets are Parquet files that PIDSMaker reads in place with [DuckDB](https://duckdb.org/): no database server and no Docker needed.
+A few minutes from a fresh machine to your first run. PIDSMaker is a Python package: install it with pip, download a dataset, and run a system. Datasets are Parquet files that PIDSMaker reads in place with [DuckDB](https://duckdb.org/): nothing else to set up.
 { .lead }
 
 !!! info "Requirements"
@@ -14,7 +14,7 @@ A few minutes from a fresh machine to your first run. PIDSMaker is a Python pack
     - **Python 3.9 to 3.11**: PyTorch 2.1.2, which PIDSMaker pins, has no wheels for Python 3.12 and later. We create the environment with [conda](https://docs.conda.io/en/latest/miniconda.html).
     - Disk space for the datasets you pick (see the [table below](#2-download-the-datasets)) and for the artifacts of your runs (a single run can produce 15 GB or more on E3 datasets).
 
-    Prefer a container? See [Installation with Docker](docker.md). On an HPC cluster, see [HPC clusters](apptainer.md).
+    On an HPC cluster, see [HPC clusters](#hpc-clusters).
 
 ## 1. Install PIDSMaker
 
@@ -157,7 +157,7 @@ If the pipeline starts building the graphs, you are all set. From a clone of the
 | Files | Default | Change it with |
 |---|---|---|
 | Datasets | `~/.cache/pidsmaker/datasets/` | `--datasets_dir`, or `$PIDSMAKER_DATASETS_DIR` |
-| Artifacts: everything a run produces (graphs, models, results...) | `/home/artifacts/` if this folder exists (e.g. in the Docker container), else `artifacts/` in the folder where you run `pidsmaker` | `--artifact_dir`, or `$PIDSMAKER_ARTIFACT_DIR` |
+| Artifacts: everything a run produces (graphs, models, results...) | `/home/artifacts/` if this folder exists, else `artifacts/` in the folder where you run `pidsmaker` | `--artifact_dir`, or `$PIDSMAKER_ARTIFACT_DIR` |
 
 Artifacts take much more space than datasets: point them to a large disk. Set `PIDSMAKER_ARTIFACT_DIR` rather than relying on the working directory, so that all your runs share the [cache of their tasks](../guide/pipeline.md#caching-of-tasks). All the environment variables are listed in the [command line reference](../reference/cli.md#environment-variables).
 
@@ -168,27 +168,20 @@ PyTorch 2.1.2 has wheels for Apple Silicon, so PIDSMaker installs [as above](#1-
 - **Memory.** Runs on provenance datasets can take more than 15 GB of RAM, and the largest datasets (`TRACE_E3` and the E5 datasets) need more memory and disk than a laptop has. PIDSMaker prints a warning at the beginning of a run when less than 16 GB are available. Graph construction uses less memory with fewer processes, e.g. `--num_workers=2`.
 - **Port 5000** is used by AirPlay Receiver. Start the [embedding visualizer](../features/visualization.md) on another port (`--port 5001`), or turn AirPlay Receiver off in **System Settings > General > AirDrop & Handoff**.
 
-### With Docker Desktop { #docker-desktop }
+## HPC clusters { #hpc-clusters }
 
-With [Docker](docker.md), the containers run in the virtual machine of Docker Desktop, limited to 8 GB of memory by default, which the compose files cannot raise: runs are killed when the VM runs out of memory. Give the VM about 75% of your RAM, e.g. 24 GB on a 32 GB laptop:
+PIDSMaker needs nothing more on a cluster than on any Linux machine. On a login node, install it as [above](#1-install-pidsmaker) (load your cluster's conda module first if it has one). Home directories are often small: store the datasets and the artifacts on a large filesystem, e.g. your project or scratch space, in your `~/.bashrc` or job scripts:
 
 ```shell
-# Memory and swap of the VM, in MiB (restarts Docker Desktop, which stops the running containers)
-plutil -replace MemoryMiB -integer 24576 ~/Library/Group\ Containers/group.com.docker/settings-store.json
-plutil -replace SwapMiB -integer 4096 ~/Library/Group\ Containers/group.com.docker/settings-store.json
-docker desktop restart
-
-# Check the memory of the VM, in GB
-docker info --format '{{.MemTotal}}' | awk '{printf "%.1f GB\n", $1 / 1024^3}'
+export PIDSMAKER_DATASETS_DIR=/path/to/large/disk/pidsmaker/datasets
+export PIDSMAKER_ARTIFACT_DIR=/path/to/large/disk/pidsmaker/artifacts
 ```
 
-On Apple Silicon, the Docker image is built for ARM (`aarch64`), with the CPU build of PyTorch, and PIDSMaker limits PyTorch to 4 CPU threads (`OMP_NUM_THREADS=4`): the VM exposes the performance and efficiency cores of the Mac as identical CPUs, and with one thread per CPU, operations on small tensors are up to 100 times slower. Set `OMP_NUM_THREADS` yourself to override it. This limit only applies in the VM of Docker Desktop, not to PIDSMaker installed on macOS with pip. PIDSMaker was tested end to end with Docker Desktop on `CADETS_E3` and `LANL`.
+Compute nodes often have no internet access. From a login node, download the datasets, and the NLTK tokenizer data that PIDSMaker otherwise downloads the first time it is imported:
 
-<span id="2-set-up-docker"></span>
-<span id="5-open-the-pidsmaker-container"></span>
+```shell
+pidsmaker download CADETS_E3 THEIA_E3
+python -m nltk.downloader punkt
+```
 
-## Docker and HPC clusters
-
-Docker is optional. The `pids` container of the repository has PIDSMaker installed from source, a [VS Code Dev Container](https://code.visualstudio.com/docs/devcontainers/containers) to edit, run and debug the code, and the tools to [build datasets from scratch](from-scratch.md): see [Installation with Docker](docker.md).
-
-HPC clusters need no container: install PIDSMaker with conda and pip as above, and see [HPC clusters](apptainer.md) for where to put the datasets and how to run on compute nodes without internet access.
+In your jobs, activate the environment, set `PIDSMAKER_AUTO_DOWNLOAD=0` (a missing dataset then stops the run with an error, instead of a download attempt), and run `pidsmaker SYSTEM DATASET`.

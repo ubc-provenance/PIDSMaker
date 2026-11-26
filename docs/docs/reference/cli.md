@@ -97,7 +97,7 @@ The same from Python: `from pidsmaker.datasets import download; download("CADETS
 | `PIDSMAKER_AUTO_DOWNLOAD` | `1` | A run downloads its dataset if it is missing. With `0`, it stops with an error instead. |
 | `PIDSMAKER_HF_REPO` | `pidsmaker/datasets` | Hugging Face dataset repository of the datasets (default of `--repo`). |
 | `PIDSMAKER_DUCKDB_THREADS` | `8` | Threads of each DuckDB connection. Graph construction opens several connections at the same time, one per day. |
-| `OMP_NUM_THREADS` | | CPU threads of PyTorch. If it is not set, PIDSMaker sets it to 4 in Docker Desktop on Apple Silicon (see [macOS](../getting-started/installation.md#docker-desktop)). |
+| `OMP_NUM_THREADS` | | CPU threads of PyTorch (by default, one per core). |
 
 ## Helper scripts
 

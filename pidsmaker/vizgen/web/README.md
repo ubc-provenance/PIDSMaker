@@ -7,31 +7,28 @@ browser, rather than viewing being a pipeline step.
 
 ## Run the viewer
 
-Start the server inside the Docker container (Flask and numpy are installed by
-the Dockerfile):
+Start the server where PIDSMaker is installed (Flask is one of its dependencies):
 
 ```bash
 python -m pidsmaker.vizgen.web.viz_server --host 0.0.0.0 --port 5000
 ```
 
 Options: `--host` (default `127.0.0.1`; use `0.0.0.0` to reach it from outside),
-`--port` (default `5000`), `--debug`. The artifacts root is `/home/artifacts` if
-present, otherwise `$PIDS_ARTIFACTS_DIR`, otherwise `<repo>/artifacts`.
+`--port` (default `5000`), `--debug`.
 
 ## Artifacts location
 
-`compose-pidsmaker.yml` mounts the host path `${ARTIFACTS_DIR:-/home/artifacts}`
-at the container's artifacts root `/home/artifacts`. If your `.env` sets
-`ARTIFACTS_DIR` (for example `ARTIFACTS_DIR=./artifacts`), that folder is what
-gets served — point it at the directory that actually holds your runs.
+The server reads the runs of the artifacts root: `$PIDS_ARTIFACTS_DIR` if it is
+set, else the default artifact folder of the pipeline (`$PIDSMAKER_ARTIFACT_DIR`,
+else `/home/artifacts/` if it exists, else `artifacts/` in the working directory).
 
 **Run Browser empty?** The viewer only discovers runs under
 `evaluation/evaluation/<hash>/<dataset>` (and `detection/evaluation/...`) that
 have a `viz_manifest.json` and/or `viz/*_points.json`. If it shows nothing,
-check that `ARTIFACTS_DIR` points at the folder containing those runs, then
-recreate the container (e.g. `ARTIFACTS_DIR=/home/artifacts docker compose
--f compose-pidsmaker.yml up -d`) and restart the server. A standalone top-level
-`<root>/viz/` export is not discovered — it must live inside a run directory.
+check that the artifacts root is the folder containing those runs (set
+`PIDSMAKER_ARTIFACT_DIR` as for the runs), and restart the server. A standalone
+top-level `<root>/viz/` export is not discovered — it must live inside a run
+directory.
 
 ## View it
 
@@ -43,11 +40,9 @@ ssh -N -L 5000:localhost:5000 <user>@<server>
 # then open http://localhost:5000
 ```
 
-If the server runs in Docker and the port is not published to the host, tunnel to
-the container IP: `-L 5000:<container-ip>:5000`. On the server itself, open
-`http://localhost:5000` directly. `compose-pidsmaker.yml` also maps `5000:5000`
-for optional LAN or VPN access; keep it firewalled, as there is no
-authentication.
+On the server itself, open `http://localhost:5000` directly. Started with
+`--host 0.0.0.0`, the server is also reachable from the LAN or a VPN; keep it
+firewalled, as there is no authentication.
 
 The last run you viewed loads automatically. Use **Open Run Browser** (top of the
 left panel) to pick another.
@@ -102,7 +97,7 @@ If you cloned the repo and already have evaluated runs, generate the manifests
 once — it only reads files already on disk; nothing is retrained:
 
 ```bash
-# inside the container (where the artifacts folder is mounted)
+# from the root of the repository, with the artifact folder of your runs
 python -m scripts.backfill_viz_manifests --dry-run   # preview what it will write
 python -m scripts.backfill_viz_manifests             # write the manifests
 ```

@@ -162,7 +162,7 @@ At the end of the `evaluation` task, metrics are printed in the logs and, with `
 
 Provenance systems classify nodes by default, network systems edges (authentications or flows). How samples are labeled, how thresholds are chosen and how each metric is computed is explained in [Evaluation & labeling](../guide/evaluation.md).
 
-All files produced by a run are written in the artifact folder: `$PIDSMAKER_ARTIFACT_DIR` if it is set, else `/home/artifacts/` if this folder exists (as in the Docker container), else `artifacts/` in the working directory. Use `--artifact_dir` to change it for a run (see [Where files are stored](installation.md#paths)).
+All files produced by a run are written in the artifact folder: `$PIDSMAKER_ARTIFACT_DIR` if it is set, else `/home/artifacts/` if this folder exists, else `artifacts/` in the working directory. Use `--artifact_dir` to change it for a run (see [Where files are stored](installation.md#paths)).
 
 ## Next steps
 
