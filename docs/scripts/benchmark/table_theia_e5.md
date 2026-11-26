@@ -8,7 +8,7 @@
 | Kairos | Provenance | 69 min | 15.4 GB | 8.1 GB | 9.3 GB |
 | MAGIC | Provenance | 11 min | 8.1 GB | 12.4 GB | 2.5 GB |
 | NodLink | Provenance | 28 min | 12.3 GB | 9.4 GB | 18.8 GB |
-| ProGrapher | Provenance | pending | | | |
+| ProGrapher | Provenance | 174 min | 5.4 GB | 1.6 GB | 2.8 GB |
 | ThreaTrace | Provenance | 8 min | 10.7 GB | 0.5 GB | 2.4 GB |
 | ShadeWatcher | Provenance | 40 min | 12.3 GB | 5.0 GB | 21.0 GB |
 | LARES | Network | 6 min | 7.7 GB | 3.3 GB | 3.3 GB |
