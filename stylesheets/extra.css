@@ -1,0 +1,927 @@
+/* ==========================================================================
+   PIDSMaker docs theme (Zensical, modern variant)
+   Brand colors are taken from the logo: orange handle, gold rim, slate shield.
+   ========================================================================== */
+
+:root,
+[data-md-color-scheme="default"] {
+  --pm-orange: #e5602a;
+  --pm-orange-soft: #e5602a14;
+  --pm-gold: #f0b429;
+  --pm-slate: #5f7080;
+  --pm-hero-glow: #e5602a22;
+
+  --md-primary-fg-color: #e5602a;
+  --md-primary-fg-color--light: #f08454;
+  --md-primary-fg-color--dark: #c24c1c;
+  --md-primary-bg-color: #fff;
+  --md-primary-bg-color--light: #ffffffb3;
+  --md-accent-fg-color: #c24c1c;
+  --md-accent-fg-color--transparent: #e5602a1a;
+  --md-accent-bg-color: #fff;
+  --md-typeset-a-color: #c8521f;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-orange: #ff7a45;
+  --pm-orange-soft: #ff7a451c;
+  --pm-hero-glow: #ff7a4524;
+
+  --md-primary-fg-color: #ff7a45;
+  --md-primary-fg-color--light: #ff9a70;
+  --md-primary-fg-color--dark: #e5602a;
+  --md-primary-bg-color: #1b1b1f;
+  --md-accent-fg-color: #ff9a70;
+  --md-accent-fg-color--transparent: #ff7a451a;
+  --md-typeset-a-color: #ff8a5c;
+}
+
+/* --------------------------------------------------------------------------
+   Header and navigation
+   -------------------------------------------------------------------------- */
+
+.md-header__button.md-logo img {
+  height: 1.6rem;
+}
+
+.md-tabs__link--active,
+.md-tabs__item--active .md-tabs__link {
+  color: var(--md-primary-fg-color);
+}
+
+/* --------------------------------------------------------------------------
+   Typography helpers
+   -------------------------------------------------------------------------- */
+
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h2 {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* Lead paragraph right under a page title */
+.md-typeset .lead {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--md-default-fg-color--light);
+  margin-top: -0.4em;
+}
+
+/* Tables: full width, zebra rows, readable on both schemes */
+.md-typeset__table {
+  width: 100%;
+}
+
+.md-typeset__table table:not([class]) {
+  display: table;
+  width: 100%;
+}
+
+.md-typeset table:not([class]) th {
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Landing page
+   -------------------------------------------------------------------------- */
+
+.pm-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.6rem;
+  align-items: center;
+  margin: 0.4rem 0 0.8rem;
+  padding: 1.6rem 1.6rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 1rem;
+  background:
+    radial-gradient(60% 120% at 0% 0%, var(--pm-hero-glow), transparent 70%),
+    radial-gradient(50% 100% at 100% 100%, #f0b42914, transparent 70%);
+  overflow: hidden;
+}
+
+/* Paragraph that Markdown wraps around the logo */
+.md-typeset .pm-hero > p {
+  margin: 0;
+  line-height: 0;
+}
+
+.pm-hero__logo {
+  width: 7.5rem;
+  height: auto;
+  filter: drop-shadow(0 0.4rem 0.8rem #0000002e);
+}
+
+.md-typeset .pm-hero h1 {
+  margin: 0 0 0.3rem;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .pm-hero h1 .pm-maker {
+  color: var(--pm-slate);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .pm-hero h1 .pm-maker {
+  color: #9fb0c0;
+}
+
+/* One punchy line, then one short supporting line */
+.md-typeset .pm-hero__tagline {
+  margin: 0 0 0.3rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .pm-hero__sub {
+  margin: 0 0 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .pm-hero__actions p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.md-typeset .pm-hero__actions .md-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  padding: 0.45em 1.05em;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.md-typeset .pm-hero__actions .md-button .twemoji {
+  height: 1.1em;
+}
+
+.md-typeset .pm-hero__actions .md-button .twemoji svg {
+  width: 1.1em;
+}
+
+.md-typeset .pm-hero__actions .md-button--primary:hover,
+.md-typeset .pm-hero__actions .md-button--primary:focus {
+  background-color: var(--md-primary-fg-color--dark);
+  border-color: var(--md-primary-fg-color--dark);
+  color: #fff;
+}
+
+/* Supported platforms, with their logos, under the hero buttons */
+.md-typeset .pm-hero__platforms p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.68rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .pm-hero__platforms a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.2em 0.75em;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 999px;
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+}
+
+.md-typeset .pm-hero__platforms a:hover,
+.md-typeset .pm-hero__platforms a:focus {
+  border-color: var(--pm-orange);
+  color: var(--pm-orange);
+}
+
+.md-typeset .pm-hero__platforms .twemoji svg {
+  width: 1.05em;
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-hero {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.8rem;
+    text-align: center;
+    padding: 1.2rem 1rem;
+  }
+
+  .pm-hero__logo {
+    width: 4rem;
+  }
+
+  .md-typeset .pm-hero h1 {
+    font-size: 1.9rem;
+  }
+
+  .md-typeset .pm-hero__tagline {
+    font-size: 1rem;
+  }
+
+  .md-typeset .pm-hero__sub {
+    font-size: 0.75rem;
+  }
+
+  .md-typeset .pm-hero__actions p,
+  .md-typeset .pm-hero__platforms p {
+    justify-content: center;
+  }
+}
+
+/* Install block right under the hero: two commands, copyable */
+.pm-install {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 0.8rem 1.6rem;
+  align-items: center;
+  margin: 0 0 0.8rem;
+  padding: 1.1rem 1.6rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 1rem;
+  background: linear-gradient(100deg, var(--pm-orange-soft), transparent 55%);
+}
+
+.md-typeset .pm-install h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.md-typeset .pm-install__intro p {
+  margin: 0;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .pm-install pre {
+  margin: 0;
+}
+
+.md-typeset .pm-install pre > code {
+  font-size: 0.72rem;
+}
+
+.md-typeset .pm-install__note {
+  margin: 0.45rem 0 0;
+  font-size: 0.64rem;
+  color: var(--md-default-fg-color--light);
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-install {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1rem;
+  }
+
+  /* Keeps "pidsmaker orthrus CADETS_E3" on one line down to 320px */
+  .md-typeset .pm-install pre > code {
+    font-size: 0.68rem;
+  }
+
+  .md-typeset .pm-install__intro,
+  .md-typeset .pm-install__note {
+    text-align: center;
+  }
+}
+
+/* Hugging Face chip, with the official logo (assets/huggingface_logo.svg) */
+.md-typeset a.pm-hf {
+  display: inline-block;
+  padding: 0 0.5em;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 999px;
+  color: var(--md-default-fg-color);
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.md-typeset a.pm-hf:hover,
+.md-typeset a.pm-hf:focus {
+  border-color: var(--pm-orange);
+  color: var(--pm-orange);
+}
+
+/* The colored logo, sized like an inline icon (chip and tab label) */
+.md-typeset img.pm-hf-logo {
+  display: inline-block;
+  width: auto;
+  height: 1.15em;
+  margin-right: 0.15em;
+  vertical-align: -0.2em;
+}
+
+/* Key numbers under the install block */
+.pm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin: 0 0 2rem;
+}
+
+.pm-stat {
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.6rem;
+  background: var(--md-code-bg-color);
+  text-align: center;
+}
+
+.pm-stat strong {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--md-primary-fg-color);
+}
+
+.pm-stat span {
+  font-size: 0.65rem;
+  color: var(--md-default-fg-color--light);
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Cards: a colored icon and a subtle lift on hover */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.6rem;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-primary-fg-color--light);
+}
+
+.md-typeset .grid.cards .lg {
+  color: var(--md-primary-fg-color);
+}
+
+.md-typeset .grid.cards > ul > li > p:last-child > a:only-child,
+.md-typeset .grid.cards .pm-card-link {
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Inline chips used in tables (OS, venue, level ...)
+   -------------------------------------------------------------------------- */
+
+.md-typeset .pm-chip {
+  display: inline-block;
+  padding: 0.05em 0.55em;
+  border-radius: 1em;
+  font-size: 0.7em;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--pm-orange-soft);
+  color: var(--md-primary-fg-color--dark);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .pm-chip {
+  color: var(--md-primary-fg-color--light);
+}
+
+/* --------------------------------------------------------------------------
+   Pipeline stage list
+   -------------------------------------------------------------------------- */
+
+.md-typeset .pm-steps {
+  counter-reset: pm-step;
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.md-typeset .pm-steps > li {
+  position: relative;
+  margin: 0 0 0.9em;
+  padding-left: 2.4em;
+}
+
+.md-typeset .pm-steps > li::before {
+  counter-increment: pm-step;
+  content: counter(pm-step);
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1.7em;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Generated argument trees (docs/scripts/get_arguments.py)
+   -------------------------------------------------------------------------- */
+
+.md-typeset .annotate > ul {
+  margin: 1em 0;
+  padding: 0.7rem 1rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  background: var(--md-code-bg-color);
+  font-family: var(--md-code-font-family);
+  font-size: 0.72rem;
+  list-style: none;
+}
+
+.md-typeset .annotate ul {
+  list-style: none;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.md-typeset .annotate ul ul {
+  margin-left: 0.35rem;
+  padding-left: 1rem;
+  border-left: 0.05rem dashed var(--md-default-fg-color--lighter);
+}
+
+.md-typeset .annotate li {
+  margin: 0 !important;
+  padding: 0.08rem 0;
+  line-height: 1.6;
+}
+
+.md-typeset .annotate li.bullet {
+  margin-top: 0.3em !important;
+}
+
+.md-typeset .annotate .key {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .annotate .key::after {
+  content: ":";
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .annotate .key-leaf {
+  color: var(--md-code-hl-name-color, var(--md-default-fg-color));
+}
+
+.md-typeset .annotate .value {
+  color: var(--md-code-hl-string-color);
+}
+
+.md-typeset .annotate .md-annotation__index {
+  font-family: var(--md-text-font-family);
+}
+
+/* Keep identifiers in tables on one line (the table scrolls if needed) */
+.md-typeset td code {
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Evaluation granularity figure (guide/evaluation.md)
+   Inline SVGs styled with theme colors, so they work in light and dark mode.
+   -------------------------------------------------------------------------- */
+
+.pm-eval-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 1.2em 0 1.6em;
+}
+
+.md-typeset .pm-eval-card {
+  display: block;
+  width: auto;
+  margin: 0;
+  padding: 0.7rem 0.8rem 0.8rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  background: var(--md-default-bg-color);
+}
+
+@media screen and (max-width: 76.1875em) {
+  .pm-eval-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media screen and (max-width: 44.9375em) {
+  .pm-eval-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.pm-eval-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pm-eval-card figcaption {
+  margin: 0.5rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  font-style: normal;
+  text-align: left;
+  color: var(--md-default-fg-color--light);
+  max-width: none;
+}
+
+.pm-eval-card figcaption strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .pm-eval-legend {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55rem;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.pm-eval-legend span {
+  display: flex;
+  align-items: center;
+  line-height: 1.4;
+  gap: 0.35em;
+}
+
+.pm-eval-legend i {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 50%;
+}
+
+.pm-eval-legend i.ben { background: var(--pm-node); }
+.pm-eval-legend i.mal { background: var(--pm-mal); }
+.pm-eval-legend i.unit {
+  width: 1.1em;
+  border-radius: 0.25em;
+  background: var(--pm-orange-soft);
+  border: 0.12em dashed var(--md-primary-fg-color);
+}
+
+.pm-eval-legend i.unit-mal {
+  background: #d93f3f1f;
+  border-color: var(--pm-mal);
+}
+
+:root,
+[data-md-color-scheme="default"] {
+  --pm-node: #9aa7b4;
+  --pm-mal: #d93f3f;
+  --pm-win: #5f708014;
+  --pm-win-stroke: #5f708055;
+  --pm-edge: #9aa7b4;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-node: #7d8a97;
+  --pm-mal: #ff5c5c;
+  --pm-win: #ffffff0a;
+  --pm-win-stroke: #ffffff30;
+  --pm-edge: #6c7884;
+}
+
+.pm-eval-card .win { fill: var(--pm-win); stroke: var(--pm-win-stroke); stroke-width: 1; }
+.pm-eval-card .lbl { fill: var(--md-default-fg-color--light); font: 600 12px var(--md-text-font-family, sans-serif); }
+.pm-eval-card .n { fill: var(--pm-node); }
+.pm-eval-card .m { fill: var(--pm-mal); }
+.pm-eval-card .e { stroke: var(--pm-edge); stroke-width: 1.5; fill: none; }
+.pm-eval-card .em { stroke: var(--pm-mal); stroke-width: 2.2; fill: none; }
+.pm-eval-card .unit { fill: var(--pm-orange-soft); stroke: var(--md-primary-fg-color); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.pm-eval-card .unit-m { fill: #d93f3f1f; stroke: var(--pm-mal); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.pm-eval-card .note { fill: var(--md-primary-fg-color); font: 700 13px var(--md-text-font-family, sans-serif); }
+
+/* ---------------------------------------------------------------------------
+   Families of data: provenance (teal) and network (indigo).
+   Used by family labels, the family cards of the home page, family headings,
+   the Provenance/Network columns of comparison tables and the
+   Provenance/Network tabs (wrapped in <div class="pm-families">).
+   ------------------------------------------------------------------------- */
+[data-md-color-scheme="default"] {
+  --pm-prov: #0b7f7a;
+  --pm-prov-soft: #0b7f7a14;
+  --pm-prov-line: #0b7f7a59;
+  --pm-net: #5a48d0;
+  --pm-net-soft: #5a48d014;
+  --pm-net-line: #5a48d059;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-prov: #37c9bd;
+  --pm-prov-soft: #37c9bd1f;
+  --pm-prov-line: #37c9bd66;
+  --pm-net: #a59bff;
+  --pm-net-soft: #a59bff1f;
+  --pm-net-line: #a59bff66;
+}
+
+/* Family labels (e.g. the Data column of the systems catalogue) */
+.md-typeset .pm-family {
+  display: inline-block;
+  padding: 0.05em 0.6em;
+  border-radius: 1em;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.md-typeset .pm-family--prov {
+  color: var(--pm-prov);
+  background-color: var(--pm-prov-soft);
+  box-shadow: inset 0 0 0 1px var(--pm-prov-line);
+}
+
+.md-typeset .pm-family--net {
+  color: var(--pm-net);
+  background-color: var(--pm-net-soft);
+  box-shadow: inset 0 0 0 1px var(--pm-net-line);
+}
+
+/* Family cards of the home page: provenance first, network second */
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(1) {
+  border-top: 3px solid var(--pm-prov);
+  background-color: var(--pm-prov-soft);
+}
+
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(2) {
+  border-top: 3px solid var(--pm-net);
+  background-color: var(--pm-net-soft);
+}
+
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(1):hover {
+  border-color: var(--pm-prov-line);
+  border-top-color: var(--pm-prov);
+}
+
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(2):hover {
+  border-color: var(--pm-net-line);
+  border-top-color: var(--pm-net);
+}
+
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(1) .lg,
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(1) a {
+  color: var(--pm-prov);
+}
+
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(2) .lg,
+.md-typeset .grid.cards.pm-family-cards > ul > li:nth-child(2) a {
+  color: var(--pm-net);
+}
+
+/* Family headings */
+.md-typeset .pm-h-prov,
+.md-typeset .pm-h-net {
+  padding-left: 0.6rem;
+  border-left: 0.2rem solid;
+}
+
+.md-typeset .pm-h-prov {
+  border-left-color: var(--pm-prov);
+}
+
+.md-typeset .pm-h-net {
+  border-left-color: var(--pm-net);
+}
+
+/* Provenance/Network columns of comparison tables (2nd and 3rd columns) */
+.md-typeset .pm-families table:not([class]) th:nth-child(2) {
+  color: var(--pm-prov);
+  box-shadow: inset 0 -2px 0 var(--pm-prov);
+}
+
+.md-typeset .pm-families table:not([class]) th:nth-child(3) {
+  color: var(--pm-net);
+  box-shadow: inset 0 -2px 0 var(--pm-net);
+}
+
+/* Provenance/Network tabs: provenance first, network second */
+.md-typeset .pm-families .tabbed-labels > label:nth-child(1) {
+  color: var(--pm-prov);
+}
+
+.md-typeset .pm-families .tabbed-labels > label:nth-child(2) {
+  color: var(--pm-net);
+}
+
+.md-typeset .pm-families .tabbed-set > input:nth-child(1):checked ~ .tabbed-labels > :nth-child(1) {
+  color: var(--pm-prov);
+}
+
+.md-typeset .pm-families .tabbed-set > input:nth-child(2):checked ~ .tabbed-labels > :nth-child(2) {
+  color: var(--pm-net);
+}
+
+.md-typeset .pm-families .tabbed-set:has(> input:nth-child(1):checked) > .tabbed-labels::before {
+  background-color: var(--pm-prov);
+}
+
+.md-typeset .pm-families .tabbed-set:has(> input:nth-child(2):checked) > .tabbed-labels::before {
+  background-color: var(--pm-net);
+}
+
+/* ---------------------------------------------------------------------------
+   Benchmark charts (inline SVG, generated by docs/scripts/benchmark_charts.py).
+   One color and one marker shape per dataset; validated for color vision
+   deficiencies against the light and dark surfaces of the docs.
+   ------------------------------------------------------------------------- */
+[data-md-color-scheme="default"] {
+  --pm-ds-1: #2a78d6;
+  --pm-ds-2: #eb6834;
+  --pm-ds-3: #1baf7a;
+  --pm-bench-grid: #e1e0d9;
+  --pm-bench-range: #c3c2b7;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-ds-1: #3987e5;
+  --pm-ds-2: #d95926;
+  --pm-ds-3: #199e70;
+  --pm-bench-grid: #2f313a;
+  --pm-bench-range: #4a4c57;
+}
+
+.md-typeset .pm-bench {
+  margin: 1em 0 1.5em;
+  overflow-x: auto;
+}
+
+.pm-bench-chart {
+  display: block;
+  width: 100%;
+  min-width: 34rem;
+  height: auto;
+  font-family: var(--md-text-font-family), system-ui, sans-serif;
+}
+
+.pm-bench-chart + .pm-bench-chart {
+  margin-top: 2em;
+}
+
+.pm-bench-chart text {
+  font-size: 12px;
+  fill: var(--md-default-fg-color--light);
+}
+
+.pm-bench-chart .pm-bench-tick {
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-bench-chart .pm-bench-label,
+.pm-bench-chart .pm-bench-legend {
+  fill: var(--md-default-fg-color);
+}
+
+.pm-bench-chart .pm-bench-axis {
+  font-weight: 600;
+}
+
+.pm-bench-chart .pm-bench-family {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pm-bench-chart .pm-bench-family--prov {
+  fill: var(--pm-prov);
+}
+
+.pm-bench-chart .pm-bench-family--net {
+  fill: var(--pm-net);
+}
+
+.pm-bench-chart .pm-bench-note {
+  font-size: 11px;
+  font-style: italic;
+}
+
+.pm-bench-grid {
+  stroke: var(--pm-bench-grid);
+  stroke-width: 1;
+}
+
+.pm-bench-range {
+  stroke: var(--pm-bench-range);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.pm-bench-mark {
+  stroke: var(--md-default-bg-color);
+  stroke-width: 2;
+  paint-order: stroke;
+}
+
+.pm-bench-mark.pm-ds-1 { fill: var(--pm-ds-1); }
+.pm-bench-mark.pm-ds-2 { fill: var(--pm-ds-2); }
+.pm-bench-mark.pm-ds-3 { fill: var(--pm-ds-3); }
+
+.pm-bench-chart g:hover .pm-bench-mark {
+  stroke: var(--md-default-fg-color);
+}
+
+.pm-bench-base {
+  stroke: var(--pm-bench-range);
+  stroke-width: 1;
+}
+
+.pm-bench-bar.pm-ds-1 { fill: var(--pm-ds-1); }
+.pm-bench-bar.pm-ds-2 { fill: var(--pm-ds-2); }
+.pm-bench-bar.pm-ds-3 { fill: var(--pm-ds-3); }
+
+.pm-bench-chart .pm-bench-hit:hover .pm-bench-bar {
+  opacity: 0.75;
+}
+
+/* Break mark across the end of a bar cut by the axis */
+.pm-bench-break {
+  fill: none;
+  stroke: var(--md-default-bg-color);
+  stroke-width: 2.5;
+}
+
+/* Stages of the stacked bars (adjacent pairs validated for color vision deficiencies) */
+[data-md-color-scheme="default"] {
+  --pm-st-1: #2a78d6;
+  --pm-st-2: #eb6834;
+  --pm-st-3: #1baf7a;
+  --pm-st-4: #eda100;
+  --pm-st-5: #e87ba4;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-st-1: #3987e5;
+  --pm-st-2: #d95926;
+  --pm-st-3: #199e70;
+  --pm-st-4: #c98500;
+  --pm-st-5: #d55181;
+}
+
+.pm-bench-bar.pm-st-1 { fill: var(--pm-st-1); }
+.pm-bench-bar.pm-st-2 { fill: var(--pm-st-2); }
+.pm-bench-bar.pm-st-3 { fill: var(--pm-st-3); }
+.pm-bench-bar.pm-st-4 { fill: var(--pm-st-4); }
+.pm-bench-bar.pm-st-5 { fill: var(--pm-st-5); }
+
+.pm-bench-chart .pm-bench-panel {
+  fill: var(--md-default-fg-color);
+  font-weight: 600;
+}
+
+/* Bars of a single series (peak RAM, peak GPU memory): one neutral color */
+[data-md-color-scheme="default"] {
+  --pm-single: #5f7080;
+}
+
+[data-md-color-scheme="slate"] {
+  --pm-single: #8d9cab;
+}
+
+.pm-bench-bar.pm-single { fill: var(--pm-single); }
+
+.pm-bench-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  background: var(--md-default-bg-color);
+  box-shadow: var(--md-shadow-z2);
+  color: var(--md-default-fg-color--light);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pm-bench-tooltip strong {
+  display: block;
+  color: var(--md-default-fg-color);
+}

@@ -1,0 +1,3535 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="The provenance datasets (DARPA TC E3&#x2f;E5, OpTC, ATLASv2, CARBANAKv2) and network datasets (LANL, OpTC network flows) supported by PIDSMaker, their attack scenarios and ground-truth labels.">
+      
+      
+        <meta name="author" content="UBC Provenance team">
+      
+      
+        <link rel="canonical" href="https://ubc-provenance.github.io/PIDSMaker/guide/datasets/">
+      
+      
+      
+      
+        <link rel="prev" href="../benchmark/">
+      
+      
+        <link rel="next" href="../evaluation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/pidsmaker.ico">
+      <meta name="generator" content="zensical-0.1.3">
+    
+    
+      
+        <title>Datasets - PIDSMaker</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e2cf241e.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PIDSMaker" class="md-header__button md-logo" aria-label="PIDSMaker" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="PIDSMaker">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PIDSMaker
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Datasets
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ubc-provenance/PIDSMaker
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../background/" class="md-tabs__link">
+          
+  
+  User guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/tuning/" class="md-tabs__link">
+          
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/cli/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../community/contributing/" class="md-tabs__link">
+          
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PIDSMaker" class="md-nav__button md-logo" aria-label="PIDSMaker" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="PIDSMaker">
+
+    </a>
+    PIDSMaker
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ubc-provenance/PIDSMaker
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Getting started
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quickstart
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Building datasets from scratch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  User guide
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  User guide
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Background
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pipeline
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benchmark
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Datasets
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Datasets
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Overview
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Provenance
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Network
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provenance-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Provenance datasets
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provenance datasets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darpa-tc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DARPA TC
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA TC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#engagement-3-e3-april-2018" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement 3 (E3), April 2018
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 3 (E3), April 2018">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cadets_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CADETS_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#theia_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        THEIA_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CLEARSCOPE_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        TRACE_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fivedirections_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FIVEDIRECTIONS_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement-5-e5-may-2019" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement 5 (E5), May 2019
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 5 (E5), May 2019">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cadets_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CADETS_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#theia_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        THEIA_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CLEARSCOPE_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        TRACE_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fivedirections_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FIVEDIRECTIONS_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darpa-optc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DARPA OpTC
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA OpTC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optc_h201" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        optc_h201
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h501" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        optc_h501
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h051" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        optc_h051
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#atlasv2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ATLASv2
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ATLASv2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#atlasv2_edr" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ATLASV2_EDR
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#carbanakv2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CARBANAKv2
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CARBANAKv2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carbanakv2_edr" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CARBANAKV2_EDR
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provenance_benign" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PROVENANCE_BENIGN
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#network-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Network datasets
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Network datasets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lanl" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LANL
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_net" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        OPTC_NET
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#train-validation-and-test-splits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Train, validation and test splits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ground truth
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-custom-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Adding custom datasets
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Evaluation & labeling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorial: a new system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Features
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Features
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/tuning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hyperparameter tuning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/instability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Instability
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Batching & sampling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/pretrained_encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pretrained encoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/supervised/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supervised fine-tuning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/multi-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-dataset training
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/attacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adversarial attacks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/triage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Triage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embedding visualizer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tasks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cleaning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleaning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/featurization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Featurization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Encoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/decoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/objectives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Objectives
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Community
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Community
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  FAQ & troubleshooting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/ubc-provenance/PIDSMaker/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Overview
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Provenance
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Network
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provenance-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Provenance datasets
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provenance datasets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#darpa-tc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DARPA TC
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA TC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#engagement-3-e3-april-2018" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement 3 (E3), April 2018
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 3 (E3), April 2018">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cadets_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CADETS_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#theia_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        THEIA_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CLEARSCOPE_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        TRACE_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fivedirections_e3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FIVEDIRECTIONS_E3
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement-5-e5-may-2019" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement 5 (E5), May 2019
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engagement 5 (E5), May 2019">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cadets_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CADETS_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#theia_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        THEIA_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearscope_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CLEARSCOPE_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        TRACE_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fivedirections_e5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FIVEDIRECTIONS_E5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#darpa-optc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DARPA OpTC
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DARPA OpTC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optc_h201" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        optc_h201
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h501" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        optc_h501
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_h051" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        optc_h051
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#atlasv2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ATLASv2
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ATLASv2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#atlasv2_edr" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ATLASV2_EDR
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#carbanakv2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CARBANAKv2
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CARBANAKv2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carbanakv2_edr" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CARBANAKV2_EDR
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provenance_benign" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PROVENANCE_BENIGN
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#network-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Network datasets
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Network datasets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lanl" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LANL
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optc_net" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        OPTC_NET
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#train-validation-and-test-splits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Train, validation and test splits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ground truth
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-custom-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Adding custom datasets
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../background/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    User guide
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+    <a href="https://github.com/ubc-provenance/PIDSMaker/edit/main/docs/docs/guide/datasets.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497zM15 5l4 4"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="datasets">Datasets<a class="headerlink" href="#datasets" title="Permanent link">&para;</a></h1>
+<p class="lead">PIDSMaker supports the public datasets most used in research on graph-based intrusion detection, of two kinds: <strong>provenance datasets</strong>, the system events recorded inside hosts, and <strong>network datasets</strong>, the authentications or flows between the hosts of a network. Every <a href="../systems/">system</a> runs on both kinds, with <a href="../systems/#running-across-families">a few exceptions</a>. This page describes each dataset, its attack scenarios and its ground truth.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Nodes and events are counted in the database of each dataset, before graph construction. Size is the size of its Parquet files, <a href="../../getting-started/installation/#2-download-the-datasets">downloaded</a> with <code>pidsmaker download</code> and read in place.</p>
+<h3 class="pm-h-prov" id="provenance">Provenance<a class="headerlink" href="#provenance" title="Permanent link">&para;</a></h3>
+<p>Nodes are processes, files and netflows, edges are system events, and the ground truth lists the attack nodes. The preprocessed datasets are <a href="../../getting-started/installation/#2-download-the-datasets">downloaded</a> from Hugging Face.</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>OS</th>
+<th style="text-align: right;">Attacks</th>
+<th style="text-align: right;">Nodes</th>
+<th style="text-align: right;">Events</th>
+<th style="text-align: right;">Size (GB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CADETS_E3</td>
+<td>FreeBSD</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2.68M</td>
+<td style="text-align: right;">36.5M</td>
+<td style="text-align: right;">1.3</td>
+</tr>
+<tr>
+<td>THEIA_E3</td>
+<td>Linux</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.26M</td>
+<td style="text-align: right;">44.4M</td>
+<td style="text-align: right;">0.71</td>
+</tr>
+<tr>
+<td>CLEARSCOPE_E3</td>
+<td>Android</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">369K</td>
+<td style="text-align: right;">18.3M</td>
+<td style="text-align: right;">0.51</td>
+</tr>
+<tr>
+<td>FIVEDIRECTIONS_E3</td>
+<td>Windows</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.38M</td>
+<td style="text-align: right;">78.9M</td>
+<td style="text-align: right;">2.3</td>
+</tr>
+<tr>
+<td>TRACE_E3</td>
+<td>Linux</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">44.5M</td>
+<td style="text-align: right;">284M</td>
+<td style="text-align: right;">9.4</td>
+</tr>
+<tr>
+<td>CADETS_E5</td>
+<td>FreeBSD</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">15.2M</td>
+<td style="text-align: right;">1.08B</td>
+<td style="text-align: right;">32.9</td>
+</tr>
+<tr>
+<td>THEIA_E5</td>
+<td>Linux</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2.29M</td>
+<td style="text-align: right;">141M</td>
+<td style="text-align: right;">3.9</td>
+</tr>
+<tr>
+<td>CLEARSCOPE_E5</td>
+<td>Android</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">501K</td>
+<td style="text-align: right;">199M</td>
+<td style="text-align: right;">5.0</td>
+</tr>
+<tr>
+<td>FIVEDIRECTIONS_E5</td>
+<td>Windows</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">18.8M</td>
+<td style="text-align: right;">1.09B</td>
+<td style="text-align: right;">30.3</td>
+</tr>
+<tr>
+<td>TRACE_E5</td>
+<td>Linux</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">72.3M</td>
+<td style="text-align: right;">2.64B</td>
+<td style="text-align: right;">74.3</td>
+</tr>
+<tr>
+<td>optc_h201</td>
+<td>Windows</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5.27M</td>
+<td style="text-align: right;">38.2M</td>
+<td style="text-align: right;">1.6</td>
+</tr>
+<tr>
+<td>optc_h501</td>
+<td>Windows</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3.96M</td>
+<td style="text-align: right;">28.0M</td>
+<td style="text-align: right;">1.2</td>
+</tr>
+<tr>
+<td>optc_h051</td>
+<td>Windows</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4.62M</td>
+<td style="text-align: right;">31.6M</td>
+<td style="text-align: right;">1.3</td>
+</tr>
+<tr>
+<td>ATLASV2_EDR</td>
+<td>Windows</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">664K</td>
+<td style="text-align: right;">2.70M</td>
+<td style="text-align: right;">0.16</td>
+</tr>
+<tr>
+<td>CARBANAKV2_EDR</td>
+<td>Windows + Linux</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4.15M</td>
+<td style="text-align: right;">17.1M</td>
+<td style="text-align: right;">1.1</td>
+</tr>
+</tbody>
+</table>
+<details class="info">
+<summary>Share of each node type</summary>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th style="text-align: right;">Processes</th>
+<th style="text-align: right;">Files</th>
+<th style="text-align: right;">Netflows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CADETS_E3</td>
+<td style="text-align: right;">8.4%</td>
+<td style="text-align: right;">85.9%</td>
+<td style="text-align: right;">5.8%</td>
+</tr>
+<tr>
+<td>THEIA_E3</td>
+<td style="text-align: right;">22.1%</td>
+<td style="text-align: right;">63.1%</td>
+<td style="text-align: right;">14.8%</td>
+</tr>
+<tr>
+<td>CLEARSCOPE_E3</td>
+<td style="text-align: right;">3.4%</td>
+<td style="text-align: right;">20.8%</td>
+<td style="text-align: right;">75.8%</td>
+</tr>
+<tr>
+<td>FIVEDIRECTIONS_E3</td>
+<td style="text-align: right;">37.7%</td>
+<td style="text-align: right;">53.3%</td>
+<td style="text-align: right;">9.0%</td>
+</tr>
+<tr>
+<td>TRACE_E3</td>
+<td style="text-align: right;">88.4%</td>
+<td style="text-align: right;">2.4%</td>
+<td style="text-align: right;">9.1%</td>
+</tr>
+<tr>
+<td>CADETS_E5</td>
+<td style="text-align: right;">43.2%</td>
+<td style="text-align: right;">55.4%</td>
+<td style="text-align: right;">1.4%</td>
+</tr>
+<tr>
+<td>THEIA_E5</td>
+<td style="text-align: right;">55.3%</td>
+<td style="text-align: right;">43.1%</td>
+<td style="text-align: right;">1.6%</td>
+</tr>
+<tr>
+<td>CLEARSCOPE_E5</td>
+<td style="text-align: right;">14.6%</td>
+<td style="text-align: right;">64.7%</td>
+<td style="text-align: right;">20.7%</td>
+</tr>
+<tr>
+<td>FIVEDIRECTIONS_E5</td>
+<td style="text-align: right;">88.5%</td>
+<td style="text-align: right;">5.3%</td>
+<td style="text-align: right;">6.2%</td>
+</tr>
+<tr>
+<td>TRACE_E5</td>
+<td style="text-align: right;">74.5%</td>
+<td style="text-align: right;">10.1%</td>
+<td style="text-align: right;">15.4%</td>
+</tr>
+<tr>
+<td>optc_h201</td>
+<td style="text-align: right;">1.9%</td>
+<td style="text-align: right;">9.0%</td>
+<td style="text-align: right;">89.1%</td>
+</tr>
+<tr>
+<td>optc_h501</td>
+<td style="text-align: right;">1.8%</td>
+<td style="text-align: right;">8.7%</td>
+<td style="text-align: right;">89.5%</td>
+</tr>
+<tr>
+<td>optc_h051</td>
+<td style="text-align: right;">1.1%</td>
+<td style="text-align: right;">8.3%</td>
+<td style="text-align: right;">90.7%</td>
+</tr>
+<tr>
+<td>ATLASV2_EDR</td>
+<td style="text-align: right;">10.1%</td>
+<td style="text-align: right;">85.8%</td>
+<td style="text-align: right;">4.1%</td>
+</tr>
+<tr>
+<td>CARBANAKV2_EDR</td>
+<td style="text-align: right;">3.2%</td>
+<td style="text-align: right;">94.5%</td>
+<td style="text-align: right;">2.3%</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 class="pm-h-net" id="network">Network<a class="headerlink" href="#network" title="Permanent link">&para;</a></h3>
+<p>Nodes are hosts, edges are authentications or network flows, and malicious events are labelled in the database. The databases are <a href="../../getting-started/from-scratch/">built from the preprocessed files of LARES</a>, and downloaded like the provenance datasets.</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Events</th>
+<th style="text-align: right;">Hosts</th>
+<th>Malicious events</th>
+<th style="text-align: right;">Size (GB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LANL</td>
+<td>49.3M NTLM authentications</td>
+<td style="text-align: right;">15,610</td>
+<td>705</td>
+<td style="text-align: right;">0.40</td>
+</tr>
+<tr>
+<td>OPTC_NET</td>
+<td>1.86B network flows (1.12B FLOW START)</td>
+<td style="text-align: right;">625</td>
+<td>5,165 (1,015 FLOW START)¹</td>
+<td style="text-align: right;">11.8</td>
+</tr>
+</tbody>
+</table>
+<p>¹ With the labels of LARES propagated to all the records of malicious flows (default); 2,370 (115 FLOW START) with the labels of LARES as they are (see <a href="#optc_net">OPTC_NET</a>).</p>
+<h2 class="pm-h-prov" id="provenance-datasets">Provenance datasets<a class="headerlink" href="#provenance-datasets" title="Permanent link">&para;</a></h2>
+<p>Provenance datasets record the system events of one or several hosts, captured by an audit framework or by EDR telemetry, during benign activity and attack campaigns. Their ground truth lists the nodes involved in each attack (see <a href="#ground-truth">Ground truth</a>).</p>
+<h3 id="darpa-tc">DARPA TC<a class="headerlink" href="#darpa-tc" title="Permanent link">&para;</a></h3>
+<p>The DARPA Transparent Computing program produced benchmark datasets for evaluating provenance-based security systems.</p>
+<h4 id="engagement-3-e3-april-2018">Engagement 3 (E3), April 2018<a class="headerlink" href="#engagement-3-e3-april-2018" title="Permanent link">&para;</a></h4>
+<p><a href="https://github.com/darpa-i2o/Transparent-Computing/blob/master/README-E3.md"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></span> Official E3 description</a></p>
+<h5 id="cadets_e3">CADETS_E3<a class="headerlink" href="#cadets_e3" title="Permanent link">&para;</a></h5>
+<p>FreeBSD host with Nginx server exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>49 min</td>
+<td>Nginx exploited to deploy Drakon loader with root escalation. Netrecon executed after C2 connection, followed by failed <code>libdrakon</code> injection into <code>sshd</code>. Host crashed with kernel panic.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>40 min</td>
+<td>Nginx re-exploited to deploy Drakon and MicroAPT implants under random names (<code>tmux</code>, <code>minions</code>, <code>sendmail</code>). Privilege escalation failed; MicroAPT ran unprivileged for port scanning.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>13 min</td>
+<td>Nginx re-exploited to deploy new Drakon implant with root privileges. Multiple failed <code>sshd</code> injection attempts using renamed <code>libdrakon</code> copies.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>CADETS_E3
+</span></code></pre></div>
+<h5 id="theia_e3">THEIA_E3<a class="headerlink" href="#theia_e3" title="Permanent link">&para;</a></h5>
+<p>Ubuntu host with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>50 min</td>
+<td>Malicious Firefox extension dropped Drakon implant. MicroAPT staged under <code>/var/log/mail</code>, connected to C2 for control and network scanning.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>30 min</td>
+<td>Firefox exploited to drop Drakon implant as <code>/home/admin/clean</code> with root privileges, then copied as <code>profile</code>. Both connected to C2 server.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>THEIA_E3
+</span></code></pre></div>
+<h5 id="clearscope_e3">CLEARSCOPE_E3<a class="headerlink" href="#clearscope_e3" title="Permanent link">&para;</a></h5>
+<p>Android device with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>54 min</td>
+<td>Firefox exploited via malicious website. Drakon implant installed and elevated, but module loading failed. Persistent C2 connection maintained.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>CLEARSCOPE_E3
+</span></code></pre></div>
+<h5 id="trace_e3">TRACE_E3<a class="headerlink" href="#trace_e3" title="Permanent link">&para;</a></h5>
+<p>Ubuntu host with Firefox and Pine e-mail client exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1h25</td>
+<td>Firefox exploited through a malicious ad on <code>www.allstate.com</code> after several crashes, loading Drakon in memory. A Drakon implant was written to <code>/home/admin/cache</code> and elevated to a root C2 shell; <code>libdrakon</code> was staged under <code>/var/log/xtmp</code> for later use. Connection lost when the operator console crashed.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>15 min</td>
+<td>Phishing e-mail exploiting a backdoored Pine client that auto-runs attachments. A first <code>tcexec</code> executable failed on a missing library, so MicroAPT was re-sent as <code>tcexec</code> and ran when the e-mail was opened. It connected to C2 and port-scanned the network; attempts to spawn a shell failed.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>12 min</td>
+<td>Drakon implant dropped to <code>/tmp/ztmp</code> via the malicious password-manager Firefox extension and run with user privileges (labelled <em>Pine Backdoor w/ Drakon Dropper</em> in the DARPA report). Injection into <code>sshd</code> and privilege escalation failed, so MicroAPT was executed from disk: it connected to C2, port-scanned the network (no open ports found) and ran netrecon.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>TRACE_E3
+</span></code></pre></div>
+<h5 id="fivedirections_e3">FIVEDIRECTIONS_E3<a class="headerlink" href="#fivedirections_e3" title="Permanent link">&para;</a></h5>
+<p>Windows 10 host with Firefox and Excel macro exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>42 min</td>
+<td>Firefox exploited by browsing to <code>www.cnpc.com.cn</code> after repeated crashes, loading Drakon in memory with a C2 connection. Netrecon module run and its output exfiltrated, then several documents (<code>.rtf</code>, <code>.docx</code>, <code>.xlsx</code>) read and exfiltrated from the user's documents directory. Access lost when the netrecon UDP exfiltration failed.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>37 min</td>
+<td>Phishing e-mail with a <code>BoviaBenefitsOE.xlsm</code> attachment carrying an encoded PowerShell command. The macro did not fire automatically, so the user ran the command manually: it downloaded <code>update.ps1</code> from <code>208.75.117.5</code> and opened a powercat reverse shell, which the attacker used to read the hosts file and personal files.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>FIVEDIRECTIONS_E3
+</span></code></pre></div>
+<h4 id="engagement-5-e5-may-2019">Engagement 5 (E5), May 2019<a class="headerlink" href="#engagement-5-e5-may-2019" title="Permanent link">&para;</a></h4>
+<p><a href="https://github.com/darpa-i2o/Transparent-Computing"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></span> Official E5 description</a></p>
+<h5 id="cadets_e5">CADETS_E5<a class="headerlink" href="#cadets_e5" title="Permanent link">&para;</a></h5>
+<p>FreeBSD host with Nginx server exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>41 min</td>
+<td>Nginx exploited with a malformed HTTP POST on the second attempt, loading Drakon APT in memory with a C2 connection to <code>4.21.51.250:80</code>. The attacker retrieved the hostname and username before the connection was unexpectedly lost.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>5h18</td>
+<td>Nginx re-exploited on both CADETS hosts. A first attempt called back to the wrong C2 listener, so C2 was moved to a pivot host (<code>128.55.12.233:80</code>). Drakon ran <code>hostname</code> and <code>whoami</code> and exfiltrated <code>/etc/passwd</code> from both hosts; the C2 connections were left open for the rest of the day.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>CADETS_E5
+</span></code></pre></div>
+<h5 id="theia_e5">THEIA_E5<a class="headerlink" href="#theia_e5" title="Permanent link">&para;</a></h5>
+<p>Ubuntu host with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>19 min</td>
+<td>Firefox exploited via malicious website. Root gained with BinFmt-Elevate, Drakon shellcode injected into <code>sshd</code>, persistence file created, C2 access maintained.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>THEIA_E5
+</span></code></pre></div>
+<h5 id="clearscope_e5">CLEARSCOPE_E5<a class="headerlink" href="#clearscope_e5" title="Permanent link">&para;</a></h5>
+<p>Android device with APK-based attacks.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>41 min</td>
+<td>Malicious <code>appstarter</code> APK loaded MicroAPT. Elevate driver installed for privilege escalation. Sensitive databases exfiltrated (calllog, calendar, SMS) and screenshot captured.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>8 min</td>
+<td>MicroAPT deployed directly via adb shell after APK dropper failed. Privilege escalation via BinFmt Elevate driver, then file exfiltration.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>CLEARSCOPE_E5
+</span></code></pre></div>
+<h5 id="trace_e5">TRACE_E5<a class="headerlink" href="#trace_e5" title="Permanent link">&para;</a></h5>
+<p>Ubuntu host with Firefox exploitation. A second attempt on May 17 with the Azazel <code>LD_PRELOAD</code> rootkit never established C2 and is not labelled.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1h28</td>
+<td>Firefox exploited via the hijacked <code>www.yale.edu</code> website, Drakon APT connected to C2. Root gained with the BinFmt-Elevate driver (installed beforehand as benign activity), then Drakon injected into <code>sshd</code> with the new ptrace-based <code>inject2</code> technique, opening further C2 connections used to read <code>/etc/passwd</code> and <code>/etc/shadow</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>TRACE_E5
+</span></code></pre></div>
+<h5 id="fivedirections_e5">FIVEDIRECTIONS_E5<a class="headerlink" href="#fivedirections_e5" title="Permanent link">&para;</a></h5>
+<p>Windows 10 hosts with Firefox exploitation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>21 min</td>
+<td>Firefox backdoor used to download <code>ctfhost2.exe</code> through the Background Intelligent Transfer Service (BITS). MicroAPT executed and connected to C2 at <code>113.165.213.253:80</code>. Privilege escalation with several drivers failed because driver signature enforcement was re-enabled after a reboot.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>32 min</td>
+<td>Firefox exploited via the hijacked <code>www.usdoj.gov</code> website, loading Drakon APT in memory. Privileges escalated to SYSTEM with the elevate driver, then the Copykatz module (Mimikatz) harvested cached credentials alongside <code>whoami</code>, <code>hostname</code> and sysinfo recon. The WMI step failed due to a target configuration issue.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>11 min</td>
+<td>Firefox backdoor triggered over DNS to <code>xx--ls8h.com</code>; Drakon APT downloaded, executed and connected to C2. Privileges escalated to SYSTEM with the File System Filter elevate driver (triggered by opening a non-existent file), then host, network and <code>passwd</code> files exfiltrated.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>6 min</td>
+<td>Follow-up to the Application Verifier persistence set up on May 16 (an unused date), which injects <code>drakon.dll</code> into every new Firefox process. A C2 connection from a fresh Firefox launch was used to escalate to SYSTEM with the File System Filter driver and exfiltrate the hosts file.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>FIVEDIRECTIONS_E5
+</span></code></pre></div>
+<h3 id="darpa-optc">DARPA OpTC<a class="headerlink" href="#darpa-optc" title="Permanent link">&para;</a></h3>
+<p>Windows enterprise environment with realistic APT scenarios. <a href="https://github.com/FiveDirections/OpTC-data"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></span> Official repository</a></p>
+<h4 id="optc_h201">optc_h201<a class="headerlink" href="#optc_h201" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1h58</td>
+<td>PowerShell Empire stager executed with elevated access. Mimikatz used for credential theft, registry persistence set, recon performed, then pivoted to other hosts via WMI.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>optc_h201
+</span></code></pre></div>
+<h4 id="optc_h501">optc_h501<a class="headerlink" href="#optc_h501" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>5h01</td>
+<td>Phishing email launched PowerShell Empire stager. Escalated via DeathStar, WMI persistence established, RDP tunneling and file exfiltration performed, then pivoted to other hosts.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>optc_h501
+</span></code></pre></div>
+<h4 id="optc_h051">optc_h051<a class="headerlink" href="#optc_h051" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>3h56</td>
+<td>Malicious Notepad++ update installed Meterpreter. Escalated to SYSTEM, migrated into LSASS for Mimikatz credential theft, established persistence, timestomped files, added admin account for RDP.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>optc_h051
+</span></code></pre></div>
+<h3 id="atlasv2">ATLASv2<a class="headerlink" href="#atlasv2" title="Permanent link">&para;</a></h3>
+<p><a href="https://arxiv.org/abs/2401.01341"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10 9H8M16 13H8M16 17H8"/></svg></span> Paper</a> · Two Windows 7 hosts (h1, h2) attacked from Kali Linux. The dataset covers four benign days followed by one attack day on which all ten scenarios are executed. The provided data is Carbon Black Cloud EDR telemetry; the original dataset also includes Sysmon, Windows Security Auditing, Firefox, and DNS logs.</p>
+<h4 id="atlasv2_edr">ATLASV2_EDR<a class="headerlink" href="#atlasv2_edr" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>s1</td>
+<td>40 min</td>
+<td>CVE-2015-5122 Adobe Flash exploit via phishing email on h1. Meterpreter shell obtained, payload.exe dropped, PDFs exfiltrated over HTTPS.</td>
+</tr>
+<tr>
+<td>s2</td>
+<td>35 min</td>
+<td>CVE-2015-3105 Adobe Flash exploit via phishing email on h1. Meterpreter shell, payload drop, and HTTPS PDF exfiltration.</td>
+</tr>
+<tr>
+<td>s3</td>
+<td>45 min</td>
+<td>CVE-2017-11882 Microsoft Word memory corruption exploit via malicious attachment on h1. Meterpreter obtained, PDFs exfiltrated.</td>
+</tr>
+<tr>
+<td>s4</td>
+<td>44 min</td>
+<td>CVE-2017-0199 Microsoft Word OLE2 link exploit via malicious document on h1. Meterpreter shell, payload drop, HTTPS exfiltration.</td>
+</tr>
+<tr>
+<td>m1</td>
+<td>1h50</td>
+<td>CVE-2015-5122 Adobe Flash exploit on h1 via phishing. h1's SimpleHTTP server poisoned to deliver payload to h2. PDFs exfiltrated from both hosts.</td>
+</tr>
+<tr>
+<td>m2</td>
+<td>30 min</td>
+<td>CVE-2015-5119 Adobe Flash exploit on h1 with lateral movement to h2 via SimpleHTTP server poisoning. PDFs exfiltrated from both hosts.</td>
+</tr>
+<tr>
+<td>m3</td>
+<td>34 min</td>
+<td>CVE-2015-3105 Adobe Flash exploit on h1 with lateral movement to h2 via poisoned SimpleHTTP server. PDFs exfiltrated.</td>
+</tr>
+<tr>
+<td>m4</td>
+<td>33 min</td>
+<td>CVE-2018-8174 Microsoft Word VBScript engine exploit on h1 with lateral movement to h2 via HTTP server. PDFs exfiltrated from both hosts.</td>
+</tr>
+<tr>
+<td>m5</td>
+<td>30 min</td>
+<td>CVE-2017-0199 Microsoft Word OLE2 link exploit on h1 with lateral movement to h2. PDFs exfiltrated from both hosts.</td>
+</tr>
+<tr>
+<td>m6</td>
+<td>33 min</td>
+<td>CVE-2017-11882 Microsoft Word memory corruption exploit on h1 with lateral movement to h2 via poisoned HTTP server. PDFs exfiltrated.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>ATLASV2_EDR
+</span></code></pre></div>
+<h3 id="carbanakv2">CARBANAKv2<a class="headerlink" href="#carbanakv2" title="Permanent link">&para;</a></h3>
+<p><a href="https://www.ndss-symposium.org/wp-content/uploads/prism2026-12.pdf"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10 9H8M16 13H8M16 17H8"/></svg></span> Paper</a> · Multi-host testbed comprising four Windows 10 workstations (h1–h4), a CentOS 7 Linux fileserver (fs), and a Windows 10 Server AD domain controller (dc). Benign activity was generated by four graduate students using the machines as their primary workstations. The provided data is Carbon Black Cloud EDR telemetry.</p>
+<h4 id="carbanakv2_edr">CARBANAKV2_EDR<a class="headerlink" href="#carbanakv2_edr" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attack id</th>
+<th>Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>10 days</td>
+<td>MITRE Carbanak APT emulation. Attacker compromises h1 (Apr 30) via WScript-based Carbanak implant (<code>TransBaseOdbcDriver.js</code>). Pivots to Linux fileserver fs and then Windows AD domain controller dc via lateral movement (May 2). Subsequently spreads to h2, h3, and h4 (May 7–10), establishing persistence across all hosts.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>CARBANAKV2_EDR
+</span></code></pre></div>
+<h3 id="provenance_benign">PROVENANCE_BENIGN<a class="headerlink" href="#provenance_benign" title="Permanent link">&para;</a></h3>
+<p>A Linux audit corpus used only to <a href="../../features/pretrained_encoders/#pretraining">pretrain SPIDER</a>. It has no ground truth, so it can't be used to evaluate detection. It is downloaded like the other datasets (<code>pidsmaker download PROVENANCE_BENIGN</code>, 2 MB).</p>
+<p>It is built on a Linux machine: auditd records the system calls of 21 scripted workloads (from core utilities, compilers and package managers to web servers, databases, browsers and attack-like commands), the logs are parsed into entities and edges, and <code>create_database_provenance_benign.py</code> loads them into a <code>PROVENANCE_BENIGN</code> database with the DARPA TC schema.
+The collection scripts are on the <a href="https://github.com/ubc-provenance/PIDSMaker/tree/spider/scripts/provenance_capture"><code>spider</code> branch</a>, and their <a href="https://github.com/ubc-provenance/PIDSMaker/blob/spider/scripts/provenance_capture/README.md">README</a> describes each step.</p>
+<p>The dates of <code>PROVENANCE_BENIGN</code> in <code>DATASET_DEFAULT_CONFIG</code> (<code>pidsmaker/config/config.py</code>) are those of the corpus used in the paper (2026-03-16, UTC). Set them to the days of your own capture.</p>
+<h2 class="pm-h-net" id="network-datasets">Network datasets<a class="headerlink" href="#network-datasets" title="Permanent link">&para;</a></h2>
+<p>Network datasets record the communications between the hosts of an enterprise network, authentications or flows, during benign activity and a red team campaign. Their single node type is the host, and their events carry attributes (logon types, ports, protocols, sizes...) that become edge features (<code>batching.edge_features=edge_attrs</code>). Both are described by a schema in <code>pidsmaker/config/schemas.py</code>, and both are built from the preprocessed files of <a href="https://github.com/TristanBilot/lares">LARES</a> (see <a href="../../getting-started/from-scratch/">Building datasets from scratch</a>).</p>
+<p>Malicious events are labelled in the database (<code>label</code> column), so the ground truth is event-level: the evaluation labels each edge with its events. Models are trained and validated on benign events only: <code>construction.benign_training</code> (on by default) drops the malicious events of the train and val dates, which has no effect when they have none (as for LANL and OPTC_NET).</p>
+<h3 id="lanl"><a href="https://csr.lanl.gov/data/cyber1/">LANL</a><a class="headerlink" href="#lanl" title="Permanent link">&para;</a></h3>
+<p>The "Comprehensive, Multi-Source Cyber-Security Events" dataset of the Los Alamos National Laboratory: 58 days of authentications between the computers of the LANL network, with the red team events of a penetration test. As in Euler, Argus, Jbeil and LARES, only NTLM authentications are kept. Edges are authentications, typed by their orientation (<code>LogOn</code>, <code>LogOff</code>, ...), with the logon type, authentication type, success and kinds of source and destination users as attributes.</p>
+<p>LANL timestamps are seconds from an undisclosed origin, mapped to UTC dates such that the first red team event happens on 2015-01-03. Models are trained on 2015-01-01, validated on 2015-01-02 and tested from 2015-01-03 to 2015-01-30. The root source of the attack is host <code>9660</code>.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>LANL
+</span></code></pre></div>
+<h3 id="optc_net">OPTC_NET<a class="headerlink" href="#optc_net" title="Permanent link">&para;</a></h3>
+<p>The network flows of all the hosts of <a href="https://github.com/FiveDirections/OpTC-data">DARPA OpTC</a> (eCAR <code>FLOW START</code> and <code>FLOW MESSAGE</code> events), from 2019-09-16 to 2019-09-25. Edges are flows, with the source and destination ports (grouped by service and range), the protocol and the size of messages as attributes. As in LARES and Argus, only FLOW START events are used by default (<code>construction.operations</code>). Models are trained from 2019-09-16 to 2019-09-21, validated on 2019-09-22 and tested from 2019-09-23 to 2019-09-25 (malicious flows happen on 2019-09-23 and 2019-09-24). The root sources of the attacks are hosts <code>201</code>, <code>402</code> and <code>501</code>.</p>
+<p>LARES labels only some of the records of each malicious flow (a flow has FLOW START and FLOW MESSAGE events, recorded by the hosts at both ends). By default, the database labels malicious all the records of a malicious flow (same 5-tuple in the same LARES file): 1,015 malicious FLOW START events instead of the 115 of LARES. The labels of LARES are kept by building the database with <code>--no_label_propagation</code> (see <a href="../../getting-started/from-scratch/#4-fill-the-database">Building datasets from scratch</a>, tab <em>OpTC flows</em>)). Euler and Argus use another preprocessing and labelling of OpTC (IP addresses as nodes, including external hosts, and all the events of compromised hosts as malicious), so their results on OpTC are not comparable.</p>
+<p>99.9% of the FLOW START events are NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor discovery, which link each host to most hosts in every time window. They are dropped by default (<code>construction.drop_noise_events</code>, which has no effect on other datasets); set <code>construction.drop_noise_events=False</code> to keep them, as LARES does. The OpTC hyperparameters of LARES (30 min windows, α = 5, β = 30) and the 6 min snapshots of Argus are loaded with <code>--tuned</code> (<code>config/tuned_baselines/optc_net/</code>).</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>OPTC_NET
+</span></code></pre></div>
+<h2 id="train-validation-and-test-splits">Train, validation and test splits<a class="headerlink" href="#train-validation-and-test-splits" title="Permanent link">&para;</a></h2>
+<p>Each dataset is split by day, as defined by <code>train_dates</code>, <code>val_dates</code> and <code>test_dates</code> in <code>DATASET_DEFAULT_CONFIG</code> (<code>pidsmaker/config/config.py</code>):</p>
+<ul>
+<li><strong>Train days</strong>: benign activity only, used to train the model.</li>
+<li><strong>Validation days</strong>: benign activity only, used to pick the detection threshold.</li>
+<li><strong>Test days</strong>: benign activity and attacks, used for evaluation.</li>
+</ul>
+<p>On datasets with labelled events, <code>construction.benign_training</code> enforces it by dropping the malicious events of the train and validation days.</p>
+<p>The events of each day are then cut into time-window graphs during <a href="../pipeline/#the-stages">construction</a>.</p>
+<h2 id="ground-truth">Ground truth<a class="headerlink" href="#ground-truth" title="Permanent link">&para;</a></h2>
+<p>The two kinds of datasets are labelled differently:</p>
+<ul>
+<li><strong>Provenance datasets</strong> come with the list of the nodes involved in each attack, in files under <code>ground_truth/</code>. PIDSMaker ships several labelings of the DARPA TC attacks (<code>orthrus</code>, <code>reapr</code>, <code>threatrace</code>).</li>
+<li><strong>Network datasets</strong> label their events in the database. Malicious nodes are the endpoints of malicious events.</li>
+</ul>
+<p>See <a href="../evaluation/#ground-truth">Ground truth</a> for how they are selected and how labels are assigned to nodes, edges and time windows.</p>
+<h2 id="adding-custom-datasets">Adding custom datasets<a class="headerlink" href="#adding-custom-datasets" title="Permanent link">&para;</a></h2>
+<p>To add a new dataset, define its configuration in <code>pidsmaker/config/config.py</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">DATASET_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="s2">"MY_DATASET"</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>        <span class="s2">"raw_dir"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>        <span class="s2">"database"</span><span class="p">:</span> <span class="s2">"my_database_name"</span><span class="p">,</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>        <span class="s2">"database_all_file"</span><span class="p">:</span> <span class="s2">"my_database_name"</span><span class="p">,</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>        <span class="s2">"schema"</span><span class="p">:</span> <span class="s2">"darpa_tc"</span><span class="p">,</span> <span class="c1"># Format of the database: node types, edge types and event attributes (in pidsmaker/config/schemas.py)</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>        <span class="s2">"timezone"</span><span class="p">:</span> <span class="s2">"US/Eastern"</span><span class="p">,</span> <span class="c1"># Timezone of the dates below</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>        <span class="s2">"start_date"</span><span class="p">:</span> <span class="s2">"2018-04-02"</span><span class="p">,</span> <span class="c1"># Start date (Inclusive)</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>        <span class="s2">"end_date"</span><span class="p">:</span> <span class="s2">"2018-04-14"</span><span class="p">,</span> <span class="c1"># End date (Exclusive)</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>        <span class="s2">"train_dates"</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>            <span class="c1"># Dates/graphs used for training (i.e., benign activity)</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>            <span class="s2">"2018-04-02"</span><span class="p">,</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>            <span class="s2">"2018-04-03"</span><span class="p">,</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>            <span class="s2">"2018-04-04"</span><span class="p">,</span>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>            <span class="s2">"2018-04-05"</span><span class="p">,</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>            <span class="s2">"2018-04-07"</span><span class="p">,</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>            <span class="s2">"2018-04-08"</span><span class="p">,</span>
+</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>            <span class="s2">"2018-04-09"</span><span class="p">,</span>
+</span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>        <span class="p">],</span>
+</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>        <span class="s2">"val_dates"</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>            <span class="c1"># Dates/graphs used for validation/threshold calibration (i.e., benign activity)</span>
+</span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>            <span class="s2">"2018-04-10"</span>
+</span><span id="__span-17-23"><a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>        <span class="p">],</span>
+</span><span id="__span-17-24"><a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>        <span class="s2">"test_dates"</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="__span-17-25"><a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>            <span class="c1"># Dates/graphs used for testing (i.e., contains both benign and attack activity)</span>
+</span><span id="__span-17-26"><a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>            <span class="s2">"2018-04-06"</span><span class="p">,</span>
+</span><span id="__span-17-27"><a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>            <span class="s2">"2018-04-11"</span><span class="p">,</span>
+</span><span id="__span-17-28"><a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>            <span class="s2">"2018-04-12"</span><span class="p">,</span>
+</span><span id="__span-17-29"><a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>            <span class="s2">"2018-04-13"</span>
+</span><span id="__span-17-30"><a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>        <span class="p">],</span>
+</span><span id="__span-17-31"><a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a>        <span class="s2">"unused_dates"</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="__span-17-32"><a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>            <span class="c1"># Any unused dates/graphs that should be ignored</span>
+</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>             <span class="s2">"2018-04-14"</span>
+</span><span id="__span-17-34"><a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a>        <span class="p">],</span>
+</span><span id="__span-17-35"><a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a>        <span class="s2">"ground_truth_relative_path"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"MY_DATASET/labels.csv"</span><span class="p">],</span>
+</span><span id="__span-17-36"><a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a>        <span class="s2">"attack_to_time_window"</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="__span-17-37"><a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a>            <span class="p">[</span><span class="s2">"MY_DATASET/labels.csv"</span><span class="p">,</span> <span class="s2">"2018-04-11 10:00:00"</span><span class="p">,</span> <span class="s2">"2018-04-12 12:00:00"</span><span class="p">],</span>
+</span><span id="__span-17-38"><a id="__codelineno-17-38" name="__codelineno-17-38" href="#__codelineno-17-38"></a>        <span class="p">],</span>
+</span><span id="__span-17-39"><a id="__codelineno-17-39" name="__codelineno-17-39" href="#__codelineno-17-39"></a>    <span class="p">},</span>
+</span><span id="__span-17-40"><a id="__codelineno-17-40" name="__codelineno-17-40" href="#__codelineno-17-40"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>schema</code> names a dataset schema of <code>SCHEMAS</code> in <code>pidsmaker/config/schemas.py</code> (<code>darpa_tc</code>, <code>optc</code>, <code>carbon_black_edr</code>, <code>lanl_auth</code>, <code>optc_flows</code>), from which the numbers of node and edge types are derived. A dataset in a new format needs a new schema, which describes the database tables of its node types, its edge types and the attributes of its events.</p>
+<p>Then follow the <a href="../../getting-started/from-scratch/">database creation guide</a> to load your data, and add its ground truth under <code>ground_truth/</code> (or, with a schema that has a label column, label its events in the database, as the <a href="#network-datasets">network datasets</a>). A dataset with labelled events, like <code>LANL</code>, sets <code>ground_truth_relative_path</code> and <code>attack_to_time_window</code> to empty lists, and can set <code>root_attack_nodes</code>, the root sources of its attacks used by the <a href="../evaluation/#host-centered-evaluation-lares">host-centered evaluation</a>.</p>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../benchmark/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Benchmark">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Benchmark
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../evaluation/" class="md-footer__link md-footer__link--next" aria-label="Next: Evaluation &amp; labeling">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Evaluation & labeling
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025&ndash;2026 UBC Provenance team &middot; MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/ubc-provenance/PIDSMaker" target="_blank" rel="noopener" title="PIDSMaker on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://discord.gg/jecmkTABUg" target="_blank" rel="noopener" title="Join the PIDSMaker Discord" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M492.5 69.8c-.2-.3-.4-.6-.8-.7-38.1-17.5-78.4-30-119.7-37.1-.4-.1-.8 0-1.1.1s-.6.4-.8.8c-5.5 9.9-10.5 20.2-14.9 30.6-44.6-6.8-89.9-6.8-134.4 0-4.5-10.5-9.5-20.7-15.1-30.6-.2-.3-.5-.6-.8-.8s-.7-.2-1.1-.2C162.5 39 122.2 51.5 84.1 69c-.3.1-.6.4-.8.7C7.1 183.5-13.8 294.6-3.6 404.2c0 .3.1.5.2.8s.3.4.5.6c44.4 32.9 94 58 146.8 74.2.4.1.8.1 1.1 0s.7-.4.9-.7c11.3-15.4 21.4-31.8 30-48.8.1-.2.2-.5.2-.8s0-.5-.1-.8-.2-.5-.4-.6-.4-.3-.7-.4c-15.8-6.1-31.2-13.4-45.9-21.9-.3-.2-.5-.4-.7-.6s-.3-.6-.3-.9 0-.6.2-.9.3-.5.6-.7c3.1-2.3 6.2-4.7 9.1-7.1.3-.2.6-.4.9-.4s.7 0 1 .1c96.2 43.9 200.4 43.9 295.5 0 .3-.1.7-.2 1-.2s.7.2.9.4c2.9 2.4 6 4.9 9.1 7.2.2.2.4.4.6.7s.2.6.2.9-.1.6-.3.9-.4.5-.6.6c-14.7 8.6-30 15.9-45.9 21.8-.2.1-.5.2-.7.4s-.3.4-.4.7-.1.5-.1.8.1.5.2.8c8.8 17 18.8 33.3 30 48.8.2.3.6.6.9.7s.8.1 1.1 0c52.9-16.2 102.6-41.3 147.1-74.2.2-.2.4-.4.5-.6s.2-.5.2-.8c12.3-126.8-20.5-236.9-86.9-334.5zm-302 267.7c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.4 59.2-52.8 59.2m195.4 0c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.2 59.2-52.8 59.2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      
+<div class="md-progress" data-md-component="progress" role="progressbar" aria-label="Loading"></div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.action.edit","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.9e76c64c.min.js"></script>
+      
+      
+        <script src="../../javascripts/benchmark.js"></script>
+      
+    
+  </body>
+</html>

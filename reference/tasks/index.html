@@ -1,0 +1,2706 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="All configuration arguments of each task of the PIDSMaker pipeline, generated from pidsmaker&#x2f;config&#x2f;config.py.">
+      
+      
+        <meta name="author" content="UBC Provenance team">
+      
+      
+        <link rel="canonical" href="https://ubc-provenance.github.io/PIDSMaker/reference/tasks/">
+      
+      
+      
+      
+        <link rel="prev" href="../cli/">
+      
+      
+        <link rel="next" href="../cleaning/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/pidsmaker.ico">
+      <meta name="generator" content="zensical-0.1.3">
+    
+    
+      
+        <title>Tasks - PIDSMaker</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e2cf241e.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PIDSMaker" class="md-header__button md-logo" aria-label="PIDSMaker" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="PIDSMaker">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PIDSMaker
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tasks
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ubc-provenance/PIDSMaker
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guide/background/" class="md-tabs__link">
+          
+  
+  User guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/tuning/" class="md-tabs__link">
+          
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../cli/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../community/contributing/" class="md-tabs__link">
+          
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PIDSMaker" class="md-nav__button md-logo" aria-label="PIDSMaker" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="PIDSMaker">
+
+    </a>
+    PIDSMaker
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ubc-provenance/PIDSMaker
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Getting started
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quickstart
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Building datasets from scratch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  User guide
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  User guide
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Background
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pipeline
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benchmark
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Datasets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Evaluation & labeling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorial: a new system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Features
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Features
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/tuning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hyperparameter tuning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/instability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Instability
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Batching & sampling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/pretrained_encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pretrained encoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/supervised/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supervised fine-tuning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/multi-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-dataset training
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/attacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adversarial attacks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/triage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Triage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embedding visualizer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tasks
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tasks
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#stage-1-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 1: Construction
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-2-transformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 2: Transformation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-3-featurization" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 3: Featurization
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stage 3: Featurization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Feature inference
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-4-batching" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 4: Batching
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-5-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 5: Training
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-6-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 6: Evaluation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-7-triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 7: Triage
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Experiments
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cleaning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleaning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../featurization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Featurization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Encoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../objectives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Objectives
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Community
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Community
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  FAQ & troubleshooting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/ubc-provenance/PIDSMaker/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#stage-1-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 1: Construction
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-2-transformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 2: Transformation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-3-featurization" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 3: Featurization
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stage 3: Featurization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Feature inference
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-4-batching" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 4: Batching
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-5-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 5: Training
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-6-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 6: Evaluation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-7-triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stage 7: Triage
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Experiments
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../cli/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+    <a href="https://github.com/ubc-provenance/PIDSMaker/edit/main/docs/docs/reference/tasks.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497zM15 5l4 4"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h1>
+<p class="lead">Every argument of each <a href="../../guide/pipeline/">pipeline</a> task, as accepted in a system's YAML config or on the command line (e.g. <code>--training.lr=0.001</code>).</p>
+<div class="admonition tip">
+<p class="admonition-title">How to read this page</p>
+<ul>
+<li>Keys are nested exactly as in the YAML config. On the CLI, join them with dots: <code>training.encoder.dropout</code> → <code>--training.encoder.dropout=0.3</code>.</li>
+<li>Click the <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 13h-4v4h-2v-4H7v-2h4V7h2v4h4m-5-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2"/></svg></span> markers to see a description and the allowed values of an argument.</li>
+<li>Arguments of interchangeable methods (featurization methods, encoders, decoders, objectives, cleaning) are documented on their own pages: <a href="../featurization/">Featurization</a>, <a href="../encoders/">Encoders</a>, <a href="../decoders/">Decoders</a>, <a href="../objectives/">Objectives</a>, <a href="../cleaning/">Cleaning</a>.</li>
+</ul>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Generated content</p>
+<p>The argument lists below are generated from <code>TASK_ARGS</code> in <code>pidsmaker/config/config.py</code> by <code>docs/scripts/get_arguments.py</code>. Don't edit them by hand.</p>
+</div>
+<h2 id="stage-1-construction">Stage 1: Construction<a class="headerlink" href="#stage-1-construction" title="Permanent link">&para;</a></h2>
+<p>Builds the time-window graphs of provenance or network events from the database. The raw data can be cleaned before the graphs are built with <code>construction.cleaning</code>: see <a href="../cleaning/">Cleaning</a>.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (1)</span></li>
+    <li class='no-bullet'><span class="key-leaf">use_all_files</span>: <span class="value">bool</span></li>
+    <li class='no-bullet'><span class="key-leaf">mimicry_edge_num</span>: <span class="value">int</span></li>
+    <li class='no-bullet'><span class="key-leaf">time_window_size</span>: <span class="value">float (2)</span></li>
+    <li class='no-bullet'><span class="key-leaf">use_hashed_label</span>: <span class="value">bool (3)</span></li>
+    <li class='no-bullet'><span class="key-leaf">fuse_edge</span>: <span class="value">bool (4)</span></li>
+    <li class='no-bullet'><span class="key-leaf">consistent_edge_types</span>: <span class="value">bool (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">operations</span>: <span class="value">str (6)</span></li>
+    <li class='no-bullet'><span class="key-leaf">drop_noise_events</span>: <span class="value">bool (7)</span></li>
+    <li class='no-bullet'><span class="key-leaf">benign_training</span>: <span class="value">bool (8)</span></li>
+    <li class='no-bullet'><span class="key-leaf">edge_type</span>: <span class="value">str (9)</span></li>
+    <li class='bullet'><span class="key">node_label_features</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">subject</span>: <span class="value">str (10)</span></li>
+        <li class='no-bullet'><span class="key-leaf">file</span>: <span class="value">str (11)</span></li>
+        <li class='no-bullet'><span class="key-leaf">netflow</span>: <span class="value">str (12)</span></li>
+        <li class='no-bullet'><span class="key-leaf">host</span>: <span class="value">str (13)</span></li>
+    </ul>
+    </li>
+    <li class='no-bullet'><span class="key-leaf">null_label_tokens</span>: <span class="value">bool (14)</span></li>
+    <li class='no-bullet'><span class="key-leaf">multi_dataset</span>: <span class="value">str (15)</span></li>
+    <li class='bullet'><span class="key">cleaning</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (16)</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>The method to build time window graphs.<br><br><b>Available options (one selection)</b>:<br><code>default</code><br><code>magic</code></li>
+<li>The size of each graph in minutes. The notation should always be float (e.g. 10.0). Supports sizes &lt; 1.0.<br></li>
+<li>Whether to hash the textual features.<br></li>
+<li>Whether to fuse duplicate sequential edges into a single edge.<br></li>
+<li>Map OpTC edge types to DARPA TC equivalents for shared vocabulary across datasets.<br></li>
+<li>Events kept when building graphs, by value of their <code>operation</code> column:                 <code>default</code> keeps the default events of the dataset's schema (all events, except for                 OpTC network flows where only FLOW_START events are kept, as in LARES and Argus),                 <code>all</code> keeps all events, otherwise a comma-separated list of operations                 (e.g. <code>FLOW_START,FLOW_MESSAGE</code>).<br></li>
+<li>Drops the noise events of the dataset's schema when building graphs (OpTC                 network flows: NetBIOS, LLMNR and SSDP broadcasts and multicasts and ICMPv6 neighbor                 discovery, which link every host to most hosts in every time window). No effect on datasets                 without noise events. Default: True.<br></li>
+<li>Drops the events labelled malicious from the graphs of the train and val dates, so                 that models are trained and validated on benign events only (datasets with event                 labels whose train or val dates have attacks). No effect on other datasets and                 dates. Default: True.<br></li>
+<li>Edge attribute used as edge type by graphs and models (e.g. the type predicted by                 <code>predict_edge_type</code>). <code>operation</code> is the default type of events of the dataset                 (e.g. system calls in provenance datasets), other values are categorical edge                 attributes of the dataset's schema (e.g. <code>logon_type</code> in LANL).<br><br><b>Available options (one selection)</b>:<br><code>auth_type</code><br><code>dst_port</code><br><code>dst_user_kind</code><br><code>logon_type</code><br><code>operation</code><br><code>protocol</code><br><code>src_port</code><br><code>src_user_kind</code><br><code>success</code></li>
+<li>Attributes of <code>subject</code> nodes used as node labels (concatenated): path, cmd_line. <code>type</code> adds the node type, and <code>auto</code> uses the type-specific default label, only made of non-null attributes.<br><br><b>Available options (multi selection)</b>:<br><code>auto</code><br><code>type</code><br><code>path</code><br><code>cmd_line</code></li>
+<li>Attributes of <code>file</code> nodes used as node labels (concatenated): path. <code>type</code> adds the node type, and <code>auto</code> uses the type-specific default label, only made of non-null attributes.<br><br><b>Available options (multi selection)</b>:<br><code>auto</code><br><code>type</code><br><code>path</code></li>
+<li>Attributes of <code>netflow</code> nodes used as node labels (concatenated): local_ip, local_port, remote_ip, remote_port. <code>type</code> adds the node type, and <code>auto</code> uses the type-specific default label, only made of non-null attributes.<br><br><b>Available options (multi selection)</b>:<br><code>auto</code><br><code>type</code><br><code>local_ip</code><br><code>local_port</code><br><code>remote_ip</code><br><code>remote_port</code></li>
+<li>Attributes of <code>host</code> nodes used as node labels (concatenated): name. <code>type</code> adds the node type, and <code>auto</code> uses the type-specific default label, only made of non-null attributes.<br><br><b>Available options (multi selection)</b>:<br><code>auto</code><br><code>type</code><br><code>name</code></li>
+<li>When enabled, null entity attributes produce explicit tokens ([NO_CMD], [NO_PATH], [NO_IP]) instead of empty strings.<br></li>
+<li>A comma-separated list of datasets on which training is performed. Evaluation is done only the primary dataset run in CLI.<br><br><b>Available options (one selection)</b>:<br><code>THEIA_E5</code><br><code>THEIA_E3</code><br><code>CADETS_E5</code><br><code>CADETS_E3</code><br><code>CLEARSCOPE_E5</code><br><code>CLEARSCOPE_E3</code><br><code>optc_h201</code><br><code>optc_h501</code><br><code>optc_h051</code><br><code>TRACE_E5</code><br><code>TRACE_E3</code><br><code>FIVEDIRECTIONS_E5</code><br><code>FIVEDIRECTIONS_E3</code><br><code>PROVENANCE_BENIGN</code><br><code>ATLASV2_EDR</code><br><code>CARBANAKV2_EDR</code><br><code>LANL</code><br><code>OPTC_NET</code><br><code>none</code></li>
+<li>Cleaning methods applied to the raw data before building the graphs, or <code>none</code>.                     <code>remove_null_attributes</code>: null-like attributes (<code>None</code>, <code>NA</code>, <code>&lt;UNNAMED fd:3&gt;</code>, invalid IPs and ports) are removed from labels;                     <code>normalize_labels</code>: whitespaces, slashes, path prefixes and quotes are normalized and long labels truncated;                     <code>remove_duplicate_events</code>: events with the same source, destination, type and timestamp are kept once;                     <code>remove_self_loops</code>: events from a node to itself are removed;                     <code>remove_noisy_netflows</code>: netflows to multicast/broadcast/... IPs are removed with their events;                     <code>dedup_window_edges</code>: only the first event of each (source, destination, type) is kept in each time window.<br><br><b>Available options (multi selection)</b>:<br><code>remove_null_attributes</code><br><code>normalize_labels</code><br><code>remove_duplicate_events</code><br><code>remove_self_loops</code><br><code>remove_noisy_netflows</code><br><code>dedup_window_edges</code><br><code>none</code></li>
+</ol>
+<h2 id="stage-2-transformation">Stage 2: Transformation<a class="headerlink" href="#stage-2-transformation" title="Permanent link">&para;</a></h2>
+<p>Optional transformations applied to the graphs after construction.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (1)</span></li>
+    <li class='bullet'><span class="key">rcaid_pseudo_graph</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">use_pruning</span>: <span class="value">bool (2)</span></li>
+        <li class='no-bullet'><span class="key-leaf">prune_threshold</span>: <span class="value">float (3)</span></li>
+        <li class='no-bullet'><span class="key-leaf">root_node_types</span>: <span class="value">str (4)</span></li>
+        <li class='no-bullet'><span class="key-leaf">keep_original_edges</span>: <span class="value">bool (5)</span></li>
+        <li class='no-bullet'><span class="key-leaf">merge_same_label_roots</span>: <span class="value">bool (6)</span></li>
+        <li class='no-bullet'><span class="key-leaf">max_roots_per_node</span>: <span class="value">int (7)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">merge_edges</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">per_edge_type</span>: <span class="value">bool (8)</span></li>
+        <li class='no-bullet'><span class="key-leaf">aggregate_attributes</span>: <span class="value">bool (9)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">synthetic_attack_naive</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">num_attacks</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_malicious_process</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">num_unauthorized_file_access</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">process_selection_method</span>: <span class="value">str</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: <code>used_methods=undirected,dag</code><br><br><b>Available options (multi selection)</b>:<br><code>undirected</code><br><code>dag</code><br><code>rcaid_pseudo_graph</code><br><code>merge_edges</code><br><code>none</code><br><code>synthetic_attack_naive</code></li>
+<li>Whether roots reaching more than <code>prune_threshold</code> of the nodes of the graph                     get no pseudo edges (R-Caid's pruning of highly-connected roots).<br></li>
+<li>Fraction of the nodes of the graph above which the descendants of a root are                     pruned (0.5 for DARPA TC in the paper).<br></li>
+<li>Comma-separated node types that can be roots (e.g. <code>file,netflow</code>: files and                     sockets, as in the paper), or <code>all</code>.<br></li>
+<li>Whether the transformed graph keeps the edges of the provenance graph next to                     the pseudo edges (root -&gt; descendant), which have no edge type. If False, only                     the pseudo edges are kept.<br></li>
+<li>Whether the pseudo edges of the roots with the same type and label (thus the                     same features) towards a same node are merged into one, from the first such root.<br></li>
+<li>Maximum number of pseudo-roots of a node (0: no limit): its roots with the                     fewest descendants. Bounds the pseudo edges by this number times the number of                     nodes, e.g. when a process reads thousands of files that become roots of all                     its descendants.<br></li>
+<li>Whether repeated edges are merged per edge type (one edge per source,                     destination and type) or regardless of their type (one edge per source and                     destination, as in Euler). Merged edges have a <code>count</code> and a <code>weight</code> attribute.<br></li>
+<li>Whether the edge attributes of a merged edge (<code>batching.edge_features=edge_attrs</code>)                     aggregate all its events, as the edge features of Euler, Argus and LARES: the number                     of events, the number of events with each value of each categorical attribute                     (e.g. successful and failed logons) and the number, mean and std of the values of                     numeric attributes, each standardized over the edges of the graph as                     sigmoid(floor(x / std)). Otherwise, the attributes of the first event are kept.<br></li>
+</ol>
+<h2 id="stage-3-featurization">Stage 3: Featurization<a class="headerlink" href="#stage-3-featurization" title="Permanent link">&para;</a></h2>
+<p>Trains the model that embeds the textual labels of entities. The methods and their arguments are listed in <a href="../featurization/">Featurization</a>.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">emb_dim</span>: <span class="value">int (1)</span></li>
+    <li class='no-bullet'><span class="key-leaf">epochs</span>: <span class="value">int (2)</span></li>
+    <li class='no-bullet'><span class="key-leaf">seed</span>: <span class="value">int</span></li>
+    <li class='no-bullet'><span class="key-leaf">training_split</span>: <span class="value">str (3)</span></li>
+    <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool (4)</span></li>
+    <li class='no-bullet'><span class="key-leaf">pretrain_datasets</span>: <span class="value">str (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (6)</span></li>
+    <li class='bullet'><span class="key">tokenization</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (7)</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Size of the text embedding. Arg not used by some featurization methods that do not build embeddings.<br></li>
+<li>Epochs to train the embedding method. Arg not used by some methods.<br></li>
+<li>The partition of data used to train the featurization method.<br><br><b>Available options (one selection)</b>:<br><code>train</code><br><code>all</code></li>
+<li>Whether the featurization method should be trained on all datasets in <code>multi_dataset</code>.<br></li>
+<li>Comma-separated list of dataset names for multi-dataset pretraining (used by word2vec, doc2vec, etc.).<br></li>
+<li>Algorithms used to create node and edge features.<br><br><b>Available options (one selection)</b>:<br><code>word2vec</code><br><code>doc2vec</code><br><code>graph2vec</code><br><code>fasttext</code><br><code>alacarte</code><br><code>temporal_rw</code><br><code>flash</code><br><code>hierarchical_hashing</code><br><code>magic</code><br><code>only_type</code><br><code>only_ones</code><br><code>ocrapt_features</code><br><code>pretrained</code></li>
+<li>How node labels are split into tokens before featurization. <code>nltk</code> splits words with NLTK,                     <code>hierarchical</code> keeps each level of paths and IPs (Kairos), <code>whole_label</code> uses the whole label as a single token (DeepWalk),                     <code>bpe</code> is the provenance-specific BPE of SPIDER, <code>huggingface</code> uses the tokenizer of a HuggingFace language model,                     <code>none</code> is for featurization methods that do not tokenize labels.<br><br><b>Available options (one selection)</b>:<br><code>none</code><br><code>nltk</code><br><code>hierarchical</code><br><code>whole_label</code><br><code>bpe</code><br><code>huggingface</code></li>
+</ol>
+<h3 id="feature-inference">Feature inference<a class="headerlink" href="#feature-inference" title="Permanent link">&para;</a></h3>
+<p><code>feat_inference</code> runs right after <code>featurization</code> and embeds every node of the graphs with the trained model. Its arguments mostly apply to <a href="../../features/pretrained_encoders/">pretrained encoders</a>: continued pretraining on the target dataset, and the <a href="../../features/pretrained_encoders/#renaming-attack">renaming attack</a>.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">to_remove</span>: <span class="value">bool</span></li>
+    <li class='no-bullet'><span class="key-leaf">edge_attributes</span>: <span class="value">str (1)</span></li>
+    <li class='no-bullet'><span class="key-leaf">continue_pretrain</span>: <span class="value">bool (2)</span></li>
+    <li class='no-bullet'><span class="key-leaf">continue_pretrain_epochs</span>: <span class="value">int (3)</span></li>
+    <li class='no-bullet'><span class="key-leaf">continue_pretrain_lr_factor</span>: <span class="value">float (4)</span></li>
+    <li class='no-bullet'><span class="key-leaf">edge_batch_size</span>: <span class="value">int (5)</span></li>
+    <li class='bullet'><span class="key">rename_attack</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">enabled</span>: <span class="value">bool (6)</span></li>
+        <li class='no-bullet'><span class="key-leaf">entities</span>: <span class="value">str (7)</span></li>
+        <li class='no-bullet'><span class="key-leaf">target_node_type</span>: <span class="value">str (8)</span></li>
+        <li class='no-bullet'><span class="key-leaf">top_k</span>: <span class="value">int (9)</span></li>
+        <li class='no-bullet'><span class="key-leaf">target_label</span>: <span class="value">str (10)</span></li>
+        <li class='no-bullet'><span class="key-leaf">seed</span>: <span class="value">int (11)</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Edge attributes of the dataset's schema used as edge features                 (<code>batching.edge_features=edge_attrs</code>): <code>all</code>, a comma-separated list of attribute                 names (names absent from the dataset are ignored), or lists per dataset, e.g.                 <code>LANL:success;OPTC_NET:src_port,dst_port,protocol</code> (unlisted datasets use all their                 attributes).<br></li>
+<li>Continue pretraining on the target dataset before inference. Default: False.<br></li>
+<li>Number of epochs for continue-pretraining on target dataset. Default: 3.<br></li>
+<li>LR multiplier relative to original peak LR (e.g., 0.1 = 10x lower). Default: 0.1.<br></li>
+<li>Number of edges to process in each batch during feat_inference. Default: 5000.<br></li>
+<li>If True, after embeddings are computed, replace the embedding of selected test-set nodes with a benign target embedding. Simulates an inference-time renaming/mimicry attack.<br></li>
+<li>Comma-separated BASE NAMES of attack entities (e.g. 'main, XIM, sendmail'). Each is matched two ways against test-set nodes of <code>target_node_type</code>: (a) exact label equality, and (b) labels ending with '/<base>' (path-style).<br></li>
+<li>Node type the attack targets (only nodes of this type are rewritten).<br><br><b>Available options (one selection)</b>:<br><code>subject</code><br><code>file</code><br><code>netflow</code></li>
+<li>If &gt;0, automatically build a benign-target pool from the top-K most frequent BARE labels (no '/') of <code>target_node_type</code> seen in the training split, and assign one target per attack entity. Path-suffix matches preserve the original prefix (e.g. '/tmp/main' -&gt; '/tmp/<assigned-target>'). If 0, use the manual <code>target_label</code> for every entity (e.g. for an 'unseen-by-pretraining' target).<br></li>
+<li>(Manual mode only, used when top_k=0) Bare base name to replace every attack entity. Path-suffix matches still preserve the prefix (e.g. '/tmp/main' -&gt; '/tmp/<target_label>').<br></li>
+<li>Seed used to shuffle the auto-picked benign pool before assigning one target per entity. Vary it for sensitivity analysis over which benign label each malicious entity is mimicking.<br></li>
+</ol>
+<h2 id="stage-4-batching">Stage 4: Batching<a class="headerlink" href="#stage-4-batching" title="Permanent link">&para;</a></h2>
+<p>Selects the node and edge features and builds the batches given to the model. See <a href="../../features/batching/">Batching &amp; sampling</a>.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">save_on_disk</span>: <span class="value">bool (1)</span></li>
+    <li class='no-bullet'><span class="key-leaf">node_features</span>: <span class="value">str (2)</span></li>
+    <li class='no-bullet'><span class="key-leaf">edges_distribution_scaling</span>: <span class="value">str (3)</span></li>
+    <li class='no-bullet'><span class="key-leaf">edge_features</span>: <span class="value">str (4)</span></li>
+    <li class='no-bullet'><span class="key-leaf">multi_dataset_training</span>: <span class="value">bool (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">compact_node_ids</span>: <span class="value">bool (6)</span></li>
+    <li class='no-bullet'><span class="key-leaf">fix_buggy_graph_reindexer</span>: <span class="value">bool (7)</span></li>
+    <li class='bullet'><span class="key">global_batching</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (8)</span></li>
+        <li class='no-bullet'><span class="key-leaf">global_batching_batch_size</span>: <span class="value">int (9)</span></li>
+        <li class='no-bullet'><span class="key-leaf">global_batching_batch_size_inference</span>: <span class="value">int (10)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">intra_graph_batching</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (11)</span></li>
+        <li class='bullet'><span class="key">edges</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">intra_graph_batch_size</span>: <span class="value">int (12)</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">tgn_last_neighbor</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">tgn_neighbor_size</span>: <span class="value">int (13)</span></li>
+            <li class='no-bullet'><span class="key-leaf">tgn_neighbor_n_hop</span>: <span class="value">int (14)</span></li>
+            <li class='no-bullet'><span class="key-leaf">fix_buggy_orthrus_TGN</span>: <span class="value">bool (15)</span></li>
+            <li class='no-bullet'><span class="key-leaf">fix_tgn_neighbor_loader</span>: <span class="value">bool (16)</span></li>
+            <li class='no-bullet'><span class="key-leaf">directed</span>: <span class="value">bool (17)</span></li>
+            <li class='no-bullet'><span class="key-leaf">insert_neighbors_before</span>: <span class="value">bool (18)</span></li>
+            <li class='no-bullet'><span class="key-leaf">reset_state_every_day</span>: <span class="value">bool (19)</span></li>
+            <li class='no-bullet'><span class="key-leaf">negative_destinations</span>: <span class="value">bool (20)</span></li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">inter_graph_batching</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (21)</span></li>
+        <li class='no-bullet'><span class="key-leaf">inter_graph_batch_size</span>: <span class="value">int (22)</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Whether to store the graphs on disk upon building the graphs.             Used to avoid re-computation of very complex batching operations that take time. Can take up to 300GB storage for CADETS_E5.<br></li>
+<li>Node features to use during GNN training. <code>node_type</code> is a one-hot encoded entity type vector,                                     <code>node_emb</code> refers to the embedding generated during the <code>featurization</code> task, <code>only_ones</code> is a vector of ones                                     with length <code>node_type</code>, <code>edges_distribution</code> counts emitted and received edges.<br><br><b>Available options (multi selection)</b>:<br><code>node_type</code><br><code>node_emb</code><br><code>only_ones</code><br><code>edges_distribution</code></li>
+<li>Scaling of the <code>edges_distribution</code> counts: <code>max</code> divides them by the largest count of                 the time window (default), <code>none</code> keeps the raw counts (as ThreaTrace), <code>log1p</code> applies log(1 + x).<br><br><b>Available options (one selection)</b>:<br><code>max</code><br><code>none</code><br><code>log1p</code></li>
+<li>Edge features to used during GNN training. <code>edge_type</code> refers to the system call type, <code>edge_type_triplet</code>                                 considers a same edge type as a new type if source or destination node types are different, <code>msg</code> is the message vector                                 used in the TGN, <code>time_encoding</code> encodes temporal order of events with their timestamps in the TGN,                                 <code>edge_attrs</code> are the edge attributes of the dataset's schema besides the edge type (one-hot categorical and                                 log-scaled numeric attributes, e.g. ports or logon types), <code>none</code> uses no features.<br><br><b>Available options (multi selection)</b>:<br><code>edge_type</code><br><code>edge_type_triplet</code><br><code>msg</code><br><code>time_encoding</code><br><code>edge_attrs</code><br><code>none</code></li>
+<li>Whether the GNN should be trained on all datasets in <code>multi_dataset</code>.<br></li>
+<li>Renumbers the nodes of the graphs from 0 to (number of nodes in the graphs - 1), keeping                                 their order, instead of using the node IDs of the database, which also count the nodes                                 absent from all graphs (86% of the 44.5M IDs of TRACE_E3). Tensors indexed by node (TGN                                 memory, neighbor loader, node ID embeddings, <code>all_nodes</code> embeddings, ...) are sized                                 accordingly. Node IDs are restored in the outputs. Results are unchanged, except for                                 methods drawing random nodes among all IDs (e.g. uniform negatives of Euler and Argus).<br></li>
+<li>A bug has been found in the first version of the framework, where reindexing graphs in shape (N, d)                                                 slightly modify node features. Setting this to true fixes the bug.<br></li>
+<li>Flattens the time window-based graphs into a single large                             temporal graph and recreate graphs based on the given method. <code>edges</code> creates contiguous graphs of size <code>global_batching_batch_size</code> edges,                             the same applies for <code>minutes</code>, <code>unique_edge_types</code> builds graphs where each pair of connected nodes share edges with distinct edge types,                             <code>none</code> uses the default time window-based batching defined in minutes with arg <code>time_window_size</code>.<br><br><b>Available options (one selection)</b>:<br><code>edges</code><br><code>minutes</code><br><code>unique_edge_types</code><br><code>none</code></li>
+<li>Controls the value associated with <code>global_batching.used_method</code> (training+inference).<br></li>
+<li>Controls the value associated with <code>global_batching.used_method</code> (inference only).<br></li>
+<li>Breaks each previously computed graph into even smaller graphs.                                 <code>edges</code> creates contiguous graphs of size <code>intra_graph_batch_size</code> edges (if a graph has 2000 edges and <code>intra_graph_batch_size=1500</code>                                 creates two graphs: one with 1500 edges, the other with 500 edges), <code>tgn_last_neighbor</code> computes for each graph its associated graph                                 based on the TGN last neighbor loader, namely a new graph where each node is connected with its last <code>tgn_neighbor_size</code> incoming edges.                                <code>none</code> does not alter any graph.<br><br><b>Available options (multi selection)</b>:<br><code>edges</code><br><code>tgn_last_neighbor</code><br><code>none</code></li>
+<li>Controls the value associated with <code>global_batching.used_method</code>.<br></li>
+<li>Number of last neighbors to store for each node.<br></li>
+<li>If greater than one, will also gather the last neighbors of neighbors.<br></li>
+<li>A bug has been in the first version of the framework, where the features of last neighbors not appearing                                             in the input graph have zero node feature vectors. Setting this arg to true includes the features of all nodes in the TGN graph.<br></li>
+<li>We found a minor bug in the original TGN code (<a href="https://github.com/pyg-team/pytorch_geometric/issues/10100">https://github.com/pyg-team/pytorch_geometric/issues/10100</a>). This                                                 is an unofficial fix.<br></li>
+<li>The original TGN's loader builds graphs in an undirected way. This makes the graphs purely directed.<br></li>
+<li>Whether to insert the edges of the current graph before loading last neighbors.<br></li>
+<li>Empties the last neighbors and resets the TGN memory at the first batch of each day                         (date of its first event), as Kairos, which trains and tests on one graph per day.<br></li>
+<li>Draws a negative destination for each edge, uniformly among the destinations                         of the training graphs (training) or of all graphs (validation, test), and adds                         it to the nodes of the TGN graph to be embedded with memory and neighbors, as                         TGN and Jbeil (used by <code>predict_edge_contrastive.neg_sampling=tgn</code>).<br></li>
+<li>Batches multiple graphs into a single large one for parallel training.                                 Does not support TGN. <code>graph_batching</code> batches <code>inter_graph_batch_size</code> together, <code>none</code> doesn't batch graphs.<br><br><b>Available options (one selection)</b>:<br><code>graph_batching</code><br><code>none</code></li>
+<li>Controls the value associated with <code>inter_graph_batching.used_method</code>.<br></li>
+</ol>
+<h2 id="stage-5-training">Stage 5: Training<a class="headerlink" href="#stage-5-training" title="Permanent link">&para;</a></h2>
+<p>Trains the encoder and the objectives, then computes the losses on the validation and test sets. Encoders, decoders and objectives have their own pages.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">seed</span>: <span class="value">int</span></li>
+    <li class='no-bullet'><span class="key-leaf">deterministic</span>: <span class="value">bool (1)</span></li>
+    <li class='no-bullet'><span class="key-leaf">num_epochs</span>: <span class="value">int</span></li>
+    <li class='no-bullet'><span class="key-leaf">patience</span>: <span class="value">int</span></li>
+    <li class='no-bullet'><span class="key-leaf">lr</span>: <span class="value">float</span></li>
+    <li class='no-bullet'><span class="key-leaf">weight_decay</span>: <span class="value">float</span></li>
+    <li class='no-bullet'><span class="key-leaf">node_hid_dim</span>: <span class="value">int (2)</span></li>
+    <li class='no-bullet'><span class="key-leaf">node_out_dim</span>: <span class="value">int (3)</span></li>
+    <li class='no-bullet'><span class="key-leaf">grad_accumulation</span>: <span class="value">int (4)</span></li>
+    <li class='no-bullet'><span class="key-leaf">stable_optim</span>: <span class="value">bool (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">inference_device</span>: <span class="value">str (6)</span></li>
+    <li class='no-bullet'><span class="key-leaf">fuse_duplicate_edges_training</span>: <span class="value">bool (7)</span></li>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (8)</span></li>
+    <li class='bullet'><span class="key">threatrace</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">ratio_threshold</span>: <span class="value">float (9)</span></li>
+        <li class='no-bullet'><span class="key-leaf">max_submodels</span>: <span class="value">int (10)</span></li>
+        <li class='no-bullet'><span class="key-leaf">max_retrain_epochs</span>: <span class="value">int (11)</span></li>
+        <li class='no-bullet'><span class="key-leaf">retrain_loss_threshold</span>: <span class="value">float (12)</span></li>
+        <li class='no-bullet'><span class="key-leaf">max_rounds_without_progress</span>: <span class="value">int (13)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">ocrapt_early_stop</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">enabled</span>: <span class="value">bool (14)</span></li>
+        <li class='no-bullet'><span class="key-leaf">patience</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">min_delta</span>: <span class="value">float</span></li>
+        <li class='no-bullet'><span class="key-leaf">max_delta</span>: <span class="value">float</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">encoder</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">dropout</span>: <span class="value">float</span></li>
+        <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (15)</span></li>
+        <li class='no-bullet'><span class="key-leaf">x_is_tuple</span>: <span class="value">bool (16)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">decoder</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str (17)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_few_shot</span>: <span class="value">bool (18)</span></li>
+        <li class='bullet'><span class="key">few_shot</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">include_attacks_in_ssl_training</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">freeze_encoder</span>: <span class="value">bool</span></li>
+            <li class='no-bullet'><span class="key-leaf">num_epochs_few_shot</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">patience_few_shot</span>: <span class="value">int</span></li>
+            <li class='no-bullet'><span class="key-leaf">lr_few_shot</span>: <span class="value">float</span></li>
+            <li class='no-bullet'><span class="key-leaf">weight_decay_few_shot</span>: <span class="value">float</span></li>
+            <li class='bullet'><span class="key">decoder</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">used_methods</span>: <span class="value">str</span></li>
+            </ul>
+            </li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Whether to force PyTorch to use deterministic algorithms.<br></li>
+<li>Number of neurons in the middle layers of the encoder.<br></li>
+<li>Number of neurons in the last layer of the encoder.<br></li>
+<li>Number of epochs to gather gradients before backprop.<br></li>
+<li>Use AdamW + warmup cosine schedule + gradient clipping for stable training.<br></li>
+<li>Device used during testing.<br><br><b>Available options (one selection)</b>:<br><code>cpu</code><br><code>cuda</code></li>
+<li>During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss.<br></li>
+<li>Which training pipeline use.             <code>threatrace</code> trains ThreaTrace's successive submodels (see <code>training.threatrace</code>).<br><br><b>Available options (one selection)</b>:<br><code>default</code><br><code>pretrained</code><br><code>threatrace</code></li>
+<li>ThreaTrace's <code>thre</code>: a node is explained by a submodel when its type is predicted                     with a top-1 / top-2 probability ratio of at least this value. Anomalous nodes are                     those no submodel explains (used by <code>threshold_method: threatrace</code>).<br></li>
+<li>Maximum number of submodels trained by <code>used_method: threatrace</code>.<br></li>
+<li>Maximum number of epochs to train each submodel after the first one.<br></li>
+<li>Training of a submodel after the first one stops once its mean loss on the nodes                     not yet explained is below this value.<br></li>
+<li>Training stops after this number of consecutive rounds where the submodel                     explains no new training node.<br></li>
+<li>Off by default, no-op unless set.<br></li>
+<li>First part of the neural network. Usually GNN encoders to capture complex patterns.<br><br><b>Available options (multi selection)</b>:<br><code>tgn</code><br><code>graph_attention</code><br><code>sage</code><br><code>gcn</code><br><code>node_id_embedding</code><br><code>snapshot_gru</code><br><code>textrcnn</code><br><code>lares</code><br><code>egraphsage</code><br><code>argus</code><br><code>shadewatcher</code><br><code>gat</code><br><code>gin</code><br><code>rgcn</code><br><code>rgcn_per_type</code><br><code>sum_aggregation</code><br><code>rcaid_gat</code><br><code>magic_gat</code><br><code>glstm</code><br><code>custom_mlp</code><br><code>none</code><br><code>hetero_graph_transformer</code></li>
+<li>Whether to consider nodes differently when being source or destination.<br></li>
+<li>Second part of the neural network. Usually MLPs specific to the downstream task (e.g. reconstruction of prediction)<br><br><b>Available options (multi selection)</b>:<br><code>predict_edge_supervised</code><br><code>predict_edge_type</code><br><code>predict_node_type</code><br><code>predict_process_tag</code><br><code>predict_masked_struct</code><br><code>detect_edge_few_shot</code><br><code>predict_edge_contrastive</code><br><code>deep_graph_infomax</code><br><code>predict_snapshot_embedding</code><br><code>reconstruct_node_features</code><br><code>reconstruct_node_embeddings</code><br><code>autoencode_edge_embeddings</code><br><code>reconstruct_edge_embeddings</code><br><code>reconstruct_masked_features</code><br><code>one_class</code></li>
+<li>Old feature: need some work to update it.<br></li>
+</ol>
+<h2 id="stage-6-evaluation">Stage 6: Evaluation<a class="headerlink" href="#stage-6-evaluation" title="Permanent link">&para;</a></h2>
+<p>Turns the losses into anomaly scores, chooses a threshold and computes the metrics.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">viz_malicious_nodes</span>: <span class="value">bool (1)</span></li>
+    <li class='no-bullet'><span class="key-leaf">ground_truth_version</span>: <span class="value">str (2)</span></li>
+    <li class='no-bullet'><span class="key-leaf">evaluate_selected_epoch_only</span>: <span class="value">bool (3)</span></li>
+    <li class='no-bullet'><span class="key-leaf">save_figures</span>: <span class="value">bool (4)</span></li>
+    <li class='no-bullet'><span class="key-leaf">best_model_selection</span>: <span class="value">str (5)</span></li>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str</span></li>
+    <li class='bullet'><span class="key">node_evaluation</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (6)</span></li>
+        <li class='bullet'><span class="key">max_val_loss</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">float (7)</span></li>
+        </ul>
+        </li>
+        <li class='no-bullet'><span class="key-leaf">use_dst_node_loss</span>: <span class="value">bool (8)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_kmeans</span>: <span class="value">bool (9)</span></li>
+        <li class='no-bullet'><span class="key-leaf">kmeans_top_K</span>: <span class="value">int (10)</span></li>
+        <li class='no-bullet'><span class="key-leaf">ocrapt_contamination</span>: <span class="value">float (11)</span></li>
+        <li class='no-bullet'><span class="key-leaf">ocrapt_min_contamination</span>: <span class="value">float (12)</span></li>
+        <li class='no-bullet'><span class="key-leaf">magic_knn_k</span>: <span class="value">int (13)</span></li>
+        <li class='no-bullet'><span class="key-leaf">magic_max_reference_size</span>: <span class="value">int (14)</span></li>
+        <li class='no-bullet'><span class="key-leaf">magic_embedding</span>: <span class="value">str (15)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">tw_evaluation</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (16)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">node_tw_evaluation</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (17)</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_dst_node_loss</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">use_kmeans</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">kmeans_top_K</span>: <span class="value">int</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">queue_evaluation</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (18)</span></li>
+        <li class='no-bullet'><span class="key-leaf">queue_threshold</span>: <span class="value">int</span></li>
+        <li class='bullet'><span class="key">kairos_idf_queue</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">include_test_set_in_IDF</span>: <span class="value">bool</span></li>
+        </ul>
+        </li>
+        <li class='bullet'><span class="key">provnet_lof_queue</span>
+        <ul>
+            <li class='no-bullet'><span class="key-leaf">queue_arg</span>: <span class="value">str</span></li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">host_two_stage_evaluation</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">alpha</span>: <span class="value">int (19)</span></li>
+        <li class='no-bullet'><span class="key-leaf">beta</span>: <span class="value">int (20)</span></li>
+        <li class='no-bullet'><span class="key-leaf">root_attack_nodes</span>: <span class="value">str (21)</span></li>
+        <li class='no-bullet'><span class="key-leaf">test_end</span>: <span class="value">str (22)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">edge_evaluation</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">malicious_edge_selection</span>: <span class="value">str (23)</span></li>
+        <li class='no-bullet'><span class="key-leaf">threshold_method</span>: <span class="value">str (24)</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Whether to generate images of malicious nodes' neighborhoods (not stable).<br></li>
+<li><br><b>Available options (one selection)</b>:<br><code>orthrus</code><br><code>reapr</code><br><code>threatrace</code></li>
+<li>Only evaluates the epoch selected by a label-free <code>best_model_selection</code> (<code>last_epoch</code>,                 <code>best_val_score</code>), instead of evaluating every epoch on the test set (faster on large                 test sets, without per-epoch test metrics).<br></li>
+<li>Whether to save the figures of the evaluation (scores, ADP and discrimination                 curves) for each evaluated epoch. Metrics are computed either way. Figures with                 one point per edge or node are slow to draw on large test sets.<br></li>
+<li>Strategy to select the best model across epochs. <code>best_adp</code> selects the best model based on the highest ADP score, <code>best_discrimination</code>                                     selects the model that does the best separation between top-score TPs and top-score FPs. These two use test labels.                                     <code>best_val_score</code> selects the model with the best score on validation data computed by the objective                                     (link prediction AUC + AP of validation edges for <code>predict_edge_contrastive</code>), as Euler's early stopping.                                     <code>last_epoch</code> selects the last evaluated epoch (no labels used). <code>best_mcc</code> selects the best MCC on the test set (as LARES' code).<br><br><b>Available options (one selection)</b>:<br><code>best_adp</code><br><code>best_discrimination</code><br><code>best_ap@10</code><br><code>best_val_score</code><br><code>best_mcc</code><br><code>last_epoch</code></li>
+<li>Method to calculate the threshold value used to detect anomalies.<br><br><b>Available options (one selection)</b>:<br><code>max_val_loss</code><br><code>mean_val_loss</code><br><code>percentile</code><br><code>threatrace</code><br><code>magic</code><br><code>flash</code><br><code>nodlink</code><br><code>fixed_zero</code><br><code>ocrapt</code></li>
+<li>Weights the margin applied to the threshold value.<br></li>
+<li>Whether to consider the loss of destination nodes when computing the node-level scores (maximum loss of a node).<br></li>
+<li>Whether to cluster nodes after thresholding as done in Orthrus<br></li>
+<li>Number of top-score nodes selected before clustering.<br></li>
+<li>For threshold_method=ocrapt: max per-type contamination (top fraction flagged), clamped from that type's own val malicious fraction.<br></li>
+<li>For threshold_method=ocrapt: min per-type contamination floor.<br></li>
+<li>For threshold_method=magic: number of nearest benign training nodes whose                     mean distance scores a test node (default 10, as in the MAGIC paper).<br></li>
+<li>For threshold_method=magic: the k-NN reference set is a random sample of at most                     this many benign training node embeddings (0: all of them).<br></li>
+<li>For threshold_method=magic: node embedding scored by the k-NN detector, the output                     of the last encoder layer (<code>last</code>, MAGIC's code) or the concatenation of all its                     layers (<code>concat</code>, MAGIC's paper).<br><br><b>Available options (one selection)</b>:<br><code>last</code><br><code>concat</code></li>
+<li>Time-window detection: each test time window is scored by reducing the losses of its edges, and classified as malicious if its score exceeds the threshold.<br><br><b>Available options (one selection)</b>:<br><code>max_val_loss</code><br><code>mean_val_loss</code><br><code>percentile</code><br><code>threatrace</code><br><code>magic</code><br><code>flash</code><br><code>nodlink</code><br><code>fixed_zero</code><br><code>ocrapt</code></li>
+<li>Node-level detection where a same node in multiple time windows is                     considered as multiple unique nodes. More realistic evaluation for near real-time detection.<br><br><b>Available options (one selection)</b>:<br><code>max_val_loss</code><br><code>mean_val_loss</code><br><code>percentile</code><br><code>threatrace</code><br><code>magic</code><br><code>flash</code><br><code>nodlink</code><br><code>fixed_zero</code><br><code>ocrapt</code></li>
+<li>Queue-level detection as in Kairos: anomalous time windows sharing rare (high-IDF) nodes are grouped into queues, and the time windows of queues whose anomaly score exceeds <code>queue_threshold</code> are flagged. <code>provnet_lof_queue</code> is not supported anymore.<br><br><b>Available options (one selection)</b>:<br><code>kairos_idf_queue</code><br><code>provnet_lof_queue</code></li>
+<li>Number of top host scores clustered by K-means in the first stage (LARES: 3).<br></li>
+<li>Number of top outgoing edges predicted malicious per selected host (LARES: 350).<br></li>
+<li>Comma-separated index IDs of the root sources of the attacks: only their malicious                     edges are positives, as LARES. <code>dataset</code>: the <code>root_attack_nodes</code> of the dataset (9660                     on LANL, 201,402,501 on OpTC flows). Empty: all malicious edges.<br></li>
+<li>End of the evaluated test period (<code>%Y-%m-%d %H:%M:%S</code> in the dataset's timezone).                     Empty: the whole test period.<br></li>
+<li>The ground truth only contains node-level labels.                 This arg controls the strategy to label edges. <code>src_nodes</code> and <code>dst_nodes</code> consider an edge as malicious if only its source or only its destination                 node is malicious. <code>both</code> labels an edge as malicious if both end nodes are malicious.<br><br><b>Available options (one selection)</b>:<br><code>src_node</code><br><code>dst_node</code><br><code>both_nodes</code></li>
+<li><br><b>Available options (one selection)</b>:<br><code>max_val_loss</code><br><code>mean_val_loss</code><br><code>percentile</code><br><code>threatrace</code><br><code>magic</code><br><code>flash</code><br><code>nodlink</code><br><code>fixed_zero</code><br><code>ocrapt</code></li>
+</ol>
+<h2 id="stage-7-triage">Stage 7: Triage<a class="headerlink" href="#stage-7-triage" title="Permanent link">&para;</a></h2>
+<p>Optional post-processing of the detections.</p>
+<div class="annotate">
+
+<ul>
+    <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (1)</span></li>
+    <li class='bullet'><span class="key">depimpact</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (2)</span></li>
+        <li class='no-bullet'><span class="key-leaf">score_method</span>: <span class="value">str (3)</span></li>
+        <li class='no-bullet'><span class="key-leaf">workers</span>: <span class="value">int</span></li>
+        <li class='no-bullet'><span class="key-leaf">visualize</span>: <span class="value">bool</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">ocrapt</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">num_hops</span>: <span class="value">int (4)</span></li>
+        <li class='no-bullet'><span class="key-leaf">top_k</span>: <span class="value">int (5)</span></li>
+        <li class='no-bullet'><span class="key-leaf">min_nodes</span>: <span class="value">int (6)</span></li>
+        <li class='no-bullet'><span class="key-leaf">max_edges</span>: <span class="value">int (7)</span></li>
+        <li class='no-bullet'><span class="key-leaf">abnormality_level</span>: <span class="value">str (8)</span></li>
+        <li class='no-bullet'><span class="key-leaf">correlate_anomalous_once</span>: <span class="value">bool</span></li>
+        <li class='no-bullet'><span class="key-leaf">remove_duplicated_subgraph</span>: <span class="value">bool</span></li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li>Post-processing step to reconstruct attack paths or reduce false positives. <code>depimpact</code> is used in Orthrus; <code>ocrapt_subgraph</code> is OCR-APT's anomalous-subgraph stage.<br><br><b>Available options (one selection)</b>:<br><code>depimpact</code><br><code>ocrapt_subgraph</code></li>
+<li><br><b>Available options (one selection)</b>:<br><code>component</code><br><code>shortest_path</code><br><code>1-hop</code><br><code>2-hop</code><br><code>3-hop</code></li>
+<li><br><b>Available options (one selection)</b>:<br><code>degree</code><br><code>recon_loss</code><br><code>degree_recon</code></li>
+<li>hops for correlating anomalies into subgraphs<br></li>
+<li>top-K seed nodes per node type (by Anomaly_score)<br></li>
+<li>minimum nodes per constructed subgraph<br></li>
+<li>subgraphs above this are Louvain-partitioned + edge-sampled<br></li>
+<li>least subgraph severity to keep (summed Prediction_probability)<br><br><b>Available options (one selection)</b>:<br><code>Negligible</code><br><code>Minor</code><br><code>Moderate</code><br><code>Significant</code><br><code>Critical</code></li>
+</ol>
+<h2 id="experiments">Experiments<a class="headerlink" href="#experiments" title="Permanent link">&para;</a></h2>
+<p>Arguments of the experiment modes, such as running a system several times to <a href="../../features/instability/">measure instability</a>. They are usually set in a YAML file under <code>config/experiments/</code> and selected with <code>--experiment</code>.</p>
+<div class="annotate">
+
+<ul>
+    <li class='bullet'><span class="key">training_loop</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">run_evaluation</span>: <span class="value">str (1)</span></li>
+    </ul>
+    </li>
+    <li class='bullet'><span class="key">experiment</span>
+    <ul>
+        <li class='no-bullet'><span class="key-leaf">used_method</span>: <span class="value">str (2)</span></li>
+        <li class='bullet'><span class="key">uncertainty</span>
+        <ul>
+            <li class='bullet'><span class="key">hyperparameter</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">hyperparameters</span>: <span class="value">str (3)</span></li>
+                <li class='no-bullet'><span class="key-leaf">iterations</span>: <span class="value">int</span></li>
+                <li class='no-bullet'><span class="key-leaf">delta</span>: <span class="value">float</span></li>
+            </ul>
+            </li>
+            <li class='bullet'><span class="key">mc_dropout</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">iterations</span>: <span class="value">int</span></li>
+                <li class='no-bullet'><span class="key-leaf">dropout</span>: <span class="value">float</span></li>
+            </ul>
+            </li>
+            <li class='bullet'><span class="key">deep_ensemble</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">method</span>: <span class="value">str</span></li>
+                <li class='no-bullet'><span class="key-leaf">iterations</span>: <span class="value">int</span></li>
+                <li class='no-bullet'><span class="key-leaf">restart_from</span>: <span class="value">str</span></li>
+            </ul>
+            </li>
+            <li class='bullet'><span class="key">bagged_ensemble</span>
+            <ul>
+                <li class='no-bullet'><span class="key-leaf">iterations</span>: <span class="value">int</span></li>
+                <li class='no-bullet'><span class="key-leaf">min_num_days</span>: <span class="value">int</span></li>
+            </ul>
+            </li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+</ul>
+
+</div>
+
+<ol>
+<li><br><b>Available options (one selection)</b>:<br><code>each_epoch</code><br><code>best_epoch</code></li>
+<li><br><b>Available options (one selection)</b>:<br><code>uncertainty</code><br><code>none</code></li>
+<li><br><b>Available options (multi selection)</b>:<br><code>lr</code><br><code>num_epochs</code><br><code>text_h_dim</code><br><code>gnn_h_dim</code></li>
+</ol>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../cli/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Command line">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Command line
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../cleaning/" class="md-footer__link md-footer__link--next" aria-label="Next: Cleaning">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Cleaning
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025&ndash;2026 UBC Provenance team &middot; MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/ubc-provenance/PIDSMaker" target="_blank" rel="noopener" title="PIDSMaker on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://discord.gg/jecmkTABUg" target="_blank" rel="noopener" title="Join the PIDSMaker Discord" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M492.5 69.8c-.2-.3-.4-.6-.8-.7-38.1-17.5-78.4-30-119.7-37.1-.4-.1-.8 0-1.1.1s-.6.4-.8.8c-5.5 9.9-10.5 20.2-14.9 30.6-44.6-6.8-89.9-6.8-134.4 0-4.5-10.5-9.5-20.7-15.1-30.6-.2-.3-.5-.6-.8-.8s-.7-.2-1.1-.2C162.5 39 122.2 51.5 84.1 69c-.3.1-.6.4-.8.7C7.1 183.5-13.8 294.6-3.6 404.2c0 .3.1.5.2.8s.3.4.5.6c44.4 32.9 94 58 146.8 74.2.4.1.8.1 1.1 0s.7-.4.9-.7c11.3-15.4 21.4-31.8 30-48.8.1-.2.2-.5.2-.8s0-.5-.1-.8-.2-.5-.4-.6-.4-.3-.7-.4c-15.8-6.1-31.2-13.4-45.9-21.9-.3-.2-.5-.4-.7-.6s-.3-.6-.3-.9 0-.6.2-.9.3-.5.6-.7c3.1-2.3 6.2-4.7 9.1-7.1.3-.2.6-.4.9-.4s.7 0 1 .1c96.2 43.9 200.4 43.9 295.5 0 .3-.1.7-.2 1-.2s.7.2.9.4c2.9 2.4 6 4.9 9.1 7.2.2.2.4.4.6.7s.2.6.2.9-.1.6-.3.9-.4.5-.6.6c-14.7 8.6-30 15.9-45.9 21.8-.2.1-.5.2-.7.4s-.3.4-.4.7-.1.5-.1.8.1.5.2.8c8.8 17 18.8 33.3 30 48.8.2.3.6.6.9.7s.8.1 1.1 0c52.9-16.2 102.6-41.3 147.1-74.2.2-.2.4-.4.5-.6s.2-.5.2-.8c12.3-126.8-20.5-236.9-86.9-334.5zm-302 267.7c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.4 59.2-52.8 59.2m195.4 0c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.2 59.2-52.8 59.2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      
+<div class="md-progress" data-md-component="progress" role="progressbar" aria-label="Loading"></div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.action.edit","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.9e76c64c.min.js"></script>
+      
+      
+        <script src="../../javascripts/benchmark.js"></script>
+      
+    
+  </body>
+</html>

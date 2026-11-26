@@ -1,0 +1,2678 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="How PIDSMaker labels and evaluates the detections of provenance and network systems at the node, edge, time-window, queue and host levels, computes thresholds and metrics such as ADP, and selects the reported epoch.">
+      
+      
+        <meta name="author" content="UBC Provenance team">
+      
+      
+        <link rel="canonical" href="https://ubc-provenance.github.io/PIDSMaker/guide/evaluation/">
+      
+      
+      
+      
+        <link rel="prev" href="../datasets/">
+      
+      
+        <link rel="next" href="../tutorial/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/pidsmaker.ico">
+      <meta name="generator" content="zensical-0.1.3">
+    
+    
+      
+        <title>Evaluation & labeling - PIDSMaker</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e2cf241e.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PIDSMaker" class="md-header__button md-logo" aria-label="PIDSMaker" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="PIDSMaker">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PIDSMaker
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Evaluation & labeling
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ubc-provenance/PIDSMaker
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  Getting started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../background/" class="md-tabs__link">
+          
+  
+  User guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/tuning/" class="md-tabs__link">
+          
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/cli/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../community/contributing/" class="md-tabs__link">
+          
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PIDSMaker" class="md-nav__button md-logo" aria-label="PIDSMaker" data-md-component="logo">
+      
+  <img src="../../assets/pidsmaker_new.png" alt="PIDSMaker">
+
+    </a>
+    PIDSMaker
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ubc-provenance/PIDSMaker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ubc-provenance/PIDSMaker
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Getting started
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quickstart
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Building datasets from scratch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  User guide
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  User guide
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Background
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pipeline
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benchmark
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Datasets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Evaluation & labeling
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Evaluation & labeling
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-losses-to-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        From losses to metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-granularities" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Evaluation granularities
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation granularities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#queues-kairos" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Queues (Kairos)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-centered-evaluation-lares" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Host-centered evaluation (LARES)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ground truth
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ground truth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-level-labels-network-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Event-level labels (network datasets)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thresholds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Thresholds
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thresholds">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clustering-orthrus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Clustering (Orthrus)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-the-reported-epoch" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Choosing the reported epoch
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Outputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings-of-each-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings of each system
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorial: a new system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Features
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Features
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/tuning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hyperparameter tuning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/instability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Instability
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Batching & sampling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/pretrained_encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pretrained encoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/supervised/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supervised fine-tuning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/multi-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-dataset training
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/attacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adversarial attacks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/triage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Triage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Embedding visualizer
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tasks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cleaning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleaning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/featurization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Featurization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/encoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Encoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/decoders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decoders
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/objectives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Objectives
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Community
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Community
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  FAQ & troubleshooting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/ubc-provenance/PIDSMaker/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-losses-to-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        From losses to metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-granularities" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Evaluation granularities
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation granularities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#queues-kairos" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Queues (Kairos)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host-centered-evaluation-lares" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Host-centered evaluation (LARES)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ground truth
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ground truth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-level-labels-network-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Event-level labels (network datasets)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thresholds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Thresholds
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thresholds">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clustering-orthrus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Clustering (Orthrus)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-the-reported-epoch" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Choosing the reported epoch
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Outputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings-of-each-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings of each system
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../background/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    User guide
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+    <a href="https://github.com/ubc-provenance/PIDSMaker/edit/main/docs/docs/guide/evaluation.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497zM15 5l4 4"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="evaluation-labeling">Evaluation &amp; labeling<a class="headerlink" href="#evaluation-labeling" title="Permanent link">&para;</a></h1>
+<p class="lead">The same detector can look excellent or useless depending on <strong>what</strong> is counted as a detection, <strong>how</strong> it is labeled, and <strong>which threshold</strong> is used. This page explains each of these choices in PIDSMaker, for provenance and network datasets, so that results can be compared fairly.</p>
+<h2 id="from-losses-to-metrics">From losses to metrics<a class="headerlink" href="#from-losses-to-metrics" title="Permanent link">&para;</a></h2>
+<ol class="pm-steps">
+<li><strong>Losses.</strong> After training, the model computes a loss for every edge (or node, for node-level objectives) of the validation and test graphs. This is done at epoch 0 and then every two epochs, and saved per time window.</li>
+<li><strong>Scores.</strong> The evaluation method groups the losses into the <strong>samples</strong> it classifies (nodes, edges, time windows...) and reduces them into one anomaly score per sample.</li>
+<li><strong>Threshold.</strong> A threshold is computed from the <strong>validation</strong> losses, which contain benign activity only. Samples scoring above it are predicted malicious.</li>
+<li><strong>Labels.</strong> Each sample gets a ground-truth label, derived from the list of attack nodes of provenance datasets, or from the labels of the events of <a href="#event-level-labels-network-datasets">network datasets</a>.</li>
+<li><strong>Metrics.</strong> Predictions are compared with the labels, for each evaluated epoch, and the metrics of the best epoch are reported.</li>
+</ol>
+<p>The evaluation method is set with <code>evaluation.used_method</code>, and its options in the sub-section of the same name. Each family has its usual granularity, which <code>evaluation.used_method</code> changes for any system:</p>
+<div class="pm-families">
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Provenance systems</th>
+<th>Network systems</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Default evaluation</strong></td>
+<td><code>node_evaluation</code>: is each process, file or netflow part of an attack?</td>
+<td><code>edge_evaluation</code>: is each authentication or flow malicious? <code>host_two_stage_evaluation</code> for LARES: which hosts are the sources of the attack, and which of their edges are malicious?</td>
+</tr>
+<tr>
+<td><strong>Ground truth</strong></td>
+<td>Attack nodes, in <a href="#ground-truth">ground-truth files</a></td>
+<td>Malicious events, <a href="#event-level-labels-network-datasets">labelled in the database</a></td>
+</tr>
+<tr>
+<td><strong>Reported epoch</strong></td>
+<td>Best ADP (<code>best_adp</code>)</td>
+<td>Chosen without labels (<code>best_val_score</code>, <code>last_epoch</code>), or best MCC for LARES</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>See the <a href="#settings-of-each-system">settings of each system</a>.</p>
+<h2 id="evaluation-granularities">Evaluation granularities<a class="headerlink" href="#evaluation-granularities" title="Permanent link">&para;</a></h2>
+<p>The ground truth lists attack <strong>nodes</strong> (provenance datasets) or malicious <strong>events</strong> (network datasets). Each evaluation method turns it into labels for the unit it classifies:</p>
+<div class="pm-eval-grid">
+<figure class="pm-eval-card"><svg viewBox="0 0 240 152" role="img"><rect class="win" x="8" y="22" width="68" height="86" rx="8"/><text class="lbl" x="42.0" y="16" text-anchor="middle">TW1</text><rect class="win" x="86" y="22" width="68" height="86" rx="8"/><text class="lbl" x="120.0" y="16" text-anchor="middle">TW2</text><rect class="win" x="164" y="22" width="68" height="86" rx="8"/><text class="lbl" x="198.0" y="16" text-anchor="middle">TW3</text><line class="e" x1="32.0" y1="48.0" x2="51.0" y2="48.0"/><line class="e" x1="27.3" y1="55.3" x2="38.3" y2="79.8"/><line class="e" x1="56.7" y1="55.3" x2="45.7" y2="79.8"/><circle class="n" cx="24" cy="48" r="7"/><circle class="n" cx="60" cy="48" r="7"/><circle class="n" cx="42" cy="88" r="7"/><line class="e" x1="110.0" y1="48.0" x2="129.0" y2="48.0"/><line class="e" x1="105.3" y1="55.3" x2="116.3" y2="79.8"/><line class="e" x1="134.7" y1="55.3" x2="123.7" y2="79.8"/><circle class="n" cx="102" cy="48" r="7"/><circle class="n" cx="138" cy="48" r="7"/><circle class="m" cx="120" cy="88" r="7"/><line class="e" x1="188.0" y1="48.0" x2="207.0" y2="48.0"/><line class="e" x1="183.3" y1="55.3" x2="194.3" y2="79.8"/><line class="e" x1="212.7" y1="55.3" x2="201.7" y2="79.8"/><circle class="n" cx="180" cy="48" r="7"/><circle class="n" cx="216" cy="48" r="7"/><circle class="m" cx="198" cy="88" r="7"/><path class="unit-m" style="fill:none" d="M120,97 C120,128 198,128 198,97"/><text class="note" x="120.0" y="146" text-anchor="middle">same node = 1 sample</text></svg><figcaption><strong>Node <code>node_evaluation</code></strong>One sample per node over the whole test set. Its score is the max loss of its edges in all windows. Malicious if the node is in the ground truth.</figcaption></figure>
+<figure class="pm-eval-card"><svg viewBox="0 0 240 152" role="img"><rect class="win" x="8" y="22" width="68" height="86" rx="8"/><text class="lbl" x="42.0" y="16" text-anchor="middle">TW1</text><rect class="win" x="86" y="22" width="68" height="86" rx="8"/><text class="lbl" x="120.0" y="16" text-anchor="middle">TW2</text><rect class="win" x="164" y="22" width="68" height="86" rx="8"/><text class="lbl" x="198.0" y="16" text-anchor="middle">TW3</text><circle class="unit-m" cx="120" cy="88" r="12"/><circle class="unit-m" cx="198" cy="88" r="12"/><line class="e" x1="32.0" y1="48.0" x2="51.0" y2="48.0"/><line class="e" x1="27.3" y1="55.3" x2="38.3" y2="79.8"/><line class="e" x1="56.7" y1="55.3" x2="45.7" y2="79.8"/><circle class="n" cx="24" cy="48" r="7"/><circle class="n" cx="60" cy="48" r="7"/><circle class="n" cx="42" cy="88" r="7"/><line class="e" x1="110.0" y1="48.0" x2="129.0" y2="48.0"/><line class="e" x1="105.3" y1="55.3" x2="116.3" y2="79.8"/><line class="e" x1="134.7" y1="55.3" x2="123.7" y2="79.8"/><circle class="n" cx="102" cy="48" r="7"/><circle class="n" cx="138" cy="48" r="7"/><circle class="m" cx="120" cy="88" r="7"/><line class="e" x1="188.0" y1="48.0" x2="207.0" y2="48.0"/><line class="e" x1="183.3" y1="55.3" x2="194.3" y2="79.8"/><line class="e" x1="212.7" y1="55.3" x2="201.7" y2="79.8"/><circle class="n" cx="180" cy="48" r="7"/><circle class="n" cx="216" cy="48" r="7"/><circle class="m" cx="198" cy="88" r="7"/><text class="note" x="120.0" y="146" text-anchor="middle">same node = 2 samples</text></svg><figcaption><strong>Node × time window <code>node_tw_evaluation</code></strong>One sample per (node, window) pair: the same node in two windows counts twice. Malicious if the node is malicious in that window.</figcaption></figure>
+<figure class="pm-eval-card"><svg viewBox="0 0 240 152" role="img"><rect class="win" x="8" y="22" width="68" height="86" rx="8"/><text class="lbl" x="42.0" y="16" text-anchor="middle">TW1</text><rect class="win" x="86" y="22" width="68" height="86" rx="8"/><text class="lbl" x="120.0" y="16" text-anchor="middle">TW2</text><rect class="win" x="164" y="22" width="68" height="86" rx="8"/><text class="lbl" x="198.0" y="16" text-anchor="middle">TW3</text><line class="e" x1="32.0" y1="48.0" x2="51.0" y2="48.0"/><line class="e" x1="27.3" y1="55.3" x2="38.3" y2="79.8"/><line class="e" x1="56.7" y1="55.3" x2="45.7" y2="79.8"/><circle class="n" cx="24" cy="48" r="7"/><circle class="n" cx="60" cy="48" r="7"/><circle class="n" cx="42" cy="88" r="7"/><line class="e" x1="110.0" y1="48.0" x2="129.0" y2="48.0"/><line class="em" x1="105.3" y1="55.3" x2="116.3" y2="79.8"/><line class="em" x1="134.7" y1="55.3" x2="123.7" y2="79.8"/><circle class="n" cx="102" cy="48" r="7"/><circle class="n" cx="138" cy="48" r="7"/><circle class="m" cx="120" cy="88" r="7"/><line class="e" x1="188.0" y1="48.0" x2="207.0" y2="48.0"/><line class="em" x1="183.3" y1="55.3" x2="194.3" y2="79.8"/><line class="em" x1="212.7" y1="55.3" x2="201.7" y2="79.8"/><circle class="n" cx="180" cy="48" r="7"/><circle class="n" cx="216" cy="48" r="7"/><circle class="m" cx="198" cy="88" r="7"/><text class="note" x="120.0" y="146" text-anchor="middle">each edge = 1 sample</text></svg><figcaption><strong>Edge <code>edge_evaluation</code></strong>One sample per event, scored by its own loss. Malicious if its source, destination or both are attack nodes, as set by <code>malicious_edge_selection</code>.</figcaption></figure>
+<figure class="pm-eval-card"><svg viewBox="0 0 240 152" role="img"><rect class="win" x="8" y="22" width="68" height="86" rx="8"/><text class="lbl" x="42.0" y="16" text-anchor="middle">TW1</text><rect class="win" x="86" y="22" width="68" height="86" rx="8"/><text class="lbl" x="120.0" y="16" text-anchor="middle">TW2</text><rect class="win" x="164" y="22" width="68" height="86" rx="8"/><text class="lbl" x="198.0" y="16" text-anchor="middle">TW3</text><rect class="unit" x="5" y="19" width="74" height="92" rx="10"/><rect class="unit-m" x="83" y="19" width="74" height="92" rx="10"/><rect class="unit-m" x="161" y="19" width="74" height="92" rx="10"/><line class="e" x1="32.0" y1="48.0" x2="51.0" y2="48.0"/><line class="e" x1="27.3" y1="55.3" x2="38.3" y2="79.8"/><line class="e" x1="56.7" y1="55.3" x2="45.7" y2="79.8"/><circle class="n" cx="24" cy="48" r="7"/><circle class="n" cx="60" cy="48" r="7"/><circle class="n" cx="42" cy="88" r="7"/><line class="e" x1="110.0" y1="48.0" x2="129.0" y2="48.0"/><line class="e" x1="105.3" y1="55.3" x2="116.3" y2="79.8"/><line class="e" x1="134.7" y1="55.3" x2="123.7" y2="79.8"/><circle class="n" cx="102" cy="48" r="7"/><circle class="n" cx="138" cy="48" r="7"/><circle class="m" cx="120" cy="88" r="7"/><line class="e" x1="188.0" y1="48.0" x2="207.0" y2="48.0"/><line class="e" x1="183.3" y1="55.3" x2="194.3" y2="79.8"/><line class="e" x1="212.7" y1="55.3" x2="201.7" y2="79.8"/><circle class="n" cx="180" cy="48" r="7"/><circle class="n" cx="216" cy="48" r="7"/><circle class="m" cx="198" cy="88" r="7"/><text class="note" x="120.0" y="146" text-anchor="middle">each window = 1 sample</text></svg><figcaption><strong>Time window <code>tw_evaluation</code></strong>One sample per time-window graph, scored by reducing the losses of its edges. Malicious if it contains at least one attack event.</figcaption></figure>
+<figure class="pm-eval-card"><svg viewBox="0 0 240 152" role="img"><rect class="win" x="8" y="22" width="68" height="86" rx="8"/><text class="lbl" x="42.0" y="16" text-anchor="middle">TW1</text><rect class="win" x="86" y="22" width="68" height="86" rx="8"/><text class="lbl" x="120.0" y="16" text-anchor="middle">TW2</text><rect class="win" x="164" y="22" width="68" height="86" rx="8"/><text class="lbl" x="198.0" y="16" text-anchor="middle">TW3</text><rect class="unit-m" x="82" y="18" width="154" height="94" rx="11"/><line class="e" x1="32.0" y1="48.0" x2="51.0" y2="48.0"/><line class="e" x1="27.3" y1="55.3" x2="38.3" y2="79.8"/><line class="e" x1="56.7" y1="55.3" x2="45.7" y2="79.8"/><circle class="n" cx="24" cy="48" r="7"/><circle class="n" cx="60" cy="48" r="7"/><circle class="n" cx="42" cy="88" r="7"/><line class="e" x1="110.0" y1="48.0" x2="129.0" y2="48.0"/><line class="e" x1="105.3" y1="55.3" x2="116.3" y2="79.8"/><line class="e" x1="134.7" y1="55.3" x2="123.7" y2="79.8"/><circle class="n" cx="102" cy="48" r="7"/><circle class="n" cx="138" cy="48" r="7"/><circle class="m" cx="120" cy="88" r="7"/><line class="e" x1="188.0" y1="48.0" x2="207.0" y2="48.0"/><line class="e" x1="183.3" y1="55.3" x2="194.3" y2="79.8"/><line class="e" x1="212.7" y1="55.3" x2="201.7" y2="79.8"/><circle class="n" cx="180" cy="48" r="7"/><circle class="n" cx="216" cy="48" r="7"/><circle class="m" cx="198" cy="88" r="7"/><text class="note" x="120.0" y="146" text-anchor="middle">TW2 + TW3 = 1 queue</text></svg><figcaption><strong>Queue <code>queue_evaluation</code></strong>Kairos: anomalous windows that share rare nodes are chained into a queue. All windows of a queue whose score exceeds <code>queue_threshold</code> are flagged.</figcaption></figure>
+<div class="pm-eval-card pm-eval-legend"><span><i class="ben"></i>benign node</span><span><i class="mal"></i>attack node (ground truth)</span><span><i class="unit"></i>one sample, labeled benign</span><span><i class="unit unit-mal"></i>one sample, labeled malicious</span></div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th><code>evaluation.used_method</code></th>
+<th>Sample</th>
+<th>Score</th>
+<th>Label: malicious if...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node_evaluation</code></td>
+<td>A node, over the whole test set</td>
+<td>Max (or mean, or 95<sup>th</sup> percentile) of the losses of its edges, as source (and as destination with <code>use_dst_node_loss</code>)</td>
+<td>the node is in the ground truth</td>
+</tr>
+<tr>
+<td><code>node_tw_evaluation</code></td>
+<td>A (node, time window) pair</td>
+<td>Same reduction, over the node's losses in that window</td>
+<td>the node is an attack node of that window</td>
+</tr>
+<tr>
+<td><code>edge_evaluation</code></td>
+<td>An edge (event)</td>
+<td>The loss of the edge</td>
+<td>its source, destination or both are attack nodes, during an attack (<code>malicious_edge_selection</code>: <code>src_node</code>, <code>dst_node</code>, <code>both_nodes</code>); on network datasets, one of its events is labelled malicious</td>
+</tr>
+<tr>
+<td><code>tw_evaluation</code></td>
+<td>A time-window graph</td>
+<td>Reduction of all the losses of the window</td>
+<td>it contains at least one attack event</td>
+</tr>
+<tr>
+<td><code>queue_evaluation</code></td>
+<td>A time-window graph, through its queue</td>
+<td>Score of the queue that contains it</td>
+<td>it contains at least one attack event</td>
+</tr>
+<tr>
+<td><code>host_two_stage_evaluation</code></td>
+<td>An edge, predicted by the top-scored hosts</td>
+<td>The loss of the edge</td>
+<td>as <code>edge_evaluation</code> with <code>both_nodes</code>, or its event label (see <a href="#host-centered-evaluation-lares">below</a>)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Which samples are evaluated?</p>
+<p>Only samples seen during inference are evaluated: a node that never appears in the test graphs is neither scored nor counted as a false negative. Empty time windows are skipped.</p>
+</div>
+<p><code>node_tw_evaluation</code> is closer to real-time detection: an alert must happen in the window of the attack, and a node that is benign most of the time and malicious in one window counts as one true positive and several true negatives.</p>
+<h3 id="queues-kairos">Queues (Kairos)<a class="headerlink" href="#queues-kairos" title="Permanent link">&para;</a></h3>
+<p><code>queue_evaluation</code> with <code>used_method: kairos_idf_queue</code> reproduces the detection of Kairos, which requires edge-level losses:</p>
+<ol>
+<li>In each test window, edges with a loss above the window's mean + 1.5 × std are anomalous. The window's loss is the mean loss of these edges.</li>
+<li>Windows are chained into <strong>queues</strong> when they share a <strong>rare</strong> node, measured by its IDF over the graphs (network nodes are ignored). <code>include_test_set_in_IDF</code> also counts the test graphs.</li>
+<li>The score of a queue is the product of (loss + 1) over its windows. All windows of queues scoring above <code>queue_threshold</code> are flagged.</li>
+</ol>
+<p>The <code>provnet_lof_queue</code> method is not supported anymore.</p>
+<h3 id="host-centered-evaluation-lares">Host-centered evaluation (LARES)<a class="headerlink" href="#host-centered-evaluation-lares" title="Permanent link">&para;</a></h3>
+<p><code>host_two_stage_evaluation</code> reproduces the two-stage evaluation of LARES, on edge-level losses:</p>
+<ol>
+<li>Each host is scored by the maximum loss of its outgoing edges over the test period. The <code>alpha</code> highest host scores are split into two clusters with k-means, and the hosts of the high-score cluster are selected, along with the host ranked just below them.</li>
+<li>The <code>beta</code> highest-scored outgoing edges of each selected host are predicted malicious.</li>
+</ol>
+<p>With <code>root_attack_nodes</code>, only the malicious edges of these source hosts are positives, as in LARES (<code>dataset</code> uses the root sources of the dataset: <code>9660</code> on LANL, <code>201,402,501</code> on OPTC_NET). <code>test_end</code> ends the evaluated period earlier (LARES evaluates LANL on its first 14 days). Precision, recall and MCC come from the predictions of the two stages, AUC and AP from the edge losses; the rank of each root host is also reported. No threshold is used.</p>
+<h2 id="ground-truth">Ground truth<a class="headerlink" href="#ground-truth" title="Permanent link">&para;</a></h2>
+<p>Evaluation compares predictions against a <strong>ground truth</strong>. For provenance datasets, it is the UUIDs of the nodes involved in each attack, described below; network datasets label their events instead (<a href="#event-level-labels-network-datasets">event-level labels</a>). The labeling of the DARPA TC attacks differs between prior works, and the choice of ground truth materially affects the reported metrics, so PIDSMaker ships several, selected with <code>evaluation.ground_truth_version</code> (default <code>orthrus</code>):</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">CLI</label><label for="__tabbed_1_2">YAML</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pidsmaker<span class="w"> </span>SYSTEM<span class="w"> </span>CADETS_E3<span class="w"> </span>--evaluation.ground_truth_version<span class="w"> </span>threatrace
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">evaluation</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">ground_truth_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">threatrace</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Source</th>
+<th>Format</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>orthrus</code> <em>(default)</em></td>
+<td>Labeling used by <a href="https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf">Orthrus</a></td>
+<td>One CSV per attack, rows of <code>uuid, {labels}, count</code></td>
+<td>All provenance datasets</td>
+</tr>
+<tr>
+<td><code>reapr</code></td>
+<td>Alternative labeling of the DARPA TC E3 datasets</td>
+<td>Same as <code>orthrus</code></td>
+<td>E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS</td>
+</tr>
+<tr>
+<td><code>threatrace</code></td>
+<td>Ground truth published by <a href="https://arxiv.org/pdf/2111.04333">ThreaTrace</a></td>
+<td>One flat UUID-per-line <code>.txt</code> per dataset, treated as a single attack over the whole test period</td>
+<td>E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS</td>
+</tr>
+</tbody>
+</table>
+<p>The files live under <code>ground_truth/&lt;version&gt;/&lt;dataset&gt;/</code>. Changing the version only changes the labels read by evaluation: it doesn't change training or the graphs, so it re-evaluates an already-trained run.</p>
+<ul>
+<li><strong>Attacks.</strong> Each dataset defines its attacks in <code>attack_to_time_window</code> (<code>DATASET_DEFAULT_CONFIG</code>, <code>pidsmaker/config/config.py</code>): one ground-truth file and one time range per attack. Attacks are what ADP and the per-attack metrics count.</li>
+<li><strong>Node labels.</strong> A node is malicious if it appears in any attack file. UUIDs of the ground truth that are not in the graphs are skipped, and counted in the logs.</li>
+<li><strong>Window labels.</strong> A time window is malicious if it contains a database event, inside an attack's time range, whose source or destination is an attack node.</li>
+</ul>
+<p>Selecting a version that has no file for the dataset fails with a clear error. See <a href="https://github.com/ubc-provenance/PIDSMaker/blob/main/ground_truth/threatrace/README.md"><code>ground_truth/threatrace/README.md</code></a> for the per-dataset ThreaTrace node counts.</p>
+<h3 id="event-level-labels-network-datasets">Event-level labels (network datasets)<a class="headerlink" href="#event-level-labels-network-datasets" title="Permanent link">&para;</a></h3>
+<p>Datasets whose schema has a label column, such as <a href="../datasets/#network-datasets">LANL and OPTC_NET</a>, label their events in the database instead of shipping ground-truth files, and <code>ground_truth_version</code> has no effect on them. Edges carry the labels of their events (also after <code>merge_edges</code>), malicious nodes are the endpoints of malicious events, and, as these datasets define no <code>attack_to_time_window</code>, all malicious events form a single attack over the test period.</p>
+<h2 id="thresholds">Thresholds<a class="headerlink" href="#thresholds" title="Permanent link">&para;</a></h2>
+<p><code>threshold_method</code> (in the section of the evaluation method) sets both how losses are reduced into a score and how the threshold is computed. Thresholds are computed on the <strong>validation</strong> losses unless stated otherwise.</p>
+<table>
+<thead>
+<tr>
+<th><code>threshold_method</code></th>
+<th>Score of a sample</th>
+<th>Threshold</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_val_loss</code></td>
+<td>Max loss</td>
+<td>Max validation loss × <code>alpha</code> (<code>node_evaluation.max_val_loss.alpha</code>, node and edge evaluation only)</td>
+<td>Velox, Orthrus, Kairos, R-Caid, network systems except LARES</td>
+</tr>
+<tr>
+<td><code>mean_val_loss</code></td>
+<td>Mean loss</td>
+<td>Mean validation loss</td>
+<td></td>
+</tr>
+<tr>
+<td><code>percentile</code></td>
+<td>95<sup>th</sup> percentile of the losses</td>
+<td>Max validation loss × <code>alpha</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>nodlink</code></td>
+<td>Max loss</td>
+<td>90<sup>th</sup> percentile of the validation losses</td>
+<td>NodLink</td>
+</tr>
+<tr>
+<td><code>threatrace</code></td>
+<td>Max over time windows of log(1.5) − log(p_true/p_other), where p_true is the probability of the true node type and p_other the highest of the others; with <code>training.used_method: threatrace</code>, the min over the submodels</td>
+<td>0: flagged unless a model predicts the true node type with a probability ratio above 1.5</td>
+<td>ThreaTrace</td>
+</tr>
+<tr>
+<td><code>flash</code></td>
+<td>Max over time windows of 1 − c if the node type is predicted correctly and 1 + c otherwise, with c = (p₁ − p₂)/p₁ on the node type probabilities, min-max normalized per window. With <code>predict_node_type.flash_snapshots</code>, the min over the snapshots of the epochs so far</td>
+<td>Flagged unless predicted correctly with c &gt; 0.53 (score ≥ 0.47)</td>
+<td>Flash</td>
+</tr>
+<tr>
+<td><code>magic</code></td>
+<td>Max over time windows of the mean distance to the <code>magic_knn_k</code> (10) nearest benign training embeddings, divided by the mean k-NN distance of the training nodes</td>
+<td>Mean score over the test nodes</td>
+<td>MAGIC</td>
+</tr>
+<tr>
+<td><code>ocrapt</code></td>
+<td>Max loss</td>
+<td>Per node type: the top fraction of scores, set by <code>ocrapt_contamination</code> and <code>ocrapt_min_contamination</code></td>
+<td>OCR-APT</td>
+</tr>
+<tr>
+<td><code>fixed_zero</code></td>
+<td>Max loss</td>
+<td>0 (decision boundary of a binary classifier)</td>
+<td><a href="../../features/supervised/">Supervised</a> objective</td>
+</tr>
+</tbody>
+</table>
+<p><code>threatrace</code> and <code>flash</code> require the <code>predict_node_type</code> objective, and <code>magic</code> requires node-level evaluation with a node-level objective.</p>
+<p>With node-level objectives, the scores of <code>threatrace</code>, <code>flash</code> and <code>magic</code> are computed at inference, and each node is flagged at evaluation, by the <code>NodeScorer</code> of the system (in <code>pidsmaker/detection/threatrace_detection.py</code>, <code>flash_detection.py</code> and <code>magic_knn.py</code>). A new threshold method with scores of its own subclasses <code>NodeScorer</code> (<code>pidsmaker/detection/node_scoring.py</code>) and registers it in <code>node_scorer_factory()</code> (<code>factory.py</code>).</p>
+<h3 id="clustering-orthrus">Clustering (Orthrus)<a class="headerlink" href="#clustering-orthrus" title="Permanent link">&para;</a></h3>
+<p>With <code>use_kmeans: True</code>, the threshold doesn't decide alone: the <code>kmeans_top_K</code> highest-scored nodes are split into two clusters with k-means on their scores, and only the nodes of the high-score cluster are predicted malicious. With <code>node_tw_evaluation</code>, clustering runs in each window that has at least one node above the threshold. The original Orthrus enables it with K = 30; PIDSMaker's <code>orthrus</code> disables it to avoid data snooping.</p>
+<h2 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h2>
+<p>Every evaluation method reports the standard classification metrics, computed from the predictions (above the threshold) or directly from the scores:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>precision</code>, <code>recall</code>, <code>fscore</code>, <code>fpr</code>, <code>mcc</code>, <code>accuracy</code>, <code>balanced_acc</code></td>
+<td>Classification metrics of the thresholded predictions</td>
+</tr>
+<tr>
+<td><code>tp</code>, <code>fp</code>, <code>tn</code>, <code>fn</code></td>
+<td>Confusion matrix</td>
+</tr>
+<tr>
+<td><code>ap</code>, <code>auc</code></td>
+<td>Average precision and ROC AUC of the scores: they don't depend on the threshold</td>
+</tr>
+<tr>
+<td><code>precision@K</code>, <code>recall@K</code>, <code>ap@K</code></td>
+<td>The same, among the K highest-scored samples (K = 10, 50, 100)</td>
+</tr>
+</tbody>
+</table>
+<p>Node and edge evaluation also report attack-centric metrics. They matter because attacks are tiny compared to benign activity: detecting one node of each attack with few false positives is often more useful than a high recall.</p>
+<dl>
+<dt><code>adp_score</code></dt>
+<dd><strong>Attack Detection Precision.</strong> Samples are ranked by score. At each rank, PIDSMaker computes the precision and the percentage of attacks with at least one detected node. ADP is the area under the curve of the attacks detected against precision: 1.0 means that every attack is detected before any false positive.</dd>
+<dt><code>discrimination</code></dt>
+<dd>For each attack, the gap between its highest score and the mean of the 10 highest benign scores (scores normalized by their max), averaged over attacks. Positive when attacks stand out from the most suspicious benign nodes.</dd>
+<dt><code>*_if_all_attacks_detected</code></dt>
+<dd>The precision, recall, TPs and FPs obtained with the lowest threshold that still detects every attack.</dd>
+<dt><code>percent_detected_attacks</code>, <code>tp_att_&lt;i&gt;</code></dt>
+<dd>The fraction of attacks detected by the threshold, and the true positives of each attack (node evaluation).</dd>
+</dl>
+<h2 id="choosing-the-reported-epoch">Choosing the reported epoch<a class="headerlink" href="#choosing-the-reported-epoch" title="Permanent link">&para;</a></h2>
+<p>Every evaluated epoch is logged, and the metrics of the best one are reported, as selected by <code>evaluation.best_model_selection</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Best epoch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>best_adp</code> <em>(default)</em></td>
+<td>Highest ADP, ties broken by discrimination</td>
+</tr>
+<tr>
+<td><code>best_discrimination</code></td>
+<td>Highest discrimination</td>
+</tr>
+<tr>
+<td><code>best_ap@10</code></td>
+<td>Highest AP among the 10 highest scores, ties broken by discrimination</td>
+</tr>
+<tr>
+<td><code>best_mcc</code></td>
+<td>Highest MCC, as in the code of LARES</td>
+</tr>
+<tr>
+<td><code>best_val_score</code></td>
+<td>Highest score on validation data computed by the objective, without labels: the AUC + AP of link prediction on the validation edges with <code>predict_edge_contrastive</code> (Euler's early stopping)</td>
+</tr>
+<tr>
+<td><code>last_epoch</code></td>
+<td>Last evaluated epoch, without labels</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>best_adp</code>, <code>best_discrimination</code> and <code>best_ap@10</code>, time-window evaluations, which have no ADP, use the highest AP. Queue evaluation uses the highest precision, then recall.</p>
+<p>With a label-free selection (<code>best_val_score</code> or <code>last_epoch</code>), <code>evaluation.evaluate_selected_epoch_only=True</code> evaluates only the selected epoch on the test set, instead of every epoch: faster on large test sets, but without per-epoch test metrics.</p>
+<div class="admonition warning">
+<p class="admonition-title">Most selections use test metrics</p>
+<p><code>best_adp</code>, <code>best_discrimination</code>, <code>best_ap@10</code> and <code>best_mcc</code> select the epoch on the metrics of the test set. Keep this in mind when comparing with systems that select their model on validation data only (<code>best_val_score</code>, <code>last_epoch</code>), and evaluate over <a href="../../features/instability/">several runs</a>.</p>
+</div>
+<h2 id="outputs">Outputs<a class="headerlink" href="#outputs" title="Permanent link">&para;</a></h2>
+<p>Results are written to the <code>precision_recall_dir/</code> folder of the evaluation task, for each epoch: the scores and predictions (<code>scores_*.pkl</code>, <code>result_*.pth</code>, <code>stats_*.pth</code>) and figures, also sent to W&amp;B:</p>
+<ul>
+<li><code>scores_*.png</code> and <code>neat_scores_*.svg</code>: the score of every node, with attack nodes highlighted and the threshold.</li>
+<li><code>adp_curve_*.png</code>: the curve whose area is the ADP.</li>
+<li><code>discrim_curve_*.png</code> and <code>distrib_*.png</code>: the distribution of scores per node type.</li>
+</ul>
+<p>Figures with one point per node or edge are slow to draw on large test sets: <code>evaluation.save_figures=False</code> skips them, and the metrics are computed either way. The network systems disable them by default.</p>
+<h2 id="settings-of-each-system">Settings of each system<a class="headerlink" href="#settings-of-each-system" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Evaluation</th>
+<th><code>threshold_method</code></th>
+<th>Clustering</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Velox, Orthrus</td>
+<td><code>node_evaluation</code></td>
+<td><code>max_val_loss</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Kairos</td>
+<td><code>node_evaluation</code></td>
+<td><code>max_val_loss</code></td>
+<td></td>
+</tr>
+<tr>
+<td>R-Caid</td>
+<td><code>node_evaluation</code></td>
+<td><code>max_val_loss</code></td>
+<td></td>
+</tr>
+<tr>
+<td>MAGIC</td>
+<td><code>node_evaluation</code></td>
+<td><code>magic</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Flash</td>
+<td><code>node_evaluation</code></td>
+<td><code>flash</code></td>
+<td></td>
+</tr>
+<tr>
+<td>NodLink</td>
+<td><code>node_evaluation</code></td>
+<td><code>nodlink</code></td>
+<td></td>
+</tr>
+<tr>
+<td>ProGrapher</td>
+<td><code>tw_evaluation</code> (<code>node_evaluation</code> from its key indicators)</td>
+<td><code>max_val_loss</code></td>
+<td></td>
+</tr>
+<tr>
+<td>ThreaTrace</td>
+<td><code>node_evaluation</code></td>
+<td><code>threatrace</code></td>
+<td></td>
+</tr>
+<tr>
+<td>OCR-APT</td>
+<td><code>node_evaluation</code></td>
+<td><code>ocrapt</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Euler, Argus, Jbeil, E-GraphSAGE, Anomal-E</td>
+<td><code>edge_evaluation</code> (<code>both_nodes</code>)</td>
+<td><code>max_val_loss</code></td>
+<td></td>
+</tr>
+<tr>
+<td>LARES</td>
+<td><code>host_two_stage_evaluation</code></td>
+<td></td>
+<td>k-means on the top host scores (α = 3)</td>
+</tr>
+</tbody>
+</table>
+<p>Any system can be evaluated differently from the CLI, for example Kairos at the time-window level:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pidsmaker<span class="w"> </span>kairos<span class="w"> </span>CADETS_E3<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--evaluation.used_method<span class="o">=</span>tw_evaluation<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>--evaluation.tw_evaluation.threshold_method<span class="o">=</span>max_val_loss
+</span></code></pre></div>
+<p>All arguments are listed in the <a href="../../reference/tasks/#stage-6-evaluation">Tasks reference</a>.</p>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../datasets/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Datasets">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Datasets
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../tutorial/" class="md-footer__link md-footer__link--next" aria-label="Next: Tutorial: a new system">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Tutorial: a new system
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025&ndash;2026 UBC Provenance team &middot; MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/ubc-provenance/PIDSMaker" target="_blank" rel="noopener" title="PIDSMaker on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://discord.gg/jecmkTABUg" target="_blank" rel="noopener" title="Join the PIDSMaker Discord" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M492.5 69.8c-.2-.3-.4-.6-.8-.7-38.1-17.5-78.4-30-119.7-37.1-.4-.1-.8 0-1.1.1s-.6.4-.8.8c-5.5 9.9-10.5 20.2-14.9 30.6-44.6-6.8-89.9-6.8-134.4 0-4.5-10.5-9.5-20.7-15.1-30.6-.2-.3-.5-.6-.8-.8s-.7-.2-1.1-.2C162.5 39 122.2 51.5 84.1 69c-.3.1-.6.4-.8.7C7.1 183.5-13.8 294.6-3.6 404.2c0 .3.1.5.2.8s.3.4.5.6c44.4 32.9 94 58 146.8 74.2.4.1.8.1 1.1 0s.7-.4.9-.7c11.3-15.4 21.4-31.8 30-48.8.1-.2.2-.5.2-.8s0-.5-.1-.8-.2-.5-.4-.6-.4-.3-.7-.4c-15.8-6.1-31.2-13.4-45.9-21.9-.3-.2-.5-.4-.7-.6s-.3-.6-.3-.9 0-.6.2-.9.3-.5.6-.7c3.1-2.3 6.2-4.7 9.1-7.1.3-.2.6-.4.9-.4s.7 0 1 .1c96.2 43.9 200.4 43.9 295.5 0 .3-.1.7-.2 1-.2s.7.2.9.4c2.9 2.4 6 4.9 9.1 7.2.2.2.4.4.6.7s.2.6.2.9-.1.6-.3.9-.4.5-.6.6c-14.7 8.6-30 15.9-45.9 21.8-.2.1-.5.2-.7.4s-.3.4-.4.7-.1.5-.1.8.1.5.2.8c8.8 17 18.8 33.3 30 48.8.2.3.6.6.9.7s.8.1 1.1 0c52.9-16.2 102.6-41.3 147.1-74.2.2-.2.4-.4.5-.6s.2-.5.2-.8c12.3-126.8-20.5-236.9-86.9-334.5zm-302 267.7c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.4 59.2-52.8 59.2m195.4 0c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.2 59.2-52.8 59.2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      
+<div class="md-progress" data-md-component="progress" role="progressbar" aria-label="Loading"></div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.action.edit","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.9e76c64c.min.js"></script>
+      
+      
+        <script src="../../javascripts/benchmark.js"></script>
+      
+    
+  </body>
+</html>
