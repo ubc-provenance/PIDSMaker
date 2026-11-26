@@ -1,8 +1,8 @@
-"""Generates the charts and tables of the benchmark page from docs/docs/assets/benchmark/results.csv.
+"""Generates the charts of the benchmark page from docs/docs/assets/benchmark/results.csv.
 
     python docs/scripts/benchmark_charts.py
 
-Writes inline SVG charts and Markdown tables to docs/scripts/benchmark/, included by
+Writes inline SVG charts to docs/scripts/benchmark/, included by
 docs/docs/guide/benchmark.md with --8<--. Colors are CSS variables (--pm-ds-*) of extra.css,
 so the charts follow the light and dark themes.
 """
@@ -281,66 +281,6 @@ def bar_panels(rows, key, datasets, stacked=False):
     return "".join(parts)
 
 
-def tables(rows):
-    """One Markdown table per dataset, systems in the order of the systems page."""
-    out = {}
-    for d in DATASETS:
-        lines = [
-            "| System | Family | Wall time | Peak RAM | Peak GPU memory | Disk |",
-            "|---|---|--:|--:|--:|--:|",
-        ]
-        for s in NAMES:
-            r = next((r for r in rows if r["dataset"] == d and r["system"] == s), None)
-            fam = "Provenance" if s in PROV else "Network"
-            if r is None:
-                if (d, s) not in NOT_APPLICABLE:
-                    lines.append(f"| {NAMES[s]} | {fam} | pending | | | |")
-                continue
-            if r["status"] != "ok":
-                lines.append(f"| {NAMES[s]} | {fam} | {r['status']} | | | |")
-                continue
-            lines.append(
-                f"| {NAMES[s]} | {fam} | {fmt(r['wall_min'], '{:,.0f}')} min | {fmt(r['ram_gb'], '{:,.1f}')} GB "
-                f"| {fmt(r['gpu_gb'], '{:,.1f}')} GB | {fmt(r['disk_gb'], '{:,.1f}')} GB |"
-            )
-        out[d] = "\n".join(lines) + "\n"
-    return out
-
-
-def stage_tables(rows):
-    """Minutes spent in each stage, one Markdown table per dataset."""
-    short = {
-        "construction": "Construction",
-        "transformation": "Transformation",
-        "featurization": "Featurization",
-        "feat_inference": "Feat. inference",
-        "batching": "Batching",
-        "training": "Training",
-        "evaluation": "Evaluation",
-        "triage": "Triage",
-    }
-    out = {}
-    for d in DATASETS:
-        lines = [
-            "| System | " + " | ".join(short[s] for s in STAGES) + " |",
-            "|---|" + "--:|" * len(STAGES),
-        ]
-        for s in NAMES:
-            r = next(
-                (r for r in rows if r["dataset"] == d and r["system"] == s and r["status"] == "ok"),
-                None,
-            )
-            if r is None:
-                continue
-            cells = [
-                fmt(r[f"t_{st}"] / 60, "{:,.1f}") if r[f"t_{st}"] is not None else "–"
-                for st in STAGES
-            ]
-            lines.append(f"| {NAMES[s]} | " + " | ".join(cells) + " |")
-        out[d] = "\n".join(lines) + "\n"
-    return out
-
-
 def main():
     rows = load()
     os.makedirs(OUT, exist_ok=True)
@@ -350,14 +290,7 @@ def main():
         for n, datasets in enumerate(DATASET_ROWS, 1):
             with open(os.path.join(OUT, f"{key}_{kind}_{n}.svg"), "w") as fh:
                 fh.write(bar_panels(rows, key, datasets, stacked=kind == "stacked") + "\n")
-
-    for d, t in tables(rows).items():
-        with open(os.path.join(OUT, f"table_{d.lower()}.md"), "w") as fh:
-            fh.write(t)
-    for d, t in stage_tables(rows).items():
-        with open(os.path.join(OUT, f"stages_{d.lower()}.md"), "w") as fh:
-            fh.write(t)
-    print(f"Wrote the charts and tables of {len(rows)} runs to {OUT}")
+    print(f"Wrote the charts of {len(rows)} runs to {OUT}")
 
 
 if __name__ == "__main__":
