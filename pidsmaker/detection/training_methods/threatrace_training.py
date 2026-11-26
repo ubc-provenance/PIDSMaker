@@ -23,11 +23,10 @@ from pidsmaker.detection.threatrace_detection import threatrace_log_ratio
 from pidsmaker.factory import build_model, optimizer_factory
 from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
-from pidsmaker.utils.data_utils import batch_to_device
 from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
 
 from . import inference_loop
-from .training_loop import needs_attack_removal, remove_attacks_if_needed
+from .training_loop import to_device_without_attacks
 
 
 class ThreaTraceEnsemble(nn.Module):
@@ -58,14 +57,6 @@ class ThreaTraceEnsemble(nn.Module):
         return self
 
 
-def _prepare(g, cfg, device):
-    if needs_attack_removal(g, cfg):
-        g = remove_attacks_if_needed(batch_to_device(g, device), cfg)
-    else:
-        g = batch_to_device(g, device)
-    return g
-
-
 def train_epoch(model, optimizer, graphs, masks, cfg, device):
     """One epoch on the graphs with nodes left to explain. Returns the mean loss per node."""
     model.train()
@@ -74,7 +65,7 @@ def train_epoch(model, optimizer, graphs, masks, cfg, device):
         num_nodes = int(mask.sum())
         if num_nodes == 0:
             continue
-        g = _prepare(g, cfg, device)
+        g = to_device_without_attacks(g, cfg, device)
         setattr(g, NODE_LOSS_MASK_KEY, mask.to(device))
         optimizer.zero_grad()
         loss = model(g)["loss"]
@@ -95,7 +86,7 @@ def explained_nodes(model, graphs, masks, cfg, device):
         if not mask.any():
             explained.append(torch.zeros_like(mask))
             continue
-        g = _prepare(g, cfg, device)
+        g = to_device_without_attacks(g, cfg, device)
         out = model(g, inference=True)["out"]
         log_ratio = threatrace_log_ratio(out, g.node_type.argmax(1))
         explained.append((log_ratio >= log_thr).cpu() & mask)

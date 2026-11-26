@@ -17,7 +17,6 @@ import time
 import torch
 
 from pidsmaker.detection.node_scoring import NodeScorer
-from pidsmaker.utils.data_utils import batch_to_device
 from pidsmaker.utils.utils import log
 
 # MAGIC estimates the mean k-NN distance of the reference set on at most 50,000 of its nodes
@@ -122,20 +121,14 @@ def magic_detection_embedding(model, h, cfg=None):
 @torch.no_grad()
 def fit_magic_detector(cfg, model, train_data, device):
     """Fits MAGIC's k-NN detector on the embeddings of the benign training nodes."""
-    from pidsmaker.detection.training_methods.training_loop import (
-        needs_attack_removal,
-        remove_attacks_if_needed,
-    )
+    from pidsmaker.detection.training_methods.training_loop import to_device_without_attacks
 
     model.eval()
     s = time.time()
     embs = []
     for dataset in train_data:
         for g in dataset:
-            has_attacks = needs_attack_removal(g, cfg)
-            g = batch_to_device(g, device)
-            if has_attacks:
-                g = remove_attacks_if_needed(g, cfg)
+            g = to_device_without_attacks(g, cfg, device)
             h, *_ = model.embed(g, inference=True)
             embs.append(magic_detection_embedding(model, h, cfg).float())
             del g

@@ -154,12 +154,7 @@ def main(cfg):
                     flash_mask = getattr(g, TRAIN_MASK_KEY, None)
                     if flash_mask is not None and not flash_mask.any():
                         continue  # FLASH: no node of this graph is still misclassified
-                    # Checked on the CPU graph to avoid a GPU sync at each batch
-                    has_attacks_to_remove = needs_attack_removal(g, cfg)
-                    # Copy to device without mutating the CPU graph: no copy back needed
-                    g = batch_to_device(g, device)
-                    if has_attacks_to_remove:
-                        g = remove_attacks_if_needed(g, cfg)
+                    g = to_device_without_attacks(g, cfg, device)
 
                     results = model(g)
                     loss = results["loss"]
@@ -350,6 +345,20 @@ def main(cfg):
     )
 
     return best_val_score
+
+
+def to_device_without_attacks(graph, cfg, device):
+    """Copies `graph` to `device`, without its attack edges if they are excluded from the
+    self-supervised training (see `remove_attacks_if_needed`).
+
+    The CPU graph is not mutated, and whether it has attacks to remove is checked on it, to
+    avoid a GPU sync at each batch.
+    """
+    has_attacks_to_remove = needs_attack_removal(graph, cfg)
+    graph = batch_to_device(graph, device)
+    if has_attacks_to_remove:
+        graph = remove_attacks_if_needed(graph, cfg)
+    return graph
 
 
 def needs_attack_removal(graph, cfg):
