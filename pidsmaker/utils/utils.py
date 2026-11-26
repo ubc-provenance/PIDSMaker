@@ -24,7 +24,6 @@ from time import mktime
 import networkx as nx
 import nltk
 import numpy as np
-import psycopg2
 import pytz
 import torch
 from tqdm import tqdm
@@ -143,36 +142,10 @@ def OPTC_datetime_to_timestamp_US(date, timezone="Etc/GMT+4"):
 
 
 def init_database_connection(cfg):
-    if cfg.construction.use_all_files:
-        database_name = cfg.dataset.database_all_file
-    else:
-        database_name = cfg.dataset.database
+    """(cursor, connection) of the database of the dataset (see `pidsmaker/utils/database.py`)."""
+    from pidsmaker.utils.database import init_database_connection as _init
 
-    # Queries without ORDER BY (e.g. `select * from file_node_table`) return rows in the
-    # table's physical order, which determines e.g. the order of indexid2msg and thus the
-    # featurization. With synchronized seqscans (Postgres default), a scan started while
-    # another scan of the same table is running joins it midway and returns rotated rows,
-    # making results depend on concurrent runs. Disabled for this session only.
-    options = "-c synchronize_seqscans=off"
-    if cfg.database.host is not None:
-        connect = psycopg2.connect(
-            database=database_name,
-            host=cfg.database.host,
-            user=cfg.database.user,
-            password=cfg.database.password,
-            port=cfg.database.port,
-            options=options,
-        )
-    else:
-        connect = psycopg2.connect(
-            database=database_name,
-            user=cfg.database.user,
-            password=cfg.database.password,
-            port=cfg.database.port,
-            options=options,
-        )
-    cur = connect.cursor()
-    return cur, connect
+    return _init(cfg)
 
 
 def std(t):

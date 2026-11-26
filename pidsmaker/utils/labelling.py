@@ -2,6 +2,7 @@ import csv
 import os.path
 from collections import defaultdict
 
+from pidsmaker.utils.database import events_order_sql
 from pidsmaker.utils.utils import datetime_to_ns_time_US, init_database_connection, log
 from pidsmaker.utils.dataset_utils import get_schema, get_uuid_to_index_id, get_time_and_end_node
 
@@ -39,7 +40,7 @@ def get_malicious_events(cfg):
             cur.execute(
                 f"SELECT src_index_id, dst_index_id, timestamp_rec, {type_col} "
                 f"FROM {schema.event_table} WHERE {schema.label_column} = 1{schema.operations_sql()} "
-                "ORDER BY timestamp_rec;"
+                f"{events_order_sql(connect, 'timestamp_rec')};"
             )
             rows = cur.fetchall()
         finally:

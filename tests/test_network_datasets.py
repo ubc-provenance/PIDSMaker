@@ -50,8 +50,10 @@ def prepare_cfg(model, dataset="LANL", custom_args=(), test_mode=True):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def lanl_database(tmp_path_factory, artifact_dir, device):
+def lanl_database(request, tmp_path_factory, artifact_dir, device):
     """Loads the synthetic LANL dataset into the test database, used by the LANL dataset."""
+    if request.config.getoption("backend") == "parquet":
+        pytest.skip("The LANL preprocessing script writes to Postgres (no Parquet output yet)")
     global TESTS_ARTIFACT_DIR, USE_CPU
     TESTS_ARTIFACT_DIR = os.path.join(artifact_dir, "network") + "/"
     USE_CPU = device == "cpu"

@@ -89,6 +89,8 @@ def get_default_cfg(args):
     cfg.database.user = args.database_user
     cfg.database.password = args.database_password
     cfg.database.port = args.database_port
+    cfg.database.backend = getattr(args, "database_backend", "postgres")
+    cfg.database.datasets_dir = getattr(args, "datasets_dir", None)
 
     # Dataset: we simply create variables for all configurations described in the dict
     set_dataset_cfg(cfg, args.dataset)
@@ -185,6 +187,20 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
     )
     parser.add_argument(
         "--database_port", type=int, default=5432, help="The port number for Postgres (default: 5432)"
+    )
+    parser.add_argument(
+        "--database_backend",
+        choices=["postgres", "parquet"],
+        default=os.environ.get("PIDSMAKER_DATABASE_BACKEND", "postgres"),
+        help="Where datasets are read from: a Postgres server, or Parquet files read in-process "
+        "by DuckDB (see pidsmaker/utils/database.py for the order of rows on both backends). "
+        "Default: $PIDSMAKER_DATABASE_BACKEND, else postgres",
+    )
+    parser.add_argument(
+        "--datasets_dir",
+        default=os.environ.get("PIDSMAKER_DATASETS_DIR"),
+        help="Folder of the Parquet datasets, one subfolder per database. "
+        "Default: $PIDSMAKER_DATASETS_DIR, else ~/.cache/pidsmaker/datasets",
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import networkx as nx
 
 from pidsmaker.config import get_dates_from_cfg, get_node_feats_from_cfg
+from pidsmaker.utils.database import events_order_sql
 from pidsmaker.utils.dataset_utils import get_node_map, get_rel2id, get_schema, iter_nodes
 from pidsmaker.utils.graph_store import save_graph
 from pidsmaker.utils.utils import (
@@ -88,8 +89,13 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
             select * from event_table
             where
                   timestamp_rec>'%s' and timestamp_rec<'%s'%s
-                   ORDER BY timestamp_rec;
-            """ % (start_ns_timestamp, end_ns_timestamp, operations_sql)
+                   %s;
+            """ % (
+                start_ns_timestamp,
+                end_ns_timestamp,
+                operations_sql,
+                events_order_sql(cur, "timestamp_rec"),
+            )
             cur.execute(sql)
             events = cur.fetchall()
 
