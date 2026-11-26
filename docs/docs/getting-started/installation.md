@@ -66,7 +66,7 @@ Optional dependencies are installed as extras, e.g. `pip install "pidsmaker[viz]
 
 ## 2. Download the datasets
 
-DARPA TC and OpTC are very large and hard to process: we provide **preprocessed versions** of all the [datasets](../guide/datasets.md), as Parquet files in the Hugging Face repository [`tbilot/pidsmaker`](https://huggingface.co/datasets/tbilot/pidsmaker). The network datasets are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares).
+DARPA TC and OpTC are very large and hard to process: we provide **preprocessed versions** of all the [datasets](../guide/datasets.md), as Parquet files in the Hugging Face repository [`pidsmaker/datasets`](https://huggingface.co/datasets/pidsmaker/datasets). The network datasets are built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares).
 
 | Dataset | Family | Size (GB) |
 |---|---|--:|

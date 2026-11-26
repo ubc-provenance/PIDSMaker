@@ -10,7 +10,7 @@ Datasets are Parquet files (see `pidsmaker/utils/database.py`), stored in
 `<datasets_dir>/<database>/`, with `datasets_dir` the `--datasets_dir` argument, else
 $PIDSMAKER_DATASETS_DIR, else ~/.cache/pidsmaker/datasets. They are downloaded from a dataset
 repository of Hugging Face with one folder per database (`<database>/manifest.json` and
-`<database>/<table>/part-*.parquet`): $PIDSMAKER_HF_REPO, else `tbilot/pidsmaker`.
+`<database>/<table>/part-*.parquet`): $PIDSMAKER_HF_REPO, else `pidsmaker/datasets`.
 A run downloads its dataset when it first opens it (`init_database_connection`), if it is
 missing, unless $PIDSMAKER_AUTO_DOWNLOAD is `0`.
 """
@@ -23,7 +23,7 @@ import sys
 from pidsmaker.config.config import DATASET_DEFAULT_CONFIG
 from pidsmaker.utils.database import DEFAULT_DATASETS_DIR
 
-DEFAULT_HF_REPO = "tbilot/pidsmaker"
+DEFAULT_HF_REPO = "pidsmaker/datasets"
 
 # Size on disk of each database (GB), shown before downloads
 DATABASE_SIZES_GB = {
