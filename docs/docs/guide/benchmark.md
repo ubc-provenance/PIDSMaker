@@ -66,7 +66,7 @@ One panel per dataset, on one scale per tab; the few bars far above the others a
 
 **Systems.** The 17 systems of the [Systems](systems.md) page, run with `python pidsmaker/main.py <system> <dataset>` from an empty artifact folder. On provenance datasets, Argus, LARES, E-GraphSAGE and Anomal-E use `--batching.edge_features=edge_type` (see [Running across families](systems.md#running-across-families)). LANL runs the NIDSs and the PIDSs that support network datasets.
 
-**Hardware and software.** Three servers with 64 CPU threads, 1 TB of RAM and an NVIDIA A100 80 GB GPU; A and B have AMD EPYC 7343 CPUs, C slower Intel Xeon Gold 6326 CPUs (the `machine` column of `results.csv`). PIDSMaker at commit `ec63214` with Postgres 17 on the same server, PyTorch 2.1.2, CUDA 12.1 and PyTorch Geometric 2.6.1.
+**Hardware and software.** Three servers with 64 CPU threads, 1 TB of RAM and an NVIDIA A100 80 GB GPU; A and B have AMD EPYC 7343 CPUs, C slower Intel Xeon Gold 6326 CPUs (the `machine` column of `results.csv`). PIDSMaker at commit `ec63214` with Postgres 17 on the same server, PyTorch 2.1.2, CUDA 12.1 and PyTorch Geometric 2.6.1. Since version 5.0.0, datasets are read from Parquet files instead of Postgres, with identical results and a faster graph construction (e.g. 80 s instead of 124 s for Orthrus on THEIA_E5); the other stages are unchanged.
 
 !!! warning "Runs shared their server"
     Each server ran up to 2 runs at a time, with 16 threads each (`OMP_NUM_THREADS=16`), so times can be longer than on a dedicated server, and longer on C. Memory and disk usage do not depend on it.
