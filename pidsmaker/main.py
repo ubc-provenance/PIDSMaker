@@ -43,7 +43,6 @@ from pidsmaker.experiments.uncertainty import (
     push_best_files_to_wandb,
     update_cfg_for_uncertainty_exp,
 )
-from pidsmaker.utils.loss_files import prune_non_best_epochs
 from pidsmaker.tasks import (
     batching,
     construction,
@@ -54,7 +53,15 @@ from pidsmaker.tasks import (
     transformation,
     triage,
 )
-from pidsmaker.utils.utils import log, remove_underscore_keys, set_seed, warn_if_low_memory
+from pidsmaker.utils import console
+from pidsmaker.utils.loss_files import prune_non_best_epochs
+from pidsmaker.utils.utils import (
+    get_device,
+    log,
+    remove_underscore_keys,
+    set_seed,
+    warn_if_low_memory,
+)
 
 
 def get_task_to_module(cfg):
@@ -116,6 +123,77 @@ def clean_cfg_for_log(cfg):
     )
 
 
+def _home(path):
+    home = os.path.expanduser("~")
+    path = os.path.abspath(path)
+    return "~" + path[len(home) :] if path == home or path.startswith(home + os.sep) else path
+
+
+def _dataset_dir(cfg):
+    """Folder of the dataset of `cfg`."""
+    try:
+        from pidsmaker.datasets import get_datasets_dir
+        from pidsmaker.utils.database import database_name
+
+        datasets_dir = get_datasets_dir(getattr(cfg.database, "datasets_dir", None))
+        return _home(os.path.join(datasets_dir, database_name(cfg)))
+    except Exception:
+        return None
+
+
+def log_run_header(cfg):
+    """Logs what runs, on which device, and where its files are."""
+    try:
+        from importlib.metadata import version
+
+        pidsmaker_version = f" {version('pidsmaker')}"
+    except Exception:
+        pidsmaker_version = ""
+
+    device = get_device(cfg)
+    if device.type == "cuda":
+        device = f"cuda ({torch.cuda.get_device_name(device)})"
+
+    mode = cfg.experiment.used_method
+    if cfg._tuning_mode != "none":
+        mode = f"tuning ({cfg._tuning_mode})"
+
+    wandb_url = None
+    try:
+        wandb_url = wandb.run.url if wandb.run is not None and not wandb.run.disabled else None
+    except Exception:
+        pass
+
+    rows = [
+        ("dataset", _dataset_dir(cfg)),
+        ("artifacts", _home(cfg._artifact_dir)),
+        ("device", str(device)),
+        ("mode", mode if mode != "none" else None),
+        ("wandb", wandb_url),
+    ]
+    log(
+        console.style(
+            f"PIDSMaker{pidsmaker_version}  {console.DOT}  {cfg._model} on {cfg.dataset.name}",
+            "bold",
+        )
+    )
+    for name, value in rows:
+        if value:
+            log(f"  {console.style(name.ljust(9), 'dim')}  {value}")
+
+
+def download_dataset_if_needed(cfg):
+    """Downloads the dataset at the start of the run if it is missing and a task runs, rather
+    than in the middle of the run when a task first reads it (e.g. the labels of the evaluation,
+    after the training)."""
+    from pidsmaker.datasets import ensure_downloaded
+
+    if os.environ.get("PIDSMAKER_AUTO_DOWNLOAD", "1") == "0":
+        return  # The task that reads the dataset raises an error with the command to download it
+    if any(update_task_paths_to_restart(cfg).values()):
+        ensure_downloaded(cfg)
+
+
 def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
     """Main execution function for PIDSMaker pipeline.
 
@@ -129,6 +207,10 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         sweep_id: W&B sweep ID for tuning mode (optional)
         **kwargs: Additional keyword arguments
     """
+    run_start = time.time()
+    console.set_artifact_dir(cfg._artifact_dir)
+    download_dataset_if_needed(cfg)
+    log_run_header(cfg)
     set_seed(cfg)
     warn_if_low_memory()
 
@@ -158,16 +240,20 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         task_to_module = get_task_to_module(cfg)
         module = task_to_module[task]["module"]
         task_path = task_to_module[task]["task_path"]
-        log(f"Task {task}: {task_path}")
 
         # In uncertainty experiments, the metrics of each iteration are required, so the
         # evaluation is computed again even if the trained model is already on disk
         rerun_for_metrics = method is not None and task == "evaluation"
-        if should_restart[task] or rerun_for_metrics:
+        ran = bool(should_restart[task] or rerun_for_metrics)
+        if ran:
+            console.task_start(task, task_path)
             return_value = module.main(cfg)
             set_task_to_done(task_path)
+            console.task_end(task, time.time() - start)
+        else:
+            console.task_cached(task, task_path)
 
-        return {"time": time.time() - start, "return": return_value}
+        return {"time": time.time() - start, "return": return_value, "ran": ran}
 
     def run_pipeline(cfg, method=None, iteration=None):
         """Execute complete pipeline: all 8 tasks from construction to triage.
@@ -192,7 +278,14 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         times = {
             f"time_{task}": round(results["time"], 2) for task, results in task_results.items()
         }
-        log("Task times (s): " + ", ".join(f"{k[5:]}={v}" for k, v in times.items()))
+        ran = [(task, r["time"]) for task, r in task_results.items() if r["ran"]]
+        if ran:
+            print(flush=True)
+            console.table(
+                ["task", "time"],
+                [(task, console.format_duration(t)) for task, t in ran]
+                + [("total", console.format_duration(sum(t for _, t in ran)))],
+            )
 
         if getattr(cfg, "_keep_best_epoch_only", False):
             prune_non_best_epochs(cfg, metrics)
@@ -211,20 +304,18 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         """
         # Standard behavior: we run the whole pipeline
         if cfg.experiment.used_method == "none":
-            log("Running pipeline in 'Standard' mode.")
             metrics, times = run_pipeline(cfg)
             wandb.log(metrics)
             wandb.log(times)
 
         elif cfg.experiment.used_method == "uncertainty":
-            log("Running pipeline in 'Uncertainty' mode.")
             method_to_metrics = defaultdict(list)
             original_cfg = copy.deepcopy(cfg)
 
             uncertainty_methods = get_uncertainty_methods_to_run(cfg)
             for method in uncertainty_methods:
                 iterations = getattr(cfg.experiment.uncertainty, method).iterations
-                log(f"[@method {method}] - Started", pre_return_line=True)
+                console.section(f"uncertainty {console.DOT} {method}")
 
                 if method == "hyperparameter":
                     hyperparameters = cfg.experiment.uncertainty.hyperparameter.hyperparameters
@@ -235,13 +326,13 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
 
                     hyper_to_metrics = defaultdict(list)
                     for hyper in hyperparameters:
-                        log(
-                            f"[@hyperparameter {hyper}] - Started",
-                            pre_return_line=True,
-                        )
+                        console.section(f"{method} {console.DOT} {hyper}")
 
                         for i in range(iterations):
-                            log(f"[@iteration {i}]", pre_return_line=True)
+                            console.section(
+                                f"{method} {console.DOT} {hyper} {console.DOT} "
+                                f"iteration {i + 1}/{iterations}"
+                            )
                             cfg = update_cfg_for_uncertainty_exp(
                                 method,
                                 i,
@@ -261,7 +352,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
                         wandb.run.tags = list(wandb.run.tags) + [str(new_tag)]
 
                     for i in range(iterations):
-                        log(f"[@iteration {i}]", pre_return_line=True)
+                        console.section(f"{method} {console.DOT} iteration {i + 1}/{iterations}")
                         cfg = update_cfg_for_uncertainty_exp(
                             method,
                             i,
@@ -302,7 +393,6 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
 
     # Sweep  mode
     else:
-        log("Running pipeline in 'Tuning' mode.")
         sweep_config = get_tuning_sweep_cfg(cfg)
         if not sweep_id:
             sweep_config["name"] = exp
@@ -325,9 +415,19 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         count = sweep_config["count"] if "count" in sweep_config else None
         wandb.agent(sweep_id, lambda: run_pipeline_from_sweep(cfg), count=count)
 
-    log("==" * 30)
-    log("Run finished.")
-    log("==" * 30)
+    print(flush=True)
+    log(
+        console.style(
+            f"{console.CHECK} Run finished in {console.format_duration(time.time() - run_start)}",
+            "bold",
+            "green",
+        )
+    )
+    if cfg._tuning_mode == "none":
+        console.log(
+            f"  {console.style('results'.ljust(9), 'dim')}  {cfg.evaluation._task_path}",
+            shorten=False,
+        )
 
 
 def cli(argv=None):

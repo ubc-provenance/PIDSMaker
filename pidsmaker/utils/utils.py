@@ -26,7 +26,6 @@ import nltk
 import numpy as np
 import pytz
 import torch
-from tqdm import tqdm
 
 try:  # Only hit the network when the tokenizer data is actually missing
     nltk.data.find("tokenizers/punkt")
@@ -34,6 +33,7 @@ except LookupError:
     nltk.download("punkt", quiet=True)
 
 from pidsmaker.config import update_cfg_for_multi_dataset
+from pidsmaker.utils import console
 
 
 def stringtomd5(originstr):
@@ -303,7 +303,8 @@ def gen_darpa_adj_files(graph, filename):
 
 
 def log_start(_file_: str):
-    log(f"======= START SUBTASK {os.path.basename(_file_)} =======")
+    """Logs the file of the code that a task runs (e.g. its featurization method)."""
+    log(console.style(os.path.relpath(_file_, os.path.dirname(os.path.dirname(__file__))), "dim"))
 
 
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
@@ -355,30 +356,21 @@ def remove_underscore_keys(data, keys_to_keep=[], keys_to_rm=[]):
     return data
 
 
-def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
+def log(msg: str = "", return_line=False, pre_return_line=False, *args, **kwargs):
+    """Prints `msg` after the time of day (see `pidsmaker.utils.console`)."""
     if pre_return_line:
-        print("")
-
-    now = datetime.now()
-    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    # Flushed, so that logs redirected to a file (e.g. with `pidsmaker --background`) are written as
-    # they come, instead of minutes later when the output buffer is full
-    kwargs.setdefault("flush", True)
-    print(f"{timestamp} - {msg}", *args, **kwargs)
-
+        print(flush=True)
+    console.log(msg, *args, **kwargs)
     if return_line:
-        print("", flush=True)
-
-
-DISABLE_TQDM = True
+        print(flush=True)
 
 
 def log_tqdm(iterator, desc="", logging=True, **kwargs):
-    now = datetime.now()
-    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    if DISABLE_TQDM and logging:
-        log(f"{desc}...")
-    return tqdm(iterator, desc=f"{timestamp} - {desc}", disable=DISABLE_TQDM, **kwargs)
+    """Progress bar of a loop in a terminal; in log files, `desc` is logged once per task
+    (unless not `logging`)."""
+    if not console.INTERACTIVE and not logging:
+        return iterator
+    return console.progress(iterator, desc=desc, **kwargs)
 
 
 LOW_MEMORY_GB = 16
@@ -454,10 +446,8 @@ def get_device(cfg):
     if cfg._use_cpu:
         return torch.device("cpu")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device == torch.device("cpu"):
-        log("Warning: the device is CPU instead of CUDA")
-    return device
+    # The device is shown at the start of the run
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def copy_directory(src_path, dest_path):
     if not os.path.isdir(src_path):
@@ -492,7 +482,7 @@ def symlink_directory(src_path, dest_path):
     src_path = os.path.abspath(src_path)
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     os.symlink(src_path, dest_path)
-    log(f"Symlinked '{dest_path}' -> '{src_path}'.")
+    log(console.style(f"Linked {console.short_path(dest_path)} -> {console.short_path(src_path)}", "dim"))
 
 
 def get_split_to_files(cfg, base_dir):
@@ -677,29 +667,30 @@ def generate_DAG(edges):
 
 
 def log_dataset_stats(datasets):
-    def log_helper(label, dataset):
-        edges = torch.tensor([d.src.shape[0] for d in dataset])
-        nodes = torch.tensor([torch.unique(d.edge_index).shape[0] for d in dataset])
+    """Logs the number of graphs, and of edges and nodes per graph, of each split."""
 
-        log(f"{label} num graphs: {len(dataset)}")
-        log(
-            f"{label} edges | mean: {int(torch.mean(edges, dtype=torch.float))} | min: {int(torch.min(edges))} | max: {int(torch.max(edges))}"
+    def row(label, dataset):
+        if len(dataset) == 0:
+            return [label, 0, "-", "-"]
+        edges = torch.tensor([d.src.shape[0] for d in dataset], dtype=torch.float)
+        nodes = torch.tensor(
+            [torch.unique(d.edge_index).shape[0] for d in dataset], dtype=torch.float
         )
-        log(
-            f"{label} nodes | mean: {int(torch.mean(nodes, dtype=torch.float))} | min: {int(torch.min(nodes))} | max: {int(torch.max(nodes))}"
-        )
-        log("")
+
+        def fmt(t):
+            return f"{int(t.mean())}  [{int(t.min())}, {int(t.max())}]"
+
+        return [label, len(dataset), fmt(edges), fmt(nodes)]
 
     train_data, val_data, test_data = datasets
-    log("")
-    log("Dataset statistics")
-    for train_graphs, val_graphs in zip(train_data, val_data):
-        for label, dataset in [("Train", train_graphs), ("Val", val_graphs)]:
-            log_helper(label, dataset)
-
-    for test_graphs in test_data:
-        for label, dataset in [("Test", test_graphs)]:
-            log_helper(label, dataset)
+    multi = max(len(train_data), len(test_data)) > 1
+    rows = []
+    for i, (train_graphs, val_graphs) in enumerate(zip(train_data, val_data)):
+        suffix = f" {i}" if multi else ""
+        rows += [row(f"train{suffix}", train_graphs), row(f"val{suffix}", val_graphs)]
+    for i, test_graphs in enumerate(test_data):
+        rows.append(row(f"test{f' {i}' if multi else ''}", test_graphs))
+    console.table(["split", "graphs", "edges/graph  [min, max]", "nodes/graph  [min, max]"], rows)
 
 
 def set_seed(cfg, seed=None):
@@ -711,7 +702,7 @@ def set_seed(cfg, seed=None):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    
+
     if cfg.training.deterministic:
         # Needs CUBLAS_WORKSPACE_CONFIG=:4096:8 on CUDA, set by the `pidsmaker` command (cli.py)
         torch.use_deterministic_algorithms(True, warn_only=True)

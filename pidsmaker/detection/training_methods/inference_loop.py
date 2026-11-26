@@ -269,16 +269,10 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
             with open(os.path.join(val_scores_dir, f"{model_epoch_file}.json"), "w") as f:
                 json.dump({"val_score": float(val_score)}, f)
             if logging:
-                log(
-                    f"[@epoch{epoch:02d}] Validation finished - Val Loss: {mean_loss:.4f}",
-                    return_line=True,
-                )
+                log(f"epoch {epoch:02d}  val    loss {mean_loss:.4f}")
         else:
             if logging:
-                log(
-                    f"[@epoch{epoch:02d}] Test finished - Test Loss: {mean_loss:.4f}",
-                    return_line=True,
-                )
+                log(f"epoch {epoch:02d}  test   loss {mean_loss:.4f}")
 
     del model
 

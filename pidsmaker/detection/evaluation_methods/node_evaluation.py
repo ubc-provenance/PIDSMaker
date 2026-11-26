@@ -18,12 +18,14 @@ import pandas as pd
 import torch
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
+    REPORT_KEY,
     classifier_evaluation,
     compute_discrimination_score,
     compute_discrimination_tp,
-    compute_tp_per_attack_thr,
     compute_kmeans_labels,
+    compute_tp_per_attack_thr,
     datetime_to_ns_time_US_handle_nano,
+    detection_mark,
     get_detected_tps_node_level,
     get_ground_truth_nids,
     get_metrics_if_all_attacks_detected,
@@ -31,23 +33,20 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     get_threshold_per_type,
     plot_detected_attacks_vs_precision,
     plot_discrimination_metric,
-    plot_score_seen,
     plot_scores_neat,
     plot_scores_with_paths_node_level,
     transform_attack2nodes_to_node2attacks,
 )
-from pidsmaker.factory import node_scorer_factory
-from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
+from pidsmaker.factory import node_scorer_factory
+from pidsmaker.utils.dataset_utils import get_node_to_path_and_type
+from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.utils.loss_files import compact_int_columns, read_losses
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     listdir_sorted,
     log,
     log_tqdm,
-)
-from pidsmaker.utils.dataset_utils import (
-    get_node_to_path_and_type
 )
 
 # Cache for train_node_set — loading all train graphs from disk is expensive
@@ -95,8 +94,6 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         dict: Contains metrics, predictions, scores, and visualization data
     """
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
-    log(f"Loading data from {test_tw_path}...")
-
 
     threshold_method = cfg.evaluation.node_evaluation.threshold_method
     alpha = cfg.evaluation.node_evaluation.max_val_loss.alpha or 1.0
@@ -104,7 +101,7 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         thr = get_threshold(test_tw_path, threshold_method, alpha)
     else:
         thr = get_threshold(val_tw_path, threshold_method, alpha)
-    log(f"Threshold: {thr:.3f}")
+    log(f"threshold {thr:.3f}  ({threshold_method})")
 
     use_dst = cfg.evaluation.node_evaluation.use_dst_node_loss
 
@@ -171,7 +168,6 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
 
 def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     ground_truth_nids, ground_truth_paths = get_ground_truth_nids(cfg)
-    log(f"Loading data from {test_tw_path}...")
 
     threshold_method = cfg.evaluation.node_evaluation.threshold_method
     alpha = cfg.evaluation.node_evaluation.max_val_loss.alpha or 1.0
@@ -187,7 +183,10 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         thr = float(np.mean(list(thr_by_type.values()))) if thr_by_type else 0.0
     else:
         thr = get_threshold(val_tw_path, threshold_method, alpha)
-    log(f"Threshold: {thr:.3f}" + (f" (per-type: {thr_by_type})" if thr_by_type else ""))
+    log(
+        f"threshold {thr:.3f}  ({threshold_method})"
+        + (f"  per type: {thr_by_type}" if thr_by_type else "")
+    )
 
     node_to_type = {nid: info["type"] for nid, info in get_node_to_path_and_type(cfg).items()} \
         if thr_by_type is not None else None
@@ -315,7 +314,6 @@ def main(
         edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
         edge_df = edge_records if isinstance(edge_records, pd.DataFrame) else pd.DataFrame(edge_records)
         torch.save(compact_int_columns(edge_df), edge_scores_file)
-        log(f"Saved {len(edge_df)} edge scores to {edge_scores_file}")
     # pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     adp_img_file = os.path.join(
         out_dir, f"adp_curve_{model_epoch_dir}.png"
@@ -332,7 +330,7 @@ def main(
     node2attacks = transform_attack2nodes_to_node2attacks(attack2nodes)
     attack_to_TPs = defaultdict(int)
 
-    log("Analysis of malicious nodes:")
+    report = ["Malicious nodes"]
     nodes, y_truth, y_preds, pred_scores, max_val_loss_tw = [], [], [], [], []
     is_seen = []
     for nid, result in results.items():
@@ -351,10 +349,9 @@ def main(
         max_val_loss_tw.append(max_tw)
 
         if y_true == 1:
-            log(
-                f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:"
-                + (" ✅ " if y_true == y_hat else " ❌ ")
-                + (node_to_path[nid]["path"])
+            report.append(
+                f"  {detection_mark(y_true == y_hat)}  node {nid:<8} loss {score:<8.3f} "
+                + node_to_path[nid]["path"]
             )
 
             if y_hat and nid in node2attacks:
@@ -363,8 +360,6 @@ def main(
 
     # Plots the PR curve and scores for mean node loss
     save_figures = cfg.evaluation.save_figures is not False  # unset: saved
-    if save_figures:
-        log(f"Saving figures to {out_dir}...")
     # plot_precision_recall(pred_scores, y_truth, pr_img_file)
     adp_score = plot_detected_attacks_vs_precision(
         pred_scores, nodes, node2attacks, y_truth, adp_img_file if save_figures else None
@@ -404,10 +399,10 @@ def main(
     )
     stats["fp_in_malicious_tw_ratio"] = round(fp_in_malicious_tw_ratio, 3)
 
-    log("TPs per attack:")
+    report.append("TPs per attack")
     tps_in_atts = []
     for att, tps in attack_to_TPs.items():
-        log(f"attack {att}: {tps}")
+        report.append(f"  attack {att}: {tps}")
         tps_in_atts.append((att, tps))
 
     stats["percent_detected_attacks"] = (
@@ -458,6 +453,7 @@ def main(
     gnn_models_dir = cfg.training._trained_models_dir
     model_path = os.path.join(gnn_models_dir, model_epoch_dir)
     stats["model_path"] = model_path
+    stats[REPORT_KEY] = report
 
     return stats
     

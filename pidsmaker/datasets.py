@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+import time
 
 from pidsmaker.config.config import DATASET_DEFAULT_CONFIG
 from pidsmaker.utils.database import DEFAULT_DATASETS_DIR
@@ -101,12 +102,12 @@ def is_downloaded(name, datasets_dir=None):
     return not missing_files(resolve_database(name), datasets_dir)
 
 
-def download(*names, datasets_dir=None, repo_id=None, revision=None, force=False):
+def download(*names, datasets_dir=None, repo_id=None, revision=None, force=False, quiet=False):
     """Downloads datasets (names of datasets or databases, or "all", the datasets of the
     repository) and returns their folders.
 
-    Datasets already downloaded are skipped, unless `force`. Interrupted downloads resume."""
-    from huggingface_hub import snapshot_download
+    Datasets already downloaded are skipped, unless `force`. Interrupted downloads resume.
+    `quiet` hides the messages of each dataset (the progress bar of the download remains)."""
 
     if len(names) == 1 and isinstance(names[0], (list, tuple)):
         names = tuple(names[0])
@@ -121,20 +122,15 @@ def download(*names, datasets_dir=None, repo_id=None, revision=None, force=False
         dataset_dir = os.path.join(datasets_dir, database)
         dirs.append(dataset_dir)
         if not force and not missing_files(database, datasets_dir):
-            print(f"{database}: already downloaded in {dataset_dir}", flush=True)
+            if not quiet:
+                print(f"{database}: already downloaded in {dataset_dir}", flush=True)
             continue
         size = DATABASE_SIZES_GB.get(database)
         size = f" ({size:g} GB)" if size is not None else ""
-        print(f"{database}: downloading{size} from {repo_id} to {dataset_dir}", flush=True)
+        if not quiet:
+            print(f"{database}: downloading{size} from {repo_id} to {dataset_dir}", flush=True)
         os.makedirs(datasets_dir, exist_ok=True)
-        snapshot_download(
-            repo_id=repo_id,
-            repo_type="dataset",
-            revision=revision,
-            allow_patterns=[f"{database}/*"],
-            local_dir=datasets_dir,
-            force_download=force,
-        )
+        _snapshot_download(database, datasets_dir, repo_id, revision, force)
         missing = missing_files(database, datasets_dir)
         if not os.path.exists(os.path.join(dataset_dir, "manifest.json")):
             raise RuntimeError(f"{database} is not in the repository {repo_id}")
@@ -144,6 +140,96 @@ def download(*names, datasets_dir=None, repo_id=None, revision=None, force=False
                 f"{repo_id}, e.g. {missing[0]}"
             )
     return dirs
+
+
+def _snapshot_download(database, datasets_dir, repo_id, revision, force):
+    """Downloads the files of `database`, several at a time. In a terminal, one progress bar
+    shows the downloaded bytes of all the files (instead of one bar per file); in log files,
+    there is no progress bar."""
+    import threading
+
+    from huggingface_hub import HfApi, snapshot_download
+    from huggingface_hub.utils import (
+        are_progress_bars_disabled,
+        disable_progress_bars,
+        enable_progress_bars,
+    )
+
+    from pidsmaker.utils import console
+
+    def run():
+        snapshot_download(
+            repo_id=repo_id,
+            repo_type="dataset",
+            revision=revision,
+            allow_patterns=[f"{database}/*"],
+            local_dir=datasets_dir,
+            force_download=force,
+        )
+
+    sizes = None
+    if console.INTERACTIVE:
+        try:
+            tree = HfApi().list_repo_tree(
+                repo_id, path_in_repo=database, recursive=True, repo_type="dataset",
+                revision=revision,
+            )  # fmt: skip
+            sizes = {f.path: f.size for f in tree if getattr(f, "size", None) is not None}
+        except Exception:
+            pass  # e.g. offline with a local mirror: the bars of huggingface_hub
+        if not sizes:
+            return run()
+
+    was_disabled = are_progress_bars_disabled()
+    disable_progress_bars()
+    try:
+        if sizes is None:
+            return run()
+
+        # The progress is read from the sizes of the files on disk: those downloaded, and those
+        # being downloaded (`.incomplete` files in the download cache of `datasets_dir`)
+        partial_dir = os.path.join(datasets_dir, ".cache", "huggingface", "download", database)
+
+        def downloaded_bytes():
+            done = 0
+            for path, size in sizes.items():
+                try:
+                    done += min(size, os.path.getsize(os.path.join(datasets_dir, path)))
+                except OSError:
+                    pass
+            for root, _, files in os.walk(partial_dir):
+                for f in files:
+                    if f.endswith(".incomplete"):
+                        try:
+                            done += os.path.getsize(os.path.join(root, f))
+                        except OSError:
+                            pass
+            return done
+
+        errors = []
+
+        def target():
+            try:
+                run()
+            except BaseException as e:  # Raised in the main thread
+                errors.append(e)
+
+        thread = threading.Thread(target=target, daemon=True)
+        thread.start()
+        total = sum(sizes.values())
+        with console.progress(
+            None, desc="Downloading", total=total, unit="B", unit_scale=True, unit_divisor=1024
+        ) as bar:
+            while thread.is_alive():
+                thread.join(0.5)
+                bar.update(min(total, downloaded_bytes()) - bar.n)
+            if not errors:
+                bar.update(total - bar.n)
+        if errors:
+            raise errors[0]
+    finally:
+        if not was_disabled:
+            enable_progress_bars()
 
 
 def ensure_downloaded(cfg):
@@ -161,7 +247,24 @@ def ensure_downloaded(cfg):
             f"Dataset {database} not found in {datasets_dir}: download it with "
             f"`pidsmaker download {cfg.dataset.name} --datasets_dir {datasets_dir}`"
         )
-    download(database, datasets_dir=datasets_dir)
+    from pidsmaker.utils import console
+
+    size = DATABASE_SIZES_GB.get(database)
+    size = f" ({size:g} GB)" if size is not None else ""
+    console.log(
+        console.style(f"{console.DOWN} Downloading the dataset {database}{size}", "bold")
+        + console.style(f"  from huggingface.co/datasets/{hf_repo()}", "dim")
+    )
+    start = time.time()
+    download(database, datasets_dir=datasets_dir, quiet=True)
+    console.log(
+        console.style(f"{console.CHECK} Downloaded {database}", "green")
+        + console.style(
+            f"  in {console.format_duration(time.time() - start)} to "
+            f"{os.path.join(datasets_dir, database)}",
+            "dim",
+        )
+    )
 
 
 def list_datasets(datasets_dir=None):
