@@ -14,7 +14,8 @@ give identical results:
   byte, Postgres with the collation of the database (e.g. en_US.utf8, which ignores dashes and
   case at first). Both orders are the same when all the event UUIDs are canonical UUIDs of a
   single case, or alphanumeric strings of a single case: this is checked (`tie_order` of the
-  manifest). One file is written per day.
+  manifest). One file is written per day. Datasets whose event UUIDs fail this check (e.g. LANL)
+  are exported with `--sort_in_postgres`, which sorts them in Postgres into a single file.
 
 Exports are written to `<out_dir>/<database>.tmp` and renamed when complete. Row counts are
 checked against Postgres.
@@ -129,7 +130,20 @@ def export_database(database, args):
         table_dir = os.path.join(tmp_dir, table)
         os.makedirs(table_dir)
         t = time.time()
-        if is_event_table:
+        if is_event_table and args.sort_in_postgres:
+            cols = ", ".join(f'"{n}"' for n in names)
+            query = f"SELECT {cols} FROM {table} ORDER BY {EVENT_ORDER}"
+            db.execute(
+                f"COPY (SELECT * FROM postgres_query('pg', {sql_str(query)})) "
+                f"TO {sql_str(os.path.join(table_dir, 'part-00000.parquet'))} "
+                f"(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE {args.row_group_size});"
+            )
+            info = {
+                "files": ["part-00000.parquet"],
+                "order": f"ORDER BY {EVENT_ORDER}",
+                "tie_order": "postgres",
+            }
+        elif is_event_table:
             info = export_event_table(db, database, table, names, tmp_dir, table_dir, args)
         else:
             cols = ", ".join(f'"{n}"' for n in names)
@@ -234,6 +248,12 @@ def main():
     parser.add_argument("--row_group_size", type=int, default=1_000_000)
     parser.add_argument(
         "--min_free_gb", type=int, default=100, help="Disk space left free (checked at start)"
+    )
+    parser.add_argument(
+        "--sort_in_postgres",
+        action="store_true",
+        help="Sort the events in Postgres (exact order whatever their UUIDs, but needs temporary "
+        "files of the size of the event table on the Postgres server), into a single file",
     )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
