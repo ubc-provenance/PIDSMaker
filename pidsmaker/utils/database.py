@@ -1,32 +1,24 @@
-"""Database backends: a Postgres server, or Parquet files queried in-process by DuckDB.
+"""Datasets: Parquet files queried in-process by DuckDB.
 
-Both are opened by `init_database_connection(cfg)`, which returns (cursor, connection). The
-Parquet backend exposes the subset of the psycopg2 API used by the framework (`cursor(name)`,
-`execute(sql, params)` with `%s` placeholders, `fetchone`/`fetchmany`/`fetchall`, `commit`,
-`close`, context managers), so that queries run unchanged on both backends.
+`init_database_connection(cfg)` returns (cursor, connection) for the dataset of `cfg`. The
+connection exposes the DB-API subset used by the framework (`cursor(name)`, `execute(sql,
+params)` with `%s` placeholders, `fetchone`/`fetchmany`/`fetchall`, `commit`, `close`, context
+managers).
 
-A Parquet dataset is a folder `<datasets_dir>/<database>/` with one subfolder per table,
-holding the `part-*.parquet` files of the table, and a `manifest.json` (see
-`dataset_preprocessing/export_parquet.py`). Each table is exposed as a DuckDB view with the
-name and columns of the Postgres table.
+A dataset is a folder `<datasets_dir>/<database>/` with one subfolder per table, holding the
+`part-*.parquet` files of the table, and a `manifest.json` listing them (see
+`pidsmaker/utils/dataset_writer.py`). Each table is exposed as a DuckDB view named after it.
 
-Row order. Rows are stored in the order of the Postgres queries of the framework, so that
-results are identical:
-- node tables in their physical order (the order of `SELECT ... FROM table` in Postgres);
-- the event table sorted by `timestamp_rec, event_uuid`, sorted by Postgres (with the collation
-  of the database, which differs from the byte order of DuckDB for some strings).
-DuckDB returns the rows of queries without ORDER BY in their stored order
-(`preserve_insertion_order`, enabled by default), so event queries skip the sort on this
-backend (see `events_order_sql`).
+Row order. Rows are stored in the order in which the framework reads them, which determines
+e.g. the order of the corpora of featurization: node tables in the order of the dataset, and the
+event table sorted by `timestamp_rec, event_uuid`. DuckDB returns the rows of queries without
+ORDER BY in their stored order (`preserve_insertion_order`, enabled by default), so the event
+queries need no ORDER BY.
 """
 
 import json
 import os
 import tempfile
-
-POSTGRES = "postgres"
-PARQUET = "parquet"
-BACKENDS = (POSTGRES, PARQUET)
 
 DEFAULT_DATASETS_DIR = os.path.join(os.path.expanduser("~"), ".cache", "pidsmaker", "datasets")
 
@@ -39,68 +31,25 @@ def database_name(cfg):
     return cfg.dataset.database_all_file if cfg.construction.use_all_files else cfg.dataset.database
 
 
-def database_backend(cfg):
-    return getattr(cfg.database, "backend", None) or PARQUET
+def datasets_dir(cfg):
+    return getattr(cfg.database, "datasets_dir", None) or DEFAULT_DATASETS_DIR
 
 
 def parquet_dataset_dir(cfg):
-    datasets_dir = getattr(cfg.database, "datasets_dir", None) or DEFAULT_DATASETS_DIR
-    return os.path.join(datasets_dir, database_name(cfg))
+    return os.path.join(datasets_dir(cfg), database_name(cfg))
 
 
 def init_database_connection(cfg):
-    """(cursor, connection) of the database of the dataset of `cfg`, on its backend."""
-    backend = database_backend(cfg)
-    if backend == PARQUET:
-        from pidsmaker.datasets import ensure_downloaded
+    """(cursor, connection) of the dataset of `cfg`, downloaded first if it is missing."""
+    from pidsmaker.datasets import ensure_downloaded
 
-        ensure_downloaded(cfg)
-        connect = ParquetConnection(parquet_dataset_dir(cfg))
-        return connect.cursor(), connect
-    if backend == POSTGRES:
-        return _init_postgres_connection(cfg)
-    raise ValueError(f"Unknown database backend {backend}. Available backends: {BACKENDS}")
-
-
-def _init_postgres_connection(cfg):
-    import psycopg2
-
-    # Queries without ORDER BY (e.g. `select * from file_node_table`) return rows in the
-    # table's physical order, which determines e.g. the order of indexid2msg and thus the
-    # featurization. With synchronized seqscans (Postgres default), a scan started while
-    # another scan of the same table is running joins it midway and returns rotated rows,
-    # making results depend on concurrent runs. Disabled for this session only.
-    kwargs = dict(
-        database=database_name(cfg),
-        user=cfg.database.user,
-        password=cfg.database.password,
-        port=cfg.database.port,
-        options="-c synchronize_seqscans=off",
-    )
-    if cfg.database.host is not None:
-        kwargs["host"] = cfg.database.host
-    connect = psycopg2.connect(**kwargs)
+    ensure_downloaded(cfg)
+    connect = ParquetConnection(parquet_dataset_dir(cfg))
     return connect.cursor(), connect
 
 
-def events_order_sql(connect, columns="timestamp_rec, event_uuid"):
-    """ORDER BY clause of the event queries sorted by time, run on `connect` (a connection or
-    a cursor).
-
-    Empty on the Parquet backend, whose event table is stored in this order (by Postgres, see
-    the module docstring). Only `timestamp_rec, event_uuid` is a total order: queries sorted
-    by `timestamp_rec` alone return the events of a same timestamp in an order that Postgres
-    does not define, which is the `event_uuid` order on the Parquet backend.
-    """
-    if getattr(connect, "events_presorted", False):
-        return ""
-    return f"ORDER BY {columns}"
-
-
 class ParquetConnection:
-    """psycopg2-like connection to a Parquet dataset, through an in-memory DuckDB database."""
-
-    events_presorted = True
+    """DB-API-like connection to a Parquet dataset, through an in-memory DuckDB database."""
 
     def __init__(self, dataset_dir):
         import duckdb
@@ -129,7 +78,7 @@ class ParquetConnection:
             self._db.execute(f"CREATE VIEW {table} AS SELECT * FROM read_parquet([{file_list}]);")
 
     def cursor(self, name=None):
-        # Named (server-side) cursors of psycopg2 stream their rows: all cursors stream here
+        # `name` is accepted for the callers that name their cursors: all cursors stream
         return ParquetCursor(self._db.cursor())
 
     def commit(self):
@@ -155,17 +104,14 @@ class ParquetConnection:
 
 
 def _to_duckdb_sql(sql):
-    """psycopg2 placeholders (`%s`, with `%%` for `%`) to DuckDB ones (`?`)."""
+    """`%s` placeholders (with `%%` for `%`), as written in the queries, to DuckDB ones (`?`)."""
     return sql.replace("%s", "?").replace("%%", "%")
 
 
 class ParquetCursor:
-    """psycopg2-like cursor. Rows are tuples of Python values, as with psycopg2.
+    """DB-API-like cursor. Rows are tuples of Python values.
 
-    DuckDB streams the results of `fetchmany` (the result is not materialized at `execute`),
-    as the named (server-side) cursors of psycopg2."""
-
-    events_presorted = True
+    DuckDB streams the results of `fetchmany`: the result is not materialized at `execute`."""
 
     def __init__(self, cursor):
         self._cur = cursor

@@ -34,7 +34,6 @@ except LookupError:
     nltk.download("punkt", quiet=True)
 
 from pidsmaker.config import update_cfg_for_multi_dataset
-from pidsmaker.utils.database import events_order_sql
 
 
 def stringtomd5(originstr):
@@ -622,7 +621,7 @@ def calculate_average_from_file(filename):
 
 def get_events_between_GPs(cur, start_time, end_time, malicious_nodes: list):
     malicious_nodes_str = ", ".join(f"'{node}'" for node in malicious_nodes)
-    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' AND src_index_id IN ({malicious_nodes_str}) AND dst_index_id IN ({malicious_nodes_str}) {events_order_sql(cur)};"
+    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' AND src_index_id IN ({malicious_nodes_str}) AND dst_index_id IN ({malicious_nodes_str});"
     cur.execute(sql)
     rows = cur.fetchall()
     return rows
@@ -633,7 +632,7 @@ def get_events_between_time_range(
     start_time,
     end_time,
 ):
-    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}' {events_order_sql(cur)};"
+    sql = f"SELECT * FROM event_table WHERE timestamp_rec BETWEEN '{start_time}' AND '{end_time}';"
     cur.execute(sql)
     rows = cur.fetchall()
     return rows

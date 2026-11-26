@@ -141,7 +141,7 @@ def get_uuid_to_index_id(cfg):
     database = (
         cfg.dataset.database_all_file if cfg.construction.use_all_files else cfg.dataset.database
     )
-    key = (dataset, database, cfg.database.host, cfg.database.port, schema.name)
+    key = (dataset, database, cfg.database.datasets_dir, schema.name)
 
     if key not in _UUID_TO_INDEX_ID_CACHE:
         uuid2nid = {}

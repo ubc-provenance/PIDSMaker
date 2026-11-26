@@ -101,13 +101,8 @@ def get_default_cfg(args):
     if cfg._restart_from_scratch:
         cfg._run_random_seed = str(uuid.uuid4())
 
-    # Database: we simply create variables for all configurations described in the dict
+    # Datasets (see pidsmaker/utils/database.py)
     cfg.database = CN()
-    cfg.database.host = args.database_host
-    cfg.database.user = args.database_user
-    cfg.database.password = args.database_password
-    cfg.database.port = args.database_port
-    cfg.database.backend = getattr(args, "database_backend", "parquet")
     cfg.database.datasets_dir = getattr(args, "datasets_dir", None)
 
     # Dataset: we simply create variables for all configurations described in the dict
@@ -195,30 +190,10 @@ def get_runtime_required_args(return_unknown_args=False, args=None):
         "--tuning_file_path", default="", help="If set, use the given YML path for tuning"
     )
     parser.add_argument(
-        "--database_host", default="postgres", help="Host machine where the db is located"
-    )
-    parser.add_argument(
-        "--database_user", default="postgres", help="Database user to connect to the database"
-    )
-    parser.add_argument(
-        "--database_password", default="postgres", help="The password to the database user"
-    )
-    parser.add_argument(
-        "--database_port", type=int, default=5432, help="The port number for Postgres (default: 5432)"
-    )
-    parser.add_argument(
-        "--database_backend",
-        choices=["postgres", "parquet"],
-        default=os.environ.get("PIDSMAKER_DATABASE_BACKEND", "parquet"),
-        help="Where datasets are read from: Parquet files read in-process by DuckDB, or a "
-        "Postgres server (legacy; see pidsmaker/utils/database.py for the order of rows on both "
-        "backends). Default: $PIDSMAKER_DATABASE_BACKEND, else parquet",
-    )
-    parser.add_argument(
         "--datasets_dir",
         default=os.environ.get("PIDSMAKER_DATASETS_DIR"),
-        help="Folder of the Parquet datasets, one subfolder per database. "
-        "Default: $PIDSMAKER_DATASETS_DIR, else ~/.cache/pidsmaker/datasets",
+        help="Folder of the datasets (Parquet files, read with DuckDB), one subfolder per "
+        "database. Default: $PIDSMAKER_DATASETS_DIR, else ~/.cache/pidsmaker/datasets",
     )
     parser.add_argument("--sweep_id", default="", help="ID of a wandb sweep for multi-agent runs")
     parser.add_argument(

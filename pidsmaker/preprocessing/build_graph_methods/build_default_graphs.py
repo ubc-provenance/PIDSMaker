@@ -1,6 +1,6 @@
-"""Default provenance graph construction from PostgreSQL database.
+"""Default graph construction from the events of a dataset.
 
-Builds provenance graphs from DARPA TC/OpTC datasets stored in PostgreSQL.
+Builds the graphs of a dataset (provenance or network events, see `pidsmaker/utils/database.py`).
 Creates time-windowed graph snapshots with node features, edge types, and timestamps.
 Supports attack mimicry generation for data augmentation.
 """
@@ -23,7 +23,6 @@ from pidsmaker.config import get_dates_from_cfg, get_node_feats_from_cfg
 from pidsmaker.config.schemas import benign_training
 from pidsmaker.preprocessing.cleaning import Cleaner
 from pidsmaker.utils.graph_store import save_edge_list
-from pidsmaker.utils.database import events_order_sql
 from pidsmaker.utils.dataset_utils import get_schema, iter_nodes
 from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
@@ -54,10 +53,9 @@ EVENT_TIME_IDX = 6
 EVENT_EXTRA_IDX = 8
 
 
-def events_sql(schema, connect):
-    """Query of the events of a time range, ordered by time (see the row shape above).
-
-    `connect` is the connection the query runs on (see `events_order_sql`)."""
+def events_sql(schema):
+    """Query of the events of a time range, in their stored order: by `timestamp_rec,
+    event_uuid` (see the row shape above and `pidsmaker/utils/database.py`)."""
     extra = [attr.column for attr in schema.edge_attributes]
     if schema.label_column:
         extra.append(schema.label_column)
@@ -66,8 +64,7 @@ def events_sql(schema, connect):
 select NULL, src_index_id, operation, NULL, dst_index_id, event_uuid, timestamp_rec, NULL{extra_sql}
 from {schema.event_table}
 where
-      timestamp_rec > %s and timestamp_rec < %s{schema.operations_sql()}
-       {events_order_sql(connect)};
+      timestamp_rec > %s and timestamp_rec < %s{schema.operations_sql()};
 """
 
 
@@ -109,7 +106,7 @@ class DayQueryPrefetcher:
         try:
             _, connect = init_database_connection(cfg)
             with connect.cursor(_next_cursor_name()) as cur:
-                cur.execute(events_sql(get_schema(cfg), connect), params)
+                cur.execute(events_sql(get_schema(cfg)), params)
                 while True:
                     chunk = cur.fetchmany(self.fetch_size)
                     if not self._put(i, chunk) or len(chunk) < self.fetch_size:
@@ -423,7 +420,7 @@ def _iter_day_chunks(cfg, params, fetch_size):
     _, connect = init_database_connection(cfg)
     try:
         with connect.cursor(_next_cursor_name()) as cur:
-            cur.execute(events_sql(get_schema(cfg), connect), params)
+            cur.execute(events_sql(get_schema(cfg)), params)
             while True:
                 chunk = cur.fetchmany(fetch_size)
                 yield chunk

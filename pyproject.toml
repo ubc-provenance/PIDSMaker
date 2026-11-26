@@ -41,8 +41,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Legacy backend: datasets in a Postgres server (--database_backend postgres)
-postgres = ["psycopg2-binary>=2.9"]
 # Embedding visualizations (vizgen)
 viz = ["umap-learn==0.5.6"]
 test = [

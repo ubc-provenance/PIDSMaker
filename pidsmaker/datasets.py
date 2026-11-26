@@ -150,10 +150,8 @@ def ensure_downloaded(cfg):
     """Downloads the dataset of `cfg` if it is missing, unless $PIDSMAKER_AUTO_DOWNLOAD is 0.
     Processes that download it at the same time wait for each other (file locks of
     huggingface_hub)."""
-    from pidsmaker.utils.database import PARQUET, database_backend, database_name
+    from pidsmaker.utils.database import database_name
 
-    if database_backend(cfg) != PARQUET:
-        return
     database = database_name(cfg)
     datasets_dir = get_datasets_dir(getattr(cfg.database, "datasets_dir", None))
     if not missing_files(database, datasets_dir):

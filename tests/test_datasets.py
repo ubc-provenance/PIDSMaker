@@ -76,7 +76,7 @@ def test_every_database_has_a_size():
     databases = {
         c["database"]
         for c in datasets.DATASET_DEFAULT_CONFIG.values()
-        if not c["database"].startswith("pidsmaker_tests_")
+        if c["database"] != "clearscope_e3_sample"
     }
     assert databases <= set(datasets.DATABASE_SIZES_GB)
     assert len(datasets.DATABASE_SIZES_GB) == len(datasets.DATASET_DEFAULT_CONFIG)
@@ -137,8 +137,6 @@ def make_cfg(datasets_dir):
         args=[
             "orthrus",
             "CADETS_E3",
-            "--database_backend",
-            "parquet",
             "--datasets_dir",
             datasets_dir,
         ],
