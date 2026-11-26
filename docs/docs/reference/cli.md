@@ -87,7 +87,7 @@ Dataset names are case-insensitive, and the names of their databases work too (e
 |---|---|---|
 | `--list` | | Lists the datasets, their sizes, and which are downloaded. |
 | `--datasets_dir PATH` | `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets` | Where datasets are stored. |
-| `--repo REPO` | `$PIDSMAKER_HF_REPO`, else `ubc-provenance/pidsmaker-datasets` | Hugging Face dataset repository. |
+| `--repo REPO` | `$PIDSMAKER_HF_REPO`, else `tbilot/pidsmaker` | Hugging Face dataset repository. |
 | `--revision REVISION` | | Branch, tag or commit of the repository. |
 | `--force` | off | Downloads the datasets again, even if they are already downloaded. |
 
@@ -100,7 +100,7 @@ The same from Python: `from pidsmaker.datasets import download; download("CADETS
 | `PIDSMAKER_DATASETS_DIR` | `~/.cache/pidsmaker/datasets` | Folder of the datasets (default of `--datasets_dir`). |
 | `PIDSMAKER_ARTIFACT_DIR` | `/home/artifacts/` if it exists, else `./artifacts/` | Folder of the artifacts (default of `--artifact_dir`). |
 | `PIDSMAKER_AUTO_DOWNLOAD` | `1` | A run downloads its dataset if it is missing. With `0`, it stops with an error instead. |
-| `PIDSMAKER_HF_REPO` | `ubc-provenance/pidsmaker-datasets` | Hugging Face dataset repository of the datasets (default of `--repo`). |
+| `PIDSMAKER_HF_REPO` | `tbilot/pidsmaker` | Hugging Face dataset repository of the datasets (default of `--repo`). |
 | `PIDSMAKER_DUCKDB_THREADS` | `8` | Threads of each DuckDB connection. Graph construction opens several connections at the same time, one per day. |
 | `PIDSMAKER_DATABASE_BACKEND` | `parquet` | `postgres` selects the [legacy Postgres backend](../getting-started/installation.md#postgres) (default of `--database_backend`). |
 | `OMP_NUM_THREADS` | | CPU threads of PyTorch. If it is not set, PIDSMaker sets it to 4 in Docker Desktop on Apple Silicon (see [macOS](../getting-started/installation.md#docker-desktop)). |

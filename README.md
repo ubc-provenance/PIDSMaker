@@ -157,7 +157,7 @@ flowchart TB
 
 ### 💻 Installation
 
-PIDSMaker is a Python package, for Python 3.9 to 3.11. Its datasets are Parquet files, downloaded from [Hugging Face](https://huggingface.co/datasets/ubc-provenance/pidsmaker-datasets) and read in place with DuckDB: no database server or Docker needed.
+PIDSMaker is a Python package, for Python 3.9 to 3.11. Its datasets are Parquet files, downloaded from [Hugging Face](https://huggingface.co/datasets/tbilot/pidsmaker) and read in place with DuckDB: no database server or Docker needed.
 
 ```shell
 conda create -n pids python=3.11 && conda activate pids
