@@ -97,9 +97,9 @@ If you cloned the repo and already have evaluated runs, generate the manifests
 once — it only reads files already on disk; nothing is retrained:
 
 ```bash
-# from the root of the repository, with the artifact folder of your runs
-python -m scripts.backfill_viz_manifests --dry-run   # preview what it will write
-python -m scripts.backfill_viz_manifests             # write the manifests
+# with the artifact folder of your runs
+python -m pidsmaker.vizgen.backfill_manifests --dry-run   # preview what it will write
+python -m pidsmaker.vizgen.backfill_manifests             # write the manifests
 ```
 
 It walks `evaluation/evaluation/*/*` and `detection/evaluation/*/*`, skips runs
@@ -139,8 +139,7 @@ python -m pidsmaker.vizgen.web.export <model> <dataset> \
     --run /home/artifacts/evaluation/evaluation/<hash>/<dataset>
 ```
 
-`scripts/embedding_viz.py` is a thin launcher for the same command. After it
-finishes, refresh the viewer and select the run.
+After it finishes, refresh the viewer and select the run.
 
 ### Large datasets (E5) — sampling caps
 

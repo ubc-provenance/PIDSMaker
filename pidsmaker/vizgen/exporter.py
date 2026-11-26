@@ -2,23 +2,23 @@
 """CLI entry point for interactive 3D embedding visualization.
 
 Usage:
-    python scripts/embedding_viz.py <model> <dataset> [options]
+    python -m pidsmaker.vizgen.web.export <model> <dataset> [options]
 
 Examples:
     # Word2Vec raw embeddings (default)
-    python scripts/embedding_viz.py orthrus CADETS_E3
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3
 
     # GNN encoder embeddings
-    python scripts/embedding_viz.py orthrus CADETS_E3 --embeddings encoder
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --embeddings encoder
 
     # Both views
-    python scripts/embedding_viz.py orthrus CADETS_E3 --embeddings both
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --embeddings both
 
     # Custom sampling
-    python scripts/embedding_viz.py orthrus CADETS_E3 --max_benign 10000 --max_attack all
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --max_benign 10000 --max_attack all
 
     # t-SNE instead of UMAP
-    python scripts/embedding_viz.py orthrus CADETS_E3 --method tsne
+    python -m pidsmaker.vizgen.web.export orthrus CADETS_E3 --method tsne
 """
 
 import argparse

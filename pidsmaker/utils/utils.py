@@ -361,7 +361,7 @@ def log(msg: str, return_line=False, pre_return_line=False, *args, **kwargs):
 
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    # Flushed, so that logs redirected to a file (e.g. `nohup.out` of run.sh) are written as
+    # Flushed, so that logs redirected to a file (e.g. with `pidsmaker --background`) are written as
     # they come, instead of minutes later when the output buffer is full
     kwargs.setdefault("flush", True)
     print(f"{timestamp} - {msg}", *args, **kwargs)
@@ -713,7 +713,7 @@ def set_seed(cfg, seed=None):
     torch.backends.cudnn.benchmark = False
     
     if cfg.training.deterministic:
-        # NOTE: must do `export CUBLAS_WORKSPACE_CONFIG=:4096:8`
+        # Needs CUBLAS_WORKSPACE_CONFIG=:4096:8 on CUDA, set by the `pidsmaker` command (cli.py)
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 

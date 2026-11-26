@@ -7,8 +7,8 @@ have none, so they stay hidden. This calls the pipeline's own write_viz_manifest
 on each completed run that lacks one -- it only indexes artifacts already on disk,
 nothing is retrained. Idempotent (skips existing unless --force).
 
-Run inside the container:
-    python -m scripts.backfill_viz_manifests [--dry-run] [--force] [--artifacts-root PATH]
+Usage:
+    python -m pidsmaker.vizgen.backfill_manifests [--dry-run] [--force] [--artifacts-root PATH]
 """
 
 import argparse
