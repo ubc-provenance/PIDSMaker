@@ -1669,9 +1669,17 @@ class SharedNodeFeatures:
 
         # `GraphReindexer.reindex_graph`
         if self.reindex is not None and self.node_feats_used:
-            edge_index = g.original_edge_index
-            x, *_ = st.reindexer._reindex_graph(
-                edge_index, g.x_src, g.x_dst, x_is_tuple=self.reindex["x_is_tuple"]
+            # The nodes are found once for both features (`unique` waits for the GPU), and the
+            # largest reindexed ID is passed (N - 1, as the IDs are 0..N-1): reading it from
+            # `edge_index.max()` also waits for the GPU
+            _, edge_index, n_id = st.reindexer._reindex_graph(g.original_edge_index)
+            max_num_node = n_id.size(0) - 1
+            x = st.reindexer.node_features_reshape(
+                edge_index,
+                g.x_src,
+                g.x_dst,
+                max_num_node=max_num_node,
+                x_is_tuple=self.reindex["x_is_tuple"],
             )
             g.x = x
             keep = self.reindex["keep_edge_level_features"]
@@ -1679,8 +1687,8 @@ class SharedNodeFeatures:
                 g.x_src, g.x_dst = x
             elif not keep:
                 del g.x_src, g.x_dst
-            g.node_type, *_ = st.reindexer._reindex_graph(
-                edge_index, g.node_type_src, g.node_type_dst, x_is_tuple=False
+            g.node_type = st.reindexer.node_features_reshape(
+                edge_index, g.node_type_src, g.node_type_dst, max_num_node=max_num_node
             )
             if not keep:
                 del g.node_type_src, g.node_type_dst
