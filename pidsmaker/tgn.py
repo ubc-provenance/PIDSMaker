@@ -508,7 +508,11 @@ class LastAggregator(torch.nn.Module):
     def forward(self, msg: Tensor, index: Tensor, t: Tensor, dim_size: int):
         argmax = scatter_argmax(t, index, dim=0, dim_size=dim_size)
         out = msg.new_zeros((dim_size, msg.size(-1)))
-        mask = argmax < msg.size(0)  # Filter items with at least one entry.
+        # Items with at least one entry. Not `argmax < msg.size(0)`: that holds for the argmax of
+        # empty items with torch_scatter (`msg.size(0)`), not with the fallback of PyG without it
+        # (`dim_size - 1`, the index of another item's message)
+        mask = torch.zeros(dim_size, dtype=torch.bool, device=index.device)
+        mask.index_fill_(0, index, True)
         out[mask] = msg[argmax[mask]]
         return out
 
