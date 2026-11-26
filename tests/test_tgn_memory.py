@@ -46,7 +46,9 @@ def test_chunked_flush_matches_single_update(chunk_size):
 
     (mem_full, lu_full), (mem_chunked, lu_chunked) = results
     assert torch.equal(lu_full, lu_chunked)
-    torch.testing.assert_close(mem_chunked, mem_full, rtol=0, atol=1e-6)
+    # Same computation, up to float32 rounding: the GRU's matrix products take other kernels
+    # for 1 row than for 100 on some CPUs (up to 5e-6 apart on the CI runners)
+    torch.testing.assert_close(mem_chunked, mem_full, rtol=1e-5, atol=1e-5)
     assert not torch.allclose(mem_full, make_memory(num_nodes).memory)  # the flush changed it
 
 

@@ -78,15 +78,16 @@ def test_selected_node_features():
     assert get_selected_node_features(_cfg("word2vec", "node_emb,node_type")) == ["node_emb", "node_type"]
 
 
-def _yml_cfg(model, dataset, custom_args=()):
+def _yml_cfg(model, dataset, artifact_dir, custom_args=()):
     args, _ = get_runtime_required_args(return_unknown_args=True, args=[model, dataset])
+    args.__dict__["artifact_dir"] = str(artifact_dir) + "/"  # not the default /home/artifacts
     for k, v in custom_args:
         args.__dict__[k] = v
     return get_yml_cfg(args)
 
 
-def test_threatrace_config():
-    cfg = _yml_cfg("threatrace", "CADETS_E3")
+def test_threatrace_config(tmp_path):
+    cfg = _yml_cfg("threatrace", "CADETS_E3", tmp_path)
     assert get_selected_node_features(cfg) == ["edges_distribution"]
     assert cfg.training.used_method == "threatrace"
     assert cfg.batching.fix_buggy_graph_reindexer
@@ -98,9 +99,12 @@ def test_threatrace_config():
     assert cfg.training.threatrace.ratio_threshold == 1.5
 
 
-def test_node_type_cannot_be_a_feature_of_node_type_prediction():
+def test_node_type_cannot_be_a_feature_of_node_type_prediction(tmp_path):
     with pytest.raises(ValueError, match="cannot be a node feature"):
-        _yml_cfg("threatrace", "CADETS_E3", [("batching.node_features", "node_type,edges_distribution")])
+        _yml_cfg(
+            "threatrace", "CADETS_E3", tmp_path,
+            [("batching.node_features", "node_type,edges_distribution")],
+        )
 
 
 def test_node_type_prediction_loss_mask():
