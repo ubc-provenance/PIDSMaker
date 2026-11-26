@@ -111,3 +111,12 @@ Zensical reports broken links and anchors at every build: please fix them before
 | Generated argument lists | `docs/scripts/args/`, produced by `docs/scripts/get_arguments.py` |
 
 The site is deployed to GitHub Pages automatically when changes are merged into `main`.
+
+## Releasing a new version
+
+Maintainers release a version by:
+
+1. Updating `version` in `pyproject.toml` (e.g. `5.1.0`) and the release notes of the README, in a pull request.
+2. Publishing a [release](https://github.com/ubc-provenance/PIDSMaker/releases/new) on GitHub, with a tag equal to that version (e.g. `5.1.0`).
+
+The release runs `.github/workflows/publish.yml`, which builds the package and publishes it to [PyPI](https://pypi.org/project/pidsmaker/) (it fails if the tag differs from the version of `pyproject.toml`). PyPI trusts this workflow as a [trusted publisher](https://docs.pypi.org/trusted-publishers/), so no token is stored in the repository.

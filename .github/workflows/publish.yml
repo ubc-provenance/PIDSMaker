@@ -1,0 +1,49 @@
+name: publish
+# Publishes the package to PyPI when a release is published on GitHub, without a token: PyPI
+# trusts this workflow (trusted publisher of the `pidsmaker` project, with the environment
+# `pypi`). See https://docs.pypi.org/trusted-publishers/.
+# It can also be run manually on a tag (Actions > publish > Run workflow), e.g. to publish
+# again a release whose upload failed.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check that the tag is the version of the package
+        run: |
+          version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::The tag ${GITHUB_REF_NAME} is not the version of pyproject.toml (${version})"
+            exit 1
+          fi
+      - run: pip install build==1.2.2 twine==6.1.0
+      - name: Build the source distribution and the wheel
+        run: python -m build
+      - run: twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pidsmaker/
+    permissions:
+      id-token: write  # to authenticate to PyPI as this workflow
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
