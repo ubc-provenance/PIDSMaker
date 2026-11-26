@@ -93,7 +93,7 @@ METRICS = {
 }
 # End of the axis of each metric, so that the bars of most runs stay readable: the few runs
 # above it are cut there, with a break mark, and their hover text gives their value
-AXIS_CUT = {"time": 150, "ram": 60, "gpu": 20, "disk": 20}
+AXIS_CUT = {"time": 80, "ram": 40, "gpu": 12, "disk": 15}  # about the 90th percentile
 
 
 def load():
@@ -128,10 +128,10 @@ def tick_label(v):
 
 
 def linear_ticks(vmax):
-    """Ticks from 0 with a step of 1, 2, 2.5 or 5 x 10^k, about 3 steps up to the axis end."""
+    """Ticks from 0 with a step of 1, 2, 2.5, 4 or 5 x 10^k, about 3 steps up to the axis end."""
     raw = vmax / 3
     e = 10 ** math.floor(math.log10(raw))
-    step = min((m * e for m in (1, 2, 2.5, 5, 10) if m * e >= raw), default=10 * e)
+    step = min((m * e for m in (1, 2, 2.5, 4, 5, 10) if m * e >= raw), default=10 * e)
     n = math.ceil(vmax / step - 1e-9)
     return [i * step for i in range(n + 1)]
 
