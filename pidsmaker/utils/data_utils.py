@@ -254,11 +254,14 @@ _PACKED_TRANSFER = _PackedTransfer()
 
 # Sorted original node IDs of the compacted node IDs (`batching.compact_node_ids`), or None
 _ORIGINAL_NODE_IDS = None
+# Copies of `_ORIGINAL_NODE_IDS` on the devices it is used on
+_ORIGINAL_NODE_IDS_ON_DEVICE = {}
 
 
 def set_original_node_ids(node_ids):
     global _ORIGINAL_NODE_IDS
     _ORIGINAL_NODE_IDS = node_ids
+    _ORIGINAL_NODE_IDS_ON_DEVICE.clear()
 
 
 def get_original_node_ids():
@@ -269,7 +272,12 @@ def to_original_node_ids(ids):
     """Node IDs of the database of (compacted) node IDs `ids` (unchanged without compaction)."""
     if _ORIGINAL_NODE_IDS is None:
         return ids
-    return _ORIGINAL_NODE_IDS.to(ids.device)[ids.long()].to(ids.dtype)
+    # Copied once per device: the inference called this at each batch, copying all the IDs
+    # (MBs) to the GPU from pageable memory, which waits for the GPU
+    table = _ORIGINAL_NODE_IDS_ON_DEVICE.get(ids.device)
+    if table is None:
+        table = _ORIGINAL_NODE_IDS_ON_DEVICE[ids.device] = _ORIGINAL_NODE_IDS.to(ids.device)
+    return table[ids.long()].to(ids.dtype)
 
 
 def compact_node_ids(dataset_groups, shared=None):
