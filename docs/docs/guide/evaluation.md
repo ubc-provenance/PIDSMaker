@@ -132,6 +132,8 @@ Datasets whose schema has a label column, such as [LANL and OPTC_NET](datasets.m
 
 `threatrace` and `flash` require the `predict_node_type` objective, and `magic` requires node-level evaluation with a node-level objective.
 
+With node-level objectives, the scores of `threatrace`, `flash` and `magic` are computed at inference, and each node is flagged at evaluation, by the `NodeScorer` of the system (in `pidsmaker/detection/threatrace_detection.py`, `flash_detection.py` and `magic_knn.py`). A new threshold method with scores of its own subclasses `NodeScorer` (`pidsmaker/detection/node_scoring.py`) and registers it in `node_scorer_factory()` (`factory.py`).
+
 ### Clustering (Orthrus)
 
 With `use_kmeans: True`, the threshold doesn't decide alone: the `kmeans_top_K` highest-scored nodes are split into two clusters with k-means on their scores, and only the nodes of the high-score cluster are predicted malicious. With `node_tw_evaluation`, clustering runs in each window that has at least one node above the threshold. Orthrus enables it with K = 30; `orthrus_non_snooped` disables it.
