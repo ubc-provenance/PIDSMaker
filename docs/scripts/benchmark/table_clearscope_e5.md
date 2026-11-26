@@ -1,0 +1,19 @@
+| System | Family | Wall time | Peak RAM | Peak GPU memory | Disk |
+|---|---|--:|--:|--:|--:|
+| Velox | Provenance | 75 min | 10.6 GB | 0.3 GB | 8.1 GB |
+| Orthrus | Provenance | 65 min | 12.6 GB | 4.4 GB | 8.1 GB |
+| OCR-APT | Provenance | 22 min | 26.1 GB | 1.4 GB | 2.6 GB |
+| R-Caid | Provenance | 12 min | 5.4 GB | 3.2 GB | 5.0 GB |
+| Flash | Provenance | 16 min | 5.1 GB | 0.5 GB | 2.5 GB |
+| Kairos | Provenance | 76 min | 11.3 GB | 6.3 GB | 7.5 GB |
+| MAGIC | Provenance | 6 min | 5.6 GB | 4.0 GB | 0.7 GB |
+| NodLink | Provenance | 14 min | 6.9 GB | 4.3 GB | 7.7 GB |
+| ProGrapher | Provenance | 34 min | 5.1 GB | 1.5 GB | 2.3 GB |
+| ThreaTrace | Provenance | 6 min | 10.5 GB | 0.3 GB | 2.2 GB |
+| ShadeWatcher | Provenance | 18 min | 5.0 GB | 1.3 GB | 5.5 GB |
+| LARES | Network | 5 min | 13.2 GB | 0.8 GB | 2.1 GB |
+| Argus | Network | 14 min | 12.9 GB | 1.8 GB | 4.1 GB |
+| Jbeil | Network | 341 min | 18.0 GB | 4.5 GB | 10.8 GB |
+| Euler | Network | 27 min | 8.8 GB | 1.4 GB | 7.2 GB |
+| E-GraphSAGE | Network | 17 min | 8.8 GB | 11.6 GB | 4.3 GB |
+| Anomal-E | Network | 10 min | 9.0 GB | 1.4 GB | 3.3 GB |
