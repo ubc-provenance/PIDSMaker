@@ -55,7 +55,7 @@ PIDSMaker runs on Linux (GPU or CPU), and on [macOS](https://ubc-provenance.gith
 See [installation guide](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/).
 
 ## Required configuration
-For most datasets: a laptop with **32 GB of RAM** is ideal. The largest datasets (e.g. TRACE datasets) run more smootly on a server with GPU.
+For most datasets: a laptop with **32 GB of RAM** is ideal. The largest datasets (e.g. TRACE datasets) run more smoothly on a server with GPU.
 
 We detail the memory, runtime and disk usage required by each system and dataset in this [benchmark](https://ubc-provenance.github.io/PIDSMaker/guide/benchmark/#results).
 
