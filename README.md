@@ -192,14 +192,13 @@ Replace `SYSTEM` by a provenance system (`velox`, `orthrus`, `nodlink`, `threatr
     pidsmaker SYSTEM DATASET --wandb
     ```
 
-3. Run in background, monitored to W&B (recommended for multiple parallel runs and for research), from the `scripts/` folder of the repository:
+3. Run in background, monitored to W&B (recommended for multiple parallel runs and for research):
     ```shell
-    ./run.sh SYSTEM DATASET
+    pidsmaker SYSTEM DATASET --wandb --background
     ```
+    The command prints the log file of the run (`pidsmaker_SYSTEM_DATASET_<time>.log`, in the current folder): follow it with `tail -f`.
 
-You can still watch the logs in your shell using `tail -f nohup.out`.
-
-To run in the foreground without W&B, with the same settings as `./run.sh`, use `./run_local.sh SYSTEM DATASET`.
+`pidsmaker` sets `PYTHONHASHSEED=0` and `CUBLAS_WORKSPACE_CONFIG=:4096:8` for reproducible runs.
 
 We generally using using W&B for experiment monitoring and historization (see installation guidelines). 
 
@@ -299,13 +298,13 @@ parameters:
 Then run the framework in tuning mode.
 
 ```sh
-./run.sh my_system CADETS_E3 --tuning_mode=hyperparameters
+pidsmaker my_system CADETS_E3 --wandb --background --tuning_mode=hyperparameters
 ```
 
 Once you find the best hyperparameters, store them in a yaml file and run your tuned model.
 
 ```sh
-./run.sh my_system CADETS_E3 --tuned
+pidsmaker my_system CADETS_E3 --wandb --background --tuned
 ```
 
 ## Citation

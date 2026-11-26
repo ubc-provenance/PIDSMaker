@@ -52,13 +52,13 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
     Each run caches the outputs of every task, which can exceed 15 GB per run on E3 datasets. Point `PIDSMAKER_ARTIFACT_DIR` to a large disk, and delete the folders of old experiments. Runs started with `--restart_from_scratch` delete their outputs automatically at the end.
 
 ??? question "Can I run several experiments in parallel?"
-    Yes. With simple architectures, 3 to 4 runs fit on a single A100 GPU without major overhead. Use `./run.sh` from the `scripts/` folder to run them in the background. Avoid starting several runs **with the same early tasks** at the same time: they would write to the same folder. See [Caching of tasks](../guide/pipeline.md#caching-of-tasks).
+    Yes. With simple architectures, 3 to 4 runs fit on a single A100 GPU without major overhead. Start each of them with `--background`, which runs it detached from the terminal, with its own log file. Avoid starting several runs **with the same early tasks** at the same time: they would write to the same folder. See [Caching of tasks](../guide/pipeline.md#caching-of-tasks).
 
 ??? question "The GPU runs out of memory."
     Reduce the size of the graphs or batches (e.g. `construction.time_window_size`, or the batching arguments in [Batching & sampling](../features/batching.md)), or the embedding sizes (`training.node_hid_dim`, `training.node_out_dim`).
 
 ??? question "I don't want to use Weights & Biases."
-    Run `pidsmaker SYSTEM DATASET` without `--wandb`, or `./run_local.sh SYSTEM DATASET` from `scripts/`. Metrics are printed in the logs.
+    Run `pidsmaker SYSTEM DATASET` without `--wandb`: metrics are printed in the logs.
 
 ## Results
 

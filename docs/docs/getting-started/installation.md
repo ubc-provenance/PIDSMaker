@@ -125,7 +125,7 @@ Create an account, then log in with the API key from your W&B dashboard:
 wandb login
 ```
 
-Runs started with `--wandb`, or with `./run.sh`, then send their logs and results to W&B.
+Runs started with `--wandb` then send their logs and results to W&B.
 
 ## Check your installation
 

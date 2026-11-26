@@ -9,7 +9,7 @@ This page shows how to run the existing systems, provenance-based (PIDSs) and ne
 { .lead }
 
 !!! note "Before you start"
-    Complete the [installation](installation.md). The `pidsmaker` command runs from any folder; the helper scripts of `scripts/` need a clone of the repository.
+    Complete the [installation](installation.md). The `pidsmaker` command runs from any folder.
 
 ## Your first run
 
@@ -84,22 +84,14 @@ The content of the config (e.g. `config/velox.yml`) is parsed and checked agains
 
 === "Background + W&B"
 
-    Recommended for research and for running several experiments in parallel. Runs in the background with `nohup`, with deterministic CUDA and Python hashing settings, and logs to W&B. From a clone of the repository:
+    Recommended for research and for running several experiments in parallel. The run continues after you close the terminal or log out, and logs to W&B. The command prints the log file of the run, in the current folder:
 
     ```shell
-    cd scripts
-    ./run.sh SYSTEM DATASET
-    tail -f nohup.out   # follow the logs
+    pidsmaker SYSTEM DATASET --wandb --background
+    tail -f pidsmaker_SYSTEM_DATASET_*.log   # follow the logs
     ```
 
-=== "Shell, same settings as run.sh"
-
-    Runs in the foreground without W&B, with the same environment variables as `run.sh`. From a clone of the repository:
-
-    ```shell
-    cd scripts
-    ./run_local.sh SYSTEM DATASET
-    ```
+All runs of `pidsmaker` are reproducible: it sets `PYTHONHASHSEED=0` (sets of strings are iterated in the same order) and `CUBLAS_WORKSPACE_CONFIG=:4096:8` (for the deterministic algorithms of CUDA), unless you set them yourself. `python pidsmaker/main.py` does not.
 
 ## Change arguments
 

@@ -212,8 +212,7 @@ For more practical experimentation, prefer running the framework in background a
 To do so, ensure you have logged to W&B with `wandb login` and run:
 
 ``` sh
-cd scripts
-./run.sh custom_system CADETS_E3 --project=test_custom_system
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system
 ```
 
 !!! note
@@ -242,16 +241,16 @@ While this first version of the model yields relatively satisfactory results, we
 
 ``` sh
 # Remove node type from node features, keep only the word2vec embedding
-./run.sh custom_system CADETS_E3 --project=test_custom_system \
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system \
     --batching.node_features=node_emb
 
 # Increase node embedding size
-./run.sh custom_system CADETS_E3 --project=test_custom_system \
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system \
     --training.node_hid_dim=256 \
     --training.node_out_dim=256
 
 # Reduce the number of GNN layers
-./run.sh custom_system CADETS_E3 --project=test_custom_system \
+pidsmaker custom_system CADETS_E3 --wandb --background --project=test_custom_system \
     --training.encoder.custom_encoder.num_layers=2
 ```
 
@@ -262,7 +261,7 @@ For more advanced hyperparameter exploration, consider using the [hyperparameter
 Nothing in our system is specific to provenance: the encoder only sees node features and edges, and the objective predicts edge types. The same config runs on a [network dataset](datasets.md#network-datasets), whose nodes are hosts and edges authentications:
 
 ``` sh
-./run.sh custom_system LANL --project=test_custom_system \
+pidsmaker custom_system LANL --wandb --background --project=test_custom_system \
     --construction.edge_type=logon_type
 ```
 
