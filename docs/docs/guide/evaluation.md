@@ -102,13 +102,13 @@ Evaluation compares predictions against a **ground truth**. For provenance datas
 | `reapr` | Alternative labeling of the DARPA TC E3 datasets | Same as `orthrus` | E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS |
 | `threatrace` | Ground truth published by [ThreaTrace](https://arxiv.org/pdf/2111.04333) | One flat UUID-per-line `.txt` per dataset, treated as a single attack over the whole test period | E3: CADETS, THEIA, TRACE, FIVEDIRECTIONS |
 
-The files live under `Ground_Truth/<version>/<dataset>/`. Changing the version only changes the labels read by evaluation: it doesn't change training or the graphs, so it re-evaluates an already-trained run.
+The files live under `ground_truth/<version>/<dataset>/`. Changing the version only changes the labels read by evaluation: it doesn't change training or the graphs, so it re-evaluates an already-trained run.
 
 - **Attacks.** Each dataset defines its attacks in `attack_to_time_window` (`DATASET_DEFAULT_CONFIG`, `pidsmaker/config/config.py`): one ground-truth file and one time range per attack. Attacks are what ADP and the per-attack metrics count.
 - **Node labels.** A node is malicious if it appears in any attack file. UUIDs of the ground truth that are not in the graphs are skipped, and counted in the logs.
 - **Window labels.** A time window is malicious if it contains a database event, inside an attack's time range, whose source or destination is an attack node.
 
-Selecting a version that has no file for the dataset fails with a clear error. See [`Ground_Truth/threatrace/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/Ground_Truth/threatrace/README.md) for the per-dataset ThreaTrace node counts.
+Selecting a version that has no file for the dataset fails with a clear error. See [`ground_truth/threatrace/README.md`](https://github.com/ubc-provenance/PIDSMaker/blob/main/ground_truth/threatrace/README.md) for the per-dataset ThreaTrace node counts.
 
 ### Event-level labels (network datasets)
 

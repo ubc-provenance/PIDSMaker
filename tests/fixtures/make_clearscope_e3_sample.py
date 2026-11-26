@@ -34,7 +34,7 @@ from pidsmaker.datasets import download  # noqa: E402
 
 DATASET = "CLEARSCOPE_E3"
 SAMPLE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "clearscope_e3_sample")
-GROUND_TRUTH_DIR = os.path.join(ROOT, "Ground_Truth", "orthrus")
+GROUND_TRUTH_DIR = os.path.join(ROOT, "ground_truth", "orthrus")
 TABLE_COLUMNS = {
     "event_table": [
         "src_node",

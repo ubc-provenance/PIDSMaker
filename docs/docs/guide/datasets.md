@@ -337,7 +337,7 @@ The events of each day are then cut into time-window graphs during [construction
 
 The two kinds of datasets are labelled differently:
 
-- **Provenance datasets** come with the list of the nodes involved in each attack, in files under `Ground_Truth/`. PIDSMaker ships several labelings of the DARPA TC attacks (`orthrus`, `reapr`, `threatrace`).
+- **Provenance datasets** come with the list of the nodes involved in each attack, in files under `ground_truth/`. PIDSMaker ships several labelings of the DARPA TC attacks (`orthrus`, `reapr`, `threatrace`).
 - **Network datasets** label their events in the database. Malicious nodes are the endpoints of malicious events.
 
 See [Ground truth](evaluation.md#ground-truth) for how they are selected and how labels are assigned to nodes, edges and time windows.
@@ -391,4 +391,4 @@ DATASET_DEFAULT_CONFIG = {
 
 `schema` names a dataset schema of `SCHEMAS` in `pidsmaker/config/schemas.py` (`darpa_tc`, `optc`, `carbon_black_edr`, `lanl_auth`, `optc_flows`), from which the numbers of node and edge types are derived. A dataset in a new format needs a new schema, which describes the database tables of its node types, its edge types and the attributes of its events.
 
-Then follow the [database creation guide](../getting-started/from-scratch.md) to load your data, and add its ground truth under `Ground_Truth/` (or, with a schema that has a label column, label its events in the database, as the [network datasets](#network-datasets)). A dataset with labelled events, like `LANL`, sets `ground_truth_relative_path` and `attack_to_time_window` to empty lists, and can set `root_attack_nodes`, the root sources of its attacks used by the [host-centered evaluation](evaluation.md#host-centered-evaluation-lares).
+Then follow the [database creation guide](../getting-started/from-scratch.md) to load your data, and add its ground truth under `ground_truth/` (or, with a schema that has a label column, label its events in the database, as the [network datasets](#network-datasets)). A dataset with labelled events, like `LANL`, sets `ground_truth_relative_path` and `attack_to_time_window` to empty lists, and can set `root_attack_nodes`, the root sources of its attacks used by the [host-centered evaluation](evaluation.md#host-centered-evaluation-lares).

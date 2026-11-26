@@ -56,7 +56,7 @@ pidsmaker = "pidsmaker.cli:main"
 Homepage = "https://github.com/ubc-provenance/PIDSMaker"
 Documentation = "https://ubc-provenance.github.io/PIDSMaker/"
 
-# config/ and Ground_Truth/ (at the root of the repository) are copied into the wheel as
+# config/ and ground_truth/ (at the root of the repository) are copied into the wheel as
 # pidsmaker/resources/ by setup.py
 [tool.setuptools.packages.find]
 include = ["pidsmaker*"]

@@ -37,7 +37,7 @@ from .config import (
 
 
 def _resources_root():
-    """Folder of `config/` and `Ground_Truth/`: `pidsmaker/resources/` when PIDSMaker is
+    """Folder of `config/` and `ground_truth/`: `pidsmaker/resources/` when PIDSMaker is
     installed from a wheel (see setup.py), else the root of the repository (source checkout or
     editable install)."""
     package_resources = pathlib.Path(__file__).parent.parent / "resources"
@@ -47,7 +47,7 @@ def _resources_root():
 
 
 ROOT_PROJECT_PATH = _resources_root()
-ROOT_GROUND_TRUTH_DIR = os.path.join(ROOT_PROJECT_PATH, "Ground_Truth/")
+ROOT_GROUND_TRUTH_DIR = os.path.join(ROOT_PROJECT_PATH, "ground_truth/")
 DEFAULT_ARTIFACT_DIR = "/home/artifacts/"
 
 
