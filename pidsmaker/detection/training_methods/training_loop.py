@@ -17,13 +17,14 @@ import numpy as np
 import torch
 import wandb
 
-from pidsmaker.detection.flash_detection import TRAIN_MASK_KEY, FlashSnapshotEnsemble
+from pidsmaker.detection.flash_detection import flash_snapshot_ensemble
 from pidsmaker.factory import (
     build_model,
     early_stop_tracker_factory,
     optimizer_factory,
     optimizer_few_shot_factory,
 )
+from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.utils.data_utils import batch_to_device, save_model
 from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
@@ -117,15 +118,7 @@ def main(cfg):
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
 
     # FLASH: a sequence of GNN snapshots, each trained on the nodes still misclassified
-    model.flash_ensemble = None
-    node_type_cfg = getattr(cfg.training.decoder, "predict_node_type", None)
-    if (
-        cfg._is_node_level
-        and cfg.evaluation.node_evaluation.threshold_method == "flash"
-        and node_type_cfg is not None
-        and node_type_cfg.flash_snapshots
-    ):
-        model.flash_ensemble = FlashSnapshotEnsemble(drop_conf=node_type_cfg.flash_drop_conf)
+    model.flash_ensemble = flash_snapshot_ensemble(cfg)
 
     for epoch in range(0, num_epochs):
         best_val_score, best_model, best_epoch = float("-inf"), None, None
@@ -151,9 +144,9 @@ def main(cfg):
             optimizer.zero_grad()
             for dataset in train_data:
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
-                    flash_mask = getattr(g, TRAIN_MASK_KEY, None)
-                    if flash_mask is not None and not flash_mask.any():
-                        continue  # FLASH: no node of this graph is still misclassified
+                    node_loss_mask = getattr(g, NODE_LOSS_MASK_KEY, None)
+                    if node_loss_mask is not None and not node_loss_mask.any():
+                        continue  # No node left to train on (FLASH: all learned by the snapshots)
                     g = to_device_without_attacks(g, cfg, device)
 
                     results = model(g)

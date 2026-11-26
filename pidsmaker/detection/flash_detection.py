@@ -18,6 +18,7 @@ rule iff its score is at least `1 - threshold`.
 import torch
 
 from pidsmaker.detection.node_scoring import NodeScorer
+from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 
 
 def flash_confidence(probs, eps=1e-6):
@@ -44,9 +45,6 @@ def flash_flags(score, threshold):
     return score >= 1 - threshold
 
 
-TRAIN_MASK_KEY = "node_loss_mask"  # NODE_LOSS_MASK_KEY of `predict_node_type`
-
-
 def flash_drop_learned(probs, node_type_idx, drop_conf):
     """Training nodes that FLASH removes after an epoch: those whose type is predicted correctly,
     or predicted with a confidence of at least `drop_conf` (`(pred == y) | (conf >= 0.9)` in the
@@ -64,7 +62,7 @@ class FlashSnapshotEnsemble:
     any of the N snapshots predicts its type correctly with a confidence above the threshold.
 
     Here, a round is an epoch over the training graphs: the remaining nodes of each graph are
-    stored in the CPU graph (`TRAIN_MASK_KEY`) and only them contribute to the loss, and the
+    stored in the CPU graph (`NODE_LOSS_MASK_KEY`) and only them contribute to the loss, and the
     score of a node at inference is the minimum of its `flash_anomaly_score` over the snapshots
     of the epochs trained so far (so it is flagged iff no snapshot is confidently correct).
     """
@@ -88,14 +86,14 @@ class FlashSnapshotEnsemble:
         remaining, total = 0, 0
         for dataset in train_data:
             for g in dataset:
-                mask = getattr(g, TRAIN_MASK_KEY, None)
+                mask = getattr(g, NODE_LOSS_MASK_KEY, None)
                 if mask is None or mask.any():
                     # The node features and types may only be built on the device copy
                     batch = batch_to_device(g, device)
                     out = model(batch, inference=True)["out"]
                     drop = flash_drop_learned(out.exp(), batch.node_type.argmax(1), self.drop_conf)
                     mask = ~drop.cpu() if mask is None else mask & ~drop.cpu()
-                setattr(g, TRAIN_MASK_KEY, mask)
+                setattr(g, NODE_LOSS_MASK_KEY, mask)
                 remaining += int(mask.sum())
                 total += mask.numel()
         model.train(was_training)
@@ -116,6 +114,20 @@ class FlashSnapshotEnsemble:
             best = torch.minimum(best, flash_anomaly_score(out.exp(), node_type_idx)[0])
         model.load_state_dict(current)
         return best
+
+
+def flash_snapshot_ensemble(cfg):
+    """The `FlashSnapshotEnsemble` trained by the training loop, or None when the model is not
+    FLASH's with snapshots (`predict_node_type.flash_snapshots` and `threshold_method: flash`)."""
+    node_type_cfg = getattr(cfg.training.decoder, "predict_node_type", None)
+    if (
+        cfg._is_node_level
+        and cfg.evaluation.node_evaluation.threshold_method == "flash"
+        and node_type_cfg is not None
+        and node_type_cfg.flash_snapshots
+    ):
+        return FlashSnapshotEnsemble(drop_conf=node_type_cfg.flash_drop_conf)
+    return None
 
 
 class FlashScorer(NodeScorer):

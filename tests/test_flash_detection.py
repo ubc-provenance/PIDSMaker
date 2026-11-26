@@ -9,15 +9,14 @@ import torch
 import torch.nn as nn
 
 from pidsmaker.detection.flash_detection import (
-    TRAIN_MASK_KEY,
     FlashSnapshotEnsemble,
     flash_anomaly_score,
     flash_confidence,
     flash_drop_learned,
     flash_flags,
 )
-from pidsmaker.objectives.predict_node_type import NodeTypePrediction
 from pidsmaker.losses import cross_entropy
+from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY, NodeTypePrediction
 
 pytestmark = pytest.mark.no_database
 
@@ -97,7 +96,7 @@ def test_masked_loss_uses_remaining_nodes_only():
     g = make_graph(50, 3, 0)
     mask = torch.zeros(50, dtype=torch.bool)
     mask[:10] = True
-    setattr(g, TRAIN_MASK_KEY, mask)
+    setattr(g, NODE_LOSS_MASK_KEY, mask)
     out = model(g)
     expected = cross_entropy(model.lin(g.x[:10]), g.node_type[:10].argmax(1))
     assert out["loss"].item() == pytest.approx(expected.item())
@@ -114,14 +113,15 @@ def test_snapshot_ensemble():
     test_g = make_graph(150, 3, 3)
     for _ in range(3):
         for g in graphs[0]:
-            if getattr(g, TRAIN_MASK_KEY, None) is not None and not getattr(g, TRAIN_MASK_KEY).any():
+            mask = getattr(g, NODE_LOSS_MASK_KEY, None)
+            if mask is not None and not mask.any():
                 continue
             opt.zero_grad()
             model(g)["loss"].backward()
             opt.step()
-        before = getattr(graphs[0][0], TRAIN_MASK_KEY, None)
+        before = getattr(graphs[0][0], NODE_LOSS_MASK_KEY, None)
         ensemble.after_epoch(model, graphs, torch.device("cpu"))
-        after = getattr(graphs[0][0], TRAIN_MASK_KEY)
+        after = getattr(graphs[0][0], NODE_LOSS_MASK_KEY)
         if before is not None:
             assert not (after & ~before).any()  # removed nodes never come back
         with torch.no_grad():
