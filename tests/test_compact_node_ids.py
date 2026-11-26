@@ -47,6 +47,14 @@ def test_compaction_keeps_order_and_restores_ids():
         assert torch.equal(to_original_node_ids(torch.stack([g.src, g.dst])), torch.stack([src, dst]))
 
 
+def test_new_node_ids_replace_their_copies():
+    # The IDs are copied once per device, the copies of the previous IDs must not be used
+    set_original_node_ids(torch.tensor([3, 7, 10]))
+    assert to_original_node_ids(torch.tensor([2, 0])).tolist() == [10, 3]
+    set_original_node_ids(torch.tensor([4, 8, 12]))
+    assert to_original_node_ids(torch.tensor([2, 0])).tolist() == [12, 4]
+
+
 def test_no_compaction_keeps_ids():
     ids = torch.tensor([[5, 9], [9, 5]])
     assert data_utils.get_original_node_ids() is None
