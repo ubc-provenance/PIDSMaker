@@ -1729,6 +1729,11 @@ SUMMARY_METRICS = [
     "adp_score", "discrimination", "ap", "auc", "tp", "fp", "fn", "mcc", "precision", "recall",
 ]  # fmt: skip
 
+# First metrics of the best epoch (see `log_best_epoch`), followed by the others
+BEST_EPOCH_METRICS = [
+    "adp_score", "ap", "auc", "mcc", "precision", "recall", "tp", "fp", "tn", "fn",
+]  # fmt: skip
+
 # Key, in the stats of an epoch, of the lines of its detailed analysis (e.g. the score of each
 # malicious node), logged for the best epoch only and removed from the stats (see `pop_report`)
 REPORT_KEY = "_report"
@@ -1775,7 +1780,9 @@ def log_best_epoch(stats, cfg, report=(), selection=None):
             log(line)
         elif i + 1 < len(report) and report[i + 1].startswith(" "):  # Title of a non-empty section
             log(console.style(line, "bold"))
-    console.metrics({k: v for k, v in stats.items() if k != "epoch"})
+    first = [k for k in BEST_EPOCH_METRICS if k in stats]
+    others = [k for k in stats if k not in first and k != "epoch"]
+    console.metrics({k: stats[k] for k in first + others})
     for name, key in [("scores", "scores_file"), ("model", "model_path")]:
         if stats.get(key):
             log(f"{console.style(name.ljust(7), 'dim')} {stats[key]}")
