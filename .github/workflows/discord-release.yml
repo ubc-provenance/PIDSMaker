@@ -1,7 +1,14 @@
 name: discord-release
+# Announces a release on Discord: when a release is published from the GitHub page, or when
+# publish.yml creates one.
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
 
 jobs:
   announce:
@@ -10,16 +17,21 @@ jobs:
       - name: Post release to Discord #announcements
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          TAG: ${{ github.event.release.tag_name }}
-          NAME: ${{ github.event.release.name }}
-          URL: ${{ github.event.release.html_url }}
-          BODY: ${{ github.event.release.body }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json name,url,body > release.json
+          NAME=$(jq -r '.name // ""' release.json)
+          URL=$(jq -r '.url' release.json)
+          BODY=$(jq -r '.body // ""' release.json)
+          # Release names start with "PIDSMaker" (e.g. "PIDSMaker 5.0.0")
+          TITLE="${NAME:-$TAG}"
+          case "$TITLE" in PIDSMaker*) ;; *) TITLE="PIDSMaker ${TITLE}" ;; esac
           # Discord embed descriptions are capped at 4096 characters
           DESC=$(printf '%s' "$BODY" | head -c 3500)
           if [ ${#BODY} -gt 3500 ]; then DESC="$DESC"$'\n\n…full notes on GitHub'; fi
           jq -n \
-            --arg title "PIDSMaker ${NAME:-$TAG} released" \
+            --arg title "${TITLE} released" \
             --arg url "$URL" \
             --arg desc "$DESC" \
             '{

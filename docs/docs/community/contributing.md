@@ -114,9 +114,11 @@ The site is deployed to GitHub Pages automatically when changes are merged into 
 
 ## Releasing a new version
 
-Maintainers release a version by:
+Maintainers release a version in two steps:
 
-1. Updating `version` in `pyproject.toml` (e.g. `5.1.0`) and the release notes of the README, in a pull request.
-2. Publishing a [release](https://github.com/ubc-provenance/PIDSMaker/releases/new) on GitHub, with a tag equal to that version (e.g. `5.1.0`).
+1. In a pull request, set `version` in `pyproject.toml` (e.g. `5.1.0`), update the release notes table of the README, and write the notes of the GitHub release in `.github/releases/5.1.0.md`.
+2. Once it is merged, run the workflow from **Actions > publish > Run workflow**, on `main`, with the version `5.1.0`.
 
-The release runs `.github/workflows/publish.yml`, which builds the package and publishes it to [PyPI](https://pypi.org/project/pidsmaker/) (it fails if the tag differs from the version of `pyproject.toml`). PyPI trusts this workflow as a [trusted publisher](https://docs.pypi.org/trusted-publishers/), so no token is stored in the repository.
+The workflow (`.github/workflows/publish.yml`) checks that the version is the one of `pyproject.toml` and that it is not released yet. Then it builds the package and publishes it to [PyPI](https://pypi.org/project/pidsmaker/), creates the tag and the GitHub release (with the notes of `.github/releases/<version>.md`, or the list of the merged pull requests if there is no such file), and announces it on Discord. PyPI trusts this workflow as a [trusted publisher](https://docs.pypi.org/trusted-publishers/), so no token is stored in the repository.
+
+A release published from the GitHub page, with a tag equal to the version of `pyproject.toml`, is also published to PyPI.
