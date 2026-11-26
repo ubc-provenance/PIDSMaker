@@ -41,7 +41,7 @@ One config is provided per PIDS. Each one includes the PIDS config and `pretrain
 | Config | PIDS |
 |---|---|
 | `pretrained_velox` | Velox |
-| `pretrained_orthrus` | Orthrus (non-snooped) |
+| `pretrained_orthrus` | Orthrus |
 | `pretrained_kairos` | Kairos |
 | `pretrained_magic` | MAGIC |
 | `pretrained_flash` | Flash |

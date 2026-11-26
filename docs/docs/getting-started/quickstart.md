@@ -24,7 +24,7 @@ From a clone of the repository, `python pidsmaker/main.py SYSTEM DATASET [--arg=
 `SYSTEM`
 :   The name of a YAML file in `config/`, which describes the full pipeline of a system:
 
-    - provenance: `velox`, `orthrus`, `orthrus_non_snooped`, `kairos`, `magic`, `flash`, `nodlink`, `rcaid`, `threatrace`, `ocrapt`;
+    - provenance: `velox`, `orthrus`, `kairos`, `magic`, `flash`, `nodlink`, `rcaid`, `threatrace`, `ocrapt`;
     - network: `euler`, `argus`, `jbeil`, `lares`, `egraphsage`, `anomal_e`;
     - or [your own](../guide/tutorial.md).
 

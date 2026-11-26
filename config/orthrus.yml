@@ -1,3 +1,9 @@
+# Orthrus without data snooping, for fair comparisons: word2vec is trained on the training split
+# only, and the k-means clustering after thresholding is disabled. To reproduce the original paper,
+# which trains word2vec on all splits (test included), override:
+#   --featurization.training_split=all --evaluation.node_evaluation.use_kmeans=True
+#   --training.lr=0.00001 --training.node_out_dim=64 --training.encoder.dropout=0.5
+
 _include_yml: default
 
 construction:
@@ -18,7 +24,7 @@ transformation:
 featurization:
   emb_dim: 128
   epochs: 50
-  training_split: all
+  training_split: train
   seed: 0
   used_method: word2vec
   tokenization:
@@ -64,15 +70,15 @@ training:
   deterministic: False
   num_epochs: 12
   patience: 3
-  lr: 0.00001
+  lr: 0.0001
   weight_decay: 0.00001
   node_hid_dim: 128
-  node_out_dim: 64
+  node_out_dim: 128
   grad_accumulation: 1
   stable_optim: False
   fuse_duplicate_edges_training: False
   encoder:
-    dropout: 0.5
+    dropout: 0.3
     used_methods: tgn,graph_attention
     graph_attention:
       activation: relu
@@ -108,7 +114,7 @@ evaluation:
     max_val_loss:
       alpha: 1.0
     use_dst_node_loss: True
-    use_kmeans: True
+    use_kmeans: False
     kmeans_top_K: 30
 
 #   tracing:

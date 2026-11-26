@@ -66,7 +66,7 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
     This is expected: self-supervised detectors, PIDSs and NIDSs alike, are **unstable**, and small changes of seed or hyperparameters change their results a lot. Run each configuration several times with `--experiment=run_n_times` and report the mean and standard deviation; see [Instability](../features/instability.md). Also check that you use the same [ground truth](../guide/evaluation.md#ground-truth) as the paper you compare with.
 
 ??? question "Which configuration should I use to compare with an existing system?"
-    The non-snooped variants, such as `orthrus_non_snooped`: some original configs use test data during training. See [Systems](../guide/systems.md#variants). For network systems, also read [Comparing NIDSs with published results](../guide/systems.md#results-and-reproducibility).
+    Mind data snooping: `orthrus` and `velox` don't use test data during training, but some other configs keep the original settings of their system, which do. See [Systems](../guide/systems.md#variants). For network systems, also read [Comparing NIDSs with published results](../guide/systems.md#results-and-reproducibility).
 
 ## Features
 

@@ -172,6 +172,6 @@ def test_cli(fake_hub, capsys):
 
 
 def test_resources_found():
-    """config/ and Ground_Truth/ are found, from the repository or the installed wheel."""
+    """config/ and ground_truth/ are found, from the repository or the installed wheel."""
     assert os.path.isfile(os.path.join(ROOT_PROJECT_PATH, "config", "orthrus.yml"))
-    assert os.path.isdir(os.path.join(ROOT_PROJECT_PATH, "Ground_Truth", "orthrus", "E3-CADETS"))
+    assert os.path.isdir(os.path.join(ROOT_PROJECT_PATH, "ground_truth", "orthrus", "E3-CADETS"))

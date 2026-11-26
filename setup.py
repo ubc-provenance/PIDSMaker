@@ -1,4 +1,4 @@
-"""Copies config/ and Ground_Truth/ (at the root of the repository) into the wheel, as
+"""Copies config/ and ground_truth/ (at the root of the repository) into the wheel, as
 pidsmaker/resources/, where `pidsmaker.config.pipeline` finds them when PIDSMaker is installed
 from a wheel. In a source checkout or an editable install, they are read from the repository."""
 
@@ -7,7 +7,7 @@ import os
 from setuptools import setup
 from setuptools.command.build_py import build_py
 
-RESOURCES = ["config", "Ground_Truth"]
+RESOURCES = ["config", "ground_truth"]
 # Not needed at runtime (the ground truth reports of DARPA, 4.5 MB)
 EXCLUDED_EXTENSIONS = (".pdf",)
 

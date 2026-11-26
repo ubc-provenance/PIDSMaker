@@ -413,7 +413,6 @@ class TestSystems:
     systems = [
         "velox",
         "orthrus",
-        "orthrus_non_snooped",
         "flash",
         "kairos",
         "magic",
