@@ -52,7 +52,7 @@ DEFAULT_ARTIFACT_DIR = "/home/artifacts/"
 
 
 def default_artifact_dir():
-    """$PIDSMAKER_ARTIFACT_DIR, else /home/artifacts/ if it exists (Docker image, servers), else
+    """$PIDSMAKER_ARTIFACT_DIR, else /home/artifacts/ if it exists (e.g. on servers), else
     `artifacts/` in the working directory."""
     if os.environ.get("PIDSMAKER_ARTIFACT_DIR"):
         return os.environ["PIDSMAKER_ARTIFACT_DIR"]

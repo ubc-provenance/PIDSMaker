@@ -174,10 +174,6 @@ weights/
 scores/
 *tar.gz
 
-# Singularity files
-*.sif
-*.def
-
 # tokenizer data
 nltk_data
 

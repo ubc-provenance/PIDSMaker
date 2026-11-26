@@ -385,15 +385,15 @@ LOW_MEMORY_GB = 16
 
 
 def available_memory_gb():
-    """RAM usable by this process, in GB: the RAM of the machine (or of the Docker VM on macOS),
-    or the memory limit of the container if it is lower. None if it cannot be read."""
+    """RAM usable by this process, in GB: the RAM of the machine, or the memory limit of its
+    cgroup (e.g. of a container or of an HPC job) if it is lower. None if it cannot be read."""
     try:
         import psutil
 
         total = psutil.virtual_memory().total
     except Exception:
         return None
-    # Memory limit of the container (cgroup v2, then v1); "max" or a huge value means no limit
+    # Memory limit of the cgroup (v2, then v1); "max" or a huge value means no limit
     for path in ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
         try:
             with open(path) as f:
@@ -407,16 +407,13 @@ def available_memory_gb():
 
 
 def warn_if_low_memory(min_gb=LOW_MEMORY_GB):
-    """Warns when less than `min_gb` of RAM are available, e.g. in Docker Desktop on macOS,
-    whose VM has 8 GB by default: runs killed by the kernel when they run out of memory
-    otherwise only print `Killed`."""
+    """Warns when less than `min_gb` of RAM are available: runs killed by the kernel when they
+    run out of memory otherwise only print `Killed`."""
     memory_gb = available_memory_gb()
     if memory_gb is not None and memory_gb < min_gb:
         log(
             f"Warning: only {memory_gb:.1f} GB of RAM are available, runs on large datasets may "
-            f"be killed when they run out of memory. With Docker Desktop (macOS), give more "
-            f"memory to its VM: https://ubc-provenance.github.io/PIDSMaker/getting-started/"
-            f"installation/#macos"
+            f"be killed when they run out of memory."
         )
     return memory_gb
 
