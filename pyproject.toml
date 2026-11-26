@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pidsmaker"
-version = "4.0.0"
+version = "5.0.0"
 description = "Intrusion detection framework based on deep learning"
-authors = [{name="mlx-graphs contributors"}]
+authors = [{name = "Tristan Bilot"}, {name = "Thomas Pasquier"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 # torch 2.1 has wheels up to Python 3.11
