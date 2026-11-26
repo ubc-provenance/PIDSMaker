@@ -26,8 +26,8 @@ dependencies = [
     "gensim==4.4.0",
     "nltk==3.8.1",
     "transformers==4.39.3",
-    "duckdb>=1.1",
-    "pyarrow",
+    "duckdb>=1.1,<2",
+    "pyarrow==21.0.0",  # tested with NumPy 1.26 (recent versions need NumPy 2)
     "huggingface_hub>=0.23,<1.0",
     "matplotlib>=3.7",
     "wandb>=0.16",
