@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-  Build, run and customize deep learning intrusion detection systems on provenance and network graphs
+  Build, run and customize ML-based intrusion detection systems
 </h3>
 
 <div align="center">
@@ -36,13 +36,13 @@
 
 ---
 
-The first framework to build and experiment with deep learning graph-based intrusion detection systems, on **host provenance** (PIDSs) and **network events** (NIDSs).
+The first framework to build and experiment with deep learning intrusion detection systems, on **host provenance** (PIDSs) and **network events** (NIDSs).
 A single codebase and pipeline runs 17 state-of-the-art systems on 17 datasets of both families, and makes them easy to customize into new variants.
 
 
 ## 💻 Installation (Linux/macOS)
 
-PIDSMaker is a Python package, for Python 3.9 to 3.11. Its datasets are Parquet files, downloaded from [Hugging Face](https://huggingface.co/datasets/pidsmaker/datasets) and read in place with DuckDB: nothing else to set up.
+Since v5.0.0, PIDSMaker is installed via pip, without Docker and Postgres. Its datasets are downloaded automatically from [Hugging Face](https://huggingface.co/datasets/pidsmaker/datasets) and read in place with DuckDB: nothing else to set up.
 
 ```shell
 conda create -n pids python=3.11 && conda activate pids
@@ -50,9 +50,15 @@ pip install pidsmaker
 pidsmaker velox CADETS_E3
 ```
 
-The [installation guide](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) covers the GPU and CPU builds of PyTorch, where datasets and artifacts are stored, macOS and [HPC clusters](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#hpc-clusters).
 
-PIDSMaker runs on Linux with or without an NVIDIA GPU, and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) on CPU, for most datasets: a laptop with 32 GB of RAM is ideal. The largest datasets (`TRACE_E3` and the E5 datasets) need a server.
+PIDSMaker runs on Linux (GPU or CPU), and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) on CPU.
+See [installation guide](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/).
+
+## Required configuration
+For most datasets: a laptop with **32 GB of RAM** is ideal. The largest datasets (e.g. TRACE datasets) run more smootly on a server with GPU.
+
+We detail the memory, runtime and disk usage required by each system and dataset in this [benchmark](https://ubc-provenance.github.io/PIDSMaker/guide/benchmark/#results).
+
 
 
 ## Release notes
