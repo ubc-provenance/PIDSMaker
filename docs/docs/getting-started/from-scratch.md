@@ -11,7 +11,7 @@ PIDSMaker [downloads](installation.md#2-download-the-datasets) preprocessed vers
 !!! warning "Plan for time and disk space"
     Downloading, uncompressing and parsing raw files takes hours and a lot of storage, especially for E5 datasets and OpTC flows: the raw files take much more space than the datasets, and the scripts write temporary files (unsorted events) about as large as the dataset. The events are sorted with DuckDB, which uses up to 80% of the RAM and spills the rest to disk (about 85 GB of RAM for the 1.9 billion events of `optc_net`, built in 42 minutes). Running experiments takes more: a single run can produce more than 15 GB of artifacts on E3 datasets, and much more on E5.
 
-The rows of a dataset, and their order, are those of the database that the previous versions of the scripts loaded into Postgres. The downloaded datasets come from databases restored from dumps, which store some rows of the node tables in another order: a dataset built from scratch can give slightly different features than the downloaded one.
+The node tables of a dataset built from scratch are in the order in which the scripts write them, which can differ from the order of the downloaded datasets: features, which depend on this order, can differ slightly from those of the downloaded dataset.
 
 The scripts are in the repository: [install PIDSMaker from source](installation.md#1-install-pidsmaker) (`pip install -e .`) and run them from its root.
 
@@ -179,8 +179,6 @@ Run a system on the new dataset:
 ## Sharing a dataset
 
 A dataset is a folder, `<datasets_dir>/<database>/`, with a `manifest.json` and the Parquet files of its tables: copy the folder to share it. To publish it on Hugging Face, as the datasets of PIDSMaker, upload the folder to a dataset repository (`hf upload-large-folder REPO <folder> --repo-type dataset`, with one folder per database at the root of the repository), and download it with `pidsmaker download DATASET --repo REPO`.
-
-Databases of the [legacy Postgres backend](installation.md#postgres) are exported to Parquet datasets with `dataset_preprocessing/export_parquet.py` (see `dataset_preprocessing/README.md`).
 
 !!! tip "Adding a new dataset"
     To add a dataset that PIDSMaker does not support yet, provenance or network, see [Adding custom datasets](../guide/datasets.md#adding-custom-datasets).

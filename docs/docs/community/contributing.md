@@ -72,12 +72,6 @@ pre-commit run --all-files
     pytest tests -n 4 --db full             # CLEARSCOPE_E3 tests on the full dataset
     ```
 
-=== "Postgres"
-
-    ```shell
-    pytest tests -n 4 --backend postgres    # on the legacy Postgres backend
-    ```
-
 === "Coverage"
 
     ```shell

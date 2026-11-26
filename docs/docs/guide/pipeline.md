@@ -204,8 +204,8 @@ The graphs of the time windows are also transformed in `--num_workers` parallel 
 
 During training, node features (embeddings and types) are stored once in a shared table, and each batch only holds node IDs: its features are rebuilt on the GPU when the batch is used, with the same operations as before, so the model receives identical inputs. This divides the RAM used by the loaded graphs by about 4-6x (on CADETS_E3, from 11.9 to 1.9 GB with Orthrus and from 5.6 to 1.4 GB with Kairos), for roughly 10% more time per epoch and about 1 GB of GPU memory. Configurations whose node features depend on the graph (`only_ones`, `edges_distribution`), heterogeneous graphs, inter-graph batching and multi-dataset training keep storing features per batch. `--no_shared_node_features` disables the table.
 
-!!! note "Deterministic database reads"
-    Tables are always read in the same order. The Parquet files store the rows in the order of the queries of the legacy Postgres backend, so that both backends give identical graphs, features and batches (checked end to end on CLEARSCOPE_E3). Postgres sessions disable synchronized scans (`synchronize_seqscans=off`): runs made with versions before this setting, on a server whose scans had drifted, can have different node embeddings.
+!!! note "Deterministic dataset reads"
+    Datasets are always read in the same order. Their Parquet files store the node tables in a fixed order and the events sorted by `timestamp_rec, event_uuid`, and DuckDB returns the rows in their stored order: graphs, features and batches do not change from one run to the next.
 
 ## Disk usage
 

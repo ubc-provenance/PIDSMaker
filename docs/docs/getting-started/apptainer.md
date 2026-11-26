@@ -1,11 +1,11 @@
 ---
 title: HPC clusters
-description: Install and run PIDSMaker on HPC clusters with conda and pip, without Docker, and run the legacy Postgres backend with Singularity/Apptainer.
+description: Install and run PIDSMaker on HPC clusters with conda and pip, without containers.
 ---
 
 # HPC clusters
 
-PIDSMaker needs no container and no database server: on an HPC cluster, install it with conda and pip as on any Linux machine. [Singularity/Apptainer](https://apptainer.org/) is only needed for the [legacy Postgres backend](installation.md#postgres).
+PIDSMaker needs no container and no database server: on an HPC cluster, install it with conda and pip as on any Linux machine.
 { .lead }
 
 ## 1. Install PIDSMaker
@@ -49,23 +49,3 @@ pidsmaker SYSTEM DATASET
 ```
 
 Continue with the [Quickstart](quickstart.md).
-
-## Legacy: Postgres with Apptainer
-
-For the [legacy Postgres backend](installation.md#postgres), the Makefile in `scripts/apptainer/` of the repository runs a Postgres server with Singularity/Apptainer, and loads the database dumps of the folder `INPUT_DIR` (by default `scripts/apptainer/data/`):
-
-```shell
-cd scripts/apptainer
-INPUT_DIR=/path/to/dumps make full-setup   # start Postgres, then load the dumps
-make down                                  # stop the database
-make up                                    # start it again
-```
-
-Then install the Postgres client library, and point PIDSMaker to the local server:
-
-```shell
-pip install "pidsmaker[postgres]"
-pidsmaker SYSTEM DATASET --database_backend postgres --database_host localhost
-```
-
-The other database settings (`--database_user`, `--database_password`, `--database_port`) are listed in the [command line reference](../reference/cli.md#datasets-and-storage).

@@ -33,7 +33,7 @@ By default (`--db sample`), the CLEARSCOPE_E3 tests run on a small sample of the
 The sample holds the events read in test mode (the first events of each set; the test set starts at the attack, so
 that the evaluation has malicious nodes), the nodes they touch, the ground truth nodes and the events between ground truth
 nodes during the attack (the malicious edges of the edge-level evaluation).
-It is extracted from the full database by `fixtures/make_clearscope_e3_sample.py`, which should be run again if the
+It is extracted from the full dataset by `fixtures/make_clearscope_e3_sample.py`, which should be run again if the
 test mode reads other events.
 
 To run the CLEARSCOPE_E3 tests end to end on the full dataset, read from `$PIDSMAKER_DATASETS_DIR` (else `~/.cache/pidsmaker/datasets`), where it is downloaded first if it is missing:
@@ -43,23 +43,14 @@ pytest tests -n 4 --db full
 ```
 
 The LANL tests (`test_network_datasets.py`) run on a small synthetic dataset in the LANL format (`synthetic_lanl.py`),
-written to a temporary Parquet dataset by the LANL preprocessing script. They only run with `--backend parquet`, and are skipped with `--backend postgres`.
+written to a temporary Parquet dataset by the LANL preprocessing script.
 
 `test_datasets.py` tests the downloads of datasets and the `pidsmaker` command against a fake Hugging Face repository, without network access.
-
-### Legacy Postgres backend
-
-With `--backend postgres`, the tests read the datasets from a Postgres server (`pip install -e ".[test,postgres]"`): the sample is loaded into a temporary database, dropped at the end of the tests, and `--db full` uses the full CLEARSCOPE_E3 database. The server is reached with the default connection settings of the framework (host `postgres`, port `5432`, user and password `postgres`), e.g. from the `pids` container with the Postgres container running.
-
-``` sh
-pytest tests -n 4 --backend postgres
-```
 
 ### Options
 
 - `--device cpu`: runs the tests that support it on CPU.
 - `--db {sample,full}`: dataset of CLEARSCOPE_E3 (see above).
-- `--backend {parquet,postgres}`: where the tests read the datasets from (default: `parquet`).
 - `--artifact_dir DIR`: directory of the artifacts (default: a temporary directory), removed after the tests.
 
 Evaluation figures are not saved (`evaluation.save_figures=False`), except by `TestEvaluationFigures`, as plotting dominates the evaluation time.
@@ -67,8 +58,8 @@ Evaluation figures are not saved (`evaluation.save_figures=False`), except by `T
 ### CI
 
 The tests run on CPU on each pull request with GitHub Actions (`.github/workflows/tests.yml`), on Python 3.9 and 3.11.
-The package is installed as users install it, with `pip install ".[test]"` and the CPU build of PyTorch, without Postgres
-and without the compiled extensions of PyTorch Geometric.
+The package is installed as users install it, with `pip install ".[test]"` and the CPU build of PyTorch, without the
+compiled extensions of PyTorch Geometric.
 
 ### Test coverage
 ```

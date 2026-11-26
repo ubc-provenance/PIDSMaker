@@ -10,8 +10,8 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 
 ## Installation
 
-??? question "Do I need Docker or Postgres?"
-    No. PIDSMaker [installs with pip](../getting-started/installation.md), and reads its datasets from Parquet files with DuckDB, in the Python process. [Docker](../getting-started/docker.md) is optional, and a Postgres server is only needed by the [legacy Postgres backend](../getting-started/installation.md#postgres).
+??? question "Do I need Docker or a database server?"
+    No. PIDSMaker [installs with pip](../getting-started/installation.md), and reads its datasets from Parquet files with DuckDB, in the Python process. [Docker](../getting-started/docker.md) is optional.
 
 ??? question "pip refuses to install PIDSMaker, or can't find `torch==2.1.2`."
     Check the version of Python: PIDSMaker needs Python 3.9 to 3.11, as PyTorch 2.1.2 has no wheels for Python 3.12 and later. Create the environment with `conda create -n pids python=3.11`.
@@ -25,20 +25,11 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
 ??? question "A run doesn't find a dataset I downloaded, or downloads it again."
     The run looks for datasets in another folder than the one you downloaded them to. Both use `--datasets_dir`, else `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets`: set `PIDSMAKER_DATASETS_DIR` once, e.g. in your `~/.bashrc`, rather than passing `--datasets_dir` to some commands only. See [Where files are stored](../getting-started/installation.md#paths).
 
-??? question "With the legacy Postgres backend, the run can't connect to the database."
-    - Check that the run uses this backend: `--database_backend postgres`, or `PIDSMAKER_DATABASE_BACKEND=postgres`.
-    - Check that the Postgres container is running: `docker compose -p postgres ps`.
-    - From the `pids` container, the database host is `postgres` (the default). From the host, or with [Apptainer](../getting-started/apptainer.md#legacy-postgres-with-apptainer), pass `--database_host localhost` (and `--database_port`, if Postgres does not listen on 5432).
-    - Check that the dataset's database was loaded: from the Postgres container, `psql -U postgres -l` lists the databases.
-
 ??? question "I changed `.env` but nothing changed (Docker)."
     Run `source .env` before `docker compose`, then recreate the containers with `docker compose ... up -d --build`.
 
 ??? question "On macOS, `docker compose` fails with `operation not permitted`."
     Docker Desktop is not allowed to read the folder of the repository (e.g. `~/Documents`). Allow it in **System Settings > Privacy & Security > Files and Folders** (or **Full Disk Access**), then restart Docker Desktop. See [Set up Docker](../getting-started/docker.md#1-set-up-docker).
-
-??? question "`docker compose up` fails with `network shared_network declared as external, but could not be found`."
-    The `pids` container joins the Docker network `shared_network`. Create it once with `docker network create shared_network`.
 
 ??? question "`docker compose up` fails with `address already in use` on port 5000 or 8000."
     Another program uses this port on the host, e.g. AirPlay Receiver on macOS for port 5000. Set other host ports in `.env`, e.g. `VIZ_PORT=5001` and `PIDS_PORT=8001`, then `source .env` and run `up` again. Without Docker, start the [embedding visualizer](../features/visualization.md) on another port with `--port`.

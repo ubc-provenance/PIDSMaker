@@ -66,11 +66,6 @@ These flags don't change the results, nor the task hashes. See [Performance](../
 |---|---|---|
 | `--datasets_dir PATH` | `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets` | Folder of the Parquet datasets, one subfolder per dataset. |
 | `--artifact_dir PATH` | `$PIDSMAKER_ARTIFACT_DIR`, else `/home/artifacts/` if it exists, else `./artifacts/` | Folder where all task outputs are written. |
-| `--database_backend BACKEND` | `$PIDSMAKER_DATABASE_BACKEND`, else `parquet` | Where datasets are read from: `parquet` (Parquet files read by DuckDB) or `postgres` (a Postgres server, the [legacy backend](../getting-started/installation.md#postgres)). Results are the same on both. |
-| `--database_host HOST` | `postgres` | Postgres backend only: host of the server. The default is the Postgres container, seen from the `pids` container; use `localhost` for a server on the same machine. |
-| `--database_port PORT` | `5432` | Postgres backend only: port of the server. |
-| `--database_user USER` | `postgres` | Postgres backend only: user. |
-| `--database_password PASSWORD` | `postgres` | Postgres backend only: password of the user. |
 
 ## Downloading datasets
 
@@ -102,7 +97,6 @@ The same from Python: `from pidsmaker.datasets import download; download("CADETS
 | `PIDSMAKER_AUTO_DOWNLOAD` | `1` | A run downloads its dataset if it is missing. With `0`, it stops with an error instead. |
 | `PIDSMAKER_HF_REPO` | `pidsmaker/datasets` | Hugging Face dataset repository of the datasets (default of `--repo`). |
 | `PIDSMAKER_DUCKDB_THREADS` | `8` | Threads of each DuckDB connection. Graph construction opens several connections at the same time, one per day. |
-| `PIDSMAKER_DATABASE_BACKEND` | `parquet` | `postgres` selects the [legacy Postgres backend](../getting-started/installation.md#postgres) (default of `--database_backend`). |
 | `OMP_NUM_THREADS` | | CPU threads of PyTorch. If it is not set, PIDSMaker sets it to 4 in Docker Desktop on Apple Silicon (see [macOS](../getting-started/installation.md#docker-desktop)). |
 
 ## Helper scripts

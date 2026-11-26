@@ -59,10 +59,11 @@ Optional dependencies are installed as extras, e.g. `pip install "pidsmaker[viz]
 | Extra | Installs | For |
 |---|---|---|
 | `viz` | `umap-learn` | The UMAP projections of the [embedding visualizer](../features/visualization.md) |
-| `postgres` | `psycopg2` | The [legacy Postgres backend](#postgres) |
 | `test` | `pytest`, `pytest-xdist`... | The [tests](../community/contributing.md#before-opening-a-pull-request) |
 
 <span id="1-download-the-datasets"></span>
+<span id="download-the-dumps"></span>
+<span id="4-load-the-databases"></span>
 
 ## 2. Download the datasets
 
@@ -88,7 +89,7 @@ DARPA TC and OpTC are very large and hard to process: we provide **preprocessed 
 | `LANL` | <span class="pm-family pm-family--net">Network</span> | 0.40 |
 | `OPTC_NET` | <span class="pm-family pm-family--net">Network</span> | 11.8 |
 
-Datasets keep this size when they are used: DuckDB reads the files in place, nothing is loaded into a database. `PROVENANCE_BENIGN` (2 MB), the corpus used to [pretrain SPIDER](../features/pretrained_encoders.md#pretraining), is downloaded the same way.
+Datasets keep this size when they are used: DuckDB reads the files in place, nothing is loaded into a database. (Earlier versions of PIDSMaker read their datasets from a Postgres server; datasets are now Parquet files.) `PROVENANCE_BENIGN` (2 MB), the corpus used to [pretrain SPIDER](../features/pretrained_encoders.md#pretraining), is downloaded the same way.
 
 !!! tip "New to PIDSMaker?"
     Start with `CADETS_E3`, `THEIA_E3` or `CLEARSCOPE_E3` for provenance-based detection, and `LANL` for network detection: they are small, quick to download, and the most widely used in papers.
@@ -191,33 +192,3 @@ On Apple Silicon, the Docker image is built for ARM (`aarch64`), with the CPU bu
 Docker is optional. The `pids` container of the repository has PIDSMaker installed from source, a [VS Code Dev Container](https://code.visualstudio.com/docs/devcontainers/containers) to edit, run and debug the code, and the tools to [build datasets from scratch](from-scratch.md): see [Installation with Docker](docker.md).
 
 HPC clusters need no container: install PIDSMaker with conda and pip as above, and see [HPC clusters](apptainer.md) for where to put the datasets and how to run on compute nodes without internet access.
-
-<span id="4-load-the-databases"></span>
-<span id="download-the-dumps"></span>
-
-## Legacy Postgres backend { #postgres }
-
-Before the Parquet datasets, PIDSMaker read its datasets from Postgres databases, loaded from database dumps. This backend still works, with the same results, e.g. to keep using databases you already loaded or [built yourself](from-scratch.md). Install the Postgres client library, then select the backend with `--database_backend postgres`, or for all runs with `PIDSMAKER_DATABASE_BACKEND=postgres`:
-
-```shell
-pip install "pidsmaker[postgres]"
-pidsmaker velox CADETS_E3 --database_backend postgres --database_host localhost
-```
-
-The connection flags (`--database_host`, `--database_port`, `--database_user`, `--database_password`) are listed in the [command line reference](../reference/cli.md#datasets-and-storage). Their defaults (host `postgres`, port `5432`, user and password `postgres`) match the Postgres container of the repository, seen from the `pids` container.
-
-??? note "Loading database dumps into Postgres"
-    The Postgres container of the repository (`compose-postgres.yml`) restores the `.dump` files of the folder `INPUT_DIR`, set in `.env` (see [Configure the paths](docker.md#2-configure-the-paths)):
-
-    ```shell
-    docker compose -p postgres -f compose-postgres.yml up -d --build
-    docker compose -p postgres exec postgres /scripts/load_dumps.sh
-    ```
-
-    `load_dumps.sh` skips the databases that already contain tables, so it can be re-run after adding dumps. To load a single dump instead (`DATASET_NAME` in lowercase, e.g. `cadets_e3`), from a shell in the container (`docker compose -p postgres exec postgres bash`):
-
-    ```shell
-    pg_restore -U postgres -h localhost -p 5432 -d DATASET_NAME /data/DATASET_NAME.dump
-    ```
-
-    From the host, connect with `--database_host localhost --database_port` set to `DOCKER_PORT` of `.env` (`5432` if it is not set). On a cluster without Docker, the Makefile of `scripts/apptainer/` runs Postgres with Apptainer: see [HPC clusters](apptainer.md#legacy-postgres-with-apptainer).
