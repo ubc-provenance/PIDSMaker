@@ -27,6 +27,7 @@ dependencies = [
     "nltk==3.8.1",
     "transformers==4.39.3",
     "duckdb>=1.1",
+    "pyarrow",
     "huggingface_hub>=0.23,<1.0",
     "matplotlib>=3.7",
     "wandb>=0.16",
@@ -48,7 +49,6 @@ test = [
     "pytest==8.3.5",
     "pytest-cov==6.1.1",
     "pytest-xdist==3.6.1",
-    "pyarrow",
 ]
 
 [project.scripts]
