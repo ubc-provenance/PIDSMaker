@@ -27,11 +27,13 @@ It renders the per-node embeddings (UMAP or t-SNE projection) and supports:
 
 ## Running the viewer
 
-Start the server inside the container:
+Start the server where PIDSMaker is installed (in the `pids` container with [Docker](../getting-started/docker.md)). The UMAP projection needs the `viz` extra (`pip install "pidsmaker[viz]"`, already installed in the Docker image).
 
 ```shell
 python -m pidsmaker.vizgen.web.viz_server
 ```
+
+The server lists the runs of the artifact folder: `$PIDS_ARTIFACTS_DIR` if it is set, else the default of `--artifact_dir` (see [Where files are stored](../getting-started/installation.md#paths)).
 
 Then open `http://127.0.0.1:5000`. The last run you viewed loads automatically; use
 **Open Run Browser** (top of the left panel) to pick another. When viewing from
@@ -60,7 +62,7 @@ are large and most runs never open the viewer, so they are **off by default** an
 enabled per run:
 
 ```shell
-python pidsmaker/main.py SYSTEM DATASET --save_for_viz
+pidsmaker SYSTEM DATASET --save_for_viz
 ```
 
 Enable it on the runs you intend to explore. Without it, a run is still

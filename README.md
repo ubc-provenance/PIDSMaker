@@ -37,7 +37,7 @@ It provides a single codebase and a single pipeline to run most recent state-of-
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| Unreleased (`main`) | | [ShadeWatcher and ProGrapher](https://ubc-provenance.github.io/PIDSMaker/guide/systems/) provenance systems. [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3. [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, Docker Desktop on CPU) for most datasets, ideally with 32 GB of RAM |
+| Unreleased (`main`) | | [`pip install pidsmaker`](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) and the `pidsmaker` command. Datasets as Parquet files downloaded from Hugging Face (`pidsmaker download`) and read with DuckDB, with identical results: no Postgres or Docker needed. [ShadeWatcher and ProGrapher](https://ubc-provenance.github.io/PIDSMaker/guide/systems/) provenance systems. [Network intrusion detection](https://ubc-provenance.github.io/PIDSMaker/guide/systems/): Euler, Argus, Jbeil, LARES, E-GraphSAGE and Anomal-E, LANL and OpTC network flow datasets, systems of both families on network or provenance datasets. [Faster, leaner pipeline](https://ubc-provenance.github.io/PIDSMaker/guide/pipeline/#performance) with identical results (Orthrus on THEIA_E5: ~3.4 h → ~61 min, 370 → 16.6 GB peak RAM; graphs ~5x smaller on disk). Tests in CI on a sample of CLEARSCOPE_E3. [Runs on macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon, Docker Desktop on CPU) for most datasets, ideally with 32 GB of RAM |
 | [4.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0) | Nov 2026 | Unified tokenization (`featurization.tokenization`, renamed tokenizer arguments), configurable graph cleaning (`construction.cleaning`), fixed queue, time-window and node-time-window evaluations, MAGIC kNN fix |
 | [3.0.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/3.0.0) | Oct 2026 | Pretrained encoders (SPIDER, CyberGFM, language models, self-supervised GNNs) as node featurization for any PIDS, `stable_optim` to reduce instability, upgrade many packages including torch 1.13.1 (CUDA 11.7) => 2.1.2 (CUDA 12.1) |
 | [2.2.0](https://github.com/ubc-provenance/PIDSMaker/releases/tag/2.2.0) | Jul 2026 | Interactive 3D embedding viewer, ThreaTrace ground truth |
@@ -78,34 +78,34 @@ The framework currently integrates the following provenance-based (PIDS) and net
 
 ### Provenance datasets
 
-System events of hosts, with the attack nodes as ground truth, available as easy-to-install preprocessed databases.
+System events of hosts, with the attack nodes as ground truth, available as preprocessed datasets downloaded with `pidsmaker download` (size of their Parquet files below).
 
 | Dataset | OS | Attacks | Nodes | Events | Size (GB) |
 |---------|------|--------:|------:|-------:|----------:|
-| CADETS_E3 | FreeBSD | 3 | 2.68M | 36.5M | 10 |
-| THEIA_E3 | Linux | 2 | 1.26M | 44.4M | 12 |
-| CLEARSCOPE_E3 | Android | 1 | 369K | 18.3M | 4.8 |
-| FIVEDIRECTIONS_E3 | Windows | 2 | 1.38M | 78.9M | 22 |
-| TRACE_E3 | Linux | 3 | 44.5M | 284M | 100 |
-| CADETS_E5 | FreeBSD | 2 | 15.2M | 1.08B | 276 |
-| THEIA_E5 | Linux | 1 | 2.29M | 141M | 36 |
-| CLEARSCOPE_E5 | Android | 2 | 501K | 199M | 49 |
-| FIVEDIRECTIONS_E5 | Windows | 4 | 18.8M | 1.09B | 280 |
-| TRACE_E5 | Linux | 1 | 72.3M | 2.64B | 710 |
-| optc_h201 | Windows | 1 | 5.27M | 38.2M | 9 |
-| optc_h501 | Windows | 1 | 3.96M | 28.0M | 6.7 |
-| optc_h051 | Windows | 1 | 4.62M | 31.6M | 7.7 |
-| ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 1 |
-| CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 6.6 |
+| CADETS_E3 | FreeBSD | 3 | 2.68M | 36.5M | 1.3 |
+| THEIA_E3 | Linux | 2 | 1.26M | 44.4M | 0.71 |
+| CLEARSCOPE_E3 | Android | 1 | 369K | 18.3M | 0.51 |
+| FIVEDIRECTIONS_E3 | Windows | 2 | 1.38M | 78.9M | 2.3 |
+| TRACE_E3 | Linux | 3 | 44.5M | 284M | 9.4 |
+| CADETS_E5 | FreeBSD | 2 | 15.2M | 1.08B | 32.9 |
+| THEIA_E5 | Linux | 1 | 2.29M | 141M | 3.9 |
+| CLEARSCOPE_E5 | Android | 2 | 501K | 199M | 5.0 |
+| FIVEDIRECTIONS_E5 | Windows | 4 | 18.8M | 1.09B | 30.3 |
+| TRACE_E5 | Linux | 1 | 72.3M | 2.64B | 74.3 |
+| optc_h201 | Windows | 1 | 5.27M | 38.2M | 1.6 |
+| optc_h501 | Windows | 1 | 3.96M | 28.0M | 1.2 |
+| optc_h051 | Windows | 1 | 4.62M | 31.6M | 1.3 |
+| ATLASV2_EDR | Windows | 10 | 664K | 2.70M | 0.16 |
+| CARBANAKV2_EDR | Windows + Linux | 1 | 4.15M | 17.1M | 1.1 |
 
 ### Network datasets
 
-Authentications or flows between hosts, with labelled malicious events, built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares) ([details](https://ubc-provenance.github.io/PIDSMaker/guide/datasets/#network-datasets)).
+Authentications or flows between hosts, with labelled malicious events, built from the preprocessed files of [LARES](https://github.com/TristanBilot/lares) ([details](https://ubc-provenance.github.io/PIDSMaker/guide/datasets/#network-datasets)), and downloaded the same way.
 
 | Dataset | Events | Hosts | Malicious events | Size (GB) |
 |---------|--------|------:|-----------------:|----------:|
-| LANL | 49.3M NTLM authentications | 15,610 | 705 | 8.5 |
-| OPTC_NET | 1.86B network flows | 625 | 5,165 | 275 |
+| LANL | 49.3M NTLM authentications | 15,610 | 705 | 0.40 |
+| OPTC_NET | 1.86B network flows | 625 | 5,165 | 11.8 |
 
 ## Pretrained Encoders
 
@@ -155,33 +155,44 @@ flowchart TB
 
 ## Setup
 
-### ⬇️ Clone the repo
+### 💻 Installation
+
+PIDSMaker is a Python package, for Python 3.9 to 3.11. Its datasets are Parquet files, downloaded from [Hugging Face](https://huggingface.co/datasets/ubc-provenance/pidsmaker-datasets) and read in place with DuckDB: no database server or Docker needed.
+
+```shell
+conda create -n pids python=3.11 && conda activate pids
+pip install pidsmaker
+pidsmaker download CADETS_E3      # 1.3 GB; `pidsmaker download --list` lists all datasets
+pidsmaker velox CADETS_E3
 ```
-git clone https://github.com/ubc-provenance/PIDSMaker.git
+
+To change the code, install it from source instead:
+
+```shell
+git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
+pip install -e .
 ```
 
-### 💻 Installation with Docker
+The [installation guide](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/) covers the GPU and CPU builds of PyTorch, where datasets and artifacts are stored, [Docker](https://ubc-provenance.github.io/PIDSMaker/getting-started/docker/), HPC clusters and the legacy Postgres backend.
 
-We have made the installation of PIDSMaker including pre-processed databases for the provenance datasets (DARPA TC, OpTC, ATLASv2, CARBANAKv2) easy and fast. Simply follow [these guidelines](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/). The network datasets are [built from the files of LARES](https://ubc-provenance.github.io/PIDSMaker/getting-started/from-scratch/) for now.
-
-PIDSMaker runs on Linux with or without an NVIDIA GPU, and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) with Docker Desktop on CPU, for most datasets: a laptop with 32 GB of RAM is ideal. The largest datasets (`TRACE_E3` and the E5 datasets) need a server.
+PIDSMaker runs on Linux with or without an NVIDIA GPU, and on [macOS](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/#macos) (Apple Silicon) on CPU, for most datasets: a laptop with 32 GB of RAM is ideal. The largest datasets (`TRACE_E3` and the E5 datasets) need a server.
 
 ## 🧪 Basic usage of the framework
 
-Once you have a followed the installation guidelines, you can open a shell in the `pids container` and experiment in multiple ways.
+Once you have followed the installation guidelines, you can experiment in multiple ways.
 Replace `SYSTEM` by a provenance system (`velox`, `orthrus`, `nodlink`, `threatrace`, `kairos`, `rcaid`, `flash`, `magic`, `ocrapt`) or a network system (`euler`, `argus`, `jbeil`, `lares`, `egraphsage`, `anomal_e`), and `DATASET` by a provenance (e.g. `CADETS_E3`) or network (`LANL`, `OPTC_NET`) dataset.
 
 1. Run in the shell:
     ```shell
-    python pidsmaker/main.py SYSTEM DATASET
+    pidsmaker SYSTEM DATASET
     ```
 
 2. Run in the shell, monitored to weights & biases (W&B):
     ```shell
-    python pidsmaker/main.py SYSTEM DATASET --wandb
+    pidsmaker SYSTEM DATASET --wandb
     ```
 
-3. Run in background, monitored to W&B (recommended for multiple parallel runs and for research):
+3. Run in background, monitored to W&B (recommended for multiple parallel runs and for research), from the `scripts/` folder of the repository:
     ```shell
     ./run.sh SYSTEM DATASET
     ```
@@ -216,7 +227,7 @@ A few examples below.
 <i>Running Kairos with embedding size of 128 instead of 100, and last neighbor sampling set to last 10 neighbors instead of 20.</i>
 
 ```shell
-python pidsmaker/main.py kairos CADETS_E3 \
+pidsmaker kairos CADETS_E3 \
   --training.node_hid_dim=128 \
   --batching.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
 ```
@@ -224,7 +235,7 @@ python pidsmaker/main.py kairos CADETS_E3 \
 <i>Running Orthrus with Doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers.</i>
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 \
+pidsmaker orthrus CADETS_E3 \
   --featurization.used_method=doc2vec \
   --featurization.emb_dim=128 \
   --training.encoder.used_methods=tgn,sage \

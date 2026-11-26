@@ -1,16 +1,18 @@
 ---
 title: Command line
-description: The command-line flags of PIDSMaker's main.py, and the helper scripts used to run experiments.
+description: The pidsmaker command, its flags, the download of datasets, the environment variables of PIDSMaker, and the helper scripts used to run experiments.
 ---
 
 # Command line
 
-`pidsmaker/main.py` is the single entry point of the framework. Besides the [task arguments](tasks.md), it accepts the flags below, which control how a run is executed rather than what it computes.
+The `pidsmaker` command is the single entry point of the framework: it runs a system on a dataset, and [downloads datasets](#downloading-datasets). Besides the [task arguments](tasks.md), a run accepts the flags below, which control how it is executed rather than what it computes.
 { .lead }
 
 ```shell
-python pidsmaker/main.py SYSTEM DATASET [FLAGS] [--task.argument=value ...]
+pidsmaker SYSTEM DATASET [FLAGS] [--task.argument=value ...]
 ```
+
+From a clone of the repository, `python pidsmaker/main.py SYSTEM DATASET ...` is equivalent.
 
 | Positional | Description |
 |---|---|
@@ -58,19 +60,54 @@ These flags don't change the results, nor the task hashes. See [Performance](../
 | `--sweep_id ID` | | Joins an existing W&B sweep, to run it with several agents. |
 | `--tuned` | off | Loads the tuned hyperparameters of the system from `config/tuned_baselines/<dataset>/tuned_<system>.yml` (e.g. LARES and Argus on `OPTC_NET`). |
 
-## Database and storage
+## Datasets and storage
 
 | Flag | Default | Description |
 |---|---|---|
-| `--database_host HOST` | `postgres` | Host of the Postgres server. Use `localhost` outside Docker. |
-| `--database_port PORT` | `5432` | Port of the Postgres server. |
-| `--database_user USER` | `postgres` | Postgres user. |
-| `--database_password PASSWORD` | `postgres` | Password of the Postgres user. |
-| `--artifact_dir PATH` | `/home/artifacts/` | Folder where all task outputs are written. |
+| `--datasets_dir PATH` | `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets` | Folder of the Parquet datasets, one subfolder per dataset. |
+| `--artifact_dir PATH` | `$PIDSMAKER_ARTIFACT_DIR`, else `/home/artifacts/` if it exists, else `./artifacts/` | Folder where all task outputs are written. |
+| `--database_backend BACKEND` | `$PIDSMAKER_DATABASE_BACKEND`, else `parquet` | Where datasets are read from: `parquet` (Parquet files read by DuckDB) or `postgres` (a Postgres server, the [legacy backend](../getting-started/installation.md#postgres)). Results are the same on both. |
+| `--database_host HOST` | `postgres` | Postgres backend only: host of the server. The default is the Postgres container, seen from the `pids` container; use `localhost` for a server on the same machine. |
+| `--database_port PORT` | `5432` | Postgres backend only: port of the server. |
+| `--database_user USER` | `postgres` | Postgres backend only: user. |
+| `--database_password PASSWORD` | `postgres` | Postgres backend only: password of the user. |
+
+## Downloading datasets
+
+`pidsmaker download` downloads datasets from Hugging Face (see [Download the datasets](../getting-started/installation.md#2-download-the-datasets)):
+
+```shell
+pidsmaker download DATASET [DATASET ...]   # or `all`
+pidsmaker download --list                  # the datasets, their sizes, and which are downloaded
+```
+
+Dataset names are case-insensitive, and the names of their databases work too (e.g. `optc_051` for `optc_h051`). Datasets already downloaded are skipped, and interrupted downloads resume where they stopped.
+
+| Flag | Default | Description |
+|---|---|---|
+| `--list` | | Lists the datasets, their sizes, and which are downloaded. |
+| `--datasets_dir PATH` | `$PIDSMAKER_DATASETS_DIR`, else `~/.cache/pidsmaker/datasets` | Where datasets are stored. |
+| `--repo REPO` | `$PIDSMAKER_HF_REPO`, else `ubc-provenance/pidsmaker-datasets` | Hugging Face dataset repository. |
+| `--revision REVISION` | | Branch, tag or commit of the repository. |
+| `--force` | off | Downloads the datasets again, even if they are already downloaded. |
+
+The same from Python: `from pidsmaker.datasets import download; download("CADETS_E3")`.
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `PIDSMAKER_DATASETS_DIR` | `~/.cache/pidsmaker/datasets` | Folder of the datasets (default of `--datasets_dir`). |
+| `PIDSMAKER_ARTIFACT_DIR` | `/home/artifacts/` if it exists, else `./artifacts/` | Folder of the artifacts (default of `--artifact_dir`). |
+| `PIDSMAKER_AUTO_DOWNLOAD` | `1` | A run downloads its dataset if it is missing. With `0`, it stops with an error instead. |
+| `PIDSMAKER_HF_REPO` | `ubc-provenance/pidsmaker-datasets` | Hugging Face dataset repository of the datasets (default of `--repo`). |
+| `PIDSMAKER_DUCKDB_THREADS` | `8` | Threads of each DuckDB connection. Graph construction opens several connections at the same time, one per day. |
+| `PIDSMAKER_DATABASE_BACKEND` | `parquet` | `postgres` selects the [legacy Postgres backend](../getting-started/installation.md#postgres) (default of `--database_backend`). |
+| `OMP_NUM_THREADS` | | CPU threads of PyTorch. If it is not set, PIDSMaker sets it to 4 in Docker Desktop on Apple Silicon (see [macOS](../getting-started/installation.md#docker-desktop)). |
 
 ## Helper scripts
 
-The scripts in `scripts/` wrap `main.py`. Run them from the `scripts/` folder. `run.sh` and `run_local.sh` also set deterministic CUDA and Python hashing settings (`CUBLAS_WORKSPACE_CONFIG=:4096:8`, `PYTHONHASHSEED=0`).
+The scripts in `scripts/` wrap `pidsmaker/main.py`. Run them from the `scripts/` folder of a clone of the repository. `run.sh` and `run_local.sh` also set deterministic CUDA and Python hashing settings (`CUBLAS_WORKSPACE_CONFIG=:4096:8`, `PYTHONHASHSEED=0`).
 
 | Script | Description |
 |---|---|

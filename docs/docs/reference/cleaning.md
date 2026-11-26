@@ -24,7 +24,7 @@ The cleaning methods were designed for provenance datasets. On network datasets,
 For example, Velox with the methods that do not remove attack nodes on any dataset:
 
 ```shell
-python pidsmaker/main.py velox CADETS_E3 \
+pidsmaker velox CADETS_E3 \
   --construction.cleaning.used_methods=remove_null_attributes,normalize_labels,remove_duplicate_events,remove_self_loops
 ```
 

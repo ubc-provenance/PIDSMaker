@@ -9,15 +9,17 @@ This page shows how to run the existing systems, provenance-based (PIDSs) and ne
 { .lead }
 
 !!! note "Before you start"
-    Complete the [installation](installation.md) and open a shell in the `pids` container. All commands below are run from the root of the repository (`/home/pids`) unless stated otherwise.
+    Complete the [installation](installation.md). The `pidsmaker` command runs from any folder; the helper scripts of `scripts/` need a clone of the repository.
 
 ## Your first run
 
 Every run takes the same two positional arguments, a **system** and a **dataset**:
 
 ```shell
-python pidsmaker/main.py SYSTEM DATASET [--arg=value ...]
+pidsmaker SYSTEM DATASET [--arg=value ...]
 ```
+
+From a clone of the repository, `python pidsmaker/main.py SYSTEM DATASET [--arg=value ...]` is equivalent.
 
 `SYSTEM`
 :   The name of a YAML file in `config/`, which describes the full pipeline of a system:
@@ -29,7 +31,7 @@ python pidsmaker/main.py SYSTEM DATASET [--arg=value ...]
     See [Systems](../guide/systems.md) for a comparison.
 
 `DATASET`
-:   A dataset defined in `DATASET_DEFAULT_CONFIG` in `pidsmaker/config/config.py`, which maps it to its Postgres database:
+:   A dataset defined in `DATASET_DEFAULT_CONFIG` in `pidsmaker/config/config.py`, which maps it to its database, a folder of Parquet files [downloaded](installation.md#2-download-the-datasets) the first time the dataset is used:
 
     - provenance: `CADETS_E3`, `THEIA_E3`, `CLEARSCOPE_E3`, `FIVEDIRECTIONS_E3`, `TRACE_E3`, `CADETS_E5`, `THEIA_E5`, `CLEARSCOPE_E5`, `FIVEDIRECTIONS_E5`, `TRACE_E5`, `optc_h201`, `optc_h501`, `optc_h051`, `ATLASV2_EDR`, `CARBANAKV2_EDR`;
     - network: `LANL`, `OPTC_NET`.
@@ -47,7 +49,7 @@ For example:
     Velox on CADETS E3, which looks for the processes, files and netflows of the attacks:
 
     ```shell
-    python pidsmaker/main.py velox CADETS_E3
+    pidsmaker velox CADETS_E3
     ```
 
 === "Network"
@@ -55,7 +57,7 @@ For example:
     Euler on LANL, which looks for the authentications of the red team:
 
     ```shell
-    python pidsmaker/main.py euler LANL
+    pidsmaker euler LANL
     ```
 
 </div>
@@ -69,20 +71,20 @@ The content of the config (e.g. `config/velox.yml`) is parsed and checked agains
     Logs are printed to the terminal. Good for quick tests and debugging.
 
     ```shell
-    python pidsmaker/main.py SYSTEM DATASET
+    pidsmaker SYSTEM DATASET
     ```
 
 === "Shell + W&B"
 
-    Same, but logs, metrics and figures are also sent to [Weights & Biases](installation.md#6-log-in-to-weights-biases).
+    Same, but logs, metrics and figures are also sent to [Weights & Biases](installation.md#3-log-in-to-weights-biases).
 
     ```shell
-    python pidsmaker/main.py SYSTEM DATASET --wandb
+    pidsmaker SYSTEM DATASET --wandb
     ```
 
 === "Background + W&B"
 
-    Recommended for research and for running several experiments in parallel. Runs in the background with `nohup`, with deterministic CUDA and Python hashing settings, and logs to W&B.
+    Recommended for research and for running several experiments in parallel. Runs in the background with `nohup`, with deterministic CUDA and Python hashing settings, and logs to W&B. From a clone of the repository:
 
     ```shell
     cd scripts
@@ -92,7 +94,7 @@ The content of the config (e.g. `config/velox.yml`) is parsed and checked agains
 
 === "Shell, same settings as run.sh"
 
-    Runs in the foreground without W&B, with the same environment variables as `run.sh`.
+    Runs in the foreground without W&B, with the same environment variables as `run.sh`. From a clone of the repository:
 
     ```shell
     cd scripts
@@ -108,7 +110,7 @@ Every argument of the YAML config can be overridden from the command line, using
 === "Provenance"
 
     ```shell
-    python pidsmaker/main.py kairos CADETS_E3 \
+    pidsmaker kairos CADETS_E3 \
       --training.node_hid_dim=128 \
       --batching.intra_graph_batching.tgn_last_neighbor.tgn_neighbor_size=10
     ```
@@ -116,7 +118,7 @@ Every argument of the YAML config can be overridden from the command line, using
 === "Network"
 
     ```shell
-    python pidsmaker/main.py euler LANL \
+    pidsmaker euler LANL \
       --construction.time_window_size=60.0 \
       --training.decoder.predict_edge_contrastive.neg_ratio=5
     ```
@@ -126,7 +128,7 @@ Every argument of the YAML config can be overridden from the command line, using
 Components can be swapped the same way. For example, Orthrus with doc2vec instead of word2vec, and 3 GraphSAGE layers instead of 2 attention layers:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 \
+pidsmaker orthrus CADETS_E3 \
   --featurization.used_method=doc2vec \
   --featurization.emb_dim=128 \
   --training.encoder.used_methods=tgn,sage \
@@ -143,7 +145,7 @@ All arguments are listed in the [Reference](../reference/tasks.md). The flags th
 By default, PIDSMaker runs on the GPU `cuda:0`. If no GPU is found, it falls back to the CPU and prints a warning. To force the CPU:
 
 ```shell
-python pidsmaker/main.py velox CADETS_E3 --cpu
+pidsmaker velox CADETS_E3 --cpu
 ```
 
 ## Results
@@ -160,7 +162,7 @@ At the end of the `evaluation` task, metrics are printed in the logs and, with `
 
 Provenance systems classify nodes by default, network systems edges (authentications or flows). How samples are labeled, how thresholds are chosen and how each metric is computed is explained in [Evaluation & labeling](../guide/evaluation.md).
 
-All files produced by a run are written in the artifact folder, `/home/artifacts/` by default (set `ARTIFACTS_DIR` in `.env`, or `--artifact_dir`).
+All files produced by a run are written in the artifact folder: `$PIDSMAKER_ARTIFACT_DIR` if it is set, else `/home/artifacts/` if this folder exists (as in the Docker container), else `artifacts/` in the working directory. Use `--artifact_dir` to change it for a run (see [Where files are stored](installation.md#paths)).
 
 ## Next steps
 

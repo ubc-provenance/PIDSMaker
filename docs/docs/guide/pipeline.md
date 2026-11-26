@@ -34,7 +34,7 @@ flowchart TB
 ## The stages
 
 <ol class="pm-steps" markdown>
-<li markdown>**Construction** (`construction`): reads the events of the dataset from the database, optionally [cleans](../reference/cleaning.md) them, and builds one graph per time window (e.g. 15 minutes). The dataset's schema (`pidsmaker/config/schemas.py`) defines its node types, edge types and event attributes.</li>
+<li markdown>**Construction** (`construction`): reads the events of the dataset from its database (Parquet files, queried with DuckDB), optionally [cleans](../reference/cleaning.md) them, and builds one graph per time window (e.g. 15 minutes). The dataset's schema (`pidsmaker/config/schemas.py`) defines its node types, edge types and event attributes.</li>
 <li markdown>**Transformation** (`transformation`): optional transformations of the graphs, applied in sequence: making them undirected, turning them into DAGs, building the R-Caid pseudo-graph, merging repeated edges into weighted edges (`merge_edges`), or injecting synthetic attacks.</li>
 <li markdown>**Featurization** (`featurization`, then `feat_inference`): learns a text embedding model on the labels of the entities (word2vec, doc2vec, FastText, hierarchical hashing, a [pretrained encoder](../features/pretrained_encoders.md)...) and embeds every node, or uses label-free features (`only_type`, `only_ones`). The attributes of events, if the dataset has any, are encoded as edge features.</li>
 <li markdown>**Batching** (`batching`): selects the node and edge features, and builds the batches given to the model: [global, intra-graph and inter-graph batching](../features/batching.md), TGN neighbor sampling.</li>
@@ -121,7 +121,7 @@ Arguments added in new versions of PIDSMaker are left out of the hash while they
 YAML files set the default arguments of a system, and CLI arguments override them:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 \
+pidsmaker orthrus CADETS_E3 \
     --featurization.emb_dim=64 \
     --training.lr=0.0001
 ```
@@ -157,7 +157,7 @@ evaluation:
 During development, you may need to re-run tasks with the same arguments, for example after changing the code. `--force_restart` restarts the pipeline from a given task:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --force_restart=featurization
+pidsmaker orthrus CADETS_E3 --force_restart=featurization
 ```
 
 !!! note
@@ -166,7 +166,7 @@ python pidsmaker/main.py orthrus CADETS_E3 --force_restart=featurization
 To run the whole pipeline without touching previous outputs, use:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --restart_from_scratch
+pidsmaker orthrus CADETS_E3 --restart_from_scratch
 ```
 
 The outputs are then written to a new folder named after a random hash, isolated from all previous runs.
@@ -195,7 +195,7 @@ On the network datasets ([PR #78](https://github.com/ubc-provenance/PIDSMaker/pu
 Graph construction builds the graphs of each day of the dataset in parallel processes. The number of processes is set with `--num_workers` (default: `min(8, #CPUs)`); it does not change the produced graphs, nor the task hashes.
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --num_workers 16
+pidsmaker orthrus CADETS_E3 --num_workers 16
 ```
 
 The graphs of the time windows are also transformed in `--num_workers` parallel processes, including by the R-Caid pseudo-graph (`rcaid_pseudo_graph`), whose random timestamps are drawn in window order from the same random state as in a sequential run, so that the transformed graphs are unchanged. The R-Caid transformation itself computes the descendants of the roots once per distinct set of successors, stops exploring those of the roots that will be pruned, and saves its edges without building networkx graphs: on CADETS_E3, the transformation task went from 371 to 6.5 s with 4 processes, with identical graphs.
@@ -205,7 +205,7 @@ The graphs of the time windows are also transformed in `--num_workers` parallel 
 During training, node features (embeddings and types) are stored once in a shared table, and each batch only holds node IDs: its features are rebuilt on the GPU when the batch is used, with the same operations as before, so the model receives identical inputs. This divides the RAM used by the loaded graphs by about 4-6x (on CADETS_E3, from 11.9 to 1.9 GB with Orthrus and from 5.6 to 1.4 GB with Kairos), for roughly 10% more time per epoch and about 1 GB of GPU memory. Configurations whose node features depend on the graph (`only_ones`, `edges_distribution`), heterogeneous graphs, inter-graph batching and multi-dataset training keep storing features per batch. `--no_shared_node_features` disables the table.
 
 !!! note "Deterministic database reads"
-    Postgres sessions now disable synchronized scans (`synchronize_seqscans=off`), so that tables are always read in the same order. Runs are reproducible, but node embeddings can differ from those of runs made with previous versions on a server whose scans had drifted.
+    Tables are always read in the same order. The Parquet files store the rows in the order of the queries of the legacy Postgres backend, so that both backends give identical graphs, features and batches (checked end to end on CLEARSCOPE_E3). Postgres sessions disable synchronized scans (`synchronize_seqscans=off`): runs made with versions before this setting, on a server whose scans had drifted, can have different node embeddings.
 
 ## Disk usage
 
@@ -223,5 +223,5 @@ Outputs are stored in compact formats, and all readers still accept the previous
 Evaluation also stores per-epoch pickles. To keep only the outputs of the best epoch once the pipeline has finished, use `--keep_best_epoch_only`. Stats and plots are kept for every epoch, but re-running evaluation afterwards only considers the kept epoch(s).
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --keep_best_epoch_only
+pidsmaker orthrus CADETS_E3 --keep_best_epoch_only
 ```

@@ -52,7 +52,7 @@ Each node flagged as malicious is a **point of interest** (POI), processed in it
 | `1-hop`, `2-hop`, `3-hop` | No tracing: the undirected *n*-hop neighborhood of the POI |
 
 ```shell
-python pidsmaker/main.py velox CADETS_E3 \
+pidsmaker velox CADETS_E3 \
   --triage.used_method=depimpact \
   --triage.depimpact.used_method=component \
   --triage.depimpact.score_method=degree \
@@ -79,7 +79,7 @@ This method follows the anomalous subgraph construction of [OCR-APT](https://arx
 The nodes of the kept subgraphs become the new predictions. As in OCR-APT, the metrics are computed with a 2-hop tolerance: a false positive within 2 hops of an attack node is not counted, and an attack node within 2 hops of a true positive counts as detected.
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 \
+pidsmaker orthrus CADETS_E3 \
   --triage.used_method=ocrapt_subgraph \
   --triage.ocrapt.num_hops=1 --triage.ocrapt.top_k=15 \
   --triage.ocrapt.min_nodes=3 --triage.ocrapt.max_edges=5000 \

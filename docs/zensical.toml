@@ -19,8 +19,9 @@ extra_css = ["stylesheets/extra.css"]
 nav = [
   { "Home" = "index.md" },
   { "Getting started" = [
-    { "Installation (Docker)" = "getting-started/installation.md" },
-    { "Installation (Apptainer)" = "getting-started/apptainer.md" },
+    { "Installation" = "getting-started/installation.md" },
+    { "Installation (Docker)" = "getting-started/docker.md" },
+    { "HPC clusters" = "getting-started/apptainer.md" },
     { "Quickstart" = "getting-started/quickstart.md" },
     { "Building datasets from scratch" = "getting-started/from-scratch.md" },
   ] },

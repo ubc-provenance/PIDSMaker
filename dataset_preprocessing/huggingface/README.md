@@ -61,6 +61,7 @@ The manifest lists the files, columns, number of rows and order of each table. E
 | CARBANAKV2_EDR | `carbanakv2_edr` | 17.1M | 1.1 | [CARBANAKv2](https://www.ndss-symposium.org/wp-content/uploads/prism2026-12.pdf) |
 | LANL | `lanl` | 49.3M | 0.40 | [LANL](https://csr.lanl.gov/data/cyber1/), preprocessed by [LARES](https://github.com/TristanBilot/lares) |
 | OPTC_NET | `optc_net` | 1.86B | 11.8 | DARPA OpTC, preprocessed by LARES |
+| PROVENANCE_BENIGN | `PROVENANCE_BENIGN` | 244K | 0.002 | Benign workloads captured with auditd ([collection scripts](https://github.com/ubc-provenance/PIDSMaker/tree/spider/scripts/provenance_capture)), to pretrain SPIDER |
 
 The attack scenarios, ground truth and statistics of each dataset are described in the [documentation](https://ubc-provenance.github.io/PIDSMaker/guide/datasets/). The ground truth of the provenance datasets is distributed with PIDSMaker; the events of the network datasets are labelled (`label` column).
 

@@ -51,8 +51,8 @@ One config is provided per PIDS. Each one includes the PIDS config and `pretrain
 They use SPIDER by default. Set `featurization.pretrained.model_type` to use another encoder, for example GPT-2 or DeepWalk in Velox:
 
 ```shell
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small --featurization.tokenization.used_method=huggingface
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk --featurization.tokenization.used_method=whole_label
+pidsmaker pretrained_velox CADETS_E3 --featurization.pretrained.model_type=gpt2_pretrained --featurization.pretrained.model_size=small --featurization.tokenization.used_method=huggingface
+pidsmaker pretrained_velox CADETS_E3 --featurization.pretrained.model_type=deepwalk --featurization.tokenization.used_method=whole_label
 ```
 
 These configs also enable [`training.stable_optim`](instability.md#reducing-instability).
@@ -82,7 +82,7 @@ At detection time, only the T5 encoder is used, so it embeds entities from their
 
 ### Pretrained weights
 
-Download the weights used in the paper ([Google Drive](https://drive.google.com/file/d/1NlUPQJTEehhe3cAOjlOq_wnPYjV-MMZ9/view?usp=drive_link), 21 MB) from the root of the repository, inside the container:
+Download the weights used in the paper ([Google Drive](https://drive.google.com/file/d/1NlUPQJTEehhe3cAOjlOq_wnPYjV-MMZ9/view?usp=drive_link), 21 MB), e.g. with `gdown` (`pip install gdown`; already installed in the Docker image):
 
 ```shell
 gdown 1NlUPQJTEehhe3cAOjlOq_wnPYjV-MMZ9 -O SPIDER-weights.tar.gz
@@ -90,10 +90,10 @@ mkdir -p weights && tar -xzf SPIDER-weights.tar.gz -C weights
 (cd weights/spider && sha256sum -c SHA256SUMS)
 ```
 
-Then pass the folder (`/home/pids/weights/spider` in the container) to any `pretrained_<pids>` config:
+Then pass the path of the folder (below, `/home/pids/weights/spider`: the weights downloaded at the root of the repository, in the Docker container) to any `pretrained_<pids>` config:
 
 ```shell
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider
+pidsmaker pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider
 ```
 
 The folder contains:
@@ -113,7 +113,7 @@ This needs the teacher files of the weights folder.
 `feat_inference.continue_pretrain_epochs` (10 in `pretrained.yml`) and `feat_inference.continue_pretrain_lr_factor` (0.1, relative to the pretraining learning rate) control this step.
 
 ```shell
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider --feat_inference.continue_pretrain=True
+pidsmaker pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider --feat_inference.continue_pretrain=True
 ```
 
 ### Renaming attack
@@ -125,7 +125,7 @@ The benign name is either drawn from the `top_k` most frequent labels of the tra
 For example, on CADETS_E3, renaming its attack processes to frequent benign names:
 
 ```shell
-python pidsmaker/main.py pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider \
+pidsmaker pretrained_velox CADETS_E3 --featurization.pretrained.weights_path=/home/pids/weights/spider \
     --feat_inference.rename_attack.enabled=True \
     --feat_inference.rename_attack.entities="main, pEja72mA, XIM, tmux-1002, font, sendmail" \
     --feat_inference.rename_attack.target_node_type=subject \
@@ -182,5 +182,5 @@ With `training.used_method: pretrained`, the GNN detector is bypassed: the pretr
 [`config/pretrained/cybergfm/cybergfm.yml`](https://github.com/ubc-provenance/PIDSMaker/blob/main/config/pretrained/cybergfm/cybergfm.yml) implements the CyberGFM baseline this way, with BERT pretraining followed by link prediction:
 
 ```shell
-python pidsmaker/main.py cybergfm CADETS_E3
+pidsmaker cybergfm CADETS_E3
 ```

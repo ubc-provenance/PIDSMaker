@@ -84,54 +84,26 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
 
 === ":lucide-download: 1. Install"
 
-    Download a preprocessed dataset, load it into Postgres and open a shell in the `pids` container ([full guide](getting-started/installation.md)). We recommend one of two setups:
+    Install PIDSMaker with pip in a conda environment, and download a preprocessed dataset ([full guide](getting-started/installation.md)). No database server or Docker needed.
 
-    === ":fontawesome-brands-linux: Linux + :simple-nvidia: NVIDIA GPU"
+    ```shell
+    conda create -n pids python=3.11 && conda activate pids
+    pip install pidsmaker
+    pidsmaker download CADETS_E3  # (1)!
+    ```
 
-        A server or workstation with Docker and the [NVIDIA Container Toolkit](getting-started/installation.md#2-set-up-docker), for all datasets.
+    1.  1.3 GB, from Hugging Face. `pidsmaker download --list` lists all the datasets and their sizes. A run also downloads its dataset the first time it needs it.
 
-        ```shell
-        git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
-        ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
-        cp .env.local .env                                          # (2)!
-        docker compose -p postgres -f compose-postgres.yml up -d --build
-        docker compose -p postgres exec postgres /scripts/load_dumps.sh
-        docker compose -f compose-pidsmaker.yml up -d --build
-        docker compose exec pids bash
-        ```
-
-        1.  See [how to get an access token](getting-started/installation.md#download-the-dumps). Dumps are saved to `./data`.
-        2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`.
-
-    === ":fontawesome-brands-apple: macOS (Apple Silicon)"
-
-        A Mac with [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/), on CPU, for most datasets: 32 GB of RAM is ideal ([details](getting-started/installation.md#macos)).
-
-        ```shell
-        git clone https://github.com/ubc-provenance/PIDSMaker.git && cd PIDSMaker
-        ./download_datasets.sh cadets_e3 YOUR_GOOGLE_ACCESS_TOKEN  # (1)!
-        cp .env.local .env && echo "VIZ_PORT=5001" >> .env          # (2)!
-        plutil -replace MemoryMiB -integer 24576 ~/Library/Group\ Containers/group.com.docker/settings-store.json
-        docker desktop restart                                      # (3)!
-        docker compose -p postgres -f compose-postgres.yml up -d --build
-        docker compose -p postgres exec postgres /scripts/load_dumps.sh
-        docker compose -f compose-pidsmaker.yml -f compose-pidsmaker.cpu.yml up -d --build  # (4)!
-        docker compose exec pids bash
-        ```
-
-        1.  See [how to get an access token](getting-started/installation.md#download-the-dumps). Dumps are saved to `./data`.
-        2.  Set `INPUT_DIR` to the absolute path of `./data` in `.env`. Port 5000 is used by AirPlay Receiver on macOS.
-        3.  Gives 24 GB to the VM of Docker Desktop (8 GB by default), for a 32 GB Mac: about 75% of your RAM.
-        4.  The CPU override removes the NVIDIA GPU reservation.
+    Runs on :fontawesome-brands-linux: Linux, ideally with an :simple-nvidia: NVIDIA GPU, for all datasets, and on :fontawesome-brands-apple: macOS (Apple Silicon), on CPU, for most datasets: 32 GB of RAM is ideal ([details](getting-started/installation.md#macos)). Prefer a container? Use [Docker](getting-started/docker.md).
 
 === ":lucide-play: 2. Run a system"
 
-    Run a provenance or a network system, from inside the `pids` container.
+    Run a provenance or a network system:
 
     ```shell
-    python pidsmaker/main.py velox CADETS_E3          # a provenance IDS
-    python pidsmaker/main.py euler LANL               # a network IDS
-    python pidsmaker/main.py kairos THEIA_E3 --wandb  # logged to Weights & Biases
+    pidsmaker velox CADETS_E3          # a provenance IDS
+    pidsmaker euler LANL               # a network IDS
+    pidsmaker kairos THEIA_E3 --wandb  # logged to Weights & Biases
     ```
 
 === ":lucide-sliders-horizontal: 3. Make it yours"
@@ -139,7 +111,7 @@ PIDSMaker gives the community **one framework**, maintained in the open, that fi
     Override any argument from the CLI, or write a new YAML config that inherits from an existing system.
 
     ```shell
-    python pidsmaker/main.py orthrus CADETS_E3 \
+    pidsmaker orthrus CADETS_E3 \
       --featurization.used_method=doc2vec \
       --training.encoder.used_methods=tgn,sage \
       --training.encoder.sage.num_layers=3

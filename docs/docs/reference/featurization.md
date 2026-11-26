@@ -41,7 +41,7 @@ Methods that learn from text first split the label of each entity into tokens. T
 For example, Orthrus with the BPE tokenization of SPIDER:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --featurization.tokenization.used_method=bpe
+pidsmaker orthrus CADETS_E3 --featurization.tokenization.used_method=bpe
 ```
 
 `doc2vec`, `temporal_rw`, `flash` and `hierarchical_hashing` accept every tokenization except `none`. `word2vec` and `fasttext` also exclude `whole_label`, since they learn from one sentence per label.
@@ -78,7 +78,7 @@ It is a comma-separated list, or `none`:
 The original systems use `none`, except SPIDER and the other BPE-based pretrained encoders, which use all of them. For example, Orthrus with hashes, random strings and large numbers replaced:
 
 ```shell
-python pidsmaker/main.py orthrus CADETS_E3 --featurization.tokenization.nltk.substitutions="hash, random, number"
+pidsmaker orthrus CADETS_E3 --featurization.tokenization.nltk.substitutions="hash, random, number"
 ```
 
 The `bpe` tokenization applies them during its domain-specific pre-tokenization (`mode: domain_bpe`), where they are checked on each path component and argument.

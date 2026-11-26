@@ -26,7 +26,7 @@ Our goal is to implement a new system that satisfies the following requirements:
     - A GPU with at least 5 GB of memory, or a CPU
     - More than 20 GB of RAM
     - More than 10 GB of storage
-    - PIDSMaker [installed](../getting-started/installation.md), with a shell opened in the `pids` container
+    - PIDSMaker [installed from source](../getting-started/installation.md#1-install-pidsmaker) (`pip install -e .`), as we add files to its code and configs
 
 ## 1. Integrate a new encoder
 
@@ -200,12 +200,12 @@ evaluation:
 
 ## 3. Run the pipeline
 
-In the pids container, you can now run the pipeline. We highly recommend using VSCode with the dev container extension to open your whole workspace in the container to avoid re-building the image after updating the code. Using dev container also enables to run the framework in debug mode using VSCode's debugger.
+You can now run the pipeline. With the editable install, your changes to the code are used without reinstalling. With [Docker](../getting-started/docker.md), the VS Code Dev Container also lets you run the framework in debug mode with VS Code's debugger.
 
 For tiny experiments, you can run the framework locally like so:
 
 ``` sh
-python pidsmaker/main.py custom_system CADETS_E3 --project=test_custom_system
+pidsmaker custom_system CADETS_E3 --project=test_custom_system
 ```
 
 For more practical experimentation, prefer running the framework in background and monitor the logs, figures and metrics in Weights & Biases (W&B).

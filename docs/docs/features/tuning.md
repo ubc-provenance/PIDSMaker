@@ -25,7 +25,7 @@ parameters:
 
 1.  Other hyperparameter search strategies like `random` and `bayesian` can be used (more info [here](https://docs.wandb.ai/guides/sweeps/sweep-config-keys/#method)).
 
-Before starting the hyperparameter search, make sure you are logged in to W&B by running: `wandb login` inside the container’s shell. Then, launch the hyperparameter tuning with `--tuning_mode=hyperparameters`, from the `scripts/` folder:
+Before starting the hyperparameter search, make sure you are logged in to W&B by running `wandb login`. Then, launch the hyperparameter tuning with `--tuning_mode=hyperparameters`, from the `scripts/` folder:
 
 ``` shell
 cd scripts
@@ -104,5 +104,5 @@ This will search for the `config/tuned_baselines/cadets_e3/tuned_my_system.yml` 
 For example, the defaults of the network systems are those of LANL, and `config/tuned_baselines/optc_net/` holds the OpTC settings of LARES and Argus:
 
 ``` shell
-python pidsmaker/main.py lares OPTC_NET --tuned
+pidsmaker lares OPTC_NET --tuned
 ```
