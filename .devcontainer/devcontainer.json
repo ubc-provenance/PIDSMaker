@@ -3,7 +3,6 @@
   "dockerComposeFile": ["../compose-pidsmaker.yml"],
   "service": "pids",
   "workspaceFolder": "/home/pids",
-  "forwardPorts": ["${env:DOCKER_PORT}"],
   "remoteUser": "pids",
   "customizations": {
     "vscode": {

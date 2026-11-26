@@ -3,8 +3,6 @@ services:
     build:
       context: .
     container_name: ${COMPOSE_PROJECT_NAME}-pids
-    networks:
-      - shared_network
     ports:
       # Host ports can be changed in .env, e.g. on macOS where AirPlay Receiver uses port 5000
       - "${PIDS_PORT:-8000}:8000"
@@ -13,11 +11,6 @@ services:
       # Datasets downloaded by `pidsmaker download` (or at the first run), kept in the artifacts
       # volume rather than in the container
       PIDSMAKER_DATASETS_DIR: /home/artifacts/datasets/parquet
-      # Legacy Postgres backend (--database_backend postgres)
-      DB_HOST: postgres
-      DOCKER_PORT: ${DOCKER_PORT:-5432}
-      DB_USER: postgres
-      DB_PASSWORD: postgres
     volumes:
       - ./:/home/pids
       - ${ARTIFACTS_DIR:-/home/artifacts}:/home/artifacts
@@ -31,8 +24,3 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
-networks:
-  shared_network:
-    external:
-      name: shared_network

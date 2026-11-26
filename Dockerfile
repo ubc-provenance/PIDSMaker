@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-# setting up environment variables (timezone for postgresql)
+# setting up environment variables (non-interactive apt, timezone)
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
@@ -55,7 +55,7 @@ RUN conda create -n pids python=3.9 && \
 # https://pythonspeed.com/articles/activate-conda-dockerfile/
 SHELL ["conda", "run", "-n", "pids", "/bin/bash", "-c"]
 # Activate the environment and install dependencies
-RUN conda install -y psycopg2 tqdm && \
+RUN conda install -y tqdm && \
     pip install scikit-learn==1.6.1 networkx==3.2.1 xxhash==3.2.0 \
                 graphviz==0.20.1 psutil scipy==1.13.1 matplotlib==3.9.4 \
                 wandb==0.24.2 chardet==5.2.0 nltk==3.8.1 igraph==0.11.5 \
