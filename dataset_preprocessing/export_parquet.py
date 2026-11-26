@@ -20,7 +20,8 @@ give identical results:
   with `--sort_in_postgres`, which sorts their events in Postgres into a single file.
 
 Exports are written to `<out_dir>/<database>.tmp` and renamed when complete. Row counts are
-checked against Postgres.
+checked against Postgres. The files are written as by the scripts that build datasets from their
+raw files (see `pidsmaker/utils/dataset_writer.py`).
 """
 
 import argparse
@@ -32,27 +33,22 @@ import time
 
 import duckdb
 
-EVENT_ORDER = "timestamp_rec, event_uuid"
-DAY_NS = 86_400 * 10**9
-# Event UUIDs whose byte order is the order of the collation of Postgres (see the docstring)
-UUID_PATTERNS = {
-    "uuid_upper": "[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}",
-    "uuid_lower": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-    "alnum_upper": "[0-9A-Z]*",
-    "alnum_lower": "[0-9a-z]*",
-}
+from pidsmaker.utils.dataset_writer import (
+    EVENT_ORDER,
+    check_tie_order,
+    connect_duckdb,
+    copy_to_parquet,
+    count_rows,
+    free_gb,
+    sql_str,
+    utc_now,
+    write_events_by_day,
+    write_manifest,
+)
 
 
 def log(database, msg):
     print(f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S} [{database}] {msg}", flush=True)
-
-
-def free_gb(path):
-    return shutil.disk_usage(path).free / 1e9
-
-
-def sql_str(s):
-    return "'" + s.replace("'", "''") + "'"
 
 
 def pg_query(db, sql):
@@ -74,14 +70,7 @@ def export_database(database, args):
     t0 = time.time()
 
     duck_tmp = os.path.join(tmp_dir, "_duckdb_tmp")
-    db = duckdb.connect(
-        config={
-            "threads": args.threads,
-            "memory_limit": f"{args.memory_gb}GB",
-            "temp_directory": duck_tmp,
-            "preserve_insertion_order": True,
-        }
-    )
+    db = connect_duckdb(duck_tmp, args.threads, args.memory_gb)
     db.execute("INSTALL postgres; LOAD postgres;")
     # Scans of node tables must start at the first page and not be parallel, for their
     # physical order (as in `pidsmaker/utils/database.py`)
@@ -113,14 +102,8 @@ def export_database(database, args):
         )
     log(database, f"{db_size:.1f} GB in Postgres, tables {tables}")
 
-    manifest = {
-        "format_version": 1,
-        "database": database,
-        "source": "postgres",
-        "collation": collation,
-        "exported_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
-        "tables": {},
-    }
+    exported_at = utc_now()
+    manifest_tables = {}
     for table in tables:
         columns = pg_query(
             db,
@@ -128,17 +111,18 @@ def export_database(database, args):
             f"'public' AND table_name = '{table}' ORDER BY ordinal_position",
         )
         names = [name for name, _ in columns]
+        cols = ", ".join(f'"{n}"' for n in names)
         is_event_table = "timestamp_rec" in names and "event_uuid" in names
         table_dir = os.path.join(tmp_dir, table)
         os.makedirs(table_dir)
         t = time.time()
         if is_event_table and args.sort_in_postgres:
-            cols = ", ".join(f'"{n}"' for n in names)
             query = f"SELECT {cols} FROM {table} ORDER BY {EVENT_ORDER}"
-            db.execute(
-                f"COPY (SELECT * FROM postgres_query('pg', {sql_str(query)})) "
-                f"TO {sql_str(os.path.join(table_dir, 'part-00000.parquet'))} "
-                f"(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE {args.row_group_size});"
+            copy_to_parquet(
+                db,
+                f"SELECT * FROM postgres_query('pg', {sql_str(query)})",
+                os.path.join(table_dir, "part-00000.parquet"),
+                args.row_group_size,
             )
             info = {
                 "files": ["part-00000.parquet"],
@@ -146,23 +130,32 @@ def export_database(database, args):
                 "tie_order": "postgres",
             }
         elif is_event_table:
-            info = export_event_table(db, database, table, names, tmp_dir, table_dir, args)
+            info = write_events_by_day(
+                db,
+                f"pg.public.{table}",
+                names,
+                os.path.join(tmp_dir, f"_staging_{table}"),
+                table_dir,
+                args.row_group_size,
+                lambda msg: log(database, f"{table}: {msg}"),
+            )
+            if info["tie_order"] == "unverified":
+                log(database, f"{table}: see --sort_in_postgres to sort the events in Postgres")
         else:
-            cols = ", ".join(f'"{n}"' for n in names)
-            db.execute(
-                f"COPY (SELECT * FROM postgres_query('pg', {sql_str(f'SELECT {cols} FROM {table}')})) "
-                f"TO {sql_str(os.path.join(table_dir, 'part-00000.parquet'))} "
-                f"(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE {args.row_group_size});"
+            copy_to_parquet(
+                db,
+                f"SELECT * FROM postgres_query('pg', {sql_str(f'SELECT {cols} FROM {table}')})",
+                os.path.join(table_dir, "part-00000.parquet"),
+                args.row_group_size,
             )
             info = {"files": ["part-00000.parquet"], "order": "physical"}
 
-        files = ", ".join(sql_str(os.path.join(table_dir, f)) for f in info["files"])
-        num_rows = db.execute(f"SELECT count(*) FROM read_parquet([{files}]);").fetchone()[0]
+        num_rows = count_rows(db, [os.path.join(table_dir, f) for f in info["files"]])
         pg_rows = pg_query(db, f"SELECT count(*) FROM {table}")[0][0]
         if num_rows != pg_rows:
             raise RuntimeError(f"{table}: {num_rows} rows exported, {pg_rows} in Postgres")
         info.update(num_rows=num_rows, columns=[list(c) for c in columns])
-        manifest["tables"][table] = info
+        manifest_tables[table] = info
         log(
             database,
             f"{table}: {num_rows:,} rows, {len(info['files'])} files ({time.time() - t:.0f}s)",
@@ -170,8 +163,7 @@ def export_database(database, args):
 
     db.close()
     shutil.rmtree(duck_tmp, ignore_errors=True)
-    with open(os.path.join(tmp_dir, "manifest.json"), "w") as f:
-        json.dump(manifest, f, indent=2)
+    write_manifest(tmp_dir, database, "postgres", manifest_tables, collation, exported_at)
     os.rename(tmp_dir, out_dir)
     size = sum(
         os.path.getsize(os.path.join(root, name))
@@ -185,36 +177,6 @@ def export_database(database, args):
     )
 
 
-def check_tie_order(db, database, events):
-    """Whether the byte order of the event UUIDs of `events` (a DuckDB relation) is the order
-    of the collation of Postgres, for the events of a same timestamp (see the docstring)."""
-    checks = ", ".join(
-        f"count(*) FILTER (WHERE NOT regexp_full_match(event_uuid, '{p}'))"
-        for p in UUID_PATTERNS.values()
-    )
-    mismatches = db.execute(f"SELECT {checks} FROM {events};").fetchone()
-    patterns = [name for name, n in zip(UUID_PATTERNS, mismatches) if n == 0]
-    if patterns:
-        return patterns[0]
-    mixed_case = db.execute(
-        f"SELECT bool_or(regexp_matches(event_uuid, '[a-z]')) "
-        f"AND bool_or(regexp_matches(event_uuid, '[A-Z]')) FROM {events};"
-    ).fetchone()[0]
-    mixed_shapes = db.execute(
-        f"SELECT count(*) FROM (SELECT timestamp_rec FROM {events} GROUP BY timestamp_rec "
-        "HAVING count(DISTINCT regexp_replace(event_uuid, '[0-9A-Za-z]', 'x', 'g')) > 1);"
-    ).fetchone()[0]
-    if not mixed_case and mixed_shapes == 0:
-        return "same_shape_in_ties"
-    log(
-        database,
-        f"WARNING: event UUIDs match none of {list(UUID_PATTERNS)}, letters of both cases: "
-        f"{bool(mixed_case)}, timestamps with UUIDs of several shapes: {mixed_shapes}. The order "
-        "of the events of a same timestamp may differ from Postgres (see --sort_in_postgres)",
-    )
-    return "unverified"
-
-
 def recheck(dataset_dir):
     """Checks the tie order of the event table of an existing export, updating its manifest."""
     path = os.path.join(dataset_dir, "manifest.json")
@@ -225,49 +187,12 @@ def recheck(dataset_dir):
         if "tie_order" not in info or info["tie_order"] == "postgres":
             continue
         files = ", ".join(sql_str(os.path.join(dataset_dir, table, f)) for f in info["files"])
-        info["tie_order"] = check_tie_order(db, manifest["database"], f"read_parquet([{files}])")
+        info["tie_order"] = check_tie_order(
+            db, f"read_parquet([{files}])", lambda msg: log(manifest["database"], msg)
+        )
         log(manifest["database"], f"{table}: tie order {info['tie_order']}")
     with open(path, "w") as f:
         json.dump(manifest, f, indent=2)
-
-
-def export_event_table(db, database, table, names, tmp_dir, table_dir, args):
-    """Copies the events unsorted, partitioned by day, then writes each day sorted."""
-    staging = os.path.join(tmp_dir, f"_staging_{table}")
-    db.execute(
-        f"COPY (SELECT *, timestamp_rec // {DAY_NS} AS _day FROM pg.public.{table}) "
-        f"TO {sql_str(staging)} (FORMAT parquet, COMPRESSION zstd, PARTITION_BY (_day));"
-    )
-    log(database, f"{table}: copied, sorting each day")
-    stage = f"read_parquet({sql_str(staging + '/*/*.parquet')}, hive_partitioning = true)"
-
-    tie_order = check_tie_order(db, database, stage)
-
-    # Partition folders are `_day=<day>`, NULL timestamps (if any) in a non-numeric one, sorted
-    # last as by ORDER BY in Postgres
-    def day_key(folder):
-        value = folder.split("=", 1)[1]
-        return (0, int(value)) if value.lstrip("-").isdigit() else (1, 0)
-
-    columns = ", ".join(f'"{n}"' for n in names)
-    files = []
-    for folder in sorted(os.listdir(staging), key=day_key):
-        is_day, day = day_key(folder)
-        name = (
-            f"part-{datetime.datetime.utcfromtimestamp(day * 86400):%Y-%m-%d}.parquet"
-            if is_day == 0
-            else "part-null.parquet"
-        )
-        day_dir = os.path.join(staging, folder)
-        db.execute(
-            f"COPY (SELECT {columns} FROM read_parquet({sql_str(day_dir + '/*.parquet')}) "
-            f"ORDER BY {EVENT_ORDER}) TO {sql_str(os.path.join(table_dir, name))} "
-            f"(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE {args.row_group_size});"
-        )
-        files.append(name)
-        shutil.rmtree(day_dir)
-    shutil.rmtree(staging)
-    return {"files": files, "order": f"ORDER BY {EVENT_ORDER}", "tie_order": tie_order}
 
 
 def main():
