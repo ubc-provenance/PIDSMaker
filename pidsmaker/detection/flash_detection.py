@@ -15,6 +15,7 @@ one (a confidently wrong prediction is the most anomalous). A node is flagged by
 rule iff its score is at least `1 - threshold`.
 """
 
+import numpy as np
 import torch
 
 from pidsmaker.detection.node_scoring import NodeScorer
@@ -135,6 +136,8 @@ class FlashScorer(NodeScorer):
     whether their type is predicted correctly. With snapshots, the score is the minimum over
     the snapshots of the model's `flash_ensemble`."""
 
+    score_column = "flash_score"
+
     def columns(self, model, data, results, split, node, loss):
         # `out` holds log-probabilities: the confidence of FLASH is computed on probabilities
         score, correct = flash_anomaly_score(results["out"].exp(), data.node_type.argmax(1))
@@ -147,3 +150,13 @@ class FlashScorer(NodeScorer):
             "flash_score": score.cpu().numpy().astype(float),
             "correct_pred": correct.long().cpu().numpy(),
         }
+
+    def node_prediction(self, values, thr):
+        # The node is flagged if, in one of its time windows, it is not predicted correctly
+        # with a confidence above the threshold
+        scores = values["flash_score"]
+        tw_max = int(np.argmax(scores))
+        pred_score = scores[tw_max]
+        if flash_flags(np.float64(pred_score), thr):
+            return pred_score, True, values["tw"][tw_max]
+        return pred_score, False, None

@@ -153,6 +153,8 @@ class MagicScorer(NodeScorer):
     """Writes the `magic_score` of the test nodes, thresholded by `threshold_method: magic`: the
     k-NN distance of their embeddings to those of the benign training nodes."""
 
+    score_column = "magic_score"
+
     def __init__(self, cfg):
         super().__init__(cfg)
         self.detector = None
@@ -175,3 +177,14 @@ class MagicScorer(NodeScorer):
             "magic_score": score.cpu().numpy().astype(float),
             "loss": loss,
         }
+
+    def node_prediction(self, values, thr):
+        # Detected in the first time window of max score, if above the threshold
+        max_score = 0
+        pred_score = max(values["magic_score"])
+        detected_tw = None
+        for score, tw in zip(values["magic_score"], values["tw"]):
+            if score > thr and score > max_score:
+                max_score = score
+                detected_tw = tw
+        return pred_score, pred_score > thr, detected_tw

@@ -1385,7 +1385,7 @@ def early_stop_tracker_factory(cfg):
 
 
 def node_scorer_factory(cfg):
-    """Build the scorer of the nodes at the inference of node-level objectives.
+    """Build the scorer of the nodes of node-level objectives, at inference and evaluation.
 
     ThreaTrace, FLASH and MAGIC threshold scores of their own, computed at inference (see
     `pidsmaker.detection.node_scoring`); the other threshold methods threshold the node losses.

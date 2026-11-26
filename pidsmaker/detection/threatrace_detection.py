@@ -7,6 +7,7 @@ at least `ratio_threshold`. The submodels are trained by
 
 import math
 
+import numpy as np
 import torch
 
 from pidsmaker.detection.node_scoring import NodeScorer
@@ -40,6 +41,8 @@ def threatrace_anomaly_score(outs, node_type, ratio_threshold):
 class ThreaTraceScorer(NodeScorer):
     """Writes the `threatrace_score` of the nodes, thresholded by `threshold_method: threatrace`."""
 
+    score_column = "threatrace_score"
+
     def columns(self, model, data, results, split, node, loss):
         # One output per submodel (ThreaTrace's multi-model scheme), or the single model's
         outs = results.get("outs", [results["out"]])
@@ -51,3 +54,12 @@ class ThreaTraceScorer(NodeScorer):
             "loss": loss,
             "threatrace_score": score.cpu().numpy().astype(float),
         }
+
+    def node_prediction(self, values, thr):
+        # The score is positive iff no submodel explains the node's type in that
+        # time window (see `threatrace_anomaly_score`): a node is detected if it is
+        # anomalous in any time window, the one with the highest score being kept.
+        scores = values["threatrace_score"]
+        best = int(np.argmax(scores))
+        pred_score = scores[best]
+        return pred_score, pred_score > thr, values["tw"][best]
