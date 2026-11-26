@@ -137,8 +137,9 @@ def format_value(value):
     return f"{value:.4f}".rstrip("0").rstrip(".") if abs(value) < 1 else f"{value:.4g}"
 
 
-def task_start(task, task_path):
-    """Header of a task that runs; the lines logged until `task_end` are indented."""
+def task_start(task, task_path, args=None):
+    """Header of a task that runs, followed by its main `args` (rows of (name, value), see
+    `log_args`); the lines logged until `task_end` are indented."""
     _state["indent"] = ""
     _state["seen_steps"] = set()
     print(flush=True)
@@ -146,6 +147,31 @@ def task_start(task, task_path):
         f"{style(f'{ARROW} {task}', 'bold', 'cyan')}  {style(short_hash(_task_id(task_path)), 'dim')}"
     )
     _state["indent"] = "  "
+    if args:
+        log_args(args)
+
+
+def _width():
+    """Width available for a message after the time of day."""
+    width = shutil.get_terminal_size((120, 24)).columns if INTERACTIVE else 120
+    return max(40, width - 10 - len(_state["indent"]))
+
+
+def log_args(rows):
+    """Logs rows of (name, value) args as `name value` pairs, each row wrapped to the width of
+    the terminal, all dim so that they are not taken for the logs of the task."""
+    width = _width()
+    for items in rows:
+        line, line_len = [], 0
+        for key, value in items:
+            cell = f"{key} {value}"
+            if line and line_len + 3 + len(cell) > width:
+                log(style("   ".join(line), "dim"))
+                line, line_len = [], 0
+            line_len += len(cell) + (3 if line else 0)
+            line.append(cell)
+        if line:
+            log(style("   ".join(line), "dim"))
 
 
 def task_end(task, seconds):

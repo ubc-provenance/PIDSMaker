@@ -462,6 +462,92 @@ def get_hashed_construction_cfg(cfg):
     return hashed
 
 
+# Args logged when a task starts: its main choices, which differ between systems and runs (not
+# the args that never change, nor those specific to a method). Rows of (name, path) pairs, where
+# `{arg}` in a path stands for each of the methods used by `arg` (e.g. each objective).
+TASK_SUMMARY_ARGS = {
+    "construction": [[("time_window_size", "time_window_size")]],
+    "transformation": [[("used_methods", "used_methods")]],
+    "featurization": [
+        [
+            ("used_method", "used_method"),
+            ("emb_dim", "emb_dim"),
+            ("epochs", "epochs"),
+            ("tokenization", "tokenization.used_method"),
+        ]
+    ],
+    "feat_inference": [],
+    "batching": [
+        [("node_features", "node_features"), ("edge_features", "edge_features")],
+        [
+            ("global_batching", "global_batching.used_method"),
+            ("intra_graph_batching", "intra_graph_batching.used_methods"),
+            ("inter_graph_batching", "inter_graph_batching.used_method"),
+        ],
+    ],
+    "training": [
+        [
+            ("num_epochs", "num_epochs"),
+            ("patience", "patience"),
+            ("lr", "lr"),
+            ("weight_decay", "weight_decay"),
+            ("node_hid_dim", "node_hid_dim"),
+            ("node_out_dim", "node_out_dim"),
+            ("grad_accumulation", "grad_accumulation"),
+        ],
+        [
+            ("encoder", "encoder.used_methods"),
+            ("objective", "decoder.used_methods"),
+            ("decoder", "decoder.{decoder.used_methods}.decoder"),
+        ],
+    ],
+    "evaluation": [
+        [("best_model_selection", "best_model_selection"), ("used_method", "used_method")],
+        [("threshold_method", "{used_method}.threshold_method")],
+    ],
+    "triage": [[("used_method", "used_method")]],
+}
+
+
+def summarize_task_args(cfg, task):
+    """Rows of (name, value) of the main args of `task` (see `TASK_SUMMARY_ARGS`), among those
+    that define its hash, so that the args of the methods that are not used are not shown."""
+    task_cfg = get_hashed_construction_cfg(cfg) if task == "construction" else getattr(cfg, task)
+    task_cfg = strip_unhashed_defaults(task, task_cfg)
+
+    def get(path):
+        node = task_cfg
+        for key in path.split("."):
+            node = node.get(key) if isinstance(node, dict) else None
+        return node
+
+    def values(path):
+        """Values of `path`, for each method of its `{arg}` (e.g. one per objective)."""
+        if "{" not in path:
+            return [get(path)]
+        start, end = path.index("{"), path.index("}")
+        methods = get(path[start + 1 : end])
+        if not isinstance(methods, str):
+            return []
+        return [
+            value
+            for method in methods.split(",")
+            for value in values(path[:start] + method.strip() + path[end + 1 :])
+        ]
+
+    rows = []
+    for row in TASK_SUMMARY_ARGS.get(task, []):
+        items = []
+        for name, path in row:
+            found = [v for v in values(path) if v is not None and not isinstance(v, dict)]
+            if found:
+                parts = [p.strip() for v in found for p in str(v).split(",")]
+                items.append((name, ", ".join(dict.fromkeys(parts))))
+        if items:
+            rows.append(items)
+    return rows
+
+
 def set_task_paths(cfg, subtask_concat_value=None):
     subtask_to_hash = {}
     # Directories common to all tasks

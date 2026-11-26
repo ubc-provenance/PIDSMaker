@@ -28,6 +28,7 @@ from pidsmaker.config import (
     get_uncertainty_methods_to_run,
     get_yml_cfg,
     set_task_to_done,
+    summarize_task_args,
     update_task_paths_to_restart,
 )
 from pidsmaker.experiments.tuning import (
@@ -246,7 +247,7 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
         rerun_for_metrics = method is not None and task == "evaluation"
         ran = bool(should_restart[task] or rerun_for_metrics)
         if ran:
-            console.task_start(task, task_path)
+            console.task_start(task, task_path, summarize_task_args(cfg, task))
             return_value = module.main(cfg)
             set_task_to_done(task_path)
             console.task_end(task, time.time() - start)
