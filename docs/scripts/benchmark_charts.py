@@ -91,6 +91,9 @@ METRICS = {
     "gpu": ("gpu_gb", "Peak GPU memory (GB)", "GB", "{:,.1f}"),
     "disk": ("disk_gb", "Disk usage of the outputs (GB)", "GB", "{:,.1f}"),
 }
+# End of the axis of each metric, so that the bars of most runs stay readable: the few runs
+# above it are cut there, with a break mark, and their hover text gives their value
+AXIS_CUT = {"time": 150, "ram": 60, "gpu": 20, "disk": 20}
 
 
 def load():
@@ -133,17 +136,6 @@ def linear_ticks(vmax):
     return [i * step for i in range(n + 1)]
 
 
-def axis_cut(values):
-    """End of the axis of a metric: its largest value or, when a few runs are far above the
-    others (more than 1.25 times above), the 95th percentile rounded up to a tick, so that the
-    bars of the other runs stay readable."""
-    if not values:
-        return 0
-    values = sorted(values)
-    cut = linear_ticks(values[min(len(values) - 1, int(0.95 * len(values)))])[-1]
-    return cut if values[-1] > 1.25 * cut else values[-1]
-
-
 def bar_end(x0, x1, y, h, r=4):
     """Horizontal bar, square at the baseline x0 and rounded at its data end x1."""
     w = x1 - x0
@@ -160,15 +152,15 @@ def bar_panels(rows, key, datasets, stacked=False):
     the datasets, so that bars can be compared across datasets.
     With `stacked`, bars are split into the groups of stages of GROUPS. Systems are in the order
     of the Systems page (most recent first in each family), the same in every chart.
-    The axis is cut (see `axis_cut`) when a few runs are far above the others: their bars stop
-    at the cut with a break mark, and their hover text gives their value."""
+    The axis ends at AXIS_CUT: the bars of the few runs above it stop there with a break mark,
+    and their hover text gives their value."""
     col, title, unit, f = METRICS[key]
     # Every system has a row, also before its first run has finished
     data = {("prov" if s in PROV else "net", s): {} for s in NAMES}
     for r in rows:
         data[(r["family"], r["system"])][r["dataset"]] = r
     # Over all the datasets, not only those of this chart: both charts of a metric share the scale
-    vmax_all = axis_cut([r[col] for r in rows if r[col]])
+    vmax_all = min(max((r[col] for r in rows if r[col]), default=0), AXIS_CUT[key])
 
     W, left, gap, top, row_h, head_h, bar_h = 760, 104, 22, 66 + (28 if stacked else 0), 22, 26, 12
     panel_w = (W - left - gap * (len(datasets) - 1)) / len(datasets) - 4
