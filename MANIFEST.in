@@ -1,0 +1,4 @@
+# Source distribution: the resources that setup.py copies into the wheel
+graft config
+graft Ground_Truth
+global-exclude *.pdf __pycache__ *.py[cod]

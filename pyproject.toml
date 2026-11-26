@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools >= 64.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,10 +8,63 @@ version = "4.0.0"
 description = "Intrusion detection framework based on deep learning"
 authors = [{name="mlx-graphs contributors"}]
 readme = "README.md"
-requires-python = ">= 3.9"
+license = {file = "LICENSE"}
+# torch 2.1 has wheels up to Python 3.11
+requires-python = ">= 3.9, < 3.12"
+# The versions tested by the CI (results depend on them). torch is installed from PyPI with CUDA
+# 12.1 on Linux: install it first from https://download.pytorch.org/whl/cpu for a CPU-only build.
+# The PyG extensions (torch_scatter, ...) are optional: see the installation docs.
+dependencies = [
+    "torch==2.1.2",
+    "torch_geometric==2.6.1",
+    "numpy==1.26.4",
+    "scipy==1.13.1",
+    "scikit-learn==1.6.1",
+    "pandas==2.3.3",
+    "networkx==3.2.1",
+    "igraph==0.11.5",
+    "gensim==4.4.0",
+    "nltk==3.8.1",
+    "transformers==4.39.3",
+    "duckdb>=1.1",
+    "huggingface_hub>=0.23,<1.0",
+    "matplotlib>=3.7",
+    "wandb>=0.16",
+    "yacs==0.1.8",
+    "pyyaml",
+    "pytz",
+    "psutil",
+    "tqdm",
+    "wget==3.2",
+    "flask>=2.2",
+]
 
-[tool.setuptools]
-packages = ["pidsmaker"]
+[project.optional-dependencies]
+# Legacy backend: datasets in a Postgres server (--database_backend postgres)
+postgres = ["psycopg2-binary>=2.9"]
+# Embedding visualizations (vizgen)
+viz = ["umap-learn==0.5.6"]
+test = [
+    "pytest==8.3.5",
+    "pytest-cov==6.1.1",
+    "pytest-xdist==3.6.1",
+    "pyarrow",
+]
+
+[project.scripts]
+pidsmaker = "pidsmaker.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ubc-provenance/PIDSMaker"
+Documentation = "https://ubc-provenance.github.io/PIDSMaker/"
+
+# config/ and Ground_Truth/ (at the root of the repository) are copied into the wheel as
+# pidsmaker/resources/ by setup.py
+[tool.setuptools.packages.find]
+include = ["pidsmaker*"]
+
+[tool.setuptools.package-data]
+"pidsmaker.vizgen.web" = ["*.html", "static/**/*"]
 
 [tool.ruff]
 line-length = 100

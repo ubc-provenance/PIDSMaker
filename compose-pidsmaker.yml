@@ -10,6 +10,10 @@ services:
       - "${PIDS_PORT:-8000}:8000"
       - "${VIZ_PORT:-5000}:5000"  # viz port
     environment:
+      # Datasets downloaded by `pidsmaker download` (or at the first run), kept in the artifacts
+      # volume rather than in the container
+      PIDSMAKER_DATASETS_DIR: /home/artifacts/datasets/parquet
+      # Legacy Postgres backend (--database_backend postgres)
       DB_HOST: postgres
       DOCKER_PORT: ${DOCKER_PORT:-5432}
       DB_USER: postgres

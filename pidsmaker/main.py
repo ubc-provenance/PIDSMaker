@@ -330,8 +330,10 @@ def main(cfg, project=None, exp=None, sweep_id=None, **kwargs):
     log("==" * 30)
 
 
-if __name__ == "__main__":
-    args, unknown_args = get_runtime_required_args(return_unknown_args=True)
+def cli(argv=None):
+    """Runs the pipeline from the command line: `pidsmaker <model> <dataset> [args]` (see
+    pidsmaker/cli.py), or `python pidsmaker/main.py <model> <dataset> [args]`."""
+    args, unknown_args = get_runtime_required_args(return_unknown_args=True, args=argv)
 
     exp_name = (
         args.exp.replace("dataset", args.dataset)
@@ -369,3 +371,7 @@ if __name__ == "__main__":
     # If it's a one-time run, we delete the files as we can't leverage them in future
     if cfg._restart_from_scratch:
         shutil.rmtree(cfg.construction._task_path, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    cli()

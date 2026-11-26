@@ -40,7 +40,7 @@ def database_name(cfg):
 
 
 def database_backend(cfg):
-    return getattr(cfg.database, "backend", None) or POSTGRES
+    return getattr(cfg.database, "backend", None) or PARQUET
 
 
 def parquet_dataset_dir(cfg):
@@ -52,6 +52,9 @@ def init_database_connection(cfg):
     """(cursor, connection) of the database of the dataset of `cfg`, on its backend."""
     backend = database_backend(cfg)
     if backend == PARQUET:
+        from pidsmaker.datasets import ensure_downloaded
+
+        ensure_downloaded(cfg)
         connect = ParquetConnection(parquet_dataset_dir(cfg))
         return connect.cursor(), connect
     if backend == POSTGRES:
@@ -105,8 +108,9 @@ class ParquetConnection:
         manifest_path = os.path.join(dataset_dir, "manifest.json")
         if not os.path.exists(manifest_path):
             raise FileNotFoundError(
-                f"No Parquet dataset in {dataset_dir} (missing manifest.json). Download the "
-                "dataset or export it from Postgres with dataset_preprocessing/export_parquet.py."
+                f"No Parquet dataset in {dataset_dir} (missing manifest.json). Download it with "
+                f"`pidsmaker download {os.path.basename(dataset_dir)} --datasets_dir "
+                f"{os.path.dirname(dataset_dir)}` (see pidsmaker/datasets.py)."
             )
         with open(manifest_path) as f:
             self.manifest = json.load(f)
