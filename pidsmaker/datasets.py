@@ -70,6 +70,17 @@ def resolve_database(name):
     raise ValueError(f"Unknown dataset {name}. Available datasets: {', '.join(dataset_names())}")
 
 
+def repo_databases(repo_id=None, revision=None):
+    """Databases of the Hugging Face repository (its folders), in the order of the datasets."""
+    from huggingface_hub import HfApi
+    from huggingface_hub.hf_api import RepoFolder
+
+    entries = HfApi().list_repo_tree(repo_id or hf_repo(), repo_type="dataset", revision=revision)
+    folders = {e.path for e in entries if isinstance(e, RepoFolder)}
+    databases = [c["database"] for c in DATASET_DEFAULT_CONFIG.values()]
+    return [d for d in dict.fromkeys(databases) if d in folders]
+
+
 def missing_files(database, datasets_dir=None):
     """Files of a downloaded dataset that are missing (all, if its manifest is missing)."""
     dataset_dir = os.path.join(get_datasets_dir(datasets_dir), database)
@@ -91,18 +102,19 @@ def is_downloaded(name, datasets_dir=None):
 
 
 def download(*names, datasets_dir=None, repo_id=None, revision=None, force=False):
-    """Downloads datasets (names of datasets or databases, or "all") and returns their folders.
+    """Downloads datasets (names of datasets or databases, or "all", the datasets of the
+    repository) and returns their folders.
 
     Datasets already downloaded are skipped, unless `force`. Interrupted downloads resume."""
     from huggingface_hub import snapshot_download
 
     if len(names) == 1 and isinstance(names[0], (list, tuple)):
         names = tuple(names[0])
+    repo_id = repo_id or hf_repo()
     if any(n.lower() == "all" for n in names):
-        names = dataset_names()
+        names = repo_databases(repo_id, revision)
     databases = list(dict.fromkeys(resolve_database(n) for n in names))
     datasets_dir = get_datasets_dir(datasets_dir)
-    repo_id = repo_id or hf_repo()
 
     dirs = []
     for database in databases:
@@ -124,6 +136,8 @@ def download(*names, datasets_dir=None, repo_id=None, revision=None, force=False
             force_download=force,
         )
         missing = missing_files(database, datasets_dir)
+        if not os.path.exists(os.path.join(dataset_dir, "manifest.json")):
+            raise RuntimeError(f"{database} is not in the repository {repo_id}")
         if missing:
             raise RuntimeError(
                 f"{database}: {len(missing)} files are missing after the download from "

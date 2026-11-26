@@ -54,6 +54,9 @@ def fake_hub(tmp_path, monkeypatch):
     import huggingface_hub
 
     monkeypatch.setattr(huggingface_hub, "snapshot_download", snapshot_download)
+    monkeypatch.setattr(
+        datasets, "repo_databases", lambda repo_id, revision: sorted(os.listdir(repo))
+    )
     monkeypatch.delenv("PIDSMAKER_HF_REPO", raising=False)
     monkeypatch.delenv("PIDSMAKER_AUTO_DOWNLOAD", raising=False)
     return {"repo": repo, "calls": calls, "dir": str(tmp_path / "datasets")}
@@ -100,6 +103,17 @@ def test_download(fake_hub):
     datasets.download("CADETS_E3", datasets_dir=fake_hub["dir"])
     assert len(fake_hub["calls"]) == 4
     assert datasets.is_downloaded("CADETS_E3", fake_hub["dir"])
+
+
+def test_download_all(fake_hub):
+    """`all` downloads the datasets of the repository."""
+    datasets.download("all", datasets_dir=fake_hub["dir"])
+    assert [c["patterns"] for c in fake_hub["calls"]] == [["cadets_e3/*"], ["optc_051/*"]]
+
+
+def test_download_dataset_not_in_repository(fake_hub):
+    with pytest.raises(RuntimeError, match="theia_e3 is not in the repository"):
+        datasets.download("THEIA_E3", datasets_dir=fake_hub["dir"])
 
 
 def test_download_repo_from_env(fake_hub, monkeypatch):
