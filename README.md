@@ -1,13 +1,20 @@
 <p align="center">
-  <img width="80%" src="https://raw.githubusercontent.com/ubc-provenance/PIDSMaker/main/.github/img/pidsmaker_title.png" alt="PIDSMAKER logo"/>
+  <img width="80%" src="https://raw.githubusercontent.com/ubc-provenance/PIDSMaker/main/.github/img/pidsmaker_title.png" alt="PIDSMaker logo"/>
 </p>
+
+<h3 align="center">
+  Build, run and customize deep learning intrusion detection systems on provenance and network graphs
+</h3>
 
 <div align="center">
 
 [![Docs](https://img.shields.io/badge/Docs-Online-ed6a2f?style=flat&labelColor=gray)](https://ubc-provenance.github.io/PIDSMaker/)
+[![Release](https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/releases)
+[![Tests](https://img.shields.io/github/actions/workflow/status/ubc-provenance/PIDSMaker/tests.yml?branch=main&style=flat&label=Tests&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/actions/workflows/tests.yml)
+[![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11-ed6a2f?style=flat&labelColor=gray&logo=python&logoColor=white)](https://ubc-provenance.github.io/PIDSMaker/getting-started/installation/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-pidsmaker-ed6a2f?style=flat&labelColor=gray&logo=huggingface&logoColor=white)](https://huggingface.co/pidsmaker)
 [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.19813646-ed6a2f?style=flat&labelColor=gray)](https://doi.org/10.5281/zenodo.19813646)
 [![License](https://img.shields.io/github/license/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/blob/main/LICENSE)
-[![Release](https://img.shields.io/github/v/release/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=gray)](https://github.com/ubc-provenance/PIDSMaker/releases)
 [![Discord](https://img.shields.io/badge/Discord-Join-ed6a2f?style=flat&labelColor=gray&logo=discord&logoColor=white)](https://discord.gg/jecmkTABUg)
 [![Stars](https://img.shields.io/github/stars/ubc-provenance/PIDSMaker?style=flat&color=ed6a2f&labelColor=white&logo=github&logoColor=black)](https://github.com/ubc-provenance/PIDSMaker/stargazers)
 
