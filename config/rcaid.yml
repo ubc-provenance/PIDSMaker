@@ -16,6 +16,11 @@ transformation:
   used_methods: rcaid_pseudo_graph
   rcaid_pseudo_graph:
     use_pruning: True
+    prune_threshold: 0.5
+    root_node_types: file, netflow
+    keep_original_edges: True
+    merge_same_label_roots: True
+    max_roots_per_node: 16
 
 featurization:
   epochs: 5
@@ -29,8 +34,10 @@ featurization:
       type_aware: True
       substitutions: none
   doc2vec:
-    include_neighbors: True
+    include_neighbors: False
+    truncate_process_name: True
     alpha: 0.025
+    workers: 1
 feat_inference:
   to_remove: True
 
@@ -54,16 +61,22 @@ training:
   lr: 0.0001
   weight_decay: 0.0001
   node_hid_dim: 128
-  node_out_dim: 3
+  node_out_dim: 128
   grad_accumulation: 1
   encoder:
     dropout: 0.5
     used_methods: rcaid_gat
+    rcaid_gat:
+      num_layers: 2
+      num_heads: 1
   decoder:
-    used_methods: predict_node_type
-    predict_node_type:
-      decoder: none
+    used_methods: predict_process_tag
+    predict_process_tag:
+      decoder: node_mlp
       balanced_loss: False
+      detection: kmeans
+      node_mlp:
+        architecture_str: none
 
 evaluation:
   viz_malicious_nodes: False

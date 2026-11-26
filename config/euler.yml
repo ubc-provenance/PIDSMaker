@@ -45,6 +45,7 @@ feat_inference:
   to_remove: True
 
 batching:
+  compact_node_ids: True
   node_features: node_type
   edge_features: none
   fix_buggy_graph_reindexer: True

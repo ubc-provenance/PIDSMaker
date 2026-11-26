@@ -1,26 +1,97 @@
 import json
 import os
-import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
-import pandas as pd
 import torch
-import torch.nn.functional as F
-from sklearn.neighbors import NearestNeighbors
 
-from pidsmaker.utils.data_utils import batch_to_device
+from pidsmaker.factory import node_scorer_factory
+from pidsmaker.utils.data_utils import batch_to_device, to_original_node_ids
 from pidsmaker.utils.labelling import has_event_labels
 from pidsmaker.utils.loss_files import write_losses
 from pidsmaker.utils.utils import (
     PeakCPUMemory,
-    calculate_average_from_file,
     get_device,
     log,
     log_tqdm,
     ns_time_to_datetime_US,
     set_seed,
 )
+
+
+class EdgeLossWriter:
+    """Writes the edge losses of the batches (one file per batch, see `write_losses`).
+
+    The columns of the batches stay on the device and are moved to the host every
+    `flush_every` batches with a single transfer, and the files are compressed and written
+    by threads, instead of a transfer (waiting for the GPU) and a write at each batch.
+    The files are the same."""
+
+    def __init__(self, cfg, logs_dir, flush_every=256, num_threads=4):
+        self.cfg = cfg
+        self.logs_dir = logs_dir
+        self.flush_every = flush_every
+        self.pending = []
+        self.losses = []
+        self.pool = ThreadPoolExecutor(num_threads)
+        self.futures = {}
+        os.makedirs(logs_dir, exist_ok=True)
+
+    def add(self, int_cols, losses, y=None):
+        """`int_cols`: (4, E) tensor of (src, dst, time, edge type), `losses`: (E,)."""
+        self.pending.append((int_cols, losses, y))
+        if len(self.pending) >= self.flush_every:
+            self.flush()
+
+    def flush(self):
+        if not self.pending:
+            return
+        sizes = [losses.numel() for _, losses, _ in self.pending]
+        int_cols = torch.cat([c for c, _, _ in self.pending], dim=1).cpu().numpy()
+        losses = torch.cat([l.float() for _, l, _ in self.pending]).cpu().numpy()
+        has_y = self.pending[0][2] is not None
+        ys = torch.cat([y for _, _, y in self.pending]).cpu().numpy() if has_y else None
+        self.pending = []
+
+        start = 0
+        for size in sizes:
+            end = start + size
+            srcnodes, dstnodes, t_vars, edge_types = int_cols[:, start:end]
+            batch_losses = losses[start:end]
+            self.losses.append(batch_losses)
+            edge_cols = {
+                "loss": batch_losses.astype(float),
+                "srcnode": srcnodes.astype(int),
+                "dstnode": dstnodes.astype(int),
+                "time": t_vars.astype(int),
+                "edge_type": edge_types.astype(int),
+            }
+            if has_y:
+                edge_cols["y"] = ys[start:end].astype(int)
+            # Here is a checkpoint, which records all edge losses in the current time window
+            tz = self.cfg.dataset.timezone
+            time_interval = (
+                ns_time_to_datetime_US(int(t_vars[0]), timezone=tz)
+                + "~"
+                + ns_time_to_datetime_US(edge_cols["time"].max(), timezone=tz)
+            )
+            # Batches with the same time interval write the same file: the last one is kept
+            previous = self.futures.get(time_interval)
+            if previous is not None:
+                previous.result()
+            self.futures[time_interval] = self.pool.submit(
+                write_losses, self.logs_dir, time_interval, edge_cols
+            )
+            start = end
+
+    def close(self):
+        """Writes the remaining batches and returns the losses of all the batches."""
+        self.flush()
+        for f in self.futures.values():
+            f.result()
+        self.pool.shutdown()
+        return self.losses
 
 
 @torch.no_grad()
@@ -31,6 +102,7 @@ def test_edge_level(
     model_epoch_file,
     cfg,
     device,
+    writer=None,
 ):
     model.eval()
 
@@ -41,42 +113,22 @@ def test_edge_level(
 
     # If the data has been reindexed in the loader or batched, we retrieve original node IDs
     # to later find the labels
-    edge_index = data.original_edge_index
+    edge_index = to_original_node_ids(data.original_edge_index)
 
-    # A single device->host transfer for all columns
     edge_types = data.edge_type.max(dim=1).indices + 1
-    srcnodes, dstnodes, t_vars, edge_types = (
-        torch.stack([edge_index[0], edge_index[1], data.t.to(edge_index.dtype), edge_types.to(edge_index.dtype)])
-        .cpu()
-        .numpy()
+    int_cols = torch.stack(
+        [edge_index[0], edge_index[1], data.t.to(edge_index.dtype), edge_types.to(edge_index.dtype)]
     )
-    losses = each_edge_loss.float().cpu().numpy()
-    start_time = int(t_vars[0])
-
-    # if 1 in data.y:
-    #     log(f"Mean score of fake malicious edges: {losses[data.y.cpu() == 1].mean():.4f}")
-    #     log(f"Mean score of benign malicious edges: {losses[data.y.cpu() == 0].mean():.4f}")
-
-    edge_cols = {
-        "loss": losses.astype(float),
-        "srcnode": srcnodes.astype(int),
-        "dstnode": dstnodes.astype(int),
-        "time": t_vars.astype(int),
-        "edge_type": edge_types.astype(int),
-    }
     # Datasets with event-level labels: the label of each edge is kept for the evaluation
-    if has_event_labels(cfg):
-        edge_cols["y"] = data.y.cpu().numpy().astype(int)
+    y = data.y if has_event_labels(cfg) else None
 
-    # Here is a checkpoint, which records all edge losses in the current time window
-    time_interval = (
-        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(edge_cols["time"].max(), timezone=cfg.dataset.timezone)
-    )
-
-    logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
-    os.makedirs(logs_dir, exist_ok=True)
-    write_losses(logs_dir, time_interval, edge_cols)
-    return losses
+    if writer is None:
+        logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
+        writer = EdgeLossWriter(cfg, logs_dir)
+        writer.add(int_cols, each_edge_loss, y)
+        return writer.close()[0]
+    writer.add(int_cols, each_edge_loss, y)
+    return None
 
 
 @torch.no_grad()
@@ -87,10 +139,10 @@ def test_node_level(
     model_epoch_file,
     cfg,
     device,
+    scorer,
 ):
     model.eval()
 
-    node_list = None
     start_time = int(data.t[0])
     end_time = int(data.t[-1])
 
@@ -101,131 +153,16 @@ def test_node_level(
     results = model(data, inference=True, validation=validation)
     loss = results["loss"]
     losses = loss.float().cpu().numpy()
-    n_id = getattr(data, "original_n_id_tgn", getattr(data, "original_n_id"))
+    n_id = to_original_node_ids(getattr(data, "original_n_id_tgn", getattr(data, "original_n_id")))
     n_id_np = n_id.cpu().numpy()
 
-    # ThreaTrace code
-    if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-        out = results["out"]
-        pred = out.max(1)[1]
-        pro = F.softmax(out, dim=1)
-        pro1 = pro.max(1)
-        # Masks the top-1 probability to get the second highest one
-        pro.scatter_(1, pro1[1].unsqueeze(1), -1)
-        pro2 = pro.max(1)
+    node_list = scorer.columns(model, data, results, split, n_id_np, losses.astype(float))
 
-        node_type_num = data.node_type.argmax(1)
-        score = torch.where(pro2[0] != 0, pro1[0] / pro2[0], pro1[0] / 1e-5)
-        score = torch.log(score + 1e-12)  # we do that or the score is much too high
-        score = score.clamp(min=0)
-        correct_pred = (node_type_num == pred).long()
-
-        node_list = {
-            "node": n_id_np,
-            "loss": losses.astype(float),
-            "threatrace_score": score.cpu().numpy().astype(float),
-            "correct_pred": correct_pred.cpu().numpy(),
-        }
-
-    # Flash code
-    elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-        out = results["out"]
-        pred = out.max(1)[1]
-        sorted, indices = out.sort(dim=1, descending=True)
-        eps = 1e-6
-        conf = (sorted[:, 0] - sorted[:, 1]) / (sorted[:, 0] + eps)
-        conf = (conf - conf.min()) / conf.max() if conf.max() > 0 else conf
-
-        node_type_num = data.node_type.argmax(1)
-        node_list = {
-            "node": n_id_np,
-            "loss": losses.astype(float),
-            "flash_score": conf.clamp(min=0).cpu().numpy().astype(float),
-            "correct_pred": (node_type_num == pred).long().cpu().numpy(),
-        }
-
-    # Magic codes
-    elif cfg.evaluation.node_evaluation.threshold_method == "magic":
-        os.makedirs(cfg.training._magic_dir, exist_ok=True)
-        if split == "val":
-            x_train, *_ = model.embed(data, inference=True)
-            x_train = x_train.cpu().numpy()
-            num_nodes = x_train.shape[0]
-            sample_size = 5000 if num_nodes > 5000 else num_nodes
-            sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
-            x_train_sampled = x_train[sample_indices]
-            x_train_mean = x_train_sampled.mean(axis=0)
-            x_train_std = x_train_sampled.std(axis=0)
-            x_train_sampled = (x_train_sampled - x_train_mean) / x_train_std
-
-            x_train_sampled = pd.DataFrame.from_records(x_train_sampled)
-
-            n_neighbors = 10
-            nbrs = NearestNeighbors(n_neighbors=n_neighbors)
-            nbrs.fit(x_train_sampled)
-            idx = list(range(x_train_sampled.shape[0]))
-            random.shuffle(idx)
-            try:
-                sample = x_train_sampled.iloc[idx[: min(50000, x_train_sampled.shape[0])]]
-                distances_train, _ = nbrs.kneighbors(
-                    sample, n_neighbors=min(len(sample), n_neighbors)
-                )
-            except KeyError as e:
-                log(f"KeyError encountered: {e}")
-                log(f"Available columns in x_train: {x_train_sampled.columns}")
-                raise
-            mean_distance_train = distances_train.mean().mean()
-            if mean_distance_train == 0:
-                mean_distance_train = 1e-9
-
-            train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
-            with open(train_distance_file, "a") as f:
-                f.write(f"{mean_distance_train}\n")
-
-            node_list = {"node": n_id_np, "loss": losses.astype(float)}
-
-        elif split == "test":
-            train_distance_file = os.path.join(cfg.training._magic_dir, "train_distance.txt")
-            mean_distance_train = calculate_average_from_file(train_distance_file)
-
-            x_test, *_ = model.embed(data, inference=True)
-            x_test = x_test.cpu().numpy()
-            num_nodes = x_test.shape[0]
-            sample_size = 5000 if num_nodes > 5000 else num_nodes
-            sample_indices = np.random.choice(num_nodes, sample_size, replace=False)
-            x_test_sampled = x_test[sample_indices]
-            x_test_mean = x_test_sampled.mean(axis=0)
-            x_test_std = x_test_sampled.std(axis=0)
-            x_test_sampled = (x_test_sampled - x_test_mean) / x_test_std
-
-            torch.cuda.empty_cache()
-            x_test_sampled = pd.DataFrame.from_records(x_test_sampled)
-
-            n_neighbors = 10
-            nbrs = NearestNeighbors(n_neighbors=n_neighbors)
-            nbrs.fit(x_test_sampled)
-
-            # Query in the same standardized space as the fitted sample.
-            distances, _ = nbrs.kneighbors(
-                (x_test - x_test_mean) / x_test_std, n_neighbors=n_neighbors
-            )
-            distances = distances.mean(axis=1)
-            # distances = distances.to_numpy()
-            score = distances / mean_distance_train
-
-            node_list = {
-                "node": n_id_np,
-                "magic_score": score.astype(float),
-                "loss": losses.astype(float),
-            }
-
-    else:
-        node_list = {"node": n_id_np, "loss": losses.astype(float)}
-
-    if node_list is None:  # e.g. magic on the train split
-        node_list = {}
-
-    time_interval = ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone) + "~" + ns_time_to_datetime_US(end_time, timezone=cfg.dataset.timezone)
+    time_interval = (
+        ns_time_to_datetime_US(start_time, timezone=cfg.dataset.timezone)
+        + "~"
+        + ns_time_to_datetime_US(end_time, timezone=cfg.dataset.timezone)
+    )
 
     logs_dir = os.path.join(cfg.training._edge_losses_dir, split, model_epoch_file)
     os.makedirs(logs_dir, exist_ok=True)
@@ -261,6 +198,9 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
     if use_cuda:
         torch.cuda.reset_peak_memory_stats(device=device)
 
+    scorer = node_scorer_factory(cfg)
+    scorer.prepare(model, train_data, [name for _, name in splits], device)
+
     val_score = 0.0
     peak_inference_cpu_mem = 0
     peak_inference_gpu_mem = 0
@@ -273,23 +213,42 @@ def main(cfg, model, val_data, test_data, epoch, split, logging=True, train_data
         cpu_mem = PeakCPUMemory().start()
 
         all_losses = []
+        is_node_level = cfg._is_node_level and not cfg._is_hybrid_loss
+        writer = None
+        if not is_node_level:
+            writer = EdgeLossWriter(
+                cfg, os.path.join(cfg.training._edge_losses_dir, split_name, model_epoch_file)
+            )
         for graphs in dataset:
             for g in log_tqdm(graphs, desc=desc, logging=logging):
                 g = batch_to_device(g, device)
 
                 s = time.time()
-                test_fn = test_node_level if (cfg._is_node_level and not cfg._is_hybrid_loss) else test_edge_level
-                losses = test_fn(
-                    data=g,
-                    model=model,
-                    split=split_name,
-                    model_epoch_file=model_epoch_file,
-                    cfg=cfg,
-                    device=device,
-                )
-                all_losses.append(np.asarray(losses, dtype=np.float64).ravel())
+                if is_node_level:
+                    losses = test_node_level(
+                        data=g,
+                        model=model,
+                        split=split_name,
+                        model_epoch_file=model_epoch_file,
+                        cfg=cfg,
+                        device=device,
+                        scorer=scorer,
+                    )
+                    all_losses.append(np.asarray(losses, dtype=np.float64).ravel())
+                else:
+                    test_edge_level(
+                        data=g,
+                        model=model,
+                        split=split_name,
+                        model_epoch_file=model_epoch_file,
+                        cfg=cfg,
+                        device=device,
+                        writer=writer,
+                    )
                 tpb.append(time.time() - s)
                 del g
+        if writer is not None:
+            all_losses += [np.asarray(l, dtype=np.float64).ravel() for l in writer.close()]
 
         peak_inference_cpu_mem = max(peak_inference_cpu_mem, cpu_mem.peak_gb())
 

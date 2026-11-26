@@ -7,12 +7,16 @@ import pytest
 import torch
 
 from pidsmaker.utils.graph_store import (
+    encode_attr_dicts,
+    encode_edge_positions,
     encode_graph,
     load_graph,
     load_graph_columns,
     save_graph,
 )
 from pidsmaker.utils.loss_files import read_losses, write_losses
+
+pytestmark = pytest.mark.no_database
 
 
 def _signature(g):
@@ -223,6 +227,7 @@ def test_lazy_columns_match_decoded_columns(tmp_path):
         "intstr": ["10", "20", "30", "40"],
         "strblob": ["a", "bb", "ccc", "dddd"],
         "obj": [None, 1, "s", 2.5],
+        "npint64": [np.int64(5), np.int64(3), np.int64(5), np.int64(9)],
     }
     for i in range(4):
         g.add_edge("1", "2", **{k: v[i] for k, v in values.items()})
@@ -236,3 +241,34 @@ def test_lazy_columns_match_decoded_columns(tmp_path):
         assert all(a == b or (a != a and b != b) for a, b in zip(rebuilt, v)), k
         assert cols[k] == v or k == "float"
     assert cols.array("int", np.int64).tolist() == values["int"]
+    assert cols.array("npint64", np.int64).tolist() == [5, 3, 5, 9]
+    assert {type(v) for v in cols["npint64"] + cols.take("npint64", [1]) + cols.factorize("npint64")[1]} == {np.int64}
+
+
+def test_numpy_int_attributes(tmp_path):
+    """np.int64 values (e.g. random timestamps) are stored as an array and loaded as np.int64."""
+    g = _provenance_graph()
+    for i, (*_, d) in enumerate(g.edges(data=True)):
+        d["time"] = np.int64(10**18 + i)
+    assert encode_graph(g)["edge_attr_cols"][1][0] == "npint64"
+    _roundtrip(g, tmp_path)
+
+
+@pytest.mark.parametrize("num_edges", [0, 1, 200])
+def test_edge_positions_payload_matches_graph(num_edges):
+    """`encode_edge_positions` encodes the graph built by adding the edges in order."""
+    rng = np.random.default_rng(num_edges)
+    nodes = [str(i) for i in rng.permutation(60)]
+    pairs = sorted({(int(u), int(v)) for u, v in rng.integers(0, 60, size=(num_edges, 2))})
+    src = np.array([u for u, _ in pairs], dtype=np.int64)
+    dst = np.array([v for _, v in pairs], dtype=np.int64)
+    times = list(rng.integers(0, 100, size=len(pairs)))
+    g = nx.MultiDiGraph()
+    g.add_nodes_from((n, {"node_type": "file", "label": n}) for n in nodes)
+    g.add_edges_from((nodes[u], nodes[v], {"time": t}) for u, v, t in zip(src, dst, times))
+    node_cols = encode_attr_dicts(list(g._node.values()))
+    expected = _payload_bytes(encode_graph(g))
+    assert _payload_bytes(encode_edge_positions(nodes, node_cols, src, dst, {"time": times})) == expected
+    # An int64 array stands for the list of its numpy scalars
+    times = np.array(times, dtype=np.int64)
+    assert _payload_bytes(encode_edge_positions(nodes, node_cols, src, dst, {"time": times})) == expected

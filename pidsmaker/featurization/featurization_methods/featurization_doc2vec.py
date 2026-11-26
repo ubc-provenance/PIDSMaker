@@ -13,23 +13,37 @@ from pidsmaker.featurization.featurization_utils import (
     get_corpus,
     get_corpus_using_neighbors_features,
 )
+from pidsmaker.utils.process_tags import truncate_process_name
 from pidsmaker.utils.utils import log, log_start
+
+
+def doc2vec_label_fn(cfg):
+    """Function replacing the label of a node before computing its features, or None."""
+    if not getattr(cfg.featurization.doc2vec, "truncate_process_name", None):
+        return None
+
+    def label_fn(node_type, label):
+        return truncate_process_name(label) if node_type == "subject" else label
+
+    return label_fn
 
 
 def doc2vec(
     cfg,
-    tagged_data: list[str],
+    tagged_data,
     model_save_path: str,
     epochs: int,
     emb_dim: int,
     alpha: float,
     dm: int = 1,
+    workers: int = 3,
 ):
     """Train Doc2Vec model on graph corpus.
 
     Args:
         cfg: Configuration object
-        tagged_data: Tagged documents (walks with node identifiers)
+        tagged_data: Tagged documents (walks with node identifiers), a list or a re-iterable
+            corpus (iterated once to build the vocabulary, then once per epoch)
         model_save_path: Path to save model
         epochs: Training epochs
         emb_dim: Embedding dimension
@@ -41,7 +55,8 @@ def doc2vec(
     """
     SEED = 0
     model = Doc2Vec(
-        vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED
+        vector_size=emb_dim, alpha=alpha, min_count=1, dm=dm, compute_loss=True, seed=SEED,
+        workers=workers,
     )
     model.build_vocab(tagged_data)
 
@@ -60,11 +75,13 @@ def main(cfg):
 
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)
     if cfg.featurization.doc2vec.include_neighbors:
+        if doc2vec_label_fn(cfg) is not None:
+            raise ValueError("`truncate_process_name` is not supported with `include_neighbors`")
         tagged_data = get_corpus_using_neighbors_features(cfg, doc2vec_format=True)
 
     # Standard token-level Doc2vec
     else:
-        tagged_data = get_corpus(cfg, doc2vec_format=True)
+        tagged_data = get_corpus(cfg, doc2vec_format=True, label_fn=doc2vec_label_fn(cfg))
 
     epochs = cfg.featurization.epochs
     emb_dim = cfg.featurization.emb_dim
@@ -77,5 +94,6 @@ def main(cfg):
         epochs=epochs,
         emb_dim=emb_dim,
         alpha=alpha,
+        workers=cfg.featurization.doc2vec.workers,
         cfg=cfg,
     )

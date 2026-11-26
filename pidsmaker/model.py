@@ -219,11 +219,13 @@ class Model(nn.Module):
                     loss = self.node_to_edge_loss(batch, loss)
 
                 if loss_or_scores is None:
+                    # Allocated on the device (a copy from the host would wait for the GPU)
+                    device = batch.edge_index.device
                     loss_or_scores = (
-                        torch.zeros(1)
+                        torch.zeros(1, device=device)
                         if train_mode
-                        else torch.zeros(loss.shape[0], dtype=torch.float)
-                    ).to(batch.edge_index.device)
+                        else torch.zeros(loss.shape[0], dtype=torch.float, device=device)
+                    )
                 
                 if loss.numel() != loss_or_scores.numel():
                     raise TypeError(

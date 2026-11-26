@@ -34,8 +34,15 @@ batching:
     tgn_last_neighbor:
       tgn_neighbor_size: 10
       negative_destinations: True
+      # Kept continuous across days (Kairos resets them every day)
+      reset_state_every_day: False
 
 training:
+  encoder:
+    # Not Kairos' 8 heads and final ReLU
+    graph_attention:
+      num_heads: 4
+      final_activation: False
   num_epochs: 10
   patience: 5
   lr: 0.0001

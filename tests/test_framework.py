@@ -53,6 +53,11 @@ def prepare_cfg(
         for k, v in custom_args:
             args.__dict__[k] = v
 
+    # The node type is the label of `predict_node_type`: it cannot be a node feature
+    objectives = args.__dict__.get("training.decoder.used_methods") or ""
+    if "predict_node_type" in objectives and args.__dict__.get("batching.node_features") is None:
+        args.__dict__["batching.node_features"] = "node_emb"
+
     cfg = get_yml_cfg(args)
     cfg._test_mode = True
 

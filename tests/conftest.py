@@ -33,6 +33,13 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "no_database: the test does not need the database (when all the selected "
+        "tests have this marker, the sample database is not loaded)"
+    )
+
+
 def worker_suffix():
     """Suffix of the per-worker resources with pytest-xdist (empty without xdist)."""
     worker = os.environ.get("PYTEST_XDIST_WORKER")
@@ -83,7 +90,9 @@ def load_sample_database(name, params):
 @pytest.fixture(scope="session", autouse=True)
 def clearscope_e3_database(request):
     """With `--db sample`, CLEARSCOPE_E3 is read from a database loaded with the sample."""
-    if request.config.getoption("db") == "full":
+    if request.config.getoption("db") == "full" or all(
+        item.get_closest_marker("no_database") for item in request.session.items
+    ):
         yield
         return
 

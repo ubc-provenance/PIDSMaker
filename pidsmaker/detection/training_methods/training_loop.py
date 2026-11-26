@@ -17,12 +17,14 @@ import numpy as np
 import torch
 import wandb
 
+from pidsmaker.detection.flash_detection import flash_snapshot_ensemble
 from pidsmaker.factory import (
     build_model,
     early_stop_tracker_factory,
     optimizer_factory,
     optimizer_few_shot_factory,
 )
+from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.utils.data_utils import batch_to_device, save_model
 from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
@@ -115,6 +117,9 @@ def main(cfg):
     if use_few_shot:
         num_epochs += 1  # in few-shot, the first epoch is without ssl training
 
+    # FLASH: a sequence of GNN snapshots, each trained on the nodes still misclassified
+    model.flash_ensemble = flash_snapshot_ensemble(cfg)
+
     for epoch in range(0, num_epochs):
         best_val_score, best_model, best_epoch = float("-inf"), None, None
 
@@ -126,45 +131,54 @@ def main(cfg):
             model.reset_state()
             model.to_fine_tuning(False)
 
+            # Sum of the losses of the batches since the last optimizer step (without autograd
+            # graph). Each batch is backpropagated right away and its gradients accumulate in
+            # `.grad` until the step: the gradients are those of the summed losses, while only
+            # the autograd graph of one batch is kept in memory (with `grad_accumulation` = N,
+            # backpropagating the sum kept the graphs of N batches, e.g. of all the graphs of
+            # the training set with OCR-APT).
             loss_acc = torch.zeros(1, device=device)
             # Accumulated on device to avoid a GPU->CPU sync at each batch
             tot_loss = torch.zeros((), dtype=torch.float64, device=device)
             model.train()
+            optimizer.zero_grad()
             for dataset in train_data:
                 for i, g in enumerate(log_tqdm(dataset, "Training")):
-                    # Checked on the CPU graph to avoid a GPU sync at each batch
-                    has_attacks_to_remove = needs_attack_removal(g, cfg)
-                    # Copy to device without mutating the CPU graph: no copy back needed
-                    g = batch_to_device(g, device)
-                    if has_attacks_to_remove:
-                        g = remove_attacks_if_needed(g, cfg)
-
-                    optimizer.zero_grad()
+                    node_loss_mask = getattr(g, NODE_LOSS_MASK_KEY, None)
+                    if node_loss_mask is not None and not node_loss_mask.any():
+                        continue  # No node left to train on (FLASH: all learned by the snapshots)
+                    g = to_device_without_attacks(g, cfg, device)
 
                     results = model(g)
                     loss = results["loss"]
-                    loss_acc += loss
+                    # A batch without any trainable output (e.g. a graph of OCR-APT with no
+                    # node to predict) gives a constant loss, which contributes no gradient
+                    if loss.requires_grad:
+                        loss.sum().backward()
+                    loss_acc += loss.detach()
                     tot_loss += loss.detach().sum().double()
 
                     if (i + 1) % grad_acc == 0:
-                        loss_acc.backward()
                         if stable_optim:
                             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                         optimizer.step()
                         if scheduler is not None:
                             scheduler.step()
+                        optimizer.zero_grad()
                         loss_acc = torch.zeros(1, device=device)
 
                     del g, results, loss
 
                 # Last batch
                 if loss_acc > 0:
-                    loss_acc.backward()
                     if stable_optim:
                         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
                     if scheduler is not None:
                         scheduler.step()
+
+            if model.flash_ensemble is not None:
+                model.flash_ensemble.after_epoch(model, train_data, device)
 
             tot_loss = tot_loss.item() / sum(len(dataset) for dataset in train_data)
             epoch_times.append(timer() - start)
@@ -272,6 +286,7 @@ def main(cfg):
                 model=model,
                 val_data=val_data,
                 test_data=test_data,
+                train_data=train_data,
                 epoch=epoch,
                 split="all",
             )
@@ -298,6 +313,7 @@ def main(cfg):
             model=model,
             val_data=val_data,
             test_data=test_data,
+            train_data=train_data,
             epoch=best_epoch,
             split="test",
         )
@@ -322,6 +338,20 @@ def main(cfg):
     )
 
     return best_val_score
+
+
+def to_device_without_attacks(graph, cfg, device):
+    """Copies `graph` to `device`, without its attack edges if they are excluded from the
+    self-supervised training (see `remove_attacks_if_needed`).
+
+    The CPU graph is not mutated, and whether it has attacks to remove is checked on it, to
+    avoid a GPU sync at each batch.
+    """
+    has_attacks_to_remove = needs_attack_removal(graph, cfg)
+    graph = batch_to_device(graph, device)
+    if has_attacks_to_remove:
+        graph = remove_attacks_if_needed(graph, cfg)
+    return graph
 
 
 def needs_attack_removal(graph, cfg):

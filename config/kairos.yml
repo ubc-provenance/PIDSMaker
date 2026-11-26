@@ -1,3 +1,21 @@
+# Kairos (Cheng et al., IEEE S&P 2024): "KAIROS: Practical Intrusion Detection and Investigation
+# using Whole-system Provenance". A TGN (node memory + graph attention over the last neighbors) on
+# hierarchically hashed node labels, trained to predict the type of each edge; edges whose type is
+# badly predicted are anomalous.
+#
+# As in the original implementation (https://github.com/ProvenanceAnalytics/kairos): messages are
+# (src, edge type, dst), TransformerConv with 8 heads then 1 head, both followed by a ReLU, a decoder
+# with dropout 0.5, and the memory and neighbors are reset every day.
+#
+# Differences with the original implementation:
+# - nodes are scored by their largest edge loss and evaluated at node level, instead of time windows
+#   whose anomalous edges (above mean + 1.5 std of the window) are grouped into IDF queues;
+# - 12 epochs and the best evaluated epoch, instead of 50 (E3) or 30 (E5) epochs;
+# - consecutive identical events between two nodes are fused (`fuse_edge`), and all the edge types
+#   of the dataset are kept (7 in the code of CADETS_E3);
+# - each level of a path or IP is a hashed token, as in the paper (the code hashes the characters of
+#   the concatenated levels), the vectors are L2-normalized, and the node type is a one-hot feature.
+
 construction:
   used_method: default
   use_all_files: True
@@ -27,6 +45,7 @@ feat_inference:
   to_remove: True
 
 batching:
+  compact_node_ids: True
   save_on_disk: False
   node_features: node_emb,node_type
   edge_features: msg,time_encoding
@@ -44,6 +63,7 @@ batching:
       fix_tgn_neighbor_loader: False
       directed: False
       insert_neighbors_before: False
+      reset_state_every_day: True
   inter_graph_batching:
     used_method: none
 training:
@@ -62,10 +82,11 @@ training:
     used_methods: graph_attention,tgn
     graph_attention:
       activation: relu
-      num_heads: 4
+      num_heads: 8
       concat: True
       flow: source_to_target
       num_layers: 2
+      final_activation: True
     tgn:
       tgn_memory_dim: 100
       tgn_time_dim: 100
@@ -78,9 +99,10 @@ training:
     predict_edge_type:
       balanced_loss: False
       use_triplet_types: False
+      edge_type_in_msg: True
       decoder: edge_mlp
       edge_mlp:
-        architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.25) | tanh | linear(0.25) | dropout(0.5) | tanh
+        architecture_str: linear(2) | dropout(0.5) | tanh | linear(0.25) | dropout(0.5) | tanh | linear(0.25) | dropout(0.5) | tanh
         src_dst_projection_coef: 2
 
 evaluation:

@@ -83,7 +83,13 @@ from pidsmaker.utils.dataset_utils import (
     get_rel2id,
     get_possible_events,
 )
-from pidsmaker.utils.utils import get_multi_datasets, log, log_dataset_stats, log_tqdm
+from pidsmaker.utils.utils import (
+    get_multi_datasets,
+    log,
+    log_dataset_stats,
+    log_tqdm,
+    ns_time_to_datetime_US,
+)
 from pidsmaker.hetero import compute_hetero_features
 
 
@@ -170,12 +176,120 @@ def batch_to_device(data, device):
     Batches using a shared node feature table get their features rebuilt on `device`
     (see `SharedNodeFeatures`).
     """
-    out = copy.copy(data).to(device, non_blocking=True)
+    device = torch.device(device)
+    if device.type == "cuda":
+        if device.index is None:  # `cuda:0` != `cuda`, so tensors on the GPU would be copied
+            device = torch.device("cuda", torch.cuda.current_device())
+        out = copy.copy(data)
+        tensors = {k: v for k, v in data.items() if isinstance(v, torch.Tensor) and v.device != device}
+        keys = [k for k, v in tensors.items() if v.device.type == "cpu"]
+        for k, v in zip(keys, _PACKED_TRANSFER([tensors[k] for k in keys], device)):
+            out[k] = v
+        for k, v in tensors.items():  # on another GPU
+            if v.device.type != "cpu":
+                out[k] = v.to(device, non_blocking=True)
+    else:
+        out = copy.copy(data).to(device, non_blocking=True)
     if SHARED_FEATS_KEY in out:
         shared = out[SHARED_FEATS_KEY]
         del out[SHARED_FEATS_KEY]
         shared.materialize(out, device)
     return out
+
+
+class _PackedTransfer:
+    """Copies CPU tensors to the GPU at once: they are packed into a pinned buffer, copied with
+    a single transfer, and the GPU tensors are views of their bytes in the copied buffer.
+
+    A copy from pageable memory waits for the kernels queued before it, so moving the ~15
+    tensors of a batch one by one waited ~15 times for the GPU per batch. Two pinned buffers
+    are used in turn: one is filled while the transfer of the previous batch may be running."""
+
+    ALIGN = 16  # bytes, so that every tensor can be viewed with its dtype
+
+    def __init__(self):
+        self.buffers = [None, None]
+        self.events = [None, None]
+        self.turn = 0
+
+    def __call__(self, tensors, device):
+        if not tensors:
+            return []
+        tensors = [t.contiguous() for t in tensors]
+        offsets, total = [], 0
+        for t in tensors:
+            offsets.append(total)
+            nbytes = t.numel() * t.element_size()
+            total += (nbytes + self.ALIGN - 1) // self.ALIGN * self.ALIGN
+
+        i = self.turn
+        self.turn = 1 - i
+        if self.events[i] is not None:
+            self.events[i].synchronize()  # the previous transfer from this buffer is done
+        if self.buffers[i] is None or self.buffers[i].numel() < total:
+            self.buffers[i] = torch.empty(int(total * 1.5) + 1024, dtype=torch.uint8).pin_memory()
+        staging = self.buffers[i]
+        # Single-threaded copies with numpy: `Tensor.copy_` splits copies across the intra-op
+        # threads, whose synchronization costs more than these small copies on a busy machine
+        staging_np = staging.numpy()
+        for t, off in zip(tensors, offsets):
+            n = t.numel() * t.element_size()
+            if n:
+                staging_np[off : off + n] = t.view(-1).view(torch.uint8).numpy()
+
+        packed = staging[:total].to(device, non_blocking=True)
+        if self.events[i] is None:
+            self.events[i] = torch.cuda.Event()
+        self.events[i].record()
+
+        out = []
+        for t, off in zip(tensors, offsets):
+            n = t.numel() * t.element_size()
+            out.append(packed[off : off + n].view(t.dtype).view(t.shape))
+        return out
+
+
+_PACKED_TRANSFER = _PackedTransfer()
+
+
+# Sorted original node IDs of the compacted node IDs (`batching.compact_node_ids`), or None
+_ORIGINAL_NODE_IDS = None
+
+
+def set_original_node_ids(node_ids):
+    global _ORIGINAL_NODE_IDS
+    _ORIGINAL_NODE_IDS = node_ids
+
+
+def get_original_node_ids():
+    return _ORIGINAL_NODE_IDS
+
+
+def to_original_node_ids(ids):
+    """Node IDs of the database of (compacted) node IDs `ids` (unchanged without compaction)."""
+    if _ORIGINAL_NODE_IDS is None:
+        return ids
+    return _ORIGINAL_NODE_IDS.to(ids.device)[ids.long()].to(ids.dtype)
+
+
+def compact_node_ids(dataset_groups, shared=None):
+    """Renumbers in place the `src` and `dst` of all graphs to the rank of their ID among the
+    sorted IDs of the nodes in the graphs (`batching.compact_node_ids`). The order of the nodes
+    is kept (sorting, `unique`, ... give the same results), while tensors indexed by node ID are
+    sized by the number of nodes in the graphs instead of the largest database ID.
+
+    Returns the sorted original IDs, also kept for `to_original_node_ids`.
+    """
+    graphs = [data for group in dataset_groups for dataset in group for data in dataset]
+    node_ids = torch.cat([torch.cat([g.src, g.dst]).unique() for g in graphs]).unique()
+    for g in graphs:
+        g.src = torch.searchsorted(node_ids, g.src).to(g.src.dtype)
+        g.dst = torch.searchsorted(node_ids, g.dst).to(g.dst.dtype)
+    if shared is not None:
+        shared.node_row = shared.node_row[node_ids]
+        shared.num_nodes = len(node_ids)
+    set_original_node_ids(node_ids)
+    return node_ids
 
 
 def load_all_datasets(cfg, device, only_keep=None):
@@ -208,6 +322,12 @@ def load_all_datasets(cfg, device, only_keep=None):
     use_tgn_intra = (
         "tgn_last_neighbor" in cfg.batching.intra_graph_batching.used_methods
     )
+
+    if getattr(cfg.batching, "compact_node_ids", False):
+        node_ids = compact_node_ids([train_data, val_data, test_data], shared=shared)
+        log(f"Node IDs compacted: {len(node_ids)} nodes in the graphs, max ID {int(node_ids[-1])}")
+    else:
+        set_original_node_ids(None)
 
     max_node = max(
         max(data.src.max().item(), data.dst.max().item())
@@ -320,6 +440,23 @@ def load_data_set(cfg, split: str, multi_dataset=False) -> list[CollatableTempor
         return [load_data_list(path, split, cfg)]
 
 
+def get_selected_node_features(cfg) -> list[str]:
+    """Node features (`batching.node_features`) actually used as GNN input.
+
+    Featurizations without embeddings (`only_type`, `only_ones`) have no `node_emb`, so it is
+    dropped. `only_ones` replaces every feature by ones. With `only_type`, the features that do
+    not need embeddings (e.g. `edges_distribution`) are kept, and `node_type` is the fallback
+    when nothing else is selected.
+    """
+    method = cfg.featurization.used_method.strip()
+    if method == "only_ones":
+        return ["only_ones"]
+    feats = [f.strip() for f in cfg.batching.node_features.replace("-", ",").split(",") if f.strip()]
+    if method == "only_type":
+        feats = [f for f in feats if f != "node_emb"] or ["node_type"]
+    return feats
+
+
 def extract_msg_from_data(
     data_set: list[CollatableTemporalData], cfg
 ) -> list[CollatableTemporalData]:
@@ -348,7 +485,7 @@ def extract_msg_from_data(
         oc = cfg.featurization.ocrapt_features
         emb_dim = 2 * edge_type_dim + 3 + int(oc.use_lifespan) + int(oc.use_cumulative_active_time)
 
-    selected_node_feats = cfg.batching.node_features
+    selected_node_feats = get_selected_node_features(cfg)
 
     msg_len = data_set[0].msg.shape[1]
     expected_msg_len = (emb_dim * 2) + (node_type_dim * 2) + edge_type_dim
@@ -366,17 +503,9 @@ def extract_msg_from_data(
     }
 
     if "edges_distribution" in selected_node_feats:
+        distrib_scaling = (getattr(cfg.batching, "edges_distribution_scaling", None) or "max").strip()
         max_num_nodes = max([torch.cat([g.src, g.dst]).max().item() for g in data_set]) + 1
         x_distrib = torch.zeros(max_num_nodes, edge_type_dim * 2, dtype=torch.float)
-
-    if only_type:
-        selected_node_feats = ["node_type"]
-    elif only_ones:
-        selected_node_feats = ["only_ones"]
-    else:
-        selected_node_feats = list(
-            map(lambda x: x.strip(), selected_node_feats.replace("-", ",").split(","))
-        )
 
     edge_features = list(
         map(lambda x: x.strip(), cfg.batching.edge_features.split(","))
@@ -412,11 +541,16 @@ def extract_msg_from_data(
                     0, g.dst.unsqueeze(1).expand(-1, edge_type_dim), fields["edge_type"]
                 )
 
-                # In ThreaTrace they don't standardize, here we do standardize by max value in TW
-                x_distrib = x_distrib / (x_distrib.max() + 1e-12)
+                # Indexing copies the rows, scaled below. ThreaTrace uses the raw counts (`none`)
+                rows_src, rows_dst = x_distrib[g.src], x_distrib[g.dst]
+                if distrib_scaling == "max":  # divided by the max count of the time window
+                    max_count = x_distrib.max() + 1e-12
+                    rows_src, rows_dst = rows_src / max_count, rows_dst / max_count
+                elif distrib_scaling == "log1p":
+                    rows_src, rows_dst = torch.log1p(rows_src), torch.log1p(rows_dst)
 
-                x_src.append(x_distrib[g.src])
-                x_dst.append(x_distrib[g.dst])
+                x_src.append(rows_src)
+                x_dst.append(rows_dst)
 
                 x_distrib.fill_(0)
 
@@ -430,11 +564,10 @@ def extract_msg_from_data(
         x_src = torch.cat(x_src, dim=-1)
         x_dst = torch.cat(x_dst, dim=-1)
 
-        # If we want to predict the edge type, we remove the edge type from the message
-        if "predict_edge_type" in cfg.training.decoder.used_methods:
-            msg = torch.cat([x_src, x_dst], dim=-1)
-        else:
+        if _msg_has_edge_type(cfg):
             msg = torch.cat([x_src, x_dst, fields["edge_type"]], dim=-1)
+        else:
+            msg = torch.cat([x_src, x_dst], dim=-1)
 
         # Edge attributes of the dataset (e.g. ports, protocols, logon types) are part of
         # the message describing the event, and optionally used as edge features
@@ -480,6 +613,19 @@ def extract_msg_from_data(
         # g.edge_index = ...
 
     return data_set
+
+def _msg_has_edge_type(cfg):
+    """Whether the edge messages `msg` = [src | dst | edge type] hold the edge type.
+
+    With `predict_edge_type`, the edge type is removed from the messages unless
+    `predict_edge_type.edge_type_in_msg` is set. The messages of an edge only reach the TGN
+    after its type is predicted (memory update, and edge features of the next batches), so
+    keeping it does not leak the predicted type: Kairos' messages are (src, edge type, dst).
+    """
+    if "predict_edge_type" not in cfg.training.decoder.used_methods:
+        return True
+    return bool(cfg.training.decoder.predict_edge_type.edge_type_in_msg)
+
 
 def _edge_features_list(cfg):
     return [x.strip() for x in cfg.batching.edge_features.split(",")]
@@ -804,12 +950,23 @@ def run_intra_graph_batching(datasets, full_data, device, max_node, cfg, graph_r
                 node_type_dim=None if shared is not None else sample.node_type_src.shape[1],
                 shared=shared,
                 edge_attrs_feature="edge_attrs" in _edge_features_list(cfg),
+                timezone=cfg.dataset.timezone,
             )
 
         else:
             raise ValueError(f"Invalid sampling method {method}")
 
     return datasets
+
+
+def _to_cpu_at_once(tensors):
+    """`[t.cpu() for t in tensors]` with one transfer (the tensors must have the same dtype)."""
+    if tensors[0].device.type == "cpu":
+        return [t.cpu() for t in tensors]
+    flat = torch.cat([t.reshape(-1) for t in tensors]).cpu()
+    return [
+        part.view(t.shape) for part, t in zip(flat.split([t.numel() for t in tensors]), tensors)
+    ]
 
 
 def compute_tgn_graphs(
@@ -823,6 +980,7 @@ def compute_tgn_graphs(
     node_type_dim,
     shared=None,
     edge_attrs_feature=False,
+    timezone="US/Eastern",
 ):
     """`datasets` is the [train, val, test] list of graph lists. With
     `tgn_loader_cfg.negative_destinations`, a negative destination is drawn for each edge (see
@@ -837,6 +995,10 @@ def compute_tgn_graphs(
     neighbor_loader = LastNeighborLoader(
         max_node, size=neighbor_size, directed=directed, device=device
     )
+    # As Kairos, which trains and tests on one graph per day: the neighbors (here) and the
+    # TGN memory (`TGNEncoder`, from the `reset_tgn_state` flag) are reset at each new day
+    reset_state_every_day = bool(getattr(tgn_loader_cfg, "reset_state_every_day", False))
+    prev_day = None
 
     # With a shared node feature table, only the graph structure is computed here and the
     # features are gathered per batch (see `SharedNodeFeatures.materialize`)
@@ -859,9 +1021,15 @@ def compute_tgn_graphs(
             for batch in log_tqdm(data_list, desc="Computing TGN last neighbor graphs"):
                 # Only the inputs are moved to the device and only the outputs are moved
                 # back: transferring the whole batch both ways dominated this step.
-                src = batch.src.to(device)
-                dst = batch.dst.to(device)
-                batch_edge_index = torch.stack([src, dst], dim=0)
+                batch_edge_index = torch.stack([batch.src, batch.dst], dim=0).to(device)
+                src, dst = batch_edge_index[0], batch_edge_index[1]
+
+                if reset_state_every_day:
+                    day = ns_time_to_datetime_US(int(batch.t[0]), timezone=timezone)[:10]
+                    batch.reset_tgn_state = day != prev_day
+                    if batch.reset_tgn_state:
+                        neighbor_loader.clear()
+                    prev_day = day
 
                 if insert_neighbors_before:
                     neighbor_loader.insert(src, dst)
@@ -932,15 +1100,22 @@ def compute_tgn_graphs(
                     del x_src_dev, x_dst_dev
 
                 batch.tgn_mode = True
-                batch.original_edge_index = batch_edge_index.cpu()
-                batch.original_n_id = original_n_id.cpu()
-                batch.reindexed_original_n_id_tgn = assoc[original_n_id].cpu()
-                batch.n_id_tgn = n_id.cpu()
-                batch.edge_index_tgn = edge_index.cpu()
-                batch.reindexed_edge_index_tgn = assoc[batch_edge_index].cpu()
+                # A single device->host transfer (each one waits for the GPU)
+                outputs = {
+                    "original_edge_index": batch_edge_index,
+                    "original_n_id": original_n_id,
+                    "reindexed_original_n_id_tgn": assoc[original_n_id],
+                    "n_id_tgn": n_id,
+                    "edge_index_tgn": edge_index,
+                    "reindexed_edge_index_tgn": assoc[batch_edge_index],
+                    "e_id": e_id,
+                }
                 if negative_destinations:
-                    batch.neg_dst_tgn = assoc[neg_dst].cpu()
-                e_id_cpu = e_id.cpu()
+                    outputs["neg_dst_tgn"] = assoc[neg_dst]
+                outputs = dict(zip(outputs, _to_cpu_at_once(list(outputs.values()))))
+                e_id_cpu = outputs.pop("e_id")
+                for key, value in outputs.items():
+                    batch[key] = value
                 # msg_tgn and t_tgn are only read by the TGN encoder with the
                 # `msg` and `time_encoding` edge features (see `run_global_batching`)
                 if "t" in full_data:
@@ -1288,12 +1463,7 @@ class _SharedFeaturesUnsupported(Exception):
 
 
 def _selected_node_feats(cfg):
-    method = cfg.featurization.used_method.strip()
-    if method == "only_type":
-        return ["node_type"]
-    if method == "only_ones":
-        return ["only_ones"]
-    return [x.strip() for x in cfg.batching.node_features.replace("-", ",").split(",")]
+    return get_selected_node_features(cfg)
 
 
 def _edge_feats_is_msg(cfg):
@@ -1392,8 +1562,9 @@ class SharedNodeFeatures:
         self.needs_msg = _needs_raw_msg(cfg)
         self.edge_feats_is_msg = _edge_feats_is_msg(cfg)
         self.edge_features = _edge_features_list(cfg)
-        self.msg_has_edge_type = "predict_edge_type" not in cfg.training.decoder.used_methods
+        self.msg_has_edge_type = _msg_has_edge_type(cfg)
         self.fix_buggy_graph_reindexer = cfg.batching.fix_buggy_graph_reindexer
+        self.tgn_node_feats_used, self.node_feats_used = _per_batch_node_feats_used(cfg)
 
         # Dataset edge attributes are appended to msg (they stay stored per edge)
         self.has_edge_attrs = False
@@ -1459,7 +1630,9 @@ class SharedNodeFeatures:
         if self.tgn is not None and g.tgn_mode:
             n_id = g.n_id_tgn
             n_rows = st.node_row[n_id]
-            if self.tgn["fix_buggy_orthrus_TGN"]:
+            if not self.tgn_node_feats_used:
+                pass
+            elif self.tgn["fix_buggy_orthrus_TGN"]:
                 num_nodes = n_id.size(0)
                 x_src = torch.zeros((num_nodes, st.x.shape[1]), device=st.x.device)
                 x_dst = x_src.clone()
@@ -1495,7 +1668,7 @@ class SharedNodeFeatures:
                 g.msg_tgn = torch.cat(parts, dim=-1)
 
         # `GraphReindexer.reindex_graph`
-        if self.reindex is not None:
+        if self.reindex is not None and self.node_feats_used:
             edge_index = g.original_edge_index
             x, *_ = st.reindexer._reindex_graph(
                 edge_index, g.x_src, g.x_dst, x_is_tuple=self.reindex["x_is_tuple"]
@@ -1519,6 +1692,31 @@ def materialize_batch(data):
     if SHARED_FEATS_KEY not in data:
         return data
     return batch_to_device(data, data.src.device)
+
+
+# Objectives that only read the embeddings of the edges' nodes (not the batch's node features)
+_OBJECTIVES_WITHOUT_NODE_FEATS = {"predict_edge_type", "predict_edge_contrastive"}
+
+
+def _per_batch_node_feats_used(cfg):
+    """Whether the features rebuilt per batch by `SharedNodeFeatures.materialize` are read:
+    (x_from_tgn, x_to_tgn, x_tgn) by the TGN encoder, and the node-level (x, node_type).
+
+    The TGN encoder only reads its node features without memory or with
+    `use_node_feats_in_gnn` (it embeds the memory otherwise), and reads none of the node-level
+    features, which are then only read by some objectives. Skipping the unused ones saves
+    their computation at each batch, including a `torch.unique` that waits for the GPU."""
+    methods = [m.strip() for m in cfg.training.encoder.used_methods.replace("-", ",").split(",")]
+    if "tgn" not in methods:
+        return True, True
+    tgn = cfg.training.encoder.tgn
+    tgn_node_feats_used = (not tgn.use_memory) or bool(tgn.use_node_feats_in_gnn)
+    objectives = {o.strip() for o in cfg.training.decoder.used_methods.split(",")}
+    node_feats_used = (
+        not objectives <= _OBJECTIVES_WITHOUT_NODE_FEATS
+        or bool(cfg.training.decoder.use_few_shot)
+    )
+    return tgn_node_feats_used, node_feats_used
 
 
 def _load_data_list_shared(path, split, cfg, builder):

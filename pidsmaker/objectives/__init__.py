@@ -7,6 +7,7 @@ from .predict_edge_supervised import PredictEdgeSupervised
 from .predict_edge_type import EdgeTypePrediction
 from .predict_masked_struct import GMAEStructPrediction
 from .predict_node_type import NodeTypePrediction
+from .predict_process_tag import ProcessTagPrediction, process_tag_classes_from_cfg
 from .predict_snapshot_embedding import SnapshotEmbeddingPrediction
 from .reconstruct_edge_emb import EdgeEmbReconstruction
 from .reconstruct_masked_feat import GMAEFeatReconstruction

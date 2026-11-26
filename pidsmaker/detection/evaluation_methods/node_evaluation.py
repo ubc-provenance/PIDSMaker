@@ -34,9 +34,9 @@ from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     plot_score_seen,
     plot_scores_neat,
     plot_scores_with_paths_node_level,
-    reduce_losses_to_score,
     transform_attack2nodes_to_node2attacks,
 )
+from pidsmaker.factory import node_scorer_factory
 from pidsmaker.utils.labelling import get_GP_of_each_attack
 from pidsmaker.detection.evaluation_methods.plot import plot_scores_distribution
 from pidsmaker.utils.loss_files import compact_int_columns, read_losses
@@ -207,23 +207,18 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
             node_to_values[node]["loss"].append(loss)
             node_to_values[node]["tw"].append(tw)
 
-            if "threatrace_score" in line:
-                node_to_values[node]["threatrace_score"].append(line["threatrace_score"])
-            if "correct_pred" in line:
-                node_to_values[node]["correct_pred"].append(line["correct_pred"])
-            if "flash_score" in line:
-                node_to_values[node]["flash_score"].append(line["flash_score"])
-            if "magic_score" in line:
-                node_to_values[node]["magic_score"].append(line["magic_score"])
+            # The scores of some threshold methods (see `NodeScorer.columns`)
+            for col, value in line.items():
+                if col not in ("node", "loss"):
+                    node_to_values[node][col].append(value)
 
             if loss > node_to_max_loss[node]:
                 node_to_max_loss[node] = loss
                 node_to_max_loss_tw[node] = tw
 
     # These scores are computed during the inference of the training task, only for this threshold method
-    score_col = {"threatrace": "threatrace_score", "flash": "flash_score", "magic": "magic_score"}.get(
-        threshold_method
-    )
+    scorer = node_scorer_factory(cfg)
+    score_col = scorer.score_column
     if score_col and any(len(values[score_col]) == 0 for values in node_to_values.values()):
         raise ValueError(
             f"Threshold method `{threshold_method}` requires the `{score_col}` computed during the "
@@ -236,48 +231,7 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
     use_kmeans = cfg.evaluation.node_evaluation.use_kmeans
     results = defaultdict(dict)
     for node_id, losses in node_to_values.items():
-        threatrace_label = 0
-        flash_label = 0
-        detected_tw = None
-        if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-            max_score = 0
-            pred_score = max(losses["threatrace_score"])
-
-            for score, node_type_pred, tw in zip(
-                losses["threatrace_score"], losses["correct_pred"], losses["tw"]
-            ):
-                if score > thr and node_type_pred and score > max_score:
-                    threatrace_label = 1
-                    max_score = score
-                    detected_tw = tw
-
-        elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-            max_score = 0
-            pred_score = max(losses["flash_score"])
-
-            for score, node_type_pred, tw in zip(
-                losses["flash_score"], losses["correct_pred"], losses["tw"]
-            ):
-                if score > thr and node_type_pred and score > max_score:
-                    flash_label = 1
-                    max_score = score
-                    detected_tw = tw
-
-        elif cfg.evaluation.node_evaluation.threshold_method == "magic":
-            max_score = 0
-            pred_score = max(losses["magic_score"])
-
-            for score, tw in zip(losses["magic_score"], losses["tw"]):
-                if score > thr and score > max_score:
-                    flash_label = 1
-                    max_score = score
-                    detected_tw = tw
-
-        else:
-            pred_score = reduce_losses_to_score(
-                losses["loss"],
-                cfg.evaluation.node_evaluation.threshold_method,
-            )
+        pred_score, flagged, detected_tw = scorer.node_prediction(losses, thr)
 
         results[node_id]["score"] = pred_score
         results[node_id]["tw_with_max_loss"] = node_to_max_loss_tw.get(node_id, -1)
@@ -285,7 +239,8 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         results[node_id]["is_seen"] = int(str(node_id) in train_node_set)
 
         # We need the detected TW range to check if the detected node spans in an attack TW
-        detected_tw = detected_tw or node_to_max_loss_tw.get(node_id, None)
+        if detected_tw is None:  # not `or`: the first time window has the index 0
+            detected_tw = node_to_max_loss_tw.get(node_id, None)
         if detected_tw is not None:
             results[node_id]["time_range"] = [
                 datetime_to_ns_time_US_handle_nano(tw, timezone=cfg.dataset.timezone) for tw in filelist[detected_tw].split("~")
@@ -296,15 +251,11 @@ def get_node_predictions_node_level(val_tw_path, test_tw_path, cfg, **kwargs):
         if use_kmeans:  # in this mode, we add the label after
             results[node_id]["y_hat"] = 0
         else:
-            if cfg.evaluation.node_evaluation.threshold_method == "threatrace":
-                results[node_id]["y_hat"] = threatrace_label
-            elif cfg.evaluation.node_evaluation.threshold_method == "flash":
-                results[node_id]["y_hat"] = flash_label
-            elif thr_by_type is not None:
+            if thr_by_type is not None:
                 node_thr = thr_by_type.get(node_to_type.get(node_id), thr)
                 results[node_id]["y_hat"] = int(pred_score > node_thr)
             else:
-                results[node_id]["y_hat"] = int(pred_score > thr)
+                results[node_id]["y_hat"] = int(flagged)
 
     if use_kmeans:
         results = compute_kmeans_labels(

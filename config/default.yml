@@ -55,7 +55,9 @@ featurization:
     decline_rate: 30
   doc2vec:
     include_neighbors: False
+    truncate_process_name: False
     alpha: 0.025
+    workers: 3
   alacarte:
     walk_length: 30
     num_walks: 10
@@ -83,7 +85,7 @@ featurization:
     use_pretrained_fb_model: False
   flash:
     min_count: 1
-    workers: 15
+    workers: 1
   graph2vec:  # ProGrapher
     wl_iterations: 4
     negative: 15
@@ -116,6 +118,13 @@ feat_inference:
   to_remove: True
 
 training:
+  # ThreaTrace (`used_method: threatrace` and `threshold_method: threatrace`)
+  threatrace:
+    ratio_threshold: 1.5
+    max_submodels: 100
+    max_retrain_epochs: 149
+    retrain_loss_threshold: 1.0
+    max_rounds_without_progress: 3
   encoder:
     x_is_tuple: False
     graph_attention:
@@ -161,6 +170,9 @@ training:
       negative_slope: 0.2
       alpha_l: 3.0
       activation: prelu
+    rcaid_gat:
+      num_layers: 2
+      num_heads: 1
     custom_mlp:
       architecture_str: none
     gcn:
@@ -212,6 +224,8 @@ training:
     predict_node_type:
       decoder: node_mlp
       balanced_loss: False
+      flash_snapshots: False
+      flash_drop_conf: 0.9
       node_mlp:
         architecture_str: none
     reconstruct_node_features:

@@ -62,7 +62,7 @@ How each system is configured at the main stages of the [pipeline](pipeline.md):
 | Kairos | `hierarchical_hashing` | `graph_attention`, `tgn` | `predict_edge_type` | `node_evaluation` | `max_val_loss` |
 | MAGIC | `only_type` | `magic_gat` | `reconstruct_masked_features`, `predict_masked_struct` | `node_evaluation` | `magic` |
 | Flash | `flash` | `sage` | `predict_node_type` | `node_evaluation` | `flash` |
-| R-Caid | `doc2vec` | `rcaid_gat` | `predict_node_type` | `node_evaluation` | `max_val_loss` |
+| R-Caid | `doc2vec` | `rcaid_gat` | `predict_process_tag` | `node_evaluation` | `max_val_loss` |
 | NodLink | `fasttext` | `sum_aggregation` | `reconstruct_node_features` | `node_evaluation` | `nodlink` |
 | ProGrapher | `graph2vec` | `textrcnn` | `predict_snapshot_embedding` | `tw_evaluation` (or `node_evaluation`) | `max_val_loss` |
 | ThreaTrace | `only_type` | `sage` | `predict_node_type` | `node_evaluation` | `threatrace` |
@@ -79,8 +79,8 @@ The two families mostly differ at both ends of the pipeline. Most PIDSs embed th
 
 Other stages:
 
-- **Transformation.** R-Caid builds its pseudo-graph (`rcaid_pseudo_graph`) and NodLink makes graphs undirected (`undirected`). Euler, Argus, LARES, E-GraphSAGE and Anomal-E merge the repeated edges of each time window (`merge_edges`); Argus and LARES aggregate the attributes of the merged events (`merge_edges.aggregate_attributes`). ShadeWatcher merges them per edge type (`merge_edges.per_edge_type`), so that each (entity, event type, entity) triple of its knowledge graph is unique.
-- **Edge features.** Velox, Orthrus and OCR-APT use the edge type; Kairos and Jbeil the TGN messages (`msg,time_encoding`); Argus, LARES, E-GraphSAGE and Anomal-E the event attributes (`edge_attrs`).
+- **Transformation.** R-Caid builds its pseudo-graph (`rcaid_pseudo_graph`: the provenance graph plus an edge from each file or socket root to each of its descendants, at most 16 roots per node) and NodLink makes graphs undirected (`undirected`). Euler, Argus, LARES, E-GraphSAGE and Anomal-E merge the repeated edges of each time window (`merge_edges`); Argus and LARES aggregate the attributes of the merged events (`merge_edges.aggregate_attributes`). ShadeWatcher merges them per edge type (`merge_edges.per_edge_type`), so that each (entity, event type, entity) triple of its knowledge graph is unique.
+- **Edge features.** Velox, Orthrus and OCR-APT use the edge type; Kairos and Jbeil the TGN messages (`msg,time_encoding`), which hold the types of the past edges in Kairos (`predict_edge_type.edge_type_in_msg`); Argus, LARES, E-GraphSAGE and Anomal-E the event attributes (`edge_attrs`).
 - **Epoch selection.** PIDSs report the epoch with the best ADP (`best_adp`, the default). Euler, Jbeil and E-GraphSAGE select it without labels on validation link prediction (`best_val_score`), Argus and Anomal-E keep the last epoch (`last_epoch`), and LARES selects the best MCC, as its code. See [Choosing the reported epoch](evaluation.md#choosing-the-reported-epoch).
 - **Triage.** OCR-APT extracts anomalous subgraphs from its detections (`triage.used_method: ocrapt_subgraph`).
 - **Knowledge graph.** ShadeWatcher sees each edge both as an interaction between two entities, scored by the inner product of their embeddings, and as a triple of a knowledge graph whose relation is the edge type. Its encoder adds the loss of TransR on these triples to the BPR loss of the interactions (`predict_edge_contrastive` with `loss: bpr`). Entities are embedded from their features (`word2vec` and type) rather than one embedding per entity, as test entities are mostly unseen during training: add `node_id_embedding` to the encoders to also learn the identity of each entity.
@@ -101,7 +101,7 @@ Two differences between the families limit this:
 
 | | On provenance datasets | On network datasets |
 |---|---|---|
-| **PIDSs** | All | Velox, Orthrus, Kairos, MAGIC, OCR-APT and ShadeWatcher. Flash, R-Caid and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types: network datasets only have hosts. NodLink is not tested on network datasets. |
+| **PIDSs** | All | Velox, Orthrus, Kairos, MAGIC, OCR-APT and ShadeWatcher. Flash and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types, and R-Caid the executables of processes (`predict_process_tag`): network datasets only have hosts. NodLink is not tested on network datasets. |
 | **NIDSs** | Euler and Jbeil as is. Argus, LARES, E-GraphSAGE and Anomal-E use event attributes, which provenance datasets don't have: replace them by the edge type with `--batching.edge_features=edge_type`. | All |
 
 The combinations of this table are those run by the tests (`tests/test_network_datasets.py`). A few useful options when moving across families:

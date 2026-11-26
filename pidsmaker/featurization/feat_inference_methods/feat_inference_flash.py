@@ -16,21 +16,23 @@ def infer(document, w2vmodel, encoder):
     We get the embedding of each word inside this document and we do the mean of all embeddings.
     OOV words are simply ignored.
     """
-    word_embeddings = [w2vmodel.wv[word] for word in document if word in w2vmodel.wv]
+    # Same values as stacking `w2vmodel.wv[word]` for the words in `w2vmodel.wv` (the tokens are
+    # strings, so `word in wv` is a lookup in `key_to_index`), gathered at once
+    key_to_index = w2vmodel.wv.key_to_index
+    indices = [key_to_index[word] for word in document if word in key_to_index]
 
     embedding_dim = w2vmodel.vector_size
 
-    if not word_embeddings:
+    if not indices:
         return np.zeros(embedding_dim)
 
-    word_embeddings_array = np.array(word_embeddings)
+    word_embeddings_array = w2vmodel.wv.vectors[indices]
 
-    output_embedding = torch.tensor(word_embeddings_array, dtype=torch.float)
+    # float32 additions, as with the torch tensors before
     if len(document) < 100000:
-        output_embedding = encoder.embed(output_embedding)
+        word_embeddings_array = encoder.embed_numpy(word_embeddings_array)
 
-    output_embedding = output_embedding.detach().cpu().numpy()
-    return np.mean(output_embedding, axis=0)
+    return np.mean(word_embeddings_array, axis=0)
 
 
 class PositionalEncoder:
@@ -41,8 +43,14 @@ class PositionalEncoder:
         self.pe[:, 0::2] = torch.sin(position * div_term)
         self.pe[:, 1::2] = torch.cos(position * div_term)
 
+        self.pe_numpy = self.pe.numpy()
+
     def embed(self, x):
         return x + self.pe[: x.size(0)]
+
+    def embed_numpy(self, x):
+        """`embed` on a float32 numpy array."""
+        return x + self.pe_numpy[: x.shape[0]]
 
 
 def main(cfg):

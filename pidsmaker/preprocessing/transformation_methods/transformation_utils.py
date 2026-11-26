@@ -1,5 +1,19 @@
+import contextlib
+
 import networkx as nx
 import numpy as np
+
+# Context manager wrapping the draws of random timestamps, set in the processes transforming
+# graphs in parallel to draw from the random state that a sequential run would have (see
+# `tasks/transformation.py`). None: draws from the current global random state.
+random_state_hook = None
+
+
+def randint_timestamps(min_t, max_t, size):
+    """`np.random.randint(min_t, max_t, size=size)` from the global random state."""
+    hook = random_state_hook or contextlib.nullcontext
+    with hook():
+        return np.random.randint(min_t, max_t, size=size)
 
 
 def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> nx.Graph:
@@ -14,7 +28,7 @@ def add_arbitrary_timestamps_to_graph(original_G: nx.Graph, new_G: nx.Graph) -> 
     """
     timestamps = [edge[2]["time"] for edge in original_G.edges(data=True)]
     min_t, max_t = min(timestamps), max(timestamps)
-    rand_t = np.random.randint(min_t, max_t, size=len(new_G.edges()))
+    rand_t = randint_timestamps(min_t, max_t, len(new_G.edges()))
 
     for t, (src, dst) in zip(rand_t, new_G.edges()):
         new_G[src][dst]["time"] = t

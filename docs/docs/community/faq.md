@@ -51,7 +51,7 @@ Answers to the questions that come up most often. Can't find yours? Ask on [Disc
     PIDSMaker falls back to the CPU automatically, with a warning. You can also force it with `--cpu`. Expect much longer training times on large datasets.
 
 ??? question "A system fails on a dataset of the other family."
-    - Flash, R-Caid and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types: they can't run on network datasets, which only have hosts.
+    - Flash and ThreaTrace predict node types (`predict_node_type`), which needs at least two node types, and R-Caid predicts the executables of processes (`predict_process_tag`): they can't run on network datasets, which only have hosts.
     - Argus, LARES, E-GraphSAGE and Anomal-E use the attributes of events, which provenance datasets don't have: add `--batching.edge_features=edge_type`.
 
     See [Running across families](../guide/systems.md#running-across-families).

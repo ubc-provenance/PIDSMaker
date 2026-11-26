@@ -62,11 +62,31 @@ def ap_contrastive(positive, negative, inference=False, margin=0.8, **kwargs):
         return pos_loss
 
     pos, neg = torch.sigmoid(positive.flatten()), torch.sigmoid(negative.flatten())
-    all_scores = torch.cat([pos, neg])
-    surrogate = torch.clamp(margin - (pos.unsqueeze(1) - all_scores.unsqueeze(0)), min=0) ** 2
-    num_pos = pos.shape[0]
-    precision = surrogate[:, :num_pos].sum(dim=1) / (surrogate.sum(dim=1) + 1e-12)
-    return -precision.mean()
+    pos_sum = _sum_squared_hinge(pos, pos, margin)
+    all_sum = pos_sum + _sum_squared_hinge(pos, neg, margin)
+    precision = pos_sum / (all_sum + 1e-12)
+    return -precision.mean().to(positive.dtype)
+
+
+def _sum_squared_hinge(queries, keys, margin):
+    """For each query q: sum over the keys k of max(0, margin - (q - k))^2.
+
+    Equal to building the (queries x keys) matrix of hinges and summing its rows, in
+    O((Q + K) log K) time and O(Q + K) memory instead of O(Q * K): only the keys k > q - margin
+    contribute, and their sum of (a + k)^2 = n * a^2 + 2a * sum(k) + sum(k^2), with a = margin - q,
+    is read from suffix sums of the sorted keys. Sorting keeps the gradients of the keys, and the
+    hinge is zero with a zero derivative at its boundary, so gradients are those of the matrix.
+    Computed in float64, as the expansion sums many terms.
+    """
+    keys, _ = torch.sort(keys.double())
+    queries = queries.double()
+    zero = keys.new_zeros(1)
+    suffix_k = torch.cat([keys.flip(0).cumsum(0).flip(0), zero])
+    suffix_k2 = torch.cat([(keys**2).flip(0).cumsum(0).flip(0), zero])
+    first = torch.searchsorted(keys.detach(), (queries - margin).detach(), right=True)
+    count = (keys.shape[0] - first).double()
+    a = margin - queries
+    return count * a * a + 2 * a * suffix_k[first] + suffix_k2[first]
 
 
 def bpr_contrastive(positive, negative, inference=False, pos_index=None, **kwargs):

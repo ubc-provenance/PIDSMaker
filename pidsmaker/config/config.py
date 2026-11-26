@@ -158,11 +158,7 @@ DATASET_DEFAULT_CONFIG = {
                 "2019-05-15 16:19:00",
             ],
             # ["E5-CLEARSCOPE/node_clearscope_e5_firefox_0517.csv", '2019-05-17 11:49:00', '2019-05-17 15:32:00'],
-            [
-                "E5-CLEARSCOPE/node_clearscope_e5_lockwatch_0517.csv",
-                "2019-05-17 15:48:00",
-                "2019-05-17 16:01:00",
-            ],
+            # ["E5-CLEARSCOPE/node_clearscope_e5_lockwatch_0517.csv", "2019-05-17 15:48:00", "2019-05-17 16:01:00"],
             [
                 "E5-CLEARSCOPE/node_clearscope_e5_tester_0517.csv",
                 "2019-05-17 16:20:00",
@@ -642,9 +638,22 @@ FEATURIZATIONS_CFG = {
         "decline_rate": Arg(int),
     },
     "doc2vec": {
-        "include_neighbors": Arg(bool),
+        "include_neighbors": Arg(
+            bool,
+            desc="Whether the document of a node also contains the labels of its successors.",
+        ),
+        "truncate_process_name": Arg(
+            bool,
+            desc="Whether the features of processes are computed from the directory of their \
+                executable only, without its name nor the rest of their label (as in R-Caid, \
+                whose `predict_process_tag` objective predicts the name).",
+        ),
         "epochs": Arg(int),
         "alpha": Arg(float),
+        "workers": Arg(
+            int,
+            desc="Number of threads training Doc2Vec. Training is deterministic only with 1.",
+        ),
     },
     # Whole-graph embedding of each time window (ProGrapher), see featurization_graph2vec.py
     "graph2vec": {
@@ -1025,6 +1034,9 @@ ENCODERS_CFG = {
         "concat": Arg(bool),
         "flow": Arg(str),
         "num_layers": Arg(int),
+        "final_activation": Arg(
+            bool, desc="Applies `activation` to the output of the last layer too, as in Kairos."
+        ),
     },
     "sage": {
         "activation": Arg(str),
@@ -1116,7 +1128,10 @@ ENCODERS_CFG = {
         "num_layers": Arg(int),
     },
     "sum_aggregation": {},
-    "rcaid_gat": {},
+    "rcaid_gat": {
+        "num_layers": Arg(int, desc="Number of layers (local + root attention, then MLP update)."),
+        "num_heads": Arg(int, desc="Number of attention heads (averaged) of each attention."),
+    },
     "magic_gat": {
         "num_layers": Arg(int),
         "num_heads": Arg(int),
@@ -1144,7 +1159,8 @@ DECODERS_CFG = {
             str,
             desc="A string describing a simple neural network. Example: if the encoder's output has shape `node_out_dim=128` \
                                 setting `architecture_str=linear(2) | relu | linear(0.5)` creates this MLP: nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 128), nn.Linear(128, y). \
-                                Precisely, in linear(x), x is the multiplier of input neurons. The final layer `nn.Linear(128, y)` is added automatically such that `y` is the \
+                                Precisely, in linear(x), x is the multiplier of input neurons. `dropout(p)` adds a dropout of rate p, \
+                                `dropout` one of rate `training.encoder.dropout`. The final layer `nn.Linear(128, y)` is added automatically such that `y` is the \
                                 output size matching the downstream objective (e.g. edge type prediction involves predicting 10 edge types, so the output of the decoder should be 10).",
         ),
         "src_dst_projection_coef": Arg(
@@ -1170,6 +1186,7 @@ RECON_LOSSES = ["SCE", "MSE", "MSE_sum", "MAE", "none"]
 PRED_LOSSES = ["cross_entropy", "BCE"]
 OBJECTIVES_NODE_LEVEL = [
     "predict_node_type",
+    "predict_process_tag",
     "reconstruct_node_features",
     "reconstruct_node_embeddings",
     "reconstruct_masked_features",
@@ -1222,6 +1239,12 @@ OBJECTIVES_CFG = {
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
         "use_triplet_types": Arg(bool),
+        "edge_type_in_msg": Arg(
+            bool,
+            desc="Keeps the edge type in the edge messages `msg` (TGN memory and `msg` edge \
+                features), as in Kairos. Messages of an edge are only used after its type is \
+                predicted. By default, the edge type is removed from the messages.",
+        ),
         "AMS":
             {
                 "version": Arg(int),
@@ -1235,6 +1258,33 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
+        "flash_snapshots": Arg(
+            bool,
+            desc="With the `flash` threshold method: trains each epoch on the training nodes still "
+            "misclassified, and flags a node only if no snapshot of the epochs so far predicts its "
+            "type correctly with a confidence above the threshold, as in FLASH.",
+        ),
+        "flash_drop_conf": Arg(
+            float,
+            desc="With `flash_snapshots`: training nodes predicted with this confidence or more are "
+            "removed after an epoch, as the correctly predicted ones (0.9 in FLASH).",
+        ),
+    },
+    # R-Caid: predicts the name of the executable of each process (other nodes are not scored)
+    "predict_process_tag": {
+        "decoder": Arg(
+            str, vals=OR(list(DECODERS_CFG.keys())), desc="Decoder used before computing loss."
+        ),
+        **DECODERS_CFG,
+        "balanced_loss": Arg(bool),
+        "detection": Arg(
+            str,
+            vals=OR(["loss", "kmeans"]),
+            desc="Score of the processes at inference. `loss`: cross-entropy of their tag (tags \
+                unseen in training have their own class, never predicted). `kmeans`: distance of \
+                their embedding to the median of the nearest K-Means cluster of training \
+                processes (as in the paper).",
+        ),
     },
     "predict_masked_struct": {
         "loss": Arg(str, vals=OR(PRED_LOSSES)),
@@ -1243,6 +1293,11 @@ OBJECTIVES_CFG = {
         ),
         **DECODERS_CFG,
         "balanced_loss": Arg(bool),
+        "max_samples": Arg(
+            int,
+            desc="Number of existing edges sampled per batch as positives, with as many negative \
+                node pairs, capped by the number of nodes (MAGIC: 10000). 0 uses all the edges.",
+        ),
     },
     "detect_edge_few_shot": {
         "decoder": Arg(
@@ -1493,7 +1548,39 @@ TASK_ARGS = {
             desc="Applies transformations to graphs after their construction. Multiple transformations can be applied sequentially. Example: `used_methods=undirected,dag`",
         ),
         "rcaid_pseudo_graph": {
-            "use_pruning": Arg(bool),
+            "use_pruning": Arg(
+                bool,
+                desc="Whether roots reaching more than `prune_threshold` of the nodes of the graph \
+                    get no pseudo edges (R-Caid's pruning of highly-connected roots).",
+            ),
+            "prune_threshold": Arg(
+                float,
+                desc="Fraction of the nodes of the graph above which the descendants of a root are \
+                    pruned (0.5 for DARPA TC in the paper).",
+            ),
+            "root_node_types": Arg(
+                str,
+                desc="Comma-separated node types that can be roots (e.g. `file,netflow`: files and \
+                    sockets, as in the paper), or `all`.",
+            ),
+            "keep_original_edges": Arg(
+                bool,
+                desc="Whether the transformed graph keeps the edges of the provenance graph next to \
+                    the pseudo edges (root -> descendant), which have no edge type. If False, only \
+                    the pseudo edges are kept.",
+            ),
+            "merge_same_label_roots": Arg(
+                bool,
+                desc="Whether the pseudo edges of the roots with the same type and label (thus the \
+                    same features) towards a same node are merged into one, from the first such root.",
+            ),
+            "max_roots_per_node": Arg(
+                int,
+                desc="Maximum number of pseudo-roots of a node (0: no limit): its roots with the \
+                    fewest descendants. Bounds the pseudo edges by this number times the number of \
+                    nodes, e.g. when a process reads thousands of files that become roots of all \
+                    its descendants.",
+            ),
         },
         "merge_edges": {
             "per_edge_type": Arg(
@@ -1590,6 +1677,12 @@ TASK_ARGS = {
                                     `node_emb` refers to the embedding generated during the `featurization` task, `only_ones` is a vector of ones \
                                     with length `node_type`, `edges_distribution` counts emitted and received edges.",
         ),
+        "edges_distribution_scaling": Arg(
+            str,
+            vals=OR(["max", "none", "log1p"]),
+            desc="Scaling of the `edges_distribution` counts: `max` divides them by the largest count of \
+                the time window (default), `none` keeps the raw counts (as ThreaTrace), `log1p` applies log(1 + x).",
+        ),
         "edge_features": Arg(
             str,
             vals=AND(["edge_type", "edge_type_triplet", "msg", "time_encoding", "edge_attrs", "none"]),
@@ -1601,6 +1694,15 @@ TASK_ARGS = {
         ),
         "multi_dataset_training": Arg(
             bool, desc="Whether the GNN should be trained on all datasets in `multi_dataset`."
+        ),
+        "compact_node_ids": Arg(
+            bool,
+            desc="Renumbers the nodes of the graphs from 0 to (number of nodes in the graphs - 1), keeping \
+                                their order, instead of using the node IDs of the database, which also count the nodes \
+                                absent from all graphs (86% of the 44.5M IDs of TRACE_E3). Tensors indexed by node (TGN \
+                                memory, neighbor loader, node ID embeddings, `all_nodes` embeddings, ...) are sized \
+                                accordingly. Node IDs are restored in the outputs. Results are unchanged, except for \
+                                methods drawing random nodes among all IDs (e.g. uniform negatives of Euler and Argus).",
         ),
         "fix_buggy_graph_reindexer": Arg(
             bool,
@@ -1667,6 +1769,11 @@ TASK_ARGS = {
                     bool,
                     desc="Whether to insert the edges of the current graph before loading last neighbors.",
                 ),
+                "reset_state_every_day": Arg(
+                    bool,
+                    desc="Empties the last neighbors and resets the TGN memory at the first batch of each day \
+                        (date of its first event), as Kairos, which trains and tests on one graph per day.",
+                ),
                 "negative_destinations": Arg(
                     bool,
                     desc="Draws a negative destination for each edge, uniformly among the destinations \
@@ -1704,7 +1811,30 @@ TASK_ARGS = {
         ),
         "inference_device": Arg(str, vals=OR(["cpu", "cuda"]), desc="Device used during testing."),
         "fuse_duplicate_edges_training": Arg(bool, desc="During training only, keeps one edge per (source, destination) pair in each batch, so that repeated events between the same entities count once in the loss."),
-        "used_method": Arg(str, vals=OR(["default", "pretrained"]), desc="Which training pipeline use."),
+        "used_method": Arg(str, vals=OR(["default", "pretrained", "threatrace"]), desc="Which training pipeline use. \
+            `threatrace` trains ThreaTrace's successive submodels (see `training.threatrace`)."),
+        "threatrace": {
+            "ratio_threshold": Arg(
+                float,
+                desc="ThreaTrace's `thre`: a node is explained by a submodel when its type is predicted \
+                    with a top-1 / top-2 probability ratio of at least this value. Anomalous nodes are \
+                    those no submodel explains (used by `threshold_method: threatrace`).",
+            ),
+            "max_submodels": Arg(int, desc="Maximum number of submodels trained by `used_method: threatrace`."),
+            "max_retrain_epochs": Arg(
+                int, desc="Maximum number of epochs to train each submodel after the first one."
+            ),
+            "retrain_loss_threshold": Arg(
+                float,
+                desc="Training of a submodel after the first one stops once its mean loss on the nodes \
+                    not yet explained is below this value.",
+            ),
+            "max_rounds_without_progress": Arg(
+                int,
+                desc="Training stops after this number of consecutive rounds where the submodel \
+                    explains no new training node.",
+            ),
+        },
         "ocrapt_early_stop": {
             "enabled": Arg(bool, desc="Off by default, no-op unless set."),
             "patience": Arg(int),
@@ -1830,6 +1960,23 @@ TASK_ARGS = {
             "ocrapt_min_contamination": Arg(
                 float,
                 desc="For threshold_method=ocrapt: min per-type contamination floor.",
+            ),
+            "magic_knn_k": Arg(
+                int,
+                desc="For threshold_method=magic: number of nearest benign training nodes whose \
+                    mean distance scores a test node (default 10, as in the MAGIC paper).",
+            ),
+            "magic_max_reference_size": Arg(
+                int,
+                desc="For threshold_method=magic: the k-NN reference set is a random sample of at most \
+                    this many benign training node embeddings (0: all of them).",
+            ),
+            "magic_embedding": Arg(
+                str,
+                vals=OR(["last", "concat"]),
+                desc="For threshold_method=magic: node embedding scored by the k-NN detector, the output \
+                    of the last encoder layer (`last`, MAGIC's code) or the concatenation of all its \
+                    layers (`concat`, MAGIC's paper).",
             ),
         },
         "tw_evaluation": {

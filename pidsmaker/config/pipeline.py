@@ -343,7 +343,10 @@ UNHASHED_DEFAULT_ARGS = {
         },
     },
     "feat_inference": {"edge_attributes": "all"},
-    "batching": {"intra_graph_batching.tgn_last_neighbor.negative_destinations": False},
+    "batching": {
+        "intra_graph_batching.tgn_last_neighbor.negative_destinations": False,
+        "compact_node_ids": False,
+    },
     "evaluation": {
         "save_figures": True,
         "evaluate_selected_epoch_only": False,
@@ -863,11 +866,26 @@ def check_edge_cases(cfg):
                 "`node_id_embedding.all_nodes` embeds all the nodes of the dataset in every graph: it "
                 f"requires edge-level objectives (got {node_level}) and no `fuse_duplicate_edges_training`."
             )
+    if "predict_node_type" in decoders:
+        from pidsmaker.utils.data_utils import get_selected_node_features
+
+        if "node_type" in get_selected_node_features(cfg):
+            raise ValueError(
+                "Objective `predict_node_type` predicts the node type, so the node type cannot be a "
+                "node feature (the label would be given as input). Remove `node_type` from "
+                "`batching.node_features` (with `featurization.used_method: only_type`, select "
+                "another feature such as `edges_distribution`)."
+            )
     if "predict_node_type" in decoders and schema.num_node_types < 2:
         raise ValueError(
             f"Objective `predict_node_type` needs at least two node types, but {cfg.dataset.name} "
             f"has a single node type ({schema.node_type_names[0]}). Use an edge-level objective "
             "(e.g. `predict_edge_type` with `construction.edge_type`)."
+        )
+    if "predict_process_tag" in decoders and "subject" not in schema.node_type_names:
+        raise ValueError(
+            f"Objective `predict_process_tag` predicts the executable of processes (`subject` nodes), "
+            f"but {cfg.dataset.name} has none (node types: {', '.join(schema.node_type_names)})."
         )
     if "edge_type_triplet" in edge_features and not schema.supports_edge_type_triplets:
         raise ValueError(
@@ -1246,6 +1264,13 @@ def check_evaluation(cfg):
         if "predict_node_type" not in cfg.training.decoder.used_methods:
             raise ValueError(
                 f"Threshold method `{node_threshold_method}` requires the `predict_node_type` objective."
+            )
+    if is_node_level and node_threshold_method == "threatrace":
+        ratio = cfg.training.threatrace.ratio_threshold
+        if ratio is None or ratio < 1.0:
+            raise ValueError(
+                "Threshold method `threatrace` requires `training.threatrace.ratio_threshold` >= 1 "
+                f"(got {ratio})."
             )
 
     if method == "queue_evaluation" and cfg._is_node_level and not cfg._is_hybrid_loss:

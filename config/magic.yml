@@ -11,7 +11,8 @@ construction:
     netflow: remote_ip
   multi_dataset: none
   cleaning:
-    used_methods: none
+    # MAGIC keeps one edge per (source, destination, edge type) in a graph (paper, Sec. 4.1)
+    used_methods: dedup_window_edges
 transformation:
   used_methods: none
 
@@ -25,7 +26,7 @@ feat_inference:
 batching:
   save_on_disk: False
   node_features: node_type
-  edge_features: none
+  edge_features: edge_type # MAGIC attends over the one-hot edge type
   fix_buggy_graph_reindexer: False
   global_batching:
     used_method: none
@@ -67,8 +68,10 @@ training:
       loss: BCE
       decoder: node_mlp
       node_mlp:
-        architecture_str: linear(4) | leaky_relu
+        # MAGIC: 2 x 192 (3 concatenated encoder layers) -> 64 -> 1
+        architecture_str: linear(0.16666667) | leaky_relu
       balanced_loss: False
+      max_samples: 10000 # MAGIC samples min(10000, #nodes) edges and as many non-edges
 
 evaluation:
   viz_malicious_nodes: False
@@ -78,3 +81,6 @@ evaluation:
   node_evaluation:
     threshold_method: magic # can't use anything else here
     use_dst_node_loss: True
+    magic_knn_k: 10 # k-NN on the benign training embeddings, as in MAGIC
+    magic_max_reference_size: 0 # 0: all the training node embeddings
+    magic_embedding: concat # all encoder layers, as in the paper (the code scores the last one)
