@@ -15,6 +15,7 @@ edit_uri = "edit/main/docs/docs/"
 copyright = "Copyright &copy; 2025&ndash;2026 UBC Provenance team &middot; MIT License"
 
 extra_css = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/benchmark.js"]
 
 nav = [
   { "Home" = "index.md" },
@@ -27,6 +28,7 @@ nav = [
     { "Background" = "guide/background.md" },
     { "Pipeline" = "guide/pipeline.md" },
     { "Systems" = "guide/systems.md" },
+    { "Benchmark" = "guide/benchmark.md" },
     { "Datasets" = "guide/datasets.md" },
     { "Evaluation & labeling" = "guide/evaluation.md" },
     { "Tutorial: a new system" = "guide/tutorial.md" },
