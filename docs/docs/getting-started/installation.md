@@ -89,7 +89,7 @@ DARPA TC and OpTC are very large and hard to process: we provide **preprocessed 
 | `LANL` | <span class="pm-family pm-family--net">Network</span> | 0.40 |
 | `OPTC_NET` | <span class="pm-family pm-family--net">Network</span> | 11.8 |
 
-Datasets keep this size when they are used: DuckDB reads the files in place, nothing is loaded into a database. (Earlier versions of PIDSMaker read their datasets from a Postgres server; datasets are now Parquet files.) `PROVENANCE_BENIGN` (2 MB), the corpus used to [pretrain SPIDER](../features/pretrained_encoders.md#pretraining), is downloaded the same way.
+Datasets keep this size when they are used: DuckDB reads the files in place, nothing is loaded into a database. (PIDSMaker 4.x read its datasets from a Postgres server, with Docker: it stays available at the tag [`4.0.0`](https://github.com/ubc-provenance/PIDSMaker/releases/tag/4.0.0).) `PROVENANCE_BENIGN` (2 MB), the corpus used to [pretrain SPIDER](../features/pretrained_encoders.md#pretraining), is downloaded the same way.
 
 !!! tip "New to PIDSMaker?"
     Start with `CADETS_E3`, `THEIA_E3` or `CLEARSCOPE_E3` for provenance-based detection, and `LANL` for network detection: they are small, quick to download, and the most widely used in papers.
