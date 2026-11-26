@@ -10,7 +10,6 @@ from copy import deepcopy
 import yaml
 from yacs.config import CfgNode as CN
 
-from .schemas import benign_training, drops_noise_events, get_schema, get_schema_by_name
 from .config import (
     CLEANING_METHODS,
     DATASET_DEFAULT_CONFIG,
@@ -33,7 +32,7 @@ from .config import (
     UNCERTAINTY_EXP_YML_FOLDER,
     Arg,
 )
-
+from .schemas import benign_training, drops_noise_events, get_schema, get_schema_by_name
 
 
 def _resources_root():
@@ -283,7 +282,7 @@ def overwrite_cfg_with_args(cfg, args):
 def set_shortcut_variables(cfg):
     decoders = cfg.training.decoder.used_methods
     encoders = cfg.training.encoder.used_methods
-    
+
     cfg._is_node_level = decoders is not None and any(
         [
             method
@@ -307,13 +306,13 @@ def set_shortcut_variables(cfg):
             if method in encoders
         ]
     )
-    
+
     # Node-level and edge-level objectives are combined at the edge level
     objectives = [o.strip() for o in decoders.split(",")] if decoders else []
     cfg._is_hybrid_loss = any(o in OBJECTIVES_NODE_LEVEL for o in objectives) and any(
         o in OBJECTIVES_EDGE_LEVEL for o in objectives
     )
-        
+
 
 
 def set_immutable_cfg(cfg):
@@ -816,7 +815,7 @@ def get_yml_cfg(args):
 
     # Here we create some variables based on parameters for easier usage
     set_shortcut_variables(cfg)
-    
+
     # In some cases, we want some parameters to be fixed and unchanged
     set_immutable_cfg(cfg)
 
@@ -1700,13 +1699,11 @@ def write_viz_manifest(task_path: str):
     manifest_path = os.path.join(task_path, VIZ_MANIFEST_FILE)
     with open(manifest_path, "w") as f:
         _json.dump(manifest, f, indent=2)
-    print(f"[viz] Wrote {manifest_path}")
 
 
 def set_task_to_done(task_path: str):
     with open(os.path.join(task_path, TASK_FINISHED_FILE), "w") as f:
         f.write("Task done")
-    print(f"Task done: {task_path}\n")
 
     # If this is an evaluation directory, write the viz manifest
     write_viz_manifest(task_path)

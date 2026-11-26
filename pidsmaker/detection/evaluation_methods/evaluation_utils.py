@@ -24,6 +24,11 @@ from sklearn.metrics import (
 )
 
 import pidsmaker.utils.labelling as labelling
+from pidsmaker.utils import console
+from pidsmaker.utils.dataset_utils import (
+    get_node_to_path_and_type,
+    get_uuid_to_index_id,
+)
 from pidsmaker.utils.loss_files import read_losses, strip_loss_ext
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
@@ -31,11 +36,6 @@ from pidsmaker.utils.utils import (
     log,
     mean,
     percentile_90,
-    std,
-)
-from pidsmaker.utils.dataset_utils import (
-    get_node_to_path_and_type,
-    get_uuid_to_index_id,
 )
 
 # Assign different colors for each attack type
@@ -267,10 +267,6 @@ def calculate_threshold(val_tw_dir, threshold_method, alpha=1.0):
         "mean": mean(loss_list) * alpha,
         "percentile_90": percentile_90(loss_list) * alpha,
     }
-    log(
-        f"Thresholds: MEAN={thr['mean']:.3f}, STD={std(loss_list):.3f}, MAX={thr['max']:.3f}, 90 Percentile={thr['percentile_90']:.3f}"
-    )
-
     return thr
 
 
@@ -1237,7 +1233,6 @@ def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
             if uuid not in uuid_to_node_id:
                 uuid_to_node_id[uuid] = str(nid)
 
-    log("Computing time-window labels...")
     os.makedirs(out_path, exist_ok=True)
 
     t_to_node = labelling.get_t2malicious_node(cfg)
@@ -1279,7 +1274,6 @@ def compute_tw_labels(cfg, losses_dir=None, tw_names=None):
     for tw, nodes in tw_to_malicious_nodes.items():
         unique_nodes, counts = np.unique(nodes, return_counts=True)
         node_to_count = {node: count for node, count in zip(unique_nodes, counts)}
-        log(f"TW {tw} -> {len(unique_nodes)} malicious nodes + {len(nodes)} malicious edges")
 
         node_to_count = {
             uuid_to_node_id[node_id]: count for node_id, count in node_to_count.items()
@@ -1358,7 +1352,7 @@ def load_losses_per_time_window(losses_dir, cfg, max_unmatched_ratio=0.01):
         int(tw): group.drop(columns="_tw").reset_index(drop=True)
         for tw, group in df.groupby("_tw", sort=True)
     }
-    log(
+    console.log_once(  # Same for each epoch
         f"Grouped {len(files)} loss files into {len(tw_to_df)}/{len(tw_names)} non-empty time windows."
     )
     return tw_names, tw_to_df
@@ -1728,3 +1722,60 @@ def two_hop_relaxed_metrics(mp_mask, gp_mask, adjacency):
     rec = tp / (tp + fn) if tp + fn else 0.0
     f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
     return {"precision": prec, "recall": rec, "fscore": f1, "tp": tp, "fp": fp, "fn": fn}
+
+
+# Metrics of the one-line summary of each epoch, when they are computed
+SUMMARY_METRICS = [
+    "adp_score", "discrimination", "ap", "auc", "tp", "fp", "fn", "mcc", "precision", "recall",
+]  # fmt: skip
+
+# Key, in the stats of an epoch, of the lines of its detailed analysis (e.g. the score of each
+# malicious node), logged for the best epoch only and removed from the stats (see `pop_report`)
+REPORT_KEY = "_report"
+
+
+def detection_mark(detected):
+    """Colored TP/FN mark of a malicious node or time window."""
+    return console.style("TP", "green") if detected else console.style("FN", "red")
+
+
+def pop_report(stats):
+    """Removes and returns the analysis lines of `stats` (see `REPORT_KEY`)."""
+    return stats.pop(REPORT_KEY, None) or []
+
+
+def epoch_name(model_epoch_dir):
+    """"model_epoch_13" -> "epoch 13"."""
+    epoch = model_epoch_dir.rsplit("_", 1)[-1]
+    return f"epoch {epoch}" if epoch.isdigit() else model_epoch_dir
+
+
+def log_epoch_summary(stats):
+    parts = [
+        f"{console.style(k, 'dim')} {console.format_value(stats[k])}"
+        for k in SUMMARY_METRICS
+        if k in stats and isinstance(stats[k], (int, float))
+    ]
+    log("  ".join(parts))
+
+
+def log_best_epoch(stats, cfg, report=(), selection=None):
+    """Logs the detailed analysis (`report`, e.g. the score of each malicious node) and all the
+    metrics of the best epoch, selected by `selection` (default: `evaluation.best_model_selection`)."""
+    if stats is None:
+        return
+    selection = selection or cfg.evaluation.best_model_selection
+    print(flush=True)
+    log(
+        console.style(f"Best epoch: {stats.get('epoch')}", "bold")
+        + console.style(f"  (selection: {selection})", "dim")
+    )
+    for i, line in enumerate(report):
+        if line.startswith(" "):
+            log(line)
+        elif i + 1 < len(report) and report[i + 1].startswith(" "):  # Title of a non-empty section
+            log(console.style(line, "bold"))
+    console.metrics({k: v for k, v in stats.items() if k != "epoch"})
+    for name, key in [("scores", "scores_file"), ("model", "model_path")]:
+        if stats.get(key):
+            log(f"{console.style(name.ljust(7), 'dim')} {stats[key]}")

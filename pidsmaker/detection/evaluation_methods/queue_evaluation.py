@@ -23,8 +23,13 @@ import wandb
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     classifier_evaluation,
     compute_tw_labels,
+    detection_mark,
+    epoch_name,
     load_losses_per_time_window,
+    log_best_epoch,
+    log_epoch_summary,
 )
+from pidsmaker.utils import console
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
@@ -167,7 +172,6 @@ def cal_set_rel_bak(node_IDF, s1, s2, num_dates, excluded_nodes=()):
             if (IDF) > math.log(
                 num_dates * 0.9 / (1)
             ):  # TODO: default value for kairos, but can be parametrized
-                log(f"node: {i} | IDF: {IDF:.3f}")
                 count += 1
     return count
 
@@ -211,7 +215,6 @@ def cal_set_rel(
             if (
                 IDF_test + IDF_train
             ) > 5:  # TODO: default value for kairos, but can be parametrized
-                log(f"node: {i} | IDF test: {IDF_test:.3f} | IDF train: {IDF_train:.3f}")
                 count += 1
     return count
 
@@ -323,12 +326,6 @@ def anomalous_queue_construction_kairos(
         if not added_que_flag:
             queues.append([copy.deepcopy(current_tw)])
 
-        log(
-            f"TW {tw} ({tw_names[tw]}) | avg anomalous loss: {loss_avg:.4f} | "
-            f"anomalous edges: {count}/{len(edge_list)} | "
-            f"nodes: {len(node_set)} | unique edges: {len(edge_set)}"
-        )
-
     return queues, tw_names, sorted(tw_to_df.keys())
 
 
@@ -345,8 +342,7 @@ def create_queues_kairos(cfg):
     os.makedirs(out_dir, exist_ok=True)
 
     test_losses_dir = os.path.join(cfg.training._edge_losses_dir, "test")
-    for model_epoch_dir in listdir_sorted(test_losses_dir):
-        log(f"Building queues for {model_epoch_dir}...", pre_return_line=True)
+    for model_epoch_dir in log_tqdm(listdir_sorted(test_losses_dir), desc="Building the queues"):
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         queues, tw_names, evaluated_tws = anomalous_queue_construction_kairos(
             test_tw_path, train_node_IDF, test_node_IDF, num_train_dates, num_test_dates, cfg
@@ -366,8 +362,10 @@ def predict_queues(cfg):
 
     tw_to_malicious_nodes = None
     best_stats = None
+    epoch_reports = {}  # logged for the best epoch only
     for model_epoch_dir in listdir_sorted(test_losses_dir):
-        log(f"[@{model_epoch_dir}] - Queue Evaluation", pre_return_line=True)
+        print(flush=True)
+        log(console.style(epoch_name(model_epoch_dir), "bold"))
         saved = torch.load(os.path.join(queues_dir, f"{model_epoch_dir}_queues.pkl"))
         queues, tw_names, evaluated_tws = (
             saved["queues"],
@@ -383,15 +381,16 @@ def predict_queues(cfg):
         tw_scores = {tw: 0.0 for tw in evaluated_tws}
 
         detected_queues = []
+        report = ["Queues"]
         for queue in queues:
             is_attack = any(labels[hq["index"]] for hq in queue)
             anomaly_score = 1.0
             for hq in queue:
                 anomaly_score *= hq["loss"] + 1
             idx_list = [hq["index"] for hq in queue]
-            log(
-                f"-> queue {idx_list} | anomaly score: {anomaly_score:.2f}"
-                + (" | ATTACK" if is_attack else "")
+            report.append(
+                f"  queue {idx_list}  anomaly score {anomaly_score:.2f}"
+                + (console.style("  attack", "red") if is_attack else "")
             )
 
             for i in idx_list:
@@ -402,7 +401,7 @@ def predict_queues(cfg):
                 for i in idx_list:
                     pred_labels[i] = 1
 
-        log(f"Detected queues: {detected_queues}")
+        report += ["Detected queues", f"  {detected_queues}", "Malicious time windows"]
         torch.save(
             detected_queues, os.path.join(out_dir, f"{model_epoch_dir}_predicted_queues.pkl")
         )
@@ -412,17 +411,16 @@ def predict_queues(cfg):
         scores = [tw_scores[tw] for tw in evaluated_tws]
         for tw, y_true, y_hat in zip(evaluated_tws, y_truth, y_preds):
             if y_true:
-                log(
-                    f"-> Malicious TW {tw} ({tw_names[tw]}): queue score={tw_scores[tw]:.2f} | is TP:"
-                    + (" ✅" if y_hat else " ❌")
+                report.append(
+                    f"  {detection_mark(y_hat)}  TW {tw:<5} {tw_names[tw]}  "
+                    f"queue score {tw_scores[tw]:.2f}"
                 )
 
         stats = classifier_evaluation(y_truth, y_preds, scores)
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
         stats["num_detected_queues"] = len(detected_queues)
-        log(f"[@{model_epoch_dir}] - Stats")
-        for k, v in stats.items():
-            log(f"{k}: {v}")
+        epoch_reports[stats["epoch"]] = report
+        log_epoch_summary(stats)
         torch.save(stats, os.path.join(out_dir, f"stats_{model_epoch_dir}.pth"))
         wandb.log(stats)
 
@@ -433,6 +431,13 @@ def predict_queues(cfg):
         ):
             best_stats = stats
 
+    if best_stats is not None:
+        log_best_epoch(
+            best_stats,
+            cfg,
+            epoch_reports.get(best_stats["epoch"], []),
+            selection="best TW-level precision, then recall",
+        )
     return best_stats
 
 

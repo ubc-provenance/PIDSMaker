@@ -13,8 +13,10 @@ import numpy as np
 import torch
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
+    REPORT_KEY,
     classifier_evaluation,
     compute_kmeans_labels,
+    detection_mark,
     get_threshold,
     load_losses_per_time_window,
     plot_precision_recall,
@@ -30,9 +32,8 @@ def get_node_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     node_tw_cfg = cfg.evaluation.node_tw_evaluation
     threshold_method = node_tw_cfg.threshold_method
 
-    log("Calculating threshold...")
     thr = get_threshold(val_tw_path, threshold_method)
-    log(f"Threshold: {thr:.3f}")
+    log(f"threshold {thr:.3f}  ({threshold_method})")
 
     tw_to_node_to_losses = defaultdict(lambda: defaultdict(list))
     tw_to_edge_index = defaultdict(list)
@@ -104,7 +105,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     pr_img_file = os.path.join(out_dir, f"pr_curve_{model_epoch_dir}.png")
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
 
-    log("Analysis of malicious nodes:")
+    report = ["Malicious nodes"]
     # One list per TW, in the same order as `tws`
     tws, nodes, y_truth, y_preds, pred_scores = [], [], [], [], []
     summary_graphs = {}
@@ -125,10 +126,9 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
 
             if y_true == 1:
                 if len(malicious_nodes) == 0:
-                    log(f"TW {tw}")
-                log(
-                    f"-> Malicious node {nid:<7}: loss={score:.3f} | is TP:"
-                    + (" ✅ " if y_true == y_hat else " ❌ ")
+                    report.append(f"  TW {tw}")
+                report.append(
+                    f"    {detection_mark(y_true == y_hat)}  node {nid:<8} loss {score:<8.3f} "
                     + node_to_path.get(nid, {}).get("path", "?")
                 )
                 malicious_nodes.add(nid)
@@ -164,7 +164,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     flat_y_preds = [e for sublist in y_preds for e in sublist]
 
     if cfg.evaluation.save_figures is not False:  # unset: saved
-        log(f"Saving figures to {out_dir}...")
         plot_precision_recall(flat_pred_scores, flat_y_truth, pr_img_file)
         plot_simple_scores(flat_pred_scores, flat_y_truth, simple_scores_img_file)
 
@@ -192,5 +191,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     )
     stats["scores_file"] = scores_file
     stats.update(**summary_graphs)
+    stats[REPORT_KEY] = report
 
     return stats

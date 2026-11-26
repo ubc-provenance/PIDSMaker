@@ -13,9 +13,14 @@ from pidsmaker.detection.evaluation_methods import (
 )
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
     compute_tw_labels,
+    epoch_name,
     listdir_sorted,
     load_losses_per_time_window,
+    log_best_epoch,
+    log_epoch_summary,
+    pop_report,
 )
+from pidsmaker.utils import console
 from pidsmaker.utils.utils import log
 
 
@@ -76,8 +81,10 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
 
     save_files_to_wandb = cfg._experiment != "uncertainty"
 
+    epoch_reports = {}  # logged for the best epoch only
     for model_epoch_dir in sorted_files:
-        log(f"[@{model_epoch_dir}] - Test Evaluation", pre_return_line=True)
+        print(flush=True)
+        log(console.style(epoch_name(model_epoch_dir), "bold"))
 
         test_tw_path = os.path.join(test_losses_dir, model_epoch_dir)
         val_tw_path = os.path.join(val_losses_dir, model_epoch_dir)
@@ -96,11 +103,10 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
             with open(val_score_file) as f:
                 stats["val_score"] = json.load(f)["val_score"]
 
-        log(f"[@{model_epoch_dir}] - Stats")
-        for k, v in stats.items():
-            log(f"{k}: {v}")
+        log_epoch_summary(stats)
 
         stats["epoch"] = int(model_epoch_dir.split("_")[-1])
+        epoch_reports[stats["epoch"]] = pop_report(stats)
 
         if save_files_to_wandb:
             # stats["simple_scores_img"] = wandb.Image(os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png"))
@@ -124,7 +130,7 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
             discrim = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
             if os.path.exists(discrim):
                 stats["discrim_img"] = wandb.Image(discrim)
-                
+
             distrib = os.path.join(out_dir, f"distrib_{model_epoch_dir}.png")
             if os.path.exists(distrib):
                 stats["distrib_img"] = wandb.Image(distrib)
@@ -138,9 +144,12 @@ def standard_evaluation(cfg, evaluation_fn, group_by_time_window=False):
         # wandb.save(best_metrics["stats"]["scores_file"], out_dir)
         wandb.save(best_metrics["stats"]["neat_scores_img_file"], out_dir)
 
-    log(f"Best scores file: {best_metrics['stats'].get('scores_file')}")
-    log(f"Best model path: {best_metrics['stats'].get('model_path')}")
-    
+    best_stats = best_metrics["stats"]
+    best_report = []
+    if best_stats is not None:
+        best_report = epoch_reports.get(best_stats.get("epoch"), [])
+    log_best_epoch(best_stats, cfg, best_report)
+
     return best_metrics["stats"]
 
 

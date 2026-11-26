@@ -101,7 +101,6 @@ def get_edge_predictions(val_tw_path, test_tw_path, cfg, **kwargs):
         thr = get_threshold(test_tw_path, threshold_method, alpha)
     else:
         thr = get_threshold(val_tw_path, threshold_method, alpha)
-    log(f"Threshold: {thr:.3f}")
 
     filelist = listdir_sorted(test_tw_path)
     dfs = [
@@ -177,7 +176,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     )
     edge_scores_file = os.path.join(out_dir, f"edge_scores_{model_epoch_dir}.pkl")
     torch.save(compact_int_columns(edge_records), edge_scores_file)
-    log(f"Saved {len(edge_records)} edge scores to {edge_scores_file}")
     del edge_records, losses
 
     adp_img_file = os.path.join(out_dir, f"adp_curve_{model_epoch_dir}.png")
@@ -186,8 +184,6 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     discrim_img_file = os.path.join(out_dir, f"discrim_curve_{model_epoch_dir}.png")
 
     save_figures = cfg.evaluation.save_figures is not False  # unset: saved
-    if save_figures:
-        log(f"Saving figures to {out_dir}...")
     adp_score = plot_detected_attacks_vs_precision(
         scores, edges, edge2attack, y_truth, adp_img_file if save_figures else None
     )

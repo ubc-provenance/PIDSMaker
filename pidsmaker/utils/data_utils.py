@@ -76,12 +76,13 @@ except ImportError:
 
 from pidsmaker.config import update_cfg_for_multi_dataset
 from pidsmaker.debug_tests import debug_test_batching
+from pidsmaker.hetero import compute_hetero_features
 from pidsmaker.tgn import LastNeighborLoader
 from pidsmaker.utils.dataset_utils import (
     get_node_map,
     get_num_edge_type,
-    get_rel2id,
     get_possible_events,
+    get_rel2id,
 )
 from pidsmaker.utils.utils import (
     get_multi_datasets,
@@ -90,7 +91,6 @@ from pidsmaker.utils.utils import (
     log_tqdm,
     ns_time_to_datetime_US,
 )
-from pidsmaker.hetero import compute_hetero_features
 
 
 class CollatableTemporalData(TemporalData):
@@ -335,7 +335,7 @@ def load_all_datasets(cfg, device, only_keep=None):
         for dataset in dataset_group
         for data in dataset
     ) + 1
-    print(f"Max node in {cfg.dataset.name}: {max_node}")
+    log(f"Max node in {cfg.dataset.name}: {max_node}")
 
     graph_reindexer = GraphReindexer(
         device=device,

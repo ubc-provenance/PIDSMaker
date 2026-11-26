@@ -12,7 +12,6 @@ from pidsmaker.utils.utils import get_device, log, log_start, set_seed
 
 def get_preprocessed_graphs(cfg):
     if not cfg._save_graph_preprocessing:
-        log("Force graphs loading to save storage.")
         return get_data(cfg)
 
     log("Loading preprocessed graphs...")

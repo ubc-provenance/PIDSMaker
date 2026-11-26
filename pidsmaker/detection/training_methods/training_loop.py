@@ -26,6 +26,7 @@ from pidsmaker.factory import (
 )
 from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
+from pidsmaker.utils import console
 from pidsmaker.utils.data_utils import batch_to_device, save_model
 from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
 
@@ -121,6 +122,7 @@ def main(cfg):
     model.flash_ensemble = flash_snapshot_ensemble(cfg)
 
     for epoch in range(0, num_epochs):
+        print(flush=True)  # Blank line between the logs of epochs
         best_val_score, best_model, best_epoch = float("-inf"), None, None
 
         if not cfg._from_weights and (not use_few_shot or (use_few_shot and epoch > 0)):
@@ -192,9 +194,14 @@ def main(cfg):
                 peak_train_gpu_mem = max(peak_train_gpu_mem, peak_inference_gpu_memory)
                 torch.cuda.reset_peak_memory_stats(device=device)
 
+            gpu_mem = f"  GPU {peak_train_gpu_mem:.2f} GB" if use_cuda else ""
             log(
-                f"[@epoch{epoch:02d}] Training finished - GPU memory: {peak_train_gpu_mem:.2f} GB | CPU memory: {peak_train_cpu_mem:.2f} GB | Mean Loss: {tot_loss:.4f}",
-                return_line=True,
+                f"epoch {epoch:02d}  train  loss {tot_loss:.4f}"
+                + console.style(
+                    f"  {console.format_duration(epoch_times[-1])}  "
+                    f"CPU {peak_train_cpu_mem:.2f} GB{gpu_mem}",
+                    "dim",
+                )
             )
 
         # Few-shot learning fine tuning

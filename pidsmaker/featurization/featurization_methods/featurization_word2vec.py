@@ -9,7 +9,10 @@ import os
 
 from gensim.models import Word2Vec
 
-from pidsmaker.featurization.featurization_utils import get_corpus, get_corpus_from_pretrain_datasets
+from pidsmaker.featurization.featurization_utils import (
+    get_corpus,
+    get_corpus_from_pretrain_datasets,
+)
 from pidsmaker.utils.utils import log, log_start
 
 
@@ -27,7 +30,7 @@ def train_word2vec(corpus, cfg, model_save_path):
     if cfg._from_weights:
         path = os.path.join(cfg._from_weights_path, "word2vec.model")
         model = Word2Vec.load(path)
-    
+
     else:
         emb_dim = cfg.featurization.emb_dim
         window_size = cfg.featurization.word2vec.window_size
@@ -51,18 +54,18 @@ def train_word2vec(corpus, cfg, model_save_path):
                             seed=seed)
 
         epoch_loss = model.get_latest_training_loss()
-        log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
+        log_every = max(1, epochs // 10)  # About 10 lines of logs
+        if log_every == 1:
+            log(f"epoch 1/{epochs}  loss {epoch_loss:.1f}")
 
         for epoch in range(epochs - 1):
             model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
             epoch_loss = model.get_latest_training_loss()
-            log(f"Epoch: {epoch+1}/{epochs}; loss: {epoch_loss}")
-
-        loss = model.get_latest_training_loss()
-        log(f"Epoch: {epochs}; loss: {loss}")
+            if (epoch + 2) % log_every == 0 or epoch + 2 == epochs:
+                log(f"epoch {epoch + 2}/{epochs}  loss {epoch_loss:.1f}")
 
         model.init_sims(replace=True)
-    
+
     model.save(os.path.join(model_save_path, 'word2vec.model'), sep_limit=10**10) # force to save in a single file
     log(f"Save word2vec to {os.path.join(model_save_path, 'word2vec.model')}")
 

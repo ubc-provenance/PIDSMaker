@@ -51,15 +51,15 @@ def train_word2vec(corpus, model_save_path, cfg):
     )
 
     epoch_loss = model.get_latest_training_loss()
-    log(f"Epoch: 0/{epochs}; loss: {epoch_loss}")
+    log_every = max(1, epochs // 10)  # About 10 lines of logs
+    if log_every == 1:
+        log(f"epoch 1/{epochs}  loss {epoch_loss:.1f}")
 
     for epoch in range(epochs - 1):
         model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
         epoch_loss = model.get_latest_training_loss()
-        log(f"Epoch: {epoch + 1}/{epochs}; loss: {epoch_loss}")
-
-    loss = model.get_latest_training_loss()
-    log(f"Epoch: {epochs}; loss: {loss}")
+        if (epoch + 2) % log_every == 0 or epoch + 2 == epochs:
+            log(f"epoch {epoch + 2}/{epochs}  loss {epoch_loss:.1f}")
 
     model.init_sims(replace=True)
     model.save(os.path.join(model_save_path, "trw_word2vec.model"))
@@ -77,7 +77,8 @@ def update_word2vec(corpus, model_save_path, cfg):
     for epoch in range(epochs):
         model.train(corpus, epochs=1, total_examples=len(corpus), compute_loss=compute_loss)
         epoch_loss = model.get_latest_training_loss()
-        log(f"Epoch: {epoch}/{epochs}; loss: {epoch_loss}")
+        if (epoch + 1) % max(1, epochs // 10) == 0 or epoch + 1 == epochs:
+            log(f"epoch {epoch + 1}/{epochs}  loss {epoch_loss:.1f}")
 
     model.init_sims(replace=True)
     model.save(os.path.join(model_save_path, "trw_word2vec.model"))

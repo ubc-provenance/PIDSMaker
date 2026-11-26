@@ -10,7 +10,9 @@ import os
 import torch
 
 from pidsmaker.detection.evaluation_methods.evaluation_utils import (
+    REPORT_KEY,
     classifier_evaluation,
+    detection_mark,
     get_threshold,
     load_losses_per_time_window,
     plot_precision_recall,
@@ -34,9 +36,7 @@ def get_tw_predictions(val_tw_path, test_tw_path, cfg, tw_to_malicious_nodes):
     """
     threshold_method = cfg.evaluation.tw_evaluation.threshold_method
     thr = get_threshold(val_tw_path, threshold_method)
-    log(f"Threshold: {thr:.3f}")
-
-    log(f"Loading data from {test_tw_path}...")
+    log(f"threshold {thr:.3f}  ({threshold_method})")
     _, tw_to_df = load_losses_per_time_window(test_tw_path, cfg)
 
     tw_labels = set(tw_to_malicious_nodes.keys())
@@ -61,6 +61,7 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
     simple_scores_img_file = os.path.join(out_dir, f"simple_scores_{model_epoch_dir}.png")
 
     tws, y_truth, y_preds, pred_scores = [], [], [], []
+    report = ["Malicious time windows"]
     for tw, result in sorted(results.items()):
         score, y_hat, y_true = result["score"], result["y_hat"], result["y_true"]
         tws.append(tw)
@@ -69,13 +70,9 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         pred_scores.append(score)
 
         if y_true == 1:
-            log(
-                f"-> Malicious TW {tw}: loss={score:.3f} | is TP:"
-                + (" ✅" if y_true == y_hat else " ❌")
-            )
+            report.append(f"  {detection_mark(y_true == y_hat)}  TW {tw:<6} loss {score:.3f}")
 
     if cfg.evaluation.save_figures is not False:  # unset: saved
-        log(f"Saving figures to {out_dir}...")
         plot_precision_recall(pred_scores, y_truth, pr_img_file)
         plot_simple_scores(pred_scores, y_truth, simple_scores_img_file)
 
@@ -92,4 +89,5 @@ def main(val_tw_path, test_tw_path, model_epoch_dir, cfg, tw_to_malicious_nodes,
         scores_file,
     )
     stats["scores_file"] = scores_file
+    stats[REPORT_KEY] = report
     return stats
