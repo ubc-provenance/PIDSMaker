@@ -12,9 +12,6 @@ How long each system takes to run, and how much memory and disk it needs, on fiv
 
 One panel per dataset, on one scale per tab; the few bars far above the others are cut, with a break mark. Time and disk are split by [stage](pipeline.md#the-stages). Hover a bar for its values; all of them are in [`results.csv`](../assets/benchmark/results.csv).
 
-!!! note "Runs in progress"
-    ProGrapher on optc_h201 is still running, and marked *pending*.
-
 === "Time"
 
     <div class="pm-bench" markdown="0">
@@ -46,9 +43,9 @@ One panel per dataset, on one scale per tab; the few bars far above the others a
 ### Takeaways
 
 - **Every run completes**, with 1 TB of RAM and an 80 GB GPU.
-- **A large GPU is not needed:** no run uses more than 32 GB of GPU memory, and 87 of 96 stay under 12 GB.
+- **A large GPU is not needed:** no run uses more than 32 GB of GPU memory, and 88 of 97 stay under 12 GB.
 - **Network systems other than Jbeil are the cheapest:** under 30 minutes outside TRACE_E3. They merge repeated edges and skip text embeddings.
-- **Jbeil is the slowest:** 2.5 to 7.8 hours on all datasets but CADETS_E3, 93% of it training its TGN on batches of 200 edges. Training is also 69 to 87% of the time of Kairos, Orthrus and Velox.
+- **Jbeil is the slowest:** 2.5 to 7.8 hours on all datasets but CADETS_E3, 85 to 97% of it training its TGN on batches of 200 edges. Training is also 69 to 87% of the time of Kairos, Orthrus and Velox.
 - **ProGrapher's time goes to graph2vec,** 77 to 98% of it: 174 minutes on THEIA_E5 and 200 on TRACE_E3.
 - **TRACE_E3 is the most expensive dataset:** 34 to 113 minutes for most systems, 28 GB of RAM for the median one and up to 102 GB (NodLink). Elsewhere, no run needs more than 40 GB of RAM.
 - **Per-epoch outputs fill the disk:** 24 of the 30 GB of Euler on THEIA_E5. [`--keep_best_epoch_only`](pipeline.md#disk-usage) keeps only those of the reported epoch.
