@@ -1,4 +1,4 @@
-_include_yml: orthrus_non_snooped
+_include_yml: orthrus
 
 featurization:
   used_method: only_type

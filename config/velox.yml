@@ -1,6 +1,6 @@
-# Simply the same config as orthrus_non_snooped + encoder set to none
+# Simply the same config as orthrus + encoder set to none
 
-_include_yml: orthrus_non_snooped
+_include_yml: orthrus
 
 batching:
   intra_graph_batching:

@@ -136,7 +136,7 @@ With node-level objectives, the scores of `threatrace`, `flash` and `magic` are 
 
 ### Clustering (Orthrus)
 
-With `use_kmeans: True`, the threshold doesn't decide alone: the `kmeans_top_K` highest-scored nodes are split into two clusters with k-means on their scores, and only the nodes of the high-score cluster are predicted malicious. With `node_tw_evaluation`, clustering runs in each window that has at least one node above the threshold. Orthrus enables it with K = 30; `orthrus_non_snooped` disables it.
+With `use_kmeans: True`, the threshold doesn't decide alone: the `kmeans_top_K` highest-scored nodes are split into two clusters with k-means on their scores, and only the nodes of the high-score cluster are predicted malicious. With `node_tw_evaluation`, clustering runs in each window that has at least one node above the threshold. The original Orthrus enables it with K = 30; PIDSMaker's `orthrus` disables it to avoid data snooping.
 
 ## Metrics
 
@@ -197,8 +197,7 @@ Figures with one point per node or edge are slow to draw on large test sets: `ev
 
 | System | Evaluation | `threshold_method` | Clustering |
 |---|---|---|---|
-| Orthrus | `node_evaluation` | `max_val_loss` | k-means, K = 30 |
-| Velox, `orthrus_non_snooped` | `node_evaluation` | `max_val_loss` | |
+| Velox, Orthrus | `node_evaluation` | `max_val_loss` | |
 | Kairos | `node_evaluation` | `max_val_loss` | |
 | R-Caid | `node_evaluation` | `max_val_loss` | |
 | MAGIC | `node_evaluation` | `magic` | |

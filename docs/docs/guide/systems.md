@@ -13,7 +13,7 @@ PIDSMaker reimplements state-of-the-art intrusion detection systems as YAML conf
 | System | Data | Config | Venue | Paper |
 |---|---|---|---|---|
 | **Velox** | <span class="pm-family pm-family--prov">Provenance</span> | `velox` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://tfjmp.org/publications/2025-usenixsec-2.pdf) |
-| **Orthrus** | <span class="pm-family pm-family--prov">Provenance</span> | `orthrus`, `orthrus_non_snooped` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
+| **Orthrus** | <span class="pm-family pm-family--prov">Provenance</span> | `orthrus` | <span class="pm-chip">USENIX Security 2025</span> | [:lucide-file-text: Paper](https://www.usenix.org/system/files/conference/usenixsecurity25/sec25cycle1-prepub-103-jiang-baoxiang.pdf) |
 | **OCR-APT** | <span class="pm-family pm-family--prov">Provenance</span> | `ocrapt` | <span class="pm-chip">ACM CCS 2025</span> | [:lucide-file-text: Paper](https://arxiv.org/pdf/2510.15188) |
 | **R-Caid** | <span class="pm-family pm-family--prov">Provenance</span> | `rcaid` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://gangw.web.illinois.edu/rcaid-sp24.pdf) |
 | **Flash** | <span class="pm-family pm-family--prov">Provenance</span> | `flash` | <span class="pm-chip">IEEE S&P 2024</span> | [:lucide-file-text: Paper](https://dartlab.org/assets/pdf/flash.pdf) |
@@ -112,11 +112,8 @@ The combinations of this table are those run by the tests (`tests/test_network_d
 
 ## Variants
 
-`orthrus_non_snooped`
-:   Orthrus without data snooping, for fair comparisons: its word2vec model is trained on the training split only (`featurization.training_split: train` instead of `all`), and the k-means clustering after thresholding is disabled. Velox inherits from this config.
-
 `velox`
-:   `orthrus_non_snooped` with the GNN replaced by a single linear layer (`training.encoder.used_methods: none`) and without TGN neighbor sampling (`batching.intra_graph_batching.used_methods: edges`). It is the deliberately simple system proposed in [Bilot et al.](https://tfjmp.org/publications/2025-usenixsec-2.pdf).
+:   `orthrus` with the GNN replaced by a single linear layer (`training.encoder.used_methods: none`) and without TGN neighbor sampling (`batching.intra_graph_batching.used_methods: edges`). It is the deliberately simple system proposed in [Bilot et al.](https://tfjmp.org/publications/2025-usenixsec-2.pdf).
 
 `pretrained_<system>`
 :   The provenance systems, with node features computed by a [pretrained encoder](../features/pretrained_encoders.md) such as SPIDER: `pretrained_velox`, `pretrained_orthrus`, `pretrained_kairos`, `pretrained_magic`, `pretrained_flash`, `pretrained_nodlink` and `pretrained_threatrace`.
@@ -128,7 +125,7 @@ The combinations of this table are those run by the tests (`tests/test_network_d
 :   The defaults of the network configs are those of LANL. `--tuned` loads the OpTC settings of LARES (30 min windows, α = 5, β = 30) and Argus (6 min snapshots), from `config/tuned_baselines/optc_net/`.
 
 !!! warning "Data snooping"
-    Some original configs rely on test data: for example, `orthrus` trains its word2vec model on all splits, test included (`featurization.training_split: all`), and `kairos` does too. PIDSMaker keeps the original configs for reproducibility, but use the non-snooped variants when comparing systems. See [Bilot et al.](https://www.usenix.org/system/files/usenixsecurity25-bilot.pdf) for a detailed analysis.
+    Some original configs rely on test data: for example, `kairos` featurizes nodes using all splits, test included (`featurization.training_split: all`). PIDSMaker keeps the original configs for reproducibility, except `orthrus`, which is non-snooped by default for fair comparisons: its word2vec model is trained on the training split only (`featurization.training_split: train` instead of `all`), and the k-means clustering after thresholding is disabled. The top of `config/orthrus.yml` lists the overrides that reproduce the original paper. See [Bilot et al.](https://www.usenix.org/system/files/usenixsecurity25-bilot.pdf) for a detailed analysis.
 
 ## Results and reproducibility
 

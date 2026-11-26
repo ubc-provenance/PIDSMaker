@@ -799,9 +799,7 @@ def get_yml_cfg(args):
 
     # Overrides with best hyperparameters
     if args.tuned:
-        tuning_file = (
-            "orthrus" if args.model in ["orthrus_non_snooped", "orthrus_fixed"] else args.model
-        )
+        tuning_file = "orthrus" if args.model == "orthrus_fixed" else args.model
         if args.model == "orthrus_fixed" and args.dataset == "CLEARSCOPE_E3":  # speciifc case
             tuning_file = args.model
         tuned_yml_file = get_yml_file(
