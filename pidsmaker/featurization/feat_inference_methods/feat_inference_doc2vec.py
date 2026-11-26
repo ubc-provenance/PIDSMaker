@@ -6,7 +6,7 @@ from gensim.models.doc2vec import Doc2Vec
 
 from pidsmaker.featurization.featurization_methods.featurization_doc2vec import doc2vec_label_fn
 from pidsmaker.tokenization import load_tokenizer
-from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
+from pidsmaker.utils.utils import get_indexid2msg, log_tqdm
 
 
 def infer_node_vector(model, tokens):
@@ -26,7 +26,6 @@ def infer_node_vector(model, tokens):
 
 
 def main(cfg):
-    log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
     doc2vec_model_path = os.path.join(cfg.featurization._model_dir, "doc2vec_model.model")

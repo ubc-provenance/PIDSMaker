@@ -29,7 +29,6 @@ from pidsmaker.utils.utils import (
     get_split_to_files,
     init_database_connection,
     log,
-    log_start,
     log_tqdm,
     ns_time_to_datetime_US,
     stringtomd5,
@@ -808,7 +807,6 @@ def main(cfg):
     Args:
         cfg: Configuration object with all construction parameters
     """
-    log_start(__file__)
 
     cleaner = Cleaner(cfg)
     if cleaner:

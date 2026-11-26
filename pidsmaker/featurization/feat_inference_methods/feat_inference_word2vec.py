@@ -2,7 +2,7 @@ import numpy as np
 from gensim.models import Word2Vec
 
 from pidsmaker.tokenization import load_tokenizer
-from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
+from pidsmaker.utils.utils import get_indexid2msg, log_tqdm
 
 
 def cal_word_weight(n, percentage):
@@ -16,7 +16,6 @@ def cal_word_weight(n, percentage):
 
 
 def main(cfg):
-    log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
     word2vec_model_path = cfg.featurization._model_dir + "word2vec.model"

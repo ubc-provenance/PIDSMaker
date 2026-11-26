@@ -13,7 +13,7 @@ from pidsmaker.featurization.featurization_utils import (
     get_corpus,
     get_corpus_from_pretrain_datasets,
 )
-from pidsmaker.utils.utils import log, log_start
+from pidsmaker.utils.utils import log
 
 
 def train_word2vec(corpus, cfg, model_save_path):
@@ -71,7 +71,6 @@ def train_word2vec(corpus, cfg, model_save_path):
 
 
 def main(cfg):
-    log_start(__file__)
     model_save_path = cfg.featurization._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 

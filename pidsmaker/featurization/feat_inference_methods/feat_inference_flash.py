@@ -6,7 +6,7 @@ import torch
 from gensim.models import Word2Vec
 
 from pidsmaker.featurization.featurization_methods.featurization_flash import get_node2corpus
-from pidsmaker.utils.utils import log_start, log_tqdm
+from pidsmaker.utils.utils import log_tqdm
 
 
 def infer(document, w2vmodel, encoder):
@@ -54,7 +54,6 @@ class PositionalEncoder:
 
 
 def main(cfg):
-    log_start(__file__)
 
     trained_w2v_dir = cfg.featurization._model_dir
     w2vmodel = Word2Vec.load(os.path.join(trained_w2v_dir, "word2vec_model_final.model"))

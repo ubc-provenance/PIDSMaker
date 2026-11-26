@@ -22,7 +22,6 @@ from pidsmaker.utils.utils import (
     get_multi_datasets,
     load_graphs_for_dates,
     log,
-    log_start,
     log_tqdm,
     set_seed,
     symlink_directory,
@@ -293,7 +292,6 @@ def main_from_config(cfg):
 
 def main(cfg):
     set_seed(cfg)
-    log_start(__file__)
 
     multi_datasets = get_multi_datasets(cfg)
     if "none" in multi_datasets:

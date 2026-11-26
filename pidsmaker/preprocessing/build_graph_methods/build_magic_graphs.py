@@ -11,7 +11,6 @@ from pidsmaker.utils.utils import (
     datetime_to_ns_time_US,
     init_database_connection,
     log,
-    log_start,
     ns_time_to_datetime_US,
 )
 
@@ -197,7 +196,6 @@ def generate_graphs(cur, uuid2type, graph_out_dir, hash2uuid, cfg):
 
 
 def main(cfg):
-    log_start(__file__)
     cur, connect = init_database_connection(cfg)
     uuid2idx, uuid2type, uuid2name, hash2uuid = get_node_list(cur=cur, cfg=cfg)
 

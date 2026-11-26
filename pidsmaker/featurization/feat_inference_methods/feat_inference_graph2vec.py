@@ -31,7 +31,7 @@ from pidsmaker.featurization.featurization_methods.featurization_graph2vec impor
     snapshot_seed,
     snapshot_words,
 )
-from pidsmaker.utils.utils import log, log_start, log_tqdm
+from pidsmaker.utils.utils import log, log_tqdm
 
 # Set in the parent process before forking the workers, to share the model without copies
 _MODEL = None
@@ -59,7 +59,6 @@ def _embed_snapshot(args):
 def main(cfg, sorted_paths, out_dir):
     """Embeds the snapshots of `sorted_paths`, whose graphs were written to `out_dir`."""
     global _MODEL
-    log_start(__file__)
     _MODEL = Doc2Vec.load(os.path.join(cfg.featurization._model_dir, MODEL_FILE))
 
     g2v_cfg = cfg.featurization.graph2vec

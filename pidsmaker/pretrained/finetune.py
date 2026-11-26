@@ -28,7 +28,7 @@ from .training_utils import (
     pad_token_id_lists, pad_tensor_batch,
 )
 
-from pidsmaker.utils.utils import get_all_graphs_for_dates, get_indexid2msg, log, log_start
+from pidsmaker.utils.utils import get_all_graphs_for_dates, get_indexid2msg, log
 from pidsmaker.utils.labelling import get_GP_of_each_attack, get_ground_truth_edges
 from pidsmaker.utils.dataset_utils import get_rel2id, ntype2id
 
@@ -591,7 +591,6 @@ def _train_edge_cls(cfg):
     or state — edges are shuffled each epoch.  CE loss, anomaly score = CE of
     true edge type.
     """
-    log_start(__file__)
 
     from .models.tgn import EdgeTypeClassifier
     import torch.nn as nn
@@ -759,7 +758,6 @@ def _train_tgn(cfg):
 
     No attack labels are used in any mode.
     """
-    log_start(__file__)
 
     pretrain_cfg = cfg.featurization.pretrained
     detect_cfg = cfg.training.pretrained
@@ -1172,7 +1170,6 @@ def _train_tgn(cfg):
 
 
 def main(cfg):
-    log_start(__file__)
 
     pretrain_cfg = cfg.featurization.pretrained
     detect_cfg = cfg.training.pretrained

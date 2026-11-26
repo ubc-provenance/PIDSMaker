@@ -3,7 +3,7 @@ import os
 import torch
 
 from pidsmaker.featurization.utils.trw import TRW
-from pidsmaker.utils.utils import get_all_graphs_for_dates, log_start, log_tqdm
+from pidsmaker.utils.utils import get_all_graphs_for_dates, log_tqdm
 
 
 def run_temporal_random_walk(dates, out_dir, cfg):
@@ -37,7 +37,6 @@ def run_temporal_random_walk(dates, out_dir, cfg):
 
 
 def main(cfg):
-    log_start(__file__)
 
     os.makedirs(cfg.featurization.temporal_rw._random_walk_dir, exist_ok=True)
     os.makedirs(cfg.featurization.temporal_rw._random_walk_corpus_dir, exist_ok=True)

@@ -2,11 +2,9 @@ import os
 
 import torch
 
-from pidsmaker.utils.utils import log_start
 
 
 def main(cfg):
-    log_start(__file__)
 
     # TODO: this part is broken, need some work to make it work (the training part of this method seems too complicated)
 

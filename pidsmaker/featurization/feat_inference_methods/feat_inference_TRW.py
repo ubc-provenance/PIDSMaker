@@ -6,7 +6,6 @@ from pidsmaker.tokenization import load_tokenizer
 from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
-    log_start,
     log_tqdm,
 )
 
@@ -22,7 +21,6 @@ def cal_word_weight(n, percentage):
 
 
 def main(cfg):
-    log_start(__file__)
     base_dir = cfg.transformation._graphs_dir
     sorted_paths = get_all_graphs_for_dates(
         base_dir, cfg.dataset.train_dates + cfg.dataset.test_dates + cfg.dataset.val_dates

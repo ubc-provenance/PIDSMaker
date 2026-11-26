@@ -14,7 +14,7 @@ from pidsmaker.featurization.featurization_utils import (
     get_corpus_using_neighbors_features,
 )
 from pidsmaker.utils.process_tags import truncate_process_name
-from pidsmaker.utils.utils import log, log_start
+from pidsmaker.utils.utils import log
 
 
 def doc2vec_label_fn(cfg):
@@ -70,7 +70,6 @@ def doc2vec(
 
 
 def main(cfg):
-    log_start(__file__)
     model_save_path = cfg.featurization._model_dir
 
     # Context-aware Doc2vec embedding that considers the neighbors when creating embedding (like in Rcaid)

@@ -15,7 +15,7 @@ import numpy as np
 import torch
 from gensim.models import Word2Vec
 
-from pidsmaker.utils.utils import log, log_start
+from pidsmaker.utils.utils import log
 
 FLOAT = np.float32
 INT = np.uint64
@@ -733,7 +733,6 @@ def featurization_for_one_split(
 
 
 def main(cfg):
-    log_start(__file__)
 
     os.makedirs(cfg.featurization.alacarte._vec_graphs_dir, exist_ok=True)
 

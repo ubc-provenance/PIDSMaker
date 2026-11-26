@@ -8,7 +8,7 @@ import os
 
 import torch
 
-from pidsmaker.utils.utils import log, log_start
+from pidsmaker.utils.utils import log
 
 from .pretrain_common import (
     _load_dataset_for_pretrain,
@@ -18,7 +18,6 @@ from .pretrain_common import (
 from ..data.sampler import ProvenanceWalkSampler
 
 def main(cfg):
-    log_start(__file__)
 
     # ── Config ──────────────────────────────────────────────────────────
     spider_cfg = cfg.featurization.pretrained

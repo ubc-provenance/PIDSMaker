@@ -2,11 +2,10 @@ import numpy as np
 from sklearn.feature_extraction import FeatureHasher
 
 from pidsmaker.tokenization import load_tokenizer
-from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
+from pidsmaker.utils.utils import get_indexid2msg, log_tqdm
 
 
 def main(cfg):
-    log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
     emb_dim = cfg.featurization.emb_dim

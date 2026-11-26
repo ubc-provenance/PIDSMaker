@@ -23,7 +23,7 @@ from pidsmaker.detection.threatrace_detection import threatrace_log_ratio
 from pidsmaker.factory import build_model, optimizer_factory
 from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
-from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
+from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_tqdm, set_seed
 
 from . import inference_loop
 from .training_loop import to_device_without_attacks
@@ -135,7 +135,6 @@ def train_submodels(model, optimizer, graphs, cfg, device):
 
 
 def main(cfg):
-    log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
     if use_cuda:

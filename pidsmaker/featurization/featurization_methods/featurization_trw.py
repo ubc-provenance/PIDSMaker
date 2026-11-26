@@ -7,7 +7,6 @@ from pidsmaker.utils.utils import (
     get_all_files_from_folders,
     get_indexid2msg,
     log,
-    log_start,
     log_tqdm,
 )
 
@@ -86,7 +85,6 @@ def update_word2vec(corpus, model_save_path, cfg):
 
 
 def main(cfg):
-    log_start(__file__)
     model_save_path = cfg.featurization._model_dir
     os.makedirs(model_save_path, exist_ok=True)
 

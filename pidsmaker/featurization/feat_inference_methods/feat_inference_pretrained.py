@@ -11,7 +11,7 @@ import os
 import numpy as np
 import torch
 
-from pidsmaker.utils.utils import get_indexid2msg, get_split_to_files, log, log_start
+from pidsmaker.utils.utils import get_indexid2msg, get_split_to_files, log
 
 
 class GraphBasedEncoder:
@@ -1339,7 +1339,6 @@ def _continue_pretrain_behavior_cluster(cfg, model, tokenizer, pretrain_cfg, inf
 
 
 def main(cfg):
-    log_start(__file__)
 
     pretrain_cfg = cfg.featurization.pretrained
     model_type = pretrain_cfg.model_type

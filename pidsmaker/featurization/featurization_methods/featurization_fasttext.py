@@ -5,7 +5,7 @@ from gensim.models import FastText
 from gensim.models.fasttext import load_facebook_model
 
 from pidsmaker.featurization.featurization_utils import get_corpus
-from pidsmaker.utils.utils import log, log_start
+from pidsmaker.utils.utils import log
 
 
 def download_facebook_weights(out_dir):
@@ -59,7 +59,6 @@ def train_fasttext(corpus, cfg):
 
 
 def main(cfg):
-    log_start(__file__)
 
     multi_dataset_training = cfg.featurization.multi_dataset_training
     corpus = get_corpus(cfg, gather_multi_dataset=multi_dataset_training)

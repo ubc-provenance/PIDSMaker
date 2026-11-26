@@ -302,11 +302,6 @@ def gen_darpa_adj_files(graph, filename):
         f.close()
 
 
-def log_start(_file_: str):
-    """Logs the file of the code that a task runs (e.g. its featurization method)."""
-    log(console.style(os.path.relpath(_file_, os.path.dirname(os.path.dirname(__file__))), "dim"))
-
-
 def get_all_files_from_folders(base_dir: str, folders: list[str]):
     paths = [
         os.path.abspath(os.path.join(base_dir, sub, f))

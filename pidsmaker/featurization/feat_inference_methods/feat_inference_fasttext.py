@@ -4,11 +4,10 @@ import numpy as np
 from gensim.models import FastText
 
 from pidsmaker.tokenization import load_tokenizer
-from pidsmaker.utils.utils import get_indexid2msg, log_start, log_tqdm
+from pidsmaker.utils.utils import get_indexid2msg, log_tqdm
 
 
 def main(cfg):
-    log_start(__file__)
     indexid2msg = get_indexid2msg(cfg)
 
     model_path = os.path.join(cfg.featurization._model_dir, "fasttext.pkl")

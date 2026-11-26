@@ -13,7 +13,6 @@ from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
     log,
-    log_start,
     log_tqdm,
 )
 
@@ -183,7 +182,6 @@ class RepeatableIterator:
 
 
 def main(cfg):
-    log_start(__file__)
 
     training_files = get_splits_to_train_featurization(cfg)
     all_phrases = list(get_node2corpus(cfg=cfg, splits=training_files, fit=True).values())

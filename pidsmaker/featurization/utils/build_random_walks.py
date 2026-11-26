@@ -9,7 +9,6 @@ from pidsmaker.utils.utils import (
     gen_darpa_rw_file,
     get_all_graphs_for_dates,
     log,
-    log_start,
 )
 
 
@@ -58,7 +57,6 @@ def preprocess_split(split: Literal["train", "val", "test"], dates: list[str], c
 
 
 def main(cfg):
-    log_start(__file__)
 
     os.makedirs(cfg.featurization.alacarte._random_walk_dir, exist_ok=True)
     os.makedirs(cfg.featurization.alacarte._random_walk_corpus_dir, exist_ok=True)

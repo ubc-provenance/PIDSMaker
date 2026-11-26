@@ -28,7 +28,7 @@ from pidsmaker.objectives.predict_node_type import NODE_LOSS_MASK_KEY
 from pidsmaker.tasks.batching import get_preprocessed_graphs
 from pidsmaker.utils import console
 from pidsmaker.utils.data_utils import batch_to_device, save_model
-from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_start, log_tqdm, set_seed
+from pidsmaker.utils.utils import PeakCPUMemory, get_device, log, log_tqdm, set_seed
 
 from . import inference_loop
 
@@ -48,7 +48,6 @@ def main(cfg):
     Returns:
         float: Best validation score achieved during training
     """
-    log_start(__file__)
     device = get_device(cfg)
     use_cuda = device == torch.device("cuda")
 

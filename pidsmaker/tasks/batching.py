@@ -7,7 +7,7 @@ from pidsmaker.utils.data_utils import (
     load_all_datasets,
     set_original_node_ids,
 )
-from pidsmaker.utils.utils import get_device, log, log_start, set_seed
+from pidsmaker.utils.utils import get_device, log, set_seed
 
 
 def get_preprocessed_graphs(cfg):
@@ -28,7 +28,6 @@ def get_data(cfg):
 
 def main(cfg):
     set_seed(cfg)
-    log_start(__file__)
     
     if not cfg._save_graph_preprocessing:
         log("Skipping task to save storage.")

@@ -24,7 +24,6 @@ from pidsmaker.utils.utils import (
     get_all_graphs_for_dates,
     get_indexid2msg,
     log,
-    log_start,
     log_tqdm,
     ns_time_to_datetime_US,
 )
@@ -640,7 +639,6 @@ def _score_graph(
 
 def _detect_edge_cls(cfg):
     """Edge classification detection: score edges with static or event embeddings."""
-    log_start(__file__)
 
     from .models.tgn import EdgeTypeClassifier
 
@@ -907,7 +905,6 @@ def _score_edges_tgn(
 
 def _detect_tgn(cfg):
     """TGN detection: score val/test edges with temporal entity memory."""
-    log_start(__file__)
 
     from .models.tgn import ProvenanceTGN
 
@@ -1121,7 +1118,6 @@ def _detect_perplexity(cfg):
     each edge by computing the mean next-token prediction loss over the
     walk containing that edge. Higher perplexity = more anomalous.
     """
-    log_start(__file__)
 
     from .models.llama import ProvenanceLLaMA, get_llama_config
 
@@ -1283,7 +1279,6 @@ def main(cfg):
       edge_cls:   edge type prediction from static BERT entity embeddings
       perplexity: decoder-only LLaMA, direct perplexity scoring (no fine-tuning)
     """
-    log_start(__file__)
 
     pretrain_cfg = cfg.featurization.pretrained
     detect_cfg = cfg.training.pretrained

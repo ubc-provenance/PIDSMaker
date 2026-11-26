@@ -28,7 +28,7 @@ from gensim.models.keyedvectors import pseudorandom_weak_vector
 
 from pidsmaker.featurization.featurization_utils import get_splits_to_train_featurization
 from pidsmaker.utils.graph_store import load_graph_columns
-from pidsmaker.utils.utils import get_all_graphs_for_dates, log, log_start, log_tqdm
+from pidsmaker.utils.utils import get_all_graphs_for_dates, log, log_tqdm
 
 # Maximum number of words of a document processed by gensim (`MAX_DOCUMENT_LEN`)
 GENSIM_MAX_DOCUMENT_LEN = 10000
@@ -230,7 +230,6 @@ def train_graph2vec(cfg, corpus):
 
 
 def main(cfg):
-    log_start(__file__)
     if cfg.featurization.multi_dataset_training:
         raise NotImplementedError("graph2vec does not support multi-dataset training.")
 
